@@ -43,7 +43,6 @@ import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
-import sleeper.core.table.TableIdentity;
 import sleeper.ingest.job.status.InMemoryIngestJobStatusStore;
 import sleeper.statestore.FixedStateStoreProvider;
 
@@ -73,6 +72,7 @@ import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_E
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRun;
@@ -85,7 +85,6 @@ class EmrPlatformExecutorTest {
     private final AmazonS3 amazonS3 = mock(AmazonS3.class);
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
-    private final TableIdentity table = tableProperties.getId();
     private final String tableId = tableProperties.get(TABLE_ID);
     private final InMemoryIngestJobStatusStore ingestJobStatusStore = new InMemoryIngestJobStatusStore();
 
@@ -490,7 +489,8 @@ class EmrPlatformExecutorTest {
 
     private BulkImportJob.Builder singleFileJobBuilder() {
         return new BulkImportJob.Builder()
-                .tableId(table)
+                .tableId(tableId)
+                .tableName(tableProperties.get(TABLE_NAME))
                 .id("my-job")
                 .files(Lists.newArrayList("file1.parquet"));
     }

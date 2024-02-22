@@ -325,6 +325,7 @@ class StateMachinePlatformExecutorTest {
 
     private BulkImportJob.Builder jobForTable() {
         return BulkImportJob.builder()
-                .tableId(tableProperties.getId());
+                .tableId(tableProperties.get(TABLE_ID))
+                .tableName(tableProperties.get(TABLE_NAME));
     }
 }
