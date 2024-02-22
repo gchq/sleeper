@@ -39,13 +39,13 @@ public class MultipleTablesTest {
     }
 
     @Test
-    void shouldIngestOneFileTo5Tables(SleeperSystemTest sleeper) {
-        // Given we have 5 tables
+    void shouldIngestOneFileToMultipleTables(SleeperSystemTest sleeper) {
+        // Given we have several tables
         // And we have one source file to be ingested
         sleeper.tables().createMany(5, schema);
         sleeper.sourceFiles().createWithNumberedRecords(schema, "file.parquet", LongStream.range(0, 100));
 
-        // When we send an ingest job with the source file to all 20 tables
+        // When we send an ingest job with the source file to all tables
         sleeper.ingest().byQueue().sendSourceFilesToAllTables("file.parquet")
                 .invokeTask().waitForJobs();
 
