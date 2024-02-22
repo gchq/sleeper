@@ -42,12 +42,12 @@ public class SleeperPageBlockUtils {
     /**
      * Read a single object from the specified channel and position in the given page.
      *
-     * @param sleeperColumnHandlesInChannelOrder The handles for each column stored in the page, in the order of the
-     * channels in the page.
-     * @param page The page to read from.
-     * @param channelNo The channel to read.
-     * @param positionNo The position to read.
-     * @return The read object.
+     * @param  sleeperColumnHandlesInChannelOrder The handles for each column stored in the page, in the order of the
+     *                                            channels in the page.
+     * @param  page                               The page to read from.
+     * @param  channelNo                          The channel to read.
+     * @param  positionNo                         The position to read.
+     * @return                                    The read object.
      */
     public static Object readObjectFromPage(
             List<SleeperColumnHandle> sleeperColumnHandlesInChannelOrder,
@@ -73,8 +73,8 @@ public class SleeperPageBlockUtils {
      * being processed, which is experimental at present.
      *
      * @param blockBuilder The block to write the elements into.
-     * @param elementType The type of the element to write.
-     * @param element The element itself.
+     * @param elementType  The type of the element to write.
+     * @param element      The element itself.
      */
     public static void writeElementToBuilder(BlockBuilder blockBuilder, ArrayType fieldType, Object element) {
         if (element == null) {
