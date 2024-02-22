@@ -25,7 +25,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.PropertiesUtils;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
-import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableNotFoundException;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
@@ -49,35 +49,35 @@ public class S3TableProperties implements TablePropertiesStore.Client {
     }
 
     @Override
-    public TableProperties loadProperties(TableIdentity tableId) {
+    public TableProperties loadProperties(TableStatus table) {
         String bucket = instanceProperties.get(CONFIG_BUCKET);
-        String key = getS3Key(tableId);
+        String key = getS3Key(table);
         LOGGER.info("Loading table properties from bucket {}, key {}", bucket, key);
         try {
             String content = s3Client.getObjectAsString(bucket, key);
             return new TableProperties(instanceProperties, PropertiesUtils.loadProperties(content));
         } catch (AmazonS3Exception e) {
-            throw TableNotFoundException.withTableIdentity(tableId, e);
+            throw TableNotFoundException.withTableIdentity(table, e);
         }
     }
 
     @Override
     public void saveProperties(TableProperties tableProperties) {
         String bucket = instanceProperties.get(CONFIG_BUCKET);
-        String key = getS3Key(tableProperties.getId());
+        String key = getS3Key(tableProperties.getStatus());
         s3Client.putObject(bucket, key, tableProperties.saveAsString());
         LOGGER.info("Saved table properties to bucket {}, key {}", bucket, key);
     }
 
     @Override
-    public void deleteProperties(TableIdentity tableId) {
+    public void deleteProperties(TableStatus table) {
         String bucket = instanceProperties.get(CONFIG_BUCKET);
-        String key = getS3Key(tableId);
+        String key = getS3Key(table);
         s3Client.deleteObject(bucket, key);
         LOGGER.info("Deleted table properties in bucket {}, key {}", bucket, key);
     }
 
-    private String getS3Key(TableIdentity tableId) {
-        return "tables/" + tableId.getTableUniqueId();
+    private String getS3Key(TableStatus table) {
+        return "tables/" + table.getTableUniqueId();
     }
 }

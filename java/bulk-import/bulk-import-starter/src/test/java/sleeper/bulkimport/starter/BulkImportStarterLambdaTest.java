@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.starter.executor.BulkImportExecutor;
 import sleeper.core.table.InMemoryTableIndex;
-import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableIndex;
 import sleeper.ingest.job.IngestJobMessageHandler;
 import sleeper.ingest.job.status.InMemoryIngestJobStatusStore;
@@ -45,7 +45,7 @@ public class BulkImportStarterLambdaTest {
 
     @BeforeEach
     void setUp() {
-        tableIndex.create(TableIdentity.uniqueIdAndName("test-table-id", "test-table"));
+        tableIndex.create(TableStatus.uniqueIdAndName("test-table-id", "test-table"));
     }
 
     @Test

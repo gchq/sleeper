@@ -37,7 +37,7 @@ import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
-import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableStatus;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.job.common.QueueMessageCount;
@@ -68,10 +68,10 @@ public class IngestJobStatusReport {
 
     public IngestJobStatusReport(
             IngestJobStatusStore ingestJobStatusStore,
-            TableIdentity tableId, JobQuery.Type queryType, String queryParameters,
+            TableStatus table, JobQuery.Type queryType, String queryParameters,
             IngestJobStatusReporter reporter, QueueMessageCount.Client queueClient, InstanceProperties properties,
             Map<String, Integer> persistentEmrStepCount) {
-        this(ingestJobStatusStore, JobQuery.fromParametersOrPrompt(tableId, queryType, queryParameters,
+        this(ingestJobStatusStore, JobQuery.fromParametersOrPrompt(table, queryType, queryParameters,
                         Clock.systemUTC(), new ConsoleInput(System.console()), Map.of("n", new RejectedJobsQuery())),
                 reporter, queueClient, properties, persistentEmrStepCount);
     }
@@ -115,12 +115,12 @@ public class IngestJobStatusReport {
 
             AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
             DynamoDBTableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDBClient);
-            TableIdentity tableId = tableIndex.getTableByName(tableName)
+            TableStatus table = tableIndex.getTableByName(tableName)
                     .orElseThrow(() -> new IllegalArgumentException("Table does not exist: " + tableName));
             IngestJobStatusStore statusStore = IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
             AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
             AmazonElasticMapReduce emrClient = AmazonElasticMapReduceClientBuilder.defaultClient();
-            new IngestJobStatusReport(statusStore, tableId, queryType, queryParameters,
+            new IngestJobStatusReport(statusStore, table, queryType, queryParameters,
                     reporter, QueueMessageCount.withSqsClient(sqsClient), instanceProperties,
                     PersistentEMRStepCount.byStatus(instanceProperties, emrClient)).run();
         } catch (IllegalArgumentException e) {

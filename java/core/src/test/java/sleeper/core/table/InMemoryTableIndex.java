@@ -26,62 +26,62 @@ import java.util.stream.Stream;
 
 public class InMemoryTableIndex implements TableIndex {
 
-    private final Map<String, TableIdentity> indexByName = new TreeMap<>();
-    private final Map<String, TableIdentity> indexById = new HashMap<>();
+    private final Map<String, TableStatus> indexByName = new TreeMap<>();
+    private final Map<String, TableStatus> indexById = new HashMap<>();
 
     @Override
-    public void create(TableIdentity tableId) throws TableAlreadyExistsException {
-        if (indexByName.containsKey(tableId.getTableName())) {
-            throw new TableAlreadyExistsException(tableId);
+    public void create(TableStatus table) throws TableAlreadyExistsException {
+        if (indexByName.containsKey(table.getTableName())) {
+            throw new TableAlreadyExistsException(table);
         }
-        save(tableId);
+        save(table);
     }
 
-    public void save(TableIdentity id) {
+    public void save(TableStatus id) {
         indexByName.put(id.getTableName(), id);
         indexById.put(id.getTableUniqueId(), id);
     }
 
     @Override
-    public Stream<TableIdentity> streamAllTables() {
+    public Stream<TableStatus> streamAllTables() {
         return new ArrayList<>(indexByName.values()).stream();
     }
 
     @Override
-    public Optional<TableIdentity> getTableByName(String tableName) {
+    public Optional<TableStatus> getTableByName(String tableName) {
         return Optional.ofNullable(indexByName.get(tableName));
     }
 
     @Override
-    public Optional<TableIdentity> getTableByUniqueId(String tableUniqueId) {
+    public Optional<TableStatus> getTableByUniqueId(String tableUniqueId) {
         return Optional.ofNullable(indexById.get(tableUniqueId));
     }
 
     @Override
-    public void delete(TableIdentity tableId) {
-        if (!indexById.containsKey(tableId.getTableUniqueId())) {
-            throw TableNotFoundException.withTableId(tableId.getTableUniqueId());
+    public void delete(TableStatus table) {
+        if (!indexById.containsKey(table.getTableUniqueId())) {
+            throw TableNotFoundException.withTableId(table.getTableUniqueId());
         }
-        TableIdentity latestId = indexById.get(tableId.getTableUniqueId());
-        if (!Objects.equals(latestId.getTableName(), tableId.getTableName())) {
-            throw TableNotFoundException.withTableName(tableId.getTableName());
+        TableStatus latest = indexById.get(table.getTableUniqueId());
+        if (!Objects.equals(latest.getTableName(), table.getTableName())) {
+            throw TableNotFoundException.withTableName(table.getTableName());
         }
-        indexByName.remove(latestId.getTableName());
-        indexById.remove(latestId.getTableUniqueId());
+        indexByName.remove(latest.getTableName());
+        indexById.remove(latest.getTableUniqueId());
     }
 
     @Override
-    public void update(TableIdentity tableId) {
-        TableIdentity existingTableWithNewName = indexByName.get(tableId.getTableName());
-        if (existingTableWithNewName != null && !existingTableWithNewName.getTableUniqueId().equals(tableId.getTableUniqueId())) {
+    public void update(TableStatus table) {
+        TableStatus existingTableWithNewName = indexByName.get(table.getTableName());
+        if (existingTableWithNewName != null && !existingTableWithNewName.getTableUniqueId().equals(table.getTableUniqueId())) {
             throw new TableAlreadyExistsException(existingTableWithNewName);
         }
-        if (!indexById.containsKey(tableId.getTableUniqueId())) {
-            throw TableNotFoundException.withTableId(tableId.getTableUniqueId());
+        if (!indexById.containsKey(table.getTableUniqueId())) {
+            throw TableNotFoundException.withTableId(table.getTableUniqueId());
         }
-        TableIdentity oldId = indexById.get(tableId.getTableUniqueId());
-        indexByName.remove(oldId.getTableName());
-        indexByName.put(tableId.getTableName(), tableId);
-        indexById.put(tableId.getTableUniqueId(), tableId);
+        TableStatus old = indexById.get(table.getTableUniqueId());
+        indexByName.remove(old.getTableName());
+        indexByName.put(table.getTableName(), table);
+        indexById.put(table.getTableUniqueId(), table);
     }
 }

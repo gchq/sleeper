@@ -17,7 +17,7 @@
 package sleeper.configuration.properties.table;
 
 import sleeper.core.table.InMemoryTableIndex;
-import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableNotFoundException;
 
@@ -60,10 +60,10 @@ public class InMemoryTableProperties implements TablePropertiesStore.Client {
     }
 
     @Override
-    public TableProperties loadProperties(TableIdentity tableId) {
-        return Optional.ofNullable(propertiesByTableId.get(tableId.getTableUniqueId()))
+    public TableProperties loadProperties(TableStatus table) {
+        return Optional.ofNullable(propertiesByTableId.get(table.getTableUniqueId()))
                 .map(this::copyIfSet)
-                .orElseThrow(() -> TableNotFoundException.withTableIdentity(tableId));
+                .orElseThrow(() -> TableNotFoundException.withTableIdentity(table));
     }
 
     @Override
@@ -72,8 +72,8 @@ public class InMemoryTableProperties implements TablePropertiesStore.Client {
     }
 
     @Override
-    public void deleteProperties(TableIdentity tableId) {
-        propertiesByTableId.remove(tableId.getTableUniqueId());
+    public void deleteProperties(TableStatus table) {
+        propertiesByTableId.remove(table.getTableUniqueId());
     }
 
     private TableProperties copyIfSet(TableProperties properties) {

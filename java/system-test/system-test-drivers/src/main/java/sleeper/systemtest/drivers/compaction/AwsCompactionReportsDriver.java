@@ -54,13 +54,13 @@ public class AwsCompactionReportsDriver implements CompactionReportsDriver {
                     .run();
             new CompactionJobStatusReport(jobStore(),
                     new StandardCompactionJobStatusReporter(out),
-                    new RangeJobsQuery(instance.getTableId(), startTime, Instant.MAX))
+                    new RangeJobsQuery(instance.getTableStatus(), startTime, Instant.MAX))
                     .run();
         };
     }
 
     public List<CompactionJobStatus> jobs(ReportingContext reportingContext) {
-        return new RangeJobsQuery(instance.getTableId(), reportingContext.getRecordingStartTime(), Instant.MAX)
+        return new RangeJobsQuery(instance.getTableStatus(), reportingContext.getRecordingStartTime(), Instant.MAX)
                 .run(jobStore());
     }
 

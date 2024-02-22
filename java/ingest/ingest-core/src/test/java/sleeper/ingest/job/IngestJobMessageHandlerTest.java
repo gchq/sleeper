@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.table.InMemoryTableIndex;
-import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableIndex;
 import sleeper.ingest.job.status.InMemoryIngestJobStatusStore;
 import sleeper.ingest.job.status.IngestJobStatus;
@@ -43,7 +43,7 @@ public class IngestJobMessageHandlerTest {
 
     private final TableIndex tableIndex = new InMemoryTableIndex();
     private final IngestJobStatusStore ingestJobStatusStore = new InMemoryIngestJobStatusStore();
-    private final TableIdentity table = TableIdentity.uniqueIdAndName("test-table-id", "test-table");
+    private final TableStatus table = TableStatus.uniqueIdAndName("test-table-id", "test-table");
     private final String tableId = table.getTableUniqueId();
 
     @BeforeEach

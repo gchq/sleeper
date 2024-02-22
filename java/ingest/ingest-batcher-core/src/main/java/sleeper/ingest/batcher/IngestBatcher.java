@@ -23,7 +23,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.validation.IngestQueue;
-import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableStatus;
 import sleeper.ingest.job.IngestJob;
 
 import java.time.Duration;
@@ -85,20 +85,20 @@ public class IngestBatcher {
     private void batchTableFiles(String tableId, List<FileIngestRequest> inputFiles, Instant time) {
         long totalBytes = totalBytes(inputFiles);
         TableProperties properties = tablePropertiesProvider.getById(tableId);
-        TableIdentity tableIdentity = properties.getId();
+        TableStatus table = properties.getStatus();
         LOGGER.info("Attempting to batch {} files of total size {} for table {}",
-                inputFiles.size(), formatBytes(totalBytes), tableIdentity);
+                inputFiles.size(), formatBytes(totalBytes), table);
         if (shouldCreateBatches(properties, inputFiles, time)) {
             IngestQueue ingestQueue = properties.getEnumValue(INGEST_BATCHER_INGEST_QUEUE, IngestQueue.class);
             LOGGER.info("Creating batches for {} files with total size of {} for table {}",
-                    inputFiles.size(), formatBytes(totalBytes), tableIdentity);
+                    inputFiles.size(), formatBytes(totalBytes), table);
             List<Instant> receivedTimes = inputFiles.stream()
                     .map(FileIngestRequest::getReceivedTime)
                     .sorted().collect(toList());
             LOGGER.info("Files to batch were received between {} and {}",
                     receivedTimes.get(0), receivedTimes.get(receivedTimes.size() - 1));
             createBatches(properties, inputFiles)
-                    .forEach(batch -> sendBatch(tableIdentity, ingestQueue, batch));
+                    .forEach(batch -> sendBatch(table, ingestQueue, batch));
         }
     }
 
@@ -136,7 +136,7 @@ public class IngestBatcher {
         return meetsMinFiles;
     }
 
-    private void sendBatch(TableIdentity tableIdentity, IngestQueue ingestQueue, List<FileIngestRequest> batch) {
+    private void sendBatch(TableStatus table, IngestQueue ingestQueue, List<FileIngestRequest> batch) {
         String jobId = jobIdSupplier.get();
         List<String> files = store.assignJobGetAssigned(jobId, batch);
         if (files.isEmpty()) {
@@ -146,13 +146,13 @@ public class IngestBatcher {
         long totalBytes = totalBytes(batch);
         IngestJob job = IngestJob.builder()
                 .id(jobId)
-                .tableId(tableIdentity.getTableUniqueId())
+                .tableId(table.getTableUniqueId())
                 .files(files)
                 .build();
         try {
             String jobQueueUrl = ingestQueue.getJobQueueUrl(instanceProperties);
             if (jobQueueUrl == null) {
-                LOGGER.error("Discarding created job with no queue configured for table {}: {}", tableIdentity, job);
+                LOGGER.error("Discarding created job with no queue configured for table {}: {}", table, job);
             } else {
                 LOGGER.info("Sending ingest job of id {} with {} files and total size of {} to {}",
                         jobId, job.getFiles().size(), formatBytes(totalBytes), ingestQueue);

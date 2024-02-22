@@ -40,7 +40,7 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableStatus;
 import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
@@ -133,7 +133,7 @@ public class SleeperRawAwsConnection implements AutoCloseable {
         // Member variables related to table properties
         // Note that the table-properties provider is NOT thread-safe.
         tableNames = new DynamoDBTableIndex(instanceProperties, dynamoDbClient).streamAllTables()
-                .map(TableIdentity::getTableName).toList();
+                .map(TableStatus::getTableName).toList();
         tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDbClient);
         LOGGER.info(String.format("Number of Sleeper tables: %d", tableNames.size()));
         for (String tableName : tableNames) {

@@ -19,7 +19,7 @@ package sleeper.ingest.job;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableIndex;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.job.status.IngestJobValidatedEvent;
@@ -95,8 +95,8 @@ public class IngestJobMessageHandler<T> {
         } else if (files.contains(null)) {
             validationFailures.add("One of the files was null");
         }
-        Optional<TableIdentity> tableIdOpt = getTableId(ingestJob);
-        if (tableIdOpt.isEmpty()) {
+        Optional<TableStatus> tableOpt = getTable(ingestJob);
+        if (tableOpt.isEmpty()) {
             validationFailures.add("Table not found");
         }
         if (!validationFailures.isEmpty()) {
@@ -104,13 +104,13 @@ public class IngestJobMessageHandler<T> {
             ingestJobStatusStore.jobValidated(
                     refusedEventBuilder()
                             .jobId(jobId)
-                            .tableId(tableIdOpt.map(TableIdentity::getTableUniqueId).orElse(null))
+                            .tableId(tableOpt.map(TableStatus::getTableUniqueId).orElse(null))
                             .jsonMessage(message)
                             .reasons(validationFailures)
                             .build());
             return Optional.empty();
         }
-        TableIdentity tableId = tableIdOpt.get();
+        TableStatus table = tableOpt.get();
 
         List<String> expandedFiles = expandDirectories.apply(files);
         if (expandedFiles.isEmpty()) {
@@ -118,7 +118,7 @@ public class IngestJobMessageHandler<T> {
             ingestJobStatusStore.jobValidated(
                     refusedEventBuilder()
                             .jobId(jobId)
-                            .tableId(tableId.getTableUniqueId())
+                            .tableId(table.getTableUniqueId())
                             .jsonMessage(message)
                             .reasons("Could not find one or more files")
                             .build());
@@ -129,13 +129,13 @@ public class IngestJobMessageHandler<T> {
         return Optional.of(applyIngestJobChanges.apply(job,
                 ingestJob.toBuilder()
                         .id(jobId)
-                        .tableName(tableId.getTableName())
-                        .tableId(tableId.getTableUniqueId())
+                        .tableName(table.getTableName())
+                        .tableId(table.getTableUniqueId())
                         .files(expandedFiles)
                         .build()));
     }
 
-    private Optional<TableIdentity> getTableId(IngestJob job) {
+    private Optional<TableStatus> getTable(IngestJob job) {
         if (job.getTableId() != null) {
             return tableIndex.getTableByUniqueId(job.getTableId());
         } else if (job.getTableName() != null) {

@@ -75,7 +75,7 @@ class TablePropertiesProviderIT extends TablePropertiesITBase {
     void shouldThrowExceptionWhenTableExistsInIndexButNotConfigBucket() {
         // Given
         new DynamoDBTableIndex(instanceProperties, dynamoDBClient)
-                .create(tableProperties.getId());
+                .create(tableProperties.getStatus());
 
         // When / Then
         assertThatThrownBy(() -> provider.getByName(tableName))
@@ -87,7 +87,7 @@ class TablePropertiesProviderIT extends TablePropertiesITBase {
         // Given
         store.save(tableProperties);
         new DynamoDBTableIndex(instanceProperties, dynamoDBClient)
-                .delete(tableProperties.getId());
+                .delete(tableProperties.getStatus());
 
         // When / Then
         assertThatThrownBy(() -> provider.getById(tableId))

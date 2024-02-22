@@ -80,7 +80,7 @@ public class AwsSleeperTablesDriverIT {
     void shouldAddOneTable() {
         driver.addTable(instanceProperties, tableProperties);
         assertThat(driver.tableIndex(instanceProperties).streamAllTables())
-                .containsExactly(tableProperties.getId());
+                .containsExactly(tableProperties.getStatus());
     }
 
     @Test

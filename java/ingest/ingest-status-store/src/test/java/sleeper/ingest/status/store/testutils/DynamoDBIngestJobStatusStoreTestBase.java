@@ -26,7 +26,7 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.schema.Schema;
 import sleeper.core.table.TableIdGenerator;
-import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableStatus;
 import sleeper.dynamodb.tools.DynamoDBTestBase;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.IngestJobTestData;
@@ -72,7 +72,7 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
     private final TableProperties tableProperties = createTableProperties(schema, instanceProperties);
 
     protected final String tableName = tableProperties.get(TABLE_NAME);
-    protected final TableIdentity table = tableProperties.getId();
+    protected final TableStatus table = tableProperties.getStatus();
     protected final String tableId = tableProperties.get(TABLE_ID);
     protected final IngestJobStatusStore store = IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
 
@@ -157,7 +157,7 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
     }
 
     protected IngestJob jobWithTableAndFiles(String tableName, String... filenames) {
-        TableIdentity table = TableIdentity.uniqueIdAndName(new TableIdGenerator().generateString(), tableName);
+        TableStatus table = TableStatus.uniqueIdAndName(new TableIdGenerator().generateString(), tableName);
         return IngestJobTestData.createJobWithTableAndFiles(UUID.randomUUID().toString(), table, filenames);
     }
 }

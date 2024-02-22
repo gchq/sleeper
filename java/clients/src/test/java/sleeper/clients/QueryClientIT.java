@@ -37,7 +37,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.inmemory.StateStoreTestHelper;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIdGenerator;
-import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableIndex;
 import sleeper.ingest.IngestFactory;
 import sleeper.ingest.testutils.IngestRecordsTestDataHelper;
@@ -297,8 +297,8 @@ public class QueryClientIT {
                     "123", "456",
                     EXIT_OPTION);
             runQueryClient(List.of(table1, table2), Map.of(
-                    table1.getId().getTableName(), stateStore1,
-                    table2.getId().getTableName(), stateStore2));
+                    table1.getStatus().getTableName(), stateStore1,
+                    table2.getStatus().getTableName(), stateStore2));
 
             // Then
             assertThat(out.toString())
@@ -326,12 +326,12 @@ public class QueryClientIT {
     }
 
     private TableProperties createTable(String tableName, Schema schema) {
-        TableIdentity tableIdentity = TableIdentity.uniqueIdAndName(
+        TableStatus tableStatus = TableStatus.uniqueIdAndName(
                 TableIdGenerator.fromRandomSeed(0).generateString(), tableName);
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        tableProperties.set(TABLE_ID, tableIdentity.getTableUniqueId());
-        tableProperties.set(TABLE_NAME, tableIdentity.getTableName());
-        tableIndex.create(tableIdentity);
+        tableProperties.set(TABLE_ID, tableStatus.getTableUniqueId());
+        tableProperties.set(TABLE_NAME, tableStatus.getTableName());
+        tableIndex.create(tableStatus);
         return tableProperties;
     }
 

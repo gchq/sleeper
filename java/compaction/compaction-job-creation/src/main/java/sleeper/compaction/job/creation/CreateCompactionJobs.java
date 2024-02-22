@@ -32,7 +32,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.SplitFileReferences;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableStatus;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
@@ -115,14 +115,14 @@ public class CreateCompactionJobs {
     }
 
     public void createJobs(TableProperties table) throws StateStoreException, IOException, ObjectFactoryException {
-        LOGGER.info("Performing pre-splits on files in {}", table.getId());
+        LOGGER.info("Performing pre-splits on files in {}", table.getStatus());
         SplitFileReferences.from(stateStoreProvider.getStateStore(table)).split();
         createJobsForTable(table);
     }
 
     private void createJobsForTable(TableProperties tableProperties) throws StateStoreException, IOException, ObjectFactoryException {
-        TableIdentity tableId = tableProperties.getId();
-        LOGGER.debug("Creating jobs for table {}", tableId);
+        TableStatus table = tableProperties.getStatus();
+        LOGGER.debug("Creating jobs for table {}", table);
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
 
         List<Partition> allPartitions = stateStore.getAllPartitions();
@@ -133,8 +133,8 @@ public class CreateCompactionJobs {
         // of efficiency and to ensure consistency.
         List<FileReference> fileReferencesWithNoJobId = fileReferences.stream().filter(f -> null == f.getJobId()).collect(Collectors.toList());
         List<FileReference> fileReferencesWithJobId = fileReferences.stream().filter(f -> null != f.getJobId()).collect(Collectors.toList());
-        LOGGER.debug("Found {} file references with no job id in table {}", fileReferencesWithNoJobId.size(), tableId);
-        LOGGER.debug("Found {} file references with a job id in table {}", fileReferencesWithJobId.size(), tableId);
+        LOGGER.debug("Found {} file references with no job id in table {}", fileReferencesWithNoJobId.size(), table);
+        LOGGER.debug("Found {} file references with a job id in table {}", fileReferencesWithJobId.size(), table);
 
         CompactionStrategy compactionStrategy = objectFactory
                 .getObject(tableProperties.get(COMPACTION_STRATEGY_CLASS), CompactionStrategy.class);
@@ -142,7 +142,7 @@ public class CreateCompactionJobs {
         compactionStrategy.init(instanceProperties, tableProperties);
 
         List<CompactionJob> compactionJobs = compactionStrategy.createCompactionJobs(fileReferencesWithJobId, fileReferencesWithNoJobId, allPartitions);
-        LOGGER.info("Used {} to create {} compaction jobs for table {}", compactionStrategy.getClass().getSimpleName(), compactionJobs.size(), tableId);
+        LOGGER.info("Used {} to create {} compaction jobs for table {}", compactionStrategy.getClass().getSimpleName(), compactionJobs.size(), table);
 
         if (compactAllFiles) {
             createJobsFromLeftoverFiles(tableProperties, fileReferencesWithNoJobId, allPartitions, compactionJobs);
@@ -210,7 +210,7 @@ public class CreateCompactionJobs {
             }
         }
         LOGGER.info("Created {} jobs from {} leftover files for table {}",
-                compactionJobs.size() - jobsBefore, leftoverFiles.size(), tableProperties.getId());
+                compactionJobs.size() - jobsBefore, leftoverFiles.size(), tableProperties.getStatus());
     }
 
     @FunctionalInterface

@@ -30,7 +30,7 @@ import sleeper.clients.util.console.ConsoleInput;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
-import sleeper.core.table.TableIdentityProvider;
+import sleeper.core.table.TableStatusProvider;
 import sleeper.ingest.batcher.IngestBatcherStore;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
 
@@ -57,10 +57,10 @@ public class IngestBatcherReport {
     private final IngestBatcherReporter reporter;
     private final BatcherQuery.Type queryType;
     private final BatcherQuery query;
-    private final TableIdentityProvider tableIdentityProvider;
+    private final TableStatusProvider tableIdentityProvider;
 
     public IngestBatcherReport(IngestBatcherStore batcherStore, IngestBatcherReporter reporter,
-                               BatcherQuery.Type queryType, TableIdentityProvider tableIdentityProvider) {
+                               BatcherQuery.Type queryType, TableStatusProvider tableIdentityProvider) {
         this.batcherStore = batcherStore;
         this.reporter = reporter;
         this.query = BatcherQuery.from(queryType, new ConsoleInput(System.console()));
@@ -112,7 +112,7 @@ public class IngestBatcherReport {
                 reporter = new StandardIngestBatcherReporter();
         }
         new IngestBatcherReport(statusStore, reporter, queryType,
-                new TableIdentityProvider(new DynamoDBTableIndex(instanceProperties, dynamoDBClient)))
+                new TableStatusProvider(new DynamoDBTableIndex(instanceProperties, dynamoDBClient)))
                 .run();
 
         amazonS3.shutdown();

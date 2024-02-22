@@ -19,7 +19,7 @@ package sleeper.core.testutils.printers;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableStatus;
 
 import java.io.PrintWriter;
 import java.util.List;
@@ -32,10 +32,10 @@ public class FileReferencePrinter {
     }
 
     public static String printExpectedFilesForAllTables(
-            List<TableIdentity> tables, PartitionTree partitions, List<FileReference> activeFiles) {
+            List<TableStatus> tables, PartitionTree partitions, List<FileReference> activeFiles) {
         return printTableFilesExpectingIdentical(
-                tables.stream().collect(Collectors.toMap(TableIdentity::getTableName, table -> partitions)),
-                tables.stream().collect(Collectors.toMap(TableIdentity::getTableName, table -> activeFiles)));
+                tables.stream().collect(Collectors.toMap(TableStatus::getTableName, table -> partitions)),
+                tables.stream().collect(Collectors.toMap(TableStatus::getTableName, table -> activeFiles)));
     }
 
     public static String printTableFilesExpectingIdentical(

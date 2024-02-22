@@ -18,18 +18,18 @@ package sleeper.core.table;
 
 import java.util.Objects;
 
-public class TableIdentity {
+public class TableStatus {
 
     private final String tableUniqueId;
     private final String tableName;
 
-    private TableIdentity(String tableUniqueId, String tableName) {
+    private TableStatus(String tableUniqueId, String tableName) {
         this.tableUniqueId = tableUniqueId;
         this.tableName = tableName;
     }
 
-    public static TableIdentity uniqueIdAndName(String tableUniqueId, String tableName) {
-        return new TableIdentity(tableUniqueId, tableName);
+    public static TableStatus uniqueIdAndName(String tableUniqueId, String tableName) {
+        return new TableStatus(tableUniqueId, tableName);
     }
 
     public String getTableName() {
@@ -48,8 +48,8 @@ public class TableIdentity {
         if (object == null || getClass() != object.getClass()) {
             return false;
         }
-        TableIdentity tableId1 = (TableIdentity) object;
-        return Objects.equals(tableUniqueId, tableId1.tableUniqueId) && Objects.equals(tableName, tableId1.tableName);
+        TableStatus table1 = (TableStatus) object;
+        return Objects.equals(tableUniqueId, table1.tableUniqueId) && Objects.equals(tableName, table1.tableName);
     }
 
     @Override

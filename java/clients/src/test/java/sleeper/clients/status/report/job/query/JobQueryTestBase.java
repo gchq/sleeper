@@ -79,7 +79,7 @@ public class JobQueryTestBase {
     }
 
     private JobQuery queryFrom(Type queryType, String queryParameters, Clock clock) {
-        return JobQuery.fromParametersOrPrompt(tableProperties.getId(), queryType, queryParameters, clock, in.consoleIn());
+        return JobQuery.fromParametersOrPrompt(tableProperties.getStatus(), queryType, queryParameters, clock, in.consoleIn());
     }
 
     private TableProperties createTableProperties() {

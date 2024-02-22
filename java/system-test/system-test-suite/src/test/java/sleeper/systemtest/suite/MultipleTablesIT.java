@@ -60,7 +60,7 @@ public class MultipleTablesIT {
     void shouldCreateMultipleTables(SleeperSystemTest sleeper) {
         sleeper.tables().createMany(5, schema);
 
-        assertThat(sleeper.tables().loadIdentities())
+        assertThat(sleeper.tables().list())
                 .hasSize(5);
     }
 
@@ -113,7 +113,7 @@ public class MultipleTablesIT {
                 .allSatisfy((table, records) -> assertThat(records)
                         .containsExactlyInAnyOrderElementsOf(
                                 sleeper.generateNumberedRecords(schema, LongStream.range(0, 100))));
-        var tables = sleeper.tables().loadIdentities();
+        var tables = sleeper.tables().list();
         var partitionsByTable = sleeper.partitioning().treeByTable();
         var filesByTable = sleeper.tableFiles().referencesByTable();
         PartitionTree expectedPartitions = partitionsBuilder(schema)
