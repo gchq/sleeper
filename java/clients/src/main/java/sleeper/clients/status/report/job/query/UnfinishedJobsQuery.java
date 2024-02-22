@@ -24,15 +24,15 @@ import sleeper.ingest.job.status.IngestJobStatusStore;
 import java.util.List;
 
 public class UnfinishedJobsQuery implements JobQuery {
-    private final TableIdentity tableId;
+    private final String tableId;
 
     public UnfinishedJobsQuery(TableIdentity tableId) {
-        this.tableId = tableId;
+        this.tableId = tableId.getTableUniqueId();
     }
 
     @Override
     public List<CompactionJobStatus> run(CompactionJobStatusStore statusStore) {
-        return statusStore.getUnfinishedJobs(tableId.getTableUniqueId());
+        return statusStore.getUnfinishedJobs(tableId);
     }
 
     @Override

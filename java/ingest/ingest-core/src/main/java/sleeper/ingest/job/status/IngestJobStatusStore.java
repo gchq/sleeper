@@ -49,7 +49,7 @@ public interface IngestJobStatusStore {
         return streamAllJobs(tableId).collect(Collectors.toList());
     }
 
-    default List<IngestJobStatus> getUnfinishedJobs(TableIdentity tableId) {
+    default List<IngestJobStatus> getUnfinishedJobs(String tableId) {
         return streamAllJobs(tableId)
                 .filter(job -> !job.isFinished())
                 .collect(Collectors.toList());

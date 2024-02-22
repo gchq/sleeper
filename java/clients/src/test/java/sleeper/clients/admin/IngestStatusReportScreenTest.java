@@ -100,7 +100,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
         @Test
         void shouldRunReportWithQueryTypeUnfinished() throws Exception {
             // Given
-            when(ingestJobStatusStore.getUnfinishedJobs(tableProperties.getId()))
+            when(ingestJobStatusStore.getUnfinishedJobs(tableProperties.get(TABLE_ID)))
                     .thenReturn(oneStartedJobStatus());
 
             // When/Then
