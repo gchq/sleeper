@@ -78,7 +78,7 @@ public class SleeperSystemTestExtension implements ParameterResolver, BeforeAllC
             return queuePurging;
         } else if (type == SystemTestParameters.class) {
             return parameters;
-        } else if (type == drivers.getClass()) {
+        } else if (type.isAssignableFrom(drivers.getClass())) {
             return drivers;
         } else if (type == DeployedSystemTestResources.class) {
             return deployedResources;
