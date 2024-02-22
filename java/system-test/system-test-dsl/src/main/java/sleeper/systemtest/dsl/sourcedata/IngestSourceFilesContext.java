@@ -16,6 +16,13 @@
 
 package sleeper.systemtest.dsl.sourcedata;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.record.Record;
+import sleeper.core.schema.Schema;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
@@ -32,6 +39,8 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
 public class IngestSourceFilesContext {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(IngestSourceFilesContext.class);
+
     private final SystemTestInstanceContext instance;
     private final Map<String, String> filenameToPath = new TreeMap<>();
     private Supplier<String> bucketName;
@@ -45,8 +54,24 @@ public class IngestSourceFilesContext {
         bucketName = () -> instance.getInstanceProperties().get(DATA_BUCKET);
     }
 
-    public void wroteFile(String name, String path) {
-        filenameToPath.put(name, path);
+    public void writeFile(IngestSourceFilesDriver driver, String filename, boolean writeSketches, Stream<Record> records) {
+        writeFile(driver, instance.getInstanceProperties(), instance.getTableProperties(), filename, writeSketches, records);
+    }
+
+    public void writeFile(IngestSourceFilesDriver driver, Schema schema, String filename, boolean writeSketches, Stream<Record> records) {
+        InstanceProperties instanceProperties = instance.getInstanceProperties();
+        TableProperties tableProperties = new TableProperties(instanceProperties);
+        tableProperties.setSchema(schema);
+        writeFile(driver, instanceProperties, tableProperties, filename, writeSketches, records);
+    }
+
+    private void writeFile(
+            IngestSourceFilesDriver driver, InstanceProperties instanceProperties, TableProperties tableProperties,
+            String filename, boolean writeSketches, Stream<Record> records) {
+        String path = instance.getInstanceProperties().get(FILE_SYSTEM) + generateFilePathNoFs(filename);
+        driver.writeFile(instanceProperties, tableProperties, path, writeSketches, records.iterator());
+        filenameToPath.put(filename, path);
+        LOGGER.info("Wrote source file {}, path: {}", filename, path);
     }
 
     public String getFilePath(String name) {
@@ -57,21 +82,17 @@ public class IngestSourceFilesContext {
         return path;
     }
 
-    public String getSourceBucketName() {
-        return bucketName.get();
-    }
-
-    public String generateFilePath(String filename) {
-        return instance.getInstanceProperties().get(FILE_SYSTEM) + generateFilePathNoFs(filename);
+    public List<String> getIngestJobFilesInBucket(Stream<String> files) {
+        return files.map(this::generateFilePathNoFs)
+                .collect(Collectors.toUnmodifiableList());
     }
 
     private String generateFilePathNoFs(String filename) {
         return bucketName.get() + "/" + instance.getTableProperties().get(TABLE_ID) + "/" + filename;
     }
 
-    public List<String> getIngestJobFilesInBucket(Stream<String> files) {
-        return files.map(this::generateFilePathNoFs)
-                .collect(Collectors.toUnmodifiableList());
+    public String getSourceBucketName() {
+        return bucketName.get();
     }
 
     public Map<String, String> getFilenameToPath() {

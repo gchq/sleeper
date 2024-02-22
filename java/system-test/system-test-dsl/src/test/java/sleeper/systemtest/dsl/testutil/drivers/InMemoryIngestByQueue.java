@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.dsl.testutil.drivers;
 
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.ingest.IngestResult;
 import sleeper.ingest.job.IngestJob;
@@ -69,6 +69,10 @@ public class InMemoryIngestByQueue {
         };
     }
 
+    public void send(IngestJob job) {
+        queuedJobs.add(job);
+    }
+
     public InvokeIngestTasksDriver tasksDriver() {
         return (expectedTasks, poll) -> {
             for (int i = 0; i < expectedTasks; i++) {
@@ -101,9 +105,7 @@ public class InMemoryIngestByQueue {
 
     private void finishJobs(SystemTestContext context, String taskId) {
         for (IngestJob queuedJob : queuedJobs) {
-            TableProperties table = context.instance()
-                    .getTablePropertiesByDeployedName(queuedJob.getTableName()).orElseThrow();
-            IngestJob job = queuedJob.toBuilder().tableId(table.get(TABLE_ID)).build();
+            IngestJob job = addTableId(queuedJob, context);
             RecordsProcessedSummary summary = ingest(job, context);
             jobStore.jobStarted(ingestJobStarted(taskId, job, summary.getStartTime()));
             jobStore.jobFinished(ingestJobFinished(taskId, job, summary));
@@ -120,6 +122,15 @@ public class InMemoryIngestByQueue {
                     .build());
         }
         runningTasks.clear();
+    }
+
+    private IngestJob addTableId(IngestJob job, SystemTestContext context) {
+        if (job.getTableId() != null) {
+            return job;
+        } else {
+            TablePropertiesProvider provider = context.instance().getTablePropertiesProvider();
+            return job.toBuilder().tableId(provider.getByName(job.getTableName()).get(TABLE_ID)).build();
+        }
     }
 
     private RecordsProcessedSummary ingest(IngestJob job, SystemTestContext context) {
