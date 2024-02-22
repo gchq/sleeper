@@ -37,9 +37,9 @@ public class InMemoryTableIndex implements TableIndex {
         save(table);
     }
 
-    public void save(TableStatus id) {
-        indexByName.put(id.getTableName(), id);
-        indexById.put(id.getTableUniqueId(), id);
+    public void save(TableStatus table) {
+        indexByName.put(table.getTableName(), table);
+        indexById.put(table.getTableUniqueId(), table);
     }
 
     @Override
