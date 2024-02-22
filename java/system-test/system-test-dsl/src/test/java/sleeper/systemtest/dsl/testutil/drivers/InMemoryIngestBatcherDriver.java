@@ -35,11 +35,13 @@ public class InMemoryIngestBatcherDriver implements IngestBatcherDriver {
     private final SystemTestInstanceContext instance;
     private final IngestBatcherStore store;
     private final InMemoryIngestByQueue ingest;
+    private final long fileSizeBytes;
 
-    public InMemoryIngestBatcherDriver(SystemTestContext context, IngestBatcherStore store, InMemoryIngestByQueue ingest) {
+    public InMemoryIngestBatcherDriver(SystemTestContext context, IngestBatcherStore store, InMemoryIngestByQueue ingest, long fileSizeBytes) {
         this.instance = context.instance();
         this.store = store;
         this.ingest = ingest;
+        this.fileSizeBytes = fileSizeBytes;
     }
 
     @Override
