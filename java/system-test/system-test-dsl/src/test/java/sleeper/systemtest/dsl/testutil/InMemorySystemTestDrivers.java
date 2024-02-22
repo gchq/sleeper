@@ -57,6 +57,7 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
     private final InMemoryIngestBatcherStore batcherStore = new InMemoryIngestBatcherStore();
     private final InMemoryIngestByQueue ingestByQueue = new InMemoryIngestByQueue(sourceFiles, data);
     private final InMemoryCompaction compaction = new InMemoryCompaction(data);
+    private long fileSizeBytesForBatcher = 1024;
 
     @Override
     public SystemTestDeploymentDriver systemTestDeployment(SystemTestParameters parameters) {
@@ -110,7 +111,11 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
 
     @Override
     public IngestBatcherDriver ingestBatcher(SystemTestContext context) {
-        return new InMemoryIngestBatcherDriver(context, batcherStore, ingestByQueue);
+        return new InMemoryIngestBatcherDriver(context, batcherStore, ingestByQueue, fileSizeBytesForBatcher);
+    }
+
+    public void fixSizeOfFilesSeenByBatcherInBytes(long fileSizeBytes) {
+        fileSizeBytesForBatcher = fileSizeBytes;
     }
 
     @Override

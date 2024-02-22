@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.sourcedata.RecordNumbers;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
+import sleeper.systemtest.dsl.testutil.InMemorySystemTestDrivers;
 
 import java.util.Map;
 import java.util.stream.LongStream;
@@ -43,13 +44,14 @@ public class SystemTestIngestBatcherTest {
     }
 
     @Test
-    void shouldCreateTwoStandardIngestJobsWithMaxJobFilesOfThree(SleeperSystemTest sleeper) {
+    void shouldCreateTwoStandardIngestJobsWithMaxJobFilesOfThree(SleeperSystemTest sleeper, InMemorySystemTestDrivers drivers) {
         // Given
         sleeper.updateTableProperties(Map.of(
                 INGEST_BATCHER_INGEST_QUEUE, STANDARD_INGEST.toString(),
                 INGEST_BATCHER_MIN_JOB_FILES, "1",
                 INGEST_BATCHER_MIN_JOB_SIZE, "1K",
                 INGEST_BATCHER_MAX_JOB_FILES, "3"));
+        drivers.fixSizeOfFilesSeenByBatcherInBytes(1024);
         RecordNumbers numbers = sleeper.scrambleNumberedRecords(LongStream.range(0, 400));
         sleeper.sourceFiles()
                 .createWithNumberedRecords("file1.parquet", numbers.range(0, 100))
