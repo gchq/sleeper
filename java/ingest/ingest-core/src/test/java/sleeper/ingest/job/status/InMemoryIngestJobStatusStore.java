@@ -77,7 +77,7 @@ public class InMemoryIngestJobStatusStore implements IngestJobStatusStore {
     }
 
     @Override
-    public Stream<IngestJobStatus> streamAllJobs(TableIdentity tableId) {
+    public Stream<IngestJobStatus> streamAllJobs(String tableId) {
         return IngestJobStatus.streamFrom(streamTableRecords(tableId));
     }
 
@@ -101,7 +101,11 @@ public class InMemoryIngestJobStatusStore implements IngestJobStatusStore {
     }
 
     public Stream<ProcessStatusUpdateRecord> streamTableRecords(TableIdentity tableId) {
-        return tableJobs(tableId.getTableUniqueId())
+        return streamTableRecords(tableId.getTableUniqueId());
+    }
+
+    public Stream<ProcessStatusUpdateRecord> streamTableRecords(String tableId) {
+        return tableJobs(tableId)
                 .map(TableJobs::streamAllRecords)
                 .orElse(Stream.empty());
     }

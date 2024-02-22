@@ -38,6 +38,10 @@ public interface IngestJobStatusStore {
     }
 
     default Stream<IngestJobStatus> streamAllJobs(TableIdentity tableId) {
+        return streamAllJobs(tableId.getTableUniqueId());
+    }
+
+    default Stream<IngestJobStatus> streamAllJobs(String tableId) {
         throw new UnsupportedOperationException("Instance has no ingest job status store");
     }
 
