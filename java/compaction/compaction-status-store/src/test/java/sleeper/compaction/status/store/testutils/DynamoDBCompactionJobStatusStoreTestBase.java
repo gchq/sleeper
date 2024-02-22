@@ -53,6 +53,7 @@ import static sleeper.configuration.properties.InstancePropertiesTestHelper.crea
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_STATUS_TTL_IN_SECONDS;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
@@ -67,7 +68,8 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
     private final Schema schema = schemaWithKey("key", new StringType());
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
 
-    protected final TableIdentity tableId = tableProperties.getId();
+    protected final TableIdentity table = tableProperties.getId();
+    protected final String tableId = tableProperties.get(TABLE_ID);
     protected final CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
     protected final CompactionJobStatusStore store = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
 

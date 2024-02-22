@@ -170,7 +170,7 @@ class InMemoryCompactionJobStatusStoreTest {
             CompactionJob job3 = addCreatedJob(time3);
 
             // When / Then
-            assertThat(store.getAllJobs(table))
+            assertThat(store.getAllJobs(tableId))
                     .containsExactly(
                             jobCreated(job3, time3),
                             jobCreated(job2, time2),
@@ -179,7 +179,7 @@ class InMemoryCompactionJobStatusStoreTest {
 
         @Test
         void shouldGetNoJobs() {
-            assertThat(store.getAllJobs(TableIdentity.uniqueIdAndName("no-jobs-id", "no-jobs-table")))
+            assertThat(store.getAllJobs("no-jobs-table"))
                     .isEmpty();
         }
     }

@@ -51,7 +51,7 @@ public interface CompactionJobStatusStore {
         throw new UnsupportedOperationException("Instance has no compaction job status store");
     }
 
-    default List<CompactionJobStatus> getAllJobs(TableIdentity tableId) {
+    default List<CompactionJobStatus> getAllJobs(String tableId) {
         return streamAllJobs(tableId).collect(Collectors.toList());
     }
 
