@@ -53,6 +53,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_ONLINE_INDEX_DYNAMO_TABLENAME;
 import static sleeper.configuration.properties.instance.CommonProperty.TABLE_INDEX_DYNAMO_STRONGLY_CONSISTENT_READS;
 import static sleeper.configuration.table.index.DynamoDBTableIdFormat.ONLINE_FIELD;
+import static sleeper.configuration.table.index.DynamoDBTableIdFormat.getOnlineKey;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
 
@@ -118,8 +119,8 @@ public class DynamoDBTableIndex implements TableIndex {
                 new ScanRequest()
                         .withTableName(nameIndexDynamoTableName)
                         .withConsistentRead(stronglyConsistent))
-                .map(DynamoDBTableIdFormat::readItem)
-                .sorted(Comparator.comparing(TableStatus::getTableName));
+                                .map(DynamoDBTableIdFormat::readItem)
+                                .sorted(Comparator.comparing(TableStatus::getTableName));
     }
 
     @Override
@@ -131,7 +132,7 @@ public class DynamoDBTableIndex implements TableIndex {
                         .addKeyConditionsEntry(ONLINE_FIELD, new Condition()
                                 .withAttributeValueList(createStringAttribute(Boolean.toString(true)))
                                 .withComparisonOperator(ComparisonOperator.EQ)))
-                .map(DynamoDBTableIdFormat::readItem);
+                                        .map(DynamoDBTableIdFormat::readItem);
     }
 
     @Override
@@ -219,11 +220,19 @@ public class DynamoDBTableIndex implements TableIndex {
                     .withExpressionAttributeNames(Map.of("#tablename", TABLE_NAME_FIELD))));
         }
         if (onlineChanged) {
-            writeItems.add(new TransactWriteItem().withPut(new Put()
-                    .withTableName(onlineIndexDynamoTableName)
-                    .withItem(idItem)
-                    .withConditionExpression("attribute_not_exists(#tablename)")
-                    .withExpressionAttributeNames(Map.of("#tablename", TABLE_NAME_FIELD))));
+            if (newStatus.isOnline()) {
+                writeItems.add(new TransactWriteItem().withPut(new Put()
+                        .withTableName(onlineIndexDynamoTableName)
+                        .withItem(idItem)
+                        .withConditionExpression("attribute_not_exists(#tablename)")
+                        .withExpressionAttributeNames(Map.of("#tablename", TABLE_NAME_FIELD))));
+            } else {
+                writeItems.add(new TransactWriteItem().withDelete(new Delete()
+                        .withTableName(onlineIndexDynamoTableName)
+                        .withKey(getOnlineKey(oldStatus))
+                        .withConditionExpression("attribute_exists(#tablename)")
+                        .withExpressionAttributeNames(Map.of("#tablename", TABLE_NAME_FIELD))));
+            }
         }
         writeItems.add(new TransactWriteItem().withPut(new Put()
                 .withTableName(idIndexDynamoTableName)
