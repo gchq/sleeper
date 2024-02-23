@@ -39,18 +39,18 @@ public interface JobQuery {
             throw new IllegalArgumentException("No parameters provided for query type " + queryType);
         }
         switch (queryType) {
-        case ALL:
-            return new AllJobsQuery(table);
-        case UNFINISHED:
-            return new UnfinishedJobsQuery(table);
-        case DETAILED:
-            return DetailedJobsQuery.fromParameters(queryParameters);
-        case RANGE:
-            return RangeJobsQuery.fromParameters(table, queryParameters, clock);
-        case REJECTED:
-            return new RejectedJobsQuery();
-        default:
-            throw new IllegalArgumentException("Unexpected query type: " + queryType);
+            case ALL:
+                return new AllJobsQuery(table);
+            case UNFINISHED:
+                return new UnfinishedJobsQuery(table);
+            case DETAILED:
+                return DetailedJobsQuery.fromParameters(queryParameters);
+            case RANGE:
+                return RangeJobsQuery.fromParameters(table, queryParameters, clock);
+            case REJECTED:
+                return new RejectedJobsQuery();
+            default:
+                throw new IllegalArgumentException("Unexpected query type: " + queryType);
         }
     }
 
