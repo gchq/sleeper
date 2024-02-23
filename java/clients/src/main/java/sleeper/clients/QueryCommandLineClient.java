@@ -160,7 +160,7 @@ public abstract class QueryCommandLineClient {
         while (true) {
             String minRowKey = in.promptLine("Enter a minimum key for row key field " + fieldName + " of type = " + fieldType + " - hit return for no minimum: ");
             if ("".equals(minRowKey)) {
-                return getMinimum(fieldType);
+                return getMinimum((PrimitiveType) fieldType);
             } else {
                 try {
                     return parse(minRowKey, (PrimitiveType) fieldType);
@@ -272,7 +272,7 @@ public abstract class QueryCommandLineClient {
         throw new IllegalArgumentException("Unknown type " + type);
     }
 
-    private Object getMinimum(Type type) {
+    private Object getMinimum(PrimitiveType type) {
         if (type instanceof IntType) {
             return Integer.MIN_VALUE;
         }
