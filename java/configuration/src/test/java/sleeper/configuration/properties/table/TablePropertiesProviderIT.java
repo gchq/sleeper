@@ -40,12 +40,12 @@ class TablePropertiesProviderIT extends TablePropertiesITBase {
     }
 
     @Test
-    void shouldLoadByFullIdentifier() {
+    void shouldLoadById() {
         // Given
         store.save(tableProperties);
 
         // When / Then
-        assertThat(provider.get(tableProperties.getId()))
+        assertThat(provider.getById(tableId))
                 .isEqualTo(tableProperties);
     }
 
@@ -75,7 +75,7 @@ class TablePropertiesProviderIT extends TablePropertiesITBase {
     void shouldThrowExceptionWhenTableExistsInIndexButNotConfigBucket() {
         // Given
         new DynamoDBTableIndex(instanceProperties, dynamoDBClient)
-                .create(tableProperties.getId());
+                .create(tableProperties.getStatus());
 
         // When / Then
         assertThatThrownBy(() -> provider.getByName(tableName))
@@ -83,14 +83,14 @@ class TablePropertiesProviderIT extends TablePropertiesITBase {
     }
 
     @Test
-    void shouldLoadByFullIdentifierWhenNotInIndex() {
+    void shouldNotLoadByIdWhenNotInIndex() {
         // Given
         store.save(tableProperties);
         new DynamoDBTableIndex(instanceProperties, dynamoDBClient)
-                .delete(tableProperties.getId());
+                .delete(tableProperties.getStatus());
 
         // When / Then
-        assertThat(provider.get(tableProperties.getId()))
-                .isEqualTo(tableProperties);
+        assertThatThrownBy(() -> provider.getById(tableId))
+                .isInstanceOf(TableNotFoundException.class);
     }
 }

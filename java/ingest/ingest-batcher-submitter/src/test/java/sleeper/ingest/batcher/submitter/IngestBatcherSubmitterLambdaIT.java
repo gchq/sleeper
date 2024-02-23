@@ -32,8 +32,8 @@ import org.testcontainers.utility.DockerImageName;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.table.InMemoryTableIndex;
-import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIndex;
+import sleeper.core.table.TableStatus;
 import sleeper.ingest.batcher.FileIngestRequest;
 import sleeper.ingest.batcher.IngestBatcherStore;
 import sleeper.ingest.batcher.testutil.InMemoryIngestBatcherStore;
@@ -63,7 +63,7 @@ public class IngestBatcherSubmitterLambdaIT {
 
     @BeforeEach
     void setup() {
-        tableIndex.create(TableIdentity.uniqueIdAndName(TEST_TABLE_ID, "test-table"));
+        tableIndex.create(TableStatus.uniqueIdAndName(TEST_TABLE_ID, "test-table"));
         s3.createBucket(TEST_BUCKET);
     }
 

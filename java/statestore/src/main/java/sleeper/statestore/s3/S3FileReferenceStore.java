@@ -357,7 +357,7 @@ class S3FileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public AllReferencesToAllFiles getAllFileReferencesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException {
+    public AllReferencesToAllFiles getAllFilesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException {
         List<AllReferencesToAFile> allFiles = readFilesFromParquet(getFilesPath(getCurrentFilesRevisionId()));
         List<AllReferencesToAFile> filesWithNoReferences = allFiles.stream()
                 .filter(file -> file.getTotalReferenceCount() < 1)

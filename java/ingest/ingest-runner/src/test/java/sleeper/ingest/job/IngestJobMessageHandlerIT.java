@@ -32,8 +32,8 @@ import org.testcontainers.utility.DockerImageName;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.table.InMemoryTableIndex;
-import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIndex;
+import sleeper.core.table.TableStatus;
 import sleeper.ingest.job.status.InMemoryIngestJobStatusStore;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 
@@ -72,7 +72,7 @@ public class IngestJobMessageHandlerIT {
     @BeforeEach
     void setup() {
         s3Client.createBucket(TEST_BUCKET);
-        tableIndex.create(TableIdentity.uniqueIdAndName(TEST_TABLE_ID, TEST_TABLE));
+        tableIndex.create(TableStatus.uniqueIdAndName(TEST_TABLE_ID, TEST_TABLE));
     }
 
     @AfterEach

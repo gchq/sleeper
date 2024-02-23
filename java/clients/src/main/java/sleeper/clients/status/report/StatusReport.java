@@ -85,7 +85,7 @@ public class StatusReport {
         // Jobs
         new CompactionJobStatusReport(compactionStatusStore,
                 new StandardCompactionJobStatusReporter(),
-                tableProperties.getId(),
+                tableProperties.getStatus(),
                 JobQuery.Type.UNFINISHED).run();
 
         // Tasks

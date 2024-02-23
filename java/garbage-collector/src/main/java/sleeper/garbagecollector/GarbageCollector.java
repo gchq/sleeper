@@ -25,7 +25,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
 import sleeper.statestore.StateStoreProvider;
 
@@ -72,8 +72,8 @@ public class GarbageCollector {
         LOGGER.info("Obtained list of {} tables", tables.size());
 
         for (TableProperties tableProperties : tables) {
-            TableIdentity tableId = tableProperties.getId();
-            LOGGER.info("Obtaining StateStore for table {}", tableId);
+            TableStatus table = tableProperties.getStatus();
+            LOGGER.info("Obtaining StateStore for table {}", table);
             StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
 
             LOGGER.debug("Requesting iterator of files ready for garbage collection from state store");
@@ -100,7 +100,7 @@ public class GarbageCollector {
                 stateStore.deleteGarbageCollectedFileReferenceCounts(batch);
                 LOGGER.info("Deleting {} files in batch", batch.size());
             }
-            LOGGER.info("{} files deleted for table {}", deletedFilenames.size(), tableId);
+            LOGGER.info("{} files deleted for table {}", deletedFilenames.size(), table);
             totalDeleted += deletedFilenames.size();
         }
         LoggedDuration duration = LoggedDuration.withFullOutput(startTime, Instant.now());

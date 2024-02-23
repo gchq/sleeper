@@ -52,7 +52,7 @@ public class InMemorySleeperTablesDriver implements SleeperTablesDriver {
     public void deleteAllTables(InstanceProperties instanceProperties) {
         String instanceId = instanceProperties.get(ID);
         TablePropertiesStore tables = deployedInstancePropertiesStore(instanceId);
-        tables.streamAllTableIds().forEach(tables::delete);
+        tables.streamAllTableStatuses().forEach(tables::delete);
         stateStoresByInstanceId.put(instanceId, new TreeMap<>());
     }
 

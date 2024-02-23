@@ -20,7 +20,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.table.TableAlreadyExistsException;
-import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableNotFoundException;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -105,7 +104,7 @@ class S3TablePropertiesStoreIT extends TablePropertiesITBase {
             tableProperties.set(TABLE_NAME, "new-name");
             assertThatThrownBy(() -> store.save(tableProperties))
                     .isInstanceOf(TableAlreadyExistsException.class);
-            assertThat(store.loadProperties(tableProperties.getId()))
+            assertThat(store.loadById(tableId))
                     .extracting(table -> table.get(TABLE_NAME))
                     .isEqualTo("old-name");
         }
@@ -125,7 +124,7 @@ class S3TablePropertiesStoreIT extends TablePropertiesITBase {
             // Then
             assertThatThrownBy(() -> store.loadByName(tableName))
                     .isInstanceOf(TableNotFoundException.class);
-            assertThatThrownBy(() -> store.loadProperties(tableProperties.getId()))
+            assertThatThrownBy(() -> store.loadById(tableId))
                     .isInstanceOf(TableNotFoundException.class);
         }
     }
@@ -140,7 +139,7 @@ class S3TablePropertiesStoreIT extends TablePropertiesITBase {
             store.save(tableProperties);
 
             // Then
-            assertThat(store.loadProperties(tableProperties.getId()))
+            assertThat(store.loadById(tableId))
                     .isEqualTo(tableProperties);
         }
 
@@ -151,7 +150,7 @@ class S3TablePropertiesStoreIT extends TablePropertiesITBase {
             store.save(tableProperties);
 
             // Then
-            assertThatThrownBy(() -> store.loadProperties(tableProperties.getId()))
+            assertThatThrownBy(() -> store.loadById(tableId))
                     .isInstanceOf(IllegalArgumentException.class);
         }
 
@@ -191,8 +190,8 @@ class S3TablePropertiesStoreIT extends TablePropertiesITBase {
         }
 
         @Test
-        void shouldFindNoTableByIdentity() {
-            assertThatThrownBy(() -> store.loadProperties(TableIdentity.uniqueIdAndName("not-an-id", "not-a-name")))
+        void shouldFindNoTableById() {
+            assertThatThrownBy(() -> store.loadById("not-a-table"))
                     .isInstanceOf(TableNotFoundException.class);
         }
     }

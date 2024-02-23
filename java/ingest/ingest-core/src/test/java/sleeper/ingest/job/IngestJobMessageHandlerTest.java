@@ -22,8 +22,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.table.InMemoryTableIndex;
-import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIndex;
+import sleeper.core.table.TableStatus;
 import sleeper.ingest.job.status.InMemoryIngestJobStatusStore;
 import sleeper.ingest.job.status.IngestJobStatus;
 import sleeper.ingest.job.status.IngestJobStatusStore;
@@ -43,11 +43,12 @@ public class IngestJobMessageHandlerTest {
 
     private final TableIndex tableIndex = new InMemoryTableIndex();
     private final IngestJobStatusStore ingestJobStatusStore = new InMemoryIngestJobStatusStore();
-    private final TableIdentity tableId = TableIdentity.uniqueIdAndName("test-table-id", "test-table");
+    private final TableStatus table = TableStatus.uniqueIdAndName("test-table-id", "test-table");
+    private final String tableId = table.getTableUniqueId();
 
     @BeforeEach
     void setUp() {
-        tableIndex.create(tableId);
+        tableIndex.create(table);
     }
 
     @Nested
@@ -156,7 +157,7 @@ public class IngestJobMessageHandlerTest {
             IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandlerWithDirectories(
                     Map.of("dir1", List.of("file1a.parquet", "file1b.parquet"),
                             "dir2", List.of("file2.parquet")))
-                    .build();
+                                    .build();
             String json = "{" +
                     "\"id\":\"test-job-id\"," +
                     "\"tableName\":\"test-table\"," +
@@ -177,8 +178,8 @@ public class IngestJobMessageHandlerTest {
             Instant validationTime = Instant.parse("2023-07-03T16:14:00Z");
             IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandlerWithDirectories(
                     Map.of("dir", List.of()))
-                    .timeSupplier(() -> validationTime)
-                    .build();
+                            .timeSupplier(() -> validationTime)
+                            .build();
             String json = "{" +
                     "\"id\":\"test-job-id\"," +
                     "\"tableName\":\"test-table\"," +
@@ -202,9 +203,9 @@ public class IngestJobMessageHandlerTest {
             Instant validationTime = Instant.parse("2023-07-03T16:14:00Z");
             IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandlerWithDirectories(
                     Map.of("dir", List.of()))
-                    .jobIdSupplier(() -> "test-job-id")
-                    .timeSupplier(() -> validationTime)
-                    .build();
+                            .jobIdSupplier(() -> "test-job-id")
+                            .timeSupplier(() -> validationTime)
+                            .build();
             String json = "{" +
                     "\"tableName\":\"test-table\"," +
                     "\"files\":[\"dir\"]" +

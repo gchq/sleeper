@@ -57,21 +57,21 @@ public class MultipleTablesIT {
     }
 
     @Test
-    void shouldCreate20Tables(SleeperSystemTest sleeper) {
+    void shouldCreateMultipleTables(SleeperSystemTest sleeper) {
         sleeper.tables().createMany(5, schema);
 
-        assertThat(sleeper.tables().loadIdentities())
+        assertThat(sleeper.tables().list())
                 .hasSize(5);
     }
 
     @Test
-    void shouldIngestOneFileTo5Tables(SleeperSystemTest sleeper) {
-        // Given we have 5 tables
+    void shouldIngestOneFileToMultipleTables(SleeperSystemTest sleeper) {
+        // Given we have several tables
         // And we have one source file to be ingested
         sleeper.tables().createMany(5, schema);
         sleeper.sourceFiles().createWithNumberedRecords(schema, "file.parquet", LongStream.range(0, 100));
 
-        // When we send an ingest job with the source file to all 20 tables
+        // When we send an ingest job with the source file to all tables
         sleeper.ingest().byQueue().sendSourceFilesToAllTables("file.parquet")
                 .invokeTask().waitForJobs();
 
@@ -79,18 +79,16 @@ public class MultipleTablesIT {
         // And all tables should have one active file
         assertThat(sleeper.query().byQueue().allRecordsByTable())
                 .hasSize(5)
-                .allSatisfy(((table, records) ->
-                        assertThat(records).containsExactlyElementsOf(
-                                sleeper.generateNumberedRecords(schema, LongStream.range(0, 100)))));
+                .allSatisfy(((table, records) -> assertThat(records).containsExactlyElementsOf(
+                        sleeper.generateNumberedRecords(schema, LongStream.range(0, 100)))));
         assertThat(sleeper.tableFiles().referencesByTable())
                 .hasSize(5)
-                .allSatisfy((table, files) ->
-                        assertThat(files).hasSize(1));
+                .allSatisfy((table, files) -> assertThat(files).hasSize(1));
     }
 
     @Test
-    void shouldSplitPartitionsOf5TablesWith100RecordsAndThresholdOf20(SleeperSystemTest sleeper) {
-        // Given we have 5 tables with a split threshold of 20
+    void shouldSplitPartitionsOfMultipleTablesWith100RecordsAndThresholdOf20(SleeperSystemTest sleeper) {
+        // Given we have several tables with a split threshold of 20
         // And we ingest a file of 100 records to each table
         sleeper.tables().createManyWithProperties(5, schema,
                 Map.of(PARTITION_SPLIT_THRESHOLD, "20"));
@@ -115,7 +113,7 @@ public class MultipleTablesIT {
                 .allSatisfy((table, records) -> assertThat(records)
                         .containsExactlyInAnyOrderElementsOf(
                                 sleeper.generateNumberedRecords(schema, LongStream.range(0, 100))));
-        var tables = sleeper.tables().loadIdentities();
+        var tables = sleeper.tables().list();
         var partitionsByTable = sleeper.partitioning().treeByTable();
         var filesByTable = sleeper.tableFiles().referencesByTable();
         PartitionTree expectedPartitions = partitionsBuilder(schema)
@@ -140,7 +138,6 @@ public class MultipleTablesIT {
                         fileReferenceFactory.partitionFile("RLL", 12),
                         fileReferenceFactory.partitionFile("RLR", 13),
                         fileReferenceFactory.partitionFile("RRL", 12),
-                        fileReferenceFactory.partitionFile("RRR", 13)
-                )));
+                        fileReferenceFactory.partitionFile("RRR", 13))));
     }
 }

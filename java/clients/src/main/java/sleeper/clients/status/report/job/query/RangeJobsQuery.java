@@ -18,7 +18,7 @@ package sleeper.clients.status.report.job.query;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableStatus;
 import sleeper.ingest.job.status.IngestJobStatus;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 
@@ -35,15 +35,15 @@ public class RangeJobsQuery implements JobQuery {
 
     public static final String DATE_FORMAT = "yyyyMMddHHmmss";
 
-    private final TableIdentity tableId;
+    private final String tableId;
     private final Instant start;
     private final Instant end;
 
-    public RangeJobsQuery(TableIdentity tableId, Instant start, Instant end) {
+    public RangeJobsQuery(TableStatus table, Instant start, Instant end) {
         if (start.isAfter(end)) {
             throw new IllegalArgumentException("Start of range provided is after end");
         }
-        this.tableId = tableId;
+        this.tableId = table.getTableUniqueId();
         this.start = start;
         this.end = end;
     }
@@ -63,23 +63,23 @@ public class RangeJobsQuery implements JobQuery {
         return Type.RANGE;
     }
 
-    public static JobQuery fromParameters(TableIdentity tableId, String queryParameters, Clock clock) {
+    public static JobQuery fromParameters(TableStatus table, String queryParameters, Clock clock) {
         if (queryParameters == null) {
             Instant end = clock.instant();
             Instant start = end.minus(Duration.ofHours(4));
-            return new RangeJobsQuery(tableId, start, end);
+            return new RangeJobsQuery(table, start, end);
         } else {
             String[] parts = queryParameters.split(",");
             Instant start = parseStart(parts[0], clock);
             Instant end = parseEnd(parts[1], clock);
-            return new RangeJobsQuery(tableId, start, end);
+            return new RangeJobsQuery(table, start, end);
         }
     }
 
-    public static JobQuery prompt(TableIdentity tableId, ConsoleInput in, Clock clock) {
+    public static JobQuery prompt(TableStatus table, ConsoleInput in, Clock clock) {
         Instant start = promptStart(in, clock);
         Instant end = promptEnd(in, clock);
-        return new RangeJobsQuery(tableId, start, end);
+        return new RangeJobsQuery(table, start, end);
     }
 
     private static Instant promptStart(ConsoleInput in, Clock clock) {

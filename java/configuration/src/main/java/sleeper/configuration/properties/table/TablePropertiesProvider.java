@@ -21,7 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableStatus;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -54,8 +54,8 @@ public class TablePropertiesProvider {
         this(propertiesStore, Duration.ofMinutes(instanceProperties.getInt(TABLE_PROPERTIES_PROVIDER_TIMEOUT_IN_MINS)), timeSupplier);
     }
 
-    protected TablePropertiesProvider(TablePropertiesStore propertiesStore,
-                                      Duration cacheTimeout, Supplier<Instant> timeSupplier) {
+    protected TablePropertiesProvider(
+            TablePropertiesStore propertiesStore, Duration cacheTimeout, Supplier<Instant> timeSupplier) {
         this.propertiesStore = propertiesStore;
         this.cacheTimeout = cacheTimeout;
         this.timeSupplier = timeSupplier;
@@ -69,27 +69,28 @@ public class TablePropertiesProvider {
         return get(tableId, cacheById, () -> propertiesStore.loadById(tableId));
     }
 
-    public TableProperties get(TableIdentity tableId) {
-        return get(tableId.getTableUniqueId(), cacheById, () -> propertiesStore.loadProperties(tableId));
+    private TableProperties get(TableStatus table) {
+        return get(table.getTableUniqueId(), cacheById, () -> propertiesStore.loadProperties(table));
     }
 
-    private TableProperties get(String identifier,
-                                Map<String, CacheEntry> cache,
-                                Supplier<TableProperties> loadProperties) {
+    private TableProperties get(
+            String identifier,
+            Map<String, CacheEntry> cache,
+            Supplier<TableProperties> loadProperties) {
         Instant currentTime = timeSupplier.get();
         CacheEntry currentEntry = cache.get(identifier);
         TableProperties properties;
         if (currentEntry == null) {
             properties = loadProperties.get();
-            LOGGER.info("Cache miss, loaded properties for table {}", properties.getId());
+            LOGGER.info("Cache miss, loaded properties for table {}", properties.getStatus());
             cache(properties, currentTime);
         } else if (currentEntry.isExpired(currentTime)) {
             properties = loadProperties.get();
-            LOGGER.info("Expiry time reached, reloaded properties for table {}", properties.getId());
+            LOGGER.info("Expiry time reached, reloaded properties for table {}", properties.getStatus());
             cache(properties, currentTime);
         } else {
             properties = currentEntry.getTableProperties();
-            LOGGER.info("Cache hit for table {}", properties.getId());
+            LOGGER.info("Cache hit for table {}", properties.getStatus());
         }
         return properties;
     }
@@ -103,7 +104,7 @@ public class TablePropertiesProvider {
     }
 
     public Stream<TableProperties> streamAllTables() {
-        return propertiesStore.streamAllTableIds()
+        return propertiesStore.streamAllTableStatuses()
                 .map(this::get);
     }
 

@@ -16,18 +16,19 @@
 
 package sleeper.ingest.job;
 
-import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableStatus;
 
 import java.util.List;
 
 public class IngestJobTestData {
 
-    public static final TableIdentity DEFAULT_TABLE = TableIdentity.uniqueIdAndName("test-table-id", "test-table");
+    public static final String DEFAULT_TABLE_ID = "test-table-id";
+    public static final TableStatus DEFAULT_TABLE = TableStatus.uniqueIdAndName(DEFAULT_TABLE_ID, "test-table");
 
     private IngestJobTestData() {
     }
 
-    public static IngestJob createJobWithTableAndFiles(String jobId, TableIdentity table, List<String> filenames) {
+    public static IngestJob createJobWithTableAndFiles(String jobId, TableStatus table, List<String> filenames) {
         return IngestJob.builder()
                 .id(jobId)
                 .files(filenames)
@@ -36,7 +37,7 @@ public class IngestJobTestData {
                 .build();
     }
 
-    public static IngestJob createJobWithTableAndFiles(String jobId, TableIdentity table, String... filenames) {
+    public static IngestJob createJobWithTableAndFiles(String jobId, TableStatus table, String... filenames) {
         return createJobWithTableAndFiles(jobId, table, List.of(filenames));
     }
 

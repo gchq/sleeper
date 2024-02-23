@@ -35,8 +35,8 @@ import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.schema.Schema;
 import sleeper.core.table.TableAlreadyExistsException;
-import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableNotFoundException;
+import sleeper.core.table.TableStatus;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -47,7 +47,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.core.table.TableIdentity.uniqueIdAndName;
+import static sleeper.core.table.TableStatus.uniqueIdAndName;
 
 @Testcontainers
 public class RenameTableIT {
@@ -106,10 +106,10 @@ public class RenameTableIT {
         new RenameTable(propertiesStore).rename(oldName, newName);
     }
 
-    private TableProperties createTable(TableIdentity tableIdentity) {
+    private TableProperties createTable(TableStatus tableStatus) {
         TableProperties table = createTestTableProperties(instanceProperties, schema);
-        table.set(TABLE_ID, tableIdentity.getTableUniqueId());
-        table.set(TABLE_NAME, tableIdentity.getTableName());
+        table.set(TABLE_ID, tableStatus.getTableUniqueId());
+        table.set(TABLE_NAME, tableStatus.getTableName());
         propertiesStore.save(table);
         return table;
     }

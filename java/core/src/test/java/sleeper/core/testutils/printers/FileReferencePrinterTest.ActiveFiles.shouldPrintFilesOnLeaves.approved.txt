@@ -1,4 +1,4 @@
-Active files:
+File references: 8
 Partition at LLL: 12 records in file
 Partition at LLR: 13 records in file
 Partition at LRL: 12 records in file

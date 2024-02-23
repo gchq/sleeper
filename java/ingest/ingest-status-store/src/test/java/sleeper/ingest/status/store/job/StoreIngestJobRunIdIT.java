@@ -39,7 +39,7 @@ public class StoreIngestJobRunIdIT extends DynamoDBIngestJobStatusStoreTestBase 
     @Test
     void shouldReportAcceptedJob() {
         // Given
-        IngestJob job = createJobWithTableAndFiles("test-job-1", tableId, "test-file-1.parquet");
+        IngestJob job = createJobWithTableAndFiles("test-job-1", table, "test-file-1.parquet");
         Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
 
         // When
@@ -56,7 +56,7 @@ public class StoreIngestJobRunIdIT extends DynamoDBIngestJobStatusStoreTestBase 
         // Given
         String jobRunId = "test-run";
         String taskId = "test-task";
-        IngestJob job = createJobWithTableAndFiles("test-job-1", tableId, "test-file-1.parquet");
+        IngestJob job = createJobWithTableAndFiles("test-job-1", table, "test-file-1.parquet");
         Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
         Instant startTime = Instant.parse("2022-09-22T12:00:15.000Z");
 
@@ -76,7 +76,7 @@ public class StoreIngestJobRunIdIT extends DynamoDBIngestJobStatusStoreTestBase 
         // Given
         String jobRunId = "test-run";
         String taskId = "test-task";
-        IngestJob job = createJobWithTableAndFiles("test-job-1", tableId, "test-file-1.parquet");
+        IngestJob job = createJobWithTableAndFiles("test-job-1", table, "test-file-1.parquet");
         Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
         Instant startTime = Instant.parse("2022-09-22T12:00:15.000Z");
         RecordsProcessedSummary summary = summary(startTime, Duration.ofMinutes(10), 100L, 100L);

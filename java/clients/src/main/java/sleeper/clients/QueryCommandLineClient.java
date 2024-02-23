@@ -37,8 +37,8 @@ import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIndex;
+import sleeper.core.table.TableStatus;
 import sleeper.query.model.Query;
 
 import java.util.ArrayList;
@@ -220,7 +220,7 @@ public abstract class QueryCommandLineClient {
 
     private String promptTableName() {
         List<String> tables = tableIndex.streamAllTables()
-                .map(TableIdentity::getTableName)
+                .map(TableStatus::getTableName)
                 .collect(Collectors.toUnmodifiableList());
         String tableName;
         if (tables.isEmpty()) {

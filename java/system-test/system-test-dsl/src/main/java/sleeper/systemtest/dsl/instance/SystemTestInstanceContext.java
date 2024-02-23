@@ -23,8 +23,8 @@ import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIndex;
+import sleeper.core.table.TableStatus;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.systemtest.dsl.sourcedata.GenerateNumberedRecords;
 import sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides;
@@ -57,10 +57,9 @@ public class SystemTestInstanceContext {
     private DeployedSleeperTablesForTest currentTables = null;
     private GenerateNumberedValueOverrides generatorOverrides = GenerateNumberedValueOverrides.none();
 
-    public SystemTestInstanceContext(SystemTestParameters parameters,
-                                     DeployedSleeperInstances deployedInstances,
-                                     SleeperInstanceDriver instanceDriver,
-                                     SleeperTablesDriver tablesDriver) {
+    public SystemTestInstanceContext(
+            SystemTestParameters parameters, DeployedSleeperInstances deployedInstances,
+            SleeperInstanceDriver instanceDriver, SleeperTablesDriver tablesDriver) {
         this.parameters = parameters;
         this.deployedInstances = deployedInstances;
         this.instanceDriver = instanceDriver;
@@ -164,15 +163,15 @@ public class SystemTestInstanceContext {
         return getTableProperties().get(TABLE_NAME);
     }
 
-    public TableIdentity getTableId() {
-        return getTableProperties().getId();
+    public TableStatus getTableStatus() {
+        return getTableProperties().getStatus();
     }
 
     public void setGeneratorOverrides(GenerateNumberedValueOverrides overrides) {
         generatorOverrides = overrides;
     }
 
-    public List<TableIdentity> loadTableIdentities() {
+    public List<TableStatus> loadTables() {
         TableIndex tableIndex = tablesDriver.tableIndex(getInstanceProperties());
         return streamTableProperties()
                 .map(table -> tableIndex.getTableByUniqueId(table.get(TABLE_ID)).orElseThrow())

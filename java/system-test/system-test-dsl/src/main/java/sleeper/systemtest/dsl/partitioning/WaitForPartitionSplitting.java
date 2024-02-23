@@ -87,7 +87,7 @@ public class WaitForPartitionSplitting {
             List<String> unsplit = partitionIdsByTableId.get(tableId).stream()
                     .filter(leafPartitionIds::contains)
                     .collect(Collectors.toUnmodifiableList());
-            LOGGER.info("Found unsplit partitions in table {}: {}", properties.getId(), unsplit);
+            LOGGER.info("Found unsplit partitions in table {}: {}", properties.getStatus(), unsplit);
             return unsplit.isEmpty();
         }
     }

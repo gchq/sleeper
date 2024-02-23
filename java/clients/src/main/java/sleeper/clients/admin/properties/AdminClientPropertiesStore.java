@@ -37,8 +37,8 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableNotFoundException;
+import sleeper.core.table.TableStatus;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
@@ -100,7 +100,7 @@ public class AdminClientPropertiesStore {
 
     private List<String> listTables(InstanceProperties instanceProperties) {
         return new DynamoDBTableIndex(instanceProperties, dynamoDB).streamAllTables()
-                .map(TableIdentity::getTableName).collect(Collectors.toUnmodifiableList());
+                .map(TableStatus::getTableName).collect(Collectors.toUnmodifiableList());
     }
 
     private Stream<TableProperties> streamTableProperties(InstanceProperties instanceProperties) {
