@@ -390,14 +390,14 @@ public class CreateCompactionJobsTest {
         List<CompactionJob> jobs = new ArrayList<>();
         TableIndex tableIndex = new InMemoryTableIndex();
         TableProperties table1 = createTableProperties(schema, instanceProperties);
-        tableIndex.create(table1.getId());
+        tableIndex.create(table1.getStatus());
         TableProperties table2 = createTableProperties(schema, instanceProperties);
-        tableIndex.create(table2.getId());
+        tableIndex.create(table2.getStatus());
         StateStore stateStore1 = inMemoryStateStoreWithSinglePartition(schema);
         stateStore1.initialise();
         StateStore stateStore2 = inMemoryStateStoreWithSinglePartition(schema);
         stateStore2.initialise();
-        tableIndex.update(table2.getId().takeOffline());
+        tableIndex.update(table2.getStatus().takeOffline());
 
         FileReferenceFactory factory = FileReferenceFactory.from(stateStore1);
         FileReference fileReference1 = factory.rootFile("file1", 200L);
