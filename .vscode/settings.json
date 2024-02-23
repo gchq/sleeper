@@ -1,5 +1,9 @@
 {
     "editor.detectIndentation": false,
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+        "source.organizeImports": "always",
+    },
     "files.autoSave": "onFocusChange",
     "java.checkstyle.configuration": "./code-style/checkstyle-idea/checkstyle.xml",
     "java.compile.nullAnalysis.mode": "automatic",
