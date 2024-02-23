@@ -60,7 +60,7 @@ public abstract class AdminClientMockStoreBase extends AdminClientTestBase {
     public void saveTableProperties(TableProperties tableProperties) {
         when(store.loadTableProperties(instanceProperties, tableProperties.get(TABLE_NAME)))
                 .thenReturn(tableProperties);
-        tableIndex.create(tableProperties.getId());
+        tableIndex.create(tableProperties.getStatus());
     }
 
     @Override

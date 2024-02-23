@@ -52,7 +52,8 @@ import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobRejecte
 public class InMemoryIngestJobStatusStoreTest {
 
     private final InMemoryIngestJobStatusStore store = new InMemoryIngestJobStatusStore();
-    private final TableStatus tableId = createTable("test-table");
+    private final TableStatus table = createTable("test-table");
+    private final String tableId = table.getTableUniqueId();
 
     @Nested
     @DisplayName("Get all jobs")
@@ -61,7 +62,7 @@ public class InMemoryIngestJobStatusStoreTest {
         public void shouldReturnOneStartedJobWithNoFiles() {
             String taskId = "test-task";
             Instant startTime = Instant.parse("2022-09-22T12:00:14.000Z");
-            IngestJob job = createJobWithTableAndFiles("test-job", tableId);
+            IngestJob job = createJobWithTableAndFiles("test-job", table);
 
             store.jobStarted(ingestJobStarted(taskId, job, startTime));
             assertThat(store.getAllJobs(tableId)).containsExactly(
@@ -72,7 +73,7 @@ public class InMemoryIngestJobStatusStoreTest {
         public void shouldReturnOneStartedJobWithFiles() {
             String taskId = "test-task";
             Instant startTime = Instant.parse("2022-09-22T12:00:14.000Z");
-            IngestJob job = createJobWithTableAndFiles("test-job", tableId, "test-file-1.parquet", "test-file-2.parquet");
+            IngestJob job = createJobWithTableAndFiles("test-job", table, "test-file-1.parquet", "test-file-2.parquet");
 
             store.jobStarted(ingestJobStarted(taskId, job, startTime));
             assertThat(store.getAllJobs(tableId)).containsExactly(
@@ -84,7 +85,7 @@ public class InMemoryIngestJobStatusStoreTest {
             String taskId = "test-task";
             Instant startTime = Instant.parse("2022-09-22T12:00:14.000Z");
             Instant finishTime = Instant.parse("2022-09-22T12:00:44.000Z");
-            IngestJob job = createJobWithTableAndFiles("test-job", tableId, "test-file-1.parquet", "test-file-2.parquet");
+            IngestJob job = createJobWithTableAndFiles("test-job", table, "test-file-1.parquet", "test-file-2.parquet");
             RecordsProcessedSummary summary = new RecordsProcessedSummary(
                     new RecordsProcessed(200L, 200L), startTime, finishTime);
 
@@ -99,7 +100,7 @@ public class InMemoryIngestJobStatusStoreTest {
             String taskId = "test-task";
             Instant startTime = Instant.parse("2022-09-22T12:00:14.000Z");
             Instant finishTime = Instant.parse("2022-09-22T12:00:44.000Z");
-            IngestJob job = createJobWithTableAndFiles("test-job", tableId, "test-file-1.parquet", "test-file-2.parquet");
+            IngestJob job = createJobWithTableAndFiles("test-job", table, "test-file-1.parquet", "test-file-2.parquet");
             RecordsProcessedSummary summary = new RecordsProcessedSummary(
                     new RecordsProcessed(200L, 200L), startTime, finishTime);
 
@@ -110,7 +111,7 @@ public class InMemoryIngestJobStatusStoreTest {
         @Test
         public void shouldReturnTwoRunsOnSameJob() {
             String taskId = "test-task";
-            IngestJob job = createJobWithTableAndFiles("test-job", tableId, "test-file-1.parquet", "test-file-2.parquet");
+            IngestJob job = createJobWithTableAndFiles("test-job", table, "test-file-1.parquet", "test-file-2.parquet");
             Instant startTime1 = Instant.parse("2022-09-22T12:00:15.000Z");
             Instant startTime2 = Instant.parse("2022-09-22T12:00:31.000Z");
             RecordsProcessedSummary summary1 = new RecordsProcessedSummary(
@@ -132,8 +133,8 @@ public class InMemoryIngestJobStatusStoreTest {
         @Test
         public void shouldReturnTwoJobs() {
             String taskId = "test-task";
-            IngestJob job1 = createJobWithTableAndFiles("test-job-1", tableId, "test-file-1.parquet", "test-file-2.parquet");
-            IngestJob job2 = createJobWithTableAndFiles("test-job-2", tableId, "test-file-3.parquet");
+            IngestJob job1 = createJobWithTableAndFiles("test-job-1", table, "test-file-1.parquet", "test-file-2.parquet");
+            IngestJob job2 = createJobWithTableAndFiles("test-job-2", table, "test-file-3.parquet");
             Instant startTime1 = Instant.parse("2022-09-22T12:00:15.000Z");
             Instant startTime2 = Instant.parse("2022-09-22T12:00:31.000Z");
             RecordsProcessedSummary summary1 = new RecordsProcessedSummary(
@@ -173,16 +174,15 @@ public class InMemoryIngestJobStatusStoreTest {
             store.jobFinished(ingestJobFinished(taskId, job2, summary2));
 
             // Then
-            assertThat(store.getAllJobs(table2)).containsExactly(
+            assertThat(store.getAllJobs(table2.getTableUniqueId())).containsExactly(
                     jobStatus(job2, finishedIngestRun(job2, taskId, summary2)));
-            assertThat(store.getAllJobs(table1)).containsExactly(
+            assertThat(store.getAllJobs(table1.getTableUniqueId())).containsExactly(
                     jobStatus(job1, finishedIngestRun(job1, taskId, summary1)));
         }
 
         @Test
         public void shouldReturnNoJobsIfTableHasNoJobs() {
-            assertThat(store.getAllJobs(TableStatus.uniqueIdAndName(
-                    "no-jobs-id", "table-with-no-jobs")))
+            assertThat(store.getAllJobs("table-with-no-jobs"))
                     .isEmpty();
         }
 
@@ -201,9 +201,9 @@ public class InMemoryIngestJobStatusStoreTest {
             store.jobStarted(ingestJobStarted(taskId, job2, startTime2));
 
             // Then
-            assertThat(store.getAllJobs(table2)).containsExactly(
+            assertThat(store.getAllJobs(table2.getTableUniqueId())).containsExactly(
                     jobStatus(job2, startedIngestRun(job2, taskId, startTime2)));
-            assertThat(store.getAllJobs(table1)).containsExactly(
+            assertThat(store.getAllJobs(table1.getTableUniqueId())).containsExactly(
                     jobStatus(job1, startedIngestRun(job1, taskId, startTime1)));
         }
     }
@@ -214,7 +214,7 @@ public class InMemoryIngestJobStatusStoreTest {
         @Test
         void shouldGetInvalidJobsWithOneRejectedJob() {
             // Given
-            IngestJob job = createJobWithTableAndFiles("test-job-1", tableId, "test-file-1.parquet");
+            IngestJob job = createJobWithTableAndFiles("test-job-1", table, "test-file-1.parquet");
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
 
             // When
@@ -229,8 +229,8 @@ public class InMemoryIngestJobStatusStoreTest {
         @Test
         void shouldGetOneInvalidJobWithOneRejectedJobAndOneAcceptedJob() {
             // Given
-            IngestJob job1 = createJobWithTableAndFiles("test-job-1", tableId, "test-file-1.parquet");
-            IngestJob job2 = createJobWithTableAndFiles("test-job-2", tableId, "test-file-2.parquet");
+            IngestJob job1 = createJobWithTableAndFiles("test-job-1", table, "test-file-1.parquet");
+            IngestJob job2 = createJobWithTableAndFiles("test-job-2", table, "test-file-2.parquet");
 
             Instant validationTime1 = Instant.parse("2022-09-22T12:00:10.000Z");
             Instant validationTime2 = Instant.parse("2022-09-22T12:02:10.000Z");
@@ -267,7 +267,7 @@ public class InMemoryIngestJobStatusStoreTest {
         @Test
         void shouldNotGetJobThatWasRejectedThenAccepted() {
             // Given
-            IngestJob job1 = createJobWithTableAndFiles("test-job-1", tableId, "test-file-1.parquet");
+            IngestJob job1 = createJobWithTableAndFiles("test-job-1", table, "test-file-1.parquet");
 
             Instant validationTime1 = Instant.parse("2022-09-22T12:00:10.000Z");
             Instant validationTime2 = Instant.parse("2022-09-22T12:02:10.000Z");
@@ -302,7 +302,7 @@ public class InMemoryIngestJobStatusStoreTest {
         void shouldReportUnstartedJobWithNoValidationFailures() {
             // Given
             String taskId = "some-task";
-            IngestJob job = createJobWithTableAndFiles("test-job-1", tableId, "test-file-1.parquet");
+            IngestJob job = createJobWithTableAndFiles("test-job-1", table, "test-file-1.parquet");
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
 
             // When
@@ -317,7 +317,7 @@ public class InMemoryIngestJobStatusStoreTest {
         void shouldReportStartedJobWithNoValidationFailures() {
             // Given
             String taskId = "test-task";
-            IngestJob job = createJobWithTableAndFiles("test-job-1", tableId, "test-file-1.parquet");
+            IngestJob job = createJobWithTableAndFiles("test-job-1", table, "test-file-1.parquet");
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
             Instant startTime = Instant.parse("2022-09-22T12:00:15.000Z");
 
@@ -334,7 +334,7 @@ public class InMemoryIngestJobStatusStoreTest {
         @Test
         void shouldReportJobWithOneValidationFailure() {
             // Given
-            IngestJob job = createJobWithTableAndFiles("test-job-1", tableId, "test-file-1.parquet");
+            IngestJob job = createJobWithTableAndFiles("test-job-1", table, "test-file-1.parquet");
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
 
             // When
@@ -349,7 +349,7 @@ public class InMemoryIngestJobStatusStoreTest {
         @Test
         void shouldReportJobWithMultipleValidationFailures() {
             // Given
-            IngestJob job = createJobWithTableAndFiles("test-job-1", tableId, "test-file-1.parquet");
+            IngestJob job = createJobWithTableAndFiles("test-job-1", table, "test-file-1.parquet");
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
 
             // When
@@ -369,7 +369,7 @@ public class InMemoryIngestJobStatusStoreTest {
         @Test
         void shouldReportAcceptedJob() {
             // Given
-            IngestJob job = createJobWithTableAndFiles("test-job-1", tableId, "test-file-1.parquet");
+            IngestJob job = createJobWithTableAndFiles("test-job-1", table, "test-file-1.parquet");
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
 
             // When
@@ -388,7 +388,7 @@ public class InMemoryIngestJobStatusStoreTest {
             // Given
             String jobRunId = "test-run";
             String taskId = "test-task";
-            IngestJob job = createJobWithTableAndFiles("test-job-1", tableId, "test-file-1.parquet");
+            IngestJob job = createJobWithTableAndFiles("test-job-1", table, "test-file-1.parquet");
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
             Instant startTime = Instant.parse("2022-09-22T12:00:15.000Z");
 
@@ -410,7 +410,7 @@ public class InMemoryIngestJobStatusStoreTest {
             // Given
             String jobRunId = "test-run";
             String taskId = "test-task";
-            IngestJob job = createJobWithTableAndFiles("test-job-1", tableId, "test-file-1.parquet");
+            IngestJob job = createJobWithTableAndFiles("test-job-1", table, "test-file-1.parquet");
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
             Instant startTime = Instant.parse("2022-09-22T12:00:15.000Z");
             RecordsProcessedSummary summary = summary(startTime, Duration.ofMinutes(10), 100L, 100L);
@@ -434,7 +434,7 @@ public class InMemoryIngestJobStatusStoreTest {
             // Given
             String jobRunId = "test-run";
             String taskId = "test-task";
-            IngestJob job = createJobWithTableAndFiles("test-job-1", tableId, "test-file-1.parquet");
+            IngestJob job = createJobWithTableAndFiles("test-job-1", table, "test-file-1.parquet");
             Instant startTime = Instant.parse("2022-09-22T12:00:15.000Z");
             RecordsProcessedSummary summary = summary(startTime, Duration.ofMinutes(10), 100L, 100L);
 

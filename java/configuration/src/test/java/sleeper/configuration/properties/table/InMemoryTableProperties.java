@@ -21,8 +21,8 @@ import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.core.table.TableStatus;
 
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -53,17 +53,17 @@ public class InMemoryTableProperties implements TablePropertiesStore.Client {
         return new TablePropertiesStore(tableIndex, new InMemoryTableProperties(false));
     }
 
-    public static TablePropertiesStore getStoreReturningExactInstances(List<TableProperties> properties) {
+    public static TablePropertiesStore getStoreReturningExactInstances(Collection<TableProperties> properties) {
         TablePropertiesStore store = getStoreReturningExactInstance();
         properties.forEach(store::save);
         return store;
     }
 
     @Override
-    public TableProperties loadProperties(TableStatus tableId) {
-        return Optional.ofNullable(propertiesByTableId.get(tableId.getTableUniqueId()))
+    public TableProperties loadProperties(TableStatus table) {
+        return Optional.ofNullable(propertiesByTableId.get(table.getTableUniqueId()))
                 .map(this::copyIfSet)
-                .orElseThrow(() -> TableNotFoundException.withTableStatus(tableId));
+                .orElseThrow(() -> TableNotFoundException.withTable(table));
     }
 
     @Override
@@ -72,8 +72,8 @@ public class InMemoryTableProperties implements TablePropertiesStore.Client {
     }
 
     @Override
-    public void deleteProperties(TableStatus tableId) {
-        propertiesByTableId.remove(tableId.getTableUniqueId());
+    public void deleteProperties(TableStatus table) {
+        propertiesByTableId.remove(table.getTableUniqueId());
     }
 
     private TableProperties copyIfSet(TableProperties properties) {

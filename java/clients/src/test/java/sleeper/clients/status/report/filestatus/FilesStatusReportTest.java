@@ -26,6 +26,7 @@ import java.util.List;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.SplitFileReferenceRequest.splitFileToChildPartitions;
 
 public class FilesStatusReportTest extends FilesStatusReportTestBase {
@@ -92,11 +93,11 @@ public class FilesStatusReportTest extends FilesStatusReportTestBase {
                 .buildTree();
         stateStore.initialise(partitions.getAllPartitions());
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(partitions);
-        List<FileReference> files = List.of(
+        stateStore.addFiles(List.of(
                 fileReferenceFactory.partitionFile("B", "file1.parquet", 100),
-                fileReferenceFactory.partitionFile("B", "file2.parquet", 100));
-        stateStore.addFiles(files);
-        stateStore.atomicallyAssignJobIdToFileReferences("job1", files);
+                fileReferenceFactory.partitionFile("B", "file2.parquet", 100)));
+        stateStore.assignJobIds(List.of(
+                assignJobOnPartitionToFiles("job1", "B", List.of("file1.parquet", "file2.parquet"))));
         stateStore.atomicallyReplaceFileReferencesWithNewOne(
                 "job1", "B", List.of("file1.parquet", "file2.parquet"),
                 fileReferenceFactory.partitionFile("B", "file3.parquet", 200));
@@ -117,13 +118,14 @@ public class FilesStatusReportTest extends FilesStatusReportTestBase {
                 .buildTree();
         stateStore.initialise(partitions.getAllPartitions());
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(partitions);
-        List<FileReference> files = List.of(
+        stateStore.addFiles(List.of(
                 fileReferenceFactory.partitionFile("B", "file1.parquet", 100),
                 fileReferenceFactory.partitionFile("B", "file2.parquet", 100),
                 fileReferenceFactory.partitionFile("B", "file3.parquet", 100),
-                fileReferenceFactory.partitionFile("B", "file4.parquet", 100));
-        stateStore.addFiles(files);
-        stateStore.atomicallyAssignJobIdToFileReferences("job1", files);
+                fileReferenceFactory.partitionFile("B", "file4.parquet", 100)));
+        stateStore.assignJobIds(List.of(
+                assignJobOnPartitionToFiles("job1", "B",
+                        List.of("file1.parquet", "file2.parquet", "file3.parquet", "file4.parquet"))));
         stateStore.atomicallyReplaceFileReferencesWithNewOne("job1", "B",
                 List.of("file1.parquet", "file2.parquet", "file3.parquet", "file4.parquet"),
                 fileReferenceFactory.partitionFile("B", "file5.parquet", 400));

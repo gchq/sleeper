@@ -87,6 +87,8 @@ For Eclipse, these settings are available to import:
 - Code style at [code-style/eclipse-style.xml](/code-style/eclipse-style.xml)
 - Import order at [code-style/eclipse-import-order.importorder](/code-style/eclipse-import-order.importorder)
 - License header at [code-style/licenseHeader.txt](/code-style/licenseHeader.txt)
+- Code templates at [code-style/eclipse-codetemplates.xml](/code-style/eclipse-codetemplates.xml)
+- Editor templates at [code-style/eclipse-templates.xml](/code-style/eclipse-templates.xml)
 
 ### Linting
 

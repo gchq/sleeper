@@ -62,7 +62,9 @@ public class SleeperSystemTestExtension implements ParameterResolver, BeforeAllC
 
     @Override
     public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
-        return SUPPORTED_PARAMETER_TYPES.contains(parameterContext.getParameter().getType());
+        Class<?> type = parameterContext.getParameter().getType();
+        return SUPPORTED_PARAMETER_TYPES.contains(type)
+                || drivers.getClass() == type;
     }
 
     @Override
@@ -76,7 +78,7 @@ public class SleeperSystemTestExtension implements ParameterResolver, BeforeAllC
             return queuePurging;
         } else if (type == SystemTestParameters.class) {
             return parameters;
-        } else if (type == SystemTestDrivers.class) {
+        } else if (type.isAssignableFrom(drivers.getClass())) {
             return drivers;
         } else if (type == DeployedSystemTestResources.class) {
             return deployedResources;

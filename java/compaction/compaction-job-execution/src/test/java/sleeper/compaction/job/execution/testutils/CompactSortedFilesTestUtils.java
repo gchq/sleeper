@@ -15,11 +15,18 @@
  */
 package sleeper.compaction.job.execution.testutils;
 
+import sleeper.compaction.job.CompactionJob;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.Type;
+import sleeper.core.statestore.StateStore;
+
+import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.toUnmodifiableList;
+import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 
 public class CompactSortedFilesTestUtils {
 
@@ -46,5 +53,15 @@ public class CompactSortedFilesTestUtils {
                 .rowKeyFields(key)
                 .valueFields(new Field("timestamp", new LongType()), new Field("value", new LongType()))
                 .build();
+    }
+
+    public static void assignJobIdToInputFiles(StateStore stateStore, CompactionJob job) throws Exception {
+        assignJobIdsToInputFiles(stateStore, job);
+    }
+
+    public static void assignJobIdsToInputFiles(StateStore stateStore, CompactionJob... jobs) throws Exception {
+        stateStore.assignJobIds(Stream.of(jobs)
+                .map(job -> assignJobOnPartitionToFiles(job.getId(), job.getPartitionId(), job.getInputFiles()))
+                .collect(toUnmodifiableList()));
     }
 }

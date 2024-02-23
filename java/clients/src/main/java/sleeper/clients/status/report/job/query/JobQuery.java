@@ -34,38 +34,38 @@ public interface JobQuery {
 
     Type getType();
 
-    static JobQuery from(TableStatus tableId, Type queryType, String queryParameters, Clock clock) {
+    static JobQuery from(TableStatus table, Type queryType, String queryParameters, Clock clock) {
         if (queryType.isParametersRequired() && queryParameters == null) {
             throw new IllegalArgumentException("No parameters provided for query type " + queryType);
         }
         switch (queryType) {
-            case ALL:
-                return new AllJobsQuery(tableId);
-            case UNFINISHED:
-                return new UnfinishedJobsQuery(tableId);
-            case DETAILED:
-                return DetailedJobsQuery.fromParameters(queryParameters);
-            case RANGE:
-                return RangeJobsQuery.fromParameters(tableId, queryParameters, clock);
-            case REJECTED:
-                return new RejectedJobsQuery();
-            default:
-                throw new IllegalArgumentException("Unexpected query type: " + queryType);
+        case ALL:
+            return new AllJobsQuery(table);
+        case UNFINISHED:
+            return new UnfinishedJobsQuery(table);
+        case DETAILED:
+            return DetailedJobsQuery.fromParameters(queryParameters);
+        case RANGE:
+            return RangeJobsQuery.fromParameters(table, queryParameters, clock);
+        case REJECTED:
+            return new RejectedJobsQuery();
+        default:
+            throw new IllegalArgumentException("Unexpected query type: " + queryType);
         }
     }
 
     static JobQuery fromParametersOrPrompt(
-            TableStatus tableId, Type queryType, String queryParameters, Clock clock, ConsoleInput input) {
-        return fromParametersOrPrompt(tableId, queryType, queryParameters, clock, input, Map.of());
+            TableStatus table, Type queryType, String queryParameters, Clock clock, ConsoleInput input) {
+        return fromParametersOrPrompt(table, queryType, queryParameters, clock, input, Map.of());
     }
 
     static JobQuery fromParametersOrPrompt(
-            TableStatus tableId, Type queryType, String queryParameters, Clock clock,
+            TableStatus table, Type queryType, String queryParameters, Clock clock,
             ConsoleInput input, Map<String, JobQuery> extraQueryTypes) {
         if (queryType == JobQuery.Type.PROMPT) {
-            return JobQueryPrompt.from(tableId, clock, input, extraQueryTypes);
+            return JobQueryPrompt.from(table, clock, input, extraQueryTypes);
         }
-        return from(tableId, queryType, queryParameters, clock);
+        return from(table, queryType, queryParameters, clock);
     }
 
     enum Type {

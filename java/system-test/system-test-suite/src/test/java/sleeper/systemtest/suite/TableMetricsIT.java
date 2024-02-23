@@ -93,7 +93,7 @@ public class TableMetricsIT {
         sleeper.tableMetrics().generate();
 
         // Then
-        assertThat(sleeper.tables().loadStatuses()).hasSize(3);
+        assertThat(sleeper.tables().list()).hasSize(3);
         assertThat(sleeper.table("A").tableMetrics().get())
                 .isEqualTo(Map.of(
                         "ActiveFileCount", List.of(2.0),

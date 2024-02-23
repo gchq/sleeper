@@ -32,11 +32,7 @@ import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.table.TableIndex;
-import sleeper.core.table.TableNotFoundException;
-import sleeper.core.table.TableStatus;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreProvider;
 
@@ -75,7 +71,6 @@ public class CreateJobsClient {
             instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
 
             TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
-            TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDBClient);
             Configuration conf = HadoopConfigurationProvider.getConfigurationForClient(instanceProperties);
             StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, conf);
             CompactionJobStatusStore jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
@@ -92,10 +87,7 @@ public class CreateJobsClient {
                         new SendCompactionJobToSqs(instanceProperties, sqsClient)::send, jobStatusStore);
             }
             if (tableNameOpt.isPresent()) {
-                String tableName = tableNameOpt.get();
-                TableStatus tableId = tableIndex.getTableByName(tableName)
-                        .orElseThrow(() -> TableNotFoundException.withTableName(tableName));
-                jobCreator.createJobs(tablePropertiesProvider.get(tableId));
+                jobCreator.createJobs(tablePropertiesProvider.getByName(tableNameOpt.get()));
             } else {
                 jobCreator.createJobs();
             }

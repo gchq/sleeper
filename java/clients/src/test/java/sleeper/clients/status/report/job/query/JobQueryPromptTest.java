@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package sleeper.clients.status.report.job.query;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.clients.status.report.job.query.JobQuery.Type;
 import sleeper.compaction.job.status.CompactionJobStatus;
 
 import java.time.Instant;
@@ -26,7 +27,6 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
-import static sleeper.clients.status.report.job.query.JobQuery.Type;
 
 public class JobQueryPromptTest extends JobQueryTestBase {
 

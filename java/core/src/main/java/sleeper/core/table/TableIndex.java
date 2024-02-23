@@ -20,7 +20,7 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 public interface TableIndex {
-    void create(TableStatus tableId) throws TableAlreadyExistsException;
+    void create(TableStatus table) throws TableAlreadyExistsException;
 
     Stream<TableStatus> streamAllTables();
 
@@ -30,7 +30,7 @@ public interface TableIndex {
 
     Optional<TableStatus> getTableByUniqueId(String tableUniqueId);
 
-    void delete(TableStatus tableId);
+    void delete(TableStatus table);
 
-    void update(TableStatus tableId);
+    void update(TableStatus table);
 }

@@ -57,22 +57,22 @@ public class IngestBatcherReport {
     private final IngestBatcherReporter reporter;
     private final BatcherQuery.Type queryType;
     private final BatcherQuery query;
-    private final TableStatusProvider tableStatusProvider;
+    private final TableStatusProvider tableProvider;
 
     public IngestBatcherReport(IngestBatcherStore batcherStore, IngestBatcherReporter reporter,
-                               BatcherQuery.Type queryType, TableStatusProvider tableStatusProvider) {
+            BatcherQuery.Type queryType, TableStatusProvider tableProvider) {
         this.batcherStore = batcherStore;
         this.reporter = reporter;
         this.query = BatcherQuery.from(queryType, new ConsoleInput(System.console()));
         this.queryType = query.getType();
-        this.tableStatusProvider = tableStatusProvider;
+        this.tableProvider = tableProvider;
     }
 
     public void run() {
         if (query == null) {
             return;
         }
-        reporter.report(query.run(batcherStore), queryType, tableStatusProvider);
+        reporter.report(query.run(batcherStore), queryType, tableProvider);
     }
 
     public static void main(String[] args) {
@@ -104,16 +104,16 @@ public class IngestBatcherReport {
                 new TablePropertiesProvider(instanceProperties, amazonS3, dynamoDBClient));
         IngestBatcherReporter reporter;
         switch (reporterType) {
-            case JSON:
-                reporter = new JsonIngestBatcherReporter();
-                break;
-            case STANDARD:
-            default:
-                reporter = new StandardIngestBatcherReporter();
+        case JSON:
+            reporter = new JsonIngestBatcherReporter();
+            break;
+        case STANDARD:
+        default:
+            reporter = new StandardIngestBatcherReporter();
         }
         new IngestBatcherReport(statusStore, reporter, queryType,
                 new TableStatusProvider(new DynamoDBTableIndex(instanceProperties, dynamoDBClient)))
-                .run();
+                        .run();
 
         amazonS3.shutdown();
         dynamoDBClient.shutdown();

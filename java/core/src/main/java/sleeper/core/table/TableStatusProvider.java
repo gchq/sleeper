@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * This class can be used to cache table statuses to avoid looking them up repeatedly in the table index database.
+ * This class can be used to cache tables to avoid looking them up repeatedly in the table index database.
  */
 public class TableStatusProvider {
     private final TableIndex tableIndex;
@@ -35,9 +35,9 @@ public class TableStatusProvider {
         if (tableStatusById.containsKey(tableId)) {
             return Optional.ofNullable(tableStatusById.get(tableId));
         } else {
-            TableStatus identity = tableIndex.getTableByUniqueId(tableId).orElse(null);
-            tableStatusById.put(tableId, identity);
-            return Optional.ofNullable(identity);
+            TableStatus status = tableIndex.getTableByUniqueId(tableId).orElse(null);
+            tableStatusById.put(tableId, status);
+            return Optional.ofNullable(status);
         }
     }
 }

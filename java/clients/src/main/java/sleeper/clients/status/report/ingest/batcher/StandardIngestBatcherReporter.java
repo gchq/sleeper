@@ -55,13 +55,13 @@ public class StandardIngestBatcherReporter implements IngestBatcherReporter {
     }
 
     @Override
-    public void report(List<FileIngestRequest> statusList, BatcherQuery.Type queryType, TableStatusProvider tableStatusProvider) {
+    public void report(List<FileIngestRequest> statusList, BatcherQuery.Type queryType, TableStatusProvider tableProvider) {
         out.println();
         out.println("Ingest Batcher Report");
         out.println("---------------------");
         printSummary(statusList, queryType);
         tableFactory.tableBuilder()
-                .itemsAndWriter(statusList, (item, builder) -> writeFileRequest(item, builder, tableStatusProvider))
+                .itemsAndWriter(statusList, (item, builder) -> writeFileRequest(item, builder, tableProvider))
                 .showField(queryType == BatcherQuery.Type.ALL, jobIdField)
                 .build().write(out);
     }
@@ -74,12 +74,12 @@ public class StandardIngestBatcherReporter implements IngestBatcherReporter {
         }
     }
 
-    private void writeFileRequest(FileIngestRequest fileIngestRequest, TableRow.Builder builder, TableStatusProvider tableStatusProvider) {
+    private void writeFileRequest(FileIngestRequest fileIngestRequest, TableRow.Builder builder, TableStatusProvider tableProvider) {
         builder
                 .value(stateField, fileIngestRequest.isAssignedToJob() ? "BATCHED" : "PENDING")
                 .value(fileNameField, fileIngestRequest.getFile())
                 .value(fileSizeBytesField, formatBytesAsHumanReadableString(fileIngestRequest.getFileSizeBytes()))
-                .value(tableNameField, tableStatusProvider.getById(fileIngestRequest.getTableId())
+                .value(tableNameField, tableProvider.getById(fileIngestRequest.getTableId())
                         .map(TableStatus::getTableName)
                         .orElseGet(() -> "<deleted table: " + fileIngestRequest.getTableId() + ">"))
                 .value(receivedTimeField, fileIngestRequest.getReceivedTime())

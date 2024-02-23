@@ -42,8 +42,8 @@ public class TablePropertiesStore {
         this.client = client;
     }
 
-    public TableProperties loadProperties(TableStatus tableId) {
-        TableProperties tableProperties = client.loadProperties(tableId);
+    TableProperties loadProperties(TableStatus table) {
+        TableProperties tableProperties = client.loadProperties(table);
         tableProperties.validate();
         return tableProperties;
     }
@@ -67,10 +67,10 @@ public class TablePropertiesStore {
     }
 
     public Stream<TableProperties> streamAllTables() {
-        return streamAllTableIds().map(this::loadProperties);
+        return streamAllTableStatuses().map(this::loadProperties);
     }
 
-    public Stream<TableStatus> streamAllTableIds() {
+    public Stream<TableStatus> streamAllTableStatuses() {
         return tableIndex.streamAllTables();
     }
 
@@ -87,23 +87,23 @@ public class TablePropertiesStore {
     }
 
     public void save(TableProperties tableProperties) {
-        Optional<TableStatus> existingId = getExistingId(tableProperties);
-        if (existingId.isPresent()) {
-            TableStatus id = existingId.get();
+        Optional<TableStatus> existingOpt = getExistingStatus(tableProperties);
+        if (existingOpt.isPresent()) {
+            TableStatus existing = existingOpt.get();
             String tableName = tableProperties.get(TABLE_NAME);
             boolean isOnline = tableProperties.getBoolean(TABLE_ONLINE);
-            if (!Objects.equals(id.getTableName(), tableName) || !(id.isOnline() == isOnline)) {
-                tableIndex.update(TableStatus.uniqueIdAndName(id.getTableUniqueId(),
+            if (!Objects.equals(existing.getTableName(), tableName) || !(existing.isOnline() == isOnline)) {
+                tableIndex.update(TableStatus.uniqueIdAndName(existing.getTableUniqueId(),
                         tableName, isOnline));
             }
-            tableProperties.set(TABLE_ID, id.getTableUniqueId());
+            tableProperties.set(TABLE_ID, existing.getTableUniqueId());
             client.saveProperties(tableProperties);
         } else {
             createWhenNotInIndex(tableProperties);
         }
     }
 
-    private Optional<TableStatus> getExistingId(TableProperties tableProperties) {
+    private Optional<TableStatus> getExistingStatus(TableProperties tableProperties) {
         if (tableProperties.isSet(TABLE_ID)) {
             return tableIndex.getTableByUniqueId(tableProperties.get(TABLE_ID));
         } else {
@@ -116,7 +116,7 @@ public class TablePropertiesStore {
             tableProperties.set(TABLE_ID, ID_GENERATOR.generateString());
         }
         client.saveProperties(tableProperties);
-        tableIndex.create(tableProperties.getId());
+        tableIndex.create(tableProperties.getStatus());
     }
 
     public void deleteByName(String tableName) {
@@ -124,16 +124,16 @@ public class TablePropertiesStore {
                 .ifPresent(this::delete);
     }
 
-    public void delete(TableStatus tableId) {
-        tableIndex.delete(tableId);
-        client.deleteProperties(tableId);
+    public void delete(TableStatus table) {
+        tableIndex.delete(table);
+        client.deleteProperties(table);
     }
 
     public interface Client {
-        TableProperties loadProperties(TableStatus tableId);
+        TableProperties loadProperties(TableStatus table);
 
         void saveProperties(TableProperties tableProperties);
 
-        void deleteProperties(TableStatus tableId);
+        void deleteProperties(TableStatus table);
     }
 }

@@ -64,8 +64,9 @@ public class AdminClientPropertiesStore {
     private final UploadDockerImages uploadDockerImages;
     private final Path generatedDirectory;
 
-    public AdminClientPropertiesStore(AmazonS3 s3, AmazonDynamoDB dynamoDB,
-                                      InvokeCdkForInstance cdk, Path generatedDirectory, UploadDockerImages uploadDockerImages) {
+    public AdminClientPropertiesStore(
+            AmazonS3 s3, AmazonDynamoDB dynamoDB, InvokeCdkForInstance cdk,
+            Path generatedDirectory, UploadDockerImages uploadDockerImages) {
         this.s3 = s3;
         this.dynamoDB = dynamoDB;
         this.dockerImageConfiguration = new DockerImageConfiguration();
@@ -155,8 +156,7 @@ public class AdminClientPropertiesStore {
             ClientUtils.clearDirectory(generatedDirectory);
             SaveLocalProperties.saveToDirectory(generatedDirectory, instanceProperties,
                     streamTableProperties(instanceProperties)
-                            .map(table -> tableName.equals(table.get(TABLE_NAME))
-                                    ? properties : table));
+                            .map(table -> tableName.equals(table.get(TABLE_NAME)) ? properties : table));
             LOGGER.info("Saving to AWS");
             S3TableProperties.getStore(instanceProperties, s3, dynamoDB).save(properties);
         } catch (IOException | AmazonS3Exception e) {

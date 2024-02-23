@@ -48,6 +48,11 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithNoReferences;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithReferences;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
+import static sleeper.core.statestore.FileReferenceTestData.AFTER_DEFAULT_UPDATE_TIME;
+import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
+import static sleeper.core.statestore.FileReferenceTestData.splitFile;
+import static sleeper.core.statestore.FileReferenceTestData.withJobId;
+import static sleeper.core.statestore.FileReferenceTestData.withLastUpdate;
 import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.noFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.partialReadyForGCFilesReport;
@@ -134,7 +139,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             assertThat(store.getFileReferences()).containsExactlyInAnyOrder(
                     withLastUpdate(updateTime, leftFile),
                     withLastUpdate(updateTime, rightFile));
-            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
                     .isEqualTo(activeFilesReport(updateTime, leftFile, rightFile));
             assertThat(store.getReadyForGCFilenamesBefore(updateTime.plus(Duration.ofDays(1))))
                     .isEmpty();
@@ -160,7 +165,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
                     withLastUpdate(updateTime, leftFile1),
                     withLastUpdate(updateTime, rightFile1),
                     withLastUpdate(updateTime, file2));
-            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
                     .isEqualTo(activeFilesReport(updateTime, leftFile1, rightFile1, file2));
             assertThat(store.getReadyForGCFilenamesBefore(updateTime.plus(Duration.ofDays(1))))
                     .isEmpty();
@@ -176,7 +181,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
 
             // When / Then
             assertThat(store.getFileReferences()).isEmpty();
-            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
                     .isEqualTo(readyForGCFilesReport(updateTime, "test-file"));
             assertThat(store.getReadyForGCFilenamesBefore(updateTime.plus(Duration.ofDays(1))))
                     .containsExactly("test-file");
@@ -236,7 +241,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             List<FileReference> expectedReferences = List.of(splitFile(file, "L"), splitFile(file, "R"));
             assertThat(store.getFileReferences())
                     .containsExactlyInAnyOrderElementsOf(expectedReferences);
-            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
                     .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, expectedReferences));
         }
 
@@ -259,7 +264,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
                     splitFile(file2, "R"));
             assertThat(store.getFileReferences())
                     .containsExactlyInAnyOrderElementsOf(expectedReferences);
-            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
                     .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, expectedReferences));
         }
 
@@ -285,7 +290,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
                     splitFile(rightFile, "RR"));
             assertThat(store.getFileReferences())
                     .containsExactlyInAnyOrderElementsOf(expectedReferences);
-            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
                     .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, expectedReferences));
         }
 
@@ -310,7 +315,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
                     splitFile(file2, "RR"));
             assertThat(store.getFileReferences())
                     .containsExactlyInAnyOrderElementsOf(expectedReferences);
-            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
                     .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, expectedReferences));
         }
 
@@ -332,7 +337,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
                     splitFile(file, "R"));
             assertThat(store.getFileReferences())
                     .containsExactlyInAnyOrderElementsOf(expectedReferences);
-            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
                     .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, expectedReferences));
         }
 
@@ -349,7 +354,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             // Then
             assertThat(store.getFileReferences())
                     .containsExactly(file);
-            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
                     .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, file));
         }
 
@@ -363,7 +368,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
 
             // Then
             assertThat(store.getFileReferences()).isEmpty();
-            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
                     .isEqualTo(noFilesReport());
         }
 
@@ -380,7 +385,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
                     .isInstanceOf(SplitRequestsFailedException.class)
                     .hasCauseInstanceOf(FileNotFoundException.class);
             assertThat(store.getFileReferences()).isEmpty();
-            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
                     .isEqualTo(noFilesReport());
         }
 
@@ -399,7 +404,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
                     .isInstanceOf(SplitRequestsFailedException.class)
                     .hasCauseInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).containsExactly(existingReference);
-            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
                     .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, existingReference));
         }
 
@@ -423,7 +428,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
                     .hasCauseInstanceOf(FileReferenceAlreadyExistsException.class);
             List<FileReference> expectedReferences = List.of(leftFile, nestedFile);
             assertThat(store.getFileReferences()).containsExactlyInAnyOrderElementsOf(expectedReferences);
-            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
                     .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, expectedReferences));
         }
 
@@ -433,7 +438,8 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             splitPartition("root", "L", "R", 5);
             FileReference file = factory.rootFile("file", 100L);
             store.addFile(file);
-            store.atomicallyAssignJobIdToFileReferences("job1", List.of(file));
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "root", List.of("file"))));
 
             // When / Then
             assertThatThrownBy(() -> store.splitFileReferences(List.of(splitFileToChildPartitions(file, "L", "R"))))
@@ -441,7 +447,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
                     .hasCauseInstanceOf(FileReferenceAssignedToJobException.class);
             assertThat(store.getFileReferences())
                     .containsExactly(withJobId("job1", file));
-            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
                     .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, withJobId("job1", file)));
         }
     }
@@ -500,24 +506,6 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
                     withJobId("job1", file1),
                     withJobId("job2", file2));
             assertThat(store.getFileReferencesWithNoJobId()).isEmpty();
-        }
-
-        @Test
-        public void shouldFailWhenSameFileIsAssignedInDifferentRequests() throws Exception {
-            // Given
-            FileReference file1 = factory.rootFile("file1", 100L);
-            FileReference file2 = factory.rootFile("file2", 100L);
-            store.addFiles(List.of(file1, file2));
-
-            // When / Then
-            assertThatThrownBy(() -> store.assignJobIds(List.of(
-                    assignJobOnPartitionToFiles("job1", "root", List.of("file1")),
-                    assignJobOnPartitionToFiles("job2", "root", List.of("file1")))))
-                    .isInstanceOf(FileReferenceAssignedToJobException.class);
-            assertThat(store.getFileReferences()).containsExactly(
-                    withJobId("job1", file1),
-                    file2);
-            assertThat(store.getFileReferencesWithNoJobId()).containsExactly(file2);
         }
 
         @Test
@@ -898,7 +886,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
 
             // Then
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
-            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
                     .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, leftOutputFile, rightOutputFile));
         }
 
@@ -989,7 +977,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             store.addFile(file);
 
             // When
-            AllReferencesToAllFiles report = store.getAllFileReferencesWithMaxUnreferenced(5);
+            AllReferencesToAllFiles report = store.getAllFilesWithMaxUnreferenced(5);
 
             // Then
             assertThat(report).isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, file));
@@ -1001,7 +989,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             store.addFilesWithReferences(List.of(fileWithNoReferences("test")));
 
             // When
-            AllReferencesToAllFiles report = store.getAllFileReferencesWithMaxUnreferenced(5);
+            AllReferencesToAllFiles report = store.getAllFilesWithMaxUnreferenced(5);
 
             // Then
             assertThat(report).isEqualTo(readyForGCFilesReport(DEFAULT_UPDATE_TIME, "test"));
@@ -1015,7 +1003,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             store.addFiles(List.of(file1, file2));
 
             // When
-            AllReferencesToAllFiles report = store.getAllFileReferencesWithMaxUnreferenced(5);
+            AllReferencesToAllFiles report = store.getAllFilesWithMaxUnreferenced(5);
 
             // Then
             assertThat(report).isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, file1, file2));
@@ -1031,7 +1019,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             store.addFiles(List.of(leftFile, rightFile));
 
             // When
-            AllReferencesToAllFiles report = store.getAllFileReferencesWithMaxUnreferenced(5);
+            AllReferencesToAllFiles report = store.getAllFilesWithMaxUnreferenced(5);
 
             // Then
             assertThat(report).isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, leftFile, rightFile));
@@ -1051,7 +1039,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             store.atomicallyReplaceFileReferencesWithNewOne("job1", "L", List.of("file"), outputFile);
 
             // When
-            AllReferencesToAllFiles report = store.getAllFileReferencesWithMaxUnreferenced(5);
+            AllReferencesToAllFiles report = store.getAllFilesWithMaxUnreferenced(5);
 
             // Then
             assertThat(report).isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, outputFile, rightFile));
@@ -1066,7 +1054,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
                     fileWithNoReferences("test3")));
 
             // When
-            AllReferencesToAllFiles report = store.getAllFileReferencesWithMaxUnreferenced(2);
+            AllReferencesToAllFiles report = store.getAllFilesWithMaxUnreferenced(2);
 
             // Then
             assertThat(report).isEqualTo(partialReadyForGCFilesReport(DEFAULT_UPDATE_TIME, "test1", "test2"));
@@ -1080,7 +1068,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
                     fileWithNoReferences("test2")));
 
             // When
-            AllReferencesToAllFiles report = store.getAllFileReferencesWithMaxUnreferenced(2);
+            AllReferencesToAllFiles report = store.getAllFilesWithMaxUnreferenced(2);
 
             // Then
             assertThat(report).isEqualTo(readyForGCFilesReport(DEFAULT_UPDATE_TIME, "test1", "test2"));
@@ -1125,9 +1113,5 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             assertThat(store.getPartitionToReferencedFilesMap())
                     .isEqualTo(Map.of("L", List.of("file")));
         }
-    }
-
-    private static FileReference withJobId(String jobId, FileReference file) {
-        return file.toBuilder().jobId(jobId).build();
     }
 }

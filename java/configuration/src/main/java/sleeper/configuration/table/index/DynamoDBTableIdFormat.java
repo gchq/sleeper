@@ -34,27 +34,25 @@ class DynamoDBTableIdFormat {
     static final String ONLINE_FIELD = "Online";
 
 
-    public static Map<String, AttributeValue> getItem(TableStatus status) {
+    public static Map<String, AttributeValue> getItem(TableStatus table) {
         return Map.of(
-                TABLE_ID_FIELD, createStringAttribute(status.getTableUniqueId()),
-                TABLE_NAME_FIELD, createStringAttribute(status.getTableName()),
-                ONLINE_FIELD, createStringAttribute(Boolean.toString(status.isOnline())));
+                TABLE_ID_FIELD, createStringAttribute(table.getTableUniqueId()),
+                TABLE_NAME_FIELD, createStringAttribute(table.getTableName()),
+                ONLINE_FIELD, createStringAttribute(Boolean.toString(table.isOnline())));
     }
 
-    public static Map<String, AttributeValue> getIdKey(TableStatus status) {
-        return Map.of(
-                TABLE_ID_FIELD, createStringAttribute(status.getTableUniqueId()));
+    public static Map<String, AttributeValue> getIdKey(TableStatus table) {
+        return Map.of(TABLE_ID_FIELD, createStringAttribute(table.getTableUniqueId()));
     }
 
-    public static Map<String, AttributeValue> getNameKey(TableStatus status) {
-        return Map.of(
-                TABLE_NAME_FIELD, createStringAttribute(status.getTableName()));
+    public static Map<String, AttributeValue> getNameKey(TableStatus table) {
+        return Map.of(TABLE_NAME_FIELD, createStringAttribute(table.getTableName()));
     }
 
-    public static Map<String, AttributeValue> getOnlineKey(TableStatus status) {
+    public static Map<String, AttributeValue> getOnlineKey(TableStatus table) {
         return Map.of(
-                TABLE_NAME_FIELD, createStringAttribute(status.getTableName()),
-                ONLINE_FIELD, createStringAttribute(Boolean.toString(status.isOnline())));
+                TABLE_NAME_FIELD, createStringAttribute(table.getTableName()),
+                ONLINE_FIELD, createStringAttribute(Boolean.toString(table.isOnline())));
     }
 
     public static TableStatus readItem(Map<String, AttributeValue> item) {

@@ -57,10 +57,9 @@ public class SystemTestInstanceContext {
     private DeployedSleeperTablesForTest currentTables = null;
     private GenerateNumberedValueOverrides generatorOverrides = GenerateNumberedValueOverrides.none();
 
-    public SystemTestInstanceContext(SystemTestParameters parameters,
-                                     DeployedSleeperInstances deployedInstances,
-                                     SleeperInstanceDriver instanceDriver,
-                                     SleeperTablesDriver tablesDriver) {
+    public SystemTestInstanceContext(
+            SystemTestParameters parameters, DeployedSleeperInstances deployedInstances,
+            SleeperInstanceDriver instanceDriver, SleeperTablesDriver tablesDriver) {
         this.parameters = parameters;
         this.deployedInstances = deployedInstances;
         this.instanceDriver = instanceDriver;
@@ -164,15 +163,15 @@ public class SystemTestInstanceContext {
         return getTableProperties().get(TABLE_NAME);
     }
 
-    public TableStatus getTableId() {
-        return getTableProperties().getId();
+    public TableStatus getTableStatus() {
+        return getTableProperties().getStatus();
     }
 
     public void setGeneratorOverrides(GenerateNumberedValueOverrides overrides) {
         generatorOverrides = overrides;
     }
 
-    public List<TableStatus> loadTableStatuses() {
+    public List<TableStatus> loadTables() {
         TableIndex tableIndex = tablesDriver.tableIndex(getInstanceProperties());
         return streamTableProperties()
                 .map(table -> tableIndex.getTableByUniqueId(table.get(TABLE_ID)).orElseThrow())

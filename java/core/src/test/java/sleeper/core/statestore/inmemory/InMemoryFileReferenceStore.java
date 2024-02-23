@@ -35,12 +35,9 @@ import sleeper.core.statestore.exception.NewReferenceSameAsOldReferenceException
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Stream;
 
@@ -189,7 +186,6 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
     }
 
     private void assignJobId(AssignJobIdRequest request, Instant updateTime) throws StateStoreException {
-        Map<String, Set<String>> partitionIdsByFilename = new LinkedHashMap<>();
         for (String filename : request.getFilenames()) {
             AllReferencesToAFile existingFile = filesByFilename.get(filename);
             if (existingFile == null) {
@@ -202,21 +198,11 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
             if (existingReference.getJobId() != null) {
                 throw new FileReferenceAssignedToJobException(existingReference);
             }
-            partitionIdsByFilename.computeIfAbsent(filename, f -> new LinkedHashSet<>())
-                    .add(request.getPartitionId());
         }
-        partitionIdsByFilename.forEach((filename, partitionIds) ->
-                filesByFilename.put(filename, filesByFilename.get(filename)
-                        .withJobIdForPartitions(request.getJobId(), partitionIds, updateTime)));
-    }
-
-    @Override
-    public void atomicallyAssignJobIdToFileReferences(String jobId, List<FileReference> fileReferences) throws StateStoreException {
-        String partitionId = fileReferences.stream().map(FileReference::getPartitionId).findAny().orElseThrow();
-        List<String> filenames = fileReferences.stream()
-                .map(FileReference::getFilename)
-                .collect(toUnmodifiableList());
-        assignJobIds(List.of(AssignJobIdRequest.assignJobOnPartitionToFiles(jobId, partitionId, filenames)));
+        for (String filename : request.getFilenames()) {
+            filesByFilename.put(filename, filesByFilename.get(filename)
+                    .withJobIdForPartition(request.getJobId(), request.getPartitionId(), updateTime));
+        }
     }
 
     @Override
@@ -233,7 +219,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public AllReferencesToAllFiles getAllFileReferencesWithMaxUnreferenced(int maxUnreferencedFiles) {
+    public AllReferencesToAllFiles getAllFilesWithMaxUnreferenced(int maxUnreferencedFiles) {
         List<AllReferencesToAFile> filesWithNoReferences = filesByFilename.values().stream()
                 .filter(file -> file.getTotalReferenceCount() < 1)
                 .collect(toUnmodifiableList());

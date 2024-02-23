@@ -28,9 +28,9 @@ public class FixedStateStoreProvider extends StateStoreProvider {
 
     public FixedStateStoreProvider(TableProperties singleTableProperties, StateStore stateStore) {
         super(tableProperties -> {
-            TableStatus requestedId = tableProperties.getId();
-            if (!Objects.equals(requestedId, singleTableProperties.getId())) {
-                throw new IllegalArgumentException("Table not found: " + requestedId);
+            TableStatus requestedTable = tableProperties.getStatus();
+            if (!Objects.equals(requestedTable, singleTableProperties.getStatus())) {
+                throw new IllegalArgumentException("Table not found: " + requestedTable);
             }
             return stateStore;
         });

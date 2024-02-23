@@ -42,7 +42,7 @@ import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPL
  */
 public class FindPartitionsToSplit {
     private static final Logger LOGGER = LoggerFactory.getLogger(FindPartitionsToSplit.class);
-    private final TableStatus tableId;
+    private final TableStatus table;
     private final TableProperties tableProperties;
     private final StateStore stateStore;
     private final JobSender jobSender;
@@ -53,7 +53,7 @@ public class FindPartitionsToSplit {
             TableProperties tableProperties,
             StateStore stateStore,
             JobSender jobSender) {
-        this.tableId = tableProperties.getId();
+        this.table = tableProperties.getStatus();
         this.tableProperties = tableProperties;
         this.stateStore = stateStore;
         this.jobSender = jobSender;
@@ -80,38 +80,38 @@ public class FindPartitionsToSplit {
             }
             // Create job and call run to send to job queue
             SplitPartitionJobDefinition job = new SplitPartitionJobDefinition(
-                    tableId.getTableUniqueId(), result.getPartition(), filesForJob);
+                    table.getTableUniqueId(), result.getPartition(), filesForJob);
             jobSender.send(job);
         }
     }
 
     public static List<FindPartitionToSplitResult> getResults(
             TableProperties tableProperties, StateStore stateStore) throws StateStoreException {
-        TableStatus tableId = tableProperties.getId();
+        TableStatus table = tableProperties.getStatus();
         long splitThreshold = tableProperties.getLong(PARTITION_SPLIT_THRESHOLD);
-        LOGGER.info("Running FindPartitionsToSplit for table {}, split threshold is {}", tableId, splitThreshold);
+        LOGGER.info("Running FindPartitionsToSplit for table {}, split threshold is {}", table, splitThreshold);
 
         List<FileReference> fileReferences = stateStore.getFileReferences();
-        LOGGER.info("There are {} file references in table {}", fileReferences.size(), tableId);
+        LOGGER.info("There are {} file references in table {}", fileReferences.size(), table);
 
         List<Partition> leafPartitions = stateStore.getLeafPartitions();
-        LOGGER.info("There are {} leaf partitions in table {}", leafPartitions.size(), tableId);
+        LOGGER.info("There are {} leaf partitions in table {}", leafPartitions.size(), table);
 
         List<FindPartitionToSplitResult> results = new ArrayList<>();
         for (Partition partition : leafPartitions) {
-            splitPartitionIfNecessary(tableId, splitThreshold, partition, fileReferences).ifPresent(results::add);
+            splitPartitionIfNecessary(table, splitThreshold, partition, fileReferences).ifPresent(results::add);
         }
         return results;
     }
 
     private static Optional<FindPartitionToSplitResult> splitPartitionIfNecessary(
-            TableStatus tableId, long splitThreshold, Partition partition, List<FileReference> fileReferences) {
+            TableStatus table, long splitThreshold, Partition partition, List<FileReference> fileReferences) {
         List<FileReference> relevantFiles = getFilesInPartition(partition, fileReferences);
         PartitionSplitCheck check = PartitionSplitCheck.fromFilesInPartition(splitThreshold, relevantFiles);
-        LOGGER.info("Number of records in partition {} of table {} is {}", partition.getId(), tableId, check.getNumberOfRecordsInPartition());
+        LOGGER.info("Number of records in partition {} of table {} is {}", partition.getId(), table, check.getNumberOfRecordsInPartition());
         if (check.isNeedsSplitting()) {
             LOGGER.info("Partition {} needs splitting (split threshold is {})", partition.getId(), splitThreshold);
-            return Optional.of(new FindPartitionToSplitResult(tableId.getTableUniqueId(), partition, relevantFiles));
+            return Optional.of(new FindPartitionToSplitResult(table.getTableUniqueId(), partition, relevantFiles));
         } else {
             LOGGER.info("Partition {} does not need splitting (split threshold is {})", partition.getId(), splitThreshold);
             return Optional.empty();

@@ -47,9 +47,10 @@ public class CompactionStatusReportScreen {
     private final AdminClientStatusStoreFactory statusStores;
     private final TableSelectHelper tableSelectHelper;
 
-    public CompactionStatusReportScreen(ConsoleOutput out, ConsoleInput in,
-                                        AdminClientPropertiesStore store,
-                                        AdminClientStatusStoreFactory statusStores) {
+    public CompactionStatusReportScreen(
+            ConsoleOutput out, ConsoleInput in,
+            AdminClientPropertiesStore store,
+            AdminClientStatusStoreFactory statusStores) {
         this.out = out;
         this.in = in;
         this.consoleHelper = new ConsoleHelper(out, in);
@@ -69,11 +70,8 @@ public class CompactionStatusReportScreen {
             } else {
                 out.clearScreen("");
                 consoleHelper.chooseOptionUntilValid("Which compaction report would you like to run",
-                        new MenuOption("Compaction Job Status Report", () ->
-                                chooseArgsForCompactionJobStatusReport(properties)),
-                        new MenuOption("Compaction Task Status Report", () ->
-                                chooseArgsForCompactionTaskStatusReport(properties))
-                ).run();
+                        new MenuOption("Compaction Job Status Report", () -> chooseArgsForCompactionJobStatusReport(properties)),
+                        new MenuOption("Compaction Task Status Report", () -> chooseArgsForCompactionTaskStatusReport(properties))).run();
             }
         }
     }
@@ -81,36 +79,28 @@ public class CompactionStatusReportScreen {
     private void chooseArgsForCompactionJobStatusReport(InstanceProperties properties) throws InterruptedException {
         Optional<TableProperties> tableOpt = tableSelectHelper.chooseTableOrReturnToMain(properties);
         if (tableOpt.isPresent()) {
-            TableStatus tableId = tableOpt.get().getId();
+            TableStatus table = tableOpt.get().getStatus();
             consoleHelper.chooseOptionUntilValid("Which query type would you like to use",
-                    new MenuOption("All", () ->
-                            runCompactionJobStatusReport(properties, tableId, JobQuery.Type.ALL)),
-                    new MenuOption("Unfinished", () ->
-                            runCompactionJobStatusReport(properties, tableId, JobQuery.Type.UNFINISHED)),
-                    new MenuOption("Detailed", () ->
-                            runCompactionJobStatusReport(properties, tableId, JobQuery.Type.DETAILED, promptForJobId(in))),
-                    new MenuOption("Range", () ->
-                            runCompactionJobStatusReport(properties, tableId, JobQuery.Type.RANGE, promptForRange(in)))
-            ).run();
+                    new MenuOption("All", () -> runCompactionJobStatusReport(properties, table, JobQuery.Type.ALL)),
+                    new MenuOption("Unfinished", () -> runCompactionJobStatusReport(properties, table, JobQuery.Type.UNFINISHED)),
+                    new MenuOption("Detailed", () -> runCompactionJobStatusReport(properties, table, JobQuery.Type.DETAILED, promptForJobId(in))),
+                    new MenuOption("Range", () -> runCompactionJobStatusReport(properties, table, JobQuery.Type.RANGE, promptForRange(in)))).run();
         }
     }
 
     private void chooseArgsForCompactionTaskStatusReport(InstanceProperties properties) throws InterruptedException {
         consoleHelper.chooseOptionUntilValid("Which query type would you like to use?",
-                new MenuOption("All", () ->
-                        runCompactionTaskStatusReport(properties, CompactionTaskQuery.ALL)),
-                new MenuOption("Unfinished", () ->
-                        runCompactionTaskStatusReport(properties, CompactionTaskQuery.UNFINISHED))
-        ).run();
+                new MenuOption("All", () -> runCompactionTaskStatusReport(properties, CompactionTaskQuery.ALL)),
+                new MenuOption("Unfinished", () -> runCompactionTaskStatusReport(properties, CompactionTaskQuery.UNFINISHED))).run();
     }
 
-    private void runCompactionJobStatusReport(InstanceProperties properties, TableStatus tableId, JobQuery.Type queryType) {
-        runCompactionJobStatusReport(properties, tableId, queryType, "");
+    private void runCompactionJobStatusReport(InstanceProperties properties, TableStatus table, JobQuery.Type queryType) {
+        runCompactionJobStatusReport(properties, table, queryType, "");
     }
 
-    private void runCompactionJobStatusReport(InstanceProperties properties, TableStatus tableId, JobQuery.Type queryType, String queryParameters) {
+    private void runCompactionJobStatusReport(InstanceProperties properties, TableStatus table, JobQuery.Type queryType, String queryParameters) {
         new CompactionJobStatusReport(statusStores.loadCompactionJobStatusStore(properties),
-                new StandardCompactionJobStatusReporter(out.printStream()), tableId, queryType, queryParameters).run();
+                new StandardCompactionJobStatusReporter(out.printStream()), table, queryType, queryParameters).run();
         confirmReturnToMainScreen(out, in);
     }
 

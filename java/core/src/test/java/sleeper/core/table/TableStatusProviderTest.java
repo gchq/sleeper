@@ -22,41 +22,41 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class TableStatusProviderTest {
     private final TableIndex tableIndex = new InMemoryTableIndex();
-    private final TableStatusProvider tableStatusProvider = new TableStatusProvider(tableIndex);
+    private final TableStatusProvider tableProvider = new TableStatusProvider(tableIndex);
 
     @Test
-    void shouldCacheTableStatusById() {
+    void shouldCacheTableById() {
         // Given
         TableStatus before = TableStatus.uniqueIdAndName("test-table-id", "test-table");
         tableIndex.create(before);
-        tableStatusProvider.getById("test-table-id");
+        tableProvider.getById("test-table-id");
 
         // When
         TableStatus after = TableStatus.uniqueIdAndName("test-table-id", "new-table-name");
         tableIndex.update(after);
 
         // Then
-        assertThat(tableStatusProvider.getById("test-table-id"))
+        assertThat(tableProvider.getById("test-table-id"))
                 .contains(before);
     }
 
     @Test
     void shouldReportTableDoesNotExist() {
         // When / Then
-        assertThat(tableStatusProvider.getById("not-a-table-id"))
+        assertThat(tableProvider.getById("not-a-table-id"))
                 .isEmpty();
     }
 
     @Test
     void shouldCacheThatTableDoesNotExist() {
         // Given
-        tableStatusProvider.getById("table-id");
+        tableProvider.getById("table-id");
 
         // When
         tableIndex.create(TableStatus.uniqueIdAndName("table-id", "table-name"));
 
         // When / Then
-        assertThat(tableStatusProvider.getById("table-id"))
+        assertThat(tableProvider.getById("table-id"))
                 .isEmpty();
     }
 }

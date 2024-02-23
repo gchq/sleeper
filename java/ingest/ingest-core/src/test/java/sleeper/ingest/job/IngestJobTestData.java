@@ -22,7 +22,8 @@ import java.util.List;
 
 public class IngestJobTestData {
 
-    public static final TableStatus DEFAULT_TABLE = TableStatus.uniqueIdAndName("test-table-id", "test-table");
+    public static final String DEFAULT_TABLE_ID = "test-table-id";
+    public static final TableStatus DEFAULT_TABLE = TableStatus.uniqueIdAndName(DEFAULT_TABLE_ID, "test-table");
 
     private IngestJobTestData() {
     }

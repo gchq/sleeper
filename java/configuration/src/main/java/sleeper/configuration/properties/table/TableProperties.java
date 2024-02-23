@@ -139,8 +139,8 @@ public class TableProperties extends SleeperProperties<TableProperty> {
         return SleeperPropertiesPrettyPrinter.forTableProperties(writer);
     }
 
-    public TableStatus getId() {
-        return TableStatus.uniqueIdAndName(get(TABLE_ID), get(TABLE_NAME), getBoolean(TABLE_ONLINE));
+    public TableStatus getStatus() {
+        return TableStatus.uniqueIdAndName(get(TABLE_ID), get(TABLE_NAME));
     }
 
     @Override

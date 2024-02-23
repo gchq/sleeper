@@ -15,7 +15,6 @@
  */
 package sleeper.bulkimport.job;
 
-import sleeper.core.table.TableStatus;
 import sleeper.ingest.job.IngestJob;
 
 import java.util.HashMap;
@@ -153,11 +152,6 @@ public class BulkImportJob {
         public Builder tableId(String tableId) {
             this.tableId = tableId;
             return this;
-        }
-
-        public Builder tableId(TableStatus tableId) {
-            return tableName(tableId.getTableName())
-                    .tableId(tableId.getTableUniqueId());
         }
 
         public Builder files(List<String> files) {

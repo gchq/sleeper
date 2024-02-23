@@ -42,7 +42,7 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
 
     private final LeafPartitionCompactionStrategy leafStrategy;
     private final ShouldCreateJobsStrategy shouldCreateJobsStrategy;
-    private TableStatus tableId;
+    private TableStatus table;
 
     public DelegatingCompactionStrategy(LeafPartitionCompactionStrategy leafStrategy) {
         this.leafStrategy = leafStrategy;
@@ -60,7 +60,7 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
         CompactionJobFactory factory = new CompactionJobFactory(instanceProperties, tableProperties);
         leafStrategy.init(instanceProperties, tableProperties, factory);
         shouldCreateJobsStrategy.init(instanceProperties, tableProperties);
-        tableId = tableProperties.getId();
+        table = tableProperties.getStatus();
     }
 
     @Override
@@ -82,7 +82,7 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
             Partition partition = partitionIdToPartition.get(partitionId);
             if (null == partition) {
                 throw new RuntimeException("Cannot find partition for partition id "
-                        + partitionId + " in table " + tableId);
+                        + partitionId + " in table " + table);
             }
 
             if (partition.isLeafPartition()) {
@@ -103,11 +103,11 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
         }
         LOGGER.info("Max jobs to create = {}", maxNumberOfJobsToCreate);
         List<CompactionJob> jobs = leafStrategy.createJobsForLeafPartition(partition, activeFilesWithNoJobId);
-        LOGGER.info("Defined {} compaction job{} for partition {}, table {}", jobs.size(), 1 == jobs.size() ? "" : "s", partition.getId(), tableId);
+        LOGGER.info("Defined {} compaction job{} for partition {}, table {}", jobs.size(), 1 == jobs.size() ? "" : "s", partition.getId(), table);
         while (jobs.size() > maxNumberOfJobsToCreate) {
             jobs.remove(jobs.size() - 1);
         }
-        LOGGER.info("Created {} compaction job{} for partition {}, table {}", jobs.size(), 1 == jobs.size() ? "" : "s", partition.getId(), tableId);
+        LOGGER.info("Created {} compaction job{} for partition {}, table {}", jobs.size(), 1 == jobs.size() ? "" : "s", partition.getId(), table);
         return jobs;
     }
 }

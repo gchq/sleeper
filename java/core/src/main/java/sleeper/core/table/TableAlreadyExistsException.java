@@ -18,7 +18,7 @@ package sleeper.core.table;
 
 public class TableAlreadyExistsException extends RuntimeException {
 
-    public TableAlreadyExistsException(TableStatus tableId) {
-        super("Table already exists: " + tableId);
+    public TableAlreadyExistsException(TableStatus table) {
+        super("Table already exists: " + table);
     }
 }

@@ -22,6 +22,7 @@ import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.systemtest.dsl.compaction.SystemTestCompaction;
+import sleeper.systemtest.dsl.gc.SystemTestGarbageCollection;
 import sleeper.systemtest.dsl.ingest.SystemTestIngest;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration;
 import sleeper.systemtest.dsl.instance.SystemTestOptionalStacks;
@@ -121,6 +122,10 @@ public class SleeperSystemTest {
 
     public SystemTestCompaction compaction() {
         return new SystemTestCompaction(context, drivers);
+    }
+
+    public SystemTestGarbageCollection garbageCollection() {
+        return new SystemTestGarbageCollection(drivers.garbageCollection(context));
     }
 
     public SystemTestReporting reporting() {

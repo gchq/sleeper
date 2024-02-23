@@ -78,17 +78,17 @@ public class FileIngestRequestSerDe {
 
         List<FileIngestRequest> toFileIngestRequests(
                 InstanceProperties properties, Configuration conf, Instant receivedTime, TableIndex tableIndex) {
-            TableStatus tableId = tableIndex.getTableByName(tableName)
+            TableStatus table = tableIndex.getTableByName(tableName)
                     .orElseThrow(() -> TableNotFoundException.withTableName(tableName));
             return streamFiles(files, conf, properties.get(FILE_SYSTEM))
                     .map(file -> {
                         String filePath = getRequestPath(file);
                         LOGGER.info("Deserialised ingest request for file {} with size {} to table {}",
-                                filePath, formatBytes(file.getLen()), tableId);
+                                filePath, formatBytes(file.getLen()), table);
                         return FileIngestRequest.builder()
                                 .file(filePath)
                                 .fileSizeBytes(file.getLen())
-                                .tableId(tableId.getTableUniqueId())
+                                .tableId(table.getTableUniqueId())
                                 .receivedTime(receivedTime)
                                 .build();
                     })

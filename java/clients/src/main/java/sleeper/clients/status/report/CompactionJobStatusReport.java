@@ -59,16 +59,16 @@ public class CompactionJobStatusReport {
     public CompactionJobStatusReport(
             CompactionJobStatusStore compactionJobStatusStore,
             CompactionJobStatusReporter reporter,
-            TableStatus tableId, JobQuery.Type queryType) {
-        this(compactionJobStatusStore, reporter, tableId, queryType, "");
+            TableStatus table, JobQuery.Type queryType) {
+        this(compactionJobStatusStore, reporter, table, queryType, "");
     }
 
     public CompactionJobStatusReport(
             CompactionJobStatusStore compactionJobStatusStore,
             CompactionJobStatusReporter reporter,
-            TableStatus tableId, JobQuery.Type queryType, String queryParameters) {
+            TableStatus table, JobQuery.Type queryType, String queryParameters) {
         this(compactionJobStatusStore, reporter,
-                JobQuery.fromParametersOrPrompt(tableId, queryType, queryParameters,
+                JobQuery.fromParametersOrPrompt(table, queryType, queryParameters,
                         Clock.systemUTC(), new ConsoleInput(System.console())));
     }
 
@@ -105,10 +105,10 @@ public class CompactionJobStatusReport {
 
             InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, instanceId);
             DynamoDBTableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDBClient);
-            TableStatus tableId = tableIndex.getTableByName(tableName)
+            TableStatus table = tableIndex.getTableByName(tableName)
                     .orElseThrow(() -> new IllegalArgumentException("Table does not exist: " + tableName));
             CompactionJobStatusStore statusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
-            new CompactionJobStatusReport(statusStore, reporter, tableId, queryType, queryParameters).run();
+            new CompactionJobStatusReport(statusStore, reporter, table, queryType, queryParameters).run();
         } catch (IllegalArgumentException e) {
             System.err.println(e.getMessage());
             printUsage();

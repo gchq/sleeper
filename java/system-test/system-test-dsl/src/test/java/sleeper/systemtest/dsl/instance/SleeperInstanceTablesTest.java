@@ -85,7 +85,7 @@ public class SleeperInstanceTablesTest {
             // Then
             assertThat(sleeper.partitioning().treeByTable())
                     .isEqualTo(Map.of("A", partitionsA, "B", partitionsB));
-            assertThat(sleeper.tables().loadStatuses()).hasSize(2);
+            assertThat(sleeper.tables().list()).hasSize(2);
         }
 
         @Test
@@ -105,7 +105,7 @@ public class SleeperInstanceTablesTest {
             // Then
             assertThat(sleeper.partitioning().treeByTable())
                     .isEqualTo(Map.of("A", partitions, "B", partitions));
-            assertThat(sleeper.tables().loadStatuses()).hasSize(2);
+            assertThat(sleeper.tables().list()).hasSize(2);
         }
     }
 
@@ -159,7 +159,7 @@ public class SleeperInstanceTablesTest {
             drivers.tables(context.parameters()).addTable(instanceProperties, tableProperties);
 
             // Then
-            assertThat(sleeper.tables().loadStatuses()).isEmpty();
+            assertThat(sleeper.tables().list()).isEmpty();
             assertThat(sleeper.directQuery().allRecordsByTable()).isEmpty();
             assertThat(sleeper.query().byQueue().allRecordsByTable()).isEmpty();
         }
@@ -170,7 +170,7 @@ public class SleeperInstanceTablesTest {
             sleeper.tables().createMany(2, schemaWithKey("key"));
 
             // Then
-            assertThat(sleeper.tables().loadStatuses()).hasSize(2);
+            assertThat(sleeper.tables().list()).hasSize(2);
             assertThat(sleeper.directQuery().allRecordsByTable()).hasSize(2);
             assertThat(sleeper.query().byQueue().allRecordsByTable()).hasSize(2);
         }

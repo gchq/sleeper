@@ -297,8 +297,8 @@ public class QueryClientIT {
                     "123", "456",
                     EXIT_OPTION);
             runQueryClient(List.of(table1, table2), Map.of(
-                    table1.getId().getTableName(), stateStore1,
-                    table2.getId().getTableName(), stateStore2));
+                    table1.getStatus().getTableName(), stateStore1,
+                    table2.getStatus().getTableName(), stateStore2));
 
             // Then
             assertThat(out.toString())

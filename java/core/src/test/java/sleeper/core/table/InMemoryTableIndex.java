@@ -30,22 +30,18 @@ public class InMemoryTableIndex implements TableIndex {
 
     private final Map<String, TableStatus> indexByName = new TreeMap<>();
     private final Map<String, TableStatus> indexById = new HashMap<>();
-    private final Set<String> onlineTableNames = new TreeSet<>();
 
     @Override
-    public void create(TableStatus tableId) throws TableAlreadyExistsException {
-        if (indexByName.containsKey(tableId.getTableName())) {
-            throw new TableAlreadyExistsException(tableId);
+    public void create(TableStatus table) throws TableAlreadyExistsException {
+        if (indexByName.containsKey(table.getTableName())) {
+            throw new TableAlreadyExistsException(table);
         }
-        save(tableId);
+        save(table);
     }
 
-    public void save(TableStatus status) {
-        indexByName.put(status.getTableName(), status);
-        indexById.put(status.getTableUniqueId(), status);
-        if (status.isOnline()) {
-            onlineTableNames.add(status.getTableName());
-        }
+    public void save(TableStatus table) {
+        indexByName.put(table.getTableName(), table);
+        indexById.put(table.getTableUniqueId(), table);
     }
 
     @Override
@@ -55,8 +51,7 @@ public class InMemoryTableIndex implements TableIndex {
 
     @Override
     public Stream<TableStatus> streamOnlineTables() {
-        return onlineTableNames.stream()
-                .flatMap(tableName -> getTableByName(tableName).stream());
+        return streamAllTables().filter(TableStatus::isOnline);
     }
 
     @Override
@@ -70,36 +65,30 @@ public class InMemoryTableIndex implements TableIndex {
     }
 
     @Override
-    public void delete(TableStatus tableId) {
-        if (!indexById.containsKey(tableId.getTableUniqueId())) {
-            throw TableNotFoundException.withTableId(tableId.getTableUniqueId());
+    public void delete(TableStatus table) {
+        if (!indexById.containsKey(table.getTableUniqueId())) {
+            throw TableNotFoundException.withTableId(table.getTableUniqueId());
         }
-        TableStatus latestId = indexById.get(tableId.getTableUniqueId());
-        if (!Objects.equals(latestId.getTableName(), tableId.getTableName())) {
-            throw TableNotFoundException.withTableName(tableId.getTableName());
+        TableStatus latest = indexById.get(table.getTableUniqueId());
+        if (!Objects.equals(latest.getTableName(), table.getTableName())) {
+            throw TableNotFoundException.withTableName(table.getTableName());
         }
-        indexByName.remove(latestId.getTableName());
-        indexById.remove(latestId.getTableUniqueId());
-        onlineTableNames.remove(tableId.getTableUniqueId());
+        indexByName.remove(latest.getTableName());
+        indexById.remove(latest.getTableUniqueId());
     }
 
     @Override
-    public void update(TableStatus status) {
-        TableStatus existingTableWithNewName = indexByName.get(status.getTableName());
-        if (existingTableWithNewName != null && !existingTableWithNewName.getTableUniqueId().equals(status.getTableUniqueId())) {
+    public void update(TableStatus table) {
+        TableStatus existingTableWithNewName = indexByName.get(table.getTableName());
+        if (existingTableWithNewName != null && !existingTableWithNewName.getTableUniqueId().equals(table.getTableUniqueId())) {
             throw new TableAlreadyExistsException(existingTableWithNewName);
         }
-        if (!indexById.containsKey(status.getTableUniqueId())) {
-            throw TableNotFoundException.withTableId(status.getTableUniqueId());
+        if (!indexById.containsKey(table.getTableUniqueId())) {
+            throw TableNotFoundException.withTableId(table.getTableUniqueId());
         }
-        TableStatus oldId = indexById.get(status.getTableUniqueId());
-        indexByName.remove(oldId.getTableName());
-        indexByName.put(status.getTableName(), status);
-        indexById.put(status.getTableUniqueId(), status);
-        if (status.isOnline()) {
-            onlineTableNames.add(status.getTableName());
-        } else {
-            onlineTableNames.remove(status.getTableName());
-        }
+        TableStatus old = indexById.get(table.getTableUniqueId());
+        indexByName.remove(old.getTableName());
+        indexByName.put(table.getTableName(), table);
+        indexById.put(table.getTableUniqueId(), table);
     }
 }

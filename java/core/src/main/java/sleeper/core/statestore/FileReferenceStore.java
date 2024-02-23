@@ -141,22 +141,7 @@ public interface FileReferenceStore {
      * @throws FileReferenceAssignedToJobException if a reference is already assigned to a job
      * @throws StateStoreException                 if the update fails for another reason
      */
-    default void assignJobIds(List<AssignJobIdRequest> requests)
-            throws StateStoreException {
-        for (AssignJobIdRequest request : requests) {
-            atomicallyAssignJobIdToFileReferences(request.getJobId(),
-                    request.getFilenames().stream()
-                            .map(filename -> FileReference.builder()
-                                    .filename(filename)
-                                    .partitionId(request.getPartitionId())
-                                    .numberOfRecords(0L)
-                                    .build())
-                            .collect(Collectors.toList()));
-        }
-    }
-
-    void atomicallyAssignJobIdToFileReferences(String jobId, List<FileReference> fileReferences)
-            throws StateStoreException;
+    void assignJobIds(List<AssignJobIdRequest> requests) throws StateStoreException;
 
     /**
      * Records that files were garbage collected and have been deleted. The reference counts for those files should be
@@ -240,7 +225,7 @@ public interface FileReferenceStore {
      * @return the report
      * @throws StateStoreException if query fails
      */
-    AllReferencesToAllFiles getAllFileReferencesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException;
+    AllReferencesToAllFiles getAllFilesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException;
 
     /**
      * Performs extra setup steps that are needed before the file reference store can be used.

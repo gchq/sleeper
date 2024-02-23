@@ -65,7 +65,6 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.ACTIVE_FILES_TABLELENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.FILE_REFERENCE_COUNT_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.DYNAMODB_STRONGLY_CONSISTENT_READS;
@@ -283,19 +282,6 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
         } catch (AmazonDynamoDBException e) {
             throw new StateStoreException("Failed to mark files ready for GC and add new files", e);
         }
-    }
-
-    /**
-     * Atomically updates the job field of the given files to the given id, as long as
-     * the compactionJob field is currently null.
-     */
-    @Override
-    public void atomicallyAssignJobIdToFileReferences(String jobId, List<FileReference> fileReferences) throws StateStoreException {
-        String partitionId = fileReferences.stream().map(FileReference::getPartitionId).findAny().orElseThrow();
-        List<String> filenames = fileReferences.stream()
-                .map(FileReference::getFilename)
-                .collect(toUnmodifiableList());
-        assignJobIds(List.of(AssignJobIdRequest.assignJobOnPartitionToFiles(jobId, partitionId, filenames)));
     }
 
     @Override
@@ -558,7 +544,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public AllReferencesToAllFiles getAllFileReferencesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException {
+    public AllReferencesToAllFiles getAllFilesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException {
         Map<String, List<FileReference>> referencesByFilename = getFileReferences().stream()
                 .collect(Collectors.groupingBy(FileReference::getFilename));
         List<AllReferencesToAFile> filesWithNoReferences = new ArrayList<>();

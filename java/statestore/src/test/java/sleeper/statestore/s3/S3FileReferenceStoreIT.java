@@ -39,8 +39,6 @@ import sleeper.core.statestore.exception.NewReferenceSameAsOldReferenceException
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -50,6 +48,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithNoReferences;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithReferences;
+import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
+import static sleeper.core.statestore.FileReferenceTestData.AFTER_DEFAULT_UPDATE_TIME;
+import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
+import static sleeper.core.statestore.FileReferenceTestData.splitFile;
+import static sleeper.core.statestore.FileReferenceTestData.withJobId;
+import static sleeper.core.statestore.FileReferenceTestData.withLastUpdate;
 import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.noFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.partialReadyForGCFilesReport;
@@ -136,7 +140,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
             assertThat(store.getFileReferences()).containsExactlyInAnyOrder(
                     withLastUpdate(updateTime, leftFile),
                     withLastUpdate(updateTime, rightFile));
-            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
                     .isEqualTo(activeFilesReport(updateTime, leftFile, rightFile));
             assertThat(store.getReadyForGCFilenamesBefore(updateTime.plus(Duration.ofDays(1))))
                     .isEmpty();
@@ -162,7 +166,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
                     withLastUpdate(updateTime, leftFile1),
                     withLastUpdate(updateTime, rightFile1),
                     withLastUpdate(updateTime, file2));
-            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
                     .isEqualTo(activeFilesReport(updateTime, leftFile1, rightFile1, file2));
             assertThat(store.getReadyForGCFilenamesBefore(updateTime.plus(Duration.ofDays(1))))
                     .isEmpty();
@@ -178,7 +182,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
 
             // When / Then
             assertThat(store.getFileReferences()).isEmpty();
-            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
                     .isEqualTo(readyForGCFilesReport(updateTime, "test-file"));
             assertThat(store.getReadyForGCFilenamesBefore(updateTime.plus(Duration.ofDays(1))))
                     .containsExactly("test-file");
@@ -238,7 +242,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
             List<FileReference> expectedReferences = List.of(splitFile(file, "L"), splitFile(file, "R"));
             assertThat(store.getFileReferences())
                     .containsExactlyInAnyOrderElementsOf(expectedReferences);
-            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
                     .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, expectedReferences));
         }
 
@@ -261,7 +265,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
                     splitFile(file2, "R"));
             assertThat(store.getFileReferences())
                     .containsExactlyInAnyOrderElementsOf(expectedReferences);
-            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
                     .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, expectedReferences));
         }
 
@@ -287,7 +291,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
                     splitFile(rightFile, "RR"));
             assertThat(store.getFileReferences())
                     .containsExactlyInAnyOrderElementsOf(expectedReferences);
-            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
                     .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, expectedReferences));
         }
 
@@ -312,7 +316,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
                     splitFile(file2, "RR"));
             assertThat(store.getFileReferences())
                     .containsExactlyInAnyOrderElementsOf(expectedReferences);
-            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
                     .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, expectedReferences));
         }
 
@@ -334,7 +338,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
                     splitFile(file, "R"));
             assertThat(store.getFileReferences())
                     .containsExactlyInAnyOrderElementsOf(expectedReferences);
-            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
                     .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, expectedReferences));
         }
 
@@ -351,7 +355,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
             // Then
             assertThat(store.getFileReferences())
                     .containsExactly(file);
-            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
                     .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, file));
         }
 
@@ -365,7 +369,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
 
             // Then
             assertThat(store.getFileReferences()).isEmpty();
-            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
                     .isEqualTo(noFilesReport());
         }
 
@@ -382,7 +386,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
                     .isInstanceOf(SplitRequestsFailedException.class)
                     .hasCauseInstanceOf(FileNotFoundException.class);
             assertThat(store.getFileReferences()).isEmpty();
-            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
                     .isEqualTo(noFilesReport());
         }
 
@@ -401,7 +405,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
                     .isInstanceOf(SplitRequestsFailedException.class)
                     .hasCauseInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).containsExactly(existingReference);
-            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
                     .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, existingReference));
         }
 
@@ -425,7 +429,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
                     .hasCauseInstanceOf(FileReferenceAlreadyExistsException.class);
             List<FileReference> expectedReferences = List.of(leftFile, nestedFile);
             assertThat(store.getFileReferences()).containsExactlyInAnyOrderElementsOf(expectedReferences);
-            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
                     .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, expectedReferences));
         }
 
@@ -435,7 +439,8 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
             splitPartition("root", "L", "R", 5);
             FileReference file = factory.rootFile("file", 100L);
             store.addFile(file);
-            store.atomicallyAssignJobIdToFileReferences("job1", List.of(file));
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "root", List.of("file"))));
 
             // When / Then
             assertThatThrownBy(() -> store.splitFileReferences(List.of(splitFileToChildPartitions(file, "L", "R"))))
@@ -443,7 +448,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
                     .hasCauseInstanceOf(FileReferenceAssignedToJobException.class);
             assertThat(store.getFileReferences())
                     .containsExactly(withJobId("job1", file));
-            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
                     .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, withJobId("job1", file)));
         }
     }
@@ -459,7 +464,8 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
             store.addFile(file);
 
             // When
-            store.atomicallyAssignJobIdToFileReferences("job", Collections.singletonList(file));
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job", "root", List.of("file"))));
 
             // Then
             assertThat(store.getFileReferences()).containsExactly(withJobId("job", file));
@@ -476,7 +482,8 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
             store.addFiles(List.of(left, right));
 
             // When
-            store.atomicallyAssignJobIdToFileReferences("job", Collections.singletonList(left));
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job", "L", List.of("file"))));
 
             // Then
             assertThat(store.getFileReferences()).containsExactlyInAnyOrder(withJobId("job", left), right);
@@ -484,14 +491,35 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
         }
 
         @Test
+        public void shouldMarkMultipleFilesWithJobIds() throws Exception {
+            // Given
+            FileReference file1 = factory.rootFile("file1", 100L);
+            FileReference file2 = factory.rootFile("file2", 100L);
+            store.addFiles(List.of(file1, file2));
+
+            // When
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "root", List.of("file1")),
+                    assignJobOnPartitionToFiles("job2", "root", List.of("file2"))));
+
+            // Then
+            assertThat(store.getFileReferences()).containsExactly(
+                    withJobId("job1", file1),
+                    withJobId("job2", file2));
+            assertThat(store.getFileReferencesWithNoJobId()).isEmpty();
+        }
+
+        @Test
         public void shouldNotMarkFileWithJobIdWhenOneIsAlreadySet() throws Exception {
             // Given
             FileReference file = factory.rootFile("file", 100L);
             store.addFile(file);
-            store.atomicallyAssignJobIdToFileReferences("job1", Collections.singletonList(file));
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "root", List.of("file"))));
 
             // When / Then
-            assertThatThrownBy(() -> store.atomicallyAssignJobIdToFileReferences("job2", Collections.singletonList(file)))
+            assertThatThrownBy(() -> store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job2", "root", List.of("file")))))
                     .isInstanceOf(FileReferenceAssignedToJobException.class);
             assertThat(store.getFileReferences()).containsExactly(withJobId("job1", file));
             assertThat(store.getFileReferencesWithNoJobId()).isEmpty();
@@ -503,11 +531,13 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
             FileReference file1 = factory.rootFile("file1", 100L);
             FileReference file2 = factory.rootFile("file2", 100L);
             FileReference file3 = factory.rootFile("file3", 100L);
-            store.addFiles(Arrays.asList(file1, file2, file3));
-            store.atomicallyAssignJobIdToFileReferences("job1", Collections.singletonList(file2));
+            store.addFiles(List.of(file1, file2, file3));
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "root", List.of("file2"))));
 
             // When / Then
-            assertThatThrownBy(() -> store.atomicallyAssignJobIdToFileReferences("job2", Arrays.asList(file1, file2, file3)))
+            assertThatThrownBy(() -> store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job2", "root", List.of("file1", "file2", "file3")))))
                     .isInstanceOf(FileReferenceAssignedToJobException.class);
             assertThat(store.getFileReferences()).containsExactlyInAnyOrder(
                     file1, withJobId("job1", file2), file3);
@@ -518,11 +548,11 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
         public void shouldNotMarkFileWithJobIdWhenFileDoesNotExist() throws Exception {
             // Given
             FileReference file = factory.rootFile("existingFile", 100L);
-            FileReference requested = factory.rootFile("requestedFile", 100L);
             store.addFile(file);
 
             // When / Then
-            assertThatThrownBy(() -> store.atomicallyAssignJobIdToFileReferences("job", List.of(requested)))
+            assertThatThrownBy(() -> store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "root", List.of("requestedFile")))))
                     .isInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).containsExactly(file);
             assertThat(store.getFileReferencesWithNoJobId()).containsExactly(file);
@@ -530,11 +560,9 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
 
         @Test
         public void shouldNotMarkFileWithJobIdWhenFileDoesNotExistAndStoreIsEmpty() throws Exception {
-            // Given
-            FileReference file = factory.rootFile("file", 100L);
-
             // When / Then
-            assertThatThrownBy(() -> store.atomicallyAssignJobIdToFileReferences("job", List.of(file)))
+            assertThatThrownBy(() -> store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "root", List.of("file")))))
                     .isInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).isEmpty();
             assertThat(store.getFileReferencesWithNoJobId()).isEmpty();
@@ -549,7 +577,8 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
             store.addFile(existingReference);
 
             // When / Then
-            assertThatThrownBy(() -> store.atomicallyAssignJobIdToFileReferences("job", List.of(file)))
+            assertThatThrownBy(() -> store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "root", List.of("file")))))
                     .isInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).containsExactly(existingReference);
             assertThat(store.getFileReferencesWithNoJobId()).containsExactly(existingReference);
@@ -568,7 +597,8 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
             store.addFile(oldFile);
 
             // When
-            store.atomicallyAssignJobIdToFileReferences("job1", List.of(oldFile));
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "root", List.of("oldFile"))));
             store.atomicallyReplaceFileReferencesWithNewOne("job1", "root", List.of("oldFile"), newFile);
 
             // Then
@@ -590,7 +620,8 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
             store.addFile(oldFile);
 
             // When
-            store.atomicallyAssignJobIdToFileReferences("job1", List.of(oldFile));
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "root", List.of("oldFile"))));
             store.atomicallyReplaceFileReferencesWithNewOne("job1", "root", List.of("oldFile"), newFile);
 
             // Then
@@ -638,7 +669,8 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
             FileReference oldFile1 = factory.rootFile("oldFile1", 100L);
             FileReference newFile = factory.rootFile("newFile", 100L);
             store.addFile(oldFile1);
-            store.atomicallyAssignJobIdToFileReferences("job1", List.of(oldFile1));
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "root", List.of("oldFile1"))));
 
             // When / Then
             assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOne(
@@ -670,7 +702,8 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
             // Given
             FileReference file = factory.rootFile("file1", 100L);
             store.addFile(file);
-            store.atomicallyAssignJobIdToFileReferences("job1", List.of(file));
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "root", List.of("file1"))));
 
             // When / Then
             assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOne(
@@ -689,7 +722,8 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
             FileReference existingReference = splitFile(file, "L");
             FileReference newReference = factory.partitionFile("L", "newFile", 100L);
             store.addFiles(List.of(existingReference, newReference));
-            store.atomicallyAssignJobIdToFileReferences("job1", List.of(existingReference));
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "L", List.of("oldFile"))));
 
             // When / Then
             assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOne(
@@ -743,7 +777,8 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
             FileReference compactionOutputFile = factory.partitionFile("L", "compactedFile", 100L);
             store.fixTime(updateTime);
             store.addFiles(List.of(leftFile, rightFile));
-            store.atomicallyAssignJobIdToFileReferences("job1", List.of(leftFile));
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "L", List.of("splitFile"))));
             store.atomicallyReplaceFileReferencesWithNewOne("job1", "L", List.of("splitFile"), compactionOutputFile);
 
             // When / Then
@@ -764,9 +799,10 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
             FileReference rightOutputFile = factory.partitionFile("R", "rightOutput", 100L);
             store.fixTime(updateTime);
             store.addFiles(List.of(leftFile, rightFile));
-            store.atomicallyAssignJobIdToFileReferences("job1", List.of(leftFile));
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "L", List.of("readyForGc")),
+                    assignJobOnPartitionToFiles("job2", "R", List.of("readyForGc"))));
             store.atomicallyReplaceFileReferencesWithNewOne("job1", "L", List.of("readyForGc"), leftOutputFile);
-            store.atomicallyAssignJobIdToFileReferences("job2", List.of(rightFile));
             store.atomicallyReplaceFileReferencesWithNewOne("job2", "R", List.of("readyForGc"), rightOutputFile);
 
             // When / Then
@@ -793,8 +829,9 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
             // And ingest and compactions happened at the expected times
             store.fixTime(ingestTime);
             store.addFiles(List.of(leftFile, rightFile));
-            store.atomicallyAssignJobIdToFileReferences("job1", List.of(leftFile));
-            store.atomicallyAssignJobIdToFileReferences("job2", List.of(rightFile));
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "L", List.of("readyForGc")),
+                    assignJobOnPartitionToFiles("job2", "R", List.of("readyForGc"))));
             store.fixTime(firstCompactionTime);
             store.atomicallyReplaceFileReferencesWithNewOne("job1", "L", List.of("readyForGc"), leftOutputFile);
             store.fixTime(secondCompactionTime);
@@ -816,7 +853,8 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
             FileReference oldFile = factory.rootFile("oldFile", 100L);
             FileReference newFile = factory.rootFile("newFile", 100L);
             store.addFile(oldFile);
-            store.atomicallyAssignJobIdToFileReferences("job1", List.of(oldFile));
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "root", List.of("oldFile"))));
             store.atomicallyReplaceFileReferencesWithNewOne("job1", "root", List.of("oldFile"), newFile);
 
             // When
@@ -838,9 +876,10 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
 
             // And the file was ingested as two references, then compacted into each partition
             store.addFiles(List.of(leftFile, rightFile));
-            store.atomicallyAssignJobIdToFileReferences("job1", List.of(leftFile));
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "L", List.of("file")),
+                    assignJobOnPartitionToFiles("job2", "R", List.of("file"))));
             store.atomicallyReplaceFileReferencesWithNewOne("job1", "L", List.of("file"), leftOutputFile);
-            store.atomicallyAssignJobIdToFileReferences("job2", List.of(rightFile));
             store.atomicallyReplaceFileReferencesWithNewOne("job2", "R", List.of("file"), rightOutputFile);
 
             // When
@@ -848,7 +887,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
 
             // Then
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
-            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
                     .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, leftOutputFile, rightOutputFile));
         }
 
@@ -879,7 +918,8 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
             FileReference rightFile = splitFile(rootFile, "R");
             FileReference leftOutputFile = factory.partitionFile("L", "leftOutput", 100L);
             store.addFiles(List.of(leftFile, rightFile));
-            store.atomicallyAssignJobIdToFileReferences("job1", List.of(leftFile));
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "L", List.of("file"))));
             store.atomicallyReplaceFileReferencesWithNewOne("job1", "L", List.of("file"), leftOutputFile);
 
             // When / Then
@@ -894,7 +934,8 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
             FileReference oldFile2 = factory.rootFile("oldFile2", 100L);
             FileReference newFile = factory.rootFile("newFile", 100L);
             store.addFiles(List.of(oldFile1, oldFile2));
-            store.atomicallyAssignJobIdToFileReferences("job1", List.of(oldFile1, oldFile2));
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "root", List.of("oldFile1", "oldFile2"))));
             store.atomicallyReplaceFileReferencesWithNewOne(
                     "job1", "root", List.of("oldFile1", "oldFile2"), newFile);
 
@@ -937,7 +978,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
             store.addFile(file);
 
             // When
-            AllReferencesToAllFiles report = store.getAllFileReferencesWithMaxUnreferenced(5);
+            AllReferencesToAllFiles report = store.getAllFilesWithMaxUnreferenced(5);
 
             // Then
             assertThat(report).isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, file));
@@ -949,7 +990,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
             store.addFilesWithReferences(List.of(fileWithNoReferences("test")));
 
             // When
-            AllReferencesToAllFiles report = store.getAllFileReferencesWithMaxUnreferenced(5);
+            AllReferencesToAllFiles report = store.getAllFilesWithMaxUnreferenced(5);
 
             // Then
             assertThat(report).isEqualTo(readyForGCFilesReport(DEFAULT_UPDATE_TIME, "test"));
@@ -963,7 +1004,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
             store.addFiles(List.of(file1, file2));
 
             // When
-            AllReferencesToAllFiles report = store.getAllFileReferencesWithMaxUnreferenced(5);
+            AllReferencesToAllFiles report = store.getAllFilesWithMaxUnreferenced(5);
 
             // Then
             assertThat(report).isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, file1, file2));
@@ -979,7 +1020,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
             store.addFiles(List.of(leftFile, rightFile));
 
             // When
-            AllReferencesToAllFiles report = store.getAllFileReferencesWithMaxUnreferenced(5);
+            AllReferencesToAllFiles report = store.getAllFilesWithMaxUnreferenced(5);
 
             // Then
             assertThat(report).isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, leftFile, rightFile));
@@ -994,11 +1035,12 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
             FileReference rightFile = splitFile(rootFile, "R");
             FileReference outputFile = factory.partitionFile("L", 50L);
             store.addFiles(List.of(leftFile, rightFile));
-            store.atomicallyAssignJobIdToFileReferences("job1", List.of(leftFile));
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "L", List.of("file"))));
             store.atomicallyReplaceFileReferencesWithNewOne("job1", "L", List.of("file"), outputFile);
 
             // When
-            AllReferencesToAllFiles report = store.getAllFileReferencesWithMaxUnreferenced(5);
+            AllReferencesToAllFiles report = store.getAllFilesWithMaxUnreferenced(5);
 
             // Then
             assertThat(report).isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, outputFile, rightFile));
@@ -1013,7 +1055,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
                     fileWithNoReferences("test3")));
 
             // When
-            AllReferencesToAllFiles report = store.getAllFileReferencesWithMaxUnreferenced(2);
+            AllReferencesToAllFiles report = store.getAllFilesWithMaxUnreferenced(2);
 
             // Then
             assertThat(report).isEqualTo(partialReadyForGCFilesReport(DEFAULT_UPDATE_TIME, "test1", "test2"));
@@ -1027,7 +1069,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
                     fileWithNoReferences("test2")));
 
             // When
-            AllReferencesToAllFiles report = store.getAllFileReferencesWithMaxUnreferenced(2);
+            AllReferencesToAllFiles report = store.getAllFilesWithMaxUnreferenced(2);
 
             // Then
             assertThat(report).isEqualTo(readyForGCFilesReport(DEFAULT_UPDATE_TIME, "test1", "test2"));
@@ -1072,9 +1114,5 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
             assertThat(store.getPartitionToReferencedFilesMap())
                     .isEqualTo(Map.of("L", List.of("file")));
         }
-    }
-
-    private static FileReference withJobId(String jobId, FileReference file) {
-        return file.toBuilder().jobId(jobId).build();
     }
 }

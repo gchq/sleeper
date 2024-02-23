@@ -27,23 +27,23 @@ public class JobQueryPrompt {
     private JobQueryPrompt() {
     }
 
-    public static JobQuery from(TableStatus tableId, Clock clock, ConsoleInput in, Map<String, JobQuery> extraQueries) {
+    public static JobQuery from(TableStatus table, Clock clock, ConsoleInput in, Map<String, JobQuery> extraQueries) {
         String type = in.promptLine("All (a), Detailed (d), range (r), or unfinished (u) query? ");
         if ("".equals(type)) {
             return null;
         } else if (type.equalsIgnoreCase("a")) {
-            return new AllJobsQuery(tableId);
+            return new AllJobsQuery(table);
         } else if (type.equalsIgnoreCase("u")) {
-            return new UnfinishedJobsQuery(tableId);
+            return new UnfinishedJobsQuery(table);
         } else if (type.equalsIgnoreCase("d")) {
             String jobIds = in.promptLine("Enter jobId to get detailed information about: ");
             return DetailedJobsQuery.fromParameters(jobIds);
         } else if (type.equalsIgnoreCase("r")) {
-            return RangeJobsQuery.prompt(tableId, in, clock);
+            return RangeJobsQuery.prompt(table, in, clock);
         } else if (extraQueries.containsKey(type)) {
             return extraQueries.get(type);
         } else {
-            return from(tableId, clock, in, extraQueries);
+            return from(table, clock, in, extraQueries);
         }
     }
 }

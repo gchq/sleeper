@@ -35,6 +35,8 @@ import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.FileReferenceTestData.splitFile;
+import static sleeper.core.statestore.FileReferenceTestData.withLastUpdate;
 
 public class S3FileReferenceStoreS3SpecificIT extends S3StateStoreOneTableTestBase {
 
