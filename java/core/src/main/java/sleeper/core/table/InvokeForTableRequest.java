@@ -14,16 +14,15 @@
  * limitations under the License.
  */
 
-package sleeper.metrics;
+package sleeper.core.table;
 
 import java.util.List;
 
-public class CalculateTableMetricsRequest {
-
+public class InvokeForTableRequest {
 
     private final List<String> tableIds;
 
-    public CalculateTableMetricsRequest(List<String> tableIds) {
+    public InvokeForTableRequest(List<String> tableIds) {
         this.tableIds = tableIds;
     }
 

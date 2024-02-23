@@ -29,6 +29,8 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
+import sleeper.core.table.InvokeForTableRequest;
+import sleeper.core.table.InvokeForTableRequestSerDe;
 import sleeper.core.table.TableIndex;
 import sleeper.core.util.LoggedDuration;
 
@@ -48,7 +50,7 @@ public class TableMetricsTriggerLambda implements RequestHandler<ScheduledEvent,
     private final AmazonDynamoDB dynamoClient;
     private final AmazonSQS sqsClient;
     private final String configBucketName;
-    private final CalculateTableMetricsSerDe serDe = new CalculateTableMetricsSerDe();
+    private final InvokeForTableRequestSerDe serDe = new InvokeForTableRequestSerDe();
 
     public TableMetricsTriggerLambda() {
         this(
@@ -79,13 +81,13 @@ public class TableMetricsTriggerLambda implements RequestHandler<ScheduledEvent,
         List<String> tableIdsBatch = new ArrayList<>();
         tableIndex.streamAllTables().forEach(table -> {
             if (tableIdsBatch.size() >= batchSize) {
-                sqsClient.sendMessage(queueUrl, serDe.toJson(new CalculateTableMetricsRequest(tableIdsBatch)));
+                sqsClient.sendMessage(queueUrl, serDe.toJson(new InvokeForTableRequest(tableIdsBatch)));
                 tableIdsBatch.clear();
             }
             tableIdsBatch.add(table.getTableUniqueId());
         });
         if (!tableIdsBatch.isEmpty()) {
-            sqsClient.sendMessage(queueUrl, serDe.toJson(new CalculateTableMetricsRequest(tableIdsBatch)));
+            sqsClient.sendMessage(queueUrl, serDe.toJson(new InvokeForTableRequest(tableIdsBatch)));
         }
 
         Instant finishTime = Instant.now();

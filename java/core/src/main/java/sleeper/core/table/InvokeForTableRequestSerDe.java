@@ -14,20 +14,20 @@
  * limitations under the License.
  */
 
-package sleeper.metrics;
+package sleeper.core.table;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-public class CalculateTableMetricsSerDe {
+public class InvokeForTableRequestSerDe {
 
     private final Gson gson = new GsonBuilder().create();
 
-    public String toJson(CalculateTableMetricsRequest request) {
+    public String toJson(InvokeForTableRequest request) {
         return gson.toJson(request);
     }
 
-    public CalculateTableMetricsRequest fromJson(String json) {
-        return gson.fromJson(json, CalculateTableMetricsRequest.class);
+    public InvokeForTableRequest fromJson(String json) {
+        return gson.fromJson(json, InvokeForTableRequest.class);
     }
 }
