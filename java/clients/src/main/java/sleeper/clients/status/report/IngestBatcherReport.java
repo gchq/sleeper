@@ -60,7 +60,7 @@ public class IngestBatcherReport {
     private final TableStatusProvider tableProvider;
 
     public IngestBatcherReport(IngestBatcherStore batcherStore, IngestBatcherReporter reporter,
-            BatcherQuery.Type queryType, TableStatusProvider tableProvider) {
+                               BatcherQuery.Type queryType, TableStatusProvider tableProvider) {
         this.batcherStore = batcherStore;
         this.reporter = reporter;
         this.query = BatcherQuery.from(queryType, new ConsoleInput(System.console()));
@@ -104,16 +104,16 @@ public class IngestBatcherReport {
                 new TablePropertiesProvider(instanceProperties, amazonS3, dynamoDBClient));
         IngestBatcherReporter reporter;
         switch (reporterType) {
-        case JSON:
-            reporter = new JsonIngestBatcherReporter();
-            break;
-        case STANDARD:
-        default:
-            reporter = new StandardIngestBatcherReporter();
+            case JSON:
+                reporter = new JsonIngestBatcherReporter();
+                break;
+            case STANDARD:
+            default:
+                reporter = new StandardIngestBatcherReporter();
         }
         new IngestBatcherReport(statusStore, reporter, queryType,
                 new TableStatusProvider(new DynamoDBTableIndex(instanceProperties, dynamoDBClient)))
-                        .run();
+                .run();
 
         amazonS3.shutdown();
         dynamoDBClient.shutdown();
@@ -127,7 +127,8 @@ public class IngestBatcherReport {
     }
 
     private static void printUsage() {
-        System.out.println("Usage: <instance-id> <report-type-standard-or-json> <optional-query-type>\n" +
+        System.out.println("" +
+                "Usage: <instance-id> <report-type-standard-or-json> <optional-query-type>\n" +
                 "Query types are:\n" +
                 "-a (All files)\n" +
                 "-p (Pending files)");
