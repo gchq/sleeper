@@ -24,27 +24,27 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.table.index.DynamoDBTableIndex;
-import sleeper.core.table.TableIndex;
-import sleeper.core.table.TableNotFoundException;
-import sleeper.core.table.TableStatus;
+import sleeper.configuration.properties.table.S3TableProperties;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TablePropertiesStore;
 
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ONLINE;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 public class PutTableOnline {
     private static final Logger LOGGER = LoggerFactory.getLogger(RenameTable.class);
 
-    private final TableIndex tableIndex;
+    private final TablePropertiesStore tablePropertiesStore;
 
-    public PutTableOnline(AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties) {
-        this.tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDB);
+    public PutTableOnline(AmazonS3 s3, AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties) {
+        this.tablePropertiesStore = S3TableProperties.getStore(instanceProperties, s3, dynamoDB);
     }
 
     public void putOnline(String tableName) {
-        TableStatus tableStatus = tableIndex.getTableByName(tableName)
-                .orElseThrow(() -> TableNotFoundException.withTableName(tableName));
-        tableIndex.update(tableStatus.putOnline());
-        LOGGER.info("Successfully put table online {}", tableStatus);
+        TableProperties tableProperties = tablePropertiesStore.loadByName(tableName);
+        tableProperties.set(TABLE_ONLINE, "true");
+        tablePropertiesStore.save(tableProperties);
+        LOGGER.info("Successfully put table online {}", tableProperties.getStatus());
     }
 
     public static void main(String[] args) {
@@ -56,7 +56,7 @@ public class PutTableOnline {
         try {
             InstanceProperties instanceProperties = new InstanceProperties();
             instanceProperties.loadFromS3GivenInstanceId(s3Client, args[0]);
-            new PutTableOnline(dynamoDBClient, instanceProperties).putOnline(args[1]);
+            new PutTableOnline(s3Client, dynamoDBClient, instanceProperties).putOnline(args[1]);
         } finally {
             dynamoDBClient.shutdown();
             s3Client.shutdown();
