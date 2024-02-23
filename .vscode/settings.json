@@ -17,7 +17,7 @@
     "comment.java.configuration.runtimes": [
         {
             "name": "JavaSE-11",
-            "path": "/usr/lib/jvm/java-11-amazon-corretto", 
+            "path": "/usr/lib/jvm/java-11-amazon-corretto",
             "default": true
         },
         {
