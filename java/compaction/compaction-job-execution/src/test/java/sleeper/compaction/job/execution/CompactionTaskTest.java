@@ -22,9 +22,9 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.execution.CompactionJobMessageHandler.JobAndMessage;
-import sleeper.compaction.job.execution.CompactionJobMessageHandler.MessageConsumer;
-import sleeper.compaction.job.execution.CompactionJobMessageHandler.Result;
+import sleeper.compaction.job.execution.CompactionTask.JobAndMessage;
+import sleeper.compaction.job.execution.CompactionTask.MessageConsumer;
+import sleeper.compaction.job.execution.CompactionTask.Result;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.time.Instant;
@@ -44,7 +44,7 @@ import static sleeper.configuration.properties.InstancePropertiesTestHelper.crea
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_TIME_IN_SECONDS;
 
-public class CompactionJobMessageHandlerTest {
+public class CompactionTaskTest {
 
     private final InstanceProperties instanceProperties = createInstance();
     private static final Queue<CompactionJob> JOBS_ON_QUEUE = new LinkedList<>();
@@ -67,7 +67,7 @@ public class CompactionJobMessageHandlerTest {
             CompactionJob job = createJobOnQueue("job1");
 
             // When
-            Result result = runJobMessageHandler(allJobsSucceed());
+            Result result = runTask(allJobsSucceed());
 
             // Then
             assertThat(result.getTotalMessagesProcessed()).isEqualTo(1L);
@@ -84,7 +84,7 @@ public class CompactionJobMessageHandlerTest {
             CompactionJob job = createJobOnQueue("job1");
 
             // When
-            Result result = runJobMessageHandler(withFailingJobs(job));
+            Result result = runTask(withFailingJobs(job));
 
             // Then
             assertThat(result.getTotalMessagesProcessed()).isEqualTo(0L);
@@ -102,7 +102,7 @@ public class CompactionJobMessageHandlerTest {
             CompactionJob job2 = createJobOnQueue("job2");
 
             // When
-            Result result = runJobMessageHandler(withFailingJobs(job2));
+            Result result = runTask(withFailingJobs(job2));
 
             // Then=
             assertThat(result.getTotalMessagesProcessed()).isEqualTo(1L);
@@ -126,7 +126,7 @@ public class CompactionJobMessageHandlerTest {
             CompactionJob job3 = createJobOnQueue("job3");
 
             // When
-            Result result = runJobMessageHandler(withFailingJobs(job1, job2));
+            Result result = runTask(withFailingJobs(job1, job2));
 
             // Then
             assertThat(result.getTotalMessagesProcessed()).isEqualTo(0L);
@@ -147,7 +147,7 @@ public class CompactionJobMessageHandlerTest {
             CompactionJob job4 = createJobOnQueue("job4");
 
             // When
-            Result result = runJobMessageHandler(withFailingJobs(job1, job3));
+            Result result = runTask(withFailingJobs(job1, job3));
 
             // Then
             assertThat(result.getTotalMessagesProcessed()).isEqualTo(2L);
@@ -170,7 +170,7 @@ public class CompactionJobMessageHandlerTest {
             CompactionJob job2 = createJobOnQueue("job2");
 
             // When
-            Result result = runJobMessageHandlerWithTimes(allJobsSucceed(), timeSupplier);
+            Result result = runTaskWithTimes(allJobsSucceed(), timeSupplier);
 
             // Then
             assertThat(result.getTotalMessagesProcessed()).isEqualTo(1L);
@@ -188,12 +188,12 @@ public class CompactionJobMessageHandlerTest {
         return instanceProperties;
     }
 
-    private Result runJobMessageHandler(MessageConsumer messageConsumer) throws Exception {
-        return runJobMessageHandlerWithTimes(messageConsumer, Instant::now);
+    private Result runTask(MessageConsumer messageConsumer) throws Exception {
+        return runTaskWithTimes(messageConsumer, Instant::now);
     }
 
-    private Result runJobMessageHandlerWithTimes(MessageConsumer messageConsumer, Supplier<Instant> timeSupplier) throws Exception {
-        return new CompactionJobMessageHandler(instanceProperties, timeSupplier, () -> {
+    private Result runTaskWithTimes(MessageConsumer messageConsumer, Supplier<Instant> timeSupplier) throws Exception {
+        return new CompactionTask(instanceProperties, timeSupplier, () -> {
             CompactionJob job = JOBS_ON_QUEUE.poll();
             if (job != null) {
                 return Optional.of(new JobAndMessage(job, null));

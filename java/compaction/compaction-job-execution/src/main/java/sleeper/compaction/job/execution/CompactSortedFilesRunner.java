@@ -33,9 +33,9 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobSerDe;
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.job.execution.CompactionJobMessageHandler.FailedJobHandler;
-import sleeper.compaction.job.execution.CompactionJobMessageHandler.JobAndMessage;
-import sleeper.compaction.job.execution.CompactionJobMessageHandler.MessageReceiver;
+import sleeper.compaction.job.execution.CompactionTask.FailedJobHandler;
+import sleeper.compaction.job.execution.CompactionTask.JobAndMessage;
+import sleeper.compaction.job.execution.CompactionTask.MessageReceiver;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
 import sleeper.compaction.task.CompactionTaskFinishedStatus;
@@ -141,11 +141,11 @@ public class CompactSortedFilesRunner {
 
         taskStatusStore.taskStarted(taskStatusBuilder.build());
         CompactionTaskFinishedStatus.Builder taskFinishedBuilder = CompactionTaskFinishedStatus.builder();
-        CompactionJobMessageHandler messageHandler = new CompactionJobMessageHandler(
+        CompactionTask messageHandler = new CompactionTask(
                 instanceProperties, Instant::now, receiveFromSqs(sqsClient, instanceProperties),
                 (jobAndMessage) -> taskFinishedBuilder.addJobSummary(compact(jobAndMessage.getJob(), jobAndMessage.getMessage())),
                 setJobFailedVisibilityOnMessage(sqsClient, instanceProperties));
-        CompactionJobMessageHandler.Result result = messageHandler.runAt(startTime);
+        CompactionTask.Result result = messageHandler.runAt(startTime);
         if (result.hasMaxConsecutiveFailuresBeenReached()) {
             LOGGER.info("Returning from run() method in CompactSortedFilesRunner as maximum consecutive failure count of {} was exceeded",
                     instanceProperties.getInt(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES));

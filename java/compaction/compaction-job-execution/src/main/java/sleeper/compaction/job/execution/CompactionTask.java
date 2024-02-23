@@ -32,8 +32,8 @@ import java.util.function.Supplier;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_TIME_IN_SECONDS;
 
-public class CompactionJobMessageHandler {
-    private static final Logger LOGGER = LoggerFactory.getLogger(CompactionJobMessageHandler.class);
+public class CompactionTask {
+    private static final Logger LOGGER = LoggerFactory.getLogger(CompactionTask.class);
 
     private final Supplier<Instant> timeSupplier;
     private final int maxConsecutiveFailures;
@@ -42,7 +42,7 @@ public class CompactionJobMessageHandler {
     private final MessageConsumer messageConsumer;
     private final FailedJobHandler failedJobHandler;
 
-    public CompactionJobMessageHandler(InstanceProperties instanceProperties, Supplier<Instant> timeSupplier,
+    public CompactionTask(InstanceProperties instanceProperties, Supplier<Instant> timeSupplier,
             MessageReceiver messageReceiver, MessageConsumer messageConsumer, FailedJobHandler failedJobHandler) {
         maxTimeInSeconds = instanceProperties.getInt(COMPACTION_TASK_MAX_TIME_IN_SECONDS);
         maxConsecutiveFailures = instanceProperties.getInt(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES);
