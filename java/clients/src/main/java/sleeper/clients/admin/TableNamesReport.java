@@ -22,7 +22,6 @@ import sleeper.core.table.TableStatus;
 
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static java.util.function.Predicate.not;
 import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
@@ -40,18 +39,19 @@ public class TableNamesReport {
     }
 
     public void print() {
-        print(tableIndex.streamAllTables(), tableIndex.streamOnlineTables());
+        print(tableIndex.streamAllTables().collect(Collectors.toList()));
     }
 
-    private void print(Stream<TableStatus> allTableIds, Stream<TableStatus> onlineTableIds) {
+    private void print(List<TableStatus> allTableIds) {
         out.println("\n\nTable Names\n----------------------------------");
-        List<String> onlineTableNames = onlineTableIds
+        allTableIds.stream()
+                .filter(TableStatus::isOnline)
                 .map(TableStatus::getTableName)
-                .collect(Collectors.toList());
-        onlineTableNames.forEach(out::println);
+                .forEach(out::println);
 
-        allTableIds.map(TableStatus::getTableName)
-                .filter(not(onlineTableNames::contains))
+        allTableIds.stream()
+                .filter(not(TableStatus::isOnline))
+                .map(TableStatus::getTableName)
                 .forEach(tableName -> out.println(tableName + " (offline)"));
         confirmReturnToMainScreen(out, in);
     }
