@@ -21,7 +21,6 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.core.table.TableNotFoundException;
-import sleeper.core.table.TableStatus;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
