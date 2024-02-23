@@ -72,8 +72,8 @@ public class AwsTableMetricsDriver implements TableMetricsDriver {
     private final CloudWatchClient cloudWatch;
 
     public AwsTableMetricsDriver(SystemTestInstanceContext instance,
-            ReportingContext reporting,
-            SystemTestClients clients) {
+                                 ReportingContext reporting,
+                                 SystemTestClients clients) {
         this.instance = instance;
         this.reporting = reporting;
         this.lambda = clients.getLambda();
