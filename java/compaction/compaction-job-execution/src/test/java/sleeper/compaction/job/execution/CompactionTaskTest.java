@@ -16,7 +16,6 @@
 
 package sleeper.compaction.job.execution;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -47,16 +46,9 @@ import static sleeper.configuration.properties.instance.CompactionProperty.COMPA
 public class CompactionTaskTest {
 
     private final InstanceProperties instanceProperties = createInstance();
-    private static final Queue<CompactionJob> JOBS_ON_QUEUE = new LinkedList<>();
-    private static final List<CompactionJob> SUCCESSFUL_JOBS = new ArrayList<>();
-    private static final List<CompactionJob> FAILED_JOBS = new ArrayList<>();
-
-    @BeforeEach
-    void setUp() {
-        JOBS_ON_QUEUE.clear();
-        SUCCESSFUL_JOBS.clear();
-        FAILED_JOBS.clear();
-    }
+    private final Queue<CompactionJob> jobsOnQueue = new LinkedList<>();
+    private final List<CompactionJob> successfulJobs = new ArrayList<>();
+    private final List<CompactionJob> failedJobs = new ArrayList<>();
 
     @Nested
     @DisplayName("Process jobs")
@@ -73,9 +65,9 @@ public class CompactionTaskTest {
             assertThat(result.getTotalMessagesProcessed()).isEqualTo(1L);
             assertThat(result.hasMaxTimeExceeded()).isFalse();
             assertThat(result.hasMaxConsecutiveFailuresBeenReached()).isTrue();
-            assertThat(SUCCESSFUL_JOBS).containsExactly(job);
-            assertThat(FAILED_JOBS).isEmpty();
-            assertThat(JOBS_ON_QUEUE).isEmpty();
+            assertThat(successfulJobs).containsExactly(job);
+            assertThat(failedJobs).isEmpty();
+            assertThat(jobsOnQueue).isEmpty();
         }
 
         @Test
@@ -90,9 +82,9 @@ public class CompactionTaskTest {
             assertThat(result.getTotalMessagesProcessed()).isEqualTo(0L);
             assertThat(result.hasMaxTimeExceeded()).isFalse();
             assertThat(result.hasMaxConsecutiveFailuresBeenReached()).isTrue();
-            assertThat(SUCCESSFUL_JOBS).isEmpty();
-            assertThat(FAILED_JOBS).containsExactly(job);
-            assertThat(JOBS_ON_QUEUE).isEmpty();
+            assertThat(successfulJobs).isEmpty();
+            assertThat(failedJobs).containsExactly(job);
+            assertThat(jobsOnQueue).isEmpty();
         }
 
         @Test
@@ -108,9 +100,9 @@ public class CompactionTaskTest {
             assertThat(result.getTotalMessagesProcessed()).isEqualTo(1L);
             assertThat(result.hasMaxTimeExceeded()).isFalse();
             assertThat(result.hasMaxConsecutiveFailuresBeenReached()).isTrue();
-            assertThat(SUCCESSFUL_JOBS).containsExactly(job1);
-            assertThat(FAILED_JOBS).containsExactly(job2);
-            assertThat(JOBS_ON_QUEUE).isEmpty();
+            assertThat(successfulJobs).containsExactly(job1);
+            assertThat(failedJobs).containsExactly(job2);
+            assertThat(jobsOnQueue).isEmpty();
         }
     }
 
@@ -132,9 +124,9 @@ public class CompactionTaskTest {
             assertThat(result.getTotalMessagesProcessed()).isEqualTo(0L);
             assertThat(result.hasMaxTimeExceeded()).isFalse();
             assertThat(result.hasMaxConsecutiveFailuresBeenReached()).isTrue();
-            assertThat(SUCCESSFUL_JOBS).isEmpty();
-            assertThat(FAILED_JOBS).containsExactly(job1, job2);
-            assertThat(JOBS_ON_QUEUE).containsExactly(job3);
+            assertThat(successfulJobs).isEmpty();
+            assertThat(failedJobs).containsExactly(job1, job2);
+            assertThat(jobsOnQueue).containsExactly(job3);
         }
 
         @Test
@@ -153,9 +145,9 @@ public class CompactionTaskTest {
             assertThat(result.getTotalMessagesProcessed()).isEqualTo(2L);
             assertThat(result.hasMaxTimeExceeded()).isFalse();
             assertThat(result.hasMaxConsecutiveFailuresBeenReached()).isTrue();
-            assertThat(SUCCESSFUL_JOBS).containsExactly(job2, job4);
-            assertThat(FAILED_JOBS).containsExactly(job1, job3);
-            assertThat(JOBS_ON_QUEUE).isEmpty();
+            assertThat(successfulJobs).containsExactly(job2, job4);
+            assertThat(failedJobs).containsExactly(job1, job3);
+            assertThat(jobsOnQueue).isEmpty();
         }
 
         @Test
@@ -176,9 +168,9 @@ public class CompactionTaskTest {
             assertThat(result.getTotalMessagesProcessed()).isEqualTo(1L);
             assertThat(result.hasMaxTimeExceeded()).isTrue();
             assertThat(result.hasMaxConsecutiveFailuresBeenReached()).isFalse();
-            assertThat(SUCCESSFUL_JOBS).containsExactly(job1);
-            assertThat(FAILED_JOBS).isEmpty();
-            assertThat(JOBS_ON_QUEUE).containsExactly(job2);
+            assertThat(successfulJobs).containsExactly(job1);
+            assertThat(failedJobs).isEmpty();
+            assertThat(jobsOnQueue).containsExactly(job2);
         }
     }
 
@@ -194,37 +186,37 @@ public class CompactionTaskTest {
 
     private Result runTaskWithTimes(MessageConsumer messageConsumer, Supplier<Instant> timeSupplier) throws Exception {
         return new CompactionTask(instanceProperties, timeSupplier, () -> {
-            CompactionJob job = JOBS_ON_QUEUE.poll();
+            CompactionJob job = jobsOnQueue.poll();
             if (job != null) {
                 return Optional.of(new JobAndMessage(job, null));
             } else {
                 return Optional.empty();
             }
-        }, messageConsumer, (jobAndMessage) -> FAILED_JOBS.add(jobAndMessage.getJob())).runAt(timeSupplier.get());
+        }, messageConsumer, (jobAndMessage) -> failedJobs.add(jobAndMessage.getJob())).runAt(timeSupplier.get());
     }
 
-    private static CompactionJob createJobOnQueue(String jobId) {
+    private CompactionJob createJobOnQueue(String jobId) {
         CompactionJob job = CompactionJob.builder()
                 .tableId("test-table-id")
                 .jobId(jobId)
                 .partitionId("root")
                 .inputFiles(List.of(UUID.randomUUID().toString()))
                 .outputFile(UUID.randomUUID().toString()).build();
-        JOBS_ON_QUEUE.add(job);
+        jobsOnQueue.add(job);
         return job;
     }
 
-    private static MessageConsumer allJobsSucceed() {
-        return (jobAndMessage) -> SUCCESSFUL_JOBS.add(jobAndMessage.getJob());
+    private MessageConsumer allJobsSucceed() {
+        return (jobAndMessage) -> successfulJobs.add(jobAndMessage.getJob());
     }
 
-    private static MessageConsumer withFailingJobs(CompactionJob... jobs) {
+    private MessageConsumer withFailingJobs(CompactionJob... jobs) {
         Set<String> failingJobIds = Stream.of(jobs).map(CompactionJob::getId).collect(Collectors.toSet());
         return (jobAndMessage) -> {
             if (failingJobIds.contains(jobAndMessage.getJob().getId())) {
                 throw new Exception("Failed to process job");
             } else {
-                SUCCESSFUL_JOBS.add(jobAndMessage.getJob());
+                successfulJobs.add(jobAndMessage.getJob());
             }
         };
     }
