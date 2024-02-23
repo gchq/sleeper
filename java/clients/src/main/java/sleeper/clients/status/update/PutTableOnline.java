@@ -32,7 +32,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_ONLINE;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 public class PutTableOnline {
-    private static final Logger LOGGER = LoggerFactory.getLogger(RenameTable.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(PutTableOnline.class);
 
     private final TablePropertiesStore tablePropertiesStore;
 
