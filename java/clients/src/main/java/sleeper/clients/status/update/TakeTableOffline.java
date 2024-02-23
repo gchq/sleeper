@@ -24,31 +24,27 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.table.index.DynamoDBTableIndex;
-import sleeper.core.table.TableIndex;
-import sleeper.core.table.TableNotFoundException;
-import sleeper.core.table.TableStatus;
+import sleeper.configuration.properties.table.S3TableProperties;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TablePropertiesStore;
 
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ONLINE;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 public class TakeTableOffline {
-    private static final Logger LOGGER = LoggerFactory.getLogger(RenameTable.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(TakeTableOffline.class);
 
-    private final TableIndex tableIndex;
+    private final TablePropertiesStore tablePropertiesStore;
 
-    public TakeTableOffline(AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties) {
-        this(new DynamoDBTableIndex(instanceProperties, dynamoDB));
-    }
-
-    public TakeTableOffline(TableIndex tableIndex) {
-        this.tableIndex = tableIndex;
+    public TakeTableOffline(AmazonS3 s3, AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties) {
+        this.tablePropertiesStore = S3TableProperties.getStore(instanceProperties, s3, dynamoDB);
     }
 
     public void takeOffline(String tableName) {
-        TableStatus tableStatus = tableIndex.getTableByName(tableName)
-                .orElseThrow(() -> TableNotFoundException.withTableName(tableName));
-        tableIndex.update(tableStatus.takeOffline());
-        LOGGER.info("Successfully took table offline {}", tableStatus);
+        TableProperties tableProperties = tablePropertiesStore.loadByName(tableName);
+        tableProperties.set(TABLE_ONLINE, "false");
+        tablePropertiesStore.save(tableProperties);
+        LOGGER.info("Successfully took table offline {}", tableProperties.getStatus());
     }
 
     public static void main(String[] args) {
@@ -60,7 +56,7 @@ public class TakeTableOffline {
         try {
             InstanceProperties instanceProperties = new InstanceProperties();
             instanceProperties.loadFromS3GivenInstanceId(s3Client, args[0]);
-            new TakeTableOffline(dynamoDBClient, instanceProperties).takeOffline(args[1]);
+            new TakeTableOffline(s3Client, dynamoDBClient, instanceProperties).takeOffline(args[1]);
         } finally {
             dynamoDBClient.shutdown();
             s3Client.shutdown();
