@@ -72,8 +72,6 @@ import static sleeper.configuration.properties.instance.CompactionProperty.COMPA
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_TIME_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_WAIT_TIME_IN_SECONDS;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
@@ -141,19 +139,11 @@ public class CompactSortedFilesRunner {
 
         taskStatusStore.taskStarted(taskStatusBuilder.build());
         CompactionTaskFinishedStatus.Builder taskFinishedBuilder = CompactionTaskFinishedStatus.builder();
-        CompactionTask messageHandler = new CompactionTask(
+        CompactionTask task = new CompactionTask(
                 instanceProperties, Instant::now, receiveFromSqs(sqsClient, instanceProperties),
                 (jobAndMessage) -> taskFinishedBuilder.addJobSummary(compact(jobAndMessage.getJob(), jobAndMessage.getMessage())),
                 setJobFailedVisibilityOnMessage(sqsClient, instanceProperties));
-        CompactionTask.Result result = messageHandler.runAt(startTime);
-        if (result.hasMaxConsecutiveFailuresBeenReached()) {
-            LOGGER.info("Returning from run() method in CompactSortedFilesRunner as maximum consecutive failure count of {} was exceeded",
-                    instanceProperties.getInt(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES));
-        } else {
-            LOGGER.info("Returning from run() method in CompactSortedFilesRunner as maximum time of {} seconds was exceeded",
-                    instanceProperties.getInt(COMPACTION_TASK_MAX_TIME_IN_SECONDS));
-        }
-        LOGGER.info("Total number of messages processed = {}", result.getTotalMessagesProcessed());
+        task.runAt(startTime);
 
         Instant finishTime = Instant.now();
         LOGGER.info("CompactSortedFilesRunner total run time = {}", LoggedDuration.withFullOutput(startTime, finishTime));

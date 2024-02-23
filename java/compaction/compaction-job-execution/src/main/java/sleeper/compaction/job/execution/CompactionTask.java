@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.util.LoggedDuration;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -52,7 +53,7 @@ public class CompactionTask {
         this.failedJobHandler = failedJobHandler;
     }
 
-    public Result runAt(Instant startTime) throws InterruptedException, IOException {
+    public void runAt(Instant startTime) throws InterruptedException, IOException {
         Instant maxTime = startTime.plus(Duration.ofSeconds(maxTimeInSeconds));
         int numConsecutiveFailures = 0;
         Instant currentTime = startTime;
@@ -76,7 +77,15 @@ public class CompactionTask {
             }
             currentTime = timeSupplier.get();
         }
-        return new Result(totalNumberOfMessagesProcessed, currentTime.isAfter(maxTime), numConsecutiveFailures >= maxConsecutiveFailures);
+        if (numConsecutiveFailures >= maxConsecutiveFailures) {
+            LOGGER.info("Terminating compaction task as {} consecutive failures exceeds maximum of {}",
+                    numConsecutiveFailures, maxConsecutiveFailures);
+        } else {
+            LOGGER.info("Terminating compaction task as it ran for {}, exceeeding maximum of {}",
+                    LoggedDuration.withFullOutput(startTime, currentTime),
+                    LoggedDuration.withFullOutput(Duration.ofSeconds(maxTimeInSeconds)));
+        }
+        LOGGER.info("Total number of messages processed = {}", totalNumberOfMessagesProcessed);
     }
 
     @FunctionalInterface
@@ -109,30 +118,6 @@ public class CompactionTask {
 
         public Message getMessage() {
             return message;
-        }
-    }
-
-    static class Result {
-        private long totalMessagesProcessed;
-        private boolean maxTimeExceeded;
-        private boolean maxConsecutiveFailuresReached;
-
-        Result(long totalMessagesProcessed, boolean maxTimeExceeded, boolean maxConsecutiveFailureReached) {
-            this.totalMessagesProcessed = totalMessagesProcessed;
-            this.maxTimeExceeded = maxTimeExceeded;
-            this.maxConsecutiveFailuresReached = maxConsecutiveFailureReached;
-        }
-
-        public long getTotalMessagesProcessed() {
-            return totalMessagesProcessed;
-        }
-
-        public boolean hasMaxTimeExceeded() {
-            return maxTimeExceeded;
-        }
-
-        public boolean hasMaxConsecutiveFailuresBeenReached() {
-            return maxConsecutiveFailuresReached;
         }
     }
 }

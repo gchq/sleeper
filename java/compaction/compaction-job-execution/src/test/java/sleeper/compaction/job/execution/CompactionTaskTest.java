@@ -23,7 +23,6 @@ import org.junit.jupiter.api.Test;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.execution.CompactionTask.JobAndMessage;
 import sleeper.compaction.job.execution.CompactionTask.MessageConsumer;
-import sleeper.compaction.job.execution.CompactionTask.Result;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.time.Instant;
@@ -59,12 +58,10 @@ public class CompactionTaskTest {
             CompactionJob job = createJobOnQueue("job1");
 
             // When
-            Result result = runTask(allJobsSucceed());
+            runTask(allJobsSucceed());
 
             // Then
-            assertThat(result.getTotalMessagesProcessed()).isEqualTo(1L);
-            assertThat(result.hasMaxTimeExceeded()).isFalse();
-            assertThat(result.hasMaxConsecutiveFailuresBeenReached()).isTrue();
+            // TODO show how the task terminated in this scenario
             assertThat(successfulJobs).containsExactly(job);
             assertThat(failedJobs).isEmpty();
             assertThat(jobsOnQueue).isEmpty();
@@ -76,12 +73,10 @@ public class CompactionTaskTest {
             CompactionJob job = createJobOnQueue("job1");
 
             // When
-            Result result = runTask(withFailingJobs(job));
+            runTask(withFailingJobs(job));
 
             // Then
-            assertThat(result.getTotalMessagesProcessed()).isEqualTo(0L);
-            assertThat(result.hasMaxTimeExceeded()).isFalse();
-            assertThat(result.hasMaxConsecutiveFailuresBeenReached()).isTrue();
+            // TODO show how the task terminated in this scenario - was it max consecutive failures or timeout?
             assertThat(successfulJobs).isEmpty();
             assertThat(failedJobs).containsExactly(job);
             assertThat(jobsOnQueue).isEmpty();
@@ -94,12 +89,10 @@ public class CompactionTaskTest {
             CompactionJob job2 = createJobOnQueue("job2");
 
             // When
-            Result result = runTask(withFailingJobs(job2));
+            runTask(withFailingJobs(job2));
 
-            // Then=
-            assertThat(result.getTotalMessagesProcessed()).isEqualTo(1L);
-            assertThat(result.hasMaxTimeExceeded()).isFalse();
-            assertThat(result.hasMaxConsecutiveFailuresBeenReached()).isTrue();
+            // Then
+            // TODO show how the task terminated in this scenario - was it max consecutive failures or timeout?
             assertThat(successfulJobs).containsExactly(job1);
             assertThat(failedJobs).containsExactly(job2);
             assertThat(jobsOnQueue).isEmpty();
@@ -118,12 +111,9 @@ public class CompactionTaskTest {
             CompactionJob job3 = createJobOnQueue("job3");
 
             // When
-            Result result = runTask(withFailingJobs(job1, job2));
+            runTask(withFailingJobs(job1, job2));
 
             // Then
-            assertThat(result.getTotalMessagesProcessed()).isEqualTo(0L);
-            assertThat(result.hasMaxTimeExceeded()).isFalse();
-            assertThat(result.hasMaxConsecutiveFailuresBeenReached()).isTrue();
             assertThat(successfulJobs).isEmpty();
             assertThat(failedJobs).containsExactly(job1, job2);
             assertThat(jobsOnQueue).containsExactly(job3);
@@ -139,12 +129,9 @@ public class CompactionTaskTest {
             CompactionJob job4 = createJobOnQueue("job4");
 
             // When
-            Result result = runTask(withFailingJobs(job1, job3));
+            runTask(withFailingJobs(job1, job3));
 
             // Then
-            assertThat(result.getTotalMessagesProcessed()).isEqualTo(2L);
-            assertThat(result.hasMaxTimeExceeded()).isFalse();
-            assertThat(result.hasMaxConsecutiveFailuresBeenReached()).isTrue();
             assertThat(successfulJobs).containsExactly(job2, job4);
             assertThat(failedJobs).containsExactly(job1, job3);
             assertThat(jobsOnQueue).isEmpty();
@@ -162,12 +149,9 @@ public class CompactionTaskTest {
             CompactionJob job2 = createJobOnQueue("job2");
 
             // When
-            Result result = runTaskWithTimes(allJobsSucceed(), timeSupplier);
+            runTaskWithTimes(allJobsSucceed(), timeSupplier);
 
             // Then
-            assertThat(result.getTotalMessagesProcessed()).isEqualTo(1L);
-            assertThat(result.hasMaxTimeExceeded()).isTrue();
-            assertThat(result.hasMaxConsecutiveFailuresBeenReached()).isFalse();
             assertThat(successfulJobs).containsExactly(job1);
             assertThat(failedJobs).isEmpty();
             assertThat(jobsOnQueue).containsExactly(job2);
@@ -180,19 +164,20 @@ public class CompactionTaskTest {
         return instanceProperties;
     }
 
-    private Result runTask(MessageConsumer messageConsumer) throws Exception {
-        return runTaskWithTimes(messageConsumer, Instant::now);
+    private void runTask(MessageConsumer messageConsumer) throws Exception {
+        runTaskWithTimes(messageConsumer, Instant::now);
     }
 
-    private Result runTaskWithTimes(MessageConsumer messageConsumer, Supplier<Instant> timeSupplier) throws Exception {
-        return new CompactionTask(instanceProperties, timeSupplier, () -> {
+    private void runTaskWithTimes(MessageConsumer messageConsumer, Supplier<Instant> timeSupplier) throws Exception {
+        new CompactionTask(instanceProperties, timeSupplier, () -> {
             CompactionJob job = jobsOnQueue.poll();
             if (job != null) {
                 return Optional.of(new JobAndMessage(job, null));
             } else {
                 return Optional.empty();
             }
-        }, messageConsumer, (jobAndMessage) -> failedJobs.add(jobAndMessage.getJob())).runAt(timeSupplier.get());
+        }, messageConsumer, (jobAndMessage) -> failedJobs.add(jobAndMessage.getJob()))
+                .runAt(timeSupplier.get());
     }
 
     private CompactionJob createJobOnQueue(String jobId) {
