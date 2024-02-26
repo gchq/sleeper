@@ -130,6 +130,10 @@ public class RunTasks {
         run(startTime, queueSize);
     }
 
+    private void run(int requestedTasks) {
+        run(System.currentTimeMillis(), requestedTasks);
+    }
+
     private void run(long startTime, int requestedTasks) {
         if (requestedTasks == 0) {
             LOGGER.info("Finishing as number of tasks requested was 0");
@@ -264,6 +268,6 @@ public class RunTasks {
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         AmazonAutoScaling asClient = AmazonAutoScalingClientBuilder.defaultClient();
         new RunTasks(sqsClient, ecsClient, s3Client, asClient, s3Bucket)
-                .run(System.currentTimeMillis(), numberOfTasks);
+                .run(numberOfTasks);
     }
 }
