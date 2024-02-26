@@ -33,7 +33,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
-import sleeper.core.table.TableStatus;
+import sleeper.core.table.TableStatusTestHelper;
 import sleeper.ingest.batcher.FileIngestRequest;
 import sleeper.ingest.batcher.IngestBatcherStore;
 import sleeper.ingest.batcher.testutil.InMemoryIngestBatcherStore;
@@ -63,14 +63,13 @@ public class IngestBatcherSubmitterLambdaIT {
 
     @BeforeEach
     void setup() {
-        tableIndex.create(TableStatus.uniqueIdAndName(TEST_TABLE_ID, "test-table"));
+        tableIndex.create(TableStatusTestHelper.uniqueIdAndName(TEST_TABLE_ID, "test-table"));
         s3.createBucket(TEST_BUCKET);
     }
 
     @AfterEach
     void tearDown() {
-        s3.listObjects(TEST_BUCKET).getObjectSummaries().forEach(s3ObjectSummary ->
-                s3.deleteObject(TEST_BUCKET, s3ObjectSummary.getKey()));
+        s3.listObjects(TEST_BUCKET).getObjectSummaries().forEach(s3ObjectSummary -> s3.deleteObject(TEST_BUCKET, s3ObjectSummary.getKey()));
         s3.deleteBucket(TEST_BUCKET);
     }
 

@@ -33,7 +33,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
-import sleeper.core.table.TableStatus;
+import sleeper.core.table.TableStatusTestHelper;
 import sleeper.ingest.job.status.InMemoryIngestJobStatusStore;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 
@@ -60,7 +60,7 @@ public class IngestJobMessageHandlerIT {
     private final TableIndex tableIndex = new InMemoryTableIndex();
     private final IngestJobStatusStore ingestJobStatusStore = new InMemoryIngestJobStatusStore();
     private final IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = IngestJobQueueConsumer.messageHandler(
-                    properties, createHadoopConfiguration(), tableIndex, ingestJobStatusStore)
+            properties, createHadoopConfiguration(), tableIndex, ingestJobStatusStore)
             .jobIdSupplier(() -> "job-id")
             .timeSupplier(() -> validationTime)
             .build();
@@ -72,13 +72,12 @@ public class IngestJobMessageHandlerIT {
     @BeforeEach
     void setup() {
         s3Client.createBucket(TEST_BUCKET);
-        tableIndex.create(TableStatus.uniqueIdAndName(TEST_TABLE_ID, TEST_TABLE));
+        tableIndex.create(TableStatusTestHelper.uniqueIdAndName(TEST_TABLE_ID, TEST_TABLE));
     }
 
     @AfterEach
     void tearDown() {
-        s3Client.listObjects(TEST_BUCKET).getObjectSummaries().forEach(s3ObjectSummary ->
-                s3Client.deleteObject(TEST_BUCKET, s3ObjectSummary.getKey()));
+        s3Client.listObjects(TEST_BUCKET).getObjectSummaries().forEach(s3ObjectSummary -> s3Client.deleteObject(TEST_BUCKET, s3ObjectSummary.getKey()));
         s3Client.deleteBucket(TEST_BUCKET);
     }
 

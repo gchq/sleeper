@@ -38,7 +38,7 @@ import sleeper.core.CommonTestConstants;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
-import sleeper.core.table.TableStatus;
+import sleeper.core.table.TableStatusTestHelper;
 import sleeper.ingest.job.IngestJobMessageHandler;
 import sleeper.ingest.job.status.InMemoryIngestJobStatusStore;
 import sleeper.ingest.job.status.IngestJobStatusStore;
@@ -73,9 +73,9 @@ public class BulkImportStarterLambdaIT {
     private final Configuration hadoopConfig = createHadoopConfiguration();
     private final BulkImportStarterLambda bulkImportStarter = new BulkImportStarterLambda(
             executor, messageHandlerBuilder()
-            .jobIdSupplier(() -> "invalid-id")
-            .timeSupplier(() -> validationTime)
-            .build());
+                    .jobIdSupplier(() -> "invalid-id")
+                    .timeSupplier(() -> validationTime)
+                    .build());
 
     private AmazonS3 createS3Client() {
         return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
@@ -84,13 +84,12 @@ public class BulkImportStarterLambdaIT {
     @BeforeEach
     void setup() {
         s3Client.createBucket(TEST_BUCKET);
-        tableIndex.create(TableStatus.uniqueIdAndName(TEST_TABLE_ID, TEST_TABLE));
+        tableIndex.create(TableStatusTestHelper.uniqueIdAndName(TEST_TABLE_ID, TEST_TABLE));
     }
 
     @AfterEach
     void tearDown() {
-        s3Client.listObjects(TEST_BUCKET).getObjectSummaries().forEach(s3ObjectSummary ->
-                s3Client.deleteObject(TEST_BUCKET, s3ObjectSummary.getKey()));
+        s3Client.listObjects(TEST_BUCKET).getObjectSummaries().forEach(s3ObjectSummary -> s3Client.deleteObject(TEST_BUCKET, s3ObjectSummary.getKey()));
         s3Client.deleteBucket(TEST_BUCKET);
     }
 

@@ -186,7 +186,7 @@ public class InMemoryTableIndexTest {
         void shouldFailToDeleteTableWhenTableNameHasBeenUpdated() {
             // Given
             TableStatus oldTable = createTable("old-name");
-            TableStatus newTable = TableStatus.uniqueIdAndName(oldTable.getTableUniqueId(), "new-name");
+            TableStatus newTable = TableStatusTestHelper.uniqueIdAndName(oldTable.getTableUniqueId(), "new-name");
             index.update(newTable);
 
             // When / Then
@@ -200,7 +200,7 @@ public class InMemoryTableIndexTest {
         @Test
         void shouldFailToDeleteTableThatDoesNotExist() {
             // Given
-            TableStatus table = TableStatus.uniqueIdAndName("not-a-table-id", "not-a-table");
+            TableStatus table = TableStatusTestHelper.uniqueIdAndName("not-a-table-id", "not-a-table");
 
             // When / Then
             assertThatThrownBy(() -> index.delete(table))
@@ -210,8 +210,8 @@ public class InMemoryTableIndexTest {
         @Test
         void shouldFailToDeleteTableIfTableRenamedAfterLoadingOldId() {
             // Given
-            TableStatus old = TableStatus.uniqueIdAndName("test-id", "old-name");
-            TableStatus renamed = TableStatus.uniqueIdAndName("test-id", "changed-name");
+            TableStatus old = TableStatusTestHelper.uniqueIdAndName("test-id", "old-name");
+            TableStatus renamed = TableStatusTestHelper.uniqueIdAndName("test-id", "changed-name");
             index.create(old);
             index.update(renamed);
 
@@ -224,8 +224,8 @@ public class InMemoryTableIndexTest {
         @Test
         void shouldFailToDeleteTableIfTableDeletedAndRecreatedAfterLoadingOldId() {
             // Given
-            TableStatus old = TableStatus.uniqueIdAndName("test-id-1", "table-name");
-            TableStatus recreated = TableStatus.uniqueIdAndName("test-id-2", "table-name");
+            TableStatus old = TableStatusTestHelper.uniqueIdAndName("test-id-1", "table-name");
+            TableStatus recreated = TableStatusTestHelper.uniqueIdAndName("test-id-2", "table-name");
             index.create(recreated);
 
             // When/Then
@@ -243,7 +243,7 @@ public class InMemoryTableIndexTest {
             TableStatus table = createTable("old-name");
 
             // When
-            TableStatus newTable = TableStatus.uniqueIdAndName(table.getTableUniqueId(), "new-name");
+            TableStatus newTable = TableStatusTestHelper.uniqueIdAndName(table.getTableUniqueId(), "new-name");
             index.update(newTable);
 
             // Then
@@ -259,7 +259,7 @@ public class InMemoryTableIndexTest {
         @Test
         void shouldFailToUpdateTableIfTableDoesNotExist() {
             // Given
-            TableStatus newTable = TableStatus.uniqueIdAndName("not-a-table-id", "new-name");
+            TableStatus newTable = TableStatusTestHelper.uniqueIdAndName("not-a-table-id", "new-name");
 
             // When/Then
             assertThatThrownBy(() -> index.update(newTable))
@@ -274,7 +274,7 @@ public class InMemoryTableIndexTest {
             TableStatus table2 = createTable("test-name-2");
 
             // When / Then
-            TableStatus newTable = TableStatus.uniqueIdAndName(table2.getTableUniqueId(), "test-name-1");
+            TableStatus newTable = TableStatusTestHelper.uniqueIdAndName(table2.getTableUniqueId(), "test-name-1");
             assertThatThrownBy(() -> index.update(newTable))
                     .isInstanceOf(TableAlreadyExistsException.class);
         }
@@ -308,7 +308,7 @@ public class InMemoryTableIndexTest {
         @Test
         void shouldFailToTakeTableOfflineIfTableDoesNotExist() {
             // When / Then
-            assertThatThrownBy(() -> index.update(TableStatus.uniqueIdAndName("not-a-table-id", "not-a-table").takeOffline()))
+            assertThatThrownBy(() -> index.update(TableStatusTestHelper.uniqueIdAndName("not-a-table-id", "not-a-table").takeOffline()))
                     .isInstanceOf(TableNotFoundException.class);
         }
 
@@ -344,13 +344,13 @@ public class InMemoryTableIndexTest {
         @Test
         void shouldFailToPutTableOnlineWhenTableDoesNotExist() {
             // When / Then
-            assertThatThrownBy(() -> index.update(TableStatus.uniqueIdAndName("not-a-table-id", "not-a-table").putOnline()))
+            assertThatThrownBy(() -> index.update(TableStatusTestHelper.uniqueIdAndName("not-a-table-id", "not-a-table").putOnline()))
                     .isInstanceOf(TableNotFoundException.class);
         }
     }
 
     private TableStatus createTable(String tableName) {
-        TableStatus table = TableStatus.uniqueIdAndName(idGenerator.generateString(), tableName);
+        TableStatus table = TableStatusTestHelper.uniqueIdAndName(idGenerator.generateString(), tableName);
         index.create(table);
         return table;
     }

@@ -30,10 +30,6 @@ public class TableStatus {
         this.online = online;
     }
 
-    public static TableStatus uniqueIdAndName(String tableUniqueId, String tableName) {
-        return uniqueIdAndName(tableUniqueId, tableName, true);
-    }
-
     public static TableStatus uniqueIdAndName(String tableUniqueId, String tableName, boolean online) {
         return new TableStatus(tableUniqueId, tableName, online);
     }
