@@ -56,7 +56,6 @@ import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.job.common.CommonJobUtils;
 import sleeper.job.common.action.ActionException;
 import sleeper.job.common.action.ChangeMessageVisibilityTimeoutAction;
-import sleeper.job.common.action.DeleteMessageAction;
 import sleeper.job.common.action.MessageReference;
 import sleeper.job.common.action.thread.PeriodicActionRunnable;
 import sleeper.statestore.StateStoreProvider;
@@ -158,15 +157,10 @@ public class CompactSortedFilesRunner {
         try {
             summary = compact(jobAndMessage.getJob());
         } finally {
-            LOGGER.info("Compaction job {}: Stopping background thread to keep SQS messages alive",
-                    jobAndMessage.getJob().getId());
-            jobAndMessage.getKeepAliveRunnable().stop();
+            jobAndMessage.close();
         }
 
-        // Delete message from queue
-        LOGGER.info("Compaction job {}: Deleting message from queue", jobAndMessage.getJob().getId());
-        DeleteMessageAction deleteAction = jobAndMessage.getMessage().deleteAction();
-        deleteAction.call();
+        jobAndMessage.completed();
 
         return summary;
     }

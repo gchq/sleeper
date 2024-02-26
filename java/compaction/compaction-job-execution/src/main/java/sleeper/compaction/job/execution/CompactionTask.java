@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.util.LoggedDuration;
+import sleeper.job.common.action.ActionException;
 import sleeper.job.common.action.MessageReference;
 import sleeper.job.common.action.thread.PeriodicActionRunnable;
 
@@ -81,7 +82,7 @@ public class CompactionTask {
             } catch (Exception e) {
                 LOGGER.error("Failed processing compaction job, putting job back on queue", e);
                 numConsecutiveFailures++;
-                failedJobHandler.onFailure(jobAndMessage);
+                jobAndMessage.failed(failedJobHandler);
             }
         }
         if (numConsecutiveFailures >= maxConsecutiveFailures) {
@@ -127,6 +128,21 @@ public class CompactionTask {
 
         public PeriodicActionRunnable getKeepAliveRunnable() {
             return keepAliveRunnable;
+        }
+
+        public void close() {
+            LOGGER.info("Compaction job {}: Stopping background thread to keep SQS messages alive", job.getId());
+            keepAliveRunnable.stop();
+        }
+
+        public void completed() throws ActionException {
+            // Delete message from queue
+            LOGGER.info("Compaction job {}: Deleting message from queue", job.getId());
+            message.deleteAction().call();
+        }
+
+        public void failed(FailedJobHandler handler) {
+            handler.onFailure(this);
         }
     }
 }
