@@ -92,7 +92,6 @@ public class CompactSortedFilesRunner {
     private final CompactionJobStatusStore jobStatusStore;
     private final CompactionTaskStatusStore taskStatusStore;
     private final String taskId;
-    private final String sqsJobQueueUrl;
     private final AmazonSQS sqsClient;
     private final AmazonECS ecsClient;
     private final int keepAliveFrequency;
@@ -108,7 +107,6 @@ public class CompactSortedFilesRunner {
         taskId = builder.taskId;
         sqsClient = builder.sqsClient;
         ecsClient = builder.ecsClient;
-        sqsJobQueueUrl = instanceProperties.get(COMPACTION_JOB_QUEUE_URL);
         keepAliveFrequency = instanceProperties.getInt(COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS);
     }
 
