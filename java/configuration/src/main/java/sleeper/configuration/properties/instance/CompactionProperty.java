@@ -63,13 +63,11 @@ public interface CompactionProperty {
             .defaultValue("10")
             .validationPredicate(Utils::isNonNegativeInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
-    UserDefinedInstanceProperty COMPACTION_TASK_MAX_TIME_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.task.max.time.seconds")
-            .description("The total time in seconds that a compaction task can be processing jobs for before it is terminated.\n" +
-                    "When a compaction task waits for compaction jobs to appear on the SQS queue, if the task receives " +
-                    "no messages in the time defined by the property \"sleeper.compaction.task.wait.time.seconds\", " +
-                    "it will try to wait for a message again.\n" +
-                    "If the compaction task runs for long enough as to exceed the amount of seconds defined by this property, " +
-                    "then the compaction task will terminate.")
+    UserDefinedInstanceProperty COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.task.max.idle.time.seconds")
+            .description("The total time in seconds that a compaction task can be idle before it is terminated.\n" +
+                    "When there are no compaction jobs available on the SQS queue, the task will wait for SQS to " +
+                    "return a job. Each time SQS returns no jobs, the task will check whether this idle time has " +
+                    "elapsed since the last time it finished a job.")
             .defaultValue("60")
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();

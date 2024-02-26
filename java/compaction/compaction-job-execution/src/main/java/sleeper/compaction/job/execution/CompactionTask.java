@@ -31,21 +31,21 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_TIME_IN_SECONDS;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS;
 
 public class CompactionTask {
     private static final Logger LOGGER = LoggerFactory.getLogger(CompactionTask.class);
 
     private final Supplier<Instant> timeSupplier;
     private final int maxConsecutiveFailures;
-    private final int maxTimeInSeconds;
+    private final Duration maxIdleTime;
     private final MessageReceiver messageReceiver;
     private final MessageConsumer messageConsumer;
     private final FailedJobHandler failedJobHandler;
 
     public CompactionTask(InstanceProperties instanceProperties, Supplier<Instant> timeSupplier,
             MessageReceiver messageReceiver, MessageConsumer messageConsumer, FailedJobHandler failedJobHandler) {
-        maxTimeInSeconds = instanceProperties.getInt(COMPACTION_TASK_MAX_TIME_IN_SECONDS);
+        maxIdleTime = Duration.ofSeconds(instanceProperties.getInt(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS));
         maxConsecutiveFailures = instanceProperties.getInt(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES);
         this.timeSupplier = timeSupplier;
         this.messageReceiver = messageReceiver;
@@ -54,14 +54,21 @@ public class CompactionTask {
     }
 
     public void runAt(Instant startTime) throws InterruptedException, IOException {
-        Instant maxTime = startTime.plus(Duration.ofSeconds(maxTimeInSeconds));
+        Instant lastActiveTime = startTime;
         int numConsecutiveFailures = 0;
-        Instant currentTime = startTime;
         long totalNumberOfMessagesProcessed = 0;
-        while (numConsecutiveFailures < maxConsecutiveFailures && currentTime.isBefore(maxTime)) {
+        while (numConsecutiveFailures < maxConsecutiveFailures) {
             Optional<JobAndMessage> jobAndMessageOpt = messageReceiver.receiveMessage();
             if (!jobAndMessageOpt.isPresent()) {
-                return;
+                Duration runTime = Duration.between(lastActiveTime, timeSupplier.get());
+                if (runTime.compareTo(maxIdleTime) >= 0) {
+                    LOGGER.info("Terminating compaction task as it was idle for {}, exceeding maximum of {}",
+                            LoggedDuration.withFullOutput(runTime),
+                            LoggedDuration.withFullOutput(maxIdleTime));
+                    return;
+                } else {
+                    continue;
+                }
             }
             JobAndMessage jobAndMessage = jobAndMessageOpt.get();
             LOGGER.info("CompactionJob is: {}", jobAndMessage.job);
@@ -69,20 +76,16 @@ public class CompactionTask {
                 messageConsumer.consume(jobAndMessage);
                 totalNumberOfMessagesProcessed++;
                 numConsecutiveFailures = 0;
+                // lastActiveTime = timeSupplier.get();
             } catch (Exception e) {
                 LOGGER.error("Failed processing compaction job, putting job back on queue", e);
                 numConsecutiveFailures++;
                 failedJobHandler.onFailure(jobAndMessage);
             }
-            currentTime = timeSupplier.get();
         }
         if (numConsecutiveFailures >= maxConsecutiveFailures) {
             LOGGER.info("Terminating compaction task as {} consecutive failures exceeds maximum of {}",
                     numConsecutiveFailures, maxConsecutiveFailures);
-        } else {
-            LOGGER.info("Terminating compaction task as it ran for {}, exceeeding maximum of {}",
-                    LoggedDuration.withFullOutput(startTime, currentTime),
-                    LoggedDuration.withFullOutput(Duration.ofSeconds(maxTimeInSeconds)));
         }
         LOGGER.info("Total number of messages processed = {}", totalNumberOfMessagesProcessed);
     }
