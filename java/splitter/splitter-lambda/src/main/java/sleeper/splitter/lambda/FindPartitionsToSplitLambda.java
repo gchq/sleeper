@@ -28,13 +28,10 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.splitter.FindPartitionsToSplit;
 import sleeper.statestore.StateStoreProvider;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
@@ -68,17 +65,8 @@ public class FindPartitionsToSplitLambda {
 
     public void eventHandler(ScheduledEvent event, Context context) {
         LOGGER.info("FindPartitionsToSplitLambda triggered at {}", event.getTime());
-        tablePropertiesProvider.streamOnlineTables().map(tableProperties -> {
-            StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-            return new FindPartitionsToSplit(instanceProperties, tableProperties, stateStore,
-                    new SqsSplitPartitionJobSender(tablePropertiesProvider, instanceProperties, sqsClient)::send);
-        }).forEach(partitionsFinder -> {
-            try {
-                partitionsFinder.run();
-            } catch (IOException | StateStoreException e) {
-                LOGGER.error("StateStoreException thrown whilst running FindPartitionsToSplit", e);
-            }
-        });
+        new FindPartitionsToSplit(instanceProperties, tablePropertiesProvider, stateStoreProvider,
+                new SqsSplitPartitionJobSender(tablePropertiesProvider, instanceProperties, sqsClient)::send).run();
         LOGGER.info("FindPartitionsToSplitLambda finished at {}", LocalDateTime.now());
     }
 }

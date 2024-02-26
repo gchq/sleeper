@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
@@ -31,6 +32,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.SplitFileReference;
 import sleeper.core.statestore.StateStore;
+import sleeper.statestore.FixedStateStoreProvider;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -181,7 +183,9 @@ public class FindPartitionsToSplitTest {
 
     private List<SplitPartitionJobDefinition> findPartitionsToSplit() throws Exception {
         List<SplitPartitionJobDefinition> jobs = new ArrayList<>();
-        new FindPartitionsToSplit(instanceProperties, tableProperties, stateStore, jobs::add).run();
+        new FindPartitionsToSplit(instanceProperties,
+                new FixedTablePropertiesProvider(List.of(tableProperties)),
+                new FixedStateStoreProvider(tableProperties, stateStore), jobs::add).run();
         return jobs;
     }
 
