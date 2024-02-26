@@ -160,6 +160,7 @@ public class CompactionTaskTest {
 
     private static InstanceProperties createInstance() {
         InstanceProperties instanceProperties = createTestInstanceProperties();
+        instanceProperties.setNumber(COMPACTION_TASK_MAX_TIME_IN_SECONDS, 1);
         instanceProperties.setNumber(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES, 2);
         return instanceProperties;
     }

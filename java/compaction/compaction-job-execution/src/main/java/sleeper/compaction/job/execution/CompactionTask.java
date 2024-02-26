@@ -61,19 +61,18 @@ public class CompactionTask {
         while (numConsecutiveFailures < maxConsecutiveFailures && currentTime.isBefore(maxTime)) {
             Optional<JobAndMessage> jobAndMessageOpt = messageReceiver.receiveMessage();
             if (!jobAndMessageOpt.isPresent()) {
+                return;
+            }
+            JobAndMessage jobAndMessage = jobAndMessageOpt.get();
+            LOGGER.info("CompactionJob is: {}", jobAndMessage.job);
+            try {
+                messageConsumer.consume(jobAndMessage);
+                totalNumberOfMessagesProcessed++;
+                numConsecutiveFailures = 0;
+            } catch (Exception e) {
+                LOGGER.error("Failed processing compaction job, putting job back on queue", e);
                 numConsecutiveFailures++;
-            } else {
-                JobAndMessage jobAndMessage = jobAndMessageOpt.get();
-                LOGGER.info("CompactionJob is: {}", jobAndMessage.job);
-                try {
-                    messageConsumer.consume(jobAndMessage);
-                    totalNumberOfMessagesProcessed++;
-                    numConsecutiveFailures = 0;
-                } catch (Exception e) {
-                    LOGGER.error("Failed processing compaction job, putting job back on queue", e);
-                    numConsecutiveFailures++;
-                    failedJobHandler.onFailure(jobAndMessage);
-                }
+                failedJobHandler.onFailure(jobAndMessage);
             }
             currentTime = timeSupplier.get();
         }
