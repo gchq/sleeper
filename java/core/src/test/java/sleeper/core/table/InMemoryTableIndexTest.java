@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class InMemoryTableIndexTest {
@@ -33,7 +34,7 @@ public class InMemoryTableIndexTest {
     class CreateTable {
         @Test
         void shouldCreateATable() {
-            TableStatus table = createOnlineTable("test-table");
+            TableStatus table = createTable("test-table");
 
             assertThat(index.streamAllTables())
                     .containsExactly(table);
@@ -41,7 +42,7 @@ public class InMemoryTableIndexTest {
 
         @Test
         void shouldPutTableOnlineWhenItIsCreated() {
-            TableStatus tableId = createOnlineTable("test-table");
+            TableStatus tableId = createTable("test-table");
 
             assertThat(index.streamOnlineTables())
                     .containsExactly(tableId);
@@ -49,9 +50,9 @@ public class InMemoryTableIndexTest {
 
         @Test
         void shouldFailToCreateATableWhichAlreadyExists() {
-            createOnlineTable("duplicate-table");
+            createTable("duplicate-table");
 
-            assertThatThrownBy(() -> createOnlineTable("duplicate-table"))
+            assertThatThrownBy(() -> createTable("duplicate-table"))
                     .isInstanceOf(TableAlreadyExistsException.class);
         }
     }
@@ -62,7 +63,7 @@ public class InMemoryTableIndexTest {
 
         @Test
         void shouldGetTableByName() {
-            TableStatus table = createOnlineTable("test-table");
+            TableStatus table = createTable("test-table");
 
             assertThat(index.getTableByName("test-table"))
                     .contains(table);
@@ -70,7 +71,7 @@ public class InMemoryTableIndexTest {
 
         @Test
         void shouldGetNoTableByName() {
-            createOnlineTable("existing-table");
+            createTable("existing-table");
 
             assertThat(index.getTableByName("not-a-table"))
                     .isEmpty();
@@ -78,7 +79,7 @@ public class InMemoryTableIndexTest {
 
         @Test
         void shouldGetTableById() {
-            TableStatus table = createOnlineTable("test-table");
+            TableStatus table = createTable("test-table");
 
             assertThat(index.getTableByUniqueId(table.getTableUniqueId()))
                     .contains(table);
@@ -86,7 +87,7 @@ public class InMemoryTableIndexTest {
 
         @Test
         void shouldGetNoTableById() {
-            createOnlineTable("existing-table");
+            createTable("existing-table");
 
             assertThat(index.getTableByUniqueId("not-a-table"))
                     .isEmpty();
@@ -99,10 +100,10 @@ public class InMemoryTableIndexTest {
 
         @Test
         void shouldGetTablesOrderedByName() {
-            createOnlineTable("some-table");
-            createOnlineTable("a-table");
-            createOnlineTable("this-table");
-            createOnlineTable("other-table");
+            createTable("some-table");
+            createTable("a-table");
+            createTable("this-table");
+            createTable("other-table");
 
             assertThat(index.streamAllTables())
                     .extracting(TableStatus::getTableName)
@@ -115,8 +116,8 @@ public class InMemoryTableIndexTest {
 
         @Test
         void shouldGetTableIds() {
-            TableStatus table1 = createOnlineTable("first-table");
-            TableStatus table2 = createOnlineTable("second-table");
+            TableStatus table1 = createTable("first-table");
+            TableStatus table2 = createTable("second-table");
 
             assertThat(index.streamAllTables())
                     .containsExactly(table1, table2);
@@ -130,8 +131,8 @@ public class InMemoryTableIndexTest {
         @Test
         void shouldGetOnlineTables() {
             // Given
-            TableStatus table1 = createOnlineTable("online-table");
-            TableStatus table2 = createOnlineTable("offline-table");
+            TableStatus table1 = createTable("online-table");
+            TableStatus table2 = createTable("offline-table");
             index.update(table2.takeOffline());
 
             // When / Then
@@ -147,7 +148,7 @@ public class InMemoryTableIndexTest {
         @Test
         void shouldDeleteTableNameReference() {
             // Given
-            TableStatus table = createOnlineTable("test-table");
+            TableStatus table = createTable("test-table");
 
             // When
             index.delete(table);
@@ -159,7 +160,7 @@ public class InMemoryTableIndexTest {
         @Test
         void shouldDeleteTableIdReference() {
             // Given
-            TableStatus table = createOnlineTable("test-table");
+            TableStatus table = createTable("test-table");
 
             // When
             index.delete(table);
@@ -171,8 +172,8 @@ public class InMemoryTableIndexTest {
         @Test
         void shouldDeleteAllTablesWhileStreamingThroughIds() {
             // Given
-            createOnlineTable("test-table-1");
-            createOnlineTable("test-table-2");
+            createTable("test-table-1");
+            createTable("test-table-2");
 
             // When
             index.streamAllTables().forEach(index::delete);
@@ -184,7 +185,7 @@ public class InMemoryTableIndexTest {
         @Test
         void shouldFailToDeleteTableWhenTableNameHasBeenUpdated() {
             // Given
-            TableStatus oldTable = createOnlineTable("old-name");
+            TableStatus oldTable = createTable("old-name");
             TableStatus newTable = TableStatus.uniqueIdAndName(oldTable.getTableUniqueId(), "new-name");
             index.update(newTable);
 
@@ -239,7 +240,7 @@ public class InMemoryTableIndexTest {
         @Test
         void shouldUpdateTableName() {
             // Given
-            TableStatus table = createOnlineTable("old-name");
+            TableStatus table = createTable("old-name");
 
             // When
             TableStatus newTable = TableStatus.uniqueIdAndName(table.getTableUniqueId(), "new-name");
@@ -269,13 +270,23 @@ public class InMemoryTableIndexTest {
         @Test
         void shouldFailToUpdateTableIfTableWithSameNameAlreadyExists() {
             // Given
-            createOnlineTable("test-name-1");
-            TableStatus table2 = createOnlineTable("test-name-2");
+            createTable("test-name-1");
+            TableStatus table2 = createTable("test-name-2");
 
             // When / Then
             TableStatus newTable = TableStatus.uniqueIdAndName(table2.getTableUniqueId(), "test-name-1");
             assertThatThrownBy(() -> index.update(newTable))
                     .isInstanceOf(TableAlreadyExistsException.class);
+        }
+
+        @Test
+        void shouldNotThrowExceptionWhenUpdatingTableWithNoChanges() {
+            // Given
+            TableStatus table = createTable("test-name-1");
+
+            // When / Then
+            assertThatCode(() -> index.update(table))
+                    .doesNotThrowAnyException();
         }
     }
 
@@ -285,7 +296,7 @@ public class InMemoryTableIndexTest {
         @Test
         void shouldTakeTableOffline() {
             // Given
-            TableStatus table = createOnlineTable("test-table");
+            TableStatus table = createTable("test-table");
 
             // When
             index.update(table.takeOffline());
@@ -304,7 +315,7 @@ public class InMemoryTableIndexTest {
         @Test
         void shouldFailToTakeTableOfflineIfTableHasBeenDeleted() {
             // Given
-            TableStatus table = createOnlineTable("test-table");
+            TableStatus table = createTable("test-table");
             index.delete(table);
 
             // When / Then
@@ -319,16 +330,15 @@ public class InMemoryTableIndexTest {
         @Test
         void shouldPutTableOnline() {
             // Given
-            TableStatus onlineTable = createOnlineTable("test-table");
-            TableStatus offlineTable = onlineTable.takeOffline();
-            index.update(offlineTable);
+            TableStatus table = createTable("test-table");
+            index.update(table.takeOffline());
 
             // When
-            index.update(onlineTable);
+            index.update(table.putOnline());
 
             // Then
             assertThat(index.streamOnlineTables())
-                    .containsExactly(onlineTable);
+                    .containsExactly(table);
         }
 
         @Test
@@ -337,6 +347,12 @@ public class InMemoryTableIndexTest {
             assertThatThrownBy(() -> index.update(TableStatus.uniqueIdAndName("not-a-table-id", "not-a-table").putOnline()))
                     .isInstanceOf(TableNotFoundException.class);
         }
+    }
+
+    private TableStatus createTable(String tableName) {
+        TableStatus table = TableStatus.uniqueIdAndName(idGenerator.generateString(), tableName);
+        index.create(table);
+        return table;
     }
 
     private TableStatus createOnlineTable(String tableName) {
