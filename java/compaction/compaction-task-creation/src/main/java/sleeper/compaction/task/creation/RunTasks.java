@@ -16,7 +16,9 @@
 package sleeper.compaction.task.creation;
 
 import com.amazonaws.services.autoscaling.AmazonAutoScaling;
+import com.amazonaws.services.autoscaling.AmazonAutoScalingClientBuilder;
 import com.amazonaws.services.ecs.AmazonECS;
+import com.amazonaws.services.ecs.AmazonECSClientBuilder;
 import com.amazonaws.services.ecs.model.AwsVpcConfiguration;
 import com.amazonaws.services.ecs.model.ContainerOverride;
 import com.amazonaws.services.ecs.model.LaunchType;
@@ -25,7 +27,9 @@ import com.amazonaws.services.ecs.model.PropagateTags;
 import com.amazonaws.services.ecs.model.RunTaskRequest;
 import com.amazonaws.services.ecs.model.TaskOverride;
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,7 +40,6 @@ import sleeper.job.common.CommonJobUtils;
 import sleeper.job.common.QueueMessageCount;
 import sleeper.job.common.RunECSTasks;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -51,6 +54,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_CPU_ARCHITECTURE;
 import static sleeper.configuration.properties.instance.CompactionProperty.MAXIMUM_CONCURRENT_COMPACTION_TASKS;
+import static sleeper.configuration.properties.instance.InstanceProperties.getConfigBucketFromInstanceId;
 import static sleeper.core.ContainerConstants.COMPACTION_CONTAINER_NAME;
 
 /**
@@ -75,10 +79,10 @@ public class RunTasks {
     private final Scaler scaler;
 
     public RunTasks(AmazonSQS sqsClient,
-                    AmazonECS ecsClient,
-                    AmazonS3 s3Client,
-                    AmazonAutoScaling asClient,
-                    String s3Bucket) {
+            AmazonECS ecsClient,
+            AmazonS3 s3Client,
+            AmazonAutoScaling asClient,
+            String s3Bucket) {
         this.sqsClient = sqsClient;
         this.ecsClient = ecsClient;
         this.s3Bucket = s3Bucket;
@@ -123,47 +127,43 @@ public class RunTasks {
                 .getApproximateNumberOfMessages();
         LOGGER.info("Queue size is {}", queueSize);
 
+        if (0 == queueSize) {
+            LOGGER.info("Finishing as queue size is 0");
+        } else {
+            // Create 1 task for each item on the queue
+            run(startTime, queueSize);
+        }
+    }
+
+    public void run(long startTime, int requestedTasks) {
         // Find out number of pending and running tasks
         int numRunningAndPendingTasks = CommonJobUtils.getNumPendingAndRunningTasks(clusterName, ecsClient);
         LOGGER.info("Number of running and pending tasks is {}", numRunningAndPendingTasks);
 
         int maxNumTasksToCreate = maximumRunningTasks - numRunningAndPendingTasks;
         LOGGER.info("Maximum number of tasks to create is {}", maxNumTasksToCreate);
+        int numberOfTasksToCreate = Math.min(requestedTasks, maxNumTasksToCreate);
 
-        // Do we need to scale?
         if (launchType.equalsIgnoreCase("EC2")) {
-            int maxNumTasksThatWillBeCreated = Math.min(maxNumTasksToCreate, queueSize);
-            int totalTasks = maxNumTasksThatWillBeCreated + numRunningAndPendingTasks;
+            int totalTasks = numberOfTasksToCreate + numRunningAndPendingTasks;
             LOGGER.info("Total number of tasks if all launches succeed {}", totalTasks);
             scaler.scaleTo(totalTasks);
         }
-
-        if (0 == queueSize) {
-            LOGGER.info("Finishing as queue size is 0");
-        } else {
-            List<String> args = new ArrayList<>();
-            args.add(s3Bucket);
-            TaskOverride override = createOverride(args, containerName);
-            NetworkConfiguration networkConfiguration = networkConfig(subnets);
-
-            // Create 1 task for each item on the queue
-            launchTasks(startTime, queueSize, maxNumTasksToCreate, override, networkConfiguration);
-        }
+        TaskOverride override = createOverride(List.of(s3Bucket), containerName);
+        NetworkConfiguration networkConfiguration = networkConfig(subnets);
+        launchTasks(startTime, numberOfTasksToCreate, override, networkConfiguration);
     }
 
     /**
      * Attempts to launch some tasks on ECS.
      *
-     * @param startTime            start time of Lambda
-     * @param queueSize            length of SQS queue
-     * @param maxNumTasksToCreate  number of tasks to attempt to launch
-     * @param override             other container overrides
-     * @param networkConfiguration container network configuration
+     * @param startTime             start time of Lambda
+     * @param numberOfTasksToCreate number of tasks to create
+     * @param override              other container overrides
+     * @param networkConfiguration  container network configuration
      */
-    private void launchTasks(long startTime, int queueSize, int maxNumTasksToCreate,
-                             TaskOverride override, NetworkConfiguration networkConfiguration) {
-
-        int numberOfTasksToCreate = Math.min(queueSize, maxNumTasksToCreate);
+    private void launchTasks(long startTime, int numberOfTasksToCreate,
+            TaskOverride override, NetworkConfiguration networkConfiguration) {
         String defUsed = (launchType.equalsIgnoreCase("FARGATE")) ? fargateTaskDefinition : ec2TaskDefinition;
         RunTaskRequest runTaskRequest = createRunTaskRequest(
                 clusterName, launchType, fargateVersion,
@@ -188,8 +188,8 @@ public class RunTasks {
     /**
      * Create the container networking configuration.
      *
-     * @param subnets the subnet name
-     * @return task network configuration
+     * @param  subnets the subnet name
+     * @return         task network configuration
      */
     private static NetworkConfiguration networkConfig(List<String> subnets) {
         AwsVpcConfiguration vpcConfiguration = new AwsVpcConfiguration()
@@ -202,9 +202,9 @@ public class RunTasks {
     /**
      * Create the container definition overrides for the task launch.
      *
-     * @param args          container runtime args
-     * @param containerName name of container used for overriding
-     * @return the container definition overrides
+     * @param  args          container runtime args
+     * @param  containerName name of container used for overriding
+     * @return               the container definition overrides
      */
     private static TaskOverride createOverride(List<String> args, String containerName) {
         ContainerOverride containerOverride = new ContainerOverride()
@@ -218,17 +218,17 @@ public class RunTasks {
     /**
      * Creates a new task request that can be passed to ECS.
      *
-     * @param clusterName          ECS cluster
-     * @param launchType           either FARGATE or EC2
-     * @param fargateVersion       version string if running on Fargate
-     * @param override             specific container overrides
-     * @param networkConfiguration the networking configuration for the container
-     * @param defUsed              which task definition to use
-     * @return the request for ECS
+     * @param  clusterName              ECS cluster
+     * @param  launchType               either FARGATE or EC2
+     * @param  fargateVersion           version string if running on Fargate
+     * @param  override                 specific container overrides
+     * @param  networkConfiguration     the networking configuration for the container
+     * @param  defUsed                  which task definition to use
+     * @return                          the request for ECS
      * @throws IllegalArgumentException if <code>launchType</code> is FARGATE and version is null
      */
     private static RunTaskRequest createRunTaskRequest(String clusterName, String launchType, String fargateVersion,
-                                                       TaskOverride override, NetworkConfiguration networkConfiguration, String defUsed) {
+            TaskOverride override, NetworkConfiguration networkConfiguration, String defUsed) {
         RunTaskRequest runTaskRequest = new RunTaskRequest()
                 .withCluster(clusterName)
                 .withOverrides(override)
@@ -245,5 +245,21 @@ public class RunTasks {
             return runTaskRequest
                     .withLaunchType(LaunchType.EC2);
         }
+    }
+
+    public static void main(String[] args) {
+        if (args.length != 2) {
+            System.out.println("Usage: <instance-id> <number-of-tasks>");
+            return;
+        }
+        String instanceId = args[0];
+        int numberOfTasks = Integer.parseInt(args[1]);
+        String s3Bucket = getConfigBucketFromInstanceId(instanceId);
+        AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
+        AmazonECS ecsClient = AmazonECSClientBuilder.defaultClient();
+        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+        AmazonAutoScaling asClient = AmazonAutoScalingClientBuilder.defaultClient();
+        new RunTasks(sqsClient, ecsClient, s3Client, asClient, s3Bucket)
+                .run(System.currentTimeMillis(), numberOfTasks);
     }
 }
