@@ -55,7 +55,6 @@ import java.time.Instant;
 import java.util.UUID;
 
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 /**
@@ -79,7 +78,6 @@ public class CompactSortedFilesRunner {
     private final String taskId;
     private final AmazonSQS sqsClient;
     private final AmazonECS ecsClient;
-    private final int keepAliveFrequency;
 
     private CompactSortedFilesRunner(Builder builder) {
         instanceProperties = builder.instanceProperties;
@@ -92,7 +90,6 @@ public class CompactSortedFilesRunner {
         taskId = builder.taskId;
         sqsClient = builder.sqsClient;
         ecsClient = builder.ecsClient;
-        keepAliveFrequency = instanceProperties.getInt(COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS);
     }
 
     public static Builder builder() {
