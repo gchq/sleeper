@@ -136,22 +136,31 @@ public class RunTasks {
     }
 
     private void run(long startTime, int requestedTasks) {
+        if (requestedTasks == 0) {
+            LOGGER.info("Finishing as number of tasks requested was 0");
+            return;
+        }
         // Find out number of pending and running tasks
         int numRunningAndPendingTasks = CommonJobUtils.getNumPendingAndRunningTasks(clusterName, ecsClient);
         LOGGER.info("Number of running and pending tasks is {}", numRunningAndPendingTasks);
 
         int maxNumTasksToCreate = maximumRunningTasks - numRunningAndPendingTasks;
-        LOGGER.info("Maximum number of tasks to create is {}", maxNumTasksToCreate);
-        int numberOfTasksToCreate = Math.min(requestedTasks, maxNumTasksToCreate);
-
-        if (launchType.equalsIgnoreCase("EC2")) {
-            int totalTasks = numberOfTasksToCreate + numRunningAndPendingTasks;
-            LOGGER.info("Total number of tasks if all launches succeed {}", totalTasks);
-            scaler.scaleTo(totalTasks);
+        if (maximumRunningTasks == numRunningAndPendingTasks) {
+            LOGGER.info("Finishing as maximum running tasks of {} has been reached", maximumRunningTasks);
+            return;
         }
-        TaskOverride override = createOverride(List.of(s3Bucket), containerName);
-        NetworkConfiguration networkConfiguration = networkConfig(subnets);
-        launchTasks(startTime, numberOfTasksToCreate, override, networkConfiguration);
+        if (requestedTasks == 0) {
+            LOGGER.info("Maximum number of tasks to create is {}", maxNumTasksToCreate);
+            int numberOfTasksToCreate = Math.min(requestedTasks, maxNumTasksToCreate);
+            if (launchType.equalsIgnoreCase("EC2")) {
+                int totalTasks = numberOfTasksToCreate + numRunningAndPendingTasks;
+                LOGGER.info("Total number of tasks if all launches succeed {}", totalTasks);
+                scaler.scaleTo(totalTasks);
+            }
+            TaskOverride override = createOverride(List.of(s3Bucket), containerName);
+            NetworkConfiguration networkConfiguration = networkConfig(subnets);
+            launchTasks(startTime, numberOfTasksToCreate, override, networkConfiguration);
+        }
     }
 
     /**
