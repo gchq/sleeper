@@ -354,10 +354,4 @@ public class InMemoryTableIndexTest {
         index.create(table);
         return table;
     }
-
-    private TableStatus createOnlineTable(String tableName) {
-        TableStatus table = TableStatus.uniqueIdAndName(idGenerator.generateString(), tableName, true);
-        index.create(table);
-        return table;
-    }
 }
