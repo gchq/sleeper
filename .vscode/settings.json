@@ -4,6 +4,9 @@
     "editor.codeActionsOnSave": {
         "source.organizeImports": "always",
     },
+    "editor.rulers": [
+        120
+    ],
     "files.autoSave": "onFocusChange",
     "java.checkstyle.configuration": "./code-style/checkstyle-idea/checkstyle.xml",
     "java.compile.nullAnalysis.mode": "automatic",
