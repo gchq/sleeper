@@ -22,7 +22,7 @@ import org.mockito.Mockito;
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
 import sleeper.core.table.TableStatus;
 
-import java.util.List;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -39,8 +39,8 @@ class TableNamesReportTest extends AdminClientMockStoreBase {
     void shouldPrintTableNamesReportWhenChosen() throws Exception {
         // Given
         setInstanceTables(createValidInstanceProperties(),
-                uniqueIdAndName("test-table-1-id", "test-table-1"),
-                uniqueIdAndName("test-table-2-id", "test-table-2"));
+                onlineTable("test-table-1-id", "test-table-1"),
+                onlineTable("test-table-2-id", "test-table-2"));
 
         // When
         String output = runClient()
@@ -65,13 +65,12 @@ class TableNamesReportTest extends AdminClientMockStoreBase {
     @Test
     void shouldPrintOnlineAndOfflineTableNames() throws Exception {
         // Given
-        List<TableStatus> onlineTables = List.of(
-                uniqueIdAndName("test-table-1-id", "test-table-1"),
-                uniqueIdAndName("test-table-2-id", "test-table-2"));
-        List<TableStatus> offlineTables = List.of(
-                uniqueIdAndName("test-table-3-id", "test-table-3"),
-                uniqueIdAndName("test-table-4-id", "test-table-4"));
-        setInstanceTables(createValidInstanceProperties(), onlineTables, offlineTables);
+        Stream<TableStatus> tables = Stream.of(
+                onlineTable("test-table-1-id", "test-table-1"),
+                onlineTable("test-table-2-id", "test-table-2"),
+                offlineTable("test-table-3-id", "test-table-3"),
+                offlineTable("test-table-4-id", "test-table-4"));
+        setInstanceTables(createValidInstanceProperties(), tables);
 
         // When
         String output = runClient()
@@ -93,5 +92,13 @@ class TableNamesReportTest extends AdminClientMockStoreBase {
         order.verify(in.mock).waitForLine();
         order.verify(in.mock).promptLine(any());
         order.verifyNoMoreInteractions();
+    }
+
+    private static TableStatus onlineTable(String tableId, String tableName) {
+        return uniqueIdAndName(tableId, tableName, true);
+    }
+
+    private static TableStatus offlineTable(String tableId, String tableName) {
+        return uniqueIdAndName(tableId, tableName, false);
     }
 }

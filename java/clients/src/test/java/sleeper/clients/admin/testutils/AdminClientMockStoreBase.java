@@ -30,10 +30,6 @@ import sleeper.core.table.TableStatus;
 import sleeper.job.common.QueueMessageCount;
 
 import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -64,32 +60,21 @@ public abstract class AdminClientMockStoreBase extends AdminClientTestBase {
     }
 
     @Override
-    public void startClient(AdminClientStatusStoreFactory statusStores, QueueMessageCount.Client queueClient)
-            throws InterruptedException {
+    public void startClient(AdminClientStatusStoreFactory statusStores, QueueMessageCount.Client queueClient) throws InterruptedException {
         new AdminClient(tableIndex, store, statusStores,
                 editor, out.consoleOut(), in.consoleIn(),
                 queueClient, (properties -> Collections.emptyMap()))
-                .start(instanceId);
+                        .start(instanceId);
     }
 
-    protected void setInstanceTables(InstanceProperties instanceProperties, TableStatus... tableIds) {
-        setInstanceProperties(instanceProperties);
-        List.of(tableIds).forEach(tableIndex::create);
+    protected void setInstanceTables(InstanceProperties instanceProperties, TableStatus... tables) {
+        setInstanceTables(instanceProperties, Stream.of(tables));
     }
 
-    protected void setInstanceTables(InstanceProperties instanceProperties, List<TableStatus> onlineTableIds, List<TableStatus> offlineTableIds) {
+    protected void setInstanceTables(InstanceProperties instanceProperties, Stream<TableStatus> tables) {
         setInstanceProperties(instanceProperties);
-        List<String> allTableNames = Stream.concat(onlineTableIds.stream(), offlineTableIds.stream())
-                .map(TableStatus::getTableName)
-                .collect(Collectors.toList());
-        allTableNames.stream()
-                .map(tableName -> TableStatus.uniqueIdAndName(UUID.randomUUID().toString(), tableName))
-                .forEach(tableIndex::create);
-        offlineTableIds.stream()
-                .map(TableStatus::getTableName)
-                .map(tableIndex::getTableByName)
-                .flatMap(Optional::stream)
-                .forEach(tableId -> tableIndex.update(tableId.takeOffline()));
+        tables.map(table -> createValidTableProperties(instanceProperties, table))
+                .forEach(this::saveTableProperties);
     }
 
     protected void setTableProperties(String tableName) {
