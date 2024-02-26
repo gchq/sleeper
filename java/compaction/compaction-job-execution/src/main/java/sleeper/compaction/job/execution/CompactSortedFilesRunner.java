@@ -152,9 +152,7 @@ public class CompactSortedFilesRunner {
         taskStatusStore.taskFinished(taskFinished);
     }
 
-    private RecordsProcessedSummary compact(CompactionJob compactionJob, Message message) throws IOException, IteratorException, ActionException, StateStoreException {
-        MessageReference messageReference = new MessageReference(sqsClient, sqsJobQueueUrl,
-                "Compaction job " + compactionJob.getId(), message.getReceiptHandle());
+    private RecordsProcessedSummary compact(CompactionJob compactionJob, MessageReference messageReference) throws IOException, IteratorException, ActionException, StateStoreException {
         // Create background thread to keep messages alive
         PeriodicActionRunnable keepAliveRunnable = new PeriodicActionRunnable(
                 messageReference.changeVisibilityTimeoutAction(
@@ -257,7 +255,9 @@ public class CompactSortedFilesRunner {
                 Message message = receiveMessageResult.getMessages().get(0);
                 LOGGER.info("Received message: {}", message);
                 CompactionJob compactionJob = CompactionJobSerDe.deserialiseFromString(message.getBody());
-                return Optional.of(new JobAndMessage(compactionJob, message));
+                MessageReference messageReference = new MessageReference(sqsClient, sqsJobQueueUrl,
+                        "Compaction job " + compactionJob.getId(), message.getReceiptHandle());
+                return Optional.of(new JobAndMessage(compactionJob, messageReference));
             }
         };
     }

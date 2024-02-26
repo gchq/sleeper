@@ -16,13 +16,13 @@
 
 package sleeper.compaction.job.execution;
 
-import com.amazonaws.services.sqs.model.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.util.LoggedDuration;
+import sleeper.job.common.action.MessageReference;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -107,9 +107,9 @@ public class CompactionTask {
 
     static class JobAndMessage {
         private CompactionJob job;
-        private Message message;
+        private MessageReference message;
 
-        JobAndMessage(CompactionJob job, Message message) {
+        JobAndMessage(CompactionJob job, MessageReference message) {
             this.job = job;
             this.message = message;
         }
@@ -118,7 +118,7 @@ public class CompactionTask {
             return job;
         }
 
-        public Message getMessage() {
+        public MessageReference getMessage() {
             return message;
         }
     }
