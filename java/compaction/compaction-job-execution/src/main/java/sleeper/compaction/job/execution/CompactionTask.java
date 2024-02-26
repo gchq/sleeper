@@ -134,15 +134,17 @@ public class CompactionTask {
 
         public void close() {
             LOGGER.info("Compaction job {}: Stopping background thread to keep SQS messages alive", job.getId());
-            if (keepAliveRunnable != null)
+            if (keepAliveRunnable != null) {
                 keepAliveRunnable.stop();
+            }
         }
 
         public void completed() throws ActionException {
             // Delete message from queue
             LOGGER.info("Compaction job {}: Deleting message from queue", job.getId());
-            if (message != null)
+            if (message != null) {
                 message.deleteAction().call();
+            }
         }
 
         public void failed(FailedJobHandler handler) {
