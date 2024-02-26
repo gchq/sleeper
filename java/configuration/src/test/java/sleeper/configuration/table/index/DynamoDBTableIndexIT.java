@@ -29,6 +29,7 @@ import sleeper.core.table.TableStatus;
 import sleeper.dynamodb.tools.DynamoDBTestBase;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 
@@ -291,6 +292,16 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
             TableStatus newTable = TableStatus.uniqueIdAndName(table2.getTableUniqueId(), "test-name-1");
             assertThatThrownBy(() -> index.update(newTable))
                     .isInstanceOf(TableAlreadyExistsException.class);
+        }
+
+        @Test
+        void shouldNotThrowExceptionWhenUpdatingTableWithNoChanges() {
+            // Given
+            TableStatus table = createTable("test-name-1");
+
+            // When / Then
+            assertThatCode(() -> index.update(table))
+                    .doesNotThrowAnyException();
         }
     }
 

@@ -194,6 +194,10 @@ public class DynamoDBTableIndex implements TableIndex {
     }
 
     public void update(TableStatus oldStatus, TableStatus newStatus) {
+        if (oldStatus.equals(newStatus)) {
+            LOGGER.debug("No changes detected for table {}, skipping update", oldStatus);
+            return;
+        }
         boolean nameChanged = !oldStatus.getTableName().equals(newStatus.getTableName());
         boolean onlineChanged = !(oldStatus.isOnline() == newStatus.isOnline());
         Map<String, AttributeValue> idItem = DynamoDBTableIdFormat.getItem(newStatus);
@@ -214,13 +218,13 @@ public class DynamoDBTableIndex implements TableIndex {
             writeItems.add(new TransactWriteItem().withPut(new Put()
                     .withTableName(onlineIndexDynamoTableName)
                     .withItem(idItem)
-                    .withConditionExpression("attribute_not_exists(#tableonline)")
-                    .withExpressionAttributeNames(Map.of("#tableonline", ONLINE_FIELD))));
+                    .withConditionExpression("attribute_not_exists(#tableonline) and attribute_not_exists(#tablename)")
+                    .withExpressionAttributeNames(Map.of("#tableonline", ONLINE_FIELD, "#tablename", TABLE_NAME_FIELD))));
             writeItems.add(new TransactWriteItem().withDelete(new Delete()
                     .withTableName(onlineIndexDynamoTableName)
                     .withKey(getOnlineKey(oldStatus))
-                    .withConditionExpression("attribute_exists(#tableonline)")
-                    .withExpressionAttributeNames(Map.of("#tableonline", ONLINE_FIELD))));
+                    .withConditionExpression("attribute_exists(#tableonline) and attribute_exists(#tablename)")
+                    .withExpressionAttributeNames(Map.of("#tableonline", ONLINE_FIELD, "#tablename", TABLE_NAME_FIELD))));
         }
         writeItems.add(new TransactWriteItem().withPut(new Put()
                 .withTableName(idIndexDynamoTableName)
