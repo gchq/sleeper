@@ -35,10 +35,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Queue;
-import java.util.Set;
 import java.util.UUID;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -83,7 +81,7 @@ public class CompactionTaskTest {
             CompactionJob job = createJobOnQueue("job1");
 
             // When
-            runTask(withFailingJobs(job));
+            runTask(processJobs(jobFails()));
 
             // Then
             assertThat(successfulJobs).isEmpty();
@@ -98,7 +96,7 @@ public class CompactionTaskTest {
             CompactionJob job2 = createJobOnQueue("job2");
 
             // When
-            runTask(withFailingJobs(job2));
+            runTask(processJobs(jobSucceeds(), jobFails()));
 
             // Then
             assertThat(successfulJobs).containsExactly(job1);
@@ -367,22 +365,11 @@ public class CompactionTaskTest {
 
     private MessageConsumer processJobs(ProcessJob... actions) {
         Iterator<ProcessJob> getAction = List.of(actions).iterator();
-        return (jobAndMessage) -> {
+        return job -> {
             if (getAction.hasNext()) {
-                getAction.next().run(jobAndMessage.getJob());
+                getAction.next().run(job);
             } else {
-                throw new IllegalStateException("Unexpected job: " + jobAndMessage);
-            }
-        };
-    }
-
-    private MessageConsumer withFailingJobs(CompactionJob... jobs) {
-        Set<String> failingJobIds = Stream.of(jobs).map(CompactionJob::getId).collect(Collectors.toSet());
-        return (jobAndMessage) -> {
-            if (failingJobIds.contains(jobAndMessage.getJob().getId())) {
-                throw new Exception("Failed to process job");
-            } else {
-                successfulJobs.add(jobAndMessage.getJob());
+                throw new IllegalStateException("Unexpected job: " + job);
             }
         };
     }

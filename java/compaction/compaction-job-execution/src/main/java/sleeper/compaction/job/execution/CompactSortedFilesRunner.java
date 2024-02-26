@@ -54,7 +54,6 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.LoggedDuration;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.job.common.CommonJobUtils;
-import sleeper.job.common.action.ActionException;
 import sleeper.job.common.action.ChangeMessageVisibilityTimeoutAction;
 import sleeper.job.common.action.MessageReference;
 import sleeper.job.common.action.thread.PeriodicActionRunnable;
@@ -140,7 +139,7 @@ public class CompactSortedFilesRunner {
         CompactionTaskFinishedStatus.Builder taskFinishedBuilder = CompactionTaskFinishedStatus.builder();
         CompactionTask task = new CompactionTask(
                 instanceProperties, Instant::now, receiveFromSqs(sqsClient, instanceProperties),
-                (jobAndMessage) -> taskFinishedBuilder.addJobSummary(compact(jobAndMessage)),
+                job -> taskFinishedBuilder.addJobSummary(compact(job)),
                 setJobFailedVisibilityOnMessage(sqsClient, instanceProperties));
         task.runAt(startTime);
 
@@ -149,20 +148,6 @@ public class CompactSortedFilesRunner {
 
         CompactionTaskStatus taskFinished = taskStatusBuilder.finished(finishTime, taskFinishedBuilder).build();
         taskStatusStore.taskFinished(taskFinished);
-    }
-
-    private RecordsProcessedSummary compact(JobAndMessage jobAndMessage) throws IOException, IteratorException, ActionException, StateStoreException {
-
-        RecordsProcessedSummary summary;
-        try {
-            summary = compact(jobAndMessage.getJob());
-        } finally {
-            jobAndMessage.close();
-        }
-
-        jobAndMessage.completed();
-
-        return summary;
     }
 
     private RecordsProcessedSummary compact(CompactionJob compactionJob) throws IteratorException, IOException, StateStoreException {

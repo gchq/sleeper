@@ -72,17 +72,21 @@ public class CompactionTask {
                     continue;
                 }
             }
-            JobAndMessage jobAndMessage = jobAndMessageOpt.get();
-            LOGGER.info("CompactionJob is: {}", jobAndMessage.job);
-            try {
-                messageConsumer.consume(jobAndMessage);
-                totalNumberOfMessagesProcessed++;
-                numConsecutiveFailures = 0;
-                lastActiveTime = timeSupplier.get();
-            } catch (Exception e) {
-                LOGGER.error("Failed processing compaction job, putting job back on queue", e);
-                numConsecutiveFailures++;
-                jobAndMessage.failed(failedJobHandler);
+            try (JobAndMessage jobAndMessage = jobAndMessageOpt.get()) {
+                LOGGER.info("CompactionJob is: {}", jobAndMessage.getJob());
+                try {
+                    messageConsumer.consume(jobAndMessage.getJob());
+                    jobAndMessage.completed();
+                    totalNumberOfMessagesProcessed++;
+                    numConsecutiveFailures = 0;
+                    lastActiveTime = timeSupplier.get();
+                } catch (Exception e) {
+                    LOGGER.error("Failed processing compaction job, putting job back on queue", e);
+                    numConsecutiveFailures++;
+                    jobAndMessage.failed(failedJobHandler);
+                } finally {
+                    jobAndMessage.close();
+                }
             }
         }
         if (numConsecutiveFailures >= maxConsecutiveFailures) {
@@ -99,7 +103,7 @@ public class CompactionTask {
 
     @FunctionalInterface
     interface MessageConsumer {
-        void consume(JobAndMessage jobAndMessage) throws Exception;
+        void consume(CompactionJob jobAndMessage) throws Exception;
     }
 
     @FunctionalInterface
@@ -107,7 +111,7 @@ public class CompactionTask {
         void onFailure(JobAndMessage jobAndMessage);
     }
 
-    static class JobAndMessage {
+    static class JobAndMessage implements AutoCloseable {
         private final CompactionJob job;
         private final MessageReference message;
         private final PeriodicActionRunnable keepAliveRunnable;
@@ -132,13 +136,15 @@ public class CompactionTask {
 
         public void close() {
             LOGGER.info("Compaction job {}: Stopping background thread to keep SQS messages alive", job.getId());
-            keepAliveRunnable.stop();
+            if (keepAliveRunnable != null)
+                keepAliveRunnable.stop();
         }
 
         public void completed() throws ActionException {
             // Delete message from queue
             LOGGER.info("Compaction job {}: Deleting message from queue", job.getId());
-            message.deleteAction().call();
+            if (message != null)
+                message.deleteAction().call();
         }
 
         public void failed(FailedJobHandler handler) {
