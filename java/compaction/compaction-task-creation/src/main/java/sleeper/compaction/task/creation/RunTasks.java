@@ -126,13 +126,8 @@ public class RunTasks {
         int queueSize = QueueMessageCount.withSqsClient(sqsClient).getQueueMessageCount(sqsJobQueueUrl)
                 .getApproximateNumberOfMessages();
         LOGGER.info("Queue size is {}", queueSize);
-
-        if (0 == queueSize) {
-            LOGGER.info("Finishing as queue size is 0");
-        } else {
-            // Create 1 task for each item on the queue
-            run(startTime, queueSize);
-        }
+        // Request 1 task for each item on the queue
+        run(startTime, queueSize);
     }
 
     private void run(long startTime, int requestedTasks) {
