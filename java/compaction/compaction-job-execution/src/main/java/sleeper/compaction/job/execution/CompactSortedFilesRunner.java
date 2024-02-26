@@ -141,7 +141,7 @@ public class CompactSortedFilesRunner {
         CompactionTaskFinishedStatus.Builder taskFinishedBuilder = CompactionTaskFinishedStatus.builder();
         CompactionTask task = new CompactionTask(
                 instanceProperties, Instant::now, receiveFromSqs(sqsClient, instanceProperties),
-                (jobAndMessage) -> taskFinishedBuilder.addJobSummary(compact(jobAndMessage.getJob(), jobAndMessage.getMessage())),
+                (jobAndMessage) -> taskFinishedBuilder.addJobSummary(compact(jobAndMessage)),
                 setJobFailedVisibilityOnMessage(sqsClient, instanceProperties));
         task.runAt(startTime);
 
@@ -152,28 +152,20 @@ public class CompactSortedFilesRunner {
         taskStatusStore.taskFinished(taskFinished);
     }
 
-    private RecordsProcessedSummary compact(CompactionJob compactionJob, MessageReference messageReference) throws IOException, IteratorException, ActionException, StateStoreException {
-        // Create background thread to keep messages alive
-        PeriodicActionRunnable keepAliveRunnable = new PeriodicActionRunnable(
-                messageReference.changeVisibilityTimeoutAction(
-                        instanceProperties.getInt(COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS)),
-                keepAliveFrequency);
-        keepAliveRunnable.start();
-        LOGGER.info("Compaction job {}: Created background thread to keep SQS messages alive (period is {} seconds)",
-                compactionJob.getId(), keepAliveFrequency);
+    private RecordsProcessedSummary compact(JobAndMessage jobAndMessage) throws IOException, IteratorException, ActionException, StateStoreException {
 
         RecordsProcessedSummary summary;
         try {
-            summary = compact(compactionJob);
+            summary = compact(jobAndMessage.getJob());
         } finally {
             LOGGER.info("Compaction job {}: Stopping background thread to keep SQS messages alive",
-                    compactionJob.getId());
-            keepAliveRunnable.stop();
+                    jobAndMessage.getJob().getId());
+            jobAndMessage.getKeepAliveRunnable().stop();
         }
 
         // Delete message from queue
-        LOGGER.info("Compaction job {}: Deleting message from queue", compactionJob.getId());
-        DeleteMessageAction deleteAction = messageReference.deleteAction();
+        LOGGER.info("Compaction job {}: Deleting message from queue", jobAndMessage.getJob().getId());
+        DeleteMessageAction deleteAction = jobAndMessage.getMessage().deleteAction();
         deleteAction.call();
 
         return summary;
@@ -237,7 +229,7 @@ public class CompactSortedFilesRunner {
         LOGGER.info("Shut down ecsClient");
     }
 
-    private static MessageReceiver receiveFromSqs(AmazonSQS sqsClient, InstanceProperties instanceProperties) {
+    private MessageReceiver receiveFromSqs(AmazonSQS sqsClient, InstanceProperties instanceProperties) {
         int waitTimeSeconds = instanceProperties.getInt(COMPACTION_TASK_WAIT_TIME_IN_SECONDS);
         int delayBeforeRetry = instanceProperties.getInt(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS);
         String sqsJobQueueUrl = instanceProperties.get(COMPACTION_JOB_QUEUE_URL);
@@ -257,7 +249,17 @@ public class CompactSortedFilesRunner {
                 CompactionJob compactionJob = CompactionJobSerDe.deserialiseFromString(message.getBody());
                 MessageReference messageReference = new MessageReference(sqsClient, sqsJobQueueUrl,
                         "Compaction job " + compactionJob.getId(), message.getReceiptHandle());
-                return Optional.of(new JobAndMessage(compactionJob, messageReference));
+
+                // Create background thread to keep messages alive
+                PeriodicActionRunnable keepAliveRunnable = new PeriodicActionRunnable(
+                        messageReference.changeVisibilityTimeoutAction(
+                                instanceProperties.getInt(COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS)),
+                        keepAliveFrequency);
+                keepAliveRunnable.start();
+                LOGGER.info("Compaction job {}: Created background thread to keep SQS messages alive (period is {} seconds)",
+                        compactionJob.getId(), keepAliveFrequency);
+
+                return Optional.of(new JobAndMessage(compactionJob, messageReference, keepAliveRunnable));
             }
         };
     }

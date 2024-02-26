@@ -23,6 +23,7 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.util.LoggedDuration;
 import sleeper.job.common.action.MessageReference;
+import sleeper.job.common.action.thread.PeriodicActionRunnable;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -106,12 +107,14 @@ public class CompactionTask {
     }
 
     static class JobAndMessage {
-        private CompactionJob job;
-        private MessageReference message;
+        private final CompactionJob job;
+        private final MessageReference message;
+        private final PeriodicActionRunnable keepAliveRunnable;
 
-        JobAndMessage(CompactionJob job, MessageReference message) {
+        JobAndMessage(CompactionJob job, MessageReference message, PeriodicActionRunnable keepAliveRunnable) {
             this.job = job;
             this.message = message;
+            this.keepAliveRunnable = keepAliveRunnable;
         }
 
         public CompactionJob getJob() {
@@ -120,6 +123,10 @@ public class CompactionTask {
 
         public MessageReference getMessage() {
             return message;
+        }
+
+        public PeriodicActionRunnable getKeepAliveRunnable() {
+            return keepAliveRunnable;
         }
     }
 }
