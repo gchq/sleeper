@@ -779,13 +779,11 @@ sleeper.compaction.task.wait.time.seconds=20
 # compaction task will terminate.
 sleeper.compaction.task.delay.before.retry.seconds=10
 
-# The total time in seconds that a compaction task can be processing jobs for before it is terminated.
-# When a compaction task waits for compaction jobs to appear on the SQS queue, if the task receives no
-# messages in the time defined by the property "sleeper.compaction.task.wait.time.seconds", it will
-# try to wait for a message again.
-# If the compaction task runs for long enough as to exceed the amount of seconds defined by this
-# property, then the compaction task will terminate.
-sleeper.compaction.task.max.time.seconds=60
+# The total time in seconds that a compaction task can be idle before it is terminated.
+# When there are no compaction jobs available on the SQS queue, the task will wait for SQS to return a
+# job. Each time SQS returns no jobs, the task will check whether this idle time has elapsed since the
+# last time it finished a job.
+sleeper.compaction.task.max.idle.time.seconds=60
 
 # The maximum number of times that a compaction task can consecutively fail to process a compaction
 # job before it terminates.
