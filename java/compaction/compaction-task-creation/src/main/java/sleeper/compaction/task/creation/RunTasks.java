@@ -148,18 +148,16 @@ public class RunTasks {
             LOGGER.info("Finishing as maximum running tasks of {} has been reached", maximumRunningTasks);
             return;
         }
-        if (requestedTasks == 0) {
-            LOGGER.info("Maximum number of tasks to create is {}", maxNumTasksToCreate);
-            int numberOfTasksToCreate = Math.min(requestedTasks, maxNumTasksToCreate);
-            if (launchType.equalsIgnoreCase("EC2")) {
-                int totalTasks = numberOfTasksToCreate + numRunningAndPendingTasks;
-                LOGGER.info("Total number of tasks if all launches succeed {}", totalTasks);
-                scaler.scaleTo(totalTasks);
-            }
-            TaskOverride override = createOverride(List.of(s3Bucket), containerName);
-            NetworkConfiguration networkConfiguration = networkConfig(subnets);
-            launchTasks(startTime, numberOfTasksToCreate, override, networkConfiguration);
+        LOGGER.info("Maximum number of tasks to create is {}", maxNumTasksToCreate);
+        int numberOfTasksToCreate = Math.min(requestedTasks, maxNumTasksToCreate);
+        if (launchType.equalsIgnoreCase("EC2")) {
+            int totalTasks = numberOfTasksToCreate + numRunningAndPendingTasks;
+            LOGGER.info("Total number of tasks if all launches succeed {}", totalTasks);
+            scaler.scaleTo(totalTasks);
         }
+        TaskOverride override = createOverride(List.of(s3Bucket), containerName);
+        NetworkConfiguration networkConfiguration = networkConfig(subnets);
+        launchTasks(startTime, numberOfTasksToCreate, override, networkConfiguration);
     }
 
     /**
