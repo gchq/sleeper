@@ -76,7 +76,7 @@ public class CompactionTask {
                 messageConsumer.consume(jobAndMessage);
                 totalNumberOfMessagesProcessed++;
                 numConsecutiveFailures = 0;
-                // lastActiveTime = timeSupplier.get();
+                lastActiveTime = timeSupplier.get();
             } catch (Exception e) {
                 LOGGER.error("Failed processing compaction job, putting job back on queue", e);
                 numConsecutiveFailures++;

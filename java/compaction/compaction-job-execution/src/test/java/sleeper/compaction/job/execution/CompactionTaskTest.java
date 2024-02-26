@@ -17,14 +17,15 @@
 package sleeper.compaction.job.execution;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.execution.CompactionTask.FailedJobHandler;
 import sleeper.compaction.job.execution.CompactionTask.JobAndMessage;
 import sleeper.compaction.job.execution.CompactionTask.MessageConsumer;
+import sleeper.compaction.job.execution.CompactionTask.MessageReceiver;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.time.Instant;
@@ -47,19 +48,20 @@ import static sleeper.configuration.properties.instance.CompactionProperty.COMPA
 
 public class CompactionTaskTest {
 
-    private final InstanceProperties instanceProperties = createInstance();
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Queue<CompactionJob> jobsOnQueue = new LinkedList<>();
     private final List<CompactionJob> successfulJobs = new ArrayList<>();
     private final List<CompactionJob> failedJobs = new ArrayList<>();
 
+    @BeforeEach
+    void setUp() {
+        instanceProperties.setNumber(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS, 0);
+        instanceProperties.setNumber(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES, 10);
+    }
+
     @Nested
     @DisplayName("Process jobs")
     class ProcessJobs {
-
-        @BeforeEach
-        void setUp() {
-            instanceProperties.setNumber(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS, 0);
-        }
 
         @Test
         void shouldRunJobFromQueueThenTerminate() throws Exception {
@@ -113,73 +115,104 @@ public class CompactionTaskTest {
         void shouldTerminateIfNoJobsArePresentAfterRunningForIdleTime() throws Exception {
             // Given
             instanceProperties.setNumber(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS, 3);
-            Iterator<Instant> times = List.of(
+            Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"),
-                    Instant.parse("2024-02-22T13:50:03Z")).iterator();
+                    Instant.parse("2024-02-22T13:50:03Z")));
 
             // When
-            runTaskWithTimes(processNoJobs(), times::next);
+            runTask(processNoJobs(), times::poll);
 
             // Then
-            assertThat(times).isExhausted();
+            assertThat(times).isEmpty();
         }
 
         @Test
         void shouldTerminateIfNoJobsArePresentAfterRunningForIdleTimeWithTwoQueuePolls() throws Exception {
             // Given
             instanceProperties.setNumber(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS, 3);
-            Iterator<Instant> times = List.of(
+            Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:02Z"), // First idle time check
-                    Instant.parse("2024-02-22T13:50:04Z")) // Second idle time check
-                    .iterator();
+                    Instant.parse("2024-02-22T13:50:04Z"))); // Second idle time check
 
             // When
-            runTaskWithTimes(processNoJobs(), times::next);
+            runTask(processNoJobs(), times::poll);
 
             // Then
-            assertThat(times).isExhausted();
+            assertThat(times).isEmpty();
         }
 
         @Test
         void shouldTerminateAfterRunningJobAndWaitingForIdleTime() throws Exception {
             // Given
             instanceProperties.setNumber(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS, 3);
-            Iterator<Instant> times = List.of(
+            Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:01Z"), // Job completed
-                    Instant.parse("2024-02-22T13:50:05Z")) // Idle time check with empty queue
-                    .iterator();
+                    Instant.parse("2024-02-22T13:50:05Z"))); // Idle time check with empty queue
             CompactionJob job = createJobOnQueue("job1");
 
             // When
-            runTaskWithTimes(jobsSucceed(1), times::next);
+            runTask(jobsSucceed(1), times::poll);
 
             // Then
-            assertThat(times).isExhausted();
+            assertThat(times).isEmpty();
             assertThat(successfulJobs).containsExactly(job);
             assertThat(failedJobs).isEmpty();
             assertThat(jobsOnQueue).isEmpty();
         }
 
         @Test
-        @Disabled("TODO")
-        void shouldTerminateWhenQueueIsEmptyOnFirstCheckThenIdleAfterProcessingJob() throws Exception {
+        void shouldTerminateWhenMaxIdleTimeNotMetOnFirstCheckThenIdleAfterProcessingJob() throws Exception {
             // Given
             instanceProperties.setNumber(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS, 3);
-            Iterator<Instant> times = List.of(
+            Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
-                    Instant.parse("2024-02-22T13:50:02Z"), // First check
-                    Instant.parse("2024-02-22T13:50:04Z"), // Job completed
-                    Instant.parse("2024-02-22T13:50:06Z")) // Second check
-                    .iterator();
-            CompactionJob job = createJobOnQueue("job1");
+                    Instant.parse("2024-02-22T13:50:01Z"), // First check
+                    Instant.parse("2024-02-22T13:50:02Z"), // Job completed
+                    Instant.parse("2024-02-22T13:50:06Z"))); // Second check
+            CompactionJob job = createJob("job1");
 
             // When
-            runTaskWithTimes(jobsSucceed(1), times::next);
+            runTask(
+                    pollQueue(
+                            receiveNoJobAnd(() -> send(job)),
+                            receiveJob(),
+                            receiveNoJob()),
+                    processJobs(jobSucceeds()),
+                    times::poll);
 
             // Then
-            assertThat(times).isExhausted();
+            assertThat(times).isEmpty();
+            assertThat(successfulJobs).containsExactly(job);
+            assertThat(failedJobs).isEmpty();
+            assertThat(jobsOnQueue).isEmpty();
+        }
+
+        @Test
+        void shouldTerminateWhenMaxIdleTimeNotMetOnFirstCheckThenNotMetAfterProcessingJob() throws Exception {
+            // Given
+            instanceProperties.setNumber(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS, 3);
+            Queue<Instant> times = new LinkedList<>(List.of(
+                    Instant.parse("2024-02-22T13:50:00Z"), // Start
+                    Instant.parse("2024-02-22T13:50:01Z"), // First check
+                    Instant.parse("2024-02-22T13:50:02Z"), // Job completed
+                    Instant.parse("2024-02-22T13:50:04Z"), // Second check
+                    Instant.parse("2024-02-22T13:50:06Z"))); // Third check
+            CompactionJob job = createJob("job1");
+
+            // When
+            runTask(
+                    pollQueue(
+                            receiveNoJobAnd(() -> send(job)),
+                            receiveJob(),
+                            receiveNoJob(),
+                            receiveNoJob()),
+                    processJobs(jobSucceeds()),
+                    times::poll);
+
+            // Then
+            assertThat(times).isEmpty();
             assertThat(successfulJobs).containsExactly(job);
             assertThat(failedJobs).isEmpty();
             assertThat(jobsOnQueue).isEmpty();
@@ -225,65 +258,118 @@ public class CompactionTaskTest {
         }
     }
 
-    private static InstanceProperties createInstance() {
-        InstanceProperties instanceProperties = createTestInstanceProperties();
-        instanceProperties.setNumber(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS, 0);
-        instanceProperties.setNumber(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES, 2);
-        return instanceProperties;
-    }
-
     private void runTask(MessageConsumer messageConsumer) throws Exception {
-        runTaskWithTimes(messageConsumer, Instant::now);
+        runTask(messageConsumer, Instant::now);
     }
 
-    private void runTaskWithTimes(MessageConsumer messageConsumer, Supplier<Instant> timeSupplier) throws Exception {
-        new CompactionTask(instanceProperties, timeSupplier, () -> {
+    private void runTask(MessageConsumer messageConsumer, Supplier<Instant> timeSupplier) throws Exception {
+        runTask(pollQueue(), messageConsumer, timeSupplier);
+    }
+
+    private void runTask(
+            MessageReceiver messageReceiver,
+            MessageConsumer messageConsumer,
+            Supplier<Instant> timeSupplier) throws Exception {
+        new CompactionTask(instanceProperties, timeSupplier, messageReceiver, messageConsumer, trackFailedJob())
+                .runAt(timeSupplier.get());
+    }
+
+    private CompactionJob createJobOnQueue(String jobId) {
+        CompactionJob job = createJob(jobId);
+        jobsOnQueue.add(job);
+        return job;
+    }
+
+    private CompactionJob createJob(String jobId) {
+        return CompactionJob.builder()
+                .tableId("test-table-id")
+                .jobId(jobId)
+                .partitionId("root")
+                .inputFiles(List.of(UUID.randomUUID().toString()))
+                .outputFile(UUID.randomUUID().toString()).build();
+    }
+
+    private void send(CompactionJob job) {
+        jobsOnQueue.add(job);
+    }
+
+    private MessageReceiver pollQueue() {
+        return () -> {
             CompactionJob job = jobsOnQueue.poll();
             if (job != null) {
                 return Optional.of(new JobAndMessage(job, null));
             } else {
                 return Optional.empty();
             }
-        }, messageConsumer, (jobAndMessage) -> failedJobs.add(jobAndMessage.getJob()))
-                .runAt(timeSupplier.get());
+        };
     }
 
-    private CompactionJob createJobOnQueue(String jobId) {
-        CompactionJob job = CompactionJob.builder()
-                .tableId("test-table-id")
-                .jobId(jobId)
-                .partitionId("root")
-                .inputFiles(List.of(UUID.randomUUID().toString()))
-                .outputFile(UUID.randomUUID().toString()).build();
-        jobsOnQueue.add(job);
-        return job;
+    private MessageReceiver pollQueue(MessageReceiver... actions) {
+        Iterator<MessageReceiver> getAction = List.of(actions).iterator();
+        return () -> {
+            if (getAction.hasNext()) {
+                return getAction.next().receiveMessage();
+            } else {
+                throw new IllegalStateException("Unexpected queue poll");
+            }
+        };
+    }
+
+    private MessageReceiver receiveJob() {
+        return () -> {
+            if (jobsOnQueue.isEmpty()) {
+                throw new IllegalStateException("Expected job on queue");
+            }
+            return Optional.of(new JobAndMessage(jobsOnQueue.poll(), null));
+        };
+    }
+
+    private MessageReceiver receiveNoJob() {
+        return () -> {
+            if (!jobsOnQueue.isEmpty()) {
+                throw new IllegalStateException("Expected no jobs on queue");
+            }
+            return Optional.empty();
+        };
+    }
+
+    private MessageReceiver receiveNoJobAnd(Runnable action) {
+        return () -> {
+            if (!jobsOnQueue.isEmpty()) {
+                throw new IllegalStateException("Expected no jobs on queue");
+            }
+            action.run();
+            return Optional.empty();
+        };
+    }
+
+    private FailedJobHandler trackFailedJob() {
+        return (jobAndMessage) -> failedJobs.add(jobAndMessage.getJob());
     }
 
     private MessageConsumer jobsSucceed(int numJobs) {
         return processJobs(Stream.generate(() -> jobSucceeds())
                 .limit(numJobs)
-                .toArray(MessageConsumer[]::new));
+                .toArray(ProcessJob[]::new));
     }
 
-    private MessageConsumer jobSucceeds() {
-        return (jobAndMessage) -> successfulJobs.add(jobAndMessage.getJob());
+    private ProcessJob jobSucceeds() {
+        return new ProcessJob(true);
     }
 
-    private MessageConsumer jobFails() {
-        return jobAndMessage -> {
-            throw new Exception("Failed to process job");
-        };
+    private ProcessJob jobFails() {
+        return new ProcessJob(false);
     }
 
     private MessageConsumer processNoJobs() {
         return processJobs();
     }
 
-    private MessageConsumer processJobs(MessageConsumer... actions) {
-        Iterator<MessageConsumer> getAction = List.of(actions).iterator();
+    private MessageConsumer processJobs(ProcessJob... actions) {
+        Iterator<ProcessJob> getAction = List.of(actions).iterator();
         return (jobAndMessage) -> {
             if (getAction.hasNext()) {
-                getAction.next().consume(jobAndMessage);
+                getAction.next().run(jobAndMessage.getJob());
             } else {
                 throw new IllegalStateException("Unexpected job: " + jobAndMessage);
             }
@@ -299,5 +385,21 @@ public class CompactionTaskTest {
                 successfulJobs.add(jobAndMessage.getJob());
             }
         };
+    }
+
+    private class ProcessJob {
+        private final boolean succeed;
+
+        ProcessJob(boolean succeed) {
+            this.succeed = succeed;
+        }
+
+        public void run(CompactionJob job) throws Exception {
+            if (succeed) {
+                successfulJobs.add(job);
+            } else {
+                throw new Exception("Failed to process job");
+            }
+        }
     }
 }
