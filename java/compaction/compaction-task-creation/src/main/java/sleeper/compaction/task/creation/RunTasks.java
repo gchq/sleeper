@@ -135,7 +135,7 @@ public class RunTasks {
         }
     }
 
-    public void run(long startTime, int requestedTasks) {
+    private void run(long startTime, int requestedTasks) {
         // Find out number of pending and running tasks
         int numRunningAndPendingTasks = CommonJobUtils.getNumPendingAndRunningTasks(clusterName, ecsClient);
         LOGGER.info("Number of running and pending tasks is {}", numRunningAndPendingTasks);
