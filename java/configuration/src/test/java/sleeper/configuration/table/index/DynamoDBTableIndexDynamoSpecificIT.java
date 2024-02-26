@@ -49,6 +49,7 @@ public class DynamoDBTableIndexDynamoSpecificIT extends DynamoDBTestBase {
         assertThatThrownBy(() -> index.update(oldTable, newTable))
                 .isInstanceOf(TableNotFoundException.class);
         assertThat(index.streamAllTables()).isEmpty();
+        assertThat(index.streamOnlineTables()).isEmpty();
     }
 
     @Test
@@ -63,6 +64,11 @@ public class DynamoDBTableIndexDynamoSpecificIT extends DynamoDBTestBase {
         // When/Then
         assertThatThrownBy(() -> index.update(oldTable, newTable))
                 .isInstanceOf(TableNotFoundException.class);
-        assertThat(index.streamAllTables()).contains(renamedTable);
+        assertThat(index.streamAllTables()).containsExactly(renamedTable);
+        assertThat(index.streamOnlineTables()).containsExactly(renamedTable);
+        assertThat(index.getTableByUniqueId(renamedTable.getTableUniqueId()).stream())
+                .containsExactly(renamedTable);
+        assertThat(index.getTableByName(renamedTable.getTableName()).stream())
+                .containsExactly(renamedTable);
     }
 }

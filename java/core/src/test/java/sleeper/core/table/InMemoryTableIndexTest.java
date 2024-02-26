@@ -299,10 +299,16 @@ public class InMemoryTableIndexTest {
             TableStatus table = createTable("test-table");
 
             // When
-            index.update(table.takeOffline());
+            TableStatus offlineTable = table.takeOffline();
+            index.update(offlineTable);
 
             // Then
+            assertThat(index.streamAllTables()).containsExactly(offlineTable);
             assertThat(index.streamOnlineTables()).isEmpty();
+            assertThat(index.getTableByUniqueId(table.getTableUniqueId()).stream())
+                    .containsExactly(offlineTable);
+            assertThat(index.getTableByName(table.getTableName()).stream())
+                    .containsExactly(offlineTable);
         }
 
         @Test
@@ -310,6 +316,7 @@ public class InMemoryTableIndexTest {
             // When / Then
             assertThatThrownBy(() -> index.update(TableStatusTestHelper.uniqueIdAndName("not-a-table-id", "not-a-table").takeOffline()))
                     .isInstanceOf(TableNotFoundException.class);
+            assertThat(index.streamAllTables()).isEmpty();
         }
 
         @Test
@@ -321,6 +328,10 @@ public class InMemoryTableIndexTest {
             // When / Then
             assertThatThrownBy(() -> index.update(table.takeOffline()))
                     .isInstanceOf(TableNotFoundException.class);
+            assertThat(index.streamAllTables()).isEmpty();
+            assertThat(index.streamOnlineTables()).isEmpty();
+            assertThat(index.getTableByUniqueId(table.getTableUniqueId())).isEmpty();
+            assertThat(index.getTableByName(table.getTableName())).isEmpty();
         }
     }
 
@@ -331,14 +342,20 @@ public class InMemoryTableIndexTest {
         void shouldPutTableOnline() {
             // Given
             TableStatus table = createTable("test-table");
-            index.update(table.takeOffline());
+            TableStatus onlineTable = table.putOnline();
+            TableStatus offlineTable = table.takeOffline();
+            index.update(offlineTable);
 
             // When
-            index.update(table.putOnline());
+            index.update(onlineTable);
 
             // Then
-            assertThat(index.streamOnlineTables())
-                    .containsExactly(table);
+            assertThat(index.streamAllTables()).containsExactly(onlineTable);
+            assertThat(index.streamOnlineTables()).containsExactly(onlineTable);
+            assertThat(index.getTableByUniqueId(table.getTableUniqueId()).stream())
+                    .containsExactly(onlineTable);
+            assertThat(index.getTableByName(table.getTableName()).stream())
+                    .containsExactly(onlineTable);
         }
 
         @Test
@@ -346,6 +363,7 @@ public class InMemoryTableIndexTest {
             // When / Then
             assertThatThrownBy(() -> index.update(TableStatusTestHelper.uniqueIdAndName("not-a-table-id", "not-a-table").putOnline()))
                     .isInstanceOf(TableNotFoundException.class);
+            assertThat(index.streamAllTables()).isEmpty();
         }
     }
 
