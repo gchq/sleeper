@@ -105,7 +105,8 @@ public class CompactSortedFilesRunner {
         if (instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE).equalsIgnoreCase("EC2")) {
             try {
                 if (this.ecsClient != null) {
-                    CommonJobUtils.retrieveContainerMetadata(ecsClient).ifPresent(info -> LOGGER.info("Task running on EC2 instance ID {} in AZ {} with ARN {} in cluster {} with status {}",
+                    CommonJobUtils.retrieveContainerMetadata(ecsClient).ifPresent(info -> LOGGER.info(
+                            "Task running on EC2 instance ID {} in AZ {} with ARN {} in cluster {} with status {}",
                             info.instanceID, info.az, info.instanceARN, info.clusterName, info.status));
                 } else {
                     LOGGER.warn("ECS client is null");
