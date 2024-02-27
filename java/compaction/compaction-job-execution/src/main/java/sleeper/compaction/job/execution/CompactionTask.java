@@ -39,15 +39,15 @@ public class CompactionTask {
     private final int maxConsecutiveFailures;
     private final Duration maxIdleTime;
     private final MessageReceiver messageReceiver;
-    private final MessageConsumer messageConsumer;
+    private final CompactionRunner compactor;
 
     public CompactionTask(InstanceProperties instanceProperties, Supplier<Instant> timeSupplier,
-            MessageReceiver messageReceiver, MessageConsumer messageConsumer) {
+            MessageReceiver messageReceiver, CompactionRunner compactor) {
         maxIdleTime = Duration.ofSeconds(instanceProperties.getInt(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS));
         maxConsecutiveFailures = instanceProperties.getInt(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES);
         this.timeSupplier = timeSupplier;
         this.messageReceiver = messageReceiver;
-        this.messageConsumer = messageConsumer;
+        this.compactor = compactor;
     }
 
     public void runAt(Instant startTime) throws InterruptedException, IOException {
@@ -71,7 +71,7 @@ public class CompactionTask {
                 CompactionJob job = message.getJob();
                 LOGGER.info("CompactionJob is: {}", job);
                 try {
-                    messageConsumer.consume(job);
+                    compactor.compact(job);
                     message.completed();
                     totalNumberOfMessagesProcessed++;
                     numConsecutiveFailures = 0;
@@ -96,8 +96,8 @@ public class CompactionTask {
     }
 
     @FunctionalInterface
-    interface MessageConsumer {
-        void consume(CompactionJob jobAndMessage) throws Exception;
+    interface CompactionRunner {
+        void compact(CompactionJob job) throws Exception;
     }
 
     interface MessageHandle extends AutoCloseable {

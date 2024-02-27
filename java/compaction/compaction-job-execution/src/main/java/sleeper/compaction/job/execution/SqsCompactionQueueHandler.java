@@ -96,10 +96,12 @@ public class SqsCompactionQueueHandler {
             this.keepAliveRunnable = keepAliveRunnable;
         }
 
+        @Override
         public CompactionJob getJob() {
             return job;
         }
 
+        @Override
         public void completed() {
             // Delete message from queue
             LOGGER.info("Compaction job {}: Deleting message from queue", job.getId());
@@ -110,12 +112,15 @@ public class SqsCompactionQueueHandler {
             }
         }
 
+        @Override
         public void failed() {
+            LOGGER.info("Compaction job {}: Returning message to queue", job.getId());
             int visibilityTimeout = instanceProperties.getInt(COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS);
             String sqsJobQueueUrl = instanceProperties.get(COMPACTION_JOB_QUEUE_URL);
             sqsClient.changeMessageVisibility(sqsJobQueueUrl, message.getReceiptHandle(), visibilityTimeout);
         }
 
+        @Override
         public void close() {
             LOGGER.info("Compaction job {}: Stopping background thread to keep SQS messages alive", job.getId());
             if (keepAliveRunnable != null) {

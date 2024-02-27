@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.execution.CompactionTask.MessageConsumer;
+import sleeper.compaction.job.execution.CompactionTask.CompactionRunner;
 import sleeper.compaction.job.execution.CompactionTask.MessageHandle;
 import sleeper.compaction.job.execution.CompactionTask.MessageReceiver;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -255,19 +255,19 @@ public class CompactionTaskTest {
         }
     }
 
-    private void runTask(MessageConsumer messageConsumer) throws Exception {
-        runTask(messageConsumer, Instant::now);
+    private void runTask(CompactionRunner compactor) throws Exception {
+        runTask(compactor, Instant::now);
     }
 
-    private void runTask(MessageConsumer messageConsumer, Supplier<Instant> timeSupplier) throws Exception {
-        runTask(pollQueue(), messageConsumer, timeSupplier);
+    private void runTask(CompactionRunner compactor, Supplier<Instant> timeSupplier) throws Exception {
+        runTask(pollQueue(), compactor, timeSupplier);
     }
 
     private void runTask(
             MessageReceiver messageReceiver,
-            MessageConsumer messageConsumer,
+            CompactionRunner compactor,
             Supplier<Instant> timeSupplier) throws Exception {
-        new CompactionTask(instanceProperties, timeSupplier, messageReceiver, messageConsumer)
+        new CompactionTask(instanceProperties, timeSupplier, messageReceiver, compactor)
                 .runAt(timeSupplier.get());
     }
 
@@ -340,7 +340,7 @@ public class CompactionTaskTest {
         };
     }
 
-    private MessageConsumer jobsSucceed(int numJobs) {
+    private CompactionRunner jobsSucceed(int numJobs) {
         return processJobs(Stream.generate(() -> jobSucceeds())
                 .limit(numJobs)
                 .toArray(ProcessJob[]::new));
@@ -354,11 +354,11 @@ public class CompactionTaskTest {
         return new ProcessJob(false);
     }
 
-    private MessageConsumer processNoJobs() {
+    private CompactionRunner processNoJobs() {
         return processJobs();
     }
 
-    private MessageConsumer processJobs(ProcessJob... actions) {
+    private CompactionRunner processJobs(ProcessJob... actions) {
         Iterator<ProcessJob> getAction = List.of(actions).iterator();
         return job -> {
             if (getAction.hasNext()) {
