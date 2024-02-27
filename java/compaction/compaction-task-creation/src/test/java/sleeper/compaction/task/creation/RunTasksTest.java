@@ -19,6 +19,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import sleeper.compaction.task.creation.RunTasks.Scaler;
 import sleeper.compaction.task.creation.RunTasks.TaskCounts;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.job.common.InMemoryQueueMessageCounts;

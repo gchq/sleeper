@@ -126,6 +126,10 @@ public class RunTasks {
         void launchTasks(long startTime, int numberOfTasksToCreate);
     }
 
+    public interface Scaler {
+        void scaleTo(String asGroupName, int numberContainers);
+    }
+
     public void run() {
         long startTime = System.currentTimeMillis();
         LOGGER.info("Queue URL is {}", sqsJobQueueUrl);

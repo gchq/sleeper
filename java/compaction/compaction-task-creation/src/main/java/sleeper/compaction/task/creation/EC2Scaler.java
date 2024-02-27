@@ -24,6 +24,8 @@ import com.amazonaws.services.ecs.AmazonECS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.compaction.task.creation.RunTasks.Scaler;
+
 import java.util.Map;
 import java.util.Optional;
 
