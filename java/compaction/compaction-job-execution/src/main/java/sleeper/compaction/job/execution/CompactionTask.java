@@ -100,11 +100,6 @@ public class CompactionTask {
         void consume(CompactionJob jobAndMessage) throws Exception;
     }
 
-    @FunctionalInterface
-    interface FailedJobHandler {
-        void onFailure(JobAndMessage jobAndMessage);
-    }
-
     interface MessageHandle extends AutoCloseable {
         CompactionJob getJob();
 
@@ -113,29 +108,5 @@ public class CompactionTask {
         void failed();
 
         void close();
-    }
-
-    static class JobAndMessage implements MessageHandle {
-        private final CompactionJob job;
-        private final FailedJobHandler failedJobHandler;
-
-        JobAndMessage(CompactionJob job, FailedJobHandler failedJobHandler) {
-            this.job = job;
-            this.failedJobHandler = failedJobHandler;
-        }
-
-        public CompactionJob getJob() {
-            return job;
-        }
-
-        public void close() {
-        }
-
-        public void completed() {
-        }
-
-        public void failed() {
-            failedJobHandler.onFailure(this);
-        }
     }
 }

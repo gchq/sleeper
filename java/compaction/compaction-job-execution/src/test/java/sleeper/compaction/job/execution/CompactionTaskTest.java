@@ -22,9 +22,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.execution.CompactionTask.FailedJobHandler;
-import sleeper.compaction.job.execution.CompactionTask.JobAndMessage;
 import sleeper.compaction.job.execution.CompactionTask.MessageConsumer;
+import sleeper.compaction.job.execution.CompactionTask.MessageHandle;
 import sleeper.compaction.job.execution.CompactionTask.MessageReceiver;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
@@ -295,7 +294,7 @@ public class CompactionTaskTest {
         return () -> {
             CompactionJob job = jobsOnQueue.poll();
             if (job != null) {
-                return Optional.of(new JobAndMessage(job, trackFailedJob()));
+                return Optional.of(new FakeMessageHandle(job));
             } else {
                 return Optional.empty();
             }
@@ -318,7 +317,7 @@ public class CompactionTaskTest {
             if (jobsOnQueue.isEmpty()) {
                 throw new IllegalStateException("Expected job on queue");
             }
-            return Optional.of(new JobAndMessage(jobsOnQueue.poll(), trackFailedJob()));
+            return Optional.of(new FakeMessageHandle(jobsOnQueue.poll()));
         };
     }
 
@@ -339,10 +338,6 @@ public class CompactionTaskTest {
             action.run();
             return Optional.empty();
         };
-    }
-
-    private FailedJobHandler trackFailedJob() {
-        return (jobAndMessage) -> failedJobs.add(jobAndMessage.getJob());
     }
 
     private MessageConsumer jobsSucceed(int numJobs) {
@@ -387,6 +382,28 @@ public class CompactionTaskTest {
             } else {
                 throw new Exception("Failed to process job");
             }
+        }
+    }
+
+    private class FakeMessageHandle implements MessageHandle {
+        private final CompactionJob job;
+
+        FakeMessageHandle(CompactionJob job) {
+            this.job = job;
+        }
+
+        public CompactionJob getJob() {
+            return job;
+        }
+
+        public void close() {
+        }
+
+        public void completed() {
+        }
+
+        public void failed() {
+            failedJobs.add(job);
         }
     }
 }
