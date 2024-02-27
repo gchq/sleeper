@@ -65,41 +65,37 @@ import static sleeper.core.ContainerConstants.COMPACTION_CONTAINER_NAME;
 public class RunTasks {
     private static final Logger LOGGER = LoggerFactory.getLogger(RunTasks.class);
 
-    private final AmazonECS ecsClient;
     private final InstanceProperties instanceProperties;
     private final String sqsJobQueueUrl;
     private final String clusterName;
     private final String launchType;
     private final int maximumRunningTasks;
-    private final Scaler scaler;
     private final QueueMessageCount.Client queueMessageCount;
     private final TaskCounts taskCounts;
+    private final Scaler scaler;
+    private final TaskLauncher launchTasks;
 
     public RunTasks(AmazonSQS sqsClient,
             AmazonECS ecsClient,
             AmazonS3 s3Client,
             AmazonAutoScaling asClient,
             InstanceProperties instanceProperties) {
-        this(sqsClient, ecsClient, s3Client, asClient, instanceProperties, QueueMessageCount.withSqsClient(sqsClient),
+        this(instanceProperties, QueueMessageCount.withSqsClient(sqsClient),
                 (clusterName) -> CommonJobUtils.getNumPendingAndRunningTasks(clusterName, ecsClient),
                 createEC2Scaler(instanceProperties, asClient, ecsClient),
                 (startTime, numberOfTasksToCreate) -> launchTasks(ecsClient, instanceProperties, startTime, numberOfTasksToCreate));
     }
 
-    public RunTasks(AmazonSQS sqsClient,
-            AmazonECS ecsClient,
-            AmazonS3 s3Client,
-            AmazonAutoScaling asClient,
-            InstanceProperties instanceProperties,
+    public RunTasks(InstanceProperties instanceProperties,
             QueueMessageCount.Client queueMessageCount,
             TaskCounts taskCounts,
             Scaler scaler,
-            LaunchTasks launchTasks) {
+            TaskLauncher launchTasks) {
         this.instanceProperties = instanceProperties;
-        this.ecsClient = ecsClient;
         this.queueMessageCount = queueMessageCount;
         this.taskCounts = taskCounts;
         this.scaler = scaler;
+        this.launchTasks = launchTasks;
         this.sqsJobQueueUrl = instanceProperties.get(COMPACTION_JOB_QUEUE_URL);
         this.clusterName = instanceProperties.get(COMPACTION_CLUSTER);
         this.maximumRunningTasks = instanceProperties.getInt(MAXIMUM_CONCURRENT_COMPACTION_TASKS);
@@ -126,7 +122,7 @@ public class RunTasks {
         int getRunningAndPending(String clusterName);
     }
 
-    private interface LaunchTasks {
+    private interface TaskLauncher {
         void launchTasks(long startTime, int numberOfTasksToCreate);
     }
 
@@ -168,7 +164,7 @@ public class RunTasks {
             scaler.scaleTo(instanceProperties.get(COMPACTION_AUTO_SCALING_GROUP), totalTasks);
         }
 
-        launchTasks(ecsClient, instanceProperties, startTime, numberOfTasksToCreate);
+        launchTasks.launchTasks(startTime, numberOfTasksToCreate);
     }
 
     /**
