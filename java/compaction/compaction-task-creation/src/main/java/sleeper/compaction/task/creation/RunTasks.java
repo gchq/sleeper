@@ -64,7 +64,6 @@ import static sleeper.core.ContainerConstants.COMPACTION_CONTAINER_NAME;
 public class RunTasks {
     private static final Logger LOGGER = LoggerFactory.getLogger(RunTasks.class);
 
-    private final AmazonSQS sqsClient;
     private final AmazonECS ecsClient;
     private final String s3Bucket;
     private final String sqsJobQueueUrl;
@@ -77,15 +76,29 @@ public class RunTasks {
     private final List<String> subnets;
     private final String fargateVersion;
     private final Scaler scaler;
+    private final QueueMessageCount.Client queueMessageCount;
+    private final TaskCounts taskCounts;
 
     public RunTasks(AmazonSQS sqsClient,
             AmazonECS ecsClient,
             AmazonS3 s3Client,
             AmazonAutoScaling asClient,
             String s3Bucket) {
-        this.sqsClient = sqsClient;
+        this(sqsClient, ecsClient, s3Client, asClient, s3Bucket, QueueMessageCount.withSqsClient(sqsClient),
+                (clusterName) -> CommonJobUtils.getNumPendingAndRunningTasks(clusterName, ecsClient));
+    }
+
+    public RunTasks(AmazonSQS sqsClient,
+            AmazonECS ecsClient,
+            AmazonS3 s3Client,
+            AmazonAutoScaling asClient,
+            String s3Bucket,
+            QueueMessageCount.Client queueMessageCount,
+            TaskCounts taskCounts) {
         this.ecsClient = ecsClient;
         this.s3Bucket = s3Bucket;
+        this.queueMessageCount = queueMessageCount;
+        this.taskCounts = taskCounts;
 
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3(s3Client, s3Bucket);
@@ -119,11 +132,15 @@ public class RunTasks {
                 requirements.getRight());
     }
 
+    private interface TaskCounts {
+        int getPendingAndRunning(String clusterName);
+    }
+
     public void run() {
         long startTime = System.currentTimeMillis();
         LOGGER.info("Queue URL is {}", sqsJobQueueUrl);
         // Find out number of messages in queue that are not being processed
-        int queueSize = QueueMessageCount.withSqsClient(sqsClient).getQueueMessageCount(sqsJobQueueUrl)
+        int queueSize = queueMessageCount.getQueueMessageCount(sqsJobQueueUrl)
                 .getApproximateNumberOfMessages();
         LOGGER.info("Queue size is {}", queueSize);
         // Request 1 task for each item on the queue
@@ -140,7 +157,7 @@ public class RunTasks {
             return;
         }
         // Find out number of pending and running tasks
-        int numRunningAndPendingTasks = CommonJobUtils.getNumPendingAndRunningTasks(clusterName, ecsClient);
+        int numRunningAndPendingTasks = taskCounts.getPendingAndRunning(clusterName);
         LOGGER.info("Number of running and pending tasks is {}", numRunningAndPendingTasks);
 
         if (numRunningAndPendingTasks >= maximumRunningTasks) {
