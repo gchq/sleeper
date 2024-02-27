@@ -102,8 +102,7 @@ public class DynamoDBTableIndex implements TableIndex {
             double totalCapacity = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
             LOGGER.debug("Created table {}, capacity consumed = {}", table, totalCapacity);
         } catch (TransactionCanceledException e) {
-            int namePutIndex = 0;
-            if (isCheckFailed(e, namePutIndex)) {
+            if (anyCheckFailed(e)) {
                 throw new TableAlreadyExistsException(table);
             } else {
                 throw e;
@@ -269,6 +268,11 @@ public class DynamoDBTableIndex implements TableIndex {
             }
             throw e;
         }
+    }
+
+    private static boolean anyCheckFailed(TransactionCanceledException e) {
+        return e.getCancellationReasons().stream()
+                .anyMatch(reason -> "ConditionalCheckFailed".equals(reason.getCode()));
     }
 
     private static boolean isCheckFailed(TransactionCanceledException e, int index) {
