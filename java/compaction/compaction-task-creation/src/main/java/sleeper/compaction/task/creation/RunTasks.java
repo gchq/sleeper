@@ -118,11 +118,11 @@ public class RunTasks {
                 instanceProperties.get(COMPACTION_CLUSTER), requirements.getLeft(), requirements.getRight());
     }
 
-    private interface TaskCounts {
+    public interface TaskCounts {
         int getRunningAndPending(String clusterName);
     }
 
-    private interface TaskLauncher {
+    public interface TaskLauncher {
         void launchTasks(long startTime, int numberOfTasksToCreate);
     }
 
