@@ -50,7 +50,6 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_NAME_INDEX_DYNAMO_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_ONLINE_INDEX_DYNAMO_TABLENAME;
 import static sleeper.configuration.properties.instance.CommonProperty.TABLE_INDEX_DYNAMO_STRONGLY_CONSISTENT_READS;
-import static sleeper.configuration.table.index.DynamoDBTableIdFormat.ONLINE_FIELD;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
 
@@ -59,6 +58,7 @@ public class DynamoDBTableIndex implements TableIndex {
 
     public static final String TABLE_NAME_FIELD = DynamoDBTableIdFormat.TABLE_NAME_FIELD;
     public static final String TABLE_ID_FIELD = DynamoDBTableIdFormat.TABLE_ID_FIELD;
+    public static final String TABLE_ONLINE_FIELD = DynamoDBTableIdFormat.ONLINE_FIELD;
 
     private final AmazonDynamoDB dynamoDB;
     private final String nameIndexDynamoTableName;
@@ -124,7 +124,7 @@ public class DynamoDBTableIndex implements TableIndex {
                 new QueryRequest()
                         .withTableName(onlineIndexDynamoTableName)
                         .withKeyConditionExpression("#online = :true")
-                        .withExpressionAttributeNames(Map.of("#online", ONLINE_FIELD))
+                        .withExpressionAttributeNames(Map.of("#online", TABLE_ONLINE_FIELD))
                         .withExpressionAttributeValues(Map.of(":true", createStringAttribute("true")))
                         .withConsistentRead(stronglyConsistent))
                                 .map(DynamoDBTableIdFormat::readItem);
@@ -212,13 +212,13 @@ public class DynamoDBTableIndex implements TableIndex {
                 .withTableName(onlineIndexDynamoTableName)
                 .withItem(idItem)
                 .withConditionExpression("attribute_not_exists(#tableonline) and attribute_not_exists(#tablename)")
-                .withExpressionAttributeNames(Map.of("#tableonline", ONLINE_FIELD, "#tablename", TABLE_NAME_FIELD))));
+                .withExpressionAttributeNames(Map.of("#tableonline", TABLE_ONLINE_FIELD, "#tablename", TABLE_NAME_FIELD))));
         if (onlineChanged || nameChanged) {
             deleteItems.add(new TransactWriteItem().withDelete(new Delete()
                     .withTableName(onlineIndexDynamoTableName)
                     .withKey(DynamoDBTableIdFormat.getOnlineKey(oldStatus))
                     .withConditionExpression("attribute_exists(#tableonline) and attribute_exists(#tablename)")
-                    .withExpressionAttributeNames(Map.of("#tableonline", ONLINE_FIELD, "#tablename", TABLE_NAME_FIELD))));
+                    .withExpressionAttributeNames(Map.of("#tableonline", TABLE_ONLINE_FIELD, "#tablename", TABLE_NAME_FIELD))));
         }
         Put namePut = new Put()
                 .withTableName(nameIndexDynamoTableName)
