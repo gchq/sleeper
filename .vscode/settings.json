@@ -4,8 +4,12 @@
     "editor.codeActionsOnSave": {
         "source.organizeImports": "always",
     },
+    "editor.rulers": [
+        120
+    ],
     "files.autoSave": "onFocusChange",
     "java.checkstyle.configuration": "./code-style/checkstyle-idea/checkstyle.xml",
+    "java.checkstyle.version": "10.6.0",
     "java.compile.nullAnalysis.mode": "automatic",
     "java.completion.importOrder": [
         "",
