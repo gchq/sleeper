@@ -265,14 +265,15 @@ public class RunTasks {
         AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
         AmazonECS ecsClient = AmazonECSClientBuilder.defaultClient();
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+        AmazonAutoScaling asClient = AmazonAutoScalingClientBuilder.defaultClient();
         try {
-            AmazonAutoScaling asClient = AmazonAutoScalingClientBuilder.defaultClient();
             new RunTasks(sqsClient, ecsClient, s3Client, asClient, s3Bucket)
                     .run(numberOfTasks);
         } finally {
             sqsClient.shutdown();
             ecsClient.shutdown();
             s3Client.shutdown();
+            asClient.shutdown();
         }
     }
 }
