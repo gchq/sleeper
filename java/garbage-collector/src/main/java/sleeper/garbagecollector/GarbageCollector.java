@@ -25,6 +25,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.table.InvokeForTableRequest;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
 import sleeper.statestore.StateStoreProvider;
@@ -37,6 +38,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 
 /**
@@ -52,25 +54,30 @@ public class GarbageCollector {
     private final int garbageCollectorBatchSize;
 
     public GarbageCollector(Configuration conf,
-                            TablePropertiesProvider tablePropertiesProvider,
-                            StateStoreProvider stateStoreProvider,
-                            int garbageCollectorBatchSize) {
+            TablePropertiesProvider tablePropertiesProvider,
+            StateStoreProvider stateStoreProvider,
+            int garbageCollectorBatchSize) {
         this.conf = conf;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
         this.garbageCollectorBatchSize = garbageCollectorBatchSize;
     }
 
-    public void run() throws StateStoreException, IOException {
-        runAtTime(Instant.now());
+    public void run(InvokeForTableRequest request) throws StateStoreException, IOException {
+        runAtTime(Instant.now(), request.getTableIds().stream()
+                .map(tablePropertiesProvider::getById)
+                .collect(toUnmodifiableList()));
     }
 
     public void runAtTime(Instant startTime) throws StateStoreException, IOException {
-        int totalDeleted = 0;
         List<TableProperties> tables = tablePropertiesProvider.streamAllTables()
                 .collect(Collectors.toUnmodifiableList());
-        LOGGER.info("Obtained list of {} tables", tables.size());
+        runAtTime(startTime, tables);
+    }
 
+    public void runAtTime(Instant startTime, List<TableProperties> tables) throws StateStoreException, IOException {
+        LOGGER.info("Obtained list of {} tables", tables.size());
+        int totalDeleted = 0;
         for (TableProperties tableProperties : tables) {
             TableStatus table = tableProperties.getStatus();
             LOGGER.info("Obtaining StateStore for table {}", table);
