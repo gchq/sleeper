@@ -16,7 +16,9 @@
 
 package sleeper.core.table;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 public class InvokeForTableRequest {
 
@@ -28,5 +30,19 @@ public class InvokeForTableRequest {
 
     public List<String> getTableIds() {
         return tableIds;
+    }
+
+    public static void sendForAllTables(TableIndex tableIndex, int batchSize, Consumer<InvokeForTableRequest> sendRequest) {
+        List<String> tableIdsBatch = new ArrayList<>();
+        tableIndex.streamAllTables().forEach(table -> {
+            if (tableIdsBatch.size() >= batchSize) {
+                sendRequest.accept(new InvokeForTableRequest(tableIdsBatch));
+                tableIdsBatch.clear();
+            }
+            tableIdsBatch.add(table.getTableUniqueId());
+        });
+        if (!tableIdsBatch.isEmpty()) {
+            sendRequest.accept(new InvokeForTableRequest(tableIdsBatch));
+        }
     }
 }

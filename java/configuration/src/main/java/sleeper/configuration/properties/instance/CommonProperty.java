@@ -16,7 +16,6 @@
 
 package sleeper.configuration.properties.instance;
 
-
 import sleeper.configuration.Utils;
 import sleeper.configuration.properties.SleeperPropertyIndex;
 
@@ -63,7 +62,9 @@ public interface CommonProperty {
             .includedInBasicTemplate(true).build();
     UserDefinedInstanceProperty OPTIONAL_STACKS = Index.propertyBuilder("sleeper.optional.stacks")
             .description("The optional stacks to deploy.")
-            .defaultValue("CompactionStack,GarbageCollectorStack,IngestStack,IngestBatcherStack,PartitionSplittingStack,QueryStack,AthenaStack,EmrServerlessBulkImportStack,EmrStudioStack,DashboardStack,TableMetricsStack")
+            .defaultValue("CompactionStack,GarbageCollectorStack,IngestStack,IngestBatcherStack," +
+                    "PartitionSplittingStack,QueryStack,AthenaStack,EmrServerlessBulkImportStack,EmrStudioStack," +
+                    "DashboardStack,TableMetricsStack")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCdkDeployWhenChanged(true)
             .includedInBasicTemplate(true).build();
@@ -153,7 +154,7 @@ public interface CommonProperty {
             .validationPredicate(Utils::isNonNullNonEmptyString)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty METRICS_BATCH_SIZE = Index.propertyBuilder("sleeper.metrics.batch.size")
+    UserDefinedInstanceProperty METRICS_TABLE_BATCH_SIZE = Index.propertyBuilder("sleeper.metrics.batch.size")
             .description("The number of tables to calculate metrics for in a single invocation. A separate invocation " +
                     "of the lambda will be made for each batch when there are more tables than the batch size.")
             .defaultValue("5")

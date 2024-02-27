@@ -16,6 +16,7 @@
 
 package sleeper.configuration.properties.instance;
 
+import sleeper.configuration.Utils;
 import sleeper.configuration.properties.SleeperPropertyIndex;
 
 import java.util.List;
@@ -31,6 +32,13 @@ public interface GarbageCollectionProperty {
             .defaultValue("1024")
             .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR)
             .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty GARBAGE_COLLECTOR_TABLE_BATCH_SIZE = Index.propertyBuilder("sleeper.gc.table.batch.size")
+            .description("The number of tables to perform garbage collection for in a single invocation. A separate " +
+                    "invocation of the lambda will be made for each batch when there are more tables than the batch " +
+                    "size.")
+            .defaultValue("5")
+            .validationPredicate(Utils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR).build();
     UserDefinedInstanceProperty GARBAGE_COLLECTOR_BATCH_SIZE = Index.propertyBuilder("sleeper.gc.batch.size")
             .description("The size of the batch of files ready for garbage collection requested from the State Store.")
             .defaultValue("2000")
