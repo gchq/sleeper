@@ -143,11 +143,11 @@ public class RunTasks {
         int numRunningAndPendingTasks = CommonJobUtils.getNumPendingAndRunningTasks(clusterName, ecsClient);
         LOGGER.info("Number of running and pending tasks is {}", numRunningAndPendingTasks);
 
-        int maxNumTasksToCreate = maximumRunningTasks - numRunningAndPendingTasks;
-        if (maximumRunningTasks == numRunningAndPendingTasks) {
+        if (numRunningAndPendingTasks >= maximumRunningTasks) {
             LOGGER.info("Finishing as maximum running tasks of {} has been reached", maximumRunningTasks);
             return;
         }
+        int maxNumTasksToCreate = maximumRunningTasks - numRunningAndPendingTasks;
         LOGGER.info("Maximum concurrent tasks is {}", maxNumTasksToCreate);
         LOGGER.info("Maximum number of tasks that can be created is {}", maxNumTasksToCreate);
         int numberOfTasksToCreate = Math.min(requestedTasks, maxNumTasksToCreate);
