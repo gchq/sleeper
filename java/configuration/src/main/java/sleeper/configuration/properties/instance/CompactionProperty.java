@@ -66,9 +66,9 @@ public interface CompactionProperty {
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.task.max.idle.time.seconds")
             .description("The total time in seconds that a compaction task can be idle before it is terminated.\n" +
-                    "When there are no compaction jobs available on the SQS queue, the task will wait for SQS to " +
-                    "return a job. Each time SQS returns no jobs, the task will check whether this idle time has " +
-                    "elapsed since the last time it finished a job.")
+                    "When there are no compaction jobs available on the SQS queue, and SQS returns no jobs, the task " +
+                    "will check whether this idle time has elapsed since the last time it finished a job. If so, the " +
+                    "task will terminate.")
             .defaultValue("60")
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
