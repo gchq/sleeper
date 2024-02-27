@@ -42,14 +42,14 @@ public class TableNamesReport {
         print(tableIndex.streamAllTables().collect(Collectors.toList()));
     }
 
-    private void print(List<TableStatus> allTableIds) {
+    private void print(List<TableStatus> allTables) {
         out.println("\n\nTable Names\n----------------------------------");
-        allTableIds.stream()
+        allTables.stream()
                 .filter(TableStatus::isOnline)
                 .map(TableStatus::getTableName)
                 .forEach(out::println);
 
-        allTableIds.stream()
+        allTables.stream()
                 .filter(not(TableStatus::isOnline))
                 .map(TableStatus::getTableName)
                 .forEach(tableName -> out.println(tableName + " (offline)"));
