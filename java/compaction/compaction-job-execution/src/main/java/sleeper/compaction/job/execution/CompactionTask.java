@@ -43,16 +43,14 @@ public class CompactionTask {
     private final Duration maxIdleTime;
     private final MessageReceiver messageReceiver;
     private final MessageConsumer messageConsumer;
-    private final FailedJobHandler failedJobHandler;
 
     public CompactionTask(InstanceProperties instanceProperties, Supplier<Instant> timeSupplier,
-            MessageReceiver messageReceiver, MessageConsumer messageConsumer, FailedJobHandler failedJobHandler) {
+            MessageReceiver messageReceiver, MessageConsumer messageConsumer) {
         maxIdleTime = Duration.ofSeconds(instanceProperties.getInt(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS));
         maxConsecutiveFailures = instanceProperties.getInt(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES);
         this.timeSupplier = timeSupplier;
         this.messageReceiver = messageReceiver;
         this.messageConsumer = messageConsumer;
-        this.failedJobHandler = failedJobHandler;
     }
 
     public void runAt(Instant startTime) throws InterruptedException, IOException {
@@ -83,7 +81,7 @@ public class CompactionTask {
                 } catch (Exception e) {
                     LOGGER.error("Failed processing compaction job, putting job back on queue", e);
                     numConsecutiveFailures++;
-                    jobAndMessage.failed(failedJobHandler);
+                    jobAndMessage.failed();
                 }
             }
         }
@@ -109,15 +107,25 @@ public class CompactionTask {
         void onFailure(JobAndMessage jobAndMessage);
     }
 
+    interface Message extends AutoCloseable {
+        CompactionJob getJob();
+
+        void completed();
+
+        void failed();
+    }
+
     static class JobAndMessage implements AutoCloseable {
         private final CompactionJob job;
         private final MessageReference message;
         private final PeriodicActionRunnable keepAliveRunnable;
+        private final FailedJobHandler failedJobHandler;
 
-        JobAndMessage(CompactionJob job, MessageReference message, PeriodicActionRunnable keepAliveRunnable) {
+        JobAndMessage(CompactionJob job, MessageReference message, PeriodicActionRunnable keepAliveRunnable, FailedJobHandler failedJobHandler) {
             this.job = job;
             this.message = message;
             this.keepAliveRunnable = keepAliveRunnable;
+            this.failedJobHandler = failedJobHandler;
         }
 
         public CompactionJob getJob() {
@@ -147,8 +155,8 @@ public class CompactionTask {
             }
         }
 
-        public void failed(FailedJobHandler handler) {
-            handler.onFailure(this);
+        public void failed() {
+            failedJobHandler.onFailure(this);
         }
     }
 }

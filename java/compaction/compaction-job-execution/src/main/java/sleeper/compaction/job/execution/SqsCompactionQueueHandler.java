@@ -80,7 +80,7 @@ public class SqsCompactionQueueHandler {
             LOGGER.info("Compaction job {}: Created background thread to keep SQS messages alive (period is {} seconds)",
                     compactionJob.getId(), keepAliveFrequency);
 
-            return Optional.of(new JobAndMessage(compactionJob, messageReference, keepAliveRunnable));
+            return Optional.of(new JobAndMessage(compactionJob, messageReference, keepAliveRunnable, this::setJobFailedVisibilityOnMessage));
         }
     }
 

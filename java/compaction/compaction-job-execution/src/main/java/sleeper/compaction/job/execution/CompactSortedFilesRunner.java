@@ -120,8 +120,7 @@ public class CompactSortedFilesRunner {
         SqsCompactionQueueHandler queueHandler = new SqsCompactionQueueHandler(sqsClient, instanceProperties);
         CompactionTask task = new CompactionTask(
                 instanceProperties, Instant::now, () -> queueHandler.receiveFromSqs(),
-                job -> taskFinishedBuilder.addJobSummary(compact(job)),
-                jobAndMessage -> queueHandler.setJobFailedVisibilityOnMessage(jobAndMessage));
+                job -> taskFinishedBuilder.addJobSummary(compact(job)));
         task.runAt(startTime);
 
         Instant finishTime = Instant.now();
