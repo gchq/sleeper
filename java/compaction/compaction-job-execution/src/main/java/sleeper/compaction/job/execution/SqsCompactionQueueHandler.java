@@ -24,8 +24,9 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobSerDe;
-import sleeper.compaction.job.execution.CompactionTask.JobAndMessage;
+import sleeper.compaction.job.execution.CompactionTask.MessageHandle;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.job.common.action.ActionException;
 import sleeper.job.common.action.MessageReference;
 import sleeper.job.common.action.thread.PeriodicActionRunnable;
 
@@ -50,7 +51,7 @@ public class SqsCompactionQueueHandler {
         this.instanceProperties = instanceProperties;
     }
 
-    public Optional<JobAndMessage> receiveFromSqs() throws InterruptedException, IOException {
+    public Optional<MessageHandle> receiveFromSqs() throws InterruptedException, IOException {
         int waitTimeSeconds = instanceProperties.getInt(COMPACTION_TASK_WAIT_TIME_IN_SECONDS);
         int delayBeforeRetry = instanceProperties.getInt(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS);
         int keepAliveFrequency = instanceProperties.getInt(COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS);
@@ -80,14 +81,47 @@ public class SqsCompactionQueueHandler {
             LOGGER.info("Compaction job {}: Created background thread to keep SQS messages alive (period is {} seconds)",
                     compactionJob.getId(), keepAliveFrequency);
 
-            return Optional.of(new JobAndMessage(compactionJob, messageReference, keepAliveRunnable, this::setJobFailedVisibilityOnMessage));
+            return Optional.of(new SqsMessageHandle(compactionJob, messageReference, keepAliveRunnable));
         }
     }
 
-    public void setJobFailedVisibilityOnMessage(JobAndMessage jobAndMessage) {
-        int visibilityTimeout = instanceProperties.getInt(COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS);
-        String sqsJobQueueUrl = instanceProperties.get(COMPACTION_JOB_QUEUE_URL);
-        sqsClient.changeMessageVisibility(sqsJobQueueUrl, jobAndMessage.getMessage().getReceiptHandle(), visibilityTimeout);
+    private class SqsMessageHandle implements MessageHandle {
+        private final CompactionJob job;
+        private final MessageReference message;
+        private final PeriodicActionRunnable keepAliveRunnable;
+
+        SqsMessageHandle(CompactionJob job, MessageReference message, PeriodicActionRunnable keepAliveRunnable) {
+            this.job = job;
+            this.message = message;
+            this.keepAliveRunnable = keepAliveRunnable;
+        }
+
+        public CompactionJob getJob() {
+            return job;
+        }
+
+        public void completed() {
+            // Delete message from queue
+            LOGGER.info("Compaction job {}: Deleting message from queue", job.getId());
+            try {
+                message.deleteAction().call();
+            } catch (ActionException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        public void failed() {
+            int visibilityTimeout = instanceProperties.getInt(COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS);
+            String sqsJobQueueUrl = instanceProperties.get(COMPACTION_JOB_QUEUE_URL);
+            sqsClient.changeMessageVisibility(sqsJobQueueUrl, message.getReceiptHandle(), visibilityTimeout);
+        }
+
+        public void close() {
+            LOGGER.info("Compaction job {}: Stopping background thread to keep SQS messages alive", job.getId());
+            if (keepAliveRunnable != null) {
+                keepAliveRunnable.stop();
+            }
+        }
     }
 
 }

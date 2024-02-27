@@ -295,7 +295,7 @@ public class CompactionTaskTest {
         return () -> {
             CompactionJob job = jobsOnQueue.poll();
             if (job != null) {
-                return Optional.of(new JobAndMessage(job, null, null, trackFailedJob()));
+                return Optional.of(new JobAndMessage(job, trackFailedJob()));
             } else {
                 return Optional.empty();
             }
@@ -318,7 +318,7 @@ public class CompactionTaskTest {
             if (jobsOnQueue.isEmpty()) {
                 throw new IllegalStateException("Expected job on queue");
             }
-            return Optional.of(new JobAndMessage(jobsOnQueue.poll(), null, null, trackFailedJob()));
+            return Optional.of(new JobAndMessage(jobsOnQueue.poll(), trackFailedJob()));
         };
     }
 

@@ -22,9 +22,6 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.util.LoggedDuration;
-import sleeper.job.common.action.ActionException;
-import sleeper.job.common.action.MessageReference;
-import sleeper.job.common.action.thread.PeriodicActionRunnable;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -58,8 +55,8 @@ public class CompactionTask {
         int numConsecutiveFailures = 0;
         long totalNumberOfMessagesProcessed = 0;
         while (numConsecutiveFailures < maxConsecutiveFailures) {
-            Optional<JobAndMessage> jobAndMessageOpt = messageReceiver.receiveMessage();
-            if (!jobAndMessageOpt.isPresent()) {
+            Optional<MessageHandle> messageOpt = messageReceiver.receiveMessage();
+            if (!messageOpt.isPresent()) {
                 Duration runTime = Duration.between(lastActiveTime, timeSupplier.get());
                 if (runTime.compareTo(maxIdleTime) >= 0) {
                     LOGGER.info("Terminating compaction task as it was idle for {}, exceeding maximum of {}",
@@ -70,18 +67,19 @@ public class CompactionTask {
                     continue;
                 }
             }
-            try (JobAndMessage jobAndMessage = jobAndMessageOpt.get()) {
-                LOGGER.info("CompactionJob is: {}", jobAndMessage.getJob());
+            try (MessageHandle message = messageOpt.get()) {
+                CompactionJob job = message.getJob();
+                LOGGER.info("CompactionJob is: {}", job);
                 try {
-                    messageConsumer.consume(jobAndMessage.getJob());
-                    jobAndMessage.completed();
+                    messageConsumer.consume(job);
+                    message.completed();
                     totalNumberOfMessagesProcessed++;
                     numConsecutiveFailures = 0;
                     lastActiveTime = timeSupplier.get();
                 } catch (Exception e) {
                     LOGGER.error("Failed processing compaction job, putting job back on queue", e);
                     numConsecutiveFailures++;
-                    jobAndMessage.failed();
+                    message.failed();
                 }
             }
         }
@@ -94,7 +92,7 @@ public class CompactionTask {
 
     @FunctionalInterface
     interface MessageReceiver {
-        Optional<JobAndMessage> receiveMessage() throws InterruptedException, IOException;
+        Optional<MessageHandle> receiveMessage() throws InterruptedException, IOException;
     }
 
     @FunctionalInterface
@@ -107,24 +105,22 @@ public class CompactionTask {
         void onFailure(JobAndMessage jobAndMessage);
     }
 
-    interface Message extends AutoCloseable {
+    interface MessageHandle extends AutoCloseable {
         CompactionJob getJob();
 
         void completed();
 
         void failed();
+
+        void close();
     }
 
-    static class JobAndMessage implements AutoCloseable {
+    static class JobAndMessage implements MessageHandle {
         private final CompactionJob job;
-        private final MessageReference message;
-        private final PeriodicActionRunnable keepAliveRunnable;
         private final FailedJobHandler failedJobHandler;
 
-        JobAndMessage(CompactionJob job, MessageReference message, PeriodicActionRunnable keepAliveRunnable, FailedJobHandler failedJobHandler) {
+        JobAndMessage(CompactionJob job, FailedJobHandler failedJobHandler) {
             this.job = job;
-            this.message = message;
-            this.keepAliveRunnable = keepAliveRunnable;
             this.failedJobHandler = failedJobHandler;
         }
 
@@ -132,27 +128,10 @@ public class CompactionTask {
             return job;
         }
 
-        public MessageReference getMessage() {
-            return message;
-        }
-
-        public PeriodicActionRunnable getKeepAliveRunnable() {
-            return keepAliveRunnable;
-        }
-
         public void close() {
-            LOGGER.info("Compaction job {}: Stopping background thread to keep SQS messages alive", job.getId());
-            if (keepAliveRunnable != null) {
-                keepAliveRunnable.stop();
-            }
         }
 
-        public void completed() throws ActionException {
-            // Delete message from queue
-            LOGGER.info("Compaction job {}: Deleting message from queue", job.getId());
-            if (message != null) {
-                message.deleteAction().call();
-            }
+        public void completed() {
         }
 
         public void failed() {
