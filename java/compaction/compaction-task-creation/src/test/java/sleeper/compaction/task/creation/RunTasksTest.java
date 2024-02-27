@@ -30,12 +30,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_AUTO_SCALING_GROUP;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
 import static sleeper.configuration.properties.instance.CompactionProperty.MAXIMUM_CONCURRENT_COMPACTION_TASKS;
 import static sleeper.job.common.QueueMessageCount.approximateNumberVisibleAndNotVisible;
 
 public class RunTasksTest {
     private static final String TEST_JOB_QUEUE = "test-job-queue";
+    private static final String TEST_AUTO_SCALING_GROUP = "test-scaling-group";
     private final InstanceProperties instanceProperties = createInstance();
     private final Map<String, Integer> numContainersByScalingGroup = new HashMap<>();
     private final Scaler scaler = numContainersByScalingGroup::put;
@@ -53,12 +56,12 @@ public class RunTasksTest {
         }
 
         @Test
-        void shouldCreateOneTasksWhenQueueHasOneMessage() {
+        void shouldCreateOneTasksWhenQueueHasOneMessages() {
             // When
-            int tasksCreated = runTasks(messagesOnQueue(1), noRunningOrPendingTasks());
+            int tasksCreated = runTasks(messagesOnQueue(5), noRunningOrPendingTasks());
 
             // Then
-            assertThat(tasksCreated).isOne();
+            assertThat(tasksCreated).isEqualTo(5);
         }
 
         private int runTasks(QueueMessageCount.Client queueMessageClient, TaskCounts taskCounts) {
@@ -80,7 +83,7 @@ public class RunTasksTest {
             instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 10);
 
             // When
-            int tasksCreated = runTasks(1);
+            int tasksCreated = runTasks(1, noRunningOrPendingTasks());
 
             // Then
             assertThat(tasksCreated).isOne();
@@ -92,14 +95,14 @@ public class RunTasksTest {
             instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 1);
 
             // When
-            int tasksCreated = runTasks(2);
+            int tasksCreated = runTasks(2, noRunningOrPendingTasks());
 
             // Then
             assertThat(tasksCreated).isOne();
         }
 
         @Test
-        void shouldCreateTasksWithExistingTasksRunningOrPending() {
+        void shouldCreateTasksWithExistingRunningOrPendingTasks() {
             // Given
             instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 5);
 
@@ -111,7 +114,7 @@ public class RunTasksTest {
         }
 
         @Test
-        void shouldNotCreateTasksWhenMaximumConcurrentTasksHasBeenMetByExistingTasks() {
+        void shouldNotCreateTasksWhenExistingRunningOrPendingTaskCountisEqualToMaximumConcurrentTasks() {
             // Given
             instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 5);
 
@@ -122,18 +125,69 @@ public class RunTasksTest {
             assertThat(tasksCreated).isZero();
         }
 
-        private int runTasks(int requestedTasks) {
-            return runTasks(requestedTasks, noRunningOrPendingTasks());
+        @Test
+        void shouldNotCreateTasksWhenExistingRunningOrPendingTaskCountIsMoreThanMaxConcurrentTasks() {
+            // Given
+            instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 5);
+
+            // When
+            int tasksCreated = runTasks(1, runningOrPendingTasks(10));
+
+            // Then
+            assertThat(tasksCreated).isZero();
+        }
+    }
+
+    @DisplayName("Auto scale if needed")
+    @Nested
+    class AutoScale {
+
+        @Test
+        void shouldNotAutoScaleIfLaunchTypeIsFargate() {
+            // Given
+            instanceProperties.set(COMPACTION_ECS_LAUNCHTYPE, "FARGATE");
+
+            // When
+            runTasks(5, noRunningOrPendingTasks());
+
+            // Then
+            assertThat(numContainersByScalingGroup).isEmpty();
         }
 
-        private int runTasks(int requestedTasks, TaskCounts taskCounts) {
-            AtomicInteger tasksLaunched = new AtomicInteger();
-            RunTasks runTasks = new RunTasks(instanceProperties, noMessagesOnQueue(), taskCounts, scaler, (startTime, numberOfTasksToCreate) -> {
-                tasksLaunched.set(numberOfTasksToCreate);
-            });
-            runTasks.run(requestedTasks);
-            return tasksLaunched.get();
+        @Test
+        void shouldAutoScaleWithNoRunningOrPendingTasks() {
+            // Given
+            instanceProperties.set(COMPACTION_ECS_LAUNCHTYPE, "EC2");
+
+            // When
+            runTasks(5, noRunningOrPendingTasks());
+
+            // Then
+            assertThat(numContainersByScalingGroup).isEqualTo(Map.of(
+                    TEST_AUTO_SCALING_GROUP, 5));
         }
+
+        @Test
+        void shouldAutoScaleWithExistingRunningOrPendingTasks() {
+            // Given
+            instanceProperties.set(COMPACTION_ECS_LAUNCHTYPE, "EC2");
+
+            // When
+            runTasks(2, runningOrPendingTasks(3));
+
+            // Then
+            assertThat(numContainersByScalingGroup).isEqualTo(Map.of(
+                    TEST_AUTO_SCALING_GROUP, 5));
+        }
+    }
+
+    private int runTasks(int requestedTasks, TaskCounts taskCounts) {
+        AtomicInteger tasksLaunched = new AtomicInteger();
+        RunTasks runTasks = new RunTasks(instanceProperties, noMessagesOnQueue(), taskCounts, scaler, (startTime, numberOfTasksToCreate) -> {
+            tasksLaunched.set(numberOfTasksToCreate);
+        });
+        runTasks.run(requestedTasks);
+        return tasksLaunched.get();
     }
 
     private static TaskCounts noRunningOrPendingTasks() {
@@ -156,6 +210,8 @@ public class RunTasksTest {
     private static InstanceProperties createInstance() {
         InstanceProperties instanceProperties = createTestInstanceProperties();
         instanceProperties.set(COMPACTION_JOB_QUEUE_URL, TEST_JOB_QUEUE);
+        instanceProperties.set(COMPACTION_AUTO_SCALING_GROUP, TEST_AUTO_SCALING_GROUP);
         return instanceProperties;
     }
+
 }
