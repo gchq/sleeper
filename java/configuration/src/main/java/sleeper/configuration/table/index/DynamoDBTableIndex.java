@@ -103,9 +103,8 @@ public class DynamoDBTableIndex implements TableIndex {
         } catch (TransactionCanceledException e) {
             if (anyCheckFailed(e)) {
                 throw new TableAlreadyExistsException(table);
-            } else {
-                throw e;
             }
+            throw e;
         }
     }
 
@@ -178,15 +177,19 @@ public class DynamoDBTableIndex implements TableIndex {
             double totalCapacity = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
             LOGGER.debug("Deleted table {}, capacity consumed = {}", table, totalCapacity);
         } catch (TransactionCanceledException e) {
-            int namePutIndex = 0;
-            int idPutIndex = 1;
-            if (isCheckFailed(e, namePutIndex)) {
+            int nameDeleteIndex = 0;
+            int idDeleteIndex = 1;
+            int onlineDeleteIndex = 2;
+            if (isCheckFailed(e, nameDeleteIndex)) {
                 throw TableNotFoundException.withTableName(table.getTableName());
-            } else if (isCheckFailed(e, idPutIndex)) {
-                throw TableNotFoundException.withTableId(table.getTableUniqueId());
-            } else {
-                throw e;
             }
+            if (isCheckFailed(e, idDeleteIndex)) {
+                throw TableNotFoundException.withTableId(table.getTableUniqueId());
+            }
+            if (isCheckFailed(e, onlineDeleteIndex)) {
+                throw TableNotFoundException.withTableName(table.getTableName());
+            }
+            throw e;
         }
     }
 
