@@ -137,7 +137,7 @@ public class RunTasks {
         run(startTime, queueSize);
     }
 
-    private void run(int requestedTasks) {
+    public void run(int requestedTasks) {
         run(System.currentTimeMillis(), requestedTasks);
     }
 
