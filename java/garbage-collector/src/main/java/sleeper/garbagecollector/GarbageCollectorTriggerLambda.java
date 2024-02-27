@@ -27,7 +27,6 @@ import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.table.InvokeForTableRequest;
@@ -47,33 +46,26 @@ public class GarbageCollectorTriggerLambda implements RequestHandler<ScheduledEv
 
     private final InstanceProperties instanceProperties = new InstanceProperties();
     private final InvokeForTableRequestSerDe serDe = new InvokeForTableRequestSerDe();
-    private final PropertiesReloader propertiesReloader;
-    private final TableIndex tableIndex;
+    private final AmazonS3 s3Client;
+    private final AmazonDynamoDB dynamoClient;
     private final AmazonSQS sqsClient;
+    private final String configBucketName;
 
     public GarbageCollectorTriggerLambda() {
-        this(
-                AmazonS3ClientBuilder.defaultClient(),
-                AmazonDynamoDBClientBuilder.defaultClient(),
-                AmazonSQSClientBuilder.defaultClient(),
-                System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
-    }
-
-    public GarbageCollectorTriggerLambda(
-            AmazonS3 s3Client, AmazonDynamoDB dynamoClient, AmazonSQS sqsClient, String configBucketName) {
-        this.instanceProperties.set(CONFIG_BUCKET, configBucketName);
-        this.propertiesReloader = PropertiesReloader.alwaysReload(s3Client, instanceProperties);
-        this.tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
-        this.sqsClient = sqsClient;
+        this.s3Client = AmazonS3ClientBuilder.defaultClient();
+        this.dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
+        this.sqsClient = AmazonSQSClientBuilder.defaultClient();
+        this.configBucketName = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
     }
 
     @Override
     public Void handleRequest(ScheduledEvent event, Context context) {
         Instant startTime = Instant.now();
         LOGGER.info("Lambda triggered at {}, started at {}", event.getTime(), startTime);
-        propertiesReloader.reloadIfNeeded();
+        instanceProperties.loadFromS3(s3Client, configBucketName);
         int batchSize = instanceProperties.getInt(GARBAGE_COLLECTOR_TABLE_BATCH_SIZE);
         String queueUrl = instanceProperties.get(GARBAGE_COLLECTOR_QUEUE_URL);
+        TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
         InvokeForTableRequest.sendForAllTables(tableIndex, batchSize,
                 request -> sqsClient.sendMessage(queueUrl, serDe.toJson(request)));
 
