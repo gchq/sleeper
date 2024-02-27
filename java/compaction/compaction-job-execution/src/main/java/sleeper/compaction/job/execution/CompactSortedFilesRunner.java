@@ -47,7 +47,6 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.LoggedDuration;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.job.common.CommonJobUtils;
-import sleeper.job.common.action.ChangeMessageVisibilityTimeoutAction;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
@@ -60,10 +59,7 @@ import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 /**
  * Retrieves compaction {@link CompactionJob}s from an SQS queue, and executes
  * them. It delegates the actual execution of the job to an instance of
- * {@link CompactSortedFiles}. It passes a
- * {@link ChangeMessageVisibilityTimeoutAction} to
- * that class so that the message on the SQS queue can be kept alive whilst the job
- * is executing. It also handles deletion of the message when the job is completed.
+ * {@link CompactSortedFiles}, and the processing of SQS messages to {@link SqsCompactionQueueHandler}.
  */
 public class CompactSortedFilesRunner {
     private static final Logger LOGGER = LoggerFactory.getLogger(CompactSortedFilesRunner.class);
