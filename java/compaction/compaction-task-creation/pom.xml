@@ -72,7 +72,7 @@
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
-                <dependency>
+        <dependency>
             <groupId>sleeper</groupId>
             <artifactId>configuration</artifactId>
             <version>${project.parent.version}</version>
