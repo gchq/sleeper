@@ -121,7 +121,14 @@ public class DynamoDBTableIndex implements TableIndex {
 
     @Override
     public Stream<TableStatus> streamOnlineTables() {
-        return streamAllTables().filter(TableStatus::isOnline);
+        return streamPagedItems(dynamoDB,
+                new QueryRequest()
+                        .withTableName(onlineIndexDynamoTableName)
+                        .withKeyConditionExpression("#online = :true")
+                        .withExpressionAttributeNames(Map.of("#online", ONLINE_FIELD))
+                        .withExpressionAttributeValues(Map.of(":true", createStringAttribute("true")))
+                        .withConsistentRead(stronglyConsistent))
+                                .map(DynamoDBTableIdFormat::readItem);
     }
 
     @Override
