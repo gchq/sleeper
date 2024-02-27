@@ -197,7 +197,7 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
 
     @Override
     public IngestByAnyQueueDriver pythonIngest(SystemTestContext context) {
-        return new PythonIngestDriver(context.instance(), context.parameters().getPythonDirectory());
+        return new PythonIngestDriver(context);
     }
 
     @Override
@@ -207,7 +207,7 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
 
     @Override
     public IngestByAnyQueueDriver pythonBulkImport(SystemTestContext context) {
-        return new PythonBulkImportDriver(context.instance(), context.parameters().getPythonDirectory());
+        return new PythonBulkImportDriver(context);
     }
 
     @Override
