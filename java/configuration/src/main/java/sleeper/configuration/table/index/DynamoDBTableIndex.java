@@ -251,10 +251,15 @@ public class DynamoDBTableIndex implements TableIndex {
             double totalCapacity = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
             LOGGER.debug("Updated table {}, capacity consumed = {}", newStatus, totalCapacity);
         } catch (TransactionCanceledException e) {
+            int onlinePutIndex = 0;
             int namePutIndex = 1;
             int idPutIndex = 2;
             int onlineDeleteIndex = 3;
             int nameDeleteIndex = 4;
+            if (isCheckFailed(e, onlinePutIndex)) {
+                throw new TableAlreadyExistsException(getTableByName(newStatus.getTableName())
+                        .orElseThrow(() -> TableNotFoundException.withTableName(newStatus.getTableName())));
+            }
             if (isCheckFailed(e, namePutIndex)) {
                 if (nameChanged) {
                     throw new TableAlreadyExistsException(getTableByName(newStatus.getTableName())
