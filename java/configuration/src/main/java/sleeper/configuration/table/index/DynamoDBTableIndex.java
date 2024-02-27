@@ -51,7 +51,6 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_ONLINE_INDEX_DYNAMO_TABLENAME;
 import static sleeper.configuration.properties.instance.CommonProperty.TABLE_INDEX_DYNAMO_STRONGLY_CONSISTENT_READS;
 import static sleeper.configuration.table.index.DynamoDBTableIdFormat.ONLINE_FIELD;
-import static sleeper.configuration.table.index.DynamoDBTableIdFormat.getOnlineKey;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
 
@@ -217,7 +216,7 @@ public class DynamoDBTableIndex implements TableIndex {
         if (onlineChanged || nameChanged) {
             deleteItems.add(new TransactWriteItem().withDelete(new Delete()
                     .withTableName(onlineIndexDynamoTableName)
-                    .withKey(getOnlineKey(oldStatus))
+                    .withKey(DynamoDBTableIdFormat.getOnlineKey(oldStatus))
                     .withConditionExpression("attribute_exists(#tableonline) and attribute_exists(#tablename)")
                     .withExpressionAttributeNames(Map.of("#tableonline", ONLINE_FIELD, "#tablename", TABLE_NAME_FIELD))));
         }
