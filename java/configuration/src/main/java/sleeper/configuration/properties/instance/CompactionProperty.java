@@ -16,7 +16,6 @@
 
 package sleeper.configuration.properties.instance;
 
-
 import sleeper.configuration.Utils;
 import sleeper.configuration.properties.SleeperPropertyIndex;
 
@@ -35,15 +34,52 @@ public interface CompactionProperty {
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.keepalive.period.seconds")
-            .description("The frequency, in seconds, with which change message visibility requests are sent to extend the " +
-                    "visibility of messages on the compaction job queue so that they are not processed by other processes.\n" +
+            .description("The frequency, in seconds, with which change message visibility requests are sent to " +
+                    "extend the visibility of messages on the compaction job queue so that they are not processed by " +
+                    "other processes.\n" +
                     "This should be less than the value of sleeper.compaction.queue.visibility.timeout.seconds.")
             .defaultValue("300")
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.job.failed.visibility.timeout.seconds")
-            .description("The delay in seconds until a failed compaction job becomes visible on the compaction job queue and " +
-                    "can be processed again.")
+            .description("The delay in seconds until a failed compaction job becomes visible on the compaction job " +
+                    "queue and can be processed again.")
             .defaultValue("0")
+            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+    UserDefinedInstanceProperty COMPACTION_TASK_WAIT_TIME_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.task.wait.time.seconds")
+            .description("The time in seconds for a compaction task to wait for a compaction job to appear on the " +
+                    "SQS queue (must be <= 20).\n" +
+                    "When a compaction task waits for compaction jobs to appear on the SQS queue, if the task " +
+                    "receives no messages in the time defined by this property, it will try to wait for a message " +
+                    "again.")
+            .defaultValue("20")
+            .validationPredicate(val -> Utils.isNonNegativeIntLtEqValue(val, 20))
+            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+    UserDefinedInstanceProperty COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.task.delay.before.retry.seconds")
+            .description("The time in seconds for a compaction task to wait after receiving no compaction jobs " +
+                    "before attempting to receive a message again.\n" +
+                    "When a compaction task waits for compaction jobs to appear on the SQS queue, if the task " +
+                    "receives no messages in the time defined by the property " +
+                    "\"sleeper.compaction.task.wait.time.seconds\", it will wait for a number of seconds defined by " +
+                    "this property, then try to receive a message again.")
+            .defaultValue("10")
+            .validationPredicate(Utils::isNonNegativeInteger)
+            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+    UserDefinedInstanceProperty COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.task.max.idle.time.seconds")
+            .description("The total time in seconds that a compaction task can be idle before it is terminated.\n" +
+                    "When there are no compaction jobs available on the SQS queue, and SQS returns no jobs, the task " +
+                    "will check whether this idle time has elapsed since the last time it finished a job. If so, the " +
+                    "task will terminate.")
+            .defaultValue("60")
+            .validationPredicate(Utils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+    UserDefinedInstanceProperty COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES = Index.propertyBuilder("sleeper.compaction.task.max.consecutive.failures")
+            .description("The maximum number of times that a compaction task can fail to process consecutive " +
+                    "compaction jobs before it terminates.\n" +
+                    "When the task starts or completes any job successfully, the count of consecutive failures is " +
+                    "set to zero. Any time it fails to process a job, this count is incremented. If this maximum is " +
+                    "reached, the task will terminate.")
+            .defaultValue("3")
+            .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES = Index.propertyBuilder("sleeper.compaction.job.creation.period.minutes")
             .description("The rate at which the compaction job creation lambda runs (in minutes, must be >=1).")
@@ -194,7 +230,8 @@ public interface CompactionProperty {
             .defaultValue("3")
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
-    UserDefinedInstanceProperty DEFAULT_SIZERATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION = Index.propertyBuilder("sleeper.default.table.compaction.strategy.sizeratio.max.concurrent.jobs.per.partition")
+    UserDefinedInstanceProperty DEFAULT_SIZERATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION = Index
+            .propertyBuilder("sleeper.default.table.compaction.strategy.sizeratio.max.concurrent.jobs.per.partition")
             .description("Used by the SizeRatioCompactionStrategy to control the maximum number of jobs that can be running " +
                     "concurrently per partition. It can be overridden on a per-table basis.")
             .defaultValue("" + Integer.MAX_VALUE)
