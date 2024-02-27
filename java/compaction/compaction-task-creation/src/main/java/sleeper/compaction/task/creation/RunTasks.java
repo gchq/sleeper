@@ -159,7 +159,7 @@ public class RunTasks {
             return;
         }
         int maxNumTasksToCreate = maximumRunningTasks - numRunningAndPendingTasks;
-        LOGGER.info("Maximum concurrent tasks is {}", maxNumTasksToCreate);
+        LOGGER.info("Maximum concurrent tasks is {}", maximumRunningTasks);
         LOGGER.info("Maximum number of tasks that can be created is {}", maxNumTasksToCreate);
         int numberOfTasksToCreate = Math.min(requestedTasks, maxNumTasksToCreate);
         if (launchType.equalsIgnoreCase("EC2")) {
