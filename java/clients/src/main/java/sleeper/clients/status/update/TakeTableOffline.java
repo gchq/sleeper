@@ -44,7 +44,7 @@ public class TakeTableOffline {
         TableProperties tableProperties = tablePropertiesStore.loadByName(tableName);
         tableProperties.set(TABLE_ONLINE, "false");
         tablePropertiesStore.save(tableProperties);
-        LOGGER.info("Successfully took table offline {}", tableProperties.getStatus());
+        LOGGER.info("Successfully took table offline: {}", tableProperties.getStatus());
     }
 
     public static void main(String[] args) {

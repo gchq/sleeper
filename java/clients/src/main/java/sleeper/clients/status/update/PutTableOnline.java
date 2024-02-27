@@ -44,7 +44,7 @@ public class PutTableOnline {
         TableProperties tableProperties = tablePropertiesStore.loadByName(tableName);
         tableProperties.set(TABLE_ONLINE, "true");
         tablePropertiesStore.save(tableProperties);
-        LOGGER.info("Successfully put table online {}", tableProperties.getStatus());
+        LOGGER.info("Successfully put table online: {}", tableProperties.getStatus());
     }
 
     public static void main(String[] args) {
