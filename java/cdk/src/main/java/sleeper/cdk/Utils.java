@@ -37,7 +37,6 @@ import sleeper.core.SleeperVersion;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
@@ -50,7 +49,6 @@ import static java.lang.String.format;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.CommonProperty.ID_MAX_LENGTH;
 import static sleeper.configuration.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.configuration.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
 import static sleeper.configuration.properties.instance.CommonProperty.STACK_TAG_NAME;
@@ -110,16 +108,6 @@ public class Utils {
 
     public static String truncateTo64Characters(String input) {
         return truncateToMaxSize(input, 64);
-    }
-
-    private static final int AVAIL_RESOURCE_NAME_LENGTH = 64 - ("sleeper-".length() + ID_MAX_LENGTH + 1);
-
-    public static String buildInstanceFunctionName(InstanceProperties instanceProperties, String name) {
-        if (name.length() > AVAIL_RESOURCE_NAME_LENGTH) {
-            throw new IllegalArgumentException("Function name too long: " + name);
-        }
-        return String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(Locale.ROOT), name);
     }
 
     /**

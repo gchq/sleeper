@@ -38,6 +38,7 @@ import sleeper.configuration.properties.SleeperScheduleRule;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.List;
+import java.util.Locale;
 
 import static sleeper.cdk.Utils.createLambdaLogGroup;
 import static sleeper.cdk.Utils.shouldDeployPaused;
@@ -69,8 +70,10 @@ public class GarbageCollectorStack extends NestedStack {
         // Garbage collector code
         LambdaCode gcJar = jars.lambdaCode(BuiltJar.GARBAGE_COLLECTOR, jarsBucket);
 
-        String triggerFunctionName = Utils.buildInstanceFunctionName(instanceProperties, "garbage-collector-trigger");
-        String functionName = Utils.buildInstanceFunctionName(instanceProperties, "garbage-collector");
+        String triggerFunctionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "garbage-collector-trigger"));
+        String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "garbage-collector"));
 
         // Garbage collector function
         IFunction triggerFunction = gcJar.buildFunction(this, "GarbageCollectorTrigger", builder -> builder
