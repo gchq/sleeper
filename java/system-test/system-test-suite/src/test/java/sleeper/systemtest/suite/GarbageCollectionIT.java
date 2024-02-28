@@ -74,7 +74,7 @@ public class GarbageCollectionIT {
         sleeper.compaction().createJobs().invokeTasks(1).waitForJobs();
 
         // When
-        sleeper.garbageCollection().collect();
+        sleeper.garbageCollection().invoke().waitFor();
 
         // Then
         PartitionTree expectedPartitions = partitionsBuilder(sleeper).singlePartition("root").buildTree();

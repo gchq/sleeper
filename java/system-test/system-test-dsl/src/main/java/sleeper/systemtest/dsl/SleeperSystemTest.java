@@ -125,7 +125,7 @@ public class SleeperSystemTest {
     }
 
     public SystemTestGarbageCollection garbageCollection() {
-        return new SystemTestGarbageCollection(drivers.garbageCollection(context));
+        return new SystemTestGarbageCollection(context, drivers);
     }
 
     public SystemTestReporting reporting() {
