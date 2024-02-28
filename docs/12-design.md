@@ -20,7 +20,7 @@ in a properties file, which is stored in a bucket in S3. The name of this S3 buc
 instance id followed by `-config`, e.g. `sleeper-mySleeperInstance-config`.
 
 An instance of Sleeper can contain one or more tables. Each table contains records with fields matching a schema.
-Each table has its own S3 bucket for storing data and a state store for storing metadata about that table.
+Each table has its own folder in a shared S3 bucket for storing data and a state store for storing metadata about that table.
 
 The Sleeper instance also contains infrastructure to ingest data, compact data, garbage collect data, split
 partitions, execute queries, and run Athena queries. Each of these are provided by a separate CDK stack. All of
@@ -55,23 +55,27 @@ sometimes be used to avoid reading a lot of the data).
 ## Tables
 
 All records in a table conform to a schema. The records in a table are stored in multiple files, with each file
-belonging to a partition. These files are all in an S3 bucket that is exclusively used by this table.
+belonging to a partition. These files are all stored in an S3 bucket deployed at an instance level, referred to as 
+the data bucket.
 
 Each table has a state store associated to it. This stores metadata about the table, namely the files that are in
 the table and how the records in the table are partitioned.
 
 Tables are deployed by the CDK table stack. This stack creates the infrastructure for each table. Each table
-requires a bucket where its data will be stored, and a state store. When a table is first created, its state store
+requires a state store to store metadata about files in the table. When a table is first created, its state store
 must be initialised.
 
 To achieve this, the table stack obtains a list of the table properties files from the instance properties. For
-each table properties file, it creates the data bucket for that table and creates the state store. The creation
-of the state store is delegated to either the DynamoDB state store stack or the S3 state store stack, as appropriate.
+each table properties file it creates the state store. The creation of the state store is delegated to either the 
+DynamoDB state store stack or the S3 state store stack, as appropriate.
 A custom CDK resource is then used to call `sleeper.cdk.custom.SleeperTableLambda`. This lambda initialises the
 state store and updates the table properties file which is stored in the instance's config bucket.
 
-The name of the bucket containing a table's data is called `sleeper-<instance-id>-table-tablename`, e.g.
-`sleeper-mySleeperInstance-table-table1`.
+The directory in the data bucket which contains a table's data is constructed from the table name:
+`<data-bucket>/<tablename>/<file>`, e.g. `sleeper-mySleeperInstance-data/table1/file1.parquet`.
+
+Tables can also be taken offline, which means they will be ignored when it comes to partition splitting and creating 
+compaction jobs. When creating a new table, it is automatically put online.
 
 ## Sorted files
 
@@ -120,12 +124,12 @@ are read from S3, and merged together. Then the median is found and used as the 
 quicker than reading all the data in sorted order and stopping once half the data has been read.
 
 The partition splitting stack has two parts. The first consists of a Cloudwatch rule that periodically executes
-a lambda that runs `sleeper.splitter.lambda.FindPartitionsToSplitLambda`. For each table, this queries the state store
-to find the leaf partitions and the active files. For each leaf partition it then calculates the number of records
-and if that is greater than a threshold it sends a message to an SQS queue saying that this partition should be
-split. The second part of the stack is the lambda that is triggered when a message arrives on the SQS queue. This
-lambda executes `sleeper.splitter.lambda.SplitPartitionLambda`. This splits the partition using the process described in
-the previous paragraph.
+a lambda that runs `sleeper.splitter.lambda.FindPartitionsToSplitLambda`. For each online table, this queries the 
+state store to find the leaf partitions and the active files. For each leaf partition it then calculates the 
+number of records and if that is greater than a threshold it sends a message to an SQS queue saying that this partition 
+should be split. The second part of the stack is the lambda that is triggered when a message arrives on the SQS queue. 
+This lambda executes `sleeper.splitter.lambda.SplitPartitionLambda`. This splits the partition using the process 
+described in the previous paragraph.
 
 Note that this partition splitting process happens independently of other parts of Sleeper. For example, the ingest
 process needs to write data to leaf partitions. But if one of those partitions is split during this ingest process,
@@ -261,12 +265,11 @@ simple streaming merge that requires negligible amounts of memory. The input fil
 
 There are two separate stages: the creation of compaction jobs, and the execution of those jobs. Compaction jobs
 are created by a lambda that runs the class `sleeper.compaction.job.creation.lambda.CreateCompactionJobsLambda`. This
-lambda is triggered periodically by a Cloudwatch rule. The lambda iterates through each table. For each table, it
-performs a pre-splitting operation on file references in the state store. This involves looking for file references that
-exist within non-leaf partitions, and atomically removing the original reference and creating 2 new references in the
-child partitions. This only moves file references down one "level" on each execution of the lambda, so the
-lambda would need to be invoked multiple times for the file references in the root partition to be moved down to the
-bottom of the tree.
+lambda is triggered periodically by a Cloudwatch rule. For each online table, it performs a pre-splitting operation 
+on file references in the state store. This involves looking for file references that exist within non-leaf partitions, 
+and atomically removing the original reference and creating 2 new references in the child partitions. This only moves
+file references down one "level" on each execution of the lambda, so the lambda would need to be invoked multiple times
+for the file references in the root partition to be moved down to the bottom of the tree.
 
 The lambda then queries the state store for information about the partitions and the file
 references that do not have a job id (if a file reference has a job id it means that a compaction job has already been
