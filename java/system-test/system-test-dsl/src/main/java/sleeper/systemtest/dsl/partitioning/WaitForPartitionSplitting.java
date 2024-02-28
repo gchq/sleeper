@@ -58,8 +58,8 @@ public class WaitForPartitionSplitting {
 
     public void pollUntilFinished(TablePropertiesProvider propertiesProvider, StateStoreProvider stateStoreProvider) throws InterruptedException {
         LOGGER.info("Waiting for splits, expecting partitions to be split: {}", partitionIdsByTableId);
-        WAIT_FOR_SPLITS.pollUntil("partition splits finished", () ->
-                new FinishedCheck(propertiesProvider, stateStoreProvider).isFinished());
+        WAIT_FOR_SPLITS.pollUntil("partition splits finished",
+                () -> new FinishedCheck(propertiesProvider, stateStoreProvider).isFinished());
     }
 
     public boolean isSplitFinished(TablePropertiesProvider propertiesProvider, StateStoreProvider stateStoreProvider) {
@@ -106,7 +106,7 @@ public class WaitForPartitionSplitting {
             TablePropertiesProvider propertiesProvider, StateStoreProvider stateStoreProvider) {
 
         // Collect all table properties and state stores first to avoid concurrency problems with providers
-        List<TableProperties> tableProperties = propertiesProvider.streamAllTables()
+        List<TableProperties> tableProperties = propertiesProvider.streamOnlineTables()
                 .collect(Collectors.toUnmodifiableList());
         Map<String, StateStore> stateStoreByTableId = tableProperties.stream()
                 .map(properties -> entry(properties.get(TABLE_ID), stateStoreProvider.getStateStore(properties)))

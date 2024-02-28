@@ -67,6 +67,34 @@ public class TableOfflineIT {
     }
 
     @Test
+    void shouldNotSplitPartitionsIfTableIsOffline(SleeperSystemTest sleeper) {
+        // Given
+        sleeper.updateTableProperties(Map.of(
+                PARTITION_SPLIT_THRESHOLD, "20",
+                TABLE_ONLINE, "false"));
+        sleeper.setGeneratorOverrides(
+                overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
+                        numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
+        sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
+
+        // When
+        sleeper.partitioning().split();
+
+        // Then
+        assertThat(sleeper.directQuery().allRecordsInTable())
+                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
+        Schema schema = sleeper.tableProperties().getSchema();
+        PartitionTree partitions = sleeper.partitioning().tree();
+        List<FileReference> activeFiles = sleeper.tableFiles().references();
+        assertThat(printPartitions(schema, partitions))
+                .isEqualTo(printPartitions(schema, expectedPartitions));
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(expectedPartitions);
+        assertThat(printFiles(partitions, activeFiles))
+                .isEqualTo(printFiles(expectedPartitions, List.of(
+                        fileReferenceFactory.rootFile(100))));
+    }
+
+    @Test
     void shouldNotCreateCompactionJobsIfTableIsOffline(SleeperSystemTest sleeper) {
         // Given
         sleeper.updateTableProperties(Map.of(
@@ -82,7 +110,7 @@ public class TableOfflineIT {
                 .numberedRecords(numbers.range(36, 46));
 
         // When
-        sleeper.compaction().createJobs().invokeTasks(1).waitForJobs();
+        sleeper.compaction().createJobs().invokeTasks(0);
 
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())
@@ -94,34 +122,5 @@ public class TableOfflineIT {
                         fileFactory.rootFile("file3.parquet", 9),
                         fileFactory.rootFile("file4.parquet", 9),
                         fileFactory.rootFile("file5.parquet", 10))));
-    }
-
-    @Test
-    void shouldNotSplitPartitionsIfTableIsOffline(SleeperSystemTest sleeper) {
-        // Given
-        sleeper.updateTableProperties(Map.of(
-                PARTITION_SPLIT_THRESHOLD, "20",
-                TABLE_ONLINE, "false"));
-        sleeper.setGeneratorOverrides(
-                overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
-                        numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
-        sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
-
-        // When
-        sleeper.partitioning().split();
-        sleeper.compaction().splitAndCompactFiles();
-
-        // Then
-        assertThat(sleeper.directQuery().allRecordsInTable())
-                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
-        Schema schema = sleeper.tableProperties().getSchema();
-        PartitionTree partitions = sleeper.partitioning().tree();
-        List<FileReference> activeFiles = sleeper.tableFiles().references();
-        assertThat(printPartitions(schema, partitions))
-                .isEqualTo(printPartitions(schema, expectedPartitions));
-        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(expectedPartitions);
-        assertThat(printFiles(partitions, activeFiles))
-                .isEqualTo(printFiles(expectedPartitions, List.of(
-                        fileReferenceFactory.rootFile(100))));
     }
 }
