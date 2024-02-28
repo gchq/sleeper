@@ -24,6 +24,8 @@ import com.amazonaws.services.ecs.AmazonECS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.compaction.task.creation.RunTasks.Scaler;
+
 import java.util.Map;
 import java.util.Optional;
 
@@ -31,7 +33,7 @@ import java.util.Optional;
  * ECS EC2 auto scaler. This makes decisions on how many instances to start and stop based on the
  * amount of work there is to do.
  */
-public class Scaler {
+public class EC2Scaler implements Scaler {
     /**
      * AutoScaling client
      */
@@ -61,11 +63,10 @@ public class Scaler {
      */
     private final int memoryReservation;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(Scaler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(EC2Scaler.class);
 
-    public Scaler(AmazonAutoScaling asClient, AmazonECS ecsClient, String asGroupName,
-                  String ecsClusterName,
-                  int cpuReservation, int memoryReservation) {
+    public EC2Scaler(AmazonAutoScaling asClient, AmazonECS ecsClient, String asGroupName,
+            String ecsClusterName, int cpuReservation, int memoryReservation) {
         this.asClient = asClient;
         this.ecsClient = ecsClient;
         this.asGroupName = asGroupName;
@@ -80,8 +81,8 @@ public class Scaler {
      * Find out how many containers of a specific CPU and RAM requirement can fit into the cluster
      * at the moment.
      *
-     * @param instanceDetails cluster EC2 details
-     * @return the number of containers that can fit
+     * @param  instanceDetails cluster EC2 details
+     * @return                 the number of containers that can fit
      */
     public int calculateAvailableClusterContainerCapacity(Map<String, InstanceDetails> instanceDetails) {
         int total = 0;
@@ -95,9 +96,9 @@ public class Scaler {
     /**
      * Find the details of a given EC2 auto scaling group
      *
-     * @param groupName the name of the auto scaling group
-     * @param client    the client object
-     * @return group data
+     * @param  groupName the name of the auto scaling group
+     * @param  client    the client object
+     * @return           group data
      */
     public static AutoScalingGroup getAutoScalingGroupInfo(String groupName, AmazonAutoScaling client) {
         DescribeAutoScalingGroupsRequest req = new DescribeAutoScalingGroupsRequest()
@@ -119,6 +120,11 @@ public class Scaler {
      * @param numberContainers total number of containers to be run at the moment
      */
     public void scaleTo(int numberContainers) {
+        scaleTo(asGroupName, numberContainers);
+    }
+
+    @Override
+    public void scaleTo(String asGroupName, int numberContainers) {
         // If we have any information set the number of containers per instance
         checkContainersPerInstance(null);
 
@@ -133,7 +139,7 @@ public class Scaler {
         int instancesDesired = (int) (Math.ceil(numberContainers / (double) containersPerInstance));
         int newClusterSize = Math.min(instancesDesired, asg.getMaxSize());
         LOGGER.info("Total containers wanted (including existing ones) {}, containers per instance {}, " +
-                        "so total instances wanted {}, limited to {} by ASG maximum", numberContainers, containersPerInstance,
+                "so total instances wanted {}, limited to {} by ASG maximum", numberContainers, containersPerInstance,
                 instancesDesired, newClusterSize);
 
         // Set the new desired size on the cluster
@@ -164,9 +170,8 @@ public class Scaler {
 
         // Get the first one, we assume the containers are homogenous
         Optional<InstanceDetails> det = details.values().stream().findFirst();
-        det.ifPresent(d ->
-                this.cachedInstanceContainers = Math.min(d.totalCPU / this.cpuReservation,
-                        d.totalRAM / this.memoryReservation));
+        det.ifPresent(d -> this.cachedInstanceContainers = Math.min(d.totalCPU / this.cpuReservation,
+                d.totalRAM / this.memoryReservation));
     }
 
     /**
