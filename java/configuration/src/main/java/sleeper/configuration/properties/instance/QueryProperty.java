@@ -80,7 +80,8 @@ public interface QueryProperty {
                     "value given below is 128KiB. This value can be overridden using the query config.")
             .defaultValue("" + (128 * 1024)) // 128 KiB
             .propertyGroup(InstancePropertyGroup.QUERY).build();
-    UserDefinedInstanceProperty INGEST_BATCHER_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES = Index.propertyBuilder("sleeper.query.warm.lambda.period.minutes")
+    UserDefinedInstanceProperty DEFAULT_QUERY_WARM_LAMBDA_EXECUTION_PERIOD_IN_MINUTES = Index
+            .propertyBuilder("sleeper.query.warm.lambda.period.minutes")
             .description("The rate at which the query lambda runs to keep it warm (in minutes, must be >=1).")
             .defaultValue("5")
             .validationPredicate(Utils::isPositiveInteger)

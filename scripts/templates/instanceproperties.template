@@ -302,7 +302,7 @@ sleeper.ingest.batcher.job.creation.memory.mb=1024
 sleeper.ingest.batcher.job.creation.timeout.seconds=900
 
 # The rate at which the ingest batcher job creation lambda runs (in minutes, must be >=1).
-sleeper.ingest.batcher.job.creation.period.minutes=5
+sleeper.ingest.batcher.job.creation.period.minutes=1
 
 
 ## The following properties relate to bulk import, i.e. ingesting data using Spark jobs running on EMR

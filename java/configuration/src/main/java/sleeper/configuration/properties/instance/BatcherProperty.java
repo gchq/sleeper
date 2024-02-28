@@ -45,7 +45,7 @@ public interface BatcherProperty {
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty INGEST_BATCHER_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES = Index.propertyBuilder("sleeper.ingest.batcher.job.creation.period.minutes")
             .description("The rate at which the ingest batcher job creation lambda runs (in minutes, must be >=1).")
-            .defaultValue("5")
+            .defaultValue("1")
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.INGEST)
             .runCdkDeployWhenChanged(true).build();

@@ -42,10 +42,10 @@ import java.util.Locale;
 
 import static sleeper.cdk.Utils.createLambdaLogGroup;
 import static sleeper.cdk.Utils.shouldDeployPaused;
-import static sleeper.configuration.properties.instance.BatcherProperty.INGEST_BATCHER_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_QUEUE_ARN;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_WARM_LAMBDA_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.QueryProperty.DEFAULT_QUERY_WARM_LAMBDA_EXECUTION_PERIOD_IN_MINUTES;
 import static sleeper.configuration.properties.instance.QueryProperty.QUERY_PROCESSOR_LAMBDA_MEMORY_IN_MB;
 import static sleeper.configuration.properties.instance.QueryProperty.QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS;
 
@@ -83,7 +83,8 @@ public class DummyLambdaExecutionStack extends NestedStack {
                 .ruleName(SleeperScheduleRule.QUERY_WARM_LAMBDA.buildRuleName(instanceProperties))
                 .description("A rule to periodically trigger the query execution lambda")
                 .enabled(!shouldDeployPaused(this))
-                .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(INGEST_BATCHER_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES))))
+                .schedule(Schedule.rate(Duration.minutes(instanceProperties
+                        .getInt(DEFAULT_QUERY_WARM_LAMBDA_EXECUTION_PERIOD_IN_MINUTES))))
                 .targets(Collections.singletonList(LambdaFunction.Builder
                     .create(handler)
                     .build()
