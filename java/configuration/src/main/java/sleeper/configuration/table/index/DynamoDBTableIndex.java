@@ -102,7 +102,7 @@ public class DynamoDBTableIndex implements TableIndex {
             LOGGER.debug("Created table {}, capacity consumed = {}", table, totalCapacity);
         } catch (TransactionCanceledException e) {
             if (anyCheckFailed(e)) {
-                throw new TableAlreadyExistsException(table);
+                throw new TableAlreadyExistsException(table, e);
             }
             throw e;
         }
@@ -181,13 +181,13 @@ public class DynamoDBTableIndex implements TableIndex {
             int idDeleteIndex = 1;
             int onlineDeleteIndex = 2;
             if (isCheckFailed(e, nameDeleteIndex)) {
-                throw TableNotFoundException.withTableName(table.getTableName());
+                throw TableNotFoundException.withTableName(table.getTableName(), e);
             }
             if (isCheckFailed(e, idDeleteIndex)) {
-                throw TableNotFoundException.withTableId(table.getTableUniqueId());
+                throw TableNotFoundException.withTableId(table.getTableUniqueId(), e);
             }
             if (isCheckFailed(e, onlineDeleteIndex)) {
-                throw TableNotFoundException.withTableName(table.getTableName());
+                throw TableNotFoundException.withTableName(table.getTableName(), e);
             }
             throw e;
         }
@@ -261,24 +261,24 @@ public class DynamoDBTableIndex implements TableIndex {
             int nameDeleteIndex = 4;
             if (isCheckFailed(e, onlinePutIndex)) {
                 throw new TableAlreadyExistsException(getTableByName(newStatus.getTableName())
-                        .orElseThrow(() -> TableNotFoundException.withTableName(newStatus.getTableName())));
+                        .orElseThrow(() -> TableNotFoundException.withTableName(newStatus.getTableName())), e);
             }
             if (isCheckFailed(e, namePutIndex)) {
                 if (nameChanged) {
                     throw new TableAlreadyExistsException(getTableByName(newStatus.getTableName())
-                            .orElseThrow(() -> TableNotFoundException.withTableName(newStatus.getTableName())));
+                            .orElseThrow(() -> TableNotFoundException.withTableName(newStatus.getTableName())), e);
                 } else {
-                    throw TableNotFoundException.withTableName(newStatus.getTableName());
+                    throw TableNotFoundException.withTableName(newStatus.getTableName(), e);
                 }
             }
             if (isCheckFailed(e, idPutIndex)) {
-                throw TableNotFoundException.withTableId(newStatus.getTableUniqueId());
+                throw TableNotFoundException.withTableId(newStatus.getTableUniqueId(), e);
             }
             if (isCheckFailed(e, onlineDeleteIndex)) {
-                throw TableNotFoundException.withTableName(oldStatus.getTableName());
+                throw TableNotFoundException.withTableName(oldStatus.getTableName(), e);
             }
             if (isCheckFailed(e, nameDeleteIndex)) {
-                throw TableNotFoundException.withTableName(oldStatus.getTableName());
+                throw TableNotFoundException.withTableName(oldStatus.getTableName(), e);
             }
             throw e;
         }
