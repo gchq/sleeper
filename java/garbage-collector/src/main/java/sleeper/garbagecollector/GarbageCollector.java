@@ -36,7 +36,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
@@ -64,18 +63,13 @@ public class GarbageCollector {
     }
 
     public void run(InvokeForTableRequest request) throws StateStoreException, IOException {
-        runAtTime(Instant.now(), request.getTableIds().stream()
+        runAtTime(Instant.now(), request);
+    }
+
+    public void runAtTime(Instant startTime, InvokeForTableRequest request) throws StateStoreException, IOException {
+        List<TableProperties> tables = request.getTableIds().stream()
                 .map(tablePropertiesProvider::getById)
-                .collect(toUnmodifiableList()));
-    }
-
-    public void runAtTime(Instant startTime) throws StateStoreException, IOException {
-        List<TableProperties> tables = tablePropertiesProvider.streamAllTables()
-                .collect(Collectors.toUnmodifiableList());
-        runAtTime(startTime, tables);
-    }
-
-    public void runAtTime(Instant startTime, List<TableProperties> tables) throws StateStoreException, IOException {
+                .collect(toUnmodifiableList());
         LOGGER.info("Obtained list of {} tables", tables.size());
         int totalDeleted = 0;
         for (TableProperties tableProperties : tables) {

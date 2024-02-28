@@ -37,17 +37,19 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.table.InvokeForTableRequest;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.statestore.FixedStateStoreProvider;
-import sleeper.statestore.StateStoreProvider;
 
 import java.nio.file.Files;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
@@ -55,23 +57,22 @@ import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYST
 import static sleeper.configuration.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithNoReferences;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
-import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
+import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
 
 public class GarbageCollectorIT {
     private static final Schema TEST_SCHEMA = getSchema();
-    private static final String TEST_TABLE_NAME = "test-table";
-    private static final String TEST_TABLE_NAME_1 = "test-table-1";
-    private static final String TEST_TABLE_NAME_2 = "test-table-2";
 
     @TempDir
     public java.nio.file.Path tempDir;
     private final PartitionTree partitions = new PartitionsBuilder(TEST_SCHEMA).singlePartition("root").buildTree();
     private final List<TableProperties> tables = new ArrayList<>();
+    private final Map<String, StateStore> stateStoreByTableName = new HashMap<>();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
 
     @BeforeEach
@@ -83,29 +84,22 @@ public class GarbageCollectorIT {
     @Nested
     @DisplayName("Collecting from single table")
     class SingleTable {
-        private TableProperties tableProperties;
-        private StateStoreProvider stateStoreProvider;
-
-        StateStore setupStateStoreAndFixTime(Instant fixedTime) {
-            StateStore stateStore = inMemoryStateStoreWithSinglePartition(TEST_SCHEMA);
-            stateStore.fixTime(fixedTime);
-            stateStoreProvider = new FixedStateStoreProvider(tableProperties, stateStore);
-            return stateStore;
-        }
+        private final TableProperties table = createTable();
+        private final StateStore stateStore = stateStore(table);
 
         @Test
         void shouldCollectFileWithNoReferencesAfterSpecifiedDelay() throws Exception {
             // Given
-            tableProperties = createTableWithGCDelay(TEST_TABLE_NAME, instanceProperties, 10);
             Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
             Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
-            StateStore stateStore = setupStateStoreAndFixTime(oldEnoughTime);
+            stateStore.fixTime(oldEnoughTime);
+            table.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, 10);
             java.nio.file.Path oldFile = tempDir.resolve("old-file.parquet");
             java.nio.file.Path newFile = tempDir.resolve("new-file.parquet");
             createFileWithNoReferencesByCompaction(stateStore, oldFile, newFile);
 
             // When
-            createGarbageCollector(instanceProperties, stateStoreProvider).runAtTime(currentTime);
+            collectGarbageAtTime(currentTime);
 
             // Then
             assertThat(Files.exists(oldFile)).isFalse();
@@ -116,15 +110,15 @@ public class GarbageCollectorIT {
         @Test
         void shouldNotCollectFileMarkedAsActive() throws Exception {
             // Given
-            tableProperties = createTableWithGCDelay(TEST_TABLE_NAME, instanceProperties, 10);
             Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
             Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
-            StateStore stateStore = setupStateStoreAndFixTime(oldEnoughTime);
+            stateStore.fixTime(oldEnoughTime);
+            table.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, 10);
             java.nio.file.Path filePath = tempDir.resolve("test-file.parquet");
             createActiveFile(filePath, stateStore);
 
             // When
-            createGarbageCollector(instanceProperties, stateStoreProvider).runAtTime(currentTime);
+            collectGarbageAtTime(currentTime);
 
             // Then
             assertThat(Files.exists(filePath)).isTrue();
@@ -135,16 +129,16 @@ public class GarbageCollectorIT {
         @Test
         void shouldNotCollectFileWithNoReferencesBeforeSpecifiedDelay() throws Exception {
             // Given
-            tableProperties = createTableWithGCDelay(TEST_TABLE_NAME, instanceProperties, 10);
             Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
             Instant notOldEnoughTime = currentTime.minus(Duration.ofMinutes(5));
-            StateStore stateStore = setupStateStoreAndFixTime(notOldEnoughTime);
+            stateStore.fixTime(notOldEnoughTime);
+            table.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, 10);
             java.nio.file.Path oldFile = tempDir.resolve("old-file.parquet");
             java.nio.file.Path newFile = tempDir.resolve("new-file.parquet");
             createFileWithNoReferencesByCompaction(stateStore, oldFile, newFile);
 
             // When
-            createGarbageCollector(instanceProperties, stateStoreProvider).runAtTime(currentTime);
+            collectGarbageAtTime(currentTime);
 
             // Then
             assertThat(Files.exists(oldFile)).isTrue();
@@ -157,10 +151,10 @@ public class GarbageCollectorIT {
         @Test
         void shouldCollectMultipleFilesInOneRun() throws Exception {
             // Given
-            tableProperties = createTableWithGCDelay(TEST_TABLE_NAME, instanceProperties, 10);
             Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
             Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
-            StateStore stateStore = setupStateStoreAndFixTime(oldEnoughTime);
+            stateStore.fixTime(oldEnoughTime);
+            table.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, 10);
             java.nio.file.Path oldFile1 = tempDir.resolve("old-file-1.parquet");
             java.nio.file.Path oldFile2 = tempDir.resolve("old-file-2.parquet");
             java.nio.file.Path newFile1 = tempDir.resolve("new-file-1.parquet");
@@ -169,8 +163,7 @@ public class GarbageCollectorIT {
             createFileWithNoReferencesByCompaction(stateStore, oldFile2, newFile2);
 
             // When
-            stateStore.fixTime(currentTime);
-            createGarbageCollector(instanceProperties, stateStoreProvider).runAtTime(currentTime);
+            collectGarbageAtTime(currentTime);
 
             // Then
             assertThat(Files.exists(oldFile1)).isFalse();
@@ -187,10 +180,10 @@ public class GarbageCollectorIT {
         void shouldCollectFilesInBatchesIfBatchSizeExceeded() throws Exception {
             // Given
             instanceProperties.setNumber(GARBAGE_COLLECTOR_BATCH_SIZE, 2);
-            tableProperties = createTableWithGCDelay(TEST_TABLE_NAME, instanceProperties, 10);
             Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
             Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
-            StateStore stateStore = setupStateStoreAndFixTime(oldEnoughTime);
+            stateStore.fixTime(oldEnoughTime);
+            table.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, 10);
             java.nio.file.Path oldFile1 = tempDir.resolve("old-file-1.parquet");
             java.nio.file.Path oldFile2 = tempDir.resolve("old-file-2.parquet");
             java.nio.file.Path newFile1 = tempDir.resolve("new-file-1.parquet");
@@ -202,7 +195,7 @@ public class GarbageCollectorIT {
             createFileWithNoReferencesByCompaction(stateStore, oldFile3, newFile3);
 
             // When
-            createGarbageCollector(instanceProperties, stateStoreProvider).runAtTime(currentTime);
+            collectGarbageAtTime(currentTime);
 
             // Then
             assertThat(Files.exists(oldFile1)).isFalse();
@@ -221,10 +214,10 @@ public class GarbageCollectorIT {
         @Test
         void shouldContinueCollectingFilesIfFileDoesNotExist() throws Exception {
             // Given
-            tableProperties = createTableWithGCDelay(TEST_TABLE_NAME, instanceProperties, 10);
             Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
             Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
-            StateStore stateStore = setupStateStoreAndFixTime(oldEnoughTime);
+            stateStore.fixTime(oldEnoughTime);
+            table.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, 10);
             stateStore.addFilesWithReferences(List.of(
                     fileWithNoReferences("/tmp/not-a-file.parquet")));
             java.nio.file.Path oldFile2 = tempDir.resolve("old-file-2.parquet");
@@ -232,8 +225,7 @@ public class GarbageCollectorIT {
             createFileWithNoReferencesByCompaction(stateStore, oldFile2, newFile2);
 
             // When
-            stateStore.fixTime(currentTime);
-            createGarbageCollector(instanceProperties, stateStoreProvider).runAtTime(currentTime);
+            collectGarbageAtTime(currentTime);
 
             // Then
             assertThat(Files.exists(oldFile2)).isFalse();
@@ -247,28 +239,21 @@ public class GarbageCollectorIT {
     @Nested
     @DisplayName("Collecting from multiple tables")
     class MultipleTables {
-        private StateStoreProvider stateStoreProvider;
-
-        void setupStateStoresAndFixTimes(Instant fixedTime) {
-            StateStore stateStore1 = inMemoryStateStoreWithSinglePartition(TEST_SCHEMA);
-            stateStore1.fixTime(fixedTime);
-            StateStore stateStore2 = inMemoryStateStoreWithSinglePartition(TEST_SCHEMA);
-            stateStore2.fixTime(fixedTime);
-            stateStoreProvider = new FixedStateStoreProvider(Map.of(
-                    TEST_TABLE_NAME_1, stateStore1, TEST_TABLE_NAME_2, stateStore2));
-        }
 
         @Test
         void shouldCollectOneFileFromEachTable() throws Exception {
             // Given
             instanceProperties.setNumber(GARBAGE_COLLECTOR_BATCH_SIZE, 2);
-            TableProperties tableProperties1 = createTableWithGCDelay(TEST_TABLE_NAME_1, instanceProperties, 10);
-            TableProperties tableProperties2 = createTableWithGCDelay(TEST_TABLE_NAME_2, instanceProperties, 10);
+            TableProperties table1 = createTable();
+            TableProperties table2 = createTable();
+            table1.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, 10);
+            table2.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, 10);
             Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
             Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
-            setupStateStoresAndFixTimes(oldEnoughTime);
-            StateStore stateStore1 = stateStoreProvider.getStateStore(tableProperties1);
-            StateStore stateStore2 = stateStoreProvider.getStateStore(tableProperties2);
+            StateStore stateStore1 = stateStore(table1);
+            StateStore stateStore2 = stateStore(table2);
+            stateStore1.fixTime(oldEnoughTime);
+            stateStore2.fixTime(oldEnoughTime);
             java.nio.file.Path oldFile1 = tempDir.resolve("old-file-1.parquet");
             java.nio.file.Path oldFile2 = tempDir.resolve("old-file-2.parquet");
             java.nio.file.Path newFile1 = tempDir.resolve("new-file-1.parquet");
@@ -277,9 +262,7 @@ public class GarbageCollectorIT {
             createFileWithNoReferencesByCompaction(stateStore2, oldFile2, newFile2);
 
             // When
-            stateStore1.fixTime(currentTime);
-            stateStore2.fixTime(currentTime);
-            createGarbageCollector(instanceProperties, stateStoreProvider).runAtTime(currentTime);
+            collectGarbageAtTime(currentTime);
 
             // Then
             assertThat(Files.exists(oldFile1)).isFalse();
@@ -324,18 +307,27 @@ public class GarbageCollectorIT {
         writer.close();
     }
 
-    private TableProperties createTableWithGCDelay(String tableName, InstanceProperties instanceProperties, int gcDelay) {
+    private TableProperties createTable() {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, TEST_SCHEMA);
-        tableProperties.set(TABLE_NAME, tableName);
-        tableProperties.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, gcDelay);
         tables.add(tableProperties);
+        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(partitions.getAllPartitions());
+        stateStoreByTableName.put(tableProperties.get(TABLE_NAME), stateStore);
         return tableProperties;
     }
 
-    private GarbageCollector createGarbageCollector(InstanceProperties instanceProperties, StateStoreProvider stateStoreProvider) {
-        return new GarbageCollector(new Configuration(),
-                new FixedTablePropertiesProvider(tables), stateStoreProvider,
+    private StateStore stateStore(TableProperties table) {
+        return stateStoreByTableName.get(table.get(TABLE_NAME));
+    }
+
+    private void collectGarbageAtTime(Instant time) throws Exception {
+        GarbageCollector collector = new GarbageCollector(new Configuration(),
+                new FixedTablePropertiesProvider(tables),
+                new FixedStateStoreProvider(stateStoreByTableName),
                 instanceProperties.getInt(GARBAGE_COLLECTOR_BATCH_SIZE));
+        List<String> tableIds = tables.stream()
+                .map(table -> table.get(TABLE_ID))
+                .collect(toUnmodifiableList());
+        collector.runAtTime(time, new InvokeForTableRequest(tableIds));
     }
 
     private static Schema getSchema() {
