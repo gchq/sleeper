@@ -22,14 +22,16 @@ public class TableStatus {
 
     private final String tableUniqueId;
     private final String tableName;
+    private final boolean online;
 
-    private TableStatus(String tableUniqueId, String tableName) {
+    private TableStatus(String tableUniqueId, String tableName, boolean online) {
         this.tableUniqueId = tableUniqueId;
         this.tableName = tableName;
+        this.online = online;
     }
 
-    public static TableStatus uniqueIdAndName(String tableUniqueId, String tableName) {
-        return new TableStatus(tableUniqueId, tableName);
+    public static TableStatus uniqueIdAndName(String tableUniqueId, String tableName, boolean online) {
+        return new TableStatus(tableUniqueId, tableName, online);
     }
 
     public String getTableName() {
@@ -40,25 +42,39 @@ public class TableStatus {
         return tableUniqueId;
     }
 
+    public boolean isOnline() {
+        return online;
+    }
+
+    public TableStatus takeOffline() {
+        return new TableStatus(this.tableUniqueId, this.tableName, false);
+    }
+
+    public TableStatus putOnline() {
+        return new TableStatus(this.tableUniqueId, this.tableName, true);
+    }
+
     @Override
-    public boolean equals(Object object) {
-        if (this == object) {
+    public boolean equals(Object o) {
+        if (this == o) {
             return true;
         }
-        if (object == null || getClass() != object.getClass()) {
+        if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        TableStatus table1 = (TableStatus) object;
-        return Objects.equals(tableUniqueId, table1.tableUniqueId) && Objects.equals(tableName, table1.tableName);
+        TableStatus that = (TableStatus) o;
+        return online == that.online && Objects.equals(tableUniqueId, that.tableUniqueId) && Objects.equals(tableName, that.tableName);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(tableUniqueId, tableName);
+        return Objects.hash(tableUniqueId, tableName, online);
     }
 
     @Override
     public String toString() {
-        return tableName + (tableUniqueId == null ? "" : " (" + tableUniqueId + ")");
+        return tableName +
+                (tableUniqueId == null ? "" : " (" + tableUniqueId + ")") +
+                (!online ? " [offline]" : "");
     }
 }

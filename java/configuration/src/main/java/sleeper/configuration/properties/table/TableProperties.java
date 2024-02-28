@@ -41,6 +41,7 @@ import static sleeper.configuration.properties.table.TableProperty.SCHEMA;
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ONLINE;
 
 public class TableProperties extends SleeperProperties<TableProperty> {
     private static final Logger LOGGER = LoggerFactory.getLogger(TableProperties.class);
@@ -139,7 +140,7 @@ public class TableProperties extends SleeperProperties<TableProperty> {
     }
 
     public TableStatus getStatus() {
-        return TableStatus.uniqueIdAndName(get(TABLE_ID), get(TABLE_NAME));
+        return TableStatus.uniqueIdAndName(get(TABLE_ID), get(TABLE_NAME), getBoolean(TABLE_ONLINE));
     }
 
     @Override

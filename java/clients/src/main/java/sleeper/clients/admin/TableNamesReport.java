@@ -15,36 +15,44 @@
  */
 package sleeper.clients.admin;
 
-import sleeper.clients.admin.properties.AdminClientPropertiesStore;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
+import sleeper.core.table.TableIndex;
+import sleeper.core.table.TableStatus;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
+import static java.util.function.Predicate.not;
 import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
 
 public class TableNamesReport {
 
     private final ConsoleOutput out;
     private final ConsoleInput in;
-    private final AdminClientPropertiesStore store;
+    private final TableIndex tableIndex;
 
-    public TableNamesReport(ConsoleOutput out, ConsoleInput in, AdminClientPropertiesStore store) {
+    public TableNamesReport(ConsoleOutput out, ConsoleInput in, TableIndex tableIndex) {
         this.out = out;
         this.in = in;
-        this.store = store;
+        this.tableIndex = tableIndex;
     }
 
-    public void print(String instanceId) {
-        print(store.listTables(instanceId));
+    public void print() {
+        print(tableIndex.streamAllTables().collect(Collectors.toList()));
     }
 
-    private void print(List<String> tableNames) {
-
+    private void print(List<TableStatus> allTables) {
         out.println("\n\nTable Names\n----------------------------------");
-        for (String tableName : tableNames) {
-            out.println(tableName);
-        }
+        allTables.stream()
+                .filter(TableStatus::isOnline)
+                .map(TableStatus::getTableName)
+                .forEach(out::println);
+
+        allTables.stream()
+                .filter(not(TableStatus::isOnline))
+                .map(TableStatus::getTableName)
+                .forEach(tableName -> out.println(tableName + " (offline)"));
         confirmReturnToMainScreen(out, in);
     }
 }
