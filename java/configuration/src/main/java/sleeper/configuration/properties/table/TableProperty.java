@@ -84,10 +84,11 @@ public interface TableProperty extends SleeperProperty {
             .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
             .setBySleeper(true).build();
     TableProperty TABLE_ONLINE = Index.propertyBuilder("sleeper.table.online")
-            .description("A boolean flag representing whether this table is online or not.\n" +
+            .description("A boolean flag representing whether this table is online or offline.\n" +
                     "An offline table will not have any partition splitting or compaction jobs run automatically.\n" +
                     "Note that taking a table offline will not stop any partitions that are being split or compaction " +
-                    "jobs that are running.")
+                    "jobs that are running. Additionally, you are still able to ingest data to offline tables and perform " +
+                    "queries against them.")
             .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
             .validationPredicate(Utils::isTrueOrFalse)
             .defaultValue("true")
