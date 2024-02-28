@@ -53,11 +53,9 @@ import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 
 public class TableMetricsStack extends NestedStack {
-    public TableMetricsStack(Construct scope,
-            String id,
-            InstanceProperties instanceProperties,
-            BuiltJars jars,
-            CoreStacks coreStacks) {
+    public TableMetricsStack(
+            Construct scope, String id, InstanceProperties instanceProperties,
+            BuiltJars jars, CoreStacks coreStacks) {
         super(scope, id);
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
         LambdaCode metricsJar = jars.lambdaCode(BuiltJar.METRICS, jarsBucket);

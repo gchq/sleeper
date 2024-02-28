@@ -59,11 +59,8 @@ import static sleeper.configuration.properties.instance.GarbageCollectionPropert
 public class GarbageCollectorStack extends NestedStack {
 
     public GarbageCollectorStack(
-            Construct scope,
-            String id,
-            InstanceProperties instanceProperties,
-            BuiltJars jars,
-            CoreStacks coreStacks) {
+            Construct scope, String id, InstanceProperties instanceProperties,
+            BuiltJars jars, CoreStacks coreStacks) {
         super(scope, id);
 
         // Jars bucket
