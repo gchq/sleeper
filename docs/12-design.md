@@ -136,7 +136,7 @@ make any difference to the results.
 
 ## State store
 
-The state store for a table holds information about the files that are currently in the table,
+The state store for tables holds information about the files that are currently in each table,
 and how those files are partitioned. Information about files is stored by creating file references, and by
 keeping track of the number of references to a file. A file reference represents a subset of the data in a file that
 exists entirely within a partition. This means you can have multiple references to the same file,
