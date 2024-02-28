@@ -39,6 +39,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
+import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFiles;
 import static sleeper.core.testutils.printers.FileReferencePrinter.printFiles;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
@@ -61,7 +62,8 @@ public class GarbageCollectionIT {
         // Given
         sleeper.updateTableProperties(Map.of(
                 COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
-                COMPACTION_FILES_BATCH_SIZE, "2"));
+                COMPACTION_FILES_BATCH_SIZE, "5",
+                GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "0"));
         RecordNumbers numbers = sleeper.scrambleNumberedRecords(LongStream.range(0, 50));
         sleeper.ingest().direct(tempDir)
                 .numberedRecords(numbers.range(0, 10))

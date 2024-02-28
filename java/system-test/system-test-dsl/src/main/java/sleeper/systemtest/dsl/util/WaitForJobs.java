@@ -40,35 +40,38 @@ public class WaitForJobs {
     private final Function<InstanceProperties, JobStatusStore> getJobsStore;
     private final Function<InstanceProperties, TaskStatusStore> getTasksStore;
 
-    private WaitForJobs(SystemTestInstanceContext instance,
-                        String typeDescription,
-                        Function<InstanceProperties, JobStatusStore> getJobsStore,
-                        Function<InstanceProperties, TaskStatusStore> getTasksStore) {
+    private WaitForJobs(
+            SystemTestInstanceContext instance, String typeDescription,
+            Function<InstanceProperties, JobStatusStore> getJobsStore,
+            Function<InstanceProperties, TaskStatusStore> getTasksStore) {
         this.instance = instance;
         this.typeDescription = typeDescription;
         this.getJobsStore = getJobsStore;
         this.getTasksStore = getTasksStore;
     }
 
-    public static WaitForJobs forIngest(SystemTestInstanceContext instance,
-                                        Function<InstanceProperties, IngestJobStatusStore> getJobsStore,
-                                        Function<InstanceProperties, IngestTaskStatusStore> getTasksStore) {
+    public static WaitForJobs forIngest(
+            SystemTestInstanceContext instance,
+            Function<InstanceProperties, IngestJobStatusStore> getJobsStore,
+            Function<InstanceProperties, IngestTaskStatusStore> getTasksStore) {
         return new WaitForJobs(instance, "ingest",
                 properties -> JobStatusStore.forIngest(getJobsStore.apply(properties)),
                 properties -> TaskStatusStore.forIngest(getTasksStore.apply(properties)));
     }
 
-    public static WaitForJobs forBulkImport(SystemTestInstanceContext instance,
-                                            Function<InstanceProperties, IngestJobStatusStore> getJobsStore) {
+    public static WaitForJobs forBulkImport(
+            SystemTestInstanceContext instance,
+            Function<InstanceProperties, IngestJobStatusStore> getJobsStore) {
         return new WaitForJobs(instance, "bulk import",
                 properties -> JobStatusStore.forIngest(getJobsStore.apply(properties)),
                 properties -> () -> true);
     }
 
-    public static WaitForJobs forCompaction(SystemTestInstanceContext instance,
-                                            Function<InstanceProperties, CompactionJobStatusStore> getJobsStore,
-                                            Function<InstanceProperties, CompactionTaskStatusStore> getTasksStore) {
-        return new WaitForJobs(instance, "ingest",
+    public static WaitForJobs forCompaction(
+            SystemTestInstanceContext instance,
+            Function<InstanceProperties, CompactionJobStatusStore> getJobsStore,
+            Function<InstanceProperties, CompactionTaskStatusStore> getTasksStore) {
+        return new WaitForJobs(instance, "compaction",
                 properties -> JobStatusStore.forCompaction(getJobsStore.apply(properties)),
                 properties -> TaskStatusStore.forCompaction(getTasksStore.apply(properties)));
     }
