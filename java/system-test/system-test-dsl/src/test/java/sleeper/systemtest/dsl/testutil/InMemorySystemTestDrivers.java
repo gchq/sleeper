@@ -16,129 +16,130 @@
 
 package sleeper.systemtest.dsl.testutil;
 
+import sleeper.ingest.batcher.testutil.InMemoryIngestBatcherStore;
 import sleeper.query.runner.recordretrieval.InMemoryDataStore;
-import sleeper.systemtest.dsl.compaction.SystemTestCompaction;
-import sleeper.systemtest.dsl.ingest.SystemTestIngest;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
-import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
+import sleeper.systemtest.dsl.SystemTestContext;
+import sleeper.systemtest.dsl.compaction.CompactionDriver;
+import sleeper.systemtest.dsl.ingest.DirectIngestDriver;
+import sleeper.systemtest.dsl.ingest.IngestBatcherDriver;
+import sleeper.systemtest.dsl.ingest.IngestByQueue;
+import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
+import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
+import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
+import sleeper.systemtest.dsl.instance.SleeperTablesDriver;
+import sleeper.systemtest.dsl.instance.SystemTestDeploymentDriver;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
-import sleeper.systemtest.dsl.metrics.SystemTestMetrics;
-import sleeper.systemtest.dsl.partitioning.SystemTestPartitioning;
-import sleeper.systemtest.dsl.python.SystemTestPythonApi;
-import sleeper.systemtest.dsl.query.SystemTestQuery;
-import sleeper.systemtest.dsl.reporting.ReportingContext;
-import sleeper.systemtest.dsl.reporting.SystemTestReporting;
-import sleeper.systemtest.dsl.reporting.SystemTestReports;
+import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
-import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
-import sleeper.systemtest.dsl.sourcedata.SystemTestCluster;
-import sleeper.systemtest.dsl.sourcedata.SystemTestSourceFiles;
+import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
+import sleeper.systemtest.dsl.testutil.drivers.InMemoryCompaction;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryDirectIngestDriver;
+import sleeper.systemtest.dsl.testutil.drivers.InMemoryDirectQueryDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryGeneratedIngestSourceFilesDriver;
-import sleeper.systemtest.dsl.testutil.drivers.InMemoryQueryDriver;
+import sleeper.systemtest.dsl.testutil.drivers.InMemoryIngestBatcherDriver;
+import sleeper.systemtest.dsl.testutil.drivers.InMemoryIngestByQueue;
+import sleeper.systemtest.dsl.testutil.drivers.InMemoryQueryByQueueDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySleeperInstanceDriver;
-import sleeper.systemtest.dsl.testutil.drivers.InMemorySleeperInstanceTablesDriver;
+import sleeper.systemtest.dsl.testutil.drivers.InMemorySleeperTablesDriver;
+import sleeper.systemtest.dsl.testutil.drivers.InMemorySourceFilesDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySystemTestDeploymentDriver;
 import sleeper.systemtest.dsl.util.PurgeQueueDriver;
-import sleeper.systemtest.dsl.util.SystemTestDrivers;
+import sleeper.systemtest.dsl.util.SystemTestDriversBase;
+import sleeper.systemtest.dsl.util.WaitForJobs;
 
-public class InMemorySystemTestDrivers implements SystemTestDrivers {
-    private final SystemTestDeploymentContext systemTestContext;
-    private final SleeperInstanceContext instanceContext;
-    private final IngestSourceFilesContext sourceFilesContext;
-    private final ReportingContext reportingContext;
+public class InMemorySystemTestDrivers extends SystemTestDriversBase {
+
+    private final SystemTestDeploymentDriver systemTestDeploymentDriver = new InMemorySystemTestDeploymentDriver();
+    private final InMemorySleeperTablesDriver tablesDriver = new InMemorySleeperTablesDriver();
+    private final SleeperInstanceDriver instanceDriver = new InMemorySleeperInstanceDriver(tablesDriver);
+    private final InMemoryDataStore sourceFiles = new InMemoryDataStore();
     private final InMemoryDataStore data = new InMemoryDataStore();
+    private final InMemoryIngestBatcherStore batcherStore = new InMemoryIngestBatcherStore();
+    private final InMemoryIngestByQueue ingestByQueue = new InMemoryIngestByQueue(sourceFiles, data);
+    private final InMemoryCompaction compaction = new InMemoryCompaction(data);
+    private long fileSizeBytesForBatcher = 1024;
 
-    public InMemorySystemTestDrivers(SystemTestParameters parameters) {
-        systemTestContext = new SystemTestDeploymentContext(parameters, new InMemorySystemTestDeploymentDriver());
-        InMemorySleeperInstanceTablesDriver tablesDriver = new InMemorySleeperInstanceTablesDriver();
-        instanceContext = new SleeperInstanceContext(parameters, systemTestContext,
-                new InMemorySleeperInstanceDriver(tablesDriver), tablesDriver);
-        sourceFilesContext = new IngestSourceFilesContext(systemTestContext, instanceContext);
-        reportingContext = new ReportingContext(parameters);
+    @Override
+    public SystemTestDeploymentDriver systemTestDeployment(SystemTestParameters parameters) {
+        return systemTestDeploymentDriver;
     }
 
     @Override
-    public SystemTestDeploymentContext getSystemTestContext() {
-        return systemTestContext;
+    public SleeperInstanceDriver instance(SystemTestParameters parameters) {
+        return instanceDriver;
     }
 
     @Override
-    public SleeperInstanceContext getInstanceContext() {
-        return instanceContext;
+    public SleeperTablesDriver tables(SystemTestParameters parameters) {
+        return tablesDriver;
     }
 
     @Override
-    public IngestSourceFilesContext getSourceFilesContext() {
-        return sourceFilesContext;
+    public IngestSourceFilesDriver sourceFiles(SystemTestContext context) {
+        return new InMemorySourceFilesDriver(sourceFiles);
     }
 
     @Override
-    public ReportingContext getReportingContext() {
-        return reportingContext;
-    }
-
-    @Override
-    public GeneratedIngestSourceFilesDriver generatedSourceFilesDriver() {
+    public GeneratedIngestSourceFilesDriver generatedSourceFiles(SystemTestParameters parameters, DeployedSystemTestResources systemTest) {
         return new InMemoryGeneratedIngestSourceFilesDriver();
     }
 
     @Override
-    public SystemTestSourceFiles sourceFiles() {
-        throw new UnsupportedOperationException();
+    public DirectIngestDriver directIngest(SystemTestContext context) {
+        return new InMemoryDirectIngestDriver(context.instance(), data);
     }
 
     @Override
-    public SystemTestPartitioning partitioning() {
-        throw new UnsupportedOperationException();
+    public IngestByQueue ingestByQueue(SystemTestContext context) {
+        return new IngestByQueue(context.instance(), ingestByQueue.byQueueDriver());
     }
 
     @Override
-    public SystemTestIngest ingest() {
-        return new SystemTestIngest(instanceContext, null,
-                new InMemoryDirectIngestDriver(instanceContext, data),
-                null, null, null, null, null, null);
+    public InvokeIngestTasksDriver invokeIngestTasks(SystemTestContext context) {
+        return ingestByQueue.tasksDriver();
     }
 
     @Override
-    public SystemTestQuery query() {
-        return new SystemTestQuery(instanceContext, null,
-                InMemoryQueryDriver.allTablesDriver(instanceContext, data),
-                null);
+    public WaitForJobs waitForIngest(SystemTestContext context) {
+        return ingestByQueue.waitForIngest(context);
     }
 
     @Override
-    public SystemTestCompaction compaction() {
-        throw new UnsupportedOperationException();
+    public WaitForJobs waitForBulkImport(SystemTestContext context) {
+        return ingestByQueue.waitForBulkImport(context);
     }
 
     @Override
-    public SystemTestReporting reporting() {
-        throw new UnsupportedOperationException();
+    public IngestBatcherDriver ingestBatcher(SystemTestContext context) {
+        return new InMemoryIngestBatcherDriver(context, batcherStore, ingestByQueue, fileSizeBytesForBatcher);
+    }
+
+    public void fixSizeOfFilesSeenByBatcherInBytes(long fileSizeBytes) {
+        fileSizeBytesForBatcher = fileSizeBytes;
     }
 
     @Override
-    public SystemTestMetrics metrics() {
-        throw new UnsupportedOperationException();
+    public CompactionDriver compaction(SystemTestContext context) {
+        return compaction.driver(context.instance());
     }
 
     @Override
-    public SystemTestReports.SystemTestBuilder reportsForExtension() {
-        throw new UnsupportedOperationException();
+    public WaitForJobs waitForCompaction(SystemTestContext context) {
+        return compaction.waitForJobs(context);
     }
 
     @Override
-    public SystemTestCluster systemTestCluster() {
-        throw new UnsupportedOperationException();
+    public QueryAllTablesDriver directQuery(SystemTestContext context) {
+        return InMemoryDirectQueryDriver.allTablesDriver(context.instance(), data);
     }
 
     @Override
-    public SystemTestPythonApi pythonApi() {
-        throw new UnsupportedOperationException();
+    public QueryAllTablesDriver queryByQueue(SystemTestContext context) {
+        return InMemoryQueryByQueueDriver.allTablesDriver(context.instance(), data);
     }
 
     @Override
-    public PurgeQueueDriver purgeQueueDriver() {
+    public PurgeQueueDriver purgeQueues(SystemTestContext context) {
         return properties -> {
         };
     }

@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.record.Record;
 import sleeper.query.model.Query;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.util.List;
 import java.util.Map;
@@ -33,10 +33,10 @@ import static java.util.Map.entry;
 public class QueryAllTablesSendAndWaitDriver implements QueryAllTablesDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(QueryAllTablesSendAndWaitDriver.class);
 
-    private final SleeperInstanceContext instance;
+    private final SystemTestInstanceContext instance;
     private final QuerySendAndWaitDriver driver;
 
-    public QueryAllTablesSendAndWaitDriver(SleeperInstanceContext instance, QuerySendAndWaitDriver driver) {
+    public QueryAllTablesSendAndWaitDriver(SystemTestInstanceContext instance, QuerySendAndWaitDriver driver) {
         this.instance = instance;
         this.driver = driver;
     }
@@ -52,7 +52,7 @@ public class QueryAllTablesSendAndWaitDriver implements QueryAllTablesDriver {
         }
         LOGGER.info("Retrieving results for {} queries", queries.size());
         return queries.stream().parallel()
-                .map(query -> entry(query.getTableName(), driver.getResults(query)))
+                .map(query -> entry(instance.getTestTableName(query.getTableName()), driver.getResults(query)))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 

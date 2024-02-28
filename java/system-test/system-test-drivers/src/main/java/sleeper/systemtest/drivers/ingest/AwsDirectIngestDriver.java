@@ -22,7 +22,7 @@ import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.IngestFactory;
 import sleeper.systemtest.dsl.ingest.DirectIngestDriver;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -30,9 +30,9 @@ import java.nio.file.Path;
 import java.util.Iterator;
 
 public class AwsDirectIngestDriver implements DirectIngestDriver {
-    private final SleeperInstanceContext instance;
+    private final SystemTestInstanceContext instance;
 
-    public AwsDirectIngestDriver(SleeperInstanceContext instance) {
+    public AwsDirectIngestDriver(SystemTestInstanceContext instance) {
         this.instance = instance;
     }
 

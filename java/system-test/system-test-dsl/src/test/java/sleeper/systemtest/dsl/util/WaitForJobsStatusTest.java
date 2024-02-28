@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.testutils.InMemoryCompactionJobStatusStore;
-import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableStatus;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.status.InMemoryIngestJobStatusStore;
 import sleeper.ingest.job.status.IngestJobStatusStore;
@@ -39,16 +39,16 @@ import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobAccepte
 
 public class WaitForJobsStatusTest {
 
-    private final TableIdentity tableId = TableIdentity.uniqueIdAndName("test-table-id", "test-table");
+    private final TableStatus table = TableStatus.uniqueIdAndName("test-table-id", "test-table");
     private final InMemoryCompactionJobStatusStore store = new InMemoryCompactionJobStatusStore();
 
     @Test
     void shouldReportSeveralBulkImportJobs() {
         // Given
         IngestJobStatusStore store = new InMemoryIngestJobStatusStore();
-        IngestJob acceptedJob = createJobWithTableAndFiles("accepted-job", tableId, "test.parquet", "test2.parquet");
-        IngestJob startedJob = createJobWithTableAndFiles("started-job", tableId, "test3.parquet", "test4.parquet");
-        IngestJob finishedJob = createJobWithTableAndFiles("finished-job", tableId, "test3.parquet", "test4.parquet");
+        IngestJob acceptedJob = createJobWithTableAndFiles("accepted-job", table, "test.parquet", "test2.parquet");
+        IngestJob startedJob = createJobWithTableAndFiles("started-job", table, "test3.parquet", "test4.parquet");
+        IngestJob finishedJob = createJobWithTableAndFiles("finished-job", table, "test3.parquet", "test4.parquet");
         store.jobValidated(ingestJobAccepted(acceptedJob, Instant.parse("2022-09-22T13:33:10Z")).jobRunId("accepted-run").build());
         store.jobValidated(ingestJobAccepted(startedJob, Instant.parse("2022-09-22T13:33:11Z")).jobRunId("started-run").build());
         store.jobValidated(ingestJobAccepted(finishedJob, Instant.parse("2022-09-22T13:33:12Z")).jobRunId("finished-run").build());

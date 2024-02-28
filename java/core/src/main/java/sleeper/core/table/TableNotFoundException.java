@@ -33,11 +33,11 @@ public class TableNotFoundException extends RuntimeException {
         return new TableNotFoundException("Table not found with name \"" + tableName + "\"");
     }
 
-    public static TableNotFoundException withTableIdentity(TableIdentity tableIdentity) {
-        return withTableIdentity(tableIdentity, null);
+    public static TableNotFoundException withTable(TableStatus table) {
+        return withTable(table, null);
     }
 
-    public static TableNotFoundException withTableIdentity(TableIdentity tableIdentity, Exception cause) {
-        return new TableNotFoundException("Table not found " + tableIdentity, cause);
+    public static TableNotFoundException withTable(TableStatus table, Exception cause) {
+        return new TableNotFoundException("Table not found: " + table, cause);
     }
 }

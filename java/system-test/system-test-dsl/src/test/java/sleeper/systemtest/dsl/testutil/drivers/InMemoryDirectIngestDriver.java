@@ -16,83 +16,47 @@
 
 package sleeper.systemtest.dsl.testutil.drivers;
 
+import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.partition.PartitionTree;
+import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.Record;
-import sleeper.core.schema.Schema;
-import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.ingest.IngestRecordsFromIterator;
+import sleeper.ingest.IngestResult;
+import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.query.runner.recordretrieval.InMemoryDataStore;
 import sleeper.systemtest.dsl.ingest.DirectIngestDriver;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
-
-import static java.util.Spliterator.IMMUTABLE;
-import static java.util.Spliterator.NONNULL;
-import static java.util.Spliterators.spliteratorUnknownSize;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
 public class InMemoryDirectIngestDriver implements DirectIngestDriver {
-    private final SleeperInstanceContext instance;
+    private final SystemTestInstanceContext instance;
     private final InMemoryDataStore data;
 
-    public InMemoryDirectIngestDriver(SleeperInstanceContext instance, InMemoryDataStore data) {
+    public InMemoryDirectIngestDriver(SystemTestInstanceContext instance, InMemoryDataStore data) {
         this.instance = instance;
         this.data = data;
     }
 
+    @Override
     public void ingest(Path tempDir, Iterator<Record> records) {
+        ingest(instance.getTableProperties(), records);
+    }
+
+    public IngestResult ingest(TableProperties tableProperties, Iterator<Record> records) {
         InstanceProperties instanceProperties = instance.getInstanceProperties();
-        TableProperties tableProperties = instance.getTableProperties();
-        Schema schema = tableProperties.getSchema();
-        StateStore stateStore = instance.getStateStore();
-        String filePathPrefix = instanceProperties.get(FILE_SYSTEM)
-                + instanceProperties.get(DATA_BUCKET) + "/"
-                + tableProperties.get(TABLE_ID);
-        PartitionTree partitions = getPartitions(stateStore);
-        Map<String, List<Record>> recordsByPartition = streamRecords(records)
-                .collect(Collectors.groupingBy(record ->
-                        partitions.getLeafPartition(schema, record.getRowKeys(schema)).getId()));
-        recordsByPartition.forEach((partitionId, recordList) ->
-                writePartitionFile(partitionId, filePathPrefix, recordList, stateStore));
-    }
-
-    private static Stream<Record> streamRecords(Iterator<Record> records) {
-        return StreamSupport.stream(spliteratorUnknownSize(records, NONNULL & IMMUTABLE), false);
-    }
-
-    private PartitionTree getPartitions(StateStore stateStore) {
-        try {
-            return new PartitionTree(stateStore.getAllPartitions());
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private void writePartitionFile(String partitionId, String filePathPrefix, List<Record> records, StateStore stateStore) {
-        String filename = filePathPrefix + "/" + UUID.randomUUID();
-        data.addFile(filename, records);
-        try {
-            stateStore.addFile(FileReference.builder()
-                    .filename(filename)
-                    .partitionId(partitionId)
-                    .numberOfRecords((long) records.size())
-                    .countApproximate(false)
-                    .onlyContainsDataForThisPartition(true)
-                    .build());
-        } catch (StateStoreException e) {
+        try (IngestCoordinator<Record> coordinator = IngestCoordinator.builderWith(instanceProperties, tableProperties)
+                .objectFactory(ObjectFactory.noUserJars())
+                .recordBatchFactory(InMemoryRecordBatch::new)
+                .partitionFileWriterFactory(InMemoryPartitionFileWriter.factory(data, instanceProperties, tableProperties))
+                .stateStore(instance.getStateStore(tableProperties))
+                .build()) {
+            return new IngestRecordsFromIterator(coordinator, records).write();
+        } catch (StateStoreException | IteratorException | IOException e) {
             throw new RuntimeException(e);
         }
     }

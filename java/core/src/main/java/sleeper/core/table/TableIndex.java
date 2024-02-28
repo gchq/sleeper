@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,15 +20,15 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 public interface TableIndex {
-    void create(TableIdentity tableId) throws TableAlreadyExistsException;
+    void create(TableStatus table) throws TableAlreadyExistsException;
 
-    Stream<TableIdentity> streamAllTables();
+    Stream<TableStatus> streamAllTables();
 
-    Optional<TableIdentity> getTableByName(String tableName);
+    Optional<TableStatus> getTableByName(String tableName);
 
-    Optional<TableIdentity> getTableByUniqueId(String tableUniqueId);
+    Optional<TableStatus> getTableByUniqueId(String tableUniqueId);
 
-    void delete(TableIdentity tableId);
+    void delete(TableStatus table);
 
-    void update(TableIdentity tableId);
+    void update(TableStatus table);
 }

@@ -16,24 +16,23 @@
 
 package sleeper.systemtest.dsl.sourcedata;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 public class SystemTestSourceFiles {
-    private final SleeperInstanceContext instance;
+
+    private final SystemTestInstanceContext instance;
     private final IngestSourceFilesContext context;
     private final IngestSourceFilesDriver driver;
     private boolean writeSketches = false;
 
-    public SystemTestSourceFiles(SleeperInstanceContext instance,
-                                 IngestSourceFilesContext context,
-                                 IngestSourceFilesDriver driver) {
+    public SystemTestSourceFiles(SystemTestInstanceContext instance,
+            IngestSourceFilesContext context,
+            IngestSourceFilesDriver driver) {
         this.instance = instance;
         this.context = context;
         this.driver = driver;
@@ -62,17 +61,12 @@ public class SystemTestSourceFiles {
     }
 
     private SystemTestSourceFiles create(String filename, Stream<Record> records) {
-        driver.writeFile(
-                instance.getInstanceProperties(), instance.getTableProperties(),
-                filename, writeSketches, records.iterator());
+        context.writeFile(driver, filename, writeSketches, records);
         return this;
     }
 
     private SystemTestSourceFiles create(Schema schema, String filename, Stream<Record> records) {
-        InstanceProperties instanceProperties = instance.getInstanceProperties();
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.setSchema(schema);
-        driver.writeFile(instanceProperties, tableProperties, filename, writeSketches, records.iterator());
+        context.writeFile(driver, schema, filename, writeSketches, records);
         return this;
     }
 }

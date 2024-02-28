@@ -24,7 +24,6 @@ import sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 import static sleeper.configuration.properties.instance.ArrowIngestProperty.ARROW_INGEST_BATCH_BUFFER_BYTES;
 import static sleeper.configuration.properties.instance.ArrowIngestProperty.ARROW_INGEST_MAX_LOCAL_STORE_BYTES;
@@ -35,6 +34,7 @@ import static sleeper.configuration.properties.instance.AsyncIngestPartitionFile
 import static sleeper.configuration.properties.instance.AsyncIngestPartitionFileWriterProperty.ASYNC_INGEST_CRT_TARGET_THROUGHPUT_GBPS;
 import static sleeper.configuration.properties.instance.CommonProperty.FORCE_RELOAD_PROPERTIES;
 import static sleeper.configuration.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
+import static sleeper.configuration.properties.instance.CommonProperty.METRICS_BATCH_SIZE;
 import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.configuration.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS;
@@ -43,8 +43,8 @@ import static sleeper.configuration.properties.instance.CompactionProperty.COMPA
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_X86_MEMORY;
 import static sleeper.configuration.properties.instance.CompactionProperty.MAXIMUM_CONCURRENT_COMPACTION_TASKS;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS;
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_RECORD_BATCH_TYPE;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_RECORD_BATCH_TYPE;
 import static sleeper.configuration.properties.instance.IngestProperty.MAXIMUM_CONCURRENT_INGEST_TASKS;
 import static sleeper.configuration.properties.instance.LoggingLevelsProperty.LOGGING_LEVEL;
 import static sleeper.configuration.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES;
@@ -95,6 +95,7 @@ public class SystemTestInstance {
         properties.set(BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING, "false");
         properties.set(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY, "1");
         properties.set(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY, "1");
+        properties.set(METRICS_BATCH_SIZE, "2");
         properties.setTags(Map.of(
                 "Description", "Sleeper Maven system test main instance",
                 "Environment", "DEV",
@@ -105,7 +106,7 @@ public class SystemTestInstance {
 
         TableProperties tableProperties = new TableProperties(properties);
         tableProperties.setSchema(SystemTestSchema.DEFAULT_SCHEMA);
-        tableProperties.set(TABLE_NAME, UUID.randomUUID().toString());
+        tableProperties.set(TABLE_NAME, "system-test");
         return DeployInstanceConfiguration.builder()
                 .instanceProperties(properties)
                 .tableProperties(tableProperties)
@@ -118,8 +119,8 @@ public class SystemTestInstance {
         properties.set(OPTIONAL_STACKS, "IngestStack");
         properties.set(MAXIMUM_CONCURRENT_INGEST_TASKS, "11");
         properties.set(MAXIMUM_CONNECTIONS_TO_S3, "25");
-        properties.set(INGEST_RECORD_BATCH_TYPE, "arrow");
-        properties.set(INGEST_PARTITION_FILE_WRITER_TYPE, "async");
+        properties.set(DEFAULT_INGEST_RECORD_BATCH_TYPE, "arrow");
+        properties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "async");
         properties.set(ARROW_INGEST_WORKING_BUFFER_BYTES, "268435456"); // 256MB
         properties.set(ARROW_INGEST_BATCH_BUFFER_BYTES, "1073741824"); // 1GB
         properties.set(ARROW_INGEST_MAX_LOCAL_STORE_BYTES, "2147483648"); // 2GB

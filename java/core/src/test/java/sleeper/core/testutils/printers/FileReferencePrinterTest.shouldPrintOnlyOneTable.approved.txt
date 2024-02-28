@@ -1,4 +1,0 @@
-One table
-Active files:
-Partition at root: 10 records in file
-

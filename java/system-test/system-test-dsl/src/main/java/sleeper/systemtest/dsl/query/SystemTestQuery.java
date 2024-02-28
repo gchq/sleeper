@@ -17,35 +17,29 @@
 package sleeper.systemtest.dsl.query;
 
 import sleeper.core.record.Record;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.SystemTestContext;
+import sleeper.systemtest.dsl.SystemTestDrivers;
 
 import java.util.List;
 import java.util.Map;
 
 public class SystemTestQuery {
-    private final SleeperInstanceContext instance;
-    private final QueryAllTablesDriver byQueueDriver;
-    private final QueryAllTablesDriver directDriver;
-    private final ClearQueryResultsDriver clearResultsDriver;
+    private final SystemTestContext context;
+    private final SystemTestDrivers drivers;
     private QueryAllTablesDriver driver = null;
 
-    public SystemTestQuery(SleeperInstanceContext instance,
-                           QueryAllTablesDriver byQueueDriver,
-                           QueryAllTablesDriver directDriver,
-                           ClearQueryResultsDriver clearResultsDriver) {
-        this.instance = instance;
-        this.byQueueDriver = byQueueDriver;
-        this.directDriver = directDriver;
-        this.clearResultsDriver = clearResultsDriver;
+    public SystemTestQuery(SystemTestContext context, SystemTestDrivers drivers) {
+        this.context = context;
+        this.drivers = drivers;
     }
 
     public SystemTestQuery byQueue() {
-        driver = byQueueDriver;
+        driver = drivers.queryByQueue(context);
         return this;
     }
 
     public SystemTestQuery direct() {
-        driver = directDriver;
+        driver = drivers.directQuery(context);
         return this;
     }
 
@@ -62,10 +56,10 @@ public class SystemTestQuery {
     }
 
     public void emptyResultsBucket() {
-        clearResultsDriver.deleteAllQueryResults();
+        drivers.clearQueryResults(context).deleteAllQueryResults();
     }
 
     private QueryCreator queryCreator() {
-        return new QueryCreator(instance);
+        return new QueryCreator(context.instance());
     }
 }

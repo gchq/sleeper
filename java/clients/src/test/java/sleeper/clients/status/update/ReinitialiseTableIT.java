@@ -352,26 +352,26 @@ public class ReinitialiseTableIT {
     }
 
     private void assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted() {
-        String tableName = tableProperties.get(TABLE_NAME);
+        String tableId = tableProperties.get(TABLE_ID);
         assertThat(s3Client.listObjectsV2(instanceProperties.get(DATA_BUCKET))
                 .getObjectSummaries())
                 .extracting(S3ObjectSummary::getKey)
                 .containsExactlyInAnyOrder(
-                        tableName + "/" + FILE_SHOULD_NOT_BE_DELETED_1,
-                        tableName + "/" + FILE_SHOULD_NOT_BE_DELETED_2,
-                        tableName + "/" + FILE_SHOULD_NOT_BE_DELETED_3);
+                        tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_1,
+                        tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_2,
+                        tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_3);
     }
 
     private void assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeletedWithS3StateStore() {
-        String tableName = tableProperties.get(TABLE_NAME);
+        String tableId = tableProperties.get(TABLE_ID);
         assertThat(s3Client.listObjectsV2(instanceProperties.get(DATA_BUCKET))
                 .getObjectSummaries())
                 .extracting(S3ObjectSummary::getKey)
                 .hasSize(5)
                 .contains(
-                        tableName + "/" + FILE_SHOULD_NOT_BE_DELETED_1,
-                        tableName + "/" + FILE_SHOULD_NOT_BE_DELETED_2,
-                        tableName + "/" + FILE_SHOULD_NOT_BE_DELETED_3)
+                        tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_1,
+                        tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_2,
+                        tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_3)
                 .satisfies(keys -> {
                     assertThat(keys)
                             .filteredOn(key -> key.startsWith(s3StateStorePath + "/files"))
@@ -383,7 +383,7 @@ public class ReinitialiseTableIT {
     }
 
     private void assertOnlyObjectsWithinPartitionsAndStateStoreFilesAreasInTheTableBucketHaveBeenDeleted() {
-        String tableName = tableProperties.get(TABLE_NAME);
+        String tableId = tableProperties.get(TABLE_ID);
         ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(instanceProperties.get(DATA_BUCKET));
         ListObjectsV2Result result = s3Client.listObjectsV2(req);
         if (tableProperties.get(STATESTORE_CLASSNAME).equals(S3StateStore.class.getName())) {
@@ -400,9 +400,9 @@ public class ReinitialiseTableIT {
             assertThat(result.getObjectSummaries())
                     .extracting(S3ObjectSummary::getKey)
                     .contains(
-                            tableName + "/" + FILE_SHOULD_NOT_BE_DELETED_1,
-                            tableName + "/" + FILE_SHOULD_NOT_BE_DELETED_2,
-                            tableName + "/" + FILE_SHOULD_NOT_BE_DELETED_3);
+                            tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_1,
+                            tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_2,
+                            tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_3);
             assertThat(result.getKeyCount()).isEqualTo(3);
         }
     }
@@ -440,14 +440,14 @@ public class ReinitialiseTableIT {
 
     private void saveTableDataFiles() {
         String dataBucket = instanceProperties.get(DATA_BUCKET);
-        String tableName = tableProperties.get(TABLE_NAME);
+        String tableId = tableProperties.get(TABLE_ID);
 
-        s3Client.putObject(dataBucket, tableName + "/" + FILE_SHOULD_NOT_BE_DELETED_1, "some-content");
-        s3Client.putObject(dataBucket, tableName + "/" + FILE_SHOULD_NOT_BE_DELETED_2, "some-content");
-        s3Client.putObject(dataBucket, tableName + "/" + FILE_SHOULD_NOT_BE_DELETED_3, "some-content");
-        s3Client.putObject(dataBucket, tableName + "/partition-root/file1.parquet", "some-content");
-        s3Client.putObject(dataBucket, tableName + "/partition-1/file2.parquet", "some-content");
-        s3Client.putObject(dataBucket, tableName + "/partition-2/file3.parquet", "some-content");
+        s3Client.putObject(dataBucket, tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_1, "some-content");
+        s3Client.putObject(dataBucket, tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_2, "some-content");
+        s3Client.putObject(dataBucket, tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_3, "some-content");
+        s3Client.putObject(dataBucket, tableId + "/partition-root/file1.parquet", "some-content");
+        s3Client.putObject(dataBucket, tableId + "/partition-1/file2.parquet", "some-content");
+        s3Client.putObject(dataBucket, tableId + "/partition-2/file3.parquet", "some-content");
 
         if (tableProperties.get(STATESTORE_CLASSNAME).equals(S3StateStore.class.getName())) {
             s3Client.putObject(dataBucket, s3StateStorePath + "/" + S3_STATE_STORE_FILES_FILENAME, "some-content");

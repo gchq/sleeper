@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.clients.util.console.menu.MenuOption;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableStatus;
 import sleeper.job.common.QueueMessageCount;
 
 import java.util.Map;
@@ -88,18 +88,18 @@ public class IngestStatusReportScreen {
     private void chooseArgsForIngestJobStatusReport(InstanceProperties properties) throws InterruptedException {
         Optional<TableProperties> tableOpt = tableSelectHelper.chooseTableOrReturnToMain(properties);
         if (tableOpt.isPresent()) {
-            TableIdentity tableId = tableOpt.get().getId();
+            TableStatus table = tableOpt.get().getStatus();
             consoleHelper.chooseOptionUntilValid("Which query type would you like to use",
                     new MenuOption("All", () ->
-                            runIngestJobStatusReport(properties, tableId, JobQuery.Type.ALL)),
+                            runIngestJobStatusReport(properties, table, JobQuery.Type.ALL)),
                     new MenuOption("Unfinished", () ->
-                            runIngestJobStatusReport(properties, tableId, JobQuery.Type.UNFINISHED)),
+                            runIngestJobStatusReport(properties, table, JobQuery.Type.UNFINISHED)),
                     new MenuOption("Detailed", () ->
-                            runIngestJobStatusReport(properties, tableId, JobQuery.Type.DETAILED, promptForJobId(in))),
+                            runIngestJobStatusReport(properties, table, JobQuery.Type.DETAILED, promptForJobId(in))),
                     new MenuOption("Range", () ->
-                            runIngestJobStatusReport(properties, tableId, JobQuery.Type.RANGE, promptForRange(in))),
+                            runIngestJobStatusReport(properties, table, JobQuery.Type.RANGE, promptForRange(in))),
                     new MenuOption("Rejected", () ->
-                            runIngestJobStatusReport(properties, tableId, JobQuery.Type.REJECTED))
+                            runIngestJobStatusReport(properties, table, JobQuery.Type.REJECTED))
             ).run();
         }
     }
@@ -113,14 +113,14 @@ public class IngestStatusReportScreen {
         ).run();
     }
 
-    private void runIngestJobStatusReport(InstanceProperties properties, TableIdentity tableId,
+    private void runIngestJobStatusReport(InstanceProperties properties, TableStatus table,
                                           JobQuery.Type queryType) {
-        runIngestJobStatusReport(properties, tableId, queryType, "");
+        runIngestJobStatusReport(properties, table, queryType, "");
     }
 
-    private void runIngestJobStatusReport(InstanceProperties properties, TableIdentity tableId,
+    private void runIngestJobStatusReport(InstanceProperties properties, TableStatus table,
                                           JobQuery.Type queryType, String queryParameters) {
-        new IngestJobStatusReport(statusStores.loadIngestJobStatusStore(properties), tableId, queryType, queryParameters,
+        new IngestJobStatusReport(statusStores.loadIngestJobStatusStore(properties), table, queryType, queryParameters,
                 new StandardIngestJobStatusReporter(out.printStream()),
                 queueClient, properties, getStepCount.apply(properties)).run();
         confirmReturnToMainScreen(out, in);

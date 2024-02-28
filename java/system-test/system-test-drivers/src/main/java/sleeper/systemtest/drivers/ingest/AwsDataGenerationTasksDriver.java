@@ -21,8 +21,8 @@ import com.amazonaws.services.ecs.model.RunTaskResult;
 import com.amazonaws.services.ecs.model.Task;
 
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
-import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
+import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.sourcedata.DataGenerationTasksDriver;
 
 import java.util.List;
@@ -31,12 +31,12 @@ import java.util.stream.Collectors;
 import static sleeper.systemtest.drivers.ingest.WaitForGenerateData.ecsTaskStatusFormat;
 
 public class AwsDataGenerationTasksDriver implements DataGenerationTasksDriver {
-    private final SystemTestDeploymentContext systemTest;
-    private final SleeperInstanceContext instance;
+    private final DeployedSystemTestResources systemTest;
+    private final SystemTestInstanceContext instance;
     private final AmazonECS ecsClient;
 
-    public AwsDataGenerationTasksDriver(SystemTestDeploymentContext systemTest,
-                                        SleeperInstanceContext instance,
+    public AwsDataGenerationTasksDriver(DeployedSystemTestResources systemTest,
+                                        SystemTestInstanceContext instance,
                                         AmazonECS ecsClient) {
         this.systemTest = systemTest;
         this.instance = instance;

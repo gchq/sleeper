@@ -25,7 +25,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.util.PollWithRetries;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.task.IngestTaskStatusStore;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -35,40 +35,43 @@ import java.util.function.Function;
 public class WaitForJobs {
     private static final Logger LOGGER = LoggerFactory.getLogger(WaitForJobs.class);
 
-    private final SleeperInstanceContext instance;
+    private final SystemTestInstanceContext instance;
     private final String typeDescription;
     private final Function<InstanceProperties, JobStatusStore> getJobsStore;
     private final Function<InstanceProperties, TaskStatusStore> getTasksStore;
 
-    private WaitForJobs(SleeperInstanceContext instance,
-                        String typeDescription,
-                        Function<InstanceProperties, JobStatusStore> getJobsStore,
-                        Function<InstanceProperties, TaskStatusStore> getTasksStore) {
+    private WaitForJobs(
+            SystemTestInstanceContext instance, String typeDescription,
+            Function<InstanceProperties, JobStatusStore> getJobsStore,
+            Function<InstanceProperties, TaskStatusStore> getTasksStore) {
         this.instance = instance;
         this.typeDescription = typeDescription;
         this.getJobsStore = getJobsStore;
         this.getTasksStore = getTasksStore;
     }
 
-    public static WaitForJobs forIngest(SleeperInstanceContext instance,
-                                        Function<InstanceProperties, IngestJobStatusStore> getJobsStore,
-                                        Function<InstanceProperties, IngestTaskStatusStore> getTasksStore) {
+    public static WaitForJobs forIngest(
+            SystemTestInstanceContext instance,
+            Function<InstanceProperties, IngestJobStatusStore> getJobsStore,
+            Function<InstanceProperties, IngestTaskStatusStore> getTasksStore) {
         return new WaitForJobs(instance, "ingest",
                 properties -> JobStatusStore.forIngest(getJobsStore.apply(properties)),
                 properties -> TaskStatusStore.forIngest(getTasksStore.apply(properties)));
     }
 
-    public static WaitForJobs forBulkImport(SleeperInstanceContext instance,
-                                            Function<InstanceProperties, IngestJobStatusStore> getJobsStore) {
+    public static WaitForJobs forBulkImport(
+            SystemTestInstanceContext instance,
+            Function<InstanceProperties, IngestJobStatusStore> getJobsStore) {
         return new WaitForJobs(instance, "bulk import",
                 properties -> JobStatusStore.forIngest(getJobsStore.apply(properties)),
                 properties -> () -> true);
     }
 
-    public static WaitForJobs forCompaction(SleeperInstanceContext instance,
-                                            Function<InstanceProperties, CompactionJobStatusStore> getJobsStore,
-                                            Function<InstanceProperties, CompactionTaskStatusStore> getTasksStore) {
-        return new WaitForJobs(instance, "ingest",
+    public static WaitForJobs forCompaction(
+            SystemTestInstanceContext instance,
+            Function<InstanceProperties, CompactionJobStatusStore> getJobsStore,
+            Function<InstanceProperties, CompactionTaskStatusStore> getTasksStore) {
+        return new WaitForJobs(instance, "compaction",
                 properties -> JobStatusStore.forCompaction(getJobsStore.apply(properties)),
                 properties -> TaskStatusStore.forCompaction(getTasksStore.apply(properties)));
     }

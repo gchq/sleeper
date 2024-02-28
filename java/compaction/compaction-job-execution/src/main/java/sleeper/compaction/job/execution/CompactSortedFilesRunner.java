@@ -23,15 +23,11 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
-import com.amazonaws.services.sqs.model.Message;
-import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
-import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionJobSerDe;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
@@ -51,36 +47,22 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.LoggedDuration;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.job.common.CommonJobUtils;
-import sleeper.job.common.action.ActionException;
-import sleeper.job.common.action.ChangeMessageVisibilityTimeoutAction;
-import sleeper.job.common.action.DeleteMessageAction;
-import sleeper.job.common.action.MessageReference;
-import sleeper.job.common.action.thread.PeriodicActionRunnable;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
 import java.time.Instant;
 import java.util.UUID;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 /**
  * Retrieves compaction {@link CompactionJob}s from an SQS queue, and executes
  * them. It delegates the actual execution of the job to an instance of
- * {@link CompactSortedFiles}. It passes a
- * {@link ChangeMessageVisibilityTimeoutAction} to
- * that class so that the message on the SQS queue can be kept alive whilst the job
- * is executing. It also handles deletion of the message when the job is completed.
+ * {@link CompactSortedFiles}, and the processing of SQS messages to {@link SqsCompactionQueueHandler}.
  */
 public class CompactSortedFilesRunner {
     private static final Logger LOGGER = LoggerFactory.getLogger(CompactSortedFilesRunner.class);
-    private static final int DEFAULT_MAX_RETRIEVE_ATTEMPTS = 3;
-    private static final int DEFAULT_WAIT_TIME = 20;
 
     private final InstanceProperties instanceProperties;
     private final ObjectFactory objectFactory;
@@ -90,13 +72,8 @@ public class CompactSortedFilesRunner {
     private final CompactionJobStatusStore jobStatusStore;
     private final CompactionTaskStatusStore taskStatusStore;
     private final String taskId;
-    private final String sqsJobQueueUrl;
     private final AmazonSQS sqsClient;
     private final AmazonECS ecsClient;
-    private final int keepAliveFrequency;
-    private final int maxMessageRetrieveAttempts;
-    private final int waitTimeSeconds;
-    private final int visibilityTimeout;
 
     private CompactSortedFilesRunner(Builder builder) {
         instanceProperties = builder.instanceProperties;
@@ -107,13 +84,8 @@ public class CompactSortedFilesRunner {
         jobStatusStore = builder.jobStatusStore;
         taskStatusStore = builder.taskStatusStore;
         taskId = builder.taskId;
-        sqsJobQueueUrl = builder.sqsJobQueueUrl;
         sqsClient = builder.sqsClient;
         ecsClient = builder.ecsClient;
-        keepAliveFrequency = builder.keepAliveFrequency;
-        maxMessageRetrieveAttempts = builder.maxMessageRetrieveAttempts;
-        waitTimeSeconds = builder.waitTimeSeconds;
-        visibilityTimeout = builder.visibilityTimeout;
     }
 
     public static Builder builder() {
@@ -122,17 +94,16 @@ public class CompactSortedFilesRunner {
 
     public void run() throws InterruptedException, IOException {
         Instant startTime = Instant.now();
-        CompactionTaskStatus.Builder taskStatusBuilder = CompactionTaskStatus
-                .builder().taskId(taskId).startTime(startTime);
+        CompactionTaskStatus.Builder taskStatusBuilder = CompactionTaskStatus.builder().taskId(taskId).startTime(startTime);
         LOGGER.info("Starting task {}", taskId);
 
         // Log some basic data if running on EC2 inside ECS
         if (instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE).equalsIgnoreCase("EC2")) {
             try {
                 if (this.ecsClient != null) {
-                    CommonJobUtils.retrieveContainerMetadata(ecsClient).ifPresent(info ->
-                            LOGGER.info("Task running on EC2 instance ID {} in AZ {} with ARN {} in cluster {} with status {}",
-                                    info.instanceID, info.az, info.instanceARN, info.clusterName, info.status));
+                    CommonJobUtils.retrieveContainerMetadata(ecsClient).ifPresent(info -> LOGGER.info(
+                            "Task running on EC2 instance ID {} in AZ {} with ARN {} in cluster {} with status {}",
+                            info.instanceID, info.az, info.instanceARN, info.clusterName, info.status));
                 } else {
                     LOGGER.warn("ECS client is null");
                 }
@@ -143,72 +114,17 @@ public class CompactSortedFilesRunner {
 
         taskStatusStore.taskStarted(taskStatusBuilder.build());
         CompactionTaskFinishedStatus.Builder taskFinishedBuilder = CompactionTaskFinishedStatus.builder();
-        long totalNumberOfMessagesProcessed = 0L;
-        int numConsecutiveTimesNoMessages = 0;
-        while (numConsecutiveTimesNoMessages < maxMessageRetrieveAttempts) {
-            ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(sqsJobQueueUrl)
-                    .withMaxNumberOfMessages(1)
-                    .withWaitTimeSeconds(waitTimeSeconds); // Must be >= 0 and <= 20
-            ReceiveMessageResult receiveMessageResult = sqsClient.receiveMessage(receiveMessageRequest);
-            if (receiveMessageResult.getMessages().isEmpty()) {
-                LOGGER.info("Received no messages in {} seconds", waitTimeSeconds);
-                numConsecutiveTimesNoMessages++;
-                Thread.sleep(10000L);
-            } else {
-                Message message = receiveMessageResult.getMessages().get(0);
-                LOGGER.info("Received message: {}", message);
-                CompactionJob compactionJob = CompactionJobSerDe.deserialiseFromString(message.getBody());
-                LOGGER.info("CompactionJob is: {}", compactionJob);
-                try {
-                    taskFinishedBuilder.addJobSummary(compact(compactionJob, message));
-                    totalNumberOfMessagesProcessed++;
-                    numConsecutiveTimesNoMessages = 0;
-                } catch (Exception e) {
-                    LOGGER.error("Failed processing compaction job, putting job back on queue", e);
-                    numConsecutiveTimesNoMessages++;
-                    sqsClient.changeMessageVisibility(sqsJobQueueUrl, message.getReceiptHandle(), visibilityTimeout);
-                }
-            }
-        }
-        LOGGER.info("Returning from run() method in CompactSortedFilesRunner as no messages received in {} seconds",
-                (numConsecutiveTimesNoMessages * waitTimeSeconds));
-        LOGGER.info("Total number of messages processed = {}", totalNumberOfMessagesProcessed);
+        SqsCompactionQueueHandler queueHandler = new SqsCompactionQueueHandler(sqsClient, instanceProperties);
+        CompactionTask task = new CompactionTask(
+                instanceProperties, Instant::now, queueHandler::receiveFromSqs,
+                job -> taskFinishedBuilder.addJobSummary(compact(job)));
+        task.runAt(startTime);
 
         Instant finishTime = Instant.now();
         LOGGER.info("CompactSortedFilesRunner total run time = {}", LoggedDuration.withFullOutput(startTime, finishTime));
 
         CompactionTaskStatus taskFinished = taskStatusBuilder.finished(finishTime, taskFinishedBuilder).build();
         taskStatusStore.taskFinished(taskFinished);
-    }
-
-    private RecordsProcessedSummary compact(CompactionJob compactionJob, Message message)
-            throws IOException, IteratorException, ActionException, StateStoreException {
-        MessageReference messageReference = new MessageReference(sqsClient, sqsJobQueueUrl,
-                "Compaction job " + compactionJob.getId(), message.getReceiptHandle());
-        // Create background thread to keep messages alive
-        PeriodicActionRunnable keepAliveRunnable = new PeriodicActionRunnable(
-                messageReference.changeVisibilityTimeoutAction(
-                        instanceProperties.getInt(COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS)),
-                keepAliveFrequency);
-        keepAliveRunnable.start();
-        LOGGER.info("Compaction job {}: Created background thread to keep SQS messages alive (period is {} seconds)",
-                compactionJob.getId(), keepAliveFrequency);
-
-        RecordsProcessedSummary summary;
-        try {
-            summary = compact(compactionJob);
-        } finally {
-            LOGGER.info("Compaction job {}: Stopping background thread to keep SQS messages alive",
-                    compactionJob.getId());
-            keepAliveRunnable.stop();
-        }
-
-        // Delete message from queue
-        LOGGER.info("Compaction job {}: Deleting message from queue", compactionJob.getId());
-        DeleteMessageAction deleteAction = messageReference.deleteAction();
-        deleteAction.call();
-
-        return summary;
     }
 
     private RecordsProcessedSummary compact(CompactionJob compactionJob) throws IteratorException, IOException, StateStoreException {
@@ -220,12 +136,9 @@ public class CompactSortedFilesRunner {
         return compactSortedFiles.run();
     }
 
-    public static void main(String[] args)
-            throws InterruptedException, IOException, ObjectFactoryException {
+    public static void main(String[] args) throws InterruptedException, IOException, ObjectFactoryException {
         if (1 != args.length) {
-            System.err.println("Error: must have 1 argument (config bucket), got "
-                    + args.length
-                    + " arguments (" + StringUtils.join(args, ',') + ")");
+            System.err.println("Error: must have 1 argument (config bucket), got " + args.length + " arguments (" + StringUtils.join(args, ',') + ")");
             System.exit(1);
         }
 
@@ -247,8 +160,6 @@ public class CompactSortedFilesRunner {
         CompactionTaskStatusStore taskStatusStore = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDBClient,
                 instanceProperties);
 
-        String sqsJobQueueUrl = instanceProperties.get(COMPACTION_JOB_QUEUE_URL);
-
         ObjectFactory objectFactory = new ObjectFactory(instanceProperties, s3Client, "/tmp");
         CompactSortedFilesRunner runner = CompactSortedFilesRunner.builder()
                 .instanceProperties(instanceProperties)
@@ -259,7 +170,6 @@ public class CompactSortedFilesRunner {
                 .jobStatusStore(jobStatusStore)
                 .taskStatusStore(taskStatusStore)
                 .taskId(UUID.randomUUID().toString())
-                .sqsJobQueueUrl(sqsJobQueueUrl)
                 .sqsClient(sqsClient)
                 .ecsClient(ecsClient)
                 .build();
@@ -284,21 +194,14 @@ public class CompactSortedFilesRunner {
         private CompactionJobStatusStore jobStatusStore;
         private CompactionTaskStatusStore taskStatusStore;
         private String taskId;
-        private String sqsJobQueueUrl;
         private AmazonSQS sqsClient;
         private AmazonECS ecsClient;
-        private int keepAliveFrequency;
-        private int maxMessageRetrieveAttempts = DEFAULT_MAX_RETRIEVE_ATTEMPTS;
-        private int waitTimeSeconds = DEFAULT_WAIT_TIME;
-        private int visibilityTimeout;
 
         private Builder() {
         }
 
         public Builder instanceProperties(InstanceProperties instanceProperties) {
             this.instanceProperties = instanceProperties;
-            this.keepAliveFrequency = instanceProperties.getInt(COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS);
-            this.visibilityTimeout = instanceProperties.getInt(COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS);
             return this;
         }
 
@@ -337,11 +240,6 @@ public class CompactSortedFilesRunner {
             return this;
         }
 
-        public Builder sqsJobQueueUrl(String sqsJobQueueUrl) {
-            this.sqsJobQueueUrl = sqsJobQueueUrl;
-            return this;
-        }
-
         public Builder sqsClient(AmazonSQS sqsClient) {
             this.sqsClient = sqsClient;
             return this;
@@ -349,16 +247,6 @@ public class CompactSortedFilesRunner {
 
         public Builder ecsClient(AmazonECS ecsClient) {
             this.ecsClient = ecsClient;
-            return this;
-        }
-
-        public Builder maxMessageRetrieveAttempts(int maxMessageRetrieveAttempts) {
-            this.maxMessageRetrieveAttempts = maxMessageRetrieveAttempts;
-            return this;
-        }
-
-        public Builder waitTimeSeconds(int waitTimeSeconds) {
-            this.waitTimeSeconds = waitTimeSeconds;
             return this;
         }
 

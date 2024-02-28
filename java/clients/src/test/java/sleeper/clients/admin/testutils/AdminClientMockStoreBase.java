@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,7 +55,7 @@ public abstract class AdminClientMockStoreBase extends AdminClientTestBase {
     public void saveTableProperties(TableProperties tableProperties) {
         when(store.loadTableProperties(instanceProperties, tableProperties.get(TABLE_NAME)))
                 .thenReturn(tableProperties);
-        tableIndex.create(tableProperties.getId());
+        tableIndex.create(tableProperties.getStatus());
     }
 
     @Override

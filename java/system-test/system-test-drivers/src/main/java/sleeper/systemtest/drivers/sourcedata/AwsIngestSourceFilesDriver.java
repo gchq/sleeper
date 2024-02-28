@@ -30,7 +30,6 @@ import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
-import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
 
 import java.io.IOException;
@@ -42,18 +41,11 @@ import static sleeper.sketches.s3.SketchesSerDeToS3.sketchesPathForDataFile;
 public class AwsIngestSourceFilesDriver implements IngestSourceFilesDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(AwsIngestSourceFilesDriver.class);
 
-    private final IngestSourceFilesContext context;
-
-    public AwsIngestSourceFilesDriver(IngestSourceFilesContext context) {
-        this.context = context;
-    }
-
     public void writeFile(InstanceProperties instanceProperties, TableProperties tableProperties,
-                          String file, boolean writeSketches, Iterator<Record> records) {
+                          String path, boolean writeSketches, Iterator<Record> records) {
         Schema schema = tableProperties.getSchema();
         Configuration conf = HadoopConfigurationProvider.getConfigurationForClient(instanceProperties, tableProperties);
         Sketches sketches = Sketches.from(schema);
-        String path = "s3a://" + context.getSourceBucketName() + "/" + file;
         LOGGER.info("Writing to {}", path);
         try (ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(
                 new Path(path), tableProperties, conf)) {
@@ -72,7 +64,5 @@ public class AwsIngestSourceFilesDriver implements IngestSourceFilesDriver {
                 throw new UncheckedIOException(e);
             }
         }
-        LOGGER.info("Wrote source file {}, path: {}", file, path);
-        context.wroteFile(file, path);
     }
 }

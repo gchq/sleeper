@@ -24,8 +24,8 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesStore;
 import sleeper.core.schema.Schema;
 import sleeper.core.table.TableAlreadyExistsException;
-import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableNotFoundException;
+import sleeper.core.table.TableStatus;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -34,7 +34,7 @@ import static sleeper.configuration.properties.table.TablePropertiesTestHelper.c
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.core.table.TableIdentity.uniqueIdAndName;
+import static sleeper.core.table.TableStatus.uniqueIdAndName;
 
 public class RenameTableTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
@@ -81,10 +81,10 @@ public class RenameTableTest {
         new RenameTable(propertiesStore).rename(oldName, newName);
     }
 
-    private TableProperties createTable(TableIdentity tableIdentity) {
+    private TableProperties createTable(TableStatus tableStatus) {
         TableProperties table = createTestTableProperties(instanceProperties, schema);
-        table.set(TABLE_ID, tableIdentity.getTableUniqueId());
-        table.set(TABLE_NAME, tableIdentity.getTableName());
+        table.set(TABLE_ID, tableStatus.getTableUniqueId());
+        table.set(TABLE_NAME, tableStatus.getTableName());
         propertiesStore.save(table);
         return table;
     }

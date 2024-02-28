@@ -57,6 +57,7 @@ import static sleeper.configuration.properties.table.TablePropertiesTestHelper.c
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithNoReferences;
+import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
@@ -103,7 +104,7 @@ public class GarbageCollectorIT {
 
             // Then
             assertThat(Files.exists(oldFile)).isFalse();
-            assertThat(stateStore.getAllFileReferencesWithMaxUnreferenced(10))
+            assertThat(stateStore.getAllFilesWithMaxUnreferenced(10))
                     .isEqualTo(activeFilesReport(oldEnoughTime, activeReference(newFile)));
         }
 
@@ -123,7 +124,7 @@ public class GarbageCollectorIT {
 
             // Then
             assertThat(Files.exists(filePath)).isTrue();
-            assertThat(stateStore.getAllFileReferencesWithMaxUnreferenced(10))
+            assertThat(stateStore.getAllFilesWithMaxUnreferenced(10))
                     .isEqualTo(activeFilesReport(oldEnoughTime, activeReference(filePath)));
         }
 
@@ -144,7 +145,7 @@ public class GarbageCollectorIT {
 
             // Then
             assertThat(Files.exists(oldFile)).isTrue();
-            assertThat(stateStore.getAllFileReferencesWithMaxUnreferenced(10)).isEqualTo(
+            assertThat(stateStore.getAllFilesWithMaxUnreferenced(10)).isEqualTo(
                     activeAndReadyForGCFilesReport(notOldEnoughTime,
                             List.of(activeReference(newFile)),
                             List.of(oldFile.toString())));
@@ -174,7 +175,7 @@ public class GarbageCollectorIT {
             assertThat(Files.exists(oldFile2)).isFalse();
             assertThat(Files.exists(newFile1)).isTrue();
             assertThat(Files.exists(newFile2)).isTrue();
-            assertThat(stateStore.getAllFileReferencesWithMaxUnreferenced(10))
+            assertThat(stateStore.getAllFilesWithMaxUnreferenced(10))
                     .isEqualTo(activeFilesReport(oldEnoughTime,
                             activeReference(newFile1),
                             activeReference(newFile2)));
@@ -208,7 +209,7 @@ public class GarbageCollectorIT {
             assertThat(Files.exists(newFile1)).isTrue();
             assertThat(Files.exists(newFile2)).isTrue();
             assertThat(Files.exists(newFile3)).isTrue();
-            assertThat(stateStore.getAllFileReferencesWithMaxUnreferenced(10)).isEqualTo(
+            assertThat(stateStore.getAllFilesWithMaxUnreferenced(10)).isEqualTo(
                     activeFilesReport(oldEnoughTime,
                             activeReference(newFile1),
                             activeReference(newFile2),
@@ -236,7 +237,7 @@ public class GarbageCollectorIT {
             // Then
             assertThat(Files.exists(oldFile2)).isFalse();
             assertThat(Files.exists(newFile2)).isTrue();
-            assertThat(stateStore.getAllFileReferencesWithMaxUnreferenced(10))
+            assertThat(stateStore.getAllFilesWithMaxUnreferenced(10))
                     .isEqualTo(activeFilesReport(oldEnoughTime,
                             activeReference(newFile2)));
         }
@@ -282,9 +283,9 @@ public class GarbageCollectorIT {
             // Then
             assertThat(Files.exists(oldFile1)).isFalse();
             assertThat(Files.exists(oldFile2)).isFalse();
-            assertThat(stateStore1.getAllFileReferencesWithMaxUnreferenced(10)).isEqualTo(
+            assertThat(stateStore1.getAllFilesWithMaxUnreferenced(10)).isEqualTo(
                     activeFilesReport(oldEnoughTime, activeReference(newFile1)));
-            assertThat(stateStore2.getAllFileReferencesWithMaxUnreferenced(10)).isEqualTo(
+            assertThat(stateStore2.getAllFilesWithMaxUnreferenced(10)).isEqualTo(
                     activeFilesReport(oldEnoughTime, activeReference(newFile2)));
         }
     }
@@ -301,7 +302,8 @@ public class GarbageCollectorIT {
                                                         java.nio.file.Path oldFilePath, java.nio.file.Path newFilePath) throws Exception {
         FileReference oldFile = createActiveFile(oldFilePath, stateStore);
         writeFile(newFilePath.toString());
-        stateStore.atomicallyAssignJobIdToFileReferences("job1", List.of(oldFile));
+        stateStore.assignJobIds(List.of(
+                assignJobOnPartitionToFiles("job1", "root", List.of(oldFile.getFilename()))));
         stateStore.atomicallyReplaceFileReferencesWithNewOne("job1", "root", List.of(oldFile.getFilename()),
                 FileReferenceFactory.from(partitions).rootFile(newFilePath.toString(), 100));
     }

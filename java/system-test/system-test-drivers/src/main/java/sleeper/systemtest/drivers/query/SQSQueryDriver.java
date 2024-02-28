@@ -34,7 +34,7 @@ import sleeper.query.tracker.QueryTrackerStore;
 import sleeper.query.tracker.TrackedQuery;
 import sleeper.systemtest.drivers.util.ReadRecordsFromS3;
 import sleeper.systemtest.drivers.util.SystemTestClients;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
 import sleeper.systemtest.dsl.query.QueryAllTablesSendAndWaitDriver;
 import sleeper.systemtest.dsl.query.QuerySendAndWaitDriver;
@@ -49,14 +49,14 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 public class SQSQueryDriver implements QuerySendAndWaitDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(SQSQueryDriver.class);
 
-    private final SleeperInstanceContext instance;
+    private final SystemTestInstanceContext instance;
     private final AmazonSQS sqsClient;
     private final AmazonDynamoDB dynamoDBClient;
     private final AmazonS3 s3Client;
     private final PollWithRetries poll = PollWithRetries.intervalAndPollingTimeout(
             Duration.ofSeconds(2), Duration.ofMinutes(1));
 
-    public SQSQueryDriver(SleeperInstanceContext instance,
+    public SQSQueryDriver(SystemTestInstanceContext instance,
                           AmazonSQS sqsClient,
                           AmazonDynamoDB dynamoDBClient,
                           AmazonS3 s3Client) {
@@ -66,7 +66,7 @@ public class SQSQueryDriver implements QuerySendAndWaitDriver {
         this.s3Client = s3Client;
     }
 
-    public static QueryAllTablesDriver allTablesDriver(SleeperInstanceContext instance, SystemTestClients clients) {
+    public static QueryAllTablesDriver allTablesDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
         return new QueryAllTablesSendAndWaitDriver(instance,
                 new SQSQueryDriver(instance, clients.getSqs(), clients.getDynamoDB(), clients.getS3()));
     }
@@ -108,7 +108,7 @@ public class SQSQueryDriver implements QuerySendAndWaitDriver {
     @Override
     public List<Record> getResults(Query query) {
         LOGGER.info("Loading results for query: {}", query.getQueryId());
-        Schema schema = instance.getTablePropertiesByName(query.getTableName()).orElseThrow().getSchema();
+        Schema schema = instance.getTablePropertiesByDeployedName(query.getTableName()).orElseThrow().getSchema();
         return s3Client.listObjects(
                         instance.getInstanceProperties().get(QUERY_RESULTS_BUCKET),
                         "query-" + query.getQueryId())

@@ -30,7 +30,7 @@ import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
 import sleeper.ingest.batcher.submitter.FileIngestRequestSerDe;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.ingest.IngestBatcherDriver;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 
 import java.time.Duration;
@@ -46,19 +46,18 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 public class AwsIngestBatcherDriver implements IngestBatcherDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(AwsIngestBatcherDriver.class);
 
-    private final SleeperInstanceContext instance;
-    private final IngestSourceFilesContext sourceFiles;
+    private final SystemTestInstanceContext instance;
     private final AmazonDynamoDB dynamoDBClient;
     private final AmazonSQS sqsClient;
     private final LambdaClient lambdaClient;
     private final PollWithRetries pollBatcherStore = PollWithRetries
             .intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(2));
 
-    public AwsIngestBatcherDriver(SleeperInstanceContext instance,
-                                  IngestSourceFilesContext sourceFiles,
-                                  SystemTestClients clients) {
+    public AwsIngestBatcherDriver(
+            SystemTestInstanceContext instance,
+            IngestSourceFilesContext sourceFiles,
+            SystemTestClients clients) {
         this.instance = instance;
-        this.sourceFiles = sourceFiles;
         this.dynamoDBClient = clients.getDynamoDB();
         this.sqsClient = clients.getSqs();
         this.lambdaClient = clients.getLambda();
@@ -69,8 +68,7 @@ public class AwsIngestBatcherDriver implements IngestBatcherDriver {
         int filesBefore = batcherStore().getPendingFilesOldestFirst().size();
         int filesAfter = filesBefore + files.size();
         sqsClient.sendMessage(instance.getInstanceProperties().get(INGEST_BATCHER_SUBMIT_QUEUE_URL),
-                FileIngestRequestSerDe.toJson(
-                        sourceFiles.getSourceBucketName(), files,
+                FileIngestRequestSerDe.toJson(files,
                         instance.getTableProperties().get(TABLE_NAME)));
         try {
             pollBatcherStore.pollUntil("files appear in batcher store", () -> {

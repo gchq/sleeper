@@ -29,7 +29,7 @@ import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
 import sleeper.compaction.task.CompactionTaskStatusStore;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.reporting.CompactionReportsDriver;
 import sleeper.systemtest.dsl.reporting.ReportingContext;
 import sleeper.systemtest.dsl.reporting.SystemTestReport;
@@ -38,10 +38,10 @@ import java.time.Instant;
 import java.util.List;
 
 public class AwsCompactionReportsDriver implements CompactionReportsDriver {
-    private final SleeperInstanceContext instance;
+    private final SystemTestInstanceContext instance;
     private final AmazonDynamoDB dynamoDB;
 
-    public AwsCompactionReportsDriver(SleeperInstanceContext instance, AmazonDynamoDB dynamoDB) {
+    public AwsCompactionReportsDriver(SystemTestInstanceContext instance, AmazonDynamoDB dynamoDB) {
         this.instance = instance;
         this.dynamoDB = dynamoDB;
     }
@@ -54,13 +54,13 @@ public class AwsCompactionReportsDriver implements CompactionReportsDriver {
                     .run();
             new CompactionJobStatusReport(jobStore(),
                     new StandardCompactionJobStatusReporter(out),
-                    new RangeJobsQuery(instance.getTableId(), startTime, Instant.MAX))
+                    new RangeJobsQuery(instance.getTableStatus(), startTime, Instant.MAX))
                     .run();
         };
     }
 
     public List<CompactionJobStatus> jobs(ReportingContext reportingContext) {
-        return new RangeJobsQuery(instance.getTableId(), reportingContext.getRecordingStartTime(), Instant.MAX)
+        return new RangeJobsQuery(instance.getTableStatus(), reportingContext.getRecordingStartTime(), Instant.MAX)
                 .run(jobStore());
     }
 

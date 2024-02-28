@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package sleeper.clients.status.report.job.query;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableStatus;
 import sleeper.ingest.job.status.IngestJobStatus;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 
@@ -34,19 +34,19 @@ public interface JobQuery {
 
     Type getType();
 
-    static JobQuery from(TableIdentity tableId, Type queryType, String queryParameters, Clock clock) {
+    static JobQuery from(TableStatus table, Type queryType, String queryParameters, Clock clock) {
         if (queryType.isParametersRequired() && queryParameters == null) {
             throw new IllegalArgumentException("No parameters provided for query type " + queryType);
         }
         switch (queryType) {
             case ALL:
-                return new AllJobsQuery(tableId);
+                return new AllJobsQuery(table);
             case UNFINISHED:
-                return new UnfinishedJobsQuery(tableId);
+                return new UnfinishedJobsQuery(table);
             case DETAILED:
                 return DetailedJobsQuery.fromParameters(queryParameters);
             case RANGE:
-                return RangeJobsQuery.fromParameters(tableId, queryParameters, clock);
+                return RangeJobsQuery.fromParameters(table, queryParameters, clock);
             case REJECTED:
                 return new RejectedJobsQuery();
             default:
@@ -55,17 +55,17 @@ public interface JobQuery {
     }
 
     static JobQuery fromParametersOrPrompt(
-            TableIdentity tableId, Type queryType, String queryParameters, Clock clock, ConsoleInput input) {
-        return fromParametersOrPrompt(tableId, queryType, queryParameters, clock, input, Map.of());
+            TableStatus table, Type queryType, String queryParameters, Clock clock, ConsoleInput input) {
+        return fromParametersOrPrompt(table, queryType, queryParameters, clock, input, Map.of());
     }
 
     static JobQuery fromParametersOrPrompt(
-            TableIdentity tableId, Type queryType, String queryParameters, Clock clock,
+            TableStatus table, Type queryType, String queryParameters, Clock clock,
             ConsoleInput input, Map<String, JobQuery> extraQueryTypes) {
         if (queryType == JobQuery.Type.PROMPT) {
-            return JobQueryPrompt.from(tableId, clock, input, extraQueryTypes);
+            return JobQueryPrompt.from(table, clock, input, extraQueryTypes);
         }
-        return from(tableId, queryType, queryParameters, clock);
+        return from(table, queryType, queryParameters, clock);
     }
 
     enum Type {

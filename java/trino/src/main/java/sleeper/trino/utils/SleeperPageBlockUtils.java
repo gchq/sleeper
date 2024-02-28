@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import io.airlift.slice.Slices;
 import io.trino.spi.Page;
 import io.trino.spi.block.Block;
 import io.trino.spi.block.BlockBuilder;
+import io.trino.spi.type.ArrayType;
 import io.trino.spi.type.BigintType;
 import io.trino.spi.type.IntegerType;
 import io.trino.spi.type.Type;
@@ -41,12 +42,12 @@ public class SleeperPageBlockUtils {
     /**
      * Read a single object from the specified channel and position in the given page.
      *
-     * @param sleeperColumnHandlesInChannelOrder The handles for each column stored in the page, in the order of the
-     *                                           channels in the page.
-     * @param page                               The page to read from.
-     * @param channelNo                          The channel to read.
-     * @param positionNo                         The position to read.
-     * @return The read object.
+     * @param  sleeperColumnHandlesInChannelOrder The handles for each column stored in the page, in the order of the
+     *                                            channels in the page.
+     * @param  page                               The page to read from.
+     * @param  channelNo                          The channel to read.
+     * @param  positionNo                         The position to read.
+     * @return                                    The read object.
      */
     public static Object readObjectFromPage(
             List<SleeperColumnHandle> sleeperColumnHandlesInChannelOrder,
@@ -72,14 +73,15 @@ public class SleeperPageBlockUtils {
      * being processed, which is experimental at present.
      *
      * @param blockBuilder The block to write the elements into.
-     * @param elementType  The type of the element to write.
+     * @param fieldType    The type of the field being written to.
      * @param element      The element itself.
      */
-    public static void writeElementToBuilder(BlockBuilder blockBuilder, Type elementType, Object element) {
+    public static void writeElementToBuilder(BlockBuilder blockBuilder, ArrayType fieldType, Object element) {
         if (element == null) {
             // Null entries do not appear to need to be closed, and doing so adds an erroneous extra element
             blockBuilder.appendNull();
         } else {
+            Type elementType = fieldType.getElementType();
             if (elementType.equals(BIGINT)) {
                 blockBuilder.writeLong((Long) element);
             } else if (elementType.equals(INTEGER)) {

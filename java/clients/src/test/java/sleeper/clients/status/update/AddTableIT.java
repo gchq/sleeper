@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,15 +34,12 @@ import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesStore;
 import sleeper.configuration.properties.table.TableProperty;
-import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.table.TableAlreadyExistsException;
-import sleeper.core.table.TableIdentity;
-import sleeper.core.table.TableIndex;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.s3.S3StateStoreCreator;
 
@@ -72,7 +69,6 @@ public class AddTableIT {
     private final AmazonDynamoDB dynamoDB = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonDynamoDBClientBuilder.standard());
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = schemaWithKey("key1");
-    private final TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDB);
     private final TablePropertiesStore propertiesStore = S3TableProperties.getStore(instanceProperties, s3, dynamoDB);
     private final Configuration configuration = getHadoopConfiguration(localStackContainer);
     @TempDir
@@ -95,10 +91,9 @@ public class AddTableIT {
         addTable(tableProperties);
 
         // Then
-        TableIdentity foundId = tableIndex.getTableByName(tableProperties.get(TABLE_NAME)).orElseThrow();
-        TableProperties foundProperties = propertiesStore.loadProperties(foundId);
-        assertThat(foundProperties.get(TABLE_ID))
-                .isNotEmpty().isEqualTo(foundId.getTableUniqueId());
+        TableProperties foundProperties = propertiesStore.loadByName(tableProperties.get(TABLE_NAME));
+        assertThat(foundProperties).isEqualTo(tableProperties);
+        assertThat(foundProperties.get(TABLE_ID)).isNotEmpty();
         StateStore stateStore = new StateStoreFactory(dynamoDB, instanceProperties, configuration).getStateStore(foundProperties);
         assertThat(stateStore.getAllPartitions())
                 .containsExactlyElementsOf(new PartitionsBuilder(schema)

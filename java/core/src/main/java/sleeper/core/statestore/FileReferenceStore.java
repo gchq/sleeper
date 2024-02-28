@@ -136,14 +136,12 @@ public interface FileReferenceStore {
      * Atomically updates the job field of file references, as long as the job field is currently unset. This will be
      * used for compaction job input files.
      *
-     * @param jobId          The job id which will be added to the {@link AllReferencesToAFile}
-     * @param fileReferences The {@link AllReferencesToAFile} whose status will be updated
+     * @param requests A list of {@link AssignJobIdRequest}s which should each be applied atomically
      * @throws FileReferenceNotFoundException      if a reference does not exist
      * @throws FileReferenceAssignedToJobException if a reference is already assigned to a job
      * @throws StateStoreException                 if the update fails for another reason
      */
-    void atomicallyAssignJobIdToFileReferences(String jobId, List<FileReference> fileReferences)
-            throws StateStoreException;
+    void assignJobIds(List<AssignJobIdRequest> requests) throws StateStoreException;
 
     /**
      * Records that files were garbage collected and have been deleted. The reference counts for those files should be
@@ -227,7 +225,7 @@ public interface FileReferenceStore {
      * @return the report
      * @throws StateStoreException if query fails
      */
-    AllReferencesToAllFiles getAllFileReferencesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException;
+    AllReferencesToAllFiles getAllFilesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException;
 
     /**
      * Performs extra setup steps that are needed before the file reference store can be used.

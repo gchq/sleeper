@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,8 +37,8 @@ import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIndex;
+import sleeper.core.table.TableStatus;
 import sleeper.query.model.Query;
 
 import java.util.ArrayList;
@@ -220,7 +220,7 @@ public abstract class QueryCommandLineClient {
 
     private String promptTableName() {
         List<String> tables = tableIndex.streamAllTables()
-                .map(TableIdentity::getTableName)
+                .map(TableStatus::getTableName)
                 .collect(Collectors.toUnmodifiableList());
         String tableName;
         if (tables.isEmpty()) {

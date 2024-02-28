@@ -73,27 +73,6 @@ public class TablePropertiesProviderTest {
         }
 
         @Test
-        void shouldLoadByFullIdentifier() {
-            // Given
-            store.save(tableProperties);
-
-            // When / Then
-            assertThat(provider.get(tableProperties.getId()))
-                    .isEqualTo(tableProperties);
-        }
-
-        @Test
-        void shouldLoadByFullIdentifierEvenWhenNotInIndex() {
-            // Given
-            store.save(tableProperties);
-            tableIndex.delete(tableProperties.getId());
-
-            // When / Then
-            assertThat(provider.get(tableProperties.getId()))
-                    .isEqualTo(tableProperties);
-        }
-
-        @Test
         void shouldLoadAllTables() {
             // Given
             TableProperties table1 = createValidTableProperties();
@@ -219,7 +198,7 @@ public class TablePropertiesProviderTest {
             // When / Then
             assertThat(provider.streamAllTables()
                     .map(properties -> properties.getInt(ROW_GROUP_SIZE)))
-                    .contains(123);
+                            .contains(123);
         }
     }
 

@@ -25,7 +25,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.query.model.Query;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.util.List;
 import java.util.UUID;
@@ -37,18 +37,18 @@ public class QueryCreator {
     private final String tableName;
     private final StateStore stateStore;
 
-    public QueryCreator(SleeperInstanceContext instance) {
+    public QueryCreator(SystemTestInstanceContext instance) {
         this(instance, instance.getTableProperties());
     }
 
-    private QueryCreator(SleeperInstanceContext instance, TableProperties tableProperties) {
+    private QueryCreator(SystemTestInstanceContext instance, TableProperties tableProperties) {
         this.schema = tableProperties.getSchema();
         this.tableName = tableProperties.get(TableProperty.TABLE_NAME);
         this.stateStore = instance.getStateStore(tableProperties);
     }
 
     public static List<Query> forAllTables(
-            SleeperInstanceContext instance, Function<QueryCreator, Query> queryFactory) {
+            SystemTestInstanceContext instance, Function<QueryCreator, Query> queryFactory) {
         return instance.streamTableProperties()
                 .map(properties -> new QueryCreator(instance, properties))
                 .map(queryFactory)

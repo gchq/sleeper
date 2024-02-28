@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,6 @@ import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.store.CompactionStatusStoreException;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.table.TableIdentity;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
 import java.time.Instant;
@@ -160,8 +159,7 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
                                         ":table", update.get(TABLE_ID),
                                         ":update_time", update.get(UPDATE_TIME),
                                         ":update_type", update.get(UPDATE_TYPE),
-                                        ":expiry", update.get(EXPIRY_DATE))))
-                ));
+                                        ":expiry", update.get(EXPIRY_DATE))))));
         List<ConsumedCapacity> consumedCapacity = result.getConsumedCapacity();
         double totalCapacity = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
         LOGGER.debug("Added {} for job {}, capacity consumed = {}",
@@ -175,21 +173,20 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
     }
 
     @Override
-    public Stream<CompactionJobStatus> streamAllJobs(TableIdentity tableId) {
+    public Stream<CompactionJobStatus> streamAllJobs(String tableId) {
         return DynamoDBCompactionJobStatusFormat.streamJobStatuses(streamPagedItems(dynamoDB, new QueryRequest()
                 .withTableName(updatesTableName)
                 .withKeyConditionExpression("#TableId = :table_id")
                 .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID))
                 .withExpressionAttributeValues(
-                        Map.of(":table_id", createStringAttribute(tableId.getTableUniqueId())))
-                .withConsistentRead(stronglyConsistentReads)
-        ));
+                        Map.of(":table_id", createStringAttribute(tableId)))
+                .withConsistentRead(stronglyConsistentReads)));
     }
 
     @Override
     public Optional<CompactionJobStatus> getJob(String jobId) {
-        return lookupJobTableId(jobId)
-                .flatMap(tableId -> DynamoDBCompactionJobStatusFormat.streamJobStatuses(streamPagedItems(dynamoDB, new QueryRequest()
+        return lookupJobTableId(jobId).flatMap(tableId -> DynamoDBCompactionJobStatusFormat
+                .streamJobStatuses(streamPagedItems(dynamoDB, new QueryRequest()
                         .withTableName(updatesTableName)
                         .withKeyConditionExpression("#TableId = :table_id AND begins_with(#JobAndUpdate, :job_id)")
                         .withExpressionAttributeNames(Map.of(
@@ -198,8 +195,8 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
                         .withExpressionAttributeValues(Map.of(
                                 ":table_id", createStringAttribute(tableId),
                                 ":job_id", createStringAttribute(jobId + "|")))
-                        .withConsistentRead(stronglyConsistentReads)
-                )).findFirst());
+                        .withConsistentRead(stronglyConsistentReads)))
+                .findFirst());
     }
 
     private Optional<String> lookupJobTableId(String jobId) {

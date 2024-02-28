@@ -35,10 +35,10 @@ import sleeper.clients.deploy.InvokeLambda;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableStatus;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.drivers.util.SystemTestClients;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.metrics.TableMetricsDriver;
 import sleeper.systemtest.dsl.reporting.ReportingContext;
 
@@ -66,12 +66,12 @@ public class AwsTableMetricsDriver implements TableMetricsDriver {
     private static final String QUERY_METRIC_STATISTIC = "Average";
     private static final int QUERY_METRIC_PERIOD_SECONDS = 5 * 60;
 
-    private final SleeperInstanceContext instance;
+    private final SystemTestInstanceContext instance;
     private final ReportingContext reporting;
     private final LambdaClient lambda;
     private final CloudWatchClient cloudWatch;
 
-    public AwsTableMetricsDriver(SleeperInstanceContext instance,
+    public AwsTableMetricsDriver(SystemTestInstanceContext instance,
                                  ReportingContext reporting,
                                  SystemTestClients clients) {
         this.instance = instance;
@@ -93,7 +93,7 @@ public class AwsTableMetricsDriver implements TableMetricsDriver {
             // Metrics can take a few seconds to show up in CloudWatch, so poll if it's not there yet
             return PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(2))
                     .queryUntil("metrics found", () -> getTableMetrics(cloudWatch, startTime, dimensions),
-                            results -> results.values().stream().anyMatch(values -> !values.isEmpty()));
+                            results -> results.values().stream().noneMatch(List::isEmpty));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
@@ -105,7 +105,7 @@ public class AwsTableMetricsDriver implements TableMetricsDriver {
         // CloudWatch needs the start time truncated to the minute
         Instant truncatedStartTime = startTime.truncatedTo(ChronoUnit.MINUTES).minus(Duration.ofMinutes(1));
         LOGGER.info("Querying metrics for namespace {}, instance {}, table {}, starting at time: {}",
-                dimensions.namespace, dimensions.instanceId, dimensions.tableIdentity, truncatedStartTime);
+                dimensions.namespace, dimensions.instanceId, dimensions.table, truncatedStartTime);
         GetMetricDataResponse response = cloudWatch.getMetricData(builder -> builder
                 .startTime(truncatedStartTime)
                 .endTime(truncatedStartTime.plus(Duration.ofHours(1)))
@@ -136,12 +136,12 @@ public class AwsTableMetricsDriver implements TableMetricsDriver {
     private static class Dimensions {
         private final String namespace;
         private final String instanceId;
-        private final TableIdentity tableIdentity;
+        private final TableStatus table;
 
         private Dimensions(InstanceProperties instanceProperties, TableProperties tableProperties) {
             instanceId = instanceProperties.get(ID);
             namespace = instanceProperties.get(METRICS_NAMESPACE);
-            tableIdentity = tableProperties.getId();
+            table = tableProperties.getStatus();
         }
 
         List<MetricDataQuery> queryAllMetrics() {
@@ -176,7 +176,7 @@ public class AwsTableMetricsDriver implements TableMetricsDriver {
         Collection<Dimension> dimensions() {
             return List.of(
                     Dimension.builder().name("instanceId").value(instanceId).build(),
-                    Dimension.builder().name("tableName").value(tableIdentity.getTableName()).build());
+                    Dimension.builder().name("tableName").value(table.getTableName()).build());
         }
     }
 }

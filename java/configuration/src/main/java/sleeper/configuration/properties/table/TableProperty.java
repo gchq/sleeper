@@ -29,6 +29,7 @@ import java.util.Objects;
 
 import static sleeper.configuration.Utils.describeEnumValuesInLowerCase;
 import static sleeper.configuration.properties.instance.CompactionProperty.DEFAULT_COMPACTION_FILES_BATCH_SIZE;
+import static sleeper.configuration.properties.instance.CompactionProperty.DEFAULT_COMPACTION_JOB_CREATION_BATCH_SIZE;
 import static sleeper.configuration.properties.instance.CompactionProperty.DEFAULT_COMPACTION_STRATEGY_CLASS;
 import static sleeper.configuration.properties.instance.CompactionProperty.DEFAULT_SIZERATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION;
 import static sleeper.configuration.properties.instance.CompactionProperty.DEFAULT_SIZERATIO_COMPACTION_STRATEGY_RATIO;
@@ -47,6 +48,8 @@ import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_BATCHER_MIN_JOB_SIZE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_BATCHER_TRACKING_TTL_MINUTES;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_FILE_WRITING_STRATEGY;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_RECORD_BATCH_TYPE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_PAGE_SIZE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_ROW_GROUP_SIZE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_S3A_READAHEAD_RANGE;
@@ -186,6 +189,15 @@ public interface TableProperty extends SleeperProperty {
                     "Also note that this many files may need to be open simultaneously. The value of " +
                     "'sleeper.fs.s3a.max-connections' must be at least the value of this plus one. The extra one is " +
                     "for the output file.")
+            .propertyGroup(TablePropertyGroup.COMPACTION)
+            .build();
+    TableProperty COMPACTION_JOB_CREATION_BATCH_SIZE = Index.propertyBuilder("sleeper.table.compaction.job.creation.batch.size")
+            .defaultProperty(DEFAULT_COMPACTION_JOB_CREATION_BATCH_SIZE)
+            .description("The number of compaction jobs to send in a single batch.\n" +
+                    "When compaction jobs are created, there is no limit on how many jobs can be created at once. " +
+                    "A batch is a group of compaction jobs that will have their creation updates applied at the same time. " +
+                    "For each batch, we send all compaction jobs to the SQS queue, then update the state store to " +
+                    "assign job IDs to the input files.")
             .propertyGroup(TablePropertyGroup.COMPACTION)
             .build();
     TableProperty SIZE_RATIO_COMPACTION_STRATEGY_RATIO = Index.propertyBuilder("sleeper.table.compaction.strategy.sizeratio.ratio")
@@ -347,6 +359,20 @@ public interface TableProperty extends SleeperProperty {
             .defaultProperty(DEFAULT_INGEST_FILE_WRITING_STRATEGY)
             .description("Specifies the strategy that ingest uses to creates files and references in partitions.\n" +
                     "Valid values are: " + describeEnumValuesInLowerCase(IngestFileWritingStrategy.class))
+            .propertyGroup(TablePropertyGroup.INGEST).build();
+    TableProperty INGEST_RECORD_BATCH_TYPE = Index.propertyBuilder("sleeper.table.ingest.record.batch.type")
+            .defaultProperty(DEFAULT_INGEST_RECORD_BATCH_TYPE)
+            .description("The way in which records are held in memory before they are written to a local store.\n" +
+                    "Valid values are 'arraylist' and 'arrow'.\n" +
+                    "The arraylist method is simpler, but it is slower and requires careful tuning of the number of records in each batch.")
+            .propertyGroup(TablePropertyGroup.INGEST).build();
+    TableProperty INGEST_PARTITION_FILE_WRITER_TYPE = Index.propertyBuilder("sleeper.table.ingest.partition.file.writer.type")
+            .defaultProperty(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE)
+            .description("The way in which partition files are written to the main Sleeper store.\n" +
+                    "Valid values are 'direct' (which writes using the s3a Hadoop file system) and 'async' (which writes locally and then " +
+                    "copies the completed Parquet file asynchronously into S3).\n" +
+                    "The direct method is simpler but the async method should provide better performance when the number of partitions " +
+                    "is large.")
             .propertyGroup(TablePropertyGroup.INGEST).build();
 
     static List<TableProperty> getAll() {

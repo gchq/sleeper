@@ -26,6 +26,8 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 
+import sleeper.configuration.properties.instance.InstanceProperties;
+
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
@@ -41,7 +43,9 @@ public class RunTasksLambda {
         AmazonECS ecsClient = AmazonECSClientBuilder.defaultClient();
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         AmazonAutoScaling asClient = AmazonAutoScalingClientBuilder.defaultClient();
-        this.runTasks = new RunTasks(sqsClient, ecsClient, s3Client, asClient, s3Bucket);
+        InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.loadFromS3(s3Client, s3Bucket);
+        this.runTasks = new RunTasks(sqsClient, ecsClient, s3Client, asClient, instanceProperties);
     }
 
     public void eventHandler(ScheduledEvent event, Context context) {

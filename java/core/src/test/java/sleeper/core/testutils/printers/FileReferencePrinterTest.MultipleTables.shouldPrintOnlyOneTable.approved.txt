@@ -1,0 +1,4 @@
+One table
+File references: 1
+Partition at root: 10 records in file
+

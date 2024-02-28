@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,8 +37,8 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.inmemory.StateStoreTestHelper;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIdGenerator;
-import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIndex;
+import sleeper.core.table.TableStatus;
 import sleeper.ingest.IngestFactory;
 import sleeper.ingest.testutils.IngestRecordsTestDataHelper;
 import sleeper.statestore.FixedStateStoreProvider;
@@ -66,7 +66,7 @@ import static sleeper.clients.QueryClientTestConstants.YES_OPTION;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
@@ -297,8 +297,8 @@ public class QueryClientIT {
                     "123", "456",
                     EXIT_OPTION);
             runQueryClient(List.of(table1, table2), Map.of(
-                    table1.getId().getTableName(), stateStore1,
-                    table2.getId().getTableName(), stateStore2));
+                    table1.getStatus().getTableName(), stateStore1,
+                    table2.getStatus().getTableName(), stateStore2));
 
             // Then
             assertThat(out.toString())
@@ -321,17 +321,17 @@ public class QueryClientIT {
         InstanceProperties instanceProperties = createTestInstanceProperties();
         instanceProperties.set(FILE_SYSTEM, "file://");
         instanceProperties.set(DATA_BUCKET, dataDir);
-        instanceProperties.set(INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
+        instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
         return instanceProperties;
     }
 
     private TableProperties createTable(String tableName, Schema schema) {
-        TableIdentity tableIdentity = TableIdentity.uniqueIdAndName(
+        TableStatus tableStatus = TableStatus.uniqueIdAndName(
                 TableIdGenerator.fromRandomSeed(0).generateString(), tableName);
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        tableProperties.set(TABLE_ID, tableIdentity.getTableUniqueId());
-        tableProperties.set(TABLE_NAME, tableIdentity.getTableName());
-        tableIndex.create(tableIdentity);
+        tableProperties.set(TABLE_ID, tableStatus.getTableUniqueId());
+        tableProperties.set(TABLE_NAME, tableStatus.getTableName());
+        tableIndex.create(tableStatus);
         return tableProperties;
     }
 

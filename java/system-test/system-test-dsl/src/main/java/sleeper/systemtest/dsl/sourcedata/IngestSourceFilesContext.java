@@ -16,27 +16,37 @@
 
 package sleeper.systemtest.dsl.sourcedata;
 
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
-import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.record.Record;
+import sleeper.core.schema.Schema;
+import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 
 public class IngestSourceFilesContext {
 
-    private final SystemTestDeploymentContext systemTest;
-    private final SleeperInstanceContext instance;
+    private static final Logger LOGGER = LoggerFactory.getLogger(IngestSourceFilesContext.class);
+
+    private final SystemTestInstanceContext instance;
     private final Map<String, String> filenameToPath = new TreeMap<>();
+    private final String testFolderName = UUID.randomUUID().toString();
     private Supplier<String> bucketName;
 
-    public IngestSourceFilesContext(SystemTestDeploymentContext systemTest, SleeperInstanceContext instance) {
-        this.systemTest = systemTest;
+    public IngestSourceFilesContext(DeployedSystemTestResources systemTest, SystemTestInstanceContext instance) {
         this.instance = instance;
         bucketName = systemTest::getSystemTestBucketName;
     }
@@ -45,17 +55,24 @@ public class IngestSourceFilesContext {
         bucketName = () -> instance.getInstanceProperties().get(DATA_BUCKET);
     }
 
-    public void useSystemTestBucket() {
-        bucketName = systemTest::getSystemTestBucketName;
+    public void writeFile(IngestSourceFilesDriver driver, String filename, boolean writeSketches, Stream<Record> records) {
+        writeFile(driver, instance.getInstanceProperties(), instance.getTableProperties(), filename, writeSketches, records);
     }
 
-    public void reset() {
-        useSystemTestBucket();
-        filenameToPath.clear();
+    public void writeFile(IngestSourceFilesDriver driver, Schema schema, String filename, boolean writeSketches, Stream<Record> records) {
+        InstanceProperties instanceProperties = instance.getInstanceProperties();
+        TableProperties tableProperties = new TableProperties(instanceProperties);
+        tableProperties.setSchema(schema);
+        writeFile(driver, instanceProperties, tableProperties, filename, writeSketches, records);
     }
 
-    public void wroteFile(String name, String path) {
-        filenameToPath.put(name, path);
+    private void writeFile(
+            IngestSourceFilesDriver driver, InstanceProperties instanceProperties, TableProperties tableProperties,
+            String filename, boolean writeSketches, Stream<Record> records) {
+        String path = instance.getInstanceProperties().get(FILE_SYSTEM) + generateFilePathNoFs(filename);
+        driver.writeFile(instanceProperties, tableProperties, path, writeSketches, records.iterator());
+        filenameToPath.put(filename, path);
+        LOGGER.info("Wrote source file {}, path: {}", filename, path);
     }
 
     public String getFilePath(String name) {
@@ -66,12 +83,20 @@ public class IngestSourceFilesContext {
         return path;
     }
 
-    public String getSourceBucketName() {
-        return bucketName.get();
+    public List<String> getIngestJobFilesInBucket(Stream<String> files) {
+        return files.map(this::ingestJobFileInBucket)
+                .collect(Collectors.toUnmodifiableList());
     }
 
-    public List<String> getIngestJobFilesInBucket(Stream<String> files) {
-        return files.map(file -> bucketName.get() + "/" + file)
-                .collect(Collectors.toUnmodifiableList());
+    public String ingestJobFileInBucket(String filename) {
+        return generateFilePathNoFs(filename);
+    }
+
+    private String generateFilePathNoFs(String filename) {
+        return bucketName.get() + "/" + testFolderName + "/" + filename;
+    }
+
+    public String getSourceBucketName() {
+        return bucketName.get();
     }
 }

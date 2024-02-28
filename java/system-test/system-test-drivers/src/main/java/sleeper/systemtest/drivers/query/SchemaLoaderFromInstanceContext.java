@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,21 +19,21 @@ package sleeper.systemtest.drivers.query;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.query.model.QuerySerDe;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.util.Optional;
 
 public class SchemaLoaderFromInstanceContext implements QuerySerDe.SchemaLoader {
 
-    private final SleeperInstanceContext instance;
+    private final SystemTestInstanceContext instance;
 
-    public SchemaLoaderFromInstanceContext(SleeperInstanceContext instance) {
+    public SchemaLoaderFromInstanceContext(SystemTestInstanceContext instance) {
         this.instance = instance;
     }
 
     @Override
     public Optional<Schema> getSchemaByTableName(String tableName) {
-        return instance.getTablePropertiesByName(tableName)
+        return instance.getTablePropertiesByDeployedName(tableName)
                 .map(TableProperties::getSchema);
     }
 
