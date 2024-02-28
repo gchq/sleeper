@@ -16,37 +16,39 @@
 
 package sleeper.systemtest.drivers.python;
 
+import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.ingest.IngestByAnyQueueDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
+import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 
 import java.nio.file.Path;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 
 public class PythonBulkImportDriver implements IngestByAnyQueueDriver {
     private final SystemTestInstanceContext instance;
+    private final IngestSourceFilesContext sourceFiles;
     private final PythonRunner pythonRunner;
     private final Path pythonDir;
 
-    public PythonBulkImportDriver(SystemTestInstanceContext instance, Path pythonDir) {
-        this.instance = instance;
+    public PythonBulkImportDriver(SystemTestContext context) {
+        this.instance = context.instance();
+        this.sourceFiles = context.sourceFiles();
+        this.pythonDir = context.parameters().getPythonDirectory();
         this.pythonRunner = new PythonRunner(pythonDir);
-        this.pythonDir = pythonDir;
     }
 
     @Override
     public void sendJobWithFiles(String jobId, String... files) {
         pythonRunner.run(Stream.concat(
-                        Stream.of(pythonDir.resolve("test/bulk_import_files_from_s3.py").toString(),
-                                "--instance", instance.getInstanceProperties().get(ID),
-                                "--table", instance.getTableName(),
-                                "--platform", "EMRServerless",
-                                "--jobid", jobId,
-                                "--files"),
-                        Stream.of(files)
-                                .map(file -> instance.getInstanceProperties().get(INGEST_SOURCE_BUCKET) + "/" + file))
+                Stream.of(pythonDir.resolve("test/bulk_import_files_from_s3.py").toString(),
+                        "--instance", instance.getInstanceProperties().get(ID),
+                        "--table", instance.getTableName(),
+                        "--platform", "EMRServerless",
+                        "--jobid", jobId,
+                        "--files"),
+                Stream.of(files).map(sourceFiles::ingestJobFileInBucket))
                 .toArray(String[]::new));
     }
 }
