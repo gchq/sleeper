@@ -16,10 +16,17 @@
 
 package sleeper.systemtest.dsl.testutil.drivers;
 
+import sleeper.query.runner.recordretrieval.InMemoryDataStore;
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFiles;
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
 
 public class InMemoryGeneratedIngestSourceFilesDriver implements GeneratedIngestSourceFilesDriver {
+    private final InMemoryDataStore sourceFiles;
+
+    public InMemoryGeneratedIngestSourceFilesDriver(InMemoryDataStore sourceFiles) {
+        this.sourceFiles = sourceFiles;
+    }
+
     @Override
     public GeneratedIngestSourceFiles findGeneratedFiles() {
         throw new UnsupportedOperationException();
@@ -27,5 +34,6 @@ public class InMemoryGeneratedIngestSourceFilesDriver implements GeneratedIngest
 
     @Override
     public void emptyBucket() {
+        sourceFiles.deleteAllFiles();
     }
 }

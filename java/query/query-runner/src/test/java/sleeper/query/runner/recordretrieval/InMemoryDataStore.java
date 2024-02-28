@@ -23,6 +23,7 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.query.model.LeafPartitionQuery;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,6 +55,14 @@ public class InMemoryDataStore implements LeafPartitionRecordRetriever {
 
     public void deleteFile(String filename) {
         recordsByFilename.remove(filename);
+    }
+
+    public Collection<String> files() {
+        return recordsByFilename.keySet();
+    }
+
+    public void deleteAllFiles() {
+        recordsByFilename.clear();
     }
 
     public Stream<Record> streamRecords(List<String> files) {

@@ -27,6 +27,7 @@ import sleeper.systemtest.dsl.extension.AfterTestPurgeQueues;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.dsl.sourcedata.RecordNumbers;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
+import sleeper.systemtest.dsl.testutil.InMemorySystemTestDrivers;
 
 import java.util.List;
 import java.util.Map;
@@ -50,7 +51,7 @@ public class GarbageCollectionTest {
     }
 
     @Test
-    void shouldGarbageCollectFilesAfterCompaction(SleeperSystemTest sleeper) {
+    void shouldGarbageCollectFilesAfterCompaction(SleeperSystemTest sleeper, InMemorySystemTestDrivers drivers) {
         // Given
         sleeper.updateTableProperties(Map.of(
                 COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
@@ -78,5 +79,6 @@ public class GarbageCollectionTest {
                         activeAndReadyForGCFiles(
                                 List.of(fileFactory.rootFile(50)),
                                 List.of())));
+        assertThat(drivers.data().files()).hasSize(1);
     }
 }

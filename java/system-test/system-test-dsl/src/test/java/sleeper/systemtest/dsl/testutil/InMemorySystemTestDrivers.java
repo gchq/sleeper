@@ -52,10 +52,10 @@ import sleeper.systemtest.dsl.util.WaitForJobs;
 public class InMemorySystemTestDrivers extends SystemTestDriversBase {
 
     private final SystemTestDeploymentDriver systemTestDeploymentDriver = new InMemorySystemTestDeploymentDriver();
-    private final InMemorySleeperTablesDriver tablesDriver = new InMemorySleeperTablesDriver();
-    private final SleeperInstanceDriver instanceDriver = new InMemorySleeperInstanceDriver(tablesDriver);
     private final InMemoryDataStore sourceFiles = new InMemoryDataStore();
     private final InMemoryDataStore data = new InMemoryDataStore();
+    private final InMemorySleeperTablesDriver tablesDriver = new InMemorySleeperTablesDriver(data);
+    private final SleeperInstanceDriver instanceDriver = new InMemorySleeperInstanceDriver(tablesDriver);
     private final InMemoryIngestBatcherStore batcherStore = new InMemoryIngestBatcherStore();
     private final InMemoryIngestByQueue ingestByQueue = new InMemoryIngestByQueue(sourceFiles, data);
     private final InMemoryCompaction compaction = new InMemoryCompaction(data);
@@ -83,7 +83,7 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
 
     @Override
     public GeneratedIngestSourceFilesDriver generatedSourceFiles(SystemTestParameters parameters, DeployedSystemTestResources systemTest) {
-        return new InMemoryGeneratedIngestSourceFilesDriver();
+        return new InMemoryGeneratedIngestSourceFilesDriver(sourceFiles);
     }
 
     @Override
@@ -149,5 +149,9 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
     public PurgeQueueDriver purgeQueues(SystemTestContext context) {
         return properties -> {
         };
+    }
+
+    public InMemoryDataStore data() {
+        return data;
     }
 }
