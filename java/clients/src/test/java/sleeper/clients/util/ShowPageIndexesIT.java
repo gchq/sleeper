@@ -19,8 +19,11 @@ package sleeper.clients.util;
 import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.hadoop.ParquetWriter;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Named;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import sleeper.clients.testutil.ToStringPrintStream;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -41,37 +44,49 @@ import java.nio.file.Path;
 import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.stream.LongStream;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.table.TableProperty.PARQUET_WRITER_VERSION;
 import static sleeper.io.parquet.record.ParquetRecordWriterFactory.createParquetRecordWriter;
 
 public class ShowPageIndexesIT {
     @TempDir
     private Path tempDir;
 
-    @Test
-    void shouldShowPageIndexesForFileWithOneRowKeyField() throws Exception {
+    private static Stream<Arguments> getParquetWriterVersions() {
+        return Stream.of(
+                Arguments.of(Named.of("Parquet writer version v1", "v1")),
+                Arguments.of(Named.of("Parquet writer version v2", "v2")));
+    }
+
+    @ParameterizedTest
+    @MethodSource("getParquetWriterVersions")
+    void shouldShowPageIndexesForFileWithOneRowKeyField(String parquetVersion) throws Exception {
         // Given
         TableProperties tableProperties = createTableProperties(Schema.builder()
                 .rowKeyFields(new Field("test-key", new StringType()))
                 .build());
+        tableProperties.set(PARQUET_WRITER_VERSION, parquetVersion);
         Path file = tempDir.resolve("test.parquet");
-        writeRecords(file, tableProperties, LongStream.rangeClosed(1, 100), (i, record) ->
-                record.put("test-key", String.format("row-%03d", i)));
+        writeRecords(file, tableProperties, LongStream.rangeClosed(1, 100),
+                (i, record) -> record.put("test-key", String.format("row-%03d", i)));
 
         // When/Then
         assertThat(runShowPageIndexes(file))
-                .isEqualTo(example("util/showPageIndexes/oneRowKeyField.txt"));
+                .isEqualTo(example("util/showPageIndexes/" + parquetVersion + "/oneRowKeyField.txt"));
     }
 
-    @Test
-    void shouldShowPageIndexesForFileWithTwoRowKeyFields() throws Exception {
+    @ParameterizedTest
+    @MethodSource("getParquetWriterVersions")
+    void shouldShowPageIndexesForFileWithTwoRowKeyFields(String parquetVersion) throws Exception {
         // Given
         TableProperties tableProperties = createTableProperties(Schema.builder()
                 .rowKeyFields(
                         new Field("test-key1", new StringType()),
                         new Field("test-key2", new StringType()))
                 .build());
+        tableProperties.set(PARQUET_WRITER_VERSION, parquetVersion);
         Path file = tempDir.resolve("test.parquet");
         writeRecords(file, tableProperties, LongStream.rangeClosed(1, 100), (i, record) -> {
             record.put("test-key1", String.format("row1-%03d", i));
@@ -80,17 +95,19 @@ public class ShowPageIndexesIT {
 
         // When/Then
         assertThat(runShowPageIndexes(file))
-                .isEqualTo(example("util/showPageIndexes/multipleRowKeyFields.txt"));
+                .isEqualTo(example("util/showPageIndexes/" + parquetVersion + "/multipleRowKeyFields.txt"));
     }
 
-    @Test
-    void shouldShowPageIndexesForFileWithRowKeySortKeyAndValueFields() throws Exception {
+    @ParameterizedTest
+    @MethodSource("getParquetWriterVersions")
+    void shouldShowPageIndexesForFileWithRowKeySortKeyAndValueFields(String parquetVersion) throws Exception {
         // Given
         TableProperties tableProperties = createTableProperties(Schema.builder()
                 .rowKeyFields(new Field("test-key", new StringType()))
                 .sortKeyFields(new Field("test-sort", new IntType()))
                 .valueFields(new Field("test-value", new LongType()))
                 .build());
+        tableProperties.set(PARQUET_WRITER_VERSION, parquetVersion);
         Path file = tempDir.resolve("test.parquet");
         writeRecords(file, tableProperties, LongStream.rangeClosed(1, 100), (i, record) -> {
             record.put("test-key", String.format("row-%03d", i));
@@ -100,43 +117,45 @@ public class ShowPageIndexesIT {
 
         // When/Then
         assertThat(runShowPageIndexes(file))
-                .isEqualTo(example("util/showPageIndexes/rowKeySortKeyAndValueFields.txt"));
+                .isEqualTo(example("util/showPageIndexes/" + parquetVersion + "/rowKeySortKeyAndValueFields.txt"));
     }
 
-    @Test
-    void shouldShowPageIndexesForFileWithMultiplePages() throws Exception {
+    @ParameterizedTest
+    @MethodSource("getParquetWriterVersions")
+    void shouldShowPageIndexesForFileWithMultiplePages(String parquetVersion) throws Exception {
         // Given
         TableProperties tableProperties = createTableProperties(Schema.builder()
                 .rowKeyFields(new Field("test-key", new StringType()))
                 .build());
+        tableProperties.set(PARQUET_WRITER_VERSION, parquetVersion);
         tableProperties.set(TableProperty.PAGE_SIZE, "100");
         Path file = tempDir.resolve("test.parquet");
-        writeRecords(file, tableProperties, LongStream.rangeClosed(1, 1000), (i, record) ->
-                record.put("test-key", String.format("row-%04d", i)));
+        writeRecords(file, tableProperties, LongStream.rangeClosed(1, 1000), (i, record) -> record.put("test-key", String.format("row-%04d", i)));
 
         // When/Then
         assertThat(runShowPageIndexes(file))
-                .isEqualTo(example("util/showPageIndexes/multiplePages.txt"));
+                .isEqualTo(example("util/showPageIndexes/" + parquetVersion + "/multiplePages.txt"));
     }
 
-    @Test
-    void shouldShowPageIndexesForFileWithMultipleRowGroups() throws Exception {
+    @ParameterizedTest
+    @MethodSource("getParquetWriterVersions")
+    void shouldShowPageIndexesForFileWithMultipleRowGroups(String parquetVersion) throws Exception {
         // Given
         TableProperties tableProperties = createTableProperties(Schema.builder()
                 .rowKeyFields(new Field("test-key", new StringType()))
                 .build());
+        tableProperties.set(PARQUET_WRITER_VERSION, parquetVersion);
         tableProperties.set(TableProperty.ROW_GROUP_SIZE, "1");
         Path file = tempDir.resolve("test.parquet");
-        writeRecords(file, tableProperties, LongStream.rangeClosed(1, 1000), (i, record) ->
-                record.put("test-key", String.format("row-%04d", i)));
+        writeRecords(file, tableProperties, LongStream.rangeClosed(1, 1000), (i, record) -> record.put("test-key", String.format("row-%04d", i)));
 
         // When/Then
         assertThat(runShowPageIndexes(file))
-                .isEqualTo(example("util/showPageIndexes/multipleRowGroups.txt"));
+                .isEqualTo(example("util/showPageIndexes/" + parquetVersion + "/multipleRowGroups.txt"));
     }
 
     private static void writeRecords(Path file, TableProperties tableProperties,
-                                     LongStream range, BiConsumer<Long, Record> recordCreator) throws IOException {
+            LongStream range, BiConsumer<Long, Record> recordCreator) throws IOException {
         try (ParquetWriter<Record> writer = createRecordWriter(file, tableProperties)) {
             range.boxed().forEach(i -> {
                 Record record = new Record();
