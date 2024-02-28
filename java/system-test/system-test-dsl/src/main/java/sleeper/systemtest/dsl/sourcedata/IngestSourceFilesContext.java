@@ -84,8 +84,12 @@ public class IngestSourceFilesContext {
     }
 
     public List<String> getIngestJobFilesInBucket(Stream<String> files) {
-        return files.map(this::generateFilePathNoFs)
+        return files.map(this::ingestJobFileInBucket)
                 .collect(Collectors.toUnmodifiableList());
+    }
+
+    public String ingestJobFileInBucket(String filename) {
+        return generateFilePathNoFs(filename);
     }
 
     private String generateFilePathNoFs(String filename) {
