@@ -20,6 +20,7 @@ import sleeper.ingest.batcher.testutil.InMemoryIngestBatcherStore;
 import sleeper.query.runner.recordretrieval.InMemoryDataStore;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
+import sleeper.systemtest.dsl.gc.GarbageCollectionDriver;
 import sleeper.systemtest.dsl.ingest.DirectIngestDriver;
 import sleeper.systemtest.dsl.ingest.IngestBatcherDriver;
 import sleeper.systemtest.dsl.ingest.IngestByQueue;
@@ -35,6 +36,7 @@ import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryCompaction;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryDirectIngestDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryDirectQueryDriver;
+import sleeper.systemtest.dsl.testutil.drivers.InMemoryGarbageCollectionDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryGeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryIngestBatcherDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryIngestByQueue;
@@ -126,6 +128,11 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
     @Override
     public WaitForJobs waitForCompaction(SystemTestContext context) {
         return compaction.waitForJobs(context);
+    }
+
+    @Override
+    public GarbageCollectionDriver garbageCollection(SystemTestContext context) {
+        return new InMemoryGarbageCollectionDriver(context.instance(), data);
     }
 
     @Override

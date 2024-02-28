@@ -53,7 +53,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
@@ -142,8 +141,8 @@ public class GarbageCollectorS3IT {
     }
 
     private GarbageCollector createGarbageCollector(InstanceProperties instanceProperties, StateStoreProvider stateStoreProvider) {
-        return new GarbageCollector(configuration, new FixedTablePropertiesProvider(tables), stateStoreProvider,
-                instanceProperties.getInt(GARBAGE_COLLECTOR_BATCH_SIZE));
+        return new GarbageCollector(configuration, instanceProperties,
+                new FixedTablePropertiesProvider(tables), stateStoreProvider);
     }
 
     private static Schema getSchema() {

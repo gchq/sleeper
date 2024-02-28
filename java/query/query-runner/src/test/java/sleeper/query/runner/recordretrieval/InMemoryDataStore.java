@@ -52,6 +52,10 @@ public class InMemoryDataStore implements LeafPartitionRecordRetriever {
         recordsByFilename.put(filename, records);
     }
 
+    public void deleteFile(String filename) {
+        recordsByFilename.remove(filename);
+    }
+
     public Stream<Record> streamRecords(List<String> files) {
         return files.stream()
                 .flatMap(this::getRecordsOrThrow);

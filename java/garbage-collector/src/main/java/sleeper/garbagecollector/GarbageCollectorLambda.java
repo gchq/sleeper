@@ -39,7 +39,6 @@ import java.io.IOException;
 import java.time.Instant;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_BATCH_SIZE;
 
 /**
  * A lambda for executing the {@link GarbageCollector}.
@@ -70,9 +69,7 @@ public class GarbageCollectorLambda implements RequestHandler<SQSEvent, Void> {
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, conf);
 
         this.garbageCollector = new GarbageCollector(conf,
-                tablePropertiesProvider,
-                stateStoreProvider,
-                instanceProperties.getInt(GARBAGE_COLLECTOR_BATCH_SIZE));
+                instanceProperties, tablePropertiesProvider, stateStoreProvider);
     }
 
     @Override

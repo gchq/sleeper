@@ -321,10 +321,9 @@ public class GarbageCollectorIT {
     }
 
     private void collectGarbageAtTime(Instant time) throws Exception {
-        GarbageCollector collector = new GarbageCollector(new Configuration(),
+        GarbageCollector collector = new GarbageCollector(new Configuration(), instanceProperties,
                 new FixedTablePropertiesProvider(tables),
-                new FixedStateStoreProvider(stateStoreByTableName),
-                instanceProperties.getInt(GARBAGE_COLLECTOR_BATCH_SIZE));
+                new FixedStateStoreProvider(stateStoreByTableName));
         List<String> tableIds = tables.stream()
                 .map(table -> table.get(TABLE_ID))
                 .collect(toUnmodifiableList());
