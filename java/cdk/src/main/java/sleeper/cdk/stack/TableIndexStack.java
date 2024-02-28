@@ -83,6 +83,10 @@ public class TableIndexStack extends NestedStack {
                         .name(DynamoDBTableIndex.TABLE_ONLINE_FIELD)
                         .type(AttributeType.STRING)
                         .build())
+                .sortKey(Attribute.builder()
+                        .name(DynamoDBTableIndex.TABLE_NAME_FIELD)
+                        .type(AttributeType.STRING)
+                        .build())
                 .pointInTimeRecovery(instanceProperties.getBoolean(TABLE_INDEX_DYNAMO_POINT_IN_TIME_RECOVERY))
                 .build();
         instanceProperties.set(TABLE_ONLINE_INDEX_DYNAMO_TABLENAME, indexByOnlineDynamoTable.getTableName());
