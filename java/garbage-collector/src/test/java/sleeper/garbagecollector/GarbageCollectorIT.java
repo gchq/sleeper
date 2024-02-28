@@ -16,7 +16,6 @@
 package sleeper.garbagecollector;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -42,6 +41,7 @@ import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.statestore.FixedStateStoreProvider;
 
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -69,7 +69,7 @@ public class GarbageCollectorIT {
     private static final Schema TEST_SCHEMA = getSchema();
 
     @TempDir
-    public java.nio.file.Path tempDir;
+    public Path tempDir;
     private final PartitionTree partitions = new PartitionsBuilder(TEST_SCHEMA).singlePartition("root").buildTree();
     private final List<TableProperties> tables = new ArrayList<>();
     private final Map<String, StateStore> stateStoreByTableName = new HashMap<>();
@@ -94,8 +94,8 @@ public class GarbageCollectorIT {
             Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
             stateStore.fixTime(oldEnoughTime);
             table.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, 10);
-            java.nio.file.Path oldFile = tempDir.resolve("old-file.parquet");
-            java.nio.file.Path newFile = tempDir.resolve("new-file.parquet");
+            Path oldFile = tempDir.resolve("old-file.parquet");
+            Path newFile = tempDir.resolve("new-file.parquet");
             createFileWithNoReferencesByCompaction(stateStore, oldFile, newFile);
 
             // When
@@ -114,7 +114,7 @@ public class GarbageCollectorIT {
             Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
             stateStore.fixTime(oldEnoughTime);
             table.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, 10);
-            java.nio.file.Path filePath = tempDir.resolve("test-file.parquet");
+            Path filePath = tempDir.resolve("test-file.parquet");
             createActiveFile(filePath, stateStore);
 
             // When
@@ -133,8 +133,8 @@ public class GarbageCollectorIT {
             Instant notOldEnoughTime = currentTime.minus(Duration.ofMinutes(5));
             stateStore.fixTime(notOldEnoughTime);
             table.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, 10);
-            java.nio.file.Path oldFile = tempDir.resolve("old-file.parquet");
-            java.nio.file.Path newFile = tempDir.resolve("new-file.parquet");
+            Path oldFile = tempDir.resolve("old-file.parquet");
+            Path newFile = tempDir.resolve("new-file.parquet");
             createFileWithNoReferencesByCompaction(stateStore, oldFile, newFile);
 
             // When
@@ -155,10 +155,10 @@ public class GarbageCollectorIT {
             Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
             stateStore.fixTime(oldEnoughTime);
             table.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, 10);
-            java.nio.file.Path oldFile1 = tempDir.resolve("old-file-1.parquet");
-            java.nio.file.Path oldFile2 = tempDir.resolve("old-file-2.parquet");
-            java.nio.file.Path newFile1 = tempDir.resolve("new-file-1.parquet");
-            java.nio.file.Path newFile2 = tempDir.resolve("new-file-2.parquet");
+            Path oldFile1 = tempDir.resolve("old-file-1.parquet");
+            Path oldFile2 = tempDir.resolve("old-file-2.parquet");
+            Path newFile1 = tempDir.resolve("new-file-1.parquet");
+            Path newFile2 = tempDir.resolve("new-file-2.parquet");
             createFileWithNoReferencesByCompaction(stateStore, oldFile1, newFile1);
             createFileWithNoReferencesByCompaction(stateStore, oldFile2, newFile2);
 
@@ -184,12 +184,12 @@ public class GarbageCollectorIT {
             Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
             stateStore.fixTime(oldEnoughTime);
             table.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, 10);
-            java.nio.file.Path oldFile1 = tempDir.resolve("old-file-1.parquet");
-            java.nio.file.Path oldFile2 = tempDir.resolve("old-file-2.parquet");
-            java.nio.file.Path newFile1 = tempDir.resolve("new-file-1.parquet");
-            java.nio.file.Path newFile2 = tempDir.resolve("new-file-2.parquet");
-            java.nio.file.Path oldFile3 = tempDir.resolve("old-file-3.parquet");
-            java.nio.file.Path newFile3 = tempDir.resolve("new-file-3.parquet");
+            Path oldFile1 = tempDir.resolve("old-file-1.parquet");
+            Path oldFile2 = tempDir.resolve("old-file-2.parquet");
+            Path newFile1 = tempDir.resolve("new-file-1.parquet");
+            Path newFile2 = tempDir.resolve("new-file-2.parquet");
+            Path oldFile3 = tempDir.resolve("old-file-3.parquet");
+            Path newFile3 = tempDir.resolve("new-file-3.parquet");
             createFileWithNoReferencesByCompaction(stateStore, oldFile1, newFile1);
             createFileWithNoReferencesByCompaction(stateStore, oldFile2, newFile2);
             createFileWithNoReferencesByCompaction(stateStore, oldFile3, newFile3);
@@ -220,8 +220,8 @@ public class GarbageCollectorIT {
             table.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, 10);
             stateStore.addFilesWithReferences(List.of(
                     fileWithNoReferences("/tmp/not-a-file.parquet")));
-            java.nio.file.Path oldFile2 = tempDir.resolve("old-file-2.parquet");
-            java.nio.file.Path newFile2 = tempDir.resolve("new-file-2.parquet");
+            Path oldFile2 = tempDir.resolve("old-file-2.parquet");
+            Path newFile2 = tempDir.resolve("new-file-2.parquet");
             createFileWithNoReferencesByCompaction(stateStore, oldFile2, newFile2);
 
             // When
@@ -254,10 +254,10 @@ public class GarbageCollectorIT {
             StateStore stateStore2 = stateStore(table2);
             stateStore1.fixTime(oldEnoughTime);
             stateStore2.fixTime(oldEnoughTime);
-            java.nio.file.Path oldFile1 = tempDir.resolve("old-file-1.parquet");
-            java.nio.file.Path oldFile2 = tempDir.resolve("old-file-2.parquet");
-            java.nio.file.Path newFile1 = tempDir.resolve("new-file-1.parquet");
-            java.nio.file.Path newFile2 = tempDir.resolve("new-file-2.parquet");
+            Path oldFile1 = tempDir.resolve("old-file-1.parquet");
+            Path oldFile2 = tempDir.resolve("old-file-2.parquet");
+            Path newFile1 = tempDir.resolve("new-file-1.parquet");
+            Path newFile2 = tempDir.resolve("new-file-2.parquet");
             createFileWithNoReferencesByCompaction(stateStore1, oldFile1, newFile1);
             createFileWithNoReferencesByCompaction(stateStore2, oldFile2, newFile2);
 
@@ -274,7 +274,7 @@ public class GarbageCollectorIT {
         }
     }
 
-    private FileReference createActiveFile(java.nio.file.Path filePath, StateStore stateStore) throws Exception {
+    private FileReference createActiveFile(Path filePath, StateStore stateStore) throws Exception {
         String filename = filePath.toString();
         FileReference fileReference = FileReferenceFactory.from(partitions).rootFile(filename, 100L);
         writeFile(filename);
@@ -283,7 +283,7 @@ public class GarbageCollectorIT {
     }
 
     private void createFileWithNoReferencesByCompaction(StateStore stateStore,
-            java.nio.file.Path oldFilePath, java.nio.file.Path newFilePath) throws Exception {
+            Path oldFilePath, Path newFilePath) throws Exception {
         FileReference oldFile = createActiveFile(oldFilePath, stateStore);
         writeFile(newFilePath.toString());
         stateStore.assignJobIds(List.of(
@@ -292,12 +292,13 @@ public class GarbageCollectorIT {
                 FileReferenceFactory.from(partitions).rootFile(newFilePath.toString(), 100));
     }
 
-    private FileReference activeReference(java.nio.file.Path filePath) {
+    private FileReference activeReference(Path filePath) {
         return FileReferenceFactory.from(partitions).rootFile(filePath.toString(), 100);
     }
 
     private void writeFile(String filename) throws Exception {
-        ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(filename), TEST_SCHEMA);
+        ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(
+                new org.apache.hadoop.fs.Path(filename), TEST_SCHEMA);
         for (int i = 0; i < 100; i++) {
             Record record = new Record();
             record.put("key", i);
