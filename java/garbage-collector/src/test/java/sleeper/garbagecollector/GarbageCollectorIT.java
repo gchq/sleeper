@@ -18,6 +18,7 @@ package sleeper.garbagecollector;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -46,7 +47,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -72,11 +72,17 @@ public class GarbageCollectorIT {
     public java.nio.file.Path tempDir;
     private final PartitionTree partitions = new PartitionsBuilder(TEST_SCHEMA).singlePartition("root").buildTree();
     private final List<TableProperties> tables = new ArrayList<>();
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
+
+    @BeforeEach
+    void setUp() throws Exception {
+        instanceProperties.set(FILE_SYSTEM, "file://");
+        instanceProperties.set(DATA_BUCKET, tempDir.toString());
+    }
 
     @Nested
     @DisplayName("Collecting from single table")
     class SingleTable {
-        private InstanceProperties instanceProperties;
         private TableProperties tableProperties;
         private StateStoreProvider stateStoreProvider;
 
@@ -90,7 +96,6 @@ public class GarbageCollectorIT {
         @Test
         void shouldCollectFileWithNoReferencesAfterSpecifiedDelay() throws Exception {
             // Given
-            instanceProperties = createInstanceProperties();
             tableProperties = createTableWithGCDelay(TEST_TABLE_NAME, instanceProperties, 10);
             Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
             Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
@@ -111,7 +116,6 @@ public class GarbageCollectorIT {
         @Test
         void shouldNotCollectFileMarkedAsActive() throws Exception {
             // Given
-            instanceProperties = createInstanceProperties();
             tableProperties = createTableWithGCDelay(TEST_TABLE_NAME, instanceProperties, 10);
             Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
             Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
@@ -131,7 +135,6 @@ public class GarbageCollectorIT {
         @Test
         void shouldNotCollectFileWithNoReferencesBeforeSpecifiedDelay() throws Exception {
             // Given
-            instanceProperties = createInstanceProperties();
             tableProperties = createTableWithGCDelay(TEST_TABLE_NAME, instanceProperties, 10);
             Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
             Instant notOldEnoughTime = currentTime.minus(Duration.ofMinutes(5));
@@ -154,7 +157,6 @@ public class GarbageCollectorIT {
         @Test
         void shouldCollectMultipleFilesInOneRun() throws Exception {
             // Given
-            instanceProperties = createInstanceProperties();
             tableProperties = createTableWithGCDelay(TEST_TABLE_NAME, instanceProperties, 10);
             Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
             Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
@@ -184,7 +186,7 @@ public class GarbageCollectorIT {
         @Test
         void shouldCollectFilesInBatchesIfBatchSizeExceeded() throws Exception {
             // Given
-            instanceProperties = createInstancePropertiesWithGCBatchSize(2);
+            instanceProperties.setNumber(GARBAGE_COLLECTOR_BATCH_SIZE, 2);
             tableProperties = createTableWithGCDelay(TEST_TABLE_NAME, instanceProperties, 10);
             Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
             Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
@@ -219,7 +221,6 @@ public class GarbageCollectorIT {
         @Test
         void shouldContinueCollectingFilesIfFileDoesNotExist() throws Exception {
             // Given
-            instanceProperties = createInstanceProperties();
             tableProperties = createTableWithGCDelay(TEST_TABLE_NAME, instanceProperties, 10);
             Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
             Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
@@ -260,7 +261,7 @@ public class GarbageCollectorIT {
         @Test
         void shouldCollectOneFileFromEachTable() throws Exception {
             // Given
-            InstanceProperties instanceProperties = createInstancePropertiesWithGCBatchSize(2);
+            instanceProperties.setNumber(GARBAGE_COLLECTOR_BATCH_SIZE, 2);
             TableProperties tableProperties1 = createTableWithGCDelay(TEST_TABLE_NAME_1, instanceProperties, 10);
             TableProperties tableProperties2 = createTableWithGCDelay(TEST_TABLE_NAME_2, instanceProperties, 10);
             Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
@@ -299,7 +300,7 @@ public class GarbageCollectorIT {
     }
 
     private void createFileWithNoReferencesByCompaction(StateStore stateStore,
-                                                        java.nio.file.Path oldFilePath, java.nio.file.Path newFilePath) throws Exception {
+            java.nio.file.Path oldFilePath, java.nio.file.Path newFilePath) throws Exception {
         FileReference oldFile = createActiveFile(oldFilePath, stateStore);
         writeFile(newFilePath.toString());
         stateStore.assignJobIds(List.of(
@@ -321,24 +322,6 @@ public class GarbageCollectorIT {
             writer.write(record);
         }
         writer.close();
-    }
-
-    private InstanceProperties createInstancePropertiesWithGCBatchSize(int gcBatchSize) {
-        return createInstanceProperties(properties ->
-                properties.setNumber(GARBAGE_COLLECTOR_BATCH_SIZE, gcBatchSize));
-    }
-
-    private InstanceProperties createInstanceProperties() {
-        return createInstanceProperties(properties -> {
-        });
-    }
-
-    private InstanceProperties createInstanceProperties(Consumer<InstanceProperties> extraProperties) {
-        InstanceProperties instanceProperties = createTestInstanceProperties();
-        instanceProperties.set(FILE_SYSTEM, "file://");
-        instanceProperties.set(DATA_BUCKET, tempDir.toString());
-        extraProperties.accept(instanceProperties);
-        return instanceProperties;
     }
 
     private TableProperties createTableWithGCDelay(String tableName, InstanceProperties instanceProperties, int gcDelay) {
