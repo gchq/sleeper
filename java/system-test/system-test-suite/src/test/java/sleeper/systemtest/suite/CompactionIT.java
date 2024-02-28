@@ -43,8 +43,10 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ONLINE;
 import static sleeper.configuration.properties.validation.IngestFileWritingStrategy.ONE_FILE_PER_LEAF;
 import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFiles;
+import static sleeper.core.statestore.FilesReportTestHelper.activeFiles;
 import static sleeper.core.testutils.printers.FileReferencePrinter.printFiles;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStringAndZeroPadTo;
@@ -126,6 +128,36 @@ public class CompactionIT {
                             List.of(fileFactory.rootFile("output1.parquet", 50),
                                     fileFactory.rootFile("output2.parquet", 50)),
                             List.of("file1.parquet", "file2.parquet", "file3.parquet", "file4.parquet"))));
+        }
+
+        @Test
+        void shouldNotCreateCompactionJobsIfTableIsOffline(SleeperSystemTest sleeper) {
+            // Given
+            sleeper.updateTableProperties(Map.of(
+                    COMPACTION_FILES_BATCH_SIZE, "5",
+                    TABLE_ONLINE, "false"));
+            // Files with records 9, 9, 9, 9, 10 (which match SizeRatioStrategy criteria)
+            RecordNumbers numbers = sleeper.scrambleNumberedRecords(LongStream.range(0, 46));
+            sleeper.ingest().direct(tempDir)
+                    .numberedRecords(numbers.range(0, 9))
+                    .numberedRecords(numbers.range(9, 18))
+                    .numberedRecords(numbers.range(18, 27))
+                    .numberedRecords(numbers.range(27, 36))
+                    .numberedRecords(numbers.range(36, 46));
+
+            // When
+            sleeper.compaction().createJobs().invokeTasks(1).waitForJobs();
+
+            // Then
+            assertThat(sleeper.directQuery().allRecordsInTable())
+                    .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 46)));
+            assertThat(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().all()))
+                    .isEqualTo(printFiles(expectedPartitions, activeFiles(
+                            fileFactory.rootFile("file1.parquet", 9),
+                            fileFactory.rootFile("file2.parquet", 9),
+                            fileFactory.rootFile("file3.parquet", 9),
+                            fileFactory.rootFile("file4.parquet", 9),
+                            fileFactory.rootFile("file5.parquet", 10))));
         }
     }
 
