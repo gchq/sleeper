@@ -61,15 +61,10 @@ the data bucket.
 Each table has a state store associated to it. This stores metadata about the table, namely the files that are in
 the table and how the records in the table are partitioned.
 
-Tables are deployed by the CDK table stack. This stack creates the infrastructure for each table. Each table
-requires a state store to store metadata about files in the table. When a table is first created, its state store
-must be initialised.
-
-To achieve this, the table stack obtains a list of the table properties files from the instance properties. For
-each table properties file it creates the state store. The creation of the state store is delegated to either the 
-DynamoDB state store stack or the S3 state store stack, as appropriate.
-A custom CDK resource is then used to call `sleeper.cdk.custom.SleeperTableLambda`. This lambda initialises the
-state store and updates the table properties file which is stored in the instance's config bucket.
+Table infrastructure is deployed at an instance level by the CDK table stacks. These stacks creates the infrastructure 
+for all tables. All tables require an S3 bucket to store data and a state store to store metadata about files in each table. 
+When a table is first created, its state store must be initialised. To achieve this, both state store implementations 
+support storing metadata for files in all tables. 
 
 The directory in the data bucket which contains a table's data is constructed from the table name:
 `<data-bucket>/<tablename>/<file>`, e.g. `sleeper-mySleeperInstance-data/table1/file1.parquet`.
