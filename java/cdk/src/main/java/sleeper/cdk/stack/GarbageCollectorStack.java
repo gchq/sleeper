@@ -75,6 +75,13 @@ public class GarbageCollectorStack extends NestedStack {
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "garbage-collector"));
 
+        // Timeout is set to 90% of the period with which this runs to avoid 2 running simultaneously,
+        // with a maximum of 900 seconds (15 minutes) which is the maximum execution time
+        // of a lambda.
+        int timeoutSecsFromGcPeriod = (int) (0.9 * 60 * instanceProperties.getInt(GARBAGE_COLLECTOR_PERIOD_IN_MINUTES));
+        Duration handlerTimeout = Duration.seconds(Math.max(1, Math.min(timeoutSecsFromGcPeriod, 900)));
+        Duration queueVisibilityTimeout = handlerTimeout.plus(Duration.seconds(10));
+
         // Garbage collector function
         IFunction triggerFunction = gcJar.buildFunction(this, "GarbageCollectorTrigger", builder -> builder
                 .functionName(triggerFunctionName)
@@ -90,10 +97,7 @@ public class GarbageCollectorStack extends NestedStack {
                 .description("Scan the state store looking for files that need deleting and delete them")
                 .runtime(Runtime.JAVA_11)
                 .memorySize(instanceProperties.getInt(GARBAGE_COLLECTOR_LAMBDA_MEMORY_IN_MB))
-                // Timeout is set to 90% of the period with which this runs to avoid 2 running simultaneously,
-                // with a maximum of 900 seconds (15 minutes) which is the maximum execution time
-                // of a lambda.
-                .timeout(Duration.seconds(Math.max(1, Math.min((int) (0.9 * 60 * instanceProperties.getInt(GARBAGE_COLLECTOR_PERIOD_IN_MINUTES)), 900))))
+                .timeout(handlerTimeout)
                 .handler("sleeper.garbagecollector.GarbageCollectorLambda::handleRequest")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .logGroup(createLambdaLogGroup(this, "GarbageCollectorLambdaLogGroup", functionName, instanceProperties)));
@@ -128,7 +132,7 @@ public class GarbageCollectorStack extends NestedStack {
                         .maxReceiveCount(1)
                         .queue(deadLetterQueue)
                         .build())
-                .visibilityTimeout(Duration.seconds(70))
+                .visibilityTimeout(queueVisibilityTimeout)
                 .build();
         instanceProperties.set(GARBAGE_COLLECTOR_QUEUE_URL, queue.getQueueUrl());
         instanceProperties.set(GARBAGE_COLLECTOR_QUEUE_ARN, queue.getQueueArn());
