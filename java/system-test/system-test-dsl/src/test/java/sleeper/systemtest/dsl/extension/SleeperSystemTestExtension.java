@@ -94,11 +94,11 @@ public class SleeperSystemTestExtension implements ParameterResolver, BeforeAllC
     @Override
     public void beforeAll(ExtensionContext context) throws Exception {
         deployedResources.deployIfMissing();
-        deployedResources.resetProperties();
     }
 
     @Override
     public void beforeEach(ExtensionContext context) {
+        deployedResources.resetProperties();
         drivers.generatedSourceFiles(parameters, deployedResources).emptyBucket();
         testContext = new SystemTestContext(parameters, drivers, deployedResources, deployedInstances);
         dsl = new SleeperSystemTest(parameters, drivers, testContext);
