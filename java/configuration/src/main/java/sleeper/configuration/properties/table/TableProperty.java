@@ -51,6 +51,7 @@ import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_RECORD_BATCH_TYPE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_PAGE_SIZE;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_PARQUET_WRITER_VERSION;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_ROW_GROUP_SIZE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_S3A_READAHEAD_RANGE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_STATISTICS_TRUNCATE_LENGTH;
@@ -160,6 +161,12 @@ public interface TableProperty extends SleeperProperty {
             .description("Used to set parquet.statistics.truncate.length, see documentation here:\n" +
                     "https://github.com/apache/parquet-mr/blob/master/parquet-hadoop/README.md\n" +
                     "The length in bytes to truncate the min/max binary values in row groups.")
+            .propertyGroup(TablePropertyGroup.DATA_STORAGE).build();
+    TableProperty PARQUET_WRITER_VERSION = Index.propertyBuilder("sleeper.table.parquet.writer.version")
+            .description("Used to set parquet.writer.version, see documentation here:\n" +
+                    "https://github.com/apache/parquet-mr/blob/master/parquet-hadoop/README.md\n" +
+                    "Can be either v1 or v2. The v2 pages store levels uncompressed while v1 pages compress levels with the data.")
+            .defaultProperty(DEFAULT_PARQUET_WRITER_VERSION)
             .propertyGroup(TablePropertyGroup.DATA_STORAGE).build();
     TableProperty S3A_READAHEAD_RANGE = Index.propertyBuilder("sleeper.table.fs.s3a.readahead.range")
             .defaultProperty(DEFAULT_S3A_READAHEAD_RANGE)
