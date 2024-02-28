@@ -130,7 +130,8 @@ public class ShowPageIndexesIT {
         tableProperties.set(PARQUET_WRITER_VERSION, parquetVersion);
         tableProperties.set(TableProperty.PAGE_SIZE, "100");
         Path file = tempDir.resolve("test.parquet");
-        writeRecords(file, tableProperties, LongStream.rangeClosed(1, 1000), (i, record) -> record.put("test-key", String.format("row-%04d", i)));
+        writeRecords(file, tableProperties, LongStream.rangeClosed(1, 1000),
+                (i, record) -> record.put("test-key", String.format("row-%04d", i)));
 
         // When/Then
         assertThat(runShowPageIndexes(file))
@@ -147,7 +148,8 @@ public class ShowPageIndexesIT {
         tableProperties.set(PARQUET_WRITER_VERSION, parquetVersion);
         tableProperties.set(TableProperty.ROW_GROUP_SIZE, "1");
         Path file = tempDir.resolve("test.parquet");
-        writeRecords(file, tableProperties, LongStream.rangeClosed(1, 1000), (i, record) -> record.put("test-key", String.format("row-%04d", i)));
+        writeRecords(file, tableProperties, LongStream.rangeClosed(1, 1000),
+                (i, record) -> record.put("test-key", String.format("row-%04d", i)));
 
         // When/Then
         assertThat(runShowPageIndexes(file))
