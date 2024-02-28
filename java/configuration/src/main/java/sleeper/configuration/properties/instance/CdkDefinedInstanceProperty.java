@@ -128,6 +128,10 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .description("The name of the table responsible for tracking query progress.")
             .propertyGroup(InstancePropertyGroup.QUERY)
             .build();
+    CdkDefinedInstanceProperty QUERY_WARM_LAMBDA_CLOUDWATCH_RULE = Index.propertyBuilder("sleeper.query.warm.lambda.rule")
+            .description("The name of the CloudWatch rule to trigger the query lambda to keep it warm.")
+            .propertyGroup(InstancePropertyGroup.QUERY)
+            .build();
     CdkDefinedInstanceProperty LEAF_PARTITION_QUERY_QUEUE_URL = Index.propertyBuilder("sleeper.query.leaf.partition.queue.url")
             .description("The URL of the queue responsible for sending a leaf partition query to sleeper.")
             .propertyGroup(InstancePropertyGroup.QUERY)

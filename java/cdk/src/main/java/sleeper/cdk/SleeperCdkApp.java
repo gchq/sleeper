@@ -30,6 +30,7 @@ import sleeper.cdk.stack.CompactionStack;
 import sleeper.cdk.stack.ConfigBucketStack;
 import sleeper.cdk.stack.CoreStacks;
 import sleeper.cdk.stack.DashboardStack;
+import sleeper.cdk.stack.DummyLambdaExecutionStack;
 import sleeper.cdk.stack.DynamoDBStateStoreStack;
 import sleeper.cdk.stack.GarbageCollectorStack;
 import sleeper.cdk.stack.IngestBatcherStack;
@@ -234,9 +235,10 @@ public class SleeperCdkApp extends Stack {
                     topicStack.getTopic());
         }
 
+        QueryStack queryStack = null;
         // Stack to execute queries
         if (optionalStacks.contains(QueryStack.class.getSimpleName())) {
-            new QueryStack(this,
+            queryStack = new QueryStack(this,
                     "Query",
                     instanceProperties, jars,
                     coreStacks);
@@ -269,6 +271,18 @@ public class SleeperCdkApp extends Stack {
                     partitionSplittingStack,
                     instanceProperties
             );
+        }
+
+        if (optionalStacks.contains(DummyLambdaExecutionStack.class.getSimpleName())) {
+           DummyLambdaExecutionStack dummyLambdaExecutionStack =
+           new DummyLambdaExecutionStack(this,
+                        "DummyLambdaExecution",
+                        instanceProperties,
+                        jars,
+                        coreStacks);
+           if (queryStack != null) {
+            dummyLambdaExecutionStack.addDependency(queryStack);
+           }
         }
 
         this.generateProperties();
