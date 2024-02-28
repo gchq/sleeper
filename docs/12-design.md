@@ -61,13 +61,9 @@ the data bucket.
 Each table has a state store associated to it. This stores metadata about the table, namely the files that are in
 the table and how the records in the table are partitioned.
 
-Table infrastructure is deployed at an instance level by the CDK table stacks. These stacks creates the infrastructure 
-for all tables. All tables require an S3 bucket to store data and a state store to store metadata about files in each table. 
-When a table is first created, its state store must be initialised. To achieve this, both state store implementations 
-support storing metadata for files in all tables. 
-
-The directory in the data bucket which contains a table's data is constructed from the table name:
-`<data-bucket>/<tablename>/<file>`, e.g. `sleeper-mySleeperInstance-data/table1/file1.parquet`.
+When an instance is deployed, it creates an S3 data bucket and creates the infrastructure for the state store. 
+When a table is created, a folder is created in the S3 data bucket for that table, and the state store is initialised 
+(to achieve this, both state store implementations support storing metadata for files in all tables). 
 
 Tables can also be taken offline, which means they will be ignored when it comes to partition splitting and creating 
 compaction jobs. When creating a new table, it is automatically put online.
