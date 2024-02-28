@@ -65,8 +65,10 @@ When an instance is deployed, it creates an S3 data bucket and creates the infra
 When a table is created, a folder is created in the S3 data bucket for that table, and the state store is initialised 
 (to achieve this, both state store implementations support storing metadata for files in all tables). 
 
-Tables can also be taken offline, which means they will be ignored when it comes to partition splitting and creating 
-compaction jobs. When creating a new table, it is automatically put online.
+Tables can also be taken offline and put online. Offline tables will be ignored when it comes to finding partitions 
+that need splitting and creating compaction jobs, however you are still able to ingest files to them, and perform 
+queries against them. When creating a new table, the table property `sleeper.table.online` determines whether a table 
+starts online or offline. This property defaults to online.
 
 ## Sorted files
 
