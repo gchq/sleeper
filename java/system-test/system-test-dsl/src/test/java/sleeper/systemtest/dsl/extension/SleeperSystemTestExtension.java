@@ -29,6 +29,7 @@ import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.instance.DeployedSleeperInstances;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
+import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
 
 import java.util.Set;
@@ -52,12 +53,11 @@ public class SleeperSystemTestExtension implements ParameterResolver, BeforeAllC
     private AfterTestReports reporting = null;
     private AfterTestPurgeQueues queuePurging = null;
 
-    protected SleeperSystemTestExtension(SystemTestParameters parameters, SystemTestDrivers drivers) {
-        this.parameters = parameters;
-        this.drivers = drivers;
-        deployedResources = new DeployedSystemTestResources(parameters, drivers.systemTestDeployment(parameters));
-        deployedInstances = new DeployedSleeperInstances(
-                parameters, deployedResources, drivers.instance(parameters), drivers.tables(parameters));
+    protected SleeperSystemTestExtension(SystemTestDeploymentContext context) {
+        parameters = context.parameters();
+        drivers = context.drivers();
+        deployedResources = context.deployedResources();
+        deployedInstances = context.deployedInstances();
     }
 
     @Override
