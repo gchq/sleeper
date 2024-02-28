@@ -1,0 +1,19 @@
+{
+    "Nested test": {
+        "prefix": "nestedtest",
+        "body": [
+            "@Nested",
+            "@DisplayName(\"${1:Nested test description}\")",
+            "class ${2:NestedTest} {",
+            "",
+            "}"
+        ],
+        "description": "A nested test"
+    },
+    "Logger": {
+        "prefix": "logger",
+        "body": [
+            "public static final Logger LOGGER = LoggerFactory.getLogger($TM_FILENAME_BASE.class);"
+        ]
+    }
+}
