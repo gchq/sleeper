@@ -24,6 +24,9 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.extension.AfterTestPurgeQueues;
+import sleeper.systemtest.dsl.extension.AfterTestReports;
+import sleeper.systemtest.dsl.reporting.SystemTestReports;
 import sleeper.systemtest.dsl.sourcedata.RecordNumbers;
 import sleeper.systemtest.suite.fixtures.SystemTestSchema;
 import sleeper.systemtest.suite.testutil.SystemTest;
@@ -34,6 +37,7 @@ import java.util.Map;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ONLINE;
@@ -43,6 +47,7 @@ import static sleeper.core.testutils.printers.PartitionsPrinter.printPartitions;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStringAndZeroPadTo;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides.overrideField;
+import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.partitionsBuilder;
 
 @SystemTest
@@ -53,7 +58,10 @@ public class TableOfflineIT {
     private FileReferenceFactory fileFactory;
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper) {
+    void setUp(SleeperSystemTest sleeper, AfterTestReports reporting, AfterTestPurgeQueues purgeQueues) {
+        sleeper.connectToInstance(MAIN);
+        reporting.reportIfTestFailed(SystemTestReports.SystemTestBuilder::compactionTasksAndJobs);
+        purgeQueues.purgeIfTestFailed(COMPACTION_JOB_QUEUE_URL);
         expectedPartitions = partitionsBuilder(sleeper).singlePartition("root").buildTree();
         fileFactory = FileReferenceFactory.from(expectedPartitions);
     }
