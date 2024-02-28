@@ -22,8 +22,12 @@ import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.Runtime;
+import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
+import software.amazon.awscdk.services.lambda.eventsources.SqsEventSourceProps;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
+import software.amazon.awscdk.services.sqs.DeadLetterQueue;
+import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.cdk.Utils;
@@ -33,13 +37,16 @@ import sleeper.cdk.jars.LambdaCode;
 import sleeper.configuration.properties.SleeperScheduleRule;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
-import java.util.Collections;
-import java.util.Locale;
+import java.util.List;
 
 import static sleeper.cdk.Utils.createLambdaLogGroup;
 import static sleeper.cdk.Utils.shouldDeployPaused;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.GARBAGE_COLLECTOR_CLOUDWATCH_RULE;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.GARBAGE_COLLECTOR_DLQ_ARN;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.GARBAGE_COLLECTOR_DLQ_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.GARBAGE_COLLECTOR_LAMBDA_FUNCTION;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.GARBAGE_COLLECTOR_QUEUE_ARN;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.GARBAGE_COLLECTOR_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_LAMBDA_MEMORY_IN_MB;
@@ -65,28 +72,37 @@ public class GarbageCollectorStack extends NestedStack {
         // Garbage collector code
         LambdaCode gcJar = jars.lambdaCode(BuiltJar.GARBAGE_COLLECTOR, jarsBucket);
 
-        String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "garbage-collector"));
+        String triggerFunctionName = Utils.buildInstanceFunctionName(instanceProperties, "garbage-collector-trigger");
+        String functionName = Utils.buildInstanceFunctionName(instanceProperties, "garbage-collector");
 
         // Garbage collector function
-        IFunction handler = gcJar.buildFunction(this, "GarbageCollectorLambda", builder -> builder
+        IFunction triggerFunction = gcJar.buildFunction(this, "GarbageCollectorTrigger", builder -> builder
+                .functionName(triggerFunctionName)
+                .description("Creates batches of Sleeper tables to perform garbage collection for and puts them on a queue to be processed")
+                .runtime(Runtime.JAVA_11)
+                .handler("sleeper.garbagecollector.GarbageCollectorTriggerLambda::handleRequest")
+                .environment(Utils.createDefaultEnvironment(instanceProperties))
+                .memorySize(256)
+                .timeout(Duration.minutes(1))
+                .logGroup(createLambdaLogGroup(this, "GarbageCollectorTriggerLogGroup", triggerFunctionName, instanceProperties)));
+        IFunction handlerFunction = gcJar.buildFunction(this, "GarbageCollectorLambda", builder -> builder
                 .functionName(functionName)
-                .description("Scan DynamoDB looking for files that need deleting and delete them")
+                .description("Scan the state store looking for files that need deleting and delete them")
                 .runtime(Runtime.JAVA_11)
                 .memorySize(instanceProperties.getInt(GARBAGE_COLLECTOR_LAMBDA_MEMORY_IN_MB))
                 // Timeout is set to 90% of the period with which this runs to avoid 2 running simultaneously,
                 // with a maximum of 900 seconds (15 minutes) which is the maximum execution time
                 // of a lambda.
                 .timeout(Duration.seconds(Math.max(1, Math.min((int) (0.9 * 60 * instanceProperties.getInt(GARBAGE_COLLECTOR_PERIOD_IN_MINUTES)), 900))))
-                .handler("sleeper.garbagecollector.GarbageCollectorLambda::eventHandler")
+                .handler("sleeper.garbagecollector.GarbageCollectorLambda::handleRequest")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
-                .reservedConcurrentExecutions(1)
                 .logGroup(createLambdaLogGroup(this, "GarbageCollectorLambdaLogGroup", functionName, instanceProperties)));
-        instanceProperties.set(GARBAGE_COLLECTOR_LAMBDA_FUNCTION, handler.getFunctionName());
+        instanceProperties.set(GARBAGE_COLLECTOR_LAMBDA_FUNCTION, triggerFunction.getFunctionName());
 
         // Grant this function permission delete files from the data bucket and
         // to read from / write to the DynamoDB table
-        coreStacks.grantGarbageCollection(handler);
+        coreStacks.grantGarbageCollection(handlerFunction);
+        coreStacks.grantReadTablesStatus(triggerFunction);
 
         // Cloudwatch rule to trigger this lambda
         Rule rule = Rule.Builder
@@ -95,9 +111,33 @@ public class GarbageCollectorStack extends NestedStack {
                 .description("A rule to periodically trigger the garbage collector")
                 .enabled(!shouldDeployPaused(this))
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(GARBAGE_COLLECTOR_PERIOD_IN_MINUTES))))
-                .targets(Collections.singletonList(new LambdaFunction(handler)))
+                .targets(List.of(new LambdaFunction(triggerFunction)))
                 .build();
         instanceProperties.set(GARBAGE_COLLECTOR_CLOUDWATCH_RULE, rule.getRuleName());
+
+        String deadLetterQueueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-GCJobDLQ");
+        Queue deadLetterQueue = Queue.Builder
+                .create(this, "GCJobDeadLetterQueue")
+                .queueName(deadLetterQueueName)
+                .build();
+        String queueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-GCJobQ");
+        Queue queue = Queue.Builder
+                .create(this, "GCJobQueue")
+                .queueName(queueName)
+                .deadLetterQueue(DeadLetterQueue.builder()
+                        .maxReceiveCount(1)
+                        .queue(deadLetterQueue)
+                        .build())
+                .visibilityTimeout(Duration.seconds(70))
+                .build();
+        instanceProperties.set(GARBAGE_COLLECTOR_QUEUE_URL, queue.getQueueUrl());
+        instanceProperties.set(GARBAGE_COLLECTOR_QUEUE_ARN, queue.getQueueArn());
+        instanceProperties.set(GARBAGE_COLLECTOR_DLQ_URL, deadLetterQueue.getQueueUrl());
+        instanceProperties.set(GARBAGE_COLLECTOR_DLQ_ARN, deadLetterQueue.getQueueArn());
+
+        queue.grantSendMessages(triggerFunction);
+        handlerFunction.addEventSource(new SqsEventSource(queue,
+                SqsEventSourceProps.builder().batchSize(1).build()));
 
         Utils.addStackTagIfSet(this, instanceProperties);
     }

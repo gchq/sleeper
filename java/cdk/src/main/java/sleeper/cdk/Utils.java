@@ -37,6 +37,7 @@ import sleeper.core.SleeperVersion;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
@@ -49,6 +50,7 @@ import static java.lang.String.format;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.CommonProperty.ID_MAX_LENGTH;
 import static sleeper.configuration.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.configuration.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
 import static sleeper.configuration.properties.instance.CommonProperty.STACK_TAG_NAME;
@@ -110,12 +112,22 @@ public class Utils {
         return truncateToMaxSize(input, 64);
     }
 
+    private static final int AVAIL_RESOURCE_NAME_LENGTH = 64 - ("sleeper-".length() + ID_MAX_LENGTH + 1);
+
+    public static String buildInstanceFunctionName(InstanceProperties instanceProperties, String name) {
+        if (name.length() > AVAIL_RESOURCE_NAME_LENGTH) {
+            throw new IllegalArgumentException("Function name too long: " + name);
+        }
+        return String.join("-", "sleeper",
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), name);
+    }
+
     /**
      * Valid values are taken from <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-logs-loggroup.html">here</a>
      * A value of -1 represents an infinite number of days.
      *
-     * @param numberOfDays number of days you want to retain the logs
-     * @return The RetentionDays equivalent
+     * @param  numberOfDays number of days you want to retain the logs
+     * @return              The RetentionDays equivalent
      */
     public static LogGroup createLogGroupWithRetentionDays(Construct scope, String id, int numberOfDays) {
         return LogGroup.Builder.create(scope, id)
@@ -152,44 +164,44 @@ public class Utils {
 
     private static RetentionDays getRetentionDays(int numberOfDays) {
         switch (numberOfDays) {
-            case -1:
-                return RetentionDays.INFINITE;
-            case 1:
-                return RetentionDays.ONE_DAY;
-            case 3:
-                return RetentionDays.THREE_DAYS;
-            case 5:
-                return RetentionDays.FIVE_DAYS;
-            case 7:
-                return RetentionDays.ONE_WEEK;
-            case 14:
-                return RetentionDays.TWO_WEEKS;
-            case 30:
-                return RetentionDays.ONE_MONTH;
-            case 60:
-                return RetentionDays.TWO_MONTHS;
-            case 90:
-                return RetentionDays.THREE_MONTHS;
-            case 120:
-                return RetentionDays.FOUR_MONTHS;
-            case 150:
-                return RetentionDays.FIVE_MONTHS;
-            case 180:
-                return RetentionDays.SIX_MONTHS;
-            case 365:
-                return RetentionDays.ONE_YEAR;
-            case 400:
-                return RetentionDays.THIRTEEN_MONTHS;
-            case 545:
-                return RetentionDays.EIGHTEEN_MONTHS;
-            case 731:
-                return RetentionDays.TWO_YEARS;
-            case 1827:
-                return RetentionDays.FIVE_YEARS;
-            case 3653:
-                return RetentionDays.TEN_YEARS;
-            default:
-                throw new IllegalArgumentException("Invalid number of days; see https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-logs-loggroup.html for valid options");
+        case -1:
+            return RetentionDays.INFINITE;
+        case 1:
+            return RetentionDays.ONE_DAY;
+        case 3:
+            return RetentionDays.THREE_DAYS;
+        case 5:
+            return RetentionDays.FIVE_DAYS;
+        case 7:
+            return RetentionDays.ONE_WEEK;
+        case 14:
+            return RetentionDays.TWO_WEEKS;
+        case 30:
+            return RetentionDays.ONE_MONTH;
+        case 60:
+            return RetentionDays.TWO_MONTHS;
+        case 90:
+            return RetentionDays.THREE_MONTHS;
+        case 120:
+            return RetentionDays.FOUR_MONTHS;
+        case 150:
+            return RetentionDays.FIVE_MONTHS;
+        case 180:
+            return RetentionDays.SIX_MONTHS;
+        case 365:
+            return RetentionDays.ONE_YEAR;
+        case 400:
+            return RetentionDays.THIRTEEN_MONTHS;
+        case 545:
+            return RetentionDays.EIGHTEEN_MONTHS;
+        case 731:
+            return RetentionDays.TWO_YEARS;
+        case 1827:
+            return RetentionDays.FIVE_YEARS;
+        case 3653:
+            return RetentionDays.TEN_YEARS;
+        default:
+            throw new IllegalArgumentException("Invalid number of days; see https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-logs-loggroup.html for valid options");
         }
     }
 
@@ -221,7 +233,7 @@ public class Utils {
                 && deployedVersion != null
                 && !localVersion.equals(deployedVersion)) {
             throw new MismatchedVersionException(format("Local version %s does not match deployed version %s. " +
-                            "Please upgrade/downgrade to make these match",
+                    "Please upgrade/downgrade to make these match",
                     localVersion, deployedVersion));
         }
         properties.set(VERSION, localVersion);
@@ -265,8 +277,8 @@ public class Utils {
      * {@link software.amazon.awscdk.services.ec2.InstanceSize} enum.
      * Java identifiers can't start with a number, so "2xlarge" becomes "xlarge2".
      *
-     * @param size the human readable size
-     * @return the internal enum name
+     * @param  size the human readable size
+     * @return      the internal enum name
      */
     public static String normaliseSize(String size) {
         if (size == null) {

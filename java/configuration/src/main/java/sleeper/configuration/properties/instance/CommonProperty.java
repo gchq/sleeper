@@ -23,10 +23,11 @@ import java.util.List;
 import java.util.Objects;
 
 public interface CommonProperty {
+    int ID_MAX_LENGTH = 20;
     UserDefinedInstanceProperty ID = Index.propertyBuilder("sleeper.id")
             .description("A string to uniquely identify this deployment. This should be no longer than 20 chars. " +
                     "It should be globally unique as it will be used to name AWS resources such as S3 buckets.")
-            .validationPredicate(value -> Utils.isNonNullNonEmptyStringWithMaxLength(value, 20))
+            .validationPredicate(value -> Utils.isNonNullNonEmptyStringWithMaxLength(value, ID_MAX_LENGTH))
             .propertyGroup(InstancePropertyGroup.COMMON)
             .editable(false).build();
     UserDefinedInstanceProperty JARS_BUCKET = Index.propertyBuilder("sleeper.jars.bucket")
