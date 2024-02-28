@@ -1,14 +1,34 @@
 {
-    "Nested test": {
+    "Test": {
+        "prefix": "test",
+        "body": [
+            "@Test",
+            "void should${1:Test}() {",
+            "    $0",
+            "}"
+        ],
+        "description": "A JUnit 5 test"
+    },
+    "Test setup": {
+        "prefix": "setup",
+        "body": [
+            "@BeforeEach",
+            "void setUp() {",
+            "    $0",
+            "}"
+        ],
+        "description": "A JUnit 5 test setup method"
+    },
+    "Nested test class": {
         "prefix": "nestedtest",
         "body": [
             "@Nested",
             "@DisplayName(\"${1:Nested test description}\")",
             "class ${2:NestedTest} {",
-            "",
+            "    $0",
             "}"
         ],
-        "description": "A nested test"
+        "description": "A JUnit 5 nested test class"
     },
     "Logger": {
         "prefix": "logger",
