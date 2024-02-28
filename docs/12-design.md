@@ -67,8 +67,8 @@ When a table is created, a folder is created in the S3 data bucket for that tabl
 
 Tables can also be taken offline and put online. Offline tables will be ignored when it comes to finding partitions 
 that need splitting and creating compaction jobs, however you are still able to ingest files to them, and perform 
-queries against them. When creating a new table, the table property `sleeper.table.online` determines whether a table 
-starts online or offline. This property defaults to online.
+queries against them. When creating a new table, the boolean table property `sleeper.table.online` determines whether 
+a table starts online or offline. This property defaults to `true`.
 
 ## Sorted files
 
