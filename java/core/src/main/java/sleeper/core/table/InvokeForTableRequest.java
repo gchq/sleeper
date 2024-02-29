@@ -16,9 +16,12 @@
 
 package sleeper.core.table;
 
-import java.util.ArrayList;
+import sleeper.core.util.SplitIntoBatches;
+
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 /**
  * Model for an SQS message to invoke some operation for a batch of tables.
@@ -37,17 +40,32 @@ public class InvokeForTableRequest {
         return tableIds;
     }
 
-    public static void sendForAllTables(TableIndex tableIndex, int batchSize, Consumer<InvokeForTableRequest> sendRequest) {
-        List<String> tableIdsBatch = new ArrayList<>();
-        tableIndex.streamAllTables().forEach(table -> {
-            if (tableIdsBatch.size() >= batchSize) {
-                sendRequest.accept(new InvokeForTableRequest(tableIdsBatch));
-                tableIdsBatch.clear();
-            }
-            tableIdsBatch.add(table.getTableUniqueId());
-        });
-        if (!tableIdsBatch.isEmpty()) {
-            sendRequest.accept(new InvokeForTableRequest(tableIdsBatch));
-        }
+    public static void sendForTables(Stream<TableStatus> tables, int batchSize, Consumer<InvokeForTableRequest> sendRequest) {
+        SplitIntoBatches.reusingListOfSize(batchSize,
+                tables.map(TableStatus::getTableUniqueId),
+                tableIds -> sendRequest.accept(new InvokeForTableRequest(tableIds)));
     }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(tableIds);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof InvokeForTableRequest)) {
+            return false;
+        }
+        InvokeForTableRequest other = (InvokeForTableRequest) obj;
+        return Objects.equals(tableIds, other.tableIds);
+    }
+
+    @Override
+    public String toString() {
+        return "InvokeForTableRequest{tableIds=" + tableIds + "}";
+    }
+
 }

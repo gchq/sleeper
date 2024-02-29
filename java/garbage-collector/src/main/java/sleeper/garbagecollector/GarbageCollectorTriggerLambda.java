@@ -69,7 +69,7 @@ public class GarbageCollectorTriggerLambda implements RequestHandler<ScheduledEv
         int batchSize = instanceProperties.getInt(GARBAGE_COLLECTOR_TABLE_BATCH_SIZE);
         String queueUrl = instanceProperties.get(GARBAGE_COLLECTOR_QUEUE_URL);
         TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
-        InvokeForTableRequest.sendForAllTables(tableIndex, batchSize,
+        InvokeForTableRequest.sendForTables(tableIndex.streamAllTables(), batchSize,
                 request -> sqsClient.sendMessage(queueUrl, serDe.toJson(request)));
 
         Instant finishTime = Instant.now();

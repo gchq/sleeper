@@ -66,7 +66,7 @@ public class TableMetricsTriggerLambda implements RequestHandler<ScheduledEvent,
         int batchSize = instanceProperties.getInt(METRICS_TABLE_BATCH_SIZE);
         String queueUrl = instanceProperties.get(TABLE_METRICS_QUEUE_URL);
         TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
-        InvokeForTableRequest.sendForAllTables(tableIndex, batchSize,
+        InvokeForTableRequest.sendForTables(tableIndex.streamAllTables(), batchSize,
                 request -> sqsClient.sendMessage(queueUrl, serDe.toJson(request)));
 
         Instant finishTime = Instant.now();

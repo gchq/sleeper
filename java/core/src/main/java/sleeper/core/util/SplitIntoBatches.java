@@ -16,7 +16,9 @@
 
 package sleeper.core.util;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -34,5 +36,22 @@ public class SplitIntoBatches {
     private static <T> Stream<List<T>> streamBatchesOf(int batchSize, List<T> items) {
         return IntStream.iterate(0, i -> i < items.size(), i -> i + batchSize)
                 .mapToObj(i -> items.subList(i, Math.min(i + batchSize, items.size())));
+    }
+
+    public static <T> void reusingListOfSize(int batchSize, Stream<T> items, Consumer<List<T>> operation) {
+        if (batchSize < 1) {
+            throw new IllegalArgumentException("Batch size must be at least 1, found " + batchSize);
+        }
+        List<T> batch = new ArrayList<>(batchSize);
+        items.forEach(item -> {
+            if (batch.size() >= batchSize) {
+                operation.accept(batch);
+                batch.clear();
+            }
+            batch.add(item);
+        });
+        if (!batch.isEmpty()) {
+            operation.accept(batch);
+        }
     }
 }
