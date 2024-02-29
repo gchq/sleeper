@@ -39,7 +39,10 @@ public class SplitIntoBatches {
     }
 
     public static <T> void forEachBatchOf(int batchSize, Stream<T> items, Consumer<List<T>> operation) {
-        List<T> batch = new ArrayList<>();
+        if (batchSize < 1) {
+            throw new IllegalArgumentException("Batch size must be at least 1, found " + batchSize);
+        }
+        List<T> batch = new ArrayList<>(batchSize);
         items.forEach(item -> {
             if (batch.size() >= batchSize) {
                 operation.accept(batch);

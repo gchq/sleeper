@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -75,13 +76,57 @@ public class SplitIntoBatchesTest {
     class SplitAStream {
 
         @Test
-        void shouldSplitStreamIntoOneFullBatchAndOnePartialBatchLeftOver() {
-            List<List<String>> batches = new ArrayList<>();
-            SplitIntoBatches.forEachBatchOf(2,
-                    Stream.of("A", "B", "C"),
-                    batch -> batches.add(new ArrayList<>(batch)));
-            assertThat(batches)
+        void shouldSplitIntoOneFullBatchAndOnePartialBatchLeftOver() {
+            assertThat(splitToBatchesOf(2, Stream.of("A", "B", "C")))
                     .containsExactly(List.of("A", "B"), List.of("C"));
+        }
+
+        @Test
+        void shouldReuseSameListForEachBatch() {
+            List<List<String>> batches = new ArrayList<>();
+            SplitIntoBatches.forEachBatchOf(2, Stream.of("A", "B", "C"),
+                    batch -> batches.add(batch));
+            assertThat(batches)
+                    .containsExactly(List.of("C"), List.of("C"));
+        }
+
+        @Test
+        void shouldSplitIntoTwoFullBatches() {
+            assertThat(splitToBatchesOf(2, Stream.of("A", "B", "C", "D")))
+                    .containsExactly(List.of("A", "B"), List.of("C", "D"));
+        }
+
+        @Test
+        void shouldSplitIntoOneFullBatch() {
+            assertThat(splitToBatchesOf(3, Stream.of("A", "B", "C")))
+                    .containsExactly(List.of("A", "B", "C"));
+        }
+
+        @Test
+        void shouldSplitIntoOnePartialBatch() {
+            assertThat(splitToBatchesOf(3, Stream.of("A", "B")))
+                    .containsExactly(List.of("A", "B"));
+        }
+
+        @Test
+        void shouldSplitEmptyStreamToNoBatches() {
+            assertThat(splitToBatchesOf(3, Stream.of()))
+                    .isEmpty();
+        }
+
+        @Test
+        void shouldFailWithBatchSizeLowerThanOne() {
+            Consumer<List<String>> ignoreBatch = batch -> {
+            };
+            assertThatThrownBy(() -> SplitIntoBatches.forEachBatchOf(0, Stream.of("A", "B"), ignoreBatch))
+                    .isInstanceOf(IllegalArgumentException.class);
+        }
+
+        private List<List<String>> splitToBatchesOf(int batchSize, Stream<String> stream) {
+            List<List<String>> batches = new ArrayList<>();
+            SplitIntoBatches.forEachBatchOf(batchSize, stream,
+                    batch -> batches.add(new ArrayList<>(batch)));
+            return batches;
         }
     }
 }
