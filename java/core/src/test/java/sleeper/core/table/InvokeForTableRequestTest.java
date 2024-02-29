@@ -15,6 +15,30 @@
  */
 package sleeper.core.table;
 
+import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Stream;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
 public class InvokeForTableRequestTest {
 
+    private final InvokeForTableRequestSerDe serDe = new InvokeForTableRequestSerDe();
+
+    @Test
+    void shouldSendRequestForTwoTables() {
+        List<String> sent = new ArrayList<>();
+        InvokeForTableRequest.sendForTables(
+                Stream.of(table("table-1"), table("table-2")),
+                1, request -> sent.add(serDe.toJson(request)));
+        assertThat(sent).extracting(serDe::fromJson).containsExactly(
+                new InvokeForTableRequest(List.of("table-1")),
+                new InvokeForTableRequest(List.of("table-2")));
+    }
+
+    private TableStatus table(String tableName) {
+        return TableStatusTestHelper.uniqueIdAndName(tableName, tableName);
+    }
 }

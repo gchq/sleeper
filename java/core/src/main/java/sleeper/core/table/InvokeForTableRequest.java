@@ -19,7 +19,9 @@ package sleeper.core.table;
 import sleeper.core.util.SplitIntoBatches;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 public class InvokeForTableRequest {
 
@@ -34,8 +36,35 @@ public class InvokeForTableRequest {
     }
 
     public static void sendForAllTables(TableIndex tableIndex, int batchSize, Consumer<InvokeForTableRequest> sendRequest) {
+        sendForTables(tableIndex.streamAllTables(), batchSize, sendRequest);
+    }
+
+    public static void sendForTables(Stream<TableStatus> tables, int batchSize, Consumer<InvokeForTableRequest> sendRequest) {
         SplitIntoBatches.reusingListOfSize(batchSize,
-                tableIndex.streamAllTables().map(TableStatus::getTableUniqueId),
+                tables.map(TableStatus::getTableUniqueId),
                 tableIds -> sendRequest.accept(new InvokeForTableRequest(tableIds)));
     }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(tableIds);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof InvokeForTableRequest)) {
+            return false;
+        }
+        InvokeForTableRequest other = (InvokeForTableRequest) obj;
+        return Objects.equals(tableIds, other.tableIds);
+    }
+
+    @Override
+    public String toString() {
+        return "InvokeForTableRequest{tableIds=" + tableIds + "}";
+    }
+
 }
