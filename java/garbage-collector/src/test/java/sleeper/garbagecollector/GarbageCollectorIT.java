@@ -18,6 +18,7 @@ package sleeper.garbagecollector;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -48,9 +49,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
@@ -272,6 +275,47 @@ public class GarbageCollectorIT {
             assertThat(stateStore2.getAllFilesWithMaxUnreferenced(10)).isEqualTo(
                     activeFilesReport(oldEnoughTime, activeReference(newFile2)));
         }
+
+        @Test
+        @Disabled("TODO")
+        void shouldFailOneTableAndFinishBatch() throws Exception {
+            // Given
+            instanceProperties.setNumber(GARBAGE_COLLECTOR_BATCH_SIZE, 2);
+            TableProperties table1 = createTable();
+            TableProperties table2 = createTable();
+            table1.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, 10);
+            table2.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, 10);
+            Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
+            Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
+            StateStore stateStore1 = stateStore(table1);
+            StateStore stateStore2 = stateStore(table2);
+            stateStore1.fixTime(oldEnoughTime);
+            stateStore2.fixTime(oldEnoughTime);
+            Path oldFile1 = tempDir.resolve("old-file-1.parquet");
+            Path oldFile2 = tempDir.resolve("old-file-2.parquet");
+            Path newFile1 = tempDir.resolve("new-file-1.parquet");
+            Path newFile2 = tempDir.resolve("new-file-2.parquet");
+            createFileWithNoReferencesByCompaction(stateStore1, oldFile1, newFile1);
+            createFileWithNoReferencesByCompaction(stateStore2, oldFile2, newFile2);
+            Files.setPosixFilePermissions(oldFile1, Set.of());
+
+            // When / Then
+            GarbageCollector collector = collector();
+            InvokeForTableRequest request = invokeForAllTables();
+            assertThatThrownBy(() -> collector.runAtTime(currentTime, request))
+                    .isInstanceOf(getClass());
+
+            assertThat(List.of(oldFile1, newFile1, newFile2))
+                    .allSatisfy(file -> assertThat(file).exists());
+            assertThat(oldFile2).doesNotExist();
+
+            assertThat(stateStore1.getAllFilesWithMaxUnreferenced(10)).isEqualTo(
+                    activeAndReadyForGCFilesReport(oldEnoughTime,
+                            List.of(activeReference(newFile1)),
+                            List.of(oldFile1.toString())));
+            assertThat(stateStore2.getAllFilesWithMaxUnreferenced(10)).isEqualTo(
+                    activeFilesReport(oldEnoughTime, activeReference(newFile2)));
+        }
     }
 
     private FileReference createActiveFile(Path filePath, StateStore stateStore) throws Exception {
@@ -321,13 +365,20 @@ public class GarbageCollectorIT {
     }
 
     private void collectGarbageAtTime(Instant time) throws Exception {
-        GarbageCollector collector = new GarbageCollector(new Configuration(), instanceProperties,
+        collector().runAtTime(time, invokeForAllTables());
+    }
+
+    private GarbageCollector collector() throws Exception {
+        return new GarbageCollector(new Configuration(), instanceProperties,
                 new FixedTablePropertiesProvider(tables),
                 new FixedStateStoreProvider(stateStoreByTableName));
+    }
+
+    private InvokeForTableRequest invokeForAllTables() {
         List<String> tableIds = tables.stream()
                 .map(table -> table.get(TABLE_ID))
                 .collect(toUnmodifiableList());
-        collector.runAtTime(time, new InvokeForTableRequest(tableIds));
+        return new InvokeForTableRequest(tableIds);
     }
 
     private static Schema getSchema() {
