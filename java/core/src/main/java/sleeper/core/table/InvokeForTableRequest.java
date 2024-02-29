@@ -34,7 +34,7 @@ public class InvokeForTableRequest {
     }
 
     public static void sendForAllTables(TableIndex tableIndex, int batchSize, Consumer<InvokeForTableRequest> sendRequest) {
-        SplitIntoBatches.forEachBatchOf(batchSize,
+        SplitIntoBatches.reusingListOfSize(batchSize,
                 tableIndex.streamAllTables().map(TableStatus::getTableUniqueId),
                 tableIds -> sendRequest.accept(new InvokeForTableRequest(tableIds)));
     }

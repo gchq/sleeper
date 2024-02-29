@@ -38,7 +38,7 @@ public class SplitIntoBatches {
                 .mapToObj(i -> items.subList(i, Math.min(i + batchSize, items.size())));
     }
 
-    public static <T> void forEachBatchOf(int batchSize, Stream<T> items, Consumer<List<T>> operation) {
+    public static <T> void reusingListOfSize(int batchSize, Stream<T> items, Consumer<List<T>> operation) {
         if (batchSize < 1) {
             throw new IllegalArgumentException("Batch size must be at least 1, found " + batchSize);
         }

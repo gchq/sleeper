@@ -84,7 +84,7 @@ public class SplitIntoBatchesTest {
         @Test
         void shouldReuseSameListForEachBatch() {
             List<List<String>> batches = new ArrayList<>();
-            SplitIntoBatches.forEachBatchOf(2, Stream.of("A", "B", "C"),
+            SplitIntoBatches.reusingListOfSize(2, Stream.of("A", "B", "C"),
                     batch -> batches.add(batch));
             assertThat(batches)
                     .containsExactly(List.of("C"), List.of("C"));
@@ -118,13 +118,13 @@ public class SplitIntoBatchesTest {
         void shouldFailWithBatchSizeLowerThanOne() {
             Consumer<List<String>> ignoreBatch = batch -> {
             };
-            assertThatThrownBy(() -> SplitIntoBatches.forEachBatchOf(0, Stream.of("A", "B"), ignoreBatch))
+            assertThatThrownBy(() -> SplitIntoBatches.reusingListOfSize(0, Stream.of("A", "B"), ignoreBatch))
                     .isInstanceOf(IllegalArgumentException.class);
         }
 
         private List<List<String>> splitToBatchesOf(int batchSize, Stream<String> stream) {
             List<List<String>> batches = new ArrayList<>();
-            SplitIntoBatches.forEachBatchOf(batchSize, stream,
+            SplitIntoBatches.reusingListOfSize(batchSize, stream,
                     batch -> batches.add(new ArrayList<>(batch)));
             return batches;
         }
