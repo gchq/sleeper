@@ -39,6 +39,7 @@ import java.time.Instant;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.GARBAGE_COLLECTOR_QUEUE_URL;
 import static sleeper.configuration.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_TABLE_BATCH_SIZE;
+import static sleeper.configuration.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECT_OFFLINE_TABLES;
 
 /**
  * A lambda to invoke {@link GarbageCollectorLambda} with batches of tables.
@@ -68,8 +69,9 @@ public class GarbageCollectorTriggerLambda implements RequestHandler<ScheduledEv
         instanceProperties.loadFromS3(s3Client, configBucketName);
         int batchSize = instanceProperties.getInt(GARBAGE_COLLECTOR_TABLE_BATCH_SIZE);
         String queueUrl = instanceProperties.get(GARBAGE_COLLECTOR_QUEUE_URL);
+        boolean gcOffline = instanceProperties.getBoolean(GARBAGE_COLLECT_OFFLINE_TABLES);
         TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
-        InvokeForTableRequest.sendForTables(tableIndex.streamAllTables(), batchSize,
+        InvokeForTableRequest.sendForTablesWithOfflineEnabled(gcOffline, tableIndex, batchSize,
                 request -> sqsClient.sendMessage(queueUrl, serDe.toJson(request)));
 
         Instant finishTime = Instant.now();

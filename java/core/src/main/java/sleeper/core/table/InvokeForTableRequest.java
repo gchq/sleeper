@@ -46,6 +46,13 @@ public class InvokeForTableRequest {
                 tableIds -> sendRequest.accept(new InvokeForTableRequest(tableIds)));
     }
 
+    public static void sendForTablesWithOfflineEnabled(
+            boolean offlineEnabled, TableIndex tableIndex, int batchSize, Consumer<InvokeForTableRequest> sendRequest) {
+        sendForTables(
+                offlineEnabled ? tableIndex.streamAllTables() : tableIndex.streamOnlineTables(),
+                batchSize, sendRequest);
+    }
+
     @Override
     public int hashCode() {
         return Objects.hash(tableIds);

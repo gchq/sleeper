@@ -739,6 +739,9 @@ sleeper.gc.memory=1024
 # of the lambda will be made for each batch when there are more tables than the batch size.
 sleeper.gc.table.batch.size=5
 
+# Whether to perform garbage collection for offline tables.
+sleeper.gc.enabled.for.offline=true
+
 # The size of the batch of files ready for garbage collection requested from the State Store.
 sleeper.gc.batch.size=2000
 
