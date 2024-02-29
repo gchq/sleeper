@@ -40,6 +40,9 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.GARBAGE_COLLECTOR_QUEUE_URL;
 import static sleeper.configuration.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_TABLE_BATCH_SIZE;
 
+/**
+ * A lambda to invoke {@link GarbageCollectorLambda} with batches of tables.
+ */
 @SuppressWarnings("unused")
 public class GarbageCollectorTriggerLambda implements RequestHandler<ScheduledEvent, Void> {
     private static final Logger LOGGER = LoggerFactory.getLogger(GarbageCollectorTriggerLambda.class);

@@ -19,6 +19,9 @@ package sleeper.core.table;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+/**
+ * Serialisation of {@link InvokeForTableRequest} to send and receive SQS messages.
+ */
 public class InvokeForTableRequestSerDe {
 
     private final Gson gson = new GsonBuilder().create();

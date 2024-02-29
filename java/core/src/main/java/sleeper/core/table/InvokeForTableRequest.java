@@ -23,6 +23,11 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+/**
+ * Model for an SQS message to invoke some operation for a batch of tables.
+ * <p>
+ * Use {@link InvokeForTableRequestSerDe} to build SQS messages from objects of this class.
+ */
 public class InvokeForTableRequest {
 
     private final List<String> tableIds;
