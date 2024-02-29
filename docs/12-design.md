@@ -61,9 +61,9 @@ the data bucket.
 Each table has a state store associated to it. This stores metadata about the table, namely the files that are in
 the table and how the records in the table are partitioned.
 
-When an instance is deployed, it creates an S3 data bucket and creates the infrastructure for the state store. 
-When a table is created, a folder is created in the S3 data bucket for that table, and the state store is initialised 
-(to achieve this, both state store implementations support storing metadata for files in all tables). 
+When an instance is deployed, it creates an S3 data bucket and creates the infrastructure for all future state stores. 
+When a table is created, a state store for that table is initialised (to achieve this, state store implementations 
+support storing metadata for files in all tables).
 
 Tables can also be taken offline and put online. Offline tables will be ignored when it comes to finding partitions 
 that need splitting and creating compaction jobs, however you are still able to ingest files to them, and perform 
