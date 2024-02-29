@@ -43,7 +43,19 @@ public class SystemTestPartitioning {
     }
 
     public void split() {
+        WaitForPartitionSplitting waitForPartitionSplitting = WaitForPartitionSplitting
+                .forCurrentPartitionsNeedingSplitting(
+                        instance.getTablePropertiesProvider(),
+                        instance.getStateStoreProvider());
         drivers.partitionSplitting(context).splitPartitions();
+        try {
+            waitForPartitionSplitting.pollUntilFinished(
+                    instance.getTablePropertiesProvider(),
+                    instance.getStateStoreProvider());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
     }
 
     public PartitionTree tree() {
