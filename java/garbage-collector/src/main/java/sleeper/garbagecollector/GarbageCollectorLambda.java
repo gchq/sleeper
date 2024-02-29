@@ -28,14 +28,11 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.core.statestore.StateStoreException;
-import sleeper.core.table.InvokeForTableRequest;
 import sleeper.core.table.InvokeForTableRequestSerDe;
 import sleeper.core.util.LoggedDuration;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreProvider;
 
-import java.io.IOException;
 import java.time.Instant;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
@@ -82,21 +79,12 @@ public class GarbageCollectorLambda implements RequestHandler<SQSEvent, Void> {
                     .map(SQSEvent.SQSMessage::getBody)
                     .peek(body -> LOGGER.info("Received message: {}", body))
                     .map(serDe::fromJson)
-                    .forEach(this::run);
+                    .forEach(garbageCollector::run);
         } finally {
             Instant finishTime = Instant.now();
             LOGGER.info("Lambda finished at {} (ran for {})",
                     finishTime, LoggedDuration.withFullOutput(startTime, finishTime));
         }
         return null;
-    }
-
-    private void run(InvokeForTableRequest request) {
-        try {
-            garbageCollector.run(request);
-        } catch (StateStoreException | IOException e) {
-            LOGGER.error("Exception thrown whilst running GarbageCollector", e);
-            throw new RuntimeException(e);
-        }
     }
 }
