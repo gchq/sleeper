@@ -39,6 +39,16 @@ public class InvokeForTableRequestTest {
     }
 
     @Test
+    void shouldSendBatchesOf2() {
+        List<String> sent = new ArrayList<>();
+        InvokeForTableRequest.forTables(
+                Stream.of(table("table-1"), table("table-2")),
+                2, request -> sent.add(serDe.toJson(request)));
+        assertThat(sent).extracting(serDe::fromJson).containsExactly(
+                new InvokeForTableRequest(List.of("table-1", "table-2")));
+    }
+
+    @Test
     void shouldSendRequestForOnlyOnlineTable() {
         // Given
         TableIndex tableIndex = new InMemoryTableIndex();
