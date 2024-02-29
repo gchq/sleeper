@@ -499,7 +499,8 @@ public class SplitPartitionIT {
         }
     }
 
-    private static void ingestRecordsFromIterator(Schema schema, StateStore stateStore, String localDir,
+    private static void ingestRecordsFromIterator(
+            Schema schema, StateStore stateStore, String localDir,
             String filePathPrefix, Iterator<Record> recordIterator) throws Exception {
         ParquetConfiguration parquetConfiguration = IngestCoordinatorTestHelper.parquetConfiguration(schema, new Configuration());
         IngestCoordinator<Record> ingestCoordinator = IngestCoordinatorTestHelper.standardIngestCoordinator(
