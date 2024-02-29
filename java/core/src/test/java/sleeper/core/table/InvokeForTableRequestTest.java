@@ -30,7 +30,7 @@ public class InvokeForTableRequestTest {
     @Test
     void shouldSendRequestForTwoTables() {
         List<String> sent = new ArrayList<>();
-        InvokeForTableRequest.sendForTables(
+        InvokeForTableRequest.forTables(
                 Stream.of(table("table-1"), table("table-2")),
                 1, request -> sent.add(serDe.toJson(request)));
         assertThat(sent).extracting(serDe::fromJson).containsExactly(
@@ -47,7 +47,7 @@ public class InvokeForTableRequestTest {
 
         // When
         List<String> sent = new ArrayList<>();
-        InvokeForTableRequest.sendForTablesWithOfflineEnabled(false, tableIndex,
+        InvokeForTableRequest.forTablesWithOfflineEnabled(false, tableIndex,
                 1, request -> sent.add(serDe.toJson(request)));
 
         // Then
@@ -64,7 +64,7 @@ public class InvokeForTableRequestTest {
 
         // When
         List<String> sent = new ArrayList<>();
-        InvokeForTableRequest.sendForTablesWithOfflineEnabled(true, tableIndex,
+        InvokeForTableRequest.forTablesWithOfflineEnabled(true, tableIndex,
                 1, request -> sent.add(serDe.toJson(request)));
 
         // Then

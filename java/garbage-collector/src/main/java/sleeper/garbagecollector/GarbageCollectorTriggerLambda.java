@@ -71,7 +71,7 @@ public class GarbageCollectorTriggerLambda implements RequestHandler<ScheduledEv
         String queueUrl = instanceProperties.get(GARBAGE_COLLECTOR_QUEUE_URL);
         boolean offlineEnabled = instanceProperties.getBoolean(GARBAGE_COLLECT_OFFLINE_TABLES);
         TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
-        InvokeForTableRequest.sendForTablesWithOfflineEnabled(offlineEnabled, tableIndex, batchSize,
+        InvokeForTableRequest.forTablesWithOfflineEnabled(offlineEnabled, tableIndex, batchSize,
                 request -> sqsClient.sendMessage(queueUrl, serDe.toJson(request)));
 
         Instant finishTime = Instant.now();

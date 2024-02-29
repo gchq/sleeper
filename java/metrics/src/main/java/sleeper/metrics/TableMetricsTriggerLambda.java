@@ -68,7 +68,7 @@ public class TableMetricsTriggerLambda implements RequestHandler<ScheduledEvent,
         String queueUrl = instanceProperties.get(TABLE_METRICS_QUEUE_URL);
         boolean offlineEnabled = instanceProperties.getBoolean(METRICS_FOR_OFFLINE_TABLES);
         TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
-        InvokeForTableRequest.sendForTablesWithOfflineEnabled(offlineEnabled, tableIndex, batchSize,
+        InvokeForTableRequest.forTablesWithOfflineEnabled(offlineEnabled, tableIndex, batchSize,
                 request -> sqsClient.sendMessage(queueUrl, serDe.toJson(request)));
 
         Instant finishTime = Instant.now();
