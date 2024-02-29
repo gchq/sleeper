@@ -25,10 +25,10 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.InvokeForTableRequest;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
+import sleeper.garbagecollector.FailedGarbageCollection.TableFailures;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
@@ -72,56 +72,80 @@ public class GarbageCollector {
         this.garbageCollectorBatchSize = instanceProperties.getInt(GARBAGE_COLLECTOR_BATCH_SIZE);
     }
 
-    public void run(InvokeForTableRequest request) throws StateStoreException, IOException {
+    public void run(InvokeForTableRequest request) throws FailedGarbageCollection {
         runAtTime(Instant.now(), request);
     }
 
-    public void runAtTime(Instant startTime, InvokeForTableRequest request) throws StateStoreException, IOException {
+    public void runAtTime(Instant startTime, InvokeForTableRequest request) throws FailedGarbageCollection {
         List<TableProperties> tables = request.getTableIds().stream()
                 .map(tablePropertiesProvider::getById)
                 .collect(toUnmodifiableList());
         LOGGER.info("Obtained list of {} tables", tables.size());
         int totalDeleted = 0;
+        List<TableFailures> failedTables = new ArrayList<>();
         for (TableProperties tableProperties : tables) {
             TableStatus table = tableProperties.getStatus();
-            LOGGER.info("Obtaining StateStore for table {}", table);
-            StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
+            FilesDeleted deleted = new FilesDeleted(table);
+            try {
+                LOGGER.info("Obtaining StateStore for table {}", table);
+                StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
 
-            LOGGER.debug("Requesting iterator of files ready for garbage collection from state store");
-            int delayBeforeDeletion = tableProperties.getInt(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION);
-            Instant deletionTime = startTime.minus(delayBeforeDeletion, ChronoUnit.MINUTES);
-            Iterator<String> readyForGC = stateStore.getReadyForGCFilenamesBefore(deletionTime).iterator();
+                LOGGER.debug("Requesting iterator of files ready for garbage collection from state store");
+                int delayBeforeDeletion = tableProperties.getInt(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION);
+                Instant deletionTime = startTime.minus(delayBeforeDeletion, ChronoUnit.MINUTES);
+                Iterator<String> readyForGC = stateStore.getReadyForGCFilenamesBefore(deletionTime).iterator();
 
-            List<String> deletedFilenames = new ArrayList<>();
-            List<String> batch = new ArrayList<>();
-            while (readyForGC.hasNext()) {
-                String filename = readyForGC.next();
-                batch.add(filename);
-                if (batch.size() == garbageCollectorBatchSize) {
-                    deleteFiles(batch);
-                    deletedFilenames.addAll(batch);
-                    stateStore.deleteGarbageCollectedFileReferenceCounts(batch);
-                    LOGGER.info("Deleting {} files in batch", garbageCollectorBatchSize);
-                    batch.clear();
+                List<String> batch = new ArrayList<>();
+                while (readyForGC.hasNext()) {
+                    String filename = readyForGC.next();
+                    batch.add(filename);
+                    if (batch.size() == garbageCollectorBatchSize) {
+                        deleteBatch(batch, stateStore, deleted);
+                        batch.clear();
+                    }
                 }
+                if (!batch.isEmpty()) {
+                    deleteBatch(batch, stateStore, deleted);
+                }
+                LOGGER.info("{} files deleted for table {}", deleted.getDeletedFilenames().size(), table);
+                totalDeleted += deleted.getDeletedFilenames().size();
+                deleted.buildTableFailures().ifPresent(failedTables::add);
+            } catch (Exception e) {
+                LOGGER.info("Failed to collect garbage for table {}", table, e);
+                failedTables.add(deleted.buildTableFailures(e));
             }
-            if (!batch.isEmpty()) {
-                deleteFiles(batch);
-                deletedFilenames.addAll(batch);
-                stateStore.deleteGarbageCollectedFileReferenceCounts(batch);
-                LOGGER.info("Deleting {} files in batch", batch.size());
-            }
-            LOGGER.info("{} files deleted for table {}", deletedFilenames.size(), table);
-            totalDeleted += deletedFilenames.size();
         }
         LoggedDuration duration = LoggedDuration.withFullOutput(startTime, Instant.now());
         LOGGER.info("{} files deleted in {}", totalDeleted, duration);
+        if (!failedTables.isEmpty()) {
+            throw new FailedGarbageCollection(failedTables);
+        }
     }
 
-    private void deleteFiles(List<String> filenames) throws IOException {
-        for (String filename : filenames) {
-            deleteFile.deleteFileAndSketches(filename);
+    private void deleteBatch(List<String> batch, StateStore stateStore, FilesDeleted deleted) {
+        List<String> deletedFilenames = deleteFiles(batch, deleted);
+        try {
+            stateStore.deleteGarbageCollectedFileReferenceCounts(deletedFilenames);
+            LOGGER.info("Deleted {} files in batch", deletedFilenames.size());
+        } catch (Exception e) {
+            LOGGER.error("Failed to update state store for files: {}", deletedFilenames, e);
+            deleted.failedStateStoreUpdate(deletedFilenames, e);
         }
+    }
+
+    private List<String> deleteFiles(List<String> filenames, FilesDeleted deleted) {
+        List<String> deletedFilenames = new ArrayList<>(filenames.size());
+        for (String filename : filenames) {
+            try {
+                deleteFile.deleteFileAndSketches(filename);
+                deleted.deleted(filename);
+                deletedFilenames.add(filename);
+            } catch (Exception e) {
+                LOGGER.error("Failed to delete file: {}", filename, e);
+                deleted.failed(filename, e);
+            }
+        }
+        return deletedFilenames;
     }
 
     @FunctionalInterface
@@ -138,19 +162,14 @@ public class GarbageCollector {
     private static void deleteFile(String filename, Configuration conf) throws IOException {
         Path path = new Path(filename);
         FileSystem fileSystem = path.getFileSystem(conf);
-        try {
-            if (!fileSystem.exists(path)) {
-                LOGGER.warn("File did not exist: {}", filename);
-                return;
-            }
-            boolean success = path.getFileSystem(conf).delete(path, false);
-            if (!success) {
-                LOGGER.warn("File could not be deleted: {}", filename);
-                return;
-            }
-            LOGGER.info("Deleted file {}", filename);
-        } catch (IOException e) {
-            LOGGER.info("Failed to delete file {}", filename, e);
+        if (!fileSystem.exists(path)) {
+            LOGGER.warn("File did not exist: {}", filename);
+            return;
         }
+        boolean success = path.getFileSystem(conf).delete(path, false);
+        if (!success) {
+            throw new IOException("File could not be deleted: " + filename);
+        }
+        LOGGER.info("Deleted file {}", filename);
     }
 }
