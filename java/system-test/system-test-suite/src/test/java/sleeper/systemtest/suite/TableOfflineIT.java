@@ -41,7 +41,6 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ONLINE;
-import static sleeper.core.statestore.FilesReportTestHelper.activeFiles;
 import static sleeper.core.testutils.printers.FileReferencePrinter.printFiles;
 import static sleeper.core.testutils.printers.PartitionsPrinter.printPartitions;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
@@ -116,7 +115,7 @@ public class TableOfflineIT {
         assertThat(sleeper.directQuery().allRecordsInTable())
                 .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 46)));
         assertThat(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().all()))
-                .isEqualTo(printFiles(expectedPartitions, activeFiles(
+                .isEqualTo(printFiles(expectedPartitions, List.of(
                         fileFactory.rootFile("file1.parquet", 9),
                         fileFactory.rootFile("file2.parquet", 9),
                         fileFactory.rootFile("file3.parquet", 9),
