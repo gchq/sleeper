@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.metrics;
+package sleeper.garbagecollector;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
@@ -37,12 +37,15 @@ import sleeper.core.util.LoggedDuration;
 import java.time.Instant;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_QUEUE_URL;
-import static sleeper.configuration.properties.instance.CommonProperty.METRICS_TABLE_BATCH_SIZE;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.GARBAGE_COLLECTOR_QUEUE_URL;
+import static sleeper.configuration.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_TABLE_BATCH_SIZE;
 
+/**
+ * A lambda to invoke {@link GarbageCollectorLambda} with batches of tables.
+ */
 @SuppressWarnings("unused")
-public class TableMetricsTriggerLambda implements RequestHandler<ScheduledEvent, Void> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(TableMetricsTriggerLambda.class);
+public class GarbageCollectorTriggerLambda implements RequestHandler<ScheduledEvent, Void> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(GarbageCollectorTriggerLambda.class);
 
     private final InstanceProperties instanceProperties = new InstanceProperties();
     private final InvokeForTableRequestSerDe serDe = new InvokeForTableRequestSerDe();
@@ -51,7 +54,7 @@ public class TableMetricsTriggerLambda implements RequestHandler<ScheduledEvent,
     private final AmazonSQS sqsClient;
     private final String configBucketName;
 
-    public TableMetricsTriggerLambda() {
+    public GarbageCollectorTriggerLambda() {
         this.s3Client = AmazonS3ClientBuilder.defaultClient();
         this.dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
         this.sqsClient = AmazonSQSClientBuilder.defaultClient();
@@ -63,8 +66,8 @@ public class TableMetricsTriggerLambda implements RequestHandler<ScheduledEvent,
         Instant startTime = Instant.now();
         LOGGER.info("Lambda triggered at {}, started at {}", event.getTime(), startTime);
         instanceProperties.loadFromS3(s3Client, configBucketName);
-        int batchSize = instanceProperties.getInt(METRICS_TABLE_BATCH_SIZE);
-        String queueUrl = instanceProperties.get(TABLE_METRICS_QUEUE_URL);
+        int batchSize = instanceProperties.getInt(GARBAGE_COLLECTOR_TABLE_BATCH_SIZE);
+        String queueUrl = instanceProperties.get(GARBAGE_COLLECTOR_QUEUE_URL);
         TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
         InvokeForTableRequest.sendForAllTables(tableIndex, batchSize,
                 request -> sqsClient.sendMessage(queueUrl, serDe.toJson(request)));
@@ -73,4 +76,5 @@ public class TableMetricsTriggerLambda implements RequestHandler<ScheduledEvent,
         LOGGER.info("Lambda finished at {} (ran for {})", finishTime, LoggedDuration.withFullOutput(startTime, finishTime));
         return null;
     }
+
 }

@@ -35,7 +35,7 @@ public class AwsGarbageCollectionDriver implements GarbageCollectionDriver {
     }
 
     @Override
-    public void collectGarbage() {
+    public void invokeGarbageCollection() {
         InvokeLambda.invokeWith(lambdaClient, instance.getInstanceProperties().get(GARBAGE_COLLECTOR_LAMBDA_FUNCTION));
     }
 

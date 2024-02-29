@@ -249,6 +249,22 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .description("The function name of the garbage collector lambda.")
             .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR)
             .build();
+    CdkDefinedInstanceProperty GARBAGE_COLLECTOR_QUEUE_URL = Index.propertyBuilder("sleeper.gc.queue.url")
+            .description("The URL of the queue for sending batches of garbage collection requests.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+    CdkDefinedInstanceProperty GARBAGE_COLLECTOR_QUEUE_ARN = Index.propertyBuilder("sleeper.gc.queue.arn")
+            .description("The ARN of the queue for sending batches of garbage collection requests.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+    CdkDefinedInstanceProperty GARBAGE_COLLECTOR_DLQ_URL = Index.propertyBuilder("sleeper.gc.dlq.url")
+            .description("The URL of the dead letter queue for sending batches of garbage collection requests.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+    CdkDefinedInstanceProperty GARBAGE_COLLECTOR_DLQ_ARN = Index.propertyBuilder("sleeper.gc.dlq.arn")
+            .description("The ARN of the dead letter queue for sending batches of garbage collection requests.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
 
     // Ingest
     CdkDefinedInstanceProperty INGEST_LAMBDA_FUNCTION = Index.propertyBuilder("sleeper.ingest.lambda.function")

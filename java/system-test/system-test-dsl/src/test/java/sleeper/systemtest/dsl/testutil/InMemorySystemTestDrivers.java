@@ -20,6 +20,7 @@ import sleeper.ingest.batcher.testutil.InMemoryIngestBatcherStore;
 import sleeper.query.runner.recordretrieval.InMemoryDataStore;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
+import sleeper.systemtest.dsl.gc.GarbageCollectionDriver;
 import sleeper.systemtest.dsl.ingest.DirectIngestDriver;
 import sleeper.systemtest.dsl.ingest.IngestBatcherDriver;
 import sleeper.systemtest.dsl.ingest.IngestByQueue;
@@ -35,6 +36,7 @@ import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryCompaction;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryDirectIngestDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryDirectQueryDriver;
+import sleeper.systemtest.dsl.testutil.drivers.InMemoryGarbageCollectionDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryGeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryIngestBatcherDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryIngestByQueue;
@@ -50,10 +52,10 @@ import sleeper.systemtest.dsl.util.WaitForJobs;
 public class InMemorySystemTestDrivers extends SystemTestDriversBase {
 
     private final SystemTestDeploymentDriver systemTestDeploymentDriver = new InMemorySystemTestDeploymentDriver();
-    private final InMemorySleeperTablesDriver tablesDriver = new InMemorySleeperTablesDriver();
-    private final SleeperInstanceDriver instanceDriver = new InMemorySleeperInstanceDriver(tablesDriver);
     private final InMemoryDataStore sourceFiles = new InMemoryDataStore();
     private final InMemoryDataStore data = new InMemoryDataStore();
+    private final InMemorySleeperTablesDriver tablesDriver = new InMemorySleeperTablesDriver(data);
+    private final SleeperInstanceDriver instanceDriver = new InMemorySleeperInstanceDriver(tablesDriver);
     private final InMemoryIngestBatcherStore batcherStore = new InMemoryIngestBatcherStore();
     private final InMemoryIngestByQueue ingestByQueue = new InMemoryIngestByQueue(sourceFiles, data);
     private final InMemoryCompaction compaction = new InMemoryCompaction(data);
@@ -81,7 +83,7 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
 
     @Override
     public GeneratedIngestSourceFilesDriver generatedSourceFiles(SystemTestParameters parameters, DeployedSystemTestResources systemTest) {
-        return new InMemoryGeneratedIngestSourceFilesDriver();
+        return new InMemoryGeneratedIngestSourceFilesDriver(sourceFiles);
     }
 
     @Override
@@ -129,6 +131,11 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
     }
 
     @Override
+    public GarbageCollectionDriver garbageCollection(SystemTestContext context) {
+        return new InMemoryGarbageCollectionDriver(context.instance(), data);
+    }
+
+    @Override
     public QueryAllTablesDriver directQuery(SystemTestContext context) {
         return InMemoryDirectQueryDriver.allTablesDriver(context.instance(), data);
     }
@@ -142,5 +149,9 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
     public PurgeQueueDriver purgeQueues(SystemTestContext context) {
         return properties -> {
         };
+    }
+
+    public InMemoryDataStore data() {
+        return data;
     }
 }
