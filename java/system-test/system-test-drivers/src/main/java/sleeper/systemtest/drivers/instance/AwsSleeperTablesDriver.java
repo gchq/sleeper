@@ -64,6 +64,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.REVISION_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_ID_INDEX_DYNAMO_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_NAME_INDEX_DYNAMO_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_ONLINE_INDEX_DYNAMO_TABLENAME;
 import static sleeper.configuration.properties.instance.InstanceProperties.S3_INSTANCE_PROPERTIES_FILE;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedResults;
 
@@ -101,10 +102,12 @@ public class AwsSleeperTablesDriver implements SleeperTablesDriver {
                 instanceProperties.get(PARTITION_TABLENAME),
                 instanceProperties.get(REVISION_TABLENAME),
                 instanceProperties.get(TABLE_NAME_INDEX_DYNAMO_TABLENAME),
-                instanceProperties.get(TABLE_ID_INDEX_DYNAMO_TABLENAME));
+                instanceProperties.get(TABLE_ID_INDEX_DYNAMO_TABLENAME),
+                instanceProperties.get(TABLE_ONLINE_INDEX_DYNAMO_TABLENAME));
         waitForTablesToEmpty(
                 instanceProperties.get(TABLE_NAME_INDEX_DYNAMO_TABLENAME),
-                instanceProperties.get(TABLE_ID_INDEX_DYNAMO_TABLENAME));
+                instanceProperties.get(TABLE_ID_INDEX_DYNAMO_TABLENAME),
+                instanceProperties.get(TABLE_ONLINE_INDEX_DYNAMO_TABLENAME));
     }
 
     public void addTable(InstanceProperties instanceProperties, TableProperties properties) {
@@ -177,9 +180,8 @@ public class AwsSleeperTablesDriver implements SleeperTablesDriver {
         LOGGER.info("Waiting for DynamoDB table to empty: {}", tableName);
         try {
             PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofSeconds(30))
-                    .pollUntil("table is empty", () ->
-                            dynamoDB.scan(new ScanRequest().withTableName(tableName).withLimit(1))
-                                    .getItems().isEmpty());
+                    .pollUntil("table is empty", () -> dynamoDB.scan(new ScanRequest().withTableName(tableName).withLimit(1))
+                            .getItems().isEmpty());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException("Interrupted while waiting for table to empty: " + tableName, e);

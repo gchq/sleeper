@@ -23,6 +23,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
+import sleeper.core.table.TableStatus;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -34,7 +35,9 @@ import static sleeper.configuration.properties.InstancePropertiesTestHelper.crea
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ONLINE;
 
 public abstract class AdminClientTestBase implements AdminConfigStoreTestHarness {
 
@@ -74,14 +77,21 @@ public abstract class AdminClientTestBase implements AdminConfigStoreTestHarness
         return createValidTableProperties(instanceProperties, TABLE_NAME_VALUE);
     }
 
+    protected TableProperties createValidTableProperties(InstanceProperties instanceProperties, TableStatus table) {
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, KEY_VALUE_SCHEMA);
+        tableProperties.set(TABLE_NAME, table.getTableName());
+        tableProperties.set(TABLE_ID, table.getTableUniqueId());
+        tableProperties.set(TABLE_ONLINE, Boolean.toString(table.isOnline()));
+        return tableProperties;
+    }
+
     protected TableProperties createValidTableProperties(InstanceProperties instanceProperties, String tableName) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, KEY_VALUE_SCHEMA);
         tableProperties.set(TABLE_NAME, tableName);
         return tableProperties;
     }
 
-    protected RunAdminClient editInstanceConfiguration(InstanceProperties before, InstanceProperties after)
-            throws Exception {
+    protected RunAdminClient editInstanceConfiguration(InstanceProperties before, InstanceProperties after) throws Exception {
         return runClient().enterPrompt(INSTANCE_CONFIGURATION_OPTION)
                 .editFromStore(before, after);
     }
@@ -92,16 +102,13 @@ public abstract class AdminClientTestBase implements AdminConfigStoreTestHarness
     }
 
     protected RunAdminClient editTableConfiguration(InstanceProperties instanceProperties,
-                                                    TableProperties before, TableProperties after)
-            throws Exception {
+            TableProperties before, TableProperties after) throws Exception {
         return runClient()
                 .enterPrompts(TABLE_CONFIGURATION_OPTION, before.get(TABLE_NAME))
                 .editFromStore(instanceProperties, before, after);
     }
 
-    protected RunAdminClient viewTableConfiguration(InstanceProperties instanceProperties,
-                                                    TableProperties tableProperties)
-            throws Exception {
+    protected RunAdminClient viewTableConfiguration(InstanceProperties instanceProperties, TableProperties tableProperties) throws Exception {
         return runClient()
                 .enterPrompts(TABLE_CONFIGURATION_OPTION, tableProperties.get(TABLE_NAME))
                 .viewInEditorFromStore(instanceProperties, tableProperties);

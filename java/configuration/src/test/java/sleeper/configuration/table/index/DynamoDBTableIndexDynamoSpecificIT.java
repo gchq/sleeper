@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.core.table.TableStatus;
+import sleeper.core.table.TableStatusTestHelper;
 import sleeper.dynamodb.tools.DynamoDBTestBase;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -41,27 +42,33 @@ public class DynamoDBTableIndexDynamoSpecificIT extends DynamoDBTestBase {
     @Test
     void shouldFailToUpdateTableIfTableDeletedAfterLoadingOldId() {
         // Given
-        TableStatus oldTable = TableStatus.uniqueIdAndName("test-id", "old-name");
-        TableStatus newTable = TableStatus.uniqueIdAndName("test-id", "new-name");
+        TableStatus oldTable = TableStatusTestHelper.uniqueIdAndName("test-id", "old-name");
+        TableStatus newTable = TableStatusTestHelper.uniqueIdAndName("test-id", "new-name");
 
         // When/Then
         assertThatThrownBy(() -> index.update(oldTable, newTable))
                 .isInstanceOf(TableNotFoundException.class);
         assertThat(index.streamAllTables()).isEmpty();
+        assertThat(index.streamOnlineTables()).isEmpty();
     }
 
     @Test
     void shouldFailToUpdateTableIfTableRenamedAfterLoadingOldId() {
         // Given
-        TableStatus oldTable = TableStatus.uniqueIdAndName("test-id", "old-name");
-        TableStatus renamedTable = TableStatus.uniqueIdAndName("test-id", "changed-name");
-        TableStatus newTable = TableStatus.uniqueIdAndName("test-id", "new-name");
+        TableStatus oldTable = TableStatusTestHelper.uniqueIdAndName("test-id", "old-name");
+        TableStatus renamedTable = TableStatusTestHelper.uniqueIdAndName("test-id", "changed-name");
+        TableStatus newTable = TableStatusTestHelper.uniqueIdAndName("test-id", "new-name");
         index.create(oldTable);
         index.update(renamedTable);
 
         // When/Then
         assertThatThrownBy(() -> index.update(oldTable, newTable))
                 .isInstanceOf(TableNotFoundException.class);
-        assertThat(index.streamAllTables()).contains(renamedTable);
+        assertThat(index.streamAllTables()).containsExactly(renamedTable);
+        assertThat(index.streamOnlineTables()).containsExactly(renamedTable);
+        assertThat(index.getTableByUniqueId(renamedTable.getTableUniqueId()).stream())
+                .containsExactly(renamedTable);
+        assertThat(index.getTableByName(renamedTable.getTableName()).stream())
+                .containsExactly(renamedTable);
     }
 }

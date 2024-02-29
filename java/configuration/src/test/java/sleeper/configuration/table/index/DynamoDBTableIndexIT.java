@@ -26,9 +26,11 @@ import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.core.table.TableIdGenerator;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.core.table.TableStatus;
+import sleeper.core.table.TableStatusTestHelper;
 import sleeper.dynamodb.tools.DynamoDBTestBase;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 
@@ -52,6 +54,14 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
 
             assertThat(index.streamAllTables())
                     .containsExactly(table);
+        }
+
+        @Test
+        void shouldPutTableOnlineWhenItIsCreated() {
+            TableStatus tableId = createTable("test-table");
+
+            assertThat(index.streamOnlineTables())
+                    .containsExactly(tableId);
         }
 
         @Test
@@ -133,6 +143,18 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
         void shouldGetNoTables() {
             assertThat(index.streamAllTables()).isEmpty();
         }
+
+        @Test
+        void shouldGetOnlineTables() {
+            // Given
+            TableStatus table1 = createTable("online-table");
+            TableStatus table2 = createTable("offline-table");
+            index.update(table2.takeOffline());
+
+            // When / Then
+            assertThat(index.streamOnlineTables())
+                    .containsExactly(table1);
+        }
     }
 
     @Nested
@@ -180,7 +202,7 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
         void shouldFailToDeleteTableWhenTableNameHasBeenUpdated() {
             // Given
             TableStatus oldTable = createTable("old-name");
-            TableStatus newTable = TableStatus.uniqueIdAndName(oldTable.getTableUniqueId(), "new-name");
+            TableStatus newTable = TableStatusTestHelper.uniqueIdAndName(oldTable.getTableUniqueId(), "new-name");
             index.update(newTable);
 
             // When / Then
@@ -194,7 +216,7 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
         @Test
         void shouldFailToDeleteTableThatDoesNotExist() {
             // Given
-            TableStatus table = TableStatus.uniqueIdAndName("not-a-table-id", "not-a-table");
+            TableStatus table = TableStatusTestHelper.uniqueIdAndName("not-a-table-id", "not-a-table");
 
             // When / Then
             assertThatThrownBy(() -> index.delete(table))
@@ -204,8 +226,8 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
         @Test
         void shouldFailToDeleteTableIfTableRenamedAfterLoadingOldId() {
             // Given
-            TableStatus old = TableStatus.uniqueIdAndName("test-id", "old-name");
-            TableStatus renamed = TableStatus.uniqueIdAndName("test-id", "changed-name");
+            TableStatus old = TableStatusTestHelper.uniqueIdAndName("test-id", "old-name");
+            TableStatus renamed = TableStatusTestHelper.uniqueIdAndName("test-id", "changed-name");
             index.create(old);
             index.update(renamed);
 
@@ -218,8 +240,8 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
         @Test
         void shouldFailToDeleteTableIfTableDeletedAndRecreatedAfterLoadingOldId() {
             // Given
-            TableStatus old = TableStatus.uniqueIdAndName("test-id-1", "table-name");
-            TableStatus recreated = TableStatus.uniqueIdAndName("test-id-2", "table-name");
+            TableStatus old = TableStatusTestHelper.uniqueIdAndName("test-id-1", "table-name");
+            TableStatus recreated = TableStatusTestHelper.uniqueIdAndName("test-id-2", "table-name");
             index.create(recreated);
 
             // When/Then
@@ -237,7 +259,7 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
             TableStatus table = createTable("old-name");
 
             // When
-            TableStatus newTable = TableStatus.uniqueIdAndName(table.getTableUniqueId(), "new-name");
+            TableStatus newTable = TableStatusTestHelper.uniqueIdAndName(table.getTableUniqueId(), "new-name");
             index.update(newTable);
 
             // Then
@@ -253,7 +275,7 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
         @Test
         void shouldFailToUpdateTableIfTableDoesNotExist() {
             // Given
-            TableStatus newTable = TableStatus.uniqueIdAndName("not-a-table-id", "new-name");
+            TableStatus newTable = TableStatusTestHelper.uniqueIdAndName("not-a-table-id", "new-name");
 
             // When/Then
             assertThatThrownBy(() -> index.update(newTable))
@@ -268,14 +290,101 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
             TableStatus table2 = createTable("test-name-2");
 
             // When / Then
-            TableStatus newTable = TableStatus.uniqueIdAndName(table2.getTableUniqueId(), "test-name-1");
+            TableStatus newTable = TableStatusTestHelper.uniqueIdAndName(table2.getTableUniqueId(), "test-name-1");
             assertThatThrownBy(() -> index.update(newTable))
                     .isInstanceOf(TableAlreadyExistsException.class);
+        }
+
+        @Test
+        void shouldNotThrowExceptionWhenUpdatingTableWithNoChanges() {
+            // Given
+            TableStatus table = createTable("test-name-1");
+
+            // When / Then
+            assertThatCode(() -> index.update(table))
+                    .doesNotThrowAnyException();
+        }
+    }
+
+    @Nested
+    @DisplayName("Take offline")
+    class TakeOffline {
+        @Test
+        void shouldTakeTableOffline() {
+            // Given
+            TableStatus table = createTable("test-table");
+
+            // When
+            TableStatus offlineTable = table.takeOffline();
+            index.update(offlineTable);
+
+            // Then
+            assertThat(index.streamAllTables()).containsExactly(offlineTable);
+            assertThat(index.streamOnlineTables()).isEmpty();
+            assertThat(index.getTableByUniqueId(table.getTableUniqueId()).stream())
+                    .containsExactly(offlineTable);
+            assertThat(index.getTableByName(table.getTableName()).stream())
+                    .containsExactly(offlineTable);
+        }
+
+        @Test
+        void shouldFailToTakeTableOfflineIfTableDoesNotExist() {
+            // When / Then
+            assertThatThrownBy(() -> index.update(TableStatusTestHelper.uniqueIdAndName("not-a-table-id", "not-a-table").takeOffline()))
+                    .isInstanceOf(TableNotFoundException.class);
+            assertThat(index.streamAllTables()).isEmpty();
+        }
+
+        @Test
+        void shouldFailToTakeTableOfflineIfTableHasBeenDeleted() {
+            // Given
+            TableStatus table = createTable("test-table");
+            index.delete(table);
+
+            // When / Then
+            assertThatThrownBy(() -> index.update(table.takeOffline()))
+                    .isInstanceOf(TableNotFoundException.class);
+            assertThat(index.streamAllTables()).isEmpty();
+            assertThat(index.streamOnlineTables()).isEmpty();
+            assertThat(index.getTableByUniqueId(table.getTableUniqueId())).isEmpty();
+            assertThat(index.getTableByName(table.getTableName())).isEmpty();
+        }
+    }
+
+    @Nested
+    @DisplayName("Put table online")
+    class PutOnline {
+        @Test
+        void shouldPutTableOnline() {
+            // Given
+            TableStatus table = createTable("test-table");
+            TableStatus onlineTable = table.putOnline();
+            TableStatus offlineTable = table.takeOffline();
+            index.update(offlineTable);
+
+            // When
+            index.update(onlineTable);
+
+            // Then
+            assertThat(index.streamAllTables()).containsExactly(onlineTable);
+            assertThat(index.streamOnlineTables()).containsExactly(onlineTable);
+            assertThat(index.getTableByUniqueId(table.getTableUniqueId()).stream())
+                    .containsExactly(onlineTable);
+            assertThat(index.getTableByName(table.getTableName()).stream())
+                    .containsExactly(onlineTable);
+        }
+
+        @Test
+        void shouldFailToPutTableOnlineWhenTableDoesNotExist() {
+            // When / Then
+            assertThatThrownBy(() -> index.update(TableStatusTestHelper.uniqueIdAndName("not-a-table-id", "not-a-table").putOnline()))
+                    .isInstanceOf(TableNotFoundException.class);
+            assertThat(index.streamAllTables()).isEmpty();
         }
     }
 
     private TableStatus createTable(String tableName) {
-        TableStatus table = TableStatus.uniqueIdAndName(idGenerator.generateString(), tableName);
+        TableStatus table = TableStatusTestHelper.uniqueIdAndName(idGenerator.generateString(), tableName);
         index.create(table);
         return table;
     }

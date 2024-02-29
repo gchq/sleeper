@@ -20,6 +20,9 @@ import org.mockito.InOrder;
 import org.mockito.Mockito;
 
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
+import sleeper.core.table.TableStatus;
+
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -28,13 +31,16 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_NAMES_REPORT_OPTION;
 import static sleeper.clients.testutil.TestConsoleInput.CONFIRM_PROMPT;
 import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
+import static sleeper.core.table.TableStatus.uniqueIdAndName;
 
 class TableNamesReportTest extends AdminClientMockStoreBase {
 
     @Test
     void shouldPrintTableNamesReportWhenChosen() throws Exception {
         // Given
-        setInstanceTables(createValidInstanceProperties(), "test-table-1", "test-table-2");
+        setInstanceTables(createValidInstanceProperties(),
+                onlineTable("test-table-1-id", "test-table-1"),
+                onlineTable("test-table-2-id", "test-table-2"));
 
         // When
         String output = runClient()
@@ -54,5 +60,45 @@ class TableNamesReportTest extends AdminClientMockStoreBase {
         order.verify(in.mock).waitForLine();
         order.verify(in.mock).promptLine(any());
         order.verifyNoMoreInteractions();
+    }
+
+    @Test
+    void shouldPrintOnlineAndOfflineTableNames() throws Exception {
+        // Given
+        Stream<TableStatus> tables = Stream.of(
+                onlineTable("test-table-1-id", "test-table-1"),
+                onlineTable("test-table-2-id", "test-table-2"),
+                offlineTable("test-table-3-id", "test-table-3"),
+                offlineTable("test-table-4-id", "test-table-4"));
+        setInstanceTables(createValidInstanceProperties(), tables);
+
+        // When
+        String output = runClient()
+                .enterPrompts(TABLE_NAMES_REPORT_OPTION, CONFIRM_PROMPT)
+                .exitGetOutput();
+
+        // Then
+        assertThat(output).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN + "\n\n" +
+                "Table Names\n" +
+                "----------------------------------\n" +
+                "test-table-1\n" +
+                "test-table-2\n" +
+                "test-table-3 (offline)\n" +
+                "test-table-4 (offline)\n" +
+                PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN);
+
+        InOrder order = Mockito.inOrder(in.mock);
+        order.verify(in.mock).promptLine(any());
+        order.verify(in.mock).waitForLine();
+        order.verify(in.mock).promptLine(any());
+        order.verifyNoMoreInteractions();
+    }
+
+    private static TableStatus onlineTable(String tableId, String tableName) {
+        return uniqueIdAndName(tableId, tableName, true);
+    }
+
+    private static TableStatus offlineTable(String tableId, String tableName) {
+        return uniqueIdAndName(tableId, tableName, false);
     }
 }

@@ -72,7 +72,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.core.table.TableStatus.uniqueIdAndName;
+import static sleeper.core.table.TableStatusTestHelper.uniqueIdAndName;
 import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
 @Testcontainers
@@ -121,16 +121,16 @@ public class DeleteTableIT {
                 .collect(Collectors.toList());
         assertThat(tableFilesInS3.stream()
                 .filter(key -> key.startsWith(tablePrefix(table, "statestore/files"))))
-                .hasSize(2);
+                        .hasSize(2);
         assertThat(tableFilesInS3.stream()
                 .filter(key -> key.startsWith(tablePrefix(table, "statestore/partitions"))))
-                .hasSize(1);
+                        .hasSize(1);
         assertThat(tableFilesInS3.stream()
                 .filter(key -> key.startsWith(tablePrefix(table, "partition_root")))
                 .map(FilenameUtils::getName))
-                .containsExactly(
-                        FilenameUtils.getName(rootFile.getFilename()),
-                        FilenameUtils.getName(rootFile.getFilename()).replace("parquet", "sketches"));
+                        .containsExactly(
+                                FilenameUtils.getName(rootFile.getFilename()),
+                                FilenameUtils.getName(rootFile.getFilename()).replace("parquet", "sketches"));
 
         // When
         deleteTable("table-1");
@@ -155,16 +155,16 @@ public class DeleteTableIT {
                 .collect(Collectors.toList());
         assertThat(tableFilesInS3.stream()
                 .filter(key -> key.startsWith(tablePrefix(table1, "statestore/files"))))
-                .hasSize(2);
+                        .hasSize(2);
         assertThat(tableFilesInS3.stream()
                 .filter(key -> key.startsWith(tablePrefix(table1, "statestore/partitions"))))
-                .hasSize(1);
+                        .hasSize(1);
         assertThat(tableFilesInS3.stream()
                 .filter(key -> key.startsWith(tablePrefix(table1, "partition_root")))
                 .map(FilenameUtils::getName))
-                .containsExactly(
-                        FilenameUtils.getName(rootFile.getFilename()),
-                        FilenameUtils.getName(rootFile.getFilename()).replace("parquet", "sketches"));
+                        .containsExactly(
+                                FilenameUtils.getName(rootFile.getFilename()),
+                                FilenameUtils.getName(rootFile.getFilename()).replace("parquet", "sketches"));
         TableProperties table2 = createTable(uniqueIdAndName("test-table-2", "table-2"));
         StateStore stateStore2 = createStateStore(table2);
         stateStore2.initialise();
@@ -180,7 +180,6 @@ public class DeleteTableIT {
                 .isEqualTo(table2);
         assertThat(streamTableObjects(table2)).isNotEmpty();
     }
-
 
     @Test
     void shouldFailToDeleteTableThatDoesNotExist() {
@@ -228,8 +227,8 @@ public class DeleteTableIT {
 
     private Stream<S3ObjectSummary> streamTableObjects(TableProperties tableProperties) {
         return s3.listObjects(new ListObjectsRequest()
-                        .withBucketName(instanceProperties.get(DATA_BUCKET))
-                        .withPrefix(tableProperties.get(TABLE_ID) + "/"))
+                .withBucketName(instanceProperties.get(DATA_BUCKET))
+                .withPrefix(tableProperties.get(TABLE_ID) + "/"))
                 .getObjectSummaries().stream()
                 .filter(s3ObjectSummary -> s3ObjectSummary.getSize() > 0);
     }

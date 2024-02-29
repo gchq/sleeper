@@ -25,7 +25,7 @@ import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.starter.executor.BulkImportExecutor;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
-import sleeper.core.table.TableStatus;
+import sleeper.core.table.TableStatusTestHelper;
 import sleeper.ingest.job.IngestJobMessageHandler;
 import sleeper.ingest.job.status.InMemoryIngestJobStatusStore;
 import sleeper.ingest.job.status.IngestJobStatusStore;
@@ -45,7 +45,7 @@ public class BulkImportStarterLambdaTest {
 
     @BeforeEach
     void setUp() {
-        tableIndex.create(TableStatus.uniqueIdAndName("test-table-id", "test-table"));
+        tableIndex.create(TableStatusTestHelper.uniqueIdAndName("test-table-id", "test-table"));
     }
 
     @Test
