@@ -1019,6 +1019,12 @@ sleeper.default.parquet.columnindex.truncate.length=128
 # The length in bytes to truncate the min/max binary values in row groups.
 sleeper.default.parquet.statistics.truncate.length=2147483647
 
+# Used to set parquet.writer.version, see documentation here:
+# https://github.com/apache/parquet-mr/blob/master/parquet-hadoop/README.md
+# Can be either v1 or v2. The v2 pages store levels uncompressed while v1 pages compress levels with
+# the data.
+sleeper.default.parquet.writer.version=v2
+
 # This specifies whether queries and scans against DynamoDB tables used in the state stores are
 # strongly consistent. This default can be overridden by a table property.
 sleeper.default.table.dynamo.strongly.consistent.reads=false

@@ -25,7 +25,6 @@ import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -36,6 +35,7 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobSerDe;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.configuration.jars.ObjectFactory;
+import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -43,18 +43,17 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TablePropertiesStore;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
-import sleeper.core.partition.Partition;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.s3.S3StateStoreCreator;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -81,21 +80,8 @@ public class CreateCompactionJobsIT {
     private final InstanceProperties instanceProperties = createInstance();
     private final Schema schema = CreateJobsTestUtils.createSchema();
     private final TablePropertiesStore tablePropertiesStore = S3TableProperties.getStore(instanceProperties, s3, dynamoDB);
-    private StateStore stateStore;
-    private CreateCompactionJobs createJobs;
-
-    @BeforeEach
-    public void setUp() throws Exception {
-        TableProperties tableProperties = createTable(schema);
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3, dynamoDB);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties, HadoopConfigurationLocalStackUtils.getHadoopConfiguration(localStackContainer));
-        stateStore = stateStoreProvider.getStateStore(tableProperties);
-        stateStore.initialise();
-        createJobs = CreateCompactionJobs.standard(new ObjectFactory(instanceProperties, s3, null),
-                instanceProperties, tablePropertiesProvider, stateStoreProvider,
-                new SendCompactionJobToSqs(instanceProperties, sqs)::send,
-                CompactionJobStatusStore.NONE);
-    }
+    private final StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties, HadoopConfigurationLocalStackUtils.getHadoopConfiguration(localStackContainer));
+    private final TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3, dynamoDB);
 
     @AfterEach
     void tearDown() {
@@ -107,8 +93,9 @@ public class CreateCompactionJobsIT {
     @Test
     public void shouldCompactAllFilesInSinglePartition() throws Exception {
         // Given
-        List<Partition> partitions = stateStore.getAllPartitions();
-        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(partitions);
+        StateStore stateStore = createTableAndStateStore(schema);
+
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
         FileReference fileReference1 = fileReferenceFactory.rootFile("file1", 200L);
         FileReference fileReference2 = fileReferenceFactory.rootFile("file2", 200L);
         FileReference fileReference3 = fileReferenceFactory.rootFile("file3", 200L);
@@ -116,7 +103,7 @@ public class CreateCompactionJobsIT {
         stateStore.addFiles(Arrays.asList(fileReference1, fileReference2, fileReference3, fileReference4));
 
         // When
-        createJobs.createJobs();
+        jobCreator().createJobs();
 
         // Then
         assertThat(stateStore.getFileReferencesWithNoJobId()).isEmpty();
@@ -125,7 +112,7 @@ public class CreateCompactionJobsIT {
                 .extracting(this::readJobMessage).singleElement().satisfies(job -> {
                     assertThat(job.getId()).isEqualTo(jobId);
                     assertThat(job.getInputFiles()).containsExactlyInAnyOrder("file1", "file2", "file3", "file4");
-                    assertThat(job.getPartitionId()).isEqualTo(partitions.get(0).getId());
+                    assertThat(job.getPartitionId()).isEqualTo("root");
                 });
     }
 
@@ -158,9 +145,18 @@ public class CreateCompactionJobsIT {
         return instanceProperties;
     }
 
-    private TableProperties createTable(Schema schema) {
+    private StateStore createTableAndStateStore(Schema schema) throws StateStoreException {
         TableProperties tableProperties = createTableProperties(schema, instanceProperties);
         tablePropertiesStore.save(tableProperties);
-        return tableProperties;
+        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
+        stateStore.initialise();
+        return stateStore;
+    }
+
+    private CreateCompactionJobs jobCreator() throws ObjectFactoryException {
+        return CreateCompactionJobs.standard(new ObjectFactory(instanceProperties, s3, null),
+                instanceProperties, tablePropertiesProvider, stateStoreProvider,
+                new SendCompactionJobToSqs(instanceProperties, sqs)::send,
+                CompactionJobStatusStore.NONE);
     }
 }

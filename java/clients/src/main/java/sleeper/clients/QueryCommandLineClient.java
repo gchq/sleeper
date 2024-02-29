@@ -272,7 +272,7 @@ public abstract class QueryCommandLineClient {
         throw new IllegalArgumentException("Unknown type " + type);
     }
 
-    private Object getMinimum(Type type) {
+    private Object getMinimum(PrimitiveType type) {
         if (type instanceof IntType) {
             return Integer.MIN_VALUE;
         }

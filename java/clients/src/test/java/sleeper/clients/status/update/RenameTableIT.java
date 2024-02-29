@@ -47,7 +47,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.core.table.TableStatus.uniqueIdAndName;
+import static sleeper.core.table.TableStatusTestHelper.uniqueIdAndName;
 
 @Testcontainers
 public class RenameTableIT {

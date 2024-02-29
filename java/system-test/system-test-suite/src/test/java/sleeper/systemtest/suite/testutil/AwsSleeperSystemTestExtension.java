@@ -19,9 +19,14 @@ package sleeper.systemtest.suite.testutil;
 import sleeper.systemtest.drivers.instance.AwsSystemTestParameters;
 import sleeper.systemtest.drivers.util.AwsSystemTestDrivers;
 import sleeper.systemtest.dsl.extension.SleeperSystemTestExtension;
+import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
 
 public class AwsSleeperSystemTestExtension extends SleeperSystemTestExtension {
+
+    private static final SystemTestDeploymentContext CONTEXT = new SystemTestDeploymentContext(
+            AwsSystemTestParameters.loadFromSystemProperties(), new AwsSystemTestDrivers());
+
     public AwsSleeperSystemTestExtension() {
-        super(AwsSystemTestParameters.loadFromSystemProperties(), new AwsSystemTestDrivers());
+        super(CONTEXT);
     }
 }

@@ -17,12 +17,16 @@
 package sleeper.systemtest.dsl.testutil;
 
 import sleeper.systemtest.dsl.extension.SleeperSystemTestExtension;
+import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
 
 import static sleeper.systemtest.dsl.testutil.SystemTestParametersTestHelper.UNIT_TEST_PARAMETERS;
 
 public class InMemorySystemTestExtension extends SleeperSystemTestExtension {
 
+    private static final SystemTestDeploymentContext CONTEXT = new SystemTestDeploymentContext(
+            UNIT_TEST_PARAMETERS, new InMemorySystemTestDrivers());
+
     public InMemorySystemTestExtension() {
-        super(UNIT_TEST_PARAMETERS, new InMemorySystemTestDrivers());
+        super(CONTEXT);
     }
 }

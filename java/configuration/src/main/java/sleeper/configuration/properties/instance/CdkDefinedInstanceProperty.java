@@ -55,6 +55,10 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .description("The name of the DynamoDB table indexing tables by their ID.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
+    CdkDefinedInstanceProperty TABLE_ONLINE_INDEX_DYNAMO_TABLENAME = Index.propertyBuilder("sleeper.tables.online.index.dynamo.table")
+            .description("The name of the DynamoDB table indexing tables by whether they are online or not, sorted by table name.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
 
     // DynamoDBStateStore
     CdkDefinedInstanceProperty ACTIVE_FILES_TABLELENAME = Index.propertyBuilder("sleeper.metadata.dynamo.active.table")

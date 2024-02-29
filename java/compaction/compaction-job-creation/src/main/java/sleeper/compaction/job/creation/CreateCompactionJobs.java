@@ -106,9 +106,9 @@ public class CreateCompactionJobs {
     }
 
     public void createJobs() throws StateStoreException, IOException, ObjectFactoryException {
-        List<TableProperties> tables = tablePropertiesProvider.streamAllTables()
+        List<TableProperties> tables = tablePropertiesProvider.streamOnlineTables()
                 .collect(Collectors.toUnmodifiableList());
-        LOGGER.info("Found {} tables", tables.size());
+        LOGGER.info("Found {} online tables", tables.size());
         for (TableProperties table : tables) {
             createJobs(table);
         }

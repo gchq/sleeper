@@ -48,6 +48,7 @@ import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
 import sleeper.splitter.FindPartitionsToSplit;
 import sleeper.splitter.SplitPartitionJobDefinition;
 import sleeper.splitter.SplitPartitionJobDefinitionSerDe;
+import sleeper.statestore.FixedStateStoreProvider;
 
 import java.io.File;
 import java.io.IOException;
@@ -184,7 +185,8 @@ public class FindPartitionsToSplitIT {
     }
 
     private FindPartitionsToSplit findPartitionsToSplit() {
-        return new FindPartitionsToSplit(instanceProperties, tableProperties, stateStore,
+        return new FindPartitionsToSplit(instanceProperties, tablePropertiesProvider,
+                new FixedStateStoreProvider(tableProperties, stateStore),
                 new SqsSplitPartitionJobSender(tablePropertiesProvider, instanceProperties, sqsClient)::send);
     }
 
@@ -234,8 +236,7 @@ public class FindPartitionsToSplitIT {
                                 .maxNoOfRecordsInLocalStore(1000L)
                                 .buildAcceptingRecords(),
                         DirectPartitionFileWriterFactory.from(parquetConfiguration,
-                                "file://" + directory.getAbsolutePath())
-                )) {
+                                "file://" + directory.getAbsolutePath()))) {
                     new IngestRecordsFromIterator(coordinator, list.iterator()).write();
                 }
             } catch (Exception e) {
