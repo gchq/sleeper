@@ -20,6 +20,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+/**
+ * Model for an SQS message to invoke some operation for a batch of tables.
+ * <p>
+ * Use {@link InvokeForTableRequestSerDe} to build SQS messages from objects of this class.
+ */
 public class InvokeForTableRequest {
 
     private final List<String> tableIds;
