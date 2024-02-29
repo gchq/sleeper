@@ -36,6 +36,7 @@ import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
+import sleeper.core.range.Region;
 import sleeper.core.record.Record;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
@@ -163,8 +164,16 @@ public class InMemoryCompaction {
 
     private RecordsProcessedSummary compact(CompactionJob job, TableProperties tableProperties, StateStore stateStore, String taskId) {
         Instant startTime = Instant.now();
+        Schema schema = tableProperties.getSchema();
+        PartitionTree partitionTree = null;
+        try {
+            partitionTree = new PartitionTree(stateStore.getAllPartitions());
+        } catch (StateStoreException e) {
+            throw new RuntimeException(e);
+        }
+        Partition partition = partitionTree.getPartition(job.getPartitionId());
         List<CloseableIterator<Record>> inputIterators = job.getInputFiles().stream()
-                .map(CountingIterator::new)
+                .map(file -> new CountingIterator(file, partition.getRegion(), schema))
                 .collect(toUnmodifiableList());
         CloseableIterator<Record> mergingIterator;
         try {
@@ -173,21 +182,11 @@ public class InMemoryCompaction {
         } catch (IteratorException e) {
             throw new RuntimeException(e);
         }
-        PartitionTree partitionTree = null;
-        try {
-            partitionTree = new PartitionTree(stateStore.getAllPartitions());
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
-        Partition partition = partitionTree.getPartition(job.getPartitionId());
-        Schema schema = tableProperties.getSchema();
         Map<String, ItemsSketch> keyFieldToSketchMap = PartitionFileWriterUtils.createQuantileSketchMap(schema);
         List<Record> records = new ArrayList<>();
         mergingIterator.forEachRemaining(record -> {
-            if (partition.getRegion().isKeyInRegion(schema, record.getRowKeys(schema))) {
-                records.add(record);
-                PartitionFileWriterUtils.updateQuantileSketchMap(schema, keyFieldToSketchMap, record);
-            }
+            records.add(record);
+            PartitionFileWriterUtils.updateQuantileSketchMap(schema, keyFieldToSketchMap, record);
         });
         data.addFile(job.getOutputFile(), records);
         sketches.addSketchForFile(job.getOutputFile(), keyFieldToSketchMap);
@@ -229,10 +228,11 @@ public class InMemoryCompaction {
         private final Iterator<Record> iterator;
         private long count = 0;
 
-        CountingIterator(String filename) {
-            iterator = data.streamRecords(List.of(filename)).iterator();
+        CountingIterator(String filename, Region region, Schema schema) {
+            iterator = data.streamRecords(List.of(filename))
+                    .filter(record -> region.isKeyInRegion(schema, record.getRowKeys(schema)))
+                    .iterator();
         }
-
         @Override
         public boolean hasNext() {
             return iterator.hasNext();
