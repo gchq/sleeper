@@ -472,11 +472,12 @@ public class SplitPartitionIT {
                     .singlePartition("A")
                     .buildList());
 
-            IntStream.range(0, 10).forEach(i -> ingestFileFromRecords(schema, stateStore,
-                    IntStream.range(0, 100)
-                            .mapToObj(r -> new Record(Map.of(
-                                    "key1", new byte[]{(byte) r},
-                                    "key2", new byte[]{(byte) -100})))));
+            IntStream.range(0, 10)
+                    .forEach(i -> ingestFileFromRecords(schema, stateStore,
+                            IntStream.range(0, 100)
+                                    .mapToObj(r -> new Record(Map.of(
+                                            "key1", new byte[]{(byte) r},
+                                            "key2", new byte[]{(byte) -100})))));
 
             // When
             splitSinglePartition(schema, stateStore, generateIds("B", "C"));
@@ -498,11 +499,12 @@ public class SplitPartitionIT {
             StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema)
                     .singlePartition("A")
                     .buildList());
-            IntStream.range(0, 10).forEach(i -> ingestFileFromRecords(schema, stateStore,
-                    IntStream.range(0, 100)
-                            .mapToObj(r -> new Record(Map.of(
-                                    "key1", new byte[]{(byte) -100},
-                                    "key2", new byte[]{(byte) r})))));
+            IntStream.range(0, 10)
+                    .forEach(i -> ingestFileFromRecords(schema, stateStore,
+                            IntStream.range(0, 100)
+                                    .mapToObj(r -> new Record(Map.of(
+                                            "key1", new byte[]{(byte) -100},
+                                            "key2", new byte[]{(byte) r})))));
 
             // When
             splitSinglePartition(schema, stateStore, generateIds("B", "C"));
