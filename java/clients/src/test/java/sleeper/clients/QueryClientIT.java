@@ -39,6 +39,7 @@ import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIdGenerator;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatus;
+import sleeper.core.table.TableStatusTestHelper;
 import sleeper.ingest.IngestFactory;
 import sleeper.ingest.testutils.IngestRecordsTestDataHelper;
 import sleeper.statestore.FixedStateStoreProvider;
@@ -151,7 +152,6 @@ public class QueryClientIT {
                     .mapToObj(num -> new Record(Map.of("key", num)))
                     .collect(Collectors.toList());
             ingestData(tableProperties, stateStore, records.iterator());
-
 
             // When
             in.enterNextPrompts(RANGE_QUERY_OPTION,
@@ -326,7 +326,7 @@ public class QueryClientIT {
     }
 
     private TableProperties createTable(String tableName, Schema schema) {
-        TableStatus tableStatus = TableStatus.uniqueIdAndName(
+        TableStatus tableStatus = TableStatusTestHelper.uniqueIdAndName(
                 TableIdGenerator.fromRandomSeed(0).generateString(), tableName);
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         tableProperties.set(TABLE_ID, tableStatus.getTableUniqueId());
@@ -339,18 +339,17 @@ public class QueryClientIT {
         new QueryClient(instanceProperties, tableIndex, new FixedTablePropertiesProvider(tablePropertiesList),
                 in.consoleIn(), out.consoleOut(), ObjectFactory.noUserJars(),
                 new FixedStateStoreProvider(stateStoreByTableName))
-                .run();
+                        .run();
     }
 
     private void runQueryClient(TableProperties tableProperties, StateStore stateStore) throws Exception {
         new QueryClient(instanceProperties, tableIndex, new FixedTablePropertiesProvider(tableProperties),
                 in.consoleIn(), out.consoleOut(), ObjectFactory.noUserJars(),
                 new FixedStateStoreProvider(tableProperties, stateStore))
-                .run();
+                        .run();
     }
 
-    private void ingestData(TableProperties tableProperties, StateStore stateStore, Iterator<Record> recordIterator)
-            throws Exception {
+    private void ingestData(TableProperties tableProperties, StateStore stateStore, Iterator<Record> recordIterator) throws Exception {
         tableProperties.set(COMPRESSION_CODEC, "snappy");
         IngestFactory factory = IngestRecordsTestDataHelper.createIngestFactory(tempDir.toString(),
                 new FixedStateStoreProvider(tableProperties, stateStore), instanceProperties);

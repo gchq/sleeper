@@ -22,7 +22,9 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
@@ -31,9 +33,12 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.SplitFileReference;
 import sleeper.core.statestore.StateStore;
+import sleeper.statestore.FixedStateStoreProvider;
+import sleeper.statestore.StateStoreProvider;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -42,6 +47,7 @@ import static sleeper.configuration.properties.instance.PartitionSplittingProper
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ONLINE;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
 
@@ -127,6 +133,36 @@ public class FindPartitionsToSplitTest {
                             partitionTree().getRootPartition(),
                             List.of("file-3.parquet", "file-2.parquet")));
         }
+
+        @Test
+        public void shouldIgnoreOfflineTable() throws Exception {
+            // Given
+            instanceProperties.setNumber(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB, 10);
+
+            TableProperties onlineTable = createTestTableProperties(instanceProperties, SCHEMA);
+            onlineTable.setNumber(PARTITION_SPLIT_THRESHOLD, 500);
+            TableProperties offlineTable = createTestTableProperties(instanceProperties, SCHEMA);
+            offlineTable.setNumber(PARTITION_SPLIT_THRESHOLD, 500);
+            offlineTable.set(TABLE_ONLINE, "false");
+
+            StateStore onlineStore = inMemoryStateStoreWithSinglePartition(SCHEMA);
+            onlineStore.addFile(fileReferenceFactory.rootFile("file.parquet", 500L));
+            StateStore offlineStore = inMemoryStateStoreWithSinglePartition(SCHEMA);
+            offlineStore.addFile(fileReferenceFactory.rootFile("file.parquet", 500L));
+
+            // When
+            List<SplitPartitionJobDefinition> jobs = findPartitionsToSplit(
+                    new FixedTablePropertiesProvider(List.of(onlineTable, offlineTable)),
+                    new FixedStateStoreProvider(Map.of(
+                            onlineTable.getStatus().getTableName(), onlineStore,
+                            offlineTable.getStatus().getTableName(), offlineStore)));
+
+            // Then
+            assertThat(jobs).containsExactly(
+                    new SplitPartitionJobDefinition(onlineTable.getStatus().getTableUniqueId(),
+                            new PartitionTree(onlineStore.getAllPartitions()).getRootPartition(),
+                            List.of("file.parquet")));
+        }
     }
 
     @Nested
@@ -179,10 +215,16 @@ public class FindPartitionsToSplitTest {
         }
     }
 
-    private List<SplitPartitionJobDefinition> findPartitionsToSplit() throws Exception {
+    private List<SplitPartitionJobDefinition> findPartitionsToSplit(TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider) throws Exception {
         List<SplitPartitionJobDefinition> jobs = new ArrayList<>();
-        new FindPartitionsToSplit(instanceProperties, tableProperties, stateStore, jobs::add).run();
+        new FindPartitionsToSplit(instanceProperties, tablePropertiesProvider, stateStoreProvider, jobs::add).run();
         return jobs;
+    }
+
+    private List<SplitPartitionJobDefinition> findPartitionsToSplit() throws Exception {
+        return findPartitionsToSplit(
+                new FixedTablePropertiesProvider(List.of(tableProperties)),
+                new FixedStateStoreProvider(tableProperties, stateStore));
     }
 
     private void setPartitions(Consumer<PartitionsBuilder> config) throws Exception {

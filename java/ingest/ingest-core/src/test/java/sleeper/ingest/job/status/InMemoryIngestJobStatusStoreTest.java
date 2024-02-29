@@ -24,6 +24,7 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 import sleeper.core.table.TableIdGenerator;
 import sleeper.core.table.TableStatus;
+import sleeper.core.table.TableStatusTestHelper;
 import sleeper.ingest.job.IngestJob;
 
 import java.time.Duration;
@@ -452,7 +453,7 @@ public class InMemoryIngestJobStatusStoreTest {
     }
 
     private TableStatus createTable(String tableName) {
-        return TableStatus.uniqueIdAndName(new TableIdGenerator().generateString(), tableName);
+        return TableStatusTestHelper.uniqueIdAndName(new TableIdGenerator().generateString(), tableName);
     }
 
 }

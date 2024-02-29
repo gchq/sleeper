@@ -34,13 +34,12 @@ import static sleeper.configuration.properties.table.TablePropertiesTestHelper.c
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.core.table.TableStatus.uniqueIdAndName;
+import static sleeper.core.table.TableStatusTestHelper.uniqueIdAndName;
 
 public class RenameTableTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = schemaWithKey("key1");
     private final TablePropertiesStore propertiesStore = InMemoryTableProperties.getStore();
-
 
     @Test
     void shouldRenameExistingTable() {

@@ -148,7 +148,7 @@ public class AdminClient {
     }
 
     public TableNamesReport tableNamesReport() {
-        return new TableNamesReport(out, in, store);
+        return new TableNamesReport(out, in, tableIndex);
     }
 
     public PartitionsStatusReportScreen partitionsStatusReportScreen() {

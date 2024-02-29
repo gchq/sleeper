@@ -31,11 +31,14 @@ class DynamoDBTableIdFormat {
 
     static final String TABLE_NAME_FIELD = "TableName";
     static final String TABLE_ID_FIELD = "TableId";
+    static final String ONLINE_FIELD = "Online";
+
 
     public static Map<String, AttributeValue> getItem(TableStatus table) {
         return Map.of(
                 TABLE_ID_FIELD, createStringAttribute(table.getTableUniqueId()),
-                TABLE_NAME_FIELD, createStringAttribute(table.getTableName()));
+                TABLE_NAME_FIELD, createStringAttribute(table.getTableName()),
+                ONLINE_FIELD, createStringAttribute(Boolean.toString(table.isOnline())));
     }
 
     public static Map<String, AttributeValue> getIdKey(TableStatus table) {
@@ -46,9 +49,16 @@ class DynamoDBTableIdFormat {
         return Map.of(TABLE_NAME_FIELD, createStringAttribute(table.getTableName()));
     }
 
+    public static Map<String, AttributeValue> getOnlineKey(TableStatus table) {
+        return Map.of(
+                TABLE_NAME_FIELD, createStringAttribute(table.getTableName()),
+                ONLINE_FIELD, createStringAttribute(Boolean.toString(table.isOnline())));
+    }
+
     public static TableStatus readItem(Map<String, AttributeValue> item) {
         return TableStatus.uniqueIdAndName(
                 getStringAttribute(item, TABLE_ID_FIELD),
-                getStringAttribute(item, TABLE_NAME_FIELD));
+                getStringAttribute(item, TABLE_NAME_FIELD),
+                getStringAttribute(item, ONLINE_FIELD).equals("true"));
     }
 }
