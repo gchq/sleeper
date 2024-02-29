@@ -16,7 +16,8 @@
 
 package sleeper.core.table;
 
-import java.util.ArrayList;
+import sleeper.core.util.SplitIntoBatches;
+
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -33,16 +34,8 @@ public class InvokeForTableRequest {
     }
 
     public static void sendForAllTables(TableIndex tableIndex, int batchSize, Consumer<InvokeForTableRequest> sendRequest) {
-        List<String> tableIdsBatch = new ArrayList<>();
-        tableIndex.streamAllTables().forEach(table -> {
-            if (tableIdsBatch.size() >= batchSize) {
-                sendRequest.accept(new InvokeForTableRequest(tableIdsBatch));
-                tableIdsBatch.clear();
-            }
-            tableIdsBatch.add(table.getTableUniqueId());
-        });
-        if (!tableIdsBatch.isEmpty()) {
-            sendRequest.accept(new InvokeForTableRequest(tableIdsBatch));
-        }
+        SplitIntoBatches.forEachBatchOf(batchSize,
+                tableIndex.streamAllTables().map(TableStatus::getTableUniqueId),
+                tableIds -> sendRequest.accept(new InvokeForTableRequest(tableIds)));
     }
 }

@@ -16,48 +16,72 @@
 
 package sleeper.core.util;
 
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class SplitIntoBatchesTest {
 
-    @Test
-    void shouldSplitListIntoOneFullBatchAndOnePartialBatchLeftOver() {
-        assertThat(SplitIntoBatches.splitListIntoBatchesOf(2, List.of("A", "B", "C")))
-                .containsExactly(List.of("A", "B"), List.of("C"));
+    @Nested
+    @DisplayName("Split a list into batches")
+    class SplitAList {
+
+        @Test
+        void shouldSplitListIntoOneFullBatchAndOnePartialBatchLeftOver() {
+            assertThat(SplitIntoBatches.splitListIntoBatchesOf(2, List.of("A", "B", "C")))
+                    .containsExactly(List.of("A", "B"), List.of("C"));
+        }
+
+        @Test
+        void shouldSplitListIntoTwoFullBatches() {
+            assertThat(SplitIntoBatches.splitListIntoBatchesOf(2, List.of("A", "B", "C", "D")))
+                    .containsExactly(List.of("A", "B"), List.of("C", "D"));
+        }
+
+        @Test
+        void shouldSplitListIntoOneFullBatch() {
+            assertThat(SplitIntoBatches.splitListIntoBatchesOf(3, List.of("A", "B", "C")))
+                    .containsExactly(List.of("A", "B", "C"));
+        }
+
+        @Test
+        void shouldSplitListIntoOnePartialBatch() {
+            assertThat(SplitIntoBatches.splitListIntoBatchesOf(3, List.of("A", "B")))
+                    .containsExactly(List.of("A", "B"));
+        }
+
+        @Test
+        void shouldSplitEmptyListToNoBatches() {
+            assertThat(SplitIntoBatches.splitListIntoBatchesOf(3, List.of()))
+                    .isEmpty();
+        }
+
+        @Test
+        void shouldFailWithBatchSizeLowerThanOne() {
+            assertThatThrownBy(() -> SplitIntoBatches.splitListIntoBatchesOf(0, List.of("A", "B")))
+                    .isInstanceOf(IllegalArgumentException.class);
+        }
     }
 
-    @Test
-    void shouldSplitListIntoTwoFullBatches() {
-        assertThat(SplitIntoBatches.splitListIntoBatchesOf(2, List.of("A", "B", "C", "D")))
-                .containsExactly(List.of("A", "B"), List.of("C", "D"));
-    }
+    @Nested
+    @DisplayName("Split a stream into batches")
+    class SplitAStream {
 
-    @Test
-    void shouldSplitListIntoOneFullBatch() {
-        assertThat(SplitIntoBatches.splitListIntoBatchesOf(3, List.of("A", "B", "C")))
-                .containsExactly(List.of("A", "B", "C"));
-    }
-
-    @Test
-    void shouldSplitListIntoOnePartialBatch() {
-        assertThat(SplitIntoBatches.splitListIntoBatchesOf(3, List.of("A", "B")))
-                .containsExactly(List.of("A", "B"));
-    }
-
-    @Test
-    void shouldSplitEmptyListToNoBatches() {
-        assertThat(SplitIntoBatches.splitListIntoBatchesOf(3, List.of()))
-                .isEmpty();
-    }
-
-    @Test
-    void shouldFailWithBatchSizeLowerThanOne() {
-        assertThatThrownBy(() -> SplitIntoBatches.splitListIntoBatchesOf(0, List.of("A", "B")))
-                .isInstanceOf(IllegalArgumentException.class);
+        @Test
+        void shouldSplitStreamIntoOneFullBatchAndOnePartialBatchLeftOver() {
+            List<List<String>> batches = new ArrayList<>();
+            SplitIntoBatches.forEachBatchOf(2,
+                    Stream.of("A", "B", "C"),
+                    batch -> batches.add(new ArrayList<>(batch)));
+            assertThat(batches)
+                    .containsExactly(List.of("A", "B"), List.of("C"));
+        }
     }
 }
