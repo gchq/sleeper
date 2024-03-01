@@ -166,35 +166,13 @@ public class InMemoryCompaction {
         Instant startTime = Instant.now();
         Schema schema = tableProperties.getSchema();
         Partition partition = getPartitionForJob(stateStore, job);
-        List<CloseableIterator<Record>> inputIterators = job.getInputFiles().stream()
-                .map(file -> new CountingIterator(file, partition.getRegion(), schema))
-                .collect(toUnmodifiableList());
-        CloseableIterator<Record> mergingIterator;
+        RecordsProcessed recordsProcessed = mergeInputFiles(job, partition, schema);
         try {
-            mergingIterator = CompactSortedFiles.getMergingIterator(
-                    ObjectFactory.noUserJars(), tableProperties.getSchema(), job, inputIterators);
-        } catch (IteratorException e) {
-            throw new RuntimeException(e);
-        }
-        Map<String, ItemsSketch> keyFieldToSketchMap = PartitionFileWriterUtils.createQuantileSketchMap(schema);
-        List<Record> records = new ArrayList<>();
-        mergingIterator.forEachRemaining(record -> {
-            records.add(record);
-            PartitionFileWriterUtils.updateQuantileSketchMap(schema, keyFieldToSketchMap, record);
-        });
-        data.addFile(job.getOutputFile(), records);
-        sketches.addSketchForFile(job.getOutputFile(), keyFieldToSketchMap);
-        try {
-            CompactSortedFiles.updateStateStoreSuccess(job, records.size(), stateStore);
+            CompactSortedFiles.updateStateStoreSuccess(job, recordsProcessed.getRecordsWritten(), stateStore);
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
         }
         Instant finishTime = startTime.plus(Duration.ofMinutes(1));
-        long recordsRead = inputIterators.stream()
-                .map(it -> (CountingIterator) it)
-                .mapToLong(it -> it.count)
-                .sum();
-        RecordsProcessed recordsProcessed = new RecordsProcessed(recordsRead, records.size());
         return new RecordsProcessedSummary(recordsProcessed, startTime, finishTime);
     }
 
@@ -206,6 +184,31 @@ public class InMemoryCompaction {
             throw new RuntimeException(e);
         }
         return partitionTree.getPartition(job.getPartitionId());
+    }
+
+    private RecordsProcessed mergeInputFiles(CompactionJob job, Partition partition, Schema schema) {
+        List<CloseableIterator<Record>> inputIterators = job.getInputFiles().stream()
+                .map(file -> new CountingIterator(file, partition.getRegion(), schema))
+                .collect(toUnmodifiableList());
+        CloseableIterator<Record> mergingIterator;
+        try {
+            mergingIterator = CompactSortedFiles.getMergingIterator(
+                    ObjectFactory.noUserJars(), schema, job, inputIterators);
+        } catch (IteratorException e) {
+            throw new RuntimeException(e);
+        }
+        Map<String, ItemsSketch> keyFieldToSketchMap = PartitionFileWriterUtils.createQuantileSketchMap(schema);
+        List<Record> records = new ArrayList<>();
+        mergingIterator.forEachRemaining(record -> {
+            records.add(record);
+            PartitionFileWriterUtils.updateQuantileSketchMap(schema, keyFieldToSketchMap, record);
+        });
+        data.addFile(job.getOutputFile(), records);
+        sketches.addSketchForFile(job.getOutputFile(), keyFieldToSketchMap);
+        return new RecordsProcessed(records.size(), inputIterators.stream()
+                .map(it -> (CountingIterator) it)
+                .mapToLong(it -> it.count)
+                .sum());
     }
 
     private static TablePropertiesProvider tablePropertiesProvider(SystemTestInstanceContext instance) {
