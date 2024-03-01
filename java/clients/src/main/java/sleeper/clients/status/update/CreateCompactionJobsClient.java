@@ -37,6 +37,8 @@ import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 
 import static sleeper.clients.util.ClientUtils.optionalArgument;
@@ -47,19 +49,15 @@ public class CreateCompactionJobsClient {
     }
 
     public static void main(String[] args) throws ObjectFactoryException, StateStoreException, IOException {
-        if (args.length < 1 || args.length > 3) {
+        if (args.length < 2 || args.length > 3) {
             System.out.println("Usage: <mode-all-or-default> <instance-id> <optional-table-name>");
             return;
         }
-        Optional<String> jobCreationModeOpt = optionalArgument(args, 0);
-        boolean compactAll = false;
-        if (jobCreationModeOpt.isPresent()) {
-            if (jobCreationModeOpt.get().equalsIgnoreCase("all")) {
-                compactAll = true;
-            } else if (!jobCreationModeOpt.get().equalsIgnoreCase("default")) {
-                System.out.println("Supported modes for job creation are ALL or DEFAULT");
-                return;
-            }
+        Boolean compactAll = Map.of("all", true, "default", false)
+                .get(args[0].toLowerCase(Locale.ROOT));
+        if (compactAll == null) {
+            System.out.println("Supported modes for job creation are ALL or DEFAULT");
+            return;
         }
         String instanceId = args[1];
         Optional<String> tableNameOpt = optionalArgument(args, 2);
