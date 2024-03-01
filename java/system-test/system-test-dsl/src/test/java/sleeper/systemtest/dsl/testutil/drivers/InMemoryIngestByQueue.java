@@ -52,10 +52,12 @@ public class InMemoryIngestByQueue {
     private final IngestJobStatusStore jobStore = new InMemoryIngestJobStatusStore();
     private final InMemoryDataStore sourceFiles;
     private final InMemoryDataStore data;
+    private final InMemorySketchesStore sketches;
 
-    public InMemoryIngestByQueue(InMemoryDataStore sourceFiles, InMemoryDataStore data) {
+    public InMemoryIngestByQueue(InMemoryDataStore sourceFiles, InMemoryDataStore data, InMemorySketchesStore sketches) {
         this.sourceFiles = sourceFiles;
         this.data = data;
+        this.sketches = sketches;
     }
 
     public IngestByQueueDriver byQueueDriver() {
@@ -141,7 +143,7 @@ public class InMemoryIngestByQueue {
         List<String> filesWithFs = job.getFiles().stream()
                 .map(file -> fs + file)
                 .collect(toUnmodifiableList());
-        IngestResult result = new InMemoryDirectIngestDriver(context.instance(), data)
+        IngestResult result = new InMemoryDirectIngestDriver(context.instance(), data, sketches)
                 .ingest(tableProperties, sourceFiles.streamRecords(filesWithFs).iterator());
         Instant finishTime = startTime.plus(Duration.ofMinutes(1));
 
