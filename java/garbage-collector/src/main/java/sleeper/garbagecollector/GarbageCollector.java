@@ -86,7 +86,7 @@ public class GarbageCollector {
         List<TableFailures> failedTables = new ArrayList<>();
         for (TableProperties tableProperties : tables) {
             TableStatus table = tableProperties.getStatus();
-            FilesDeleted deleted = new FilesDeleted(table);
+            TableFilesDeleted deleted = new TableFilesDeleted(table);
             try {
                 LOGGER.info("Starting GC for table {}", table);
                 deleteInBatches(tableProperties, startTime, deleted);
@@ -105,7 +105,7 @@ public class GarbageCollector {
         }
     }
 
-    private void deleteInBatches(TableProperties tableProperties, Instant startTime, FilesDeleted deleted) throws StateStoreException {
+    private void deleteInBatches(TableProperties tableProperties, Instant startTime, TableFilesDeleted deleted) throws StateStoreException {
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         Iterator<String> readyForGC = getReadyForGCIterator(tableProperties, startTime, stateStore);
         List<String> batch = new ArrayList<>();
@@ -131,7 +131,7 @@ public class GarbageCollector {
         return readyForGC;
     }
 
-    private void deleteBatch(List<String> batch, StateStore stateStore, FilesDeleted deleted) {
+    private void deleteBatch(List<String> batch, StateStore stateStore, TableFilesDeleted deleted) {
         List<String> deletedFilenames = deleteFiles(batch, deleted);
         try {
             stateStore.deleteGarbageCollectedFileReferenceCounts(deletedFilenames);
@@ -142,7 +142,7 @@ public class GarbageCollector {
         }
     }
 
-    private List<String> deleteFiles(List<String> filenames, FilesDeleted deleted) {
+    private List<String> deleteFiles(List<String> filenames, TableFilesDeleted deleted) {
         List<String> deletedFilenames = new ArrayList<>(filenames.size());
         for (String filename : filenames) {
             try {

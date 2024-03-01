@@ -24,14 +24,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-class FilesDeleted {
+/**
+ * This class is used by {@link GarbageCollector} to track which files have need deleted for a table.
+ */
+class TableFilesDeleted {
 
     private final TableStatus table;
     private final List<String> deletedFilenames = new ArrayList<>();
     private final List<FileFailure> fileFailures = new ArrayList<>();
     private final List<StateStoreUpdateFailure> stateStoreUpdateFailures = new ArrayList<>();
 
-    FilesDeleted(TableStatus table) {
+    TableFilesDeleted(TableStatus table) {
         this.table = table;
     }
 
