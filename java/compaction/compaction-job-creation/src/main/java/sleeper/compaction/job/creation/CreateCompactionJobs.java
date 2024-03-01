@@ -93,24 +93,6 @@ public class CreateCompactionJobs {
         STRATEGY, FORCE_ALL_FILES_AFTER_STRATEGY;
     }
 
-    public static CreateCompactionJobs compactAllFiles(ObjectFactory objectFactory,
-            InstanceProperties instanceProperties,
-            TablePropertiesProvider tablePropertiesProvider,
-            StateStoreProvider stateStoreProvider,
-            JobSender jobSender,
-            CompactionJobStatusStore jobStatusStore) {
-        return new CreateCompactionJobs(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider, jobSender, jobStatusStore, Mode.FORCE_ALL_FILES_AFTER_STRATEGY);
-    }
-
-    public static CreateCompactionJobs standard(ObjectFactory objectFactory,
-            InstanceProperties instanceProperties,
-            TablePropertiesProvider tablePropertiesProvider,
-            StateStoreProvider stateStoreProvider,
-            JobSender jobSender,
-            CompactionJobStatusStore jobStatusStore) {
-        return new CreateCompactionJobs(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider, jobSender, jobStatusStore, Mode.STRATEGY);
-    }
-
     public void createJobs() throws StateStoreException, IOException, ObjectFactoryException {
         List<TableProperties> tables = tablePropertiesProvider.streamOnlineTables()
                 .collect(Collectors.toUnmodifiableList());

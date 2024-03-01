@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.creation.CreateCompactionJobs;
+import sleeper.compaction.job.creation.CreateCompactionJobs.Mode;
 import sleeper.compaction.job.creation.SendCompactionJobToSqs;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.jars.ObjectFactory;
@@ -91,8 +92,9 @@ public class CreateCompactionJobsLambda implements RequestHandler<SQSEvent, Void
         LOGGER.info("Lambda started at {}", startTime);
         propertiesReloader.reloadIfNeeded();
 
-        CreateCompactionJobs createJobs = CreateCompactionJobs.standard(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider,
-                new SendCompactionJobToSqs(instanceProperties, sqsClient)::send, jobStatusStore);
+        CreateCompactionJobs createJobs = new CreateCompactionJobs(
+                objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider,
+                new SendCompactionJobToSqs(instanceProperties, sqsClient)::send, jobStatusStore, Mode.STRATEGY);
 
         event.getRecords().stream()
                 .map(SQSEvent.SQSMessage::getBody)
