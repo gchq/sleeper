@@ -47,7 +47,6 @@ import sleeper.query.model.Query;
 import sleeper.query.model.QueryProcessingConfig;
 import sleeper.query.model.QuerySerDe;
 import sleeper.query.output.ResultsOutputConstants;
-import sleeper.query.runner.recordretrieval.QueryExecutor;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -62,10 +61,10 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.query.runner.output.NoResultsOutput.NO_RESULTS_OUTPUT;
 
 /**
- * A lambda that is triggered when a serialised query arrives on an SQS queue. A processor executes the request using a
- * {@link QueryExecutor} and publishes the results to either SQS or S3 based on the configuration of the query.
- * The processor contains a cache that includes mappings from partitions to files in those partitions. This is reused by
- * subsequent calls to the lambda if the AWS runtime chooses to reuse the instance.
+ * A Lambda that is triggered when an {@link ScheduledEvent} is received. A processor executes, creates a new
+ * {@link Query} for every table in the system and publishes a {@link SendMessageRequest} to the SQS query queue.
+ * The results from the queries are discarded as they are not required since this Lambda ensures that the query Lambdas
+ * remain warm for genuine queries.
  */
 @SuppressWarnings("unused")
 public class WarmQueryExecutorLambda implements RequestHandler<ScheduledEvent, Void> {

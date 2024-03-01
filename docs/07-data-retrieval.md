@@ -193,6 +193,16 @@ To send the results to a particular SQS queue use:
 You will need to give Sleeper's writing data IAM role (given by the CloudFormation
 export `<instance-id>-QueryLambdaRoleArn`) permission to write to the above S3 bucket or SQS queue.
 
+## Keep Lambda Warm Optional Stack
+
+Lambdas inherently have a startup time usually refer to as cold start. 
+This can add a significant delay thus increasing a queries execution time. 
+
+To address this issue the KeepLambdaWarmStack can be enabled. This will create an Event Rule running every 5 minutes which
+triggers the query Lambdas thus ensuring it is warm state. Enabling this will incur extra charges since the Lambdas are running every 5 minutes. 
+
+This can be enabled by adding `KeepLambdaWarmStack` to the optional stacks. It is not enabled by default.
+
 ## Use the Java API directly
 
 You can also retrieve data using the Java class `QueryExecutor`.
