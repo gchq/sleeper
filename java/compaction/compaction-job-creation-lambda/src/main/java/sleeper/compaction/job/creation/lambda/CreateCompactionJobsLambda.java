@@ -19,7 +19,8 @@ import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
-import com.amazonaws.services.lambda.runtime.events.ScheduledEvent;
+import com.amazonaws.services.lambda.runtime.RequestHandler;
+import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
@@ -51,7 +52,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
  * A lambda function for executing {@link CreateCompactionJobs}.
  */
 @SuppressWarnings("unused")
-public class CreateCompactionJobsLambda {
+public class CreateCompactionJobsLambda implements RequestHandler<SQSEvent, Void> {
     private final AmazonDynamoDB dynamoDBClient;
     private AmazonSQS sqsClient;
     private final InstanceProperties instanceProperties;
@@ -89,12 +90,12 @@ public class CreateCompactionJobsLambda {
     /**
      * Constructor used in tests.
      *
-     * @param instanceProperties    The SleeperProperties
-     * @param endpointConfiguration The configuration of the endpoint for the DynamoDB client
+     * @param  instanceProperties     The SleeperProperties
+     * @param  endpointConfiguration  The configuration of the endpoint for the DynamoDB client
      * @throws ObjectFactoryException if user jars cannot be loaded
      */
     public CreateCompactionJobsLambda(InstanceProperties instanceProperties,
-                                      AwsClientBuilder.EndpointConfiguration endpointConfiguration) throws ObjectFactoryException {
+            AwsClientBuilder.EndpointConfiguration endpointConfiguration) throws ObjectFactoryException {
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         this.instanceProperties = instanceProperties;
 
@@ -110,9 +111,9 @@ public class CreateCompactionJobsLambda {
         this.jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
     }
 
-    public void eventHandler(ScheduledEvent event, Context context) {
+    public Void handleRequest(SQSEvent event, Context context) {
         Instant startTime = Instant.now();
-        LOGGER.info("Lambda triggered at {}, started at {}", event.getTime(), startTime);
+        LOGGER.info("Lambda started at {}", startTime);
         propertiesReloader.reloadIfNeeded();
 
         CreateCompactionJobs createJobs = CreateCompactionJobs.standard(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider,
@@ -125,5 +126,6 @@ public class CreateCompactionJobsLambda {
 
         Instant finishTime = Instant.now();
         LOGGER.info("Lambda finished at {} (ran for {})", finishTime, LoggedDuration.withFullOutput(startTime, finishTime));
+        return null;
     }
 }
