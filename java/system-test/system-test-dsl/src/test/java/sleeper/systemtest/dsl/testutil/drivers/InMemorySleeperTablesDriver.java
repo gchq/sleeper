@@ -63,6 +63,9 @@ public class InMemorySleeperTablesDriver implements SleeperTablesDriver {
         data.deleteAllFiles();
     }
 
+    /**
+     * Note that this is synchronized because this is called in parallel in DeployedSleeperTablesForTest.addTables
+     */
     @Override
     public synchronized void addTable(InstanceProperties instanceProperties, TableProperties properties) {
         String instanceId = instanceProperties.get(ID);
