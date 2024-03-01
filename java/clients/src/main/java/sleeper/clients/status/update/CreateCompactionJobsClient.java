@@ -53,8 +53,8 @@ import static sleeper.compaction.job.creation.CreateCompactionJobs.Mode.STRATEGY
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_BATCH_SIZE;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
-public class CreateJobsClient {
-    private CreateJobsClient() {
+public class CreateCompactionJobsClient {
+    private CreateCompactionJobsClient() {
     }
 
     private static final Map<String, CreateCompactionJobs.Mode> ARG_TO_MODE = Map.of(
