@@ -165,13 +165,7 @@ public class InMemoryCompaction {
     private RecordsProcessedSummary compact(CompactionJob job, TableProperties tableProperties, StateStore stateStore, String taskId) {
         Instant startTime = Instant.now();
         Schema schema = tableProperties.getSchema();
-        PartitionTree partitionTree = null;
-        try {
-            partitionTree = new PartitionTree(stateStore.getAllPartitions());
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
-        Partition partition = partitionTree.getPartition(job.getPartitionId());
+        Partition partition = getPartitionForJob(stateStore, job);
         List<CloseableIterator<Record>> inputIterators = job.getInputFiles().stream()
                 .map(file -> new CountingIterator(file, partition.getRegion(), schema))
                 .collect(toUnmodifiableList());
@@ -204,6 +198,16 @@ public class InMemoryCompaction {
         return new RecordsProcessedSummary(recordsProcessed, startTime, finishTime);
     }
 
+    private static Partition getPartitionForJob(StateStore stateStore, CompactionJob job) {
+        PartitionTree partitionTree = null;
+        try {
+            partitionTree = new PartitionTree(stateStore.getAllPartitions());
+        } catch (StateStoreException e) {
+            throw new RuntimeException(e);
+        }
+        return partitionTree.getPartition(job.getPartitionId());
+    }
+
     private static TablePropertiesProvider tablePropertiesProvider(SystemTestInstanceContext instance) {
         return new FixedTablePropertiesProvider(
                 instance.streamTableProperties().collect(toUnmodifiableList()));
@@ -233,6 +237,7 @@ public class InMemoryCompaction {
                     .filter(record -> region.isKeyInRegion(schema, record.getRowKeys(schema)))
                     .iterator();
         }
+
         @Override
         public boolean hasNext() {
             return iterator.hasNext();
