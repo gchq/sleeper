@@ -27,6 +27,7 @@ import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.table.InvokeForTableRequest;
 import sleeper.core.table.InvokeForTableRequestSerDe;
 import sleeper.core.table.TableIndex;
+import sleeper.core.table.TableNotFoundException;
 import sleeper.core.table.TableStatus;
 
 import java.util.List;
@@ -57,7 +58,7 @@ public class TriggerGarbageCollectionClient {
             TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
             List<TableStatus> tables = tableNames.stream()
                     .map(name -> tableIndex.getTableByName(name)
-                            .orElseThrow(() -> new IllegalArgumentException("Table not found: " + name)))
+                            .orElseThrow(() -> TableNotFoundException.withTableName(name)))
                     .collect(toUnmodifiableList());
             int batchSize = instanceProperties.getInt(GARBAGE_COLLECTOR_TABLE_BATCH_SIZE);
             String queueUrl = instanceProperties.get(GARBAGE_COLLECTOR_QUEUE_URL);
