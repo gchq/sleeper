@@ -192,7 +192,7 @@ public class PartitionSplittingStack extends NestedStack {
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .memorySize(instanceProperties.getInt(FIND_PARTITIONS_TO_SPLIT_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(FIND_PARTITIONS_TO_SPLIT_TIMEOUT_IN_SECONDS)))
-                .handler("sleeper.splitter.lambda.FindPartitionsToSplitTriggerLambda::eventHandler")
+                .handler("sleeper.splitter.lambda.FindPartitionsToSplitTriggerLambda::handleRequest")
                 .environment(environmentVariables)
                 .reservedConcurrentExecutions(1)
                 .logGroup(createLambdaLogGroup(this, "FindPartitionsToSplitTriggerLogGroup", triggerFunctionName, instanceProperties)));
