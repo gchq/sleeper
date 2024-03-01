@@ -31,7 +31,7 @@ class FilesDeleted {
     private final List<FileFailure> fileFailures = new ArrayList<>();
     private final List<StateStoreUpdateFailure> stateStoreUpdateFailures = new ArrayList<>();
 
-    public FilesDeleted(TableStatus table) {
+    FilesDeleted(TableStatus table) {
         this.table = table;
     }
 
