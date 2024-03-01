@@ -52,8 +52,8 @@ import java.util.Map;
 import static sleeper.cdk.Utils.createLambdaLogGroup;
 import static sleeper.cdk.Utils.shouldDeployPaused;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_CLOUDWATCH_RULE;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_DLQ_ARN;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_DLQ_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_JOB_DLQ_ARN;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_JOB_DLQ_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_TRIGGER_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.PartitionSplittingProperty.FIND_PARTITIONS_TO_SPLIT_LAMBDA_MEMORY_IN_MB;
@@ -97,13 +97,13 @@ public class PartitionSplittingStack extends NestedStack {
                 .deadLetterQueue(partitionSplittingDeadLetterQueue)
                 .visibilityTimeout(Duration.seconds(instanceProperties.getInt(SPLIT_PARTITIONS_TIMEOUT_IN_SECONDS))) // TODO Needs to be >= function timeout
                 .build();
-        instanceProperties.set(CdkDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_URL,
+        instanceProperties.set(CdkDefinedInstanceProperty.PARTITION_SPLITTING_JOB_QUEUE_URL,
                 partitionSplittingQueue.getQueueUrl());
-        instanceProperties.set(CdkDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_ARN,
+        instanceProperties.set(CdkDefinedInstanceProperty.PARTITION_SPLITTING_JOB_QUEUE_ARN,
                 partitionSplittingQueue.getQueueArn());
-        instanceProperties.set(PARTITION_SPLITTING_DLQ_URL,
+        instanceProperties.set(PARTITION_SPLITTING_JOB_DLQ_URL,
                 partitionSplittingDeadLetterQueue.getQueue().getQueueUrl());
-        instanceProperties.set(PARTITION_SPLITTING_DLQ_ARN,
+        instanceProperties.set(PARTITION_SPLITTING_JOB_DLQ_ARN,
                 partitionSplittingDeadLetterQueue.getQueue().getQueueArn());
 
         // Add alarm to send message to SNS if there are any messages on the dead letter queue

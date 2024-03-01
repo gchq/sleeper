@@ -38,7 +38,7 @@ import java.util.function.Function;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_DLQ_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_DLQ_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_JOB_DLQ_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_DLQ_URL;
 
 /**
@@ -68,7 +68,8 @@ public class DeadLettersStatusReport {
             }
         });
         printStats(instanceProperties.get(INGEST_JOB_DLQ_URL), "ingest jobs dead-letter", s -> s);
-        printStats(instanceProperties.get(PARTITION_SPLITTING_DLQ_URL), "partition splitting jobs dead-letter", s ->
+        printStats(instanceProperties.get(PARTITION_SPLITTING_JOB_DLQ_URL), "partition splitting jobs dead-letter",
+                s ->
                 new SplitPartitionJobDefinitionSerDe(tablePropertiesProvider).fromJson(s).toString());
 
         printStats(instanceProperties.get(QUERY_DLQ_URL), "queries dead-letter", s ->

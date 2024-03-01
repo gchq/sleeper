@@ -38,7 +38,7 @@ import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.core.testutils.printers.FileReferencePrinter.printFiles;
 import static sleeper.core.testutils.printers.PartitionsPrinter.printPartitions;
@@ -57,7 +57,7 @@ public class PartitionSplittingIT {
     void setUp(SleeperSystemTest sleeper, AfterTestReports reporting, AfterTestPurgeQueues purgeQueues) {
         sleeper.connectToInstance(MAIN);
         reporting.reportIfTestFailed(SystemTestReports.SystemTestBuilder::partitionStatus);
-        purgeQueues.purgeIfTestFailed(PARTITION_SPLITTING_QUEUE_URL, COMPACTION_JOB_QUEUE_URL);
+        purgeQueues.purgeIfTestFailed(PARTITION_SPLITTING_JOB_QUEUE_URL, COMPACTION_JOB_QUEUE_URL);
     }
 
     @Test
