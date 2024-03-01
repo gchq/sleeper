@@ -32,6 +32,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.SplitFileReferences;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.table.InvokeForTableRequest;
 import sleeper.core.table.TableStatus;
 import sleeper.statestore.StateStoreProvider;
 
@@ -72,12 +73,12 @@ public class CreateCompactionJobs {
     private final boolean compactAllFiles;
 
     private CreateCompactionJobs(ObjectFactory objectFactory,
-                                 InstanceProperties instanceProperties,
-                                 TablePropertiesProvider tablePropertiesProvider,
-                                 StateStoreProvider stateStoreProvider,
-                                 JobSender jobSender,
-                                 CompactionJobStatusStore jobStatusStore,
-                                 boolean compactAllFiles) {
+            InstanceProperties instanceProperties,
+            TablePropertiesProvider tablePropertiesProvider,
+            StateStoreProvider stateStoreProvider,
+            JobSender jobSender,
+            CompactionJobStatusStore jobStatusStore,
+            boolean compactAllFiles) {
         this.objectFactory = objectFactory;
         this.instanceProperties = instanceProperties;
         this.jobSender = jobSender;
@@ -88,20 +89,20 @@ public class CreateCompactionJobs {
     }
 
     public static CreateCompactionJobs compactAllFiles(ObjectFactory objectFactory,
-                                                       InstanceProperties instanceProperties,
-                                                       TablePropertiesProvider tablePropertiesProvider,
-                                                       StateStoreProvider stateStoreProvider,
-                                                       JobSender jobSender,
-                                                       CompactionJobStatusStore jobStatusStore) {
+            InstanceProperties instanceProperties,
+            TablePropertiesProvider tablePropertiesProvider,
+            StateStoreProvider stateStoreProvider,
+            JobSender jobSender,
+            CompactionJobStatusStore jobStatusStore) {
         return new CreateCompactionJobs(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider, jobSender, jobStatusStore, true);
     }
 
     public static CreateCompactionJobs standard(ObjectFactory objectFactory,
-                                                InstanceProperties instanceProperties,
-                                                TablePropertiesProvider tablePropertiesProvider,
-                                                StateStoreProvider stateStoreProvider,
-                                                JobSender jobSender,
-                                                CompactionJobStatusStore jobStatusStore) {
+            InstanceProperties instanceProperties,
+            TablePropertiesProvider tablePropertiesProvider,
+            StateStoreProvider stateStoreProvider,
+            JobSender jobSender,
+            CompactionJobStatusStore jobStatusStore) {
         return new CreateCompactionJobs(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider, jobSender, jobStatusStore, false);
     }
 
@@ -109,6 +110,16 @@ public class CreateCompactionJobs {
         List<TableProperties> tables = tablePropertiesProvider.streamOnlineTables()
                 .collect(Collectors.toUnmodifiableList());
         LOGGER.info("Found {} online tables", tables.size());
+        for (TableProperties table : tables) {
+            createJobs(table);
+        }
+    }
+
+    public void createJobs(InvokeForTableRequest request) throws StateStoreException, IOException, ObjectFactoryException {
+        List<TableProperties> tables = request.getTableIds().stream()
+                .map(tablePropertiesProvider::getById)
+                .collect(Collectors.toUnmodifiableList());
+        LOGGER.info("Running for tables: {}", tables);
         for (TableProperties table : tables) {
             createJobs(table);
         }
@@ -172,7 +183,7 @@ public class CreateCompactionJobs {
     }
 
     private void createJobsFromLeftoverFiles(TableProperties tableProperties, List<FileReference> activeFileReferencesWithNoJobId,
-                                             List<Partition> allPartitions, List<CompactionJob> compactionJobs) {
+            List<Partition> allPartitions, List<CompactionJob> compactionJobs) {
         LOGGER.info("Creating compaction jobs for all files");
         int jobsBefore = compactionJobs.size();
         int batchSize = tableProperties.getInt(COMPACTION_FILES_BATCH_SIZE);

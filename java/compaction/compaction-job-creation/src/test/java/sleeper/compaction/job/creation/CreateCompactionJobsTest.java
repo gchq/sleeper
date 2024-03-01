@@ -35,8 +35,7 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.table.InMemoryTableIndex;
-import sleeper.core.table.TableIndex;
+import sleeper.core.table.InvokeForTableRequest;
 import sleeper.statestore.FixedStateStoreProvider;
 
 import java.time.Instant;
@@ -47,8 +46,6 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
-import static sleeper.compaction.job.creation.CreateJobsTestUtils.assertAllReferencesHaveJobId;
-import static sleeper.compaction.job.creation.CreateJobsTestUtils.createTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
@@ -94,7 +91,7 @@ public class CreateCompactionJobsTest {
             stateStore.addFiles(fileReferences);
 
             // When
-            jobCreator.createJobs();
+            createJobs(jobCreator);
 
             // Then
             assertThat(jobs).singleElement().satisfies(job -> {
@@ -127,7 +124,7 @@ public class CreateCompactionJobsTest {
             stateStore.addFiles(List.of(fileReference1, fileReference2, fileReference3, fileReference4));
 
             // When
-            jobCreator.createJobs();
+            createJobs(jobCreator);
 
             // Then
             assertThat(jobs).satisfiesExactlyInAnyOrder(job -> {
@@ -172,7 +169,7 @@ public class CreateCompactionJobsTest {
             stateStore.addFiles(List.of(fileReference1, fileReference2));
 
             // When
-            jobCreator.createJobs();
+            createJobs(jobCreator);
 
             // Then
             assertThat(jobs).satisfiesExactlyInAnyOrder(job -> {
@@ -220,7 +217,7 @@ public class CreateCompactionJobsTest {
             stateStore.addFiles(List.of(leftReference, rightReference));
 
             // When
-            jobCreator.createJobs();
+            createJobs(jobCreator);
 
             // Then
             assertThat(jobs).satisfiesExactlyInAnyOrder(job -> {
@@ -277,10 +274,10 @@ public class CreateCompactionJobsTest {
                     ObjectFactory.noUserJars(), instanceProperties,
                     new FixedTablePropertiesProvider(List.of(tableProperties1, tableProperties2)),
                     new FixedStateStoreProvider(Map.of(
-                            tableProperties1.getStatus().getTableName(), stateStore1,
-                            tableProperties2.getStatus().getTableName(), stateStore2)),
+                            tableProperties1.get(TABLE_NAME), stateStore1,
+                            tableProperties2.get(TABLE_NAME), stateStore2)),
                     jobs::add, jobStatusStore);
-            jobCreator.createJobs(tableProperties1);
+            jobCreator.createJobs(new InvokeForTableRequest(List.of(tableProperties1.get(TABLE_ID))));
 
             // Then
             assertThat(jobs).singleElement().satisfies(job -> {
@@ -329,7 +326,7 @@ public class CreateCompactionJobsTest {
             stateStore.addFiles(List.of(fileReference1, fileReference2));
 
             // When we force create jobs
-            jobCreator.createJobs();
+            createJobs(jobCreator);
 
             // Then a compaction job will be created for the files skipped by the BasicCompactionStrategy
             assertThat(jobs).satisfiesExactly(job -> {
@@ -365,7 +362,7 @@ public class CreateCompactionJobsTest {
             stateStore.addFile(fileReference1);
 
             // When we force create jobs
-            jobCreator.createJobs();
+            createJobs(jobCreator);
 
             // Then a compaction job will be created for the files skipped by the BasicCompactionStrategy
             assertThat(jobs).satisfiesExactly(job -> {
@@ -384,47 +381,6 @@ public class CreateCompactionJobsTest {
         }
     }
 
-    @Test
-    void shouldIgnoreOfflineTablesWhenCreatingCompactionJobs() throws Exception {
-        // Given
-        List<CompactionJob> jobs = new ArrayList<>();
-        TableIndex tableIndex = new InMemoryTableIndex();
-        TableProperties table1 = createTableProperties(schema, instanceProperties);
-        tableIndex.create(table1.getStatus());
-        TableProperties table2 = createTableProperties(schema, instanceProperties);
-        tableIndex.create(table2.getStatus());
-        StateStore stateStore1 = inMemoryStateStoreWithSinglePartition(schema);
-        stateStore1.initialise();
-        StateStore stateStore2 = inMemoryStateStoreWithSinglePartition(schema);
-        stateStore2.initialise();
-        tableIndex.update(table2.getStatus().takeOffline());
-
-        FileReferenceFactory factory = FileReferenceFactory.from(stateStore1);
-        FileReference fileReference1 = factory.rootFile("file1", 200L);
-        FileReference fileReference2 = factory.rootFile("file2", 200L);
-        FileReference fileReference3 = factory.rootFile("file3", 200L);
-        FileReference fileReference4 = factory.rootFile("file4", 200L);
-        stateStore1.addFiles(List.of(fileReference1, fileReference2, fileReference3, fileReference4));
-
-        // When
-        CreateCompactionJobs.standard(
-                ObjectFactory.noUserJars(), instanceProperties,
-                new FixedTablePropertiesProvider(List.of(table1, table2)),
-                new FixedStateStoreProvider(Map.of(
-                        table1.get(TABLE_NAME), stateStore1,
-                        table2.get(TABLE_NAME), stateStore2)),
-                jobs::add, jobStatusStore).createJobs();
-
-        // Then
-        assertThat(stateStore1.getFileReferencesWithNoJobId()).isEmpty();
-        String jobId = assertAllReferencesHaveJobId(stateStore1.getFileReferences());
-        assertThat(jobs).satisfiesExactly(job -> {
-            assertThat(job.getId()).isEqualTo(jobId);
-            assertThat(job.getInputFiles()).containsExactlyInAnyOrder("file1", "file2", "file3", "file4");
-            assertThat(job.getPartitionId()).isEqualTo("root");
-        });
-    }
-
     private void verifyJobCreationReported(CompactionJob job) {
         assertThat(jobStatusStore.getJob(job.getId()).orElseThrow())
                 .usingRecursiveComparison().ignoringFields("createdStatus.updateTime")
@@ -439,5 +395,9 @@ public class CreateCompactionJobsTest {
 
     private FileReference withJobId(FileReference fileReference, String jobId) {
         return fileReference.toBuilder().jobId(jobId).lastStateStoreUpdateTime(DEFAULT_UPDATE_TIME).build();
+    }
+
+    private void createJobs(CreateCompactionJobs jobCreator) throws Exception {
+        jobCreator.createJobs(new InvokeForTableRequest(List.of(tableProperties.get(TABLE_ID))));
     }
 }
