@@ -21,6 +21,7 @@ import org.apache.datasketches.quantiles.ItemsSketch;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.creation.CreateCompactionJobs;
+import sleeper.compaction.job.creation.CreateCompactionJobs.Mode;
 import sleeper.compaction.job.execution.CompactSortedFiles;
 import sleeper.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.compaction.task.CompactionTaskStatus;
@@ -28,7 +29,6 @@ import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.compaction.testutils.InMemoryCompactionJobStatusStore;
 import sleeper.compaction.testutils.InMemoryCompactionTaskStatusStore;
 import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
@@ -43,6 +43,7 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.table.InvokeForTableRequest;
 import sleeper.core.util.PollWithRetries;
 import sleeper.ingest.impl.partitionfilewriter.PartitionFileWriterUtils;
 import sleeper.query.runner.recordretrieval.InMemoryDataStore;
@@ -64,6 +65,7 @@ import java.util.TreeSet;
 import java.util.UUID;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_BATCH_SIZE;
 
 public class InMemoryCompaction {
 
@@ -104,26 +106,14 @@ public class InMemoryCompaction {
         @Override
         public List<String> createJobsGetIds() {
             Set<String> jobIdsBefore = jobIds();
-            try {
-                CreateCompactionJobs.standard(ObjectFactory.noUserJars(), instance.getInstanceProperties(),
-                        tablePropertiesProvider(instance), instance.getStateStoreProvider(), jobSender(), jobStore)
-                        .createJobs();
-            } catch (StateStoreException | IOException | ObjectFactoryException e) {
-                throw new RuntimeException(e);
-            }
+            createJobs(Mode.STRATEGY);
             return jobIdsExcept(jobIdsBefore);
         }
 
         @Override
         public List<String> forceCreateJobsGetIds() {
             Set<String> jobIdsBefore = jobIds();
-            try {
-                CreateCompactionJobs.compactAllFiles(ObjectFactory.noUserJars(), instance.getInstanceProperties(),
-                        tablePropertiesProvider(instance), instance.getStateStoreProvider(), jobSender(), jobStore)
-                        .createJobs();
-            } catch (StateStoreException | IOException | ObjectFactoryException e) {
-                throw new RuntimeException(e);
-            }
+            createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY);
             return jobIdsExcept(jobIdsBefore);
         }
 
@@ -137,6 +127,18 @@ public class InMemoryCompaction {
                 taskStore.taskStarted(task);
                 runningTasks.add(task);
             }
+        }
+
+        private void createJobs(Mode mode) {
+            int batchSize = instance.getInstanceProperties().getInt(COMPACTION_JOB_CREATION_BATCH_SIZE);
+            InvokeForTableRequest.forTables(
+                    instance.streamTableProperties().map(TableProperties::getStatus),
+                    batchSize, jobCreator(mode)::createJobs);
+        }
+
+        private CreateCompactionJobs jobCreator(Mode mode) {
+            return new CreateCompactionJobs(ObjectFactory.noUserJars(), instance.getInstanceProperties(),
+                    tablePropertiesProvider(instance), instance.getStateStoreProvider(), jobSender(), jobStore, mode);
         }
     }
 
