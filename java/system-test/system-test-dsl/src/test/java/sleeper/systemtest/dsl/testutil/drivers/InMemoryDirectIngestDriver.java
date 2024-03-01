@@ -36,10 +36,12 @@ import java.util.Iterator;
 public class InMemoryDirectIngestDriver implements DirectIngestDriver {
     private final SystemTestInstanceContext instance;
     private final InMemoryDataStore data;
+    private final InMemorySketchesStore sketches;
 
-    public InMemoryDirectIngestDriver(SystemTestInstanceContext instance, InMemoryDataStore data) {
+    public InMemoryDirectIngestDriver(SystemTestInstanceContext instance, InMemoryDataStore data, InMemorySketchesStore sketches) {
         this.instance = instance;
         this.data = data;
+        this.sketches = sketches;
     }
 
     @Override
@@ -52,7 +54,7 @@ public class InMemoryDirectIngestDriver implements DirectIngestDriver {
         try (IngestCoordinator<Record> coordinator = IngestCoordinator.builderWith(instanceProperties, tableProperties)
                 .objectFactory(ObjectFactory.noUserJars())
                 .recordBatchFactory(InMemoryRecordBatch::new)
-                .partitionFileWriterFactory(InMemoryPartitionFileWriter.factory(data, instanceProperties, tableProperties))
+                .partitionFileWriterFactory(InMemoryPartitionFileWriter.factory(data, sketches, instanceProperties, tableProperties))
                 .stateStore(instance.getStateStore(tableProperties))
                 .build()) {
             return new IngestRecordsFromIterator(coordinator, records).write();

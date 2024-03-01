@@ -30,6 +30,7 @@ import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
 import sleeper.systemtest.dsl.instance.SleeperTablesDriver;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentDriver;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
+import sleeper.systemtest.dsl.partitioning.PartitionSplittingDriver;
 import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
@@ -40,7 +41,9 @@ import sleeper.systemtest.dsl.testutil.drivers.InMemoryGarbageCollectionDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryGeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryIngestBatcherDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryIngestByQueue;
+import sleeper.systemtest.dsl.testutil.drivers.InMemoryPartitionSplittingDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryQueryByQueueDriver;
+import sleeper.systemtest.dsl.testutil.drivers.InMemorySketchesStore;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySleeperInstanceDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySleeperTablesDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySourceFilesDriver;
@@ -54,11 +57,12 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
     private final SystemTestDeploymentDriver systemTestDeploymentDriver = new InMemorySystemTestDeploymentDriver();
     private final InMemoryDataStore sourceFiles = new InMemoryDataStore();
     private final InMemoryDataStore data = new InMemoryDataStore();
+    private final InMemorySketchesStore sketches = new InMemorySketchesStore();
     private final InMemorySleeperTablesDriver tablesDriver = new InMemorySleeperTablesDriver(data);
     private final SleeperInstanceDriver instanceDriver = new InMemorySleeperInstanceDriver(tablesDriver);
     private final InMemoryIngestBatcherStore batcherStore = new InMemoryIngestBatcherStore();
-    private final InMemoryIngestByQueue ingestByQueue = new InMemoryIngestByQueue(sourceFiles, data);
-    private final InMemoryCompaction compaction = new InMemoryCompaction(data);
+    private final InMemoryIngestByQueue ingestByQueue = new InMemoryIngestByQueue(sourceFiles, data, sketches);
+    private final InMemoryCompaction compaction = new InMemoryCompaction(data, sketches);
     private long fileSizeBytesForBatcher = 1024;
 
     @Override
@@ -88,7 +92,7 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
 
     @Override
     public DirectIngestDriver directIngest(SystemTestContext context) {
-        return new InMemoryDirectIngestDriver(context.instance(), data);
+        return new InMemoryDirectIngestDriver(context.instance(), data, sketches);
     }
 
     @Override
@@ -149,6 +153,11 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
     public PurgeQueueDriver purgeQueues(SystemTestContext context) {
         return properties -> {
         };
+    }
+
+    @Override
+    public PartitionSplittingDriver partitionSplitting(SystemTestContext context) {
+        return new InMemoryPartitionSplittingDriver(context.instance(), sketches);
     }
 
     public InMemoryDataStore data() {

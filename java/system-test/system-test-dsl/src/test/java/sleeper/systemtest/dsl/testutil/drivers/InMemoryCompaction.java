@@ -16,6 +16,8 @@
 
 package sleeper.systemtest.dsl.testutil.drivers;
 
+import org.apache.datasketches.quantiles.ItemsSketch;
+
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.creation.CreateCompactionJobs;
@@ -32,12 +34,17 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorException;
+import sleeper.core.partition.Partition;
+import sleeper.core.partition.PartitionTree;
+import sleeper.core.range.Region;
 import sleeper.core.record.Record;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.PollWithRetries;
+import sleeper.ingest.impl.partitionfilewriter.PartitionFileWriterUtils;
 import sleeper.query.runner.recordretrieval.InMemoryDataStore;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
@@ -65,9 +72,11 @@ public class InMemoryCompaction {
     private final CompactionJobStatusStore jobStore = new InMemoryCompactionJobStatusStore();
     private final CompactionTaskStatusStore taskStore = new InMemoryCompactionTaskStatusStore();
     private final InMemoryDataStore data;
+    private final InMemorySketchesStore sketches;
 
-    public InMemoryCompaction(InMemoryDataStore data) {
+    public InMemoryCompaction(InMemoryDataStore data, InMemorySketchesStore sketches) {
         this.data = data;
+        this.sketches = sketches;
     }
 
     public CompactionDriver driver(SystemTestInstanceContext instance) {
@@ -155,31 +164,51 @@ public class InMemoryCompaction {
 
     private RecordsProcessedSummary compact(CompactionJob job, TableProperties tableProperties, StateStore stateStore, String taskId) {
         Instant startTime = Instant.now();
-        List<CloseableIterator<Record>> inputIterators = job.getInputFiles().stream()
-                .map(CountingIterator::new)
-                .collect(toUnmodifiableList());
-        CloseableIterator<Record> mergingIterator;
+        Schema schema = tableProperties.getSchema();
+        Partition partition = getPartitionForJob(stateStore, job);
+        RecordsProcessed recordsProcessed = mergeInputFiles(job, partition, schema);
         try {
-            mergingIterator = CompactSortedFiles.getMergingIterator(
-                    ObjectFactory.noUserJars(), tableProperties.getSchema(), job, inputIterators);
-        } catch (IteratorException e) {
-            throw new RuntimeException(e);
-        }
-        List<Record> records = new ArrayList<>();
-        mergingIterator.forEachRemaining(records::add);
-        data.addFile(job.getOutputFile(), records);
-        try {
-            CompactSortedFiles.updateStateStoreSuccess(job, records.size(), stateStore);
+            CompactSortedFiles.updateStateStoreSuccess(job, recordsProcessed.getRecordsWritten(), stateStore);
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
         }
         Instant finishTime = startTime.plus(Duration.ofMinutes(1));
-        long recordsRead = inputIterators.stream()
+        return new RecordsProcessedSummary(recordsProcessed, startTime, finishTime);
+    }
+
+    private static Partition getPartitionForJob(StateStore stateStore, CompactionJob job) {
+        PartitionTree partitionTree = null;
+        try {
+            partitionTree = new PartitionTree(stateStore.getAllPartitions());
+        } catch (StateStoreException e) {
+            throw new RuntimeException(e);
+        }
+        return partitionTree.getPartition(job.getPartitionId());
+    }
+
+    private RecordsProcessed mergeInputFiles(CompactionJob job, Partition partition, Schema schema) {
+        List<CloseableIterator<Record>> inputIterators = job.getInputFiles().stream()
+                .map(file -> new CountingIterator(file, partition.getRegion(), schema))
+                .collect(toUnmodifiableList());
+        CloseableIterator<Record> mergingIterator;
+        try {
+            mergingIterator = CompactSortedFiles.getMergingIterator(
+                    ObjectFactory.noUserJars(), schema, job, inputIterators);
+        } catch (IteratorException e) {
+            throw new RuntimeException(e);
+        }
+        Map<String, ItemsSketch> keyFieldToSketchMap = PartitionFileWriterUtils.createQuantileSketchMap(schema);
+        List<Record> records = new ArrayList<>();
+        mergingIterator.forEachRemaining(record -> {
+            records.add(record);
+            PartitionFileWriterUtils.updateQuantileSketchMap(schema, keyFieldToSketchMap, record);
+        });
+        data.addFile(job.getOutputFile(), records);
+        sketches.addSketchForFile(job.getOutputFile(), keyFieldToSketchMap);
+        return new RecordsProcessed(records.size(), inputIterators.stream()
                 .map(it -> (CountingIterator) it)
                 .mapToLong(it -> it.count)
-                .sum();
-        RecordsProcessed recordsProcessed = new RecordsProcessed(recordsRead, records.size());
-        return new RecordsProcessedSummary(recordsProcessed, startTime, finishTime);
+                .sum());
     }
 
     private static TablePropertiesProvider tablePropertiesProvider(SystemTestInstanceContext instance) {
@@ -206,8 +235,10 @@ public class InMemoryCompaction {
         private final Iterator<Record> iterator;
         private long count = 0;
 
-        CountingIterator(String filename) {
-            iterator = data.streamRecords(List.of(filename)).iterator();
+        CountingIterator(String filename, Region region, Schema schema) {
+            iterator = data.streamRecords(List.of(filename))
+                    .filter(record -> region.isKeyInRegion(schema, record.getRowKeys(schema)))
+                    .iterator();
         }
 
         @Override

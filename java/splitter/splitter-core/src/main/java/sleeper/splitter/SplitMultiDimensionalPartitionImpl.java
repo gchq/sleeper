@@ -76,24 +76,24 @@ public class SplitMultiDimensionalPartitionImpl {
     private final List<PrimitiveType> rowKeyTypes;
     private final Partition partition;
     private final List<String> fileNames; // These should be active files for the partition
-    private final Configuration conf;
     private final RangeFactory rangeFactory;
     private final Supplier<String> idSupplier;
+    private final SketchesLoader sketchesLoader;
 
     public SplitMultiDimensionalPartitionImpl(StateStore stateStore,
-                                              Schema schema,
-                                              Partition partition,
-                                              List<String> fileNames,
-                                              Configuration conf,
-                                              Supplier<String> idSupplier) {
+            Schema schema,
+            Partition partition,
+            List<String> fileNames,
+            Supplier<String> idSupplier,
+            SketchesLoader sketchesLoader) {
         this.stateStore = stateStore;
         this.schema = schema;
         this.rowKeyTypes = schema.getRowKeyTypes();
         this.partition = partition;
         this.fileNames = fileNames;
-        this.conf = conf;
         this.rangeFactory = new RangeFactory(schema);
         this.idSupplier = idSupplier;
+        this.sketchesLoader = sketchesLoader;
     }
 
     void splitPartition() throws StateStoreException, IOException {
@@ -154,7 +154,7 @@ public class SplitMultiDimensionalPartitionImpl {
         for (String fileName : fileNames) {
             String sketchesFile = fileName.replace(".parquet", ".sketches");
             LOGGER.info("Loading Sketches from {}", sketchesFile);
-            Sketches sketches = new SketchesSerDeToS3(schema).loadFromHadoopFS(new Path(sketchesFile), conf);
+            Sketches sketches = sketchesLoader.load(sketchesFile);
             sketchList.add(sketches.getQuantilesSketch(keyField));
         }
 
@@ -179,7 +179,7 @@ public class SplitMultiDimensionalPartitionImpl {
         for (String fileName : fileNames) {
             String sketchesFile = fileName.replace(".parquet", ".sketches");
             LOGGER.info("Loading Sketches from {}", sketchesFile);
-            Sketches sketches = new SketchesSerDeToS3(schema).loadFromHadoopFS(new Path(sketchesFile), conf);
+            Sketches sketches = sketchesLoader.load(sketchesFile);
             sketchList.add(sketches.getQuantilesSketch(keyField));
         }
 
@@ -204,7 +204,7 @@ public class SplitMultiDimensionalPartitionImpl {
         for (String fileName : fileNames) {
             String sketchesFile = fileName.replace(".parquet", ".sketches");
             LOGGER.info("Loading Sketches from {}", sketchesFile);
-            Sketches sketches = new SketchesSerDeToS3(schema).loadFromHadoopFS(new Path(sketchesFile), conf);
+            Sketches sketches = sketchesLoader.load(sketchesFile);
             sketchList.add(sketches.getQuantilesSketch(keyField));
         }
 
@@ -229,7 +229,7 @@ public class SplitMultiDimensionalPartitionImpl {
         for (String fileName : fileNames) {
             String sketchesFile = fileName.replace(".parquet", ".sketches");
             LOGGER.info("Loading Sketches from {}", sketchesFile);
-            Sketches sketches = new SketchesSerDeToS3(schema).loadFromHadoopFS(new Path(sketchesFile), conf);
+            Sketches sketches = sketchesLoader.load(sketchesFile);
             sketchList.add(sketches.getQuantilesSketch(keyField));
         }
 
@@ -252,8 +252,7 @@ public class SplitMultiDimensionalPartitionImpl {
                 .collect(Collectors.toList());
     }
 
-    private void splitPartition(Partition partition, Object splitPoint, int dimension)
-            throws StateStoreException {
+    private void splitPartition(Partition partition, Object splitPoint, int dimension) throws StateStoreException {
         Field fieldToSplitOn = schema.getRowKeyFields().get(dimension);
         LOGGER.info("Splitting partition {} on split point {} in dimension {}", partition.getId(), splitPoint, dimension);
 
@@ -299,5 +298,13 @@ public class SplitMultiDimensionalPartitionImpl {
         LOGGER.info("New partition: {}", rightChild);
 
         stateStore.atomicallyUpdatePartitionAndCreateNewOnes(partition, leftChild, rightChild);
+    }
+
+    public interface SketchesLoader {
+        Sketches load(String filename) throws IOException;
+    }
+
+    public static SketchesLoader loadFromFile(Schema schema, Configuration conf) {
+        return (filename) -> new SketchesSerDeToS3(schema).loadFromHadoopFS(new Path(filename), conf);
     }
 }
