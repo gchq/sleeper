@@ -24,7 +24,7 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 
 public class FailedGarbageCollection extends RuntimeException {
 
-    private final List<TableFailures> tableFailures;
+    private final transient List<TableFailures> tableFailures;
 
     public FailedGarbageCollection(List<TableFailures> tableFailures) {
         super(getMessage(tableFailures), getCause(tableFailures));
@@ -32,7 +32,7 @@ public class FailedGarbageCollection extends RuntimeException {
     }
 
     private static String getMessage(List<TableFailures> tableFailures) {
-        return "Failed garbage collection for table IDs: " +
+        return "Found garbage collection failures for tables: " +
                 tableFailures.stream().map(TableFailures::getTable).collect(toUnmodifiableList());
     }
 
