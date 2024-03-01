@@ -165,20 +165,35 @@ public class InMemoryCompaction {
     private RecordsProcessedSummary compact(CompactionJob job, TableProperties tableProperties, StateStore stateStore, String taskId) {
         Instant startTime = Instant.now();
         Schema schema = tableProperties.getSchema();
+        Partition partition = getPartitionForJob(stateStore, job);
+        RecordsProcessed recordsProcessed = mergeInputFiles(job, partition, schema);
+        try {
+            CompactSortedFiles.updateStateStoreSuccess(job, recordsProcessed.getRecordsWritten(), stateStore);
+        } catch (StateStoreException e) {
+            throw new RuntimeException(e);
+        }
+        Instant finishTime = startTime.plus(Duration.ofMinutes(1));
+        return new RecordsProcessedSummary(recordsProcessed, startTime, finishTime);
+    }
+
+    private static Partition getPartitionForJob(StateStore stateStore, CompactionJob job) {
         PartitionTree partitionTree = null;
         try {
             partitionTree = new PartitionTree(stateStore.getAllPartitions());
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
         }
-        Partition partition = partitionTree.getPartition(job.getPartitionId());
+        return partitionTree.getPartition(job.getPartitionId());
+    }
+
+    private RecordsProcessed mergeInputFiles(CompactionJob job, Partition partition, Schema schema) {
         List<CloseableIterator<Record>> inputIterators = job.getInputFiles().stream()
                 .map(file -> new CountingIterator(file, partition.getRegion(), schema))
                 .collect(toUnmodifiableList());
         CloseableIterator<Record> mergingIterator;
         try {
             mergingIterator = CompactSortedFiles.getMergingIterator(
-                    ObjectFactory.noUserJars(), tableProperties.getSchema(), job, inputIterators);
+                    ObjectFactory.noUserJars(), schema, job, inputIterators);
         } catch (IteratorException e) {
             throw new RuntimeException(e);
         }
@@ -190,18 +205,10 @@ public class InMemoryCompaction {
         });
         data.addFile(job.getOutputFile(), records);
         sketches.addSketchForFile(job.getOutputFile(), keyFieldToSketchMap);
-        try {
-            CompactSortedFiles.updateStateStoreSuccess(job, records.size(), stateStore);
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
-        Instant finishTime = startTime.plus(Duration.ofMinutes(1));
-        long recordsRead = inputIterators.stream()
+        return new RecordsProcessed(records.size(), inputIterators.stream()
                 .map(it -> (CountingIterator) it)
                 .mapToLong(it -> it.count)
-                .sum();
-        RecordsProcessed recordsProcessed = new RecordsProcessed(recordsRead, records.size());
-        return new RecordsProcessedSummary(recordsProcessed, startTime, finishTime);
+                .sum());
     }
 
     private static TablePropertiesProvider tablePropertiesProvider(SystemTestInstanceContext instance) {
@@ -233,6 +240,7 @@ public class InMemoryCompaction {
                     .filter(record -> region.isKeyInRegion(schema, record.getRowKeys(schema)))
                     .iterator();
         }
+
         @Override
         public boolean hasNext() {
             return iterator.hasNext();
