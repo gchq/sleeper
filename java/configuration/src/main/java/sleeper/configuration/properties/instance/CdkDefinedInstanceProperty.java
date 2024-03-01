@@ -215,6 +215,22 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .build();
 
     // Partition splitting
+    CdkDefinedInstanceProperty PARTITION_SPLITTING_BATCH_QUEUE_URL = Index.propertyBuilder("sleeper.partition.splitting.batch.queue.url")
+            .description("The URL of the queue for sending batches of partition splitting requests.")
+            .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
+            .build();
+    CdkDefinedInstanceProperty PARTITION_SPLITTING_BATCH_QUEUE_ARN = Index.propertyBuilder("sleeper.partition.splitting.batch.queue.arn")
+            .description("The ARN of the queue for sending batches of partition splitting requests.")
+            .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
+            .build();
+    CdkDefinedInstanceProperty PARTITION_SPLITTING_BATCH_DLQ_URL = Index.propertyBuilder("sleeper.partition.splitting.batch.dlq.url")
+            .description("The URL of the dead letter queue for sending batches of partition splitting requests.")
+            .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
+            .build();
+    CdkDefinedInstanceProperty PARTITION_SPLITTING_BATCH_DLQ_ARN = Index.propertyBuilder("sleeper.partition.splitting.batch.dlq.arn")
+            .description("The ARN of the dead letter queue for sending batches of partition splitting requests.")
+            .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
+            .build();
     CdkDefinedInstanceProperty PARTITION_SPLITTING_JOB_QUEUE_URL = Index.propertyBuilder("sleeper.partition.splitting.job.queue.url")
             .description("The URL of the queue for partition splitting jobs.")
             .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
