@@ -255,11 +255,11 @@ public class PartitionSplittingStack extends NestedStack {
                 SqsEventSourceProps.builder().batchSize(1).build()));
     }
 
-    private class QueueAndDlq {
+    private static class QueueAndDlq {
         private Queue queue;
         private Queue dlq;
 
-        public QueueAndDlq(Queue queue, Queue dlq) {
+        QueueAndDlq(Queue queue, Queue dlq) {
             this.queue = queue;
             this.dlq = dlq;
         }
