@@ -40,10 +40,17 @@ public class InvokeForTableRequest {
         return tableIds;
     }
 
-    public static void sendForTables(Stream<TableStatus> tables, int batchSize, Consumer<InvokeForTableRequest> sendRequest) {
+    public static void forTables(Stream<TableStatus> tables, int batchSize, Consumer<InvokeForTableRequest> sendRequest) {
         SplitIntoBatches.reusingListOfSize(batchSize,
                 tables.map(TableStatus::getTableUniqueId),
                 tableIds -> sendRequest.accept(new InvokeForTableRequest(tableIds)));
+    }
+
+    public static void forTablesWithOfflineEnabled(
+            boolean offlineEnabled, TableIndex tableIndex, int batchSize, Consumer<InvokeForTableRequest> sendRequest) {
+        forTables(
+                offlineEnabled ? tableIndex.streamAllTables() : tableIndex.streamOnlineTables(),
+                batchSize, sendRequest);
     }
 
     @Override

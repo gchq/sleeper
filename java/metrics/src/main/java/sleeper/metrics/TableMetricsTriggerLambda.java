@@ -38,6 +38,7 @@ import java.time.Instant;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_QUEUE_URL;
+import static sleeper.configuration.properties.instance.CommonProperty.METRICS_FOR_OFFLINE_TABLES;
 import static sleeper.configuration.properties.instance.CommonProperty.METRICS_TABLE_BATCH_SIZE;
 
 @SuppressWarnings("unused")
@@ -65,8 +66,9 @@ public class TableMetricsTriggerLambda implements RequestHandler<ScheduledEvent,
         instanceProperties.loadFromS3(s3Client, configBucketName);
         int batchSize = instanceProperties.getInt(METRICS_TABLE_BATCH_SIZE);
         String queueUrl = instanceProperties.get(TABLE_METRICS_QUEUE_URL);
+        boolean offlineEnabled = instanceProperties.getBoolean(METRICS_FOR_OFFLINE_TABLES);
         TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
-        InvokeForTableRequest.sendForTables(tableIndex.streamAllTables(), batchSize,
+        InvokeForTableRequest.forTablesWithOfflineEnabled(offlineEnabled, tableIndex, batchSize,
                 request -> sqsClient.sendMessage(queueUrl, serDe.toJson(request)));
 
         Instant finishTime = Instant.now();
