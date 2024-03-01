@@ -24,7 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public class FilesDeleted {
+class FilesDeleted {
 
     private final TableStatus table;
     private final List<String> deletedFilenames = new ArrayList<>();
