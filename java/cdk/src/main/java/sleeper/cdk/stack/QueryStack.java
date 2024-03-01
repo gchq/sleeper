@@ -101,6 +101,7 @@ public class QueryStack extends NestedStack {
     public static final String QUERY_LAMBDA_ROLE_ARN = "QueryLambdaRoleArn";
 
     private CfnApi webSocketApi;
+    private IQueue queryQueriesQueue;
 
     public QueryStack(Construct scope,
                       String id,
@@ -131,7 +132,7 @@ public class QueryStack extends NestedStack {
         instanceProperties.set(QUERY_TRACKER_TABLE_NAME, queryTrackingTable.getTableName());
 
         LambdaCode queryJar = jars.lambdaCode(BuiltJar.QUERY, jarsBucket);
-        Queue queryQueriesQueue = setupQueriesQueryQueue(instanceProperties);
+        queryQueriesQueue = setupQueriesQueryQueue(instanceProperties);
 
         IFunction queryExecutorLambda = setupQueriesQueryLambda(coreStacks, instanceProperties, queryJar, queryQueriesQueue, jarsBucket, queryTrackingTable);
         IFunction leafPartitionQueryLambda = setupLeafPartitionQueryQueueAndLambda(coreStacks, instanceProperties, queryJar, jarsBucket, queryTrackingTable);
@@ -449,7 +450,7 @@ public class QueryStack extends NestedStack {
      * @param leafPartitionQueryLambda the Lambda that will execute the leaf partition query
      * @param coreStacks the core stacks this belongs to
      */
-    protected void setupWebSocketApi(LambdaCode queryJar, InstanceProperties instanceProperties, Queue queriesQueue, IFunction queryExecutorLambda,
+    protected void setupWebSocketApi(LambdaCode queryJar, InstanceProperties instanceProperties, IQueue queriesQueue, IFunction queryExecutorLambda,
                                      IFunction leafPartitionQueryLambda, CoreStacks coreStacks) {
         Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
@@ -548,5 +549,9 @@ public class QueryStack extends NestedStack {
                         + "/live/*"
                 ))
                 .build());
+    }
+
+    public void grantSendMessages(IGrantable identity) {
+        queryQueriesQueue.grantSendMessages(identity);
     }
 }

@@ -30,13 +30,13 @@ import sleeper.cdk.stack.CompactionStack;
 import sleeper.cdk.stack.ConfigBucketStack;
 import sleeper.cdk.stack.CoreStacks;
 import sleeper.cdk.stack.DashboardStack;
-import sleeper.cdk.stack.DummyLambdaExecutionStack;
 import sleeper.cdk.stack.DynamoDBStateStoreStack;
 import sleeper.cdk.stack.GarbageCollectorStack;
 import sleeper.cdk.stack.IngestBatcherStack;
 import sleeper.cdk.stack.IngestStack;
 import sleeper.cdk.stack.IngestStacks;
 import sleeper.cdk.stack.IngestStatusStoreStack;
+import sleeper.cdk.stack.KeepLambdaWarmStack;
 import sleeper.cdk.stack.ManagedPoliciesStack;
 import sleeper.cdk.stack.PartitionSplittingStack;
 import sleeper.cdk.stack.PropertiesStack;
@@ -273,16 +273,13 @@ public class SleeperCdkApp extends Stack {
             );
         }
 
-        if (optionalStacks.contains(DummyLambdaExecutionStack.class.getSimpleName())) {
-           DummyLambdaExecutionStack dummyLambdaExecutionStack =
-           new DummyLambdaExecutionStack(this,
-                        "DummyLambdaExecution",
-                        instanceProperties,
-                        jars,
-                        coreStacks);
-           if (queryStack != null) {
-            dummyLambdaExecutionStack.addDependency(queryStack);
-           }
+        if (optionalStacks.contains(KeepLambdaWarmStack.class.getSimpleName())) {
+            new KeepLambdaWarmStack(this,
+                    "KeepLambdaWarmExecution",
+                    instanceProperties,
+                    jars,
+                    coreStacks,
+                    queryStack);
         }
 
         this.generateProperties();

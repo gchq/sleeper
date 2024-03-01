@@ -22,11 +22,11 @@ import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
+import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
-import software.amazon.awscdk.services.sqs.IQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
@@ -42,30 +42,34 @@ import java.util.Locale;
 
 import static sleeper.cdk.Utils.createLambdaLogGroup;
 import static sleeper.cdk.Utils.shouldDeployPaused;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_QUEUE_ARN;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_WARM_LAMBDA_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.QueryProperty.DEFAULT_QUERY_WARM_LAMBDA_EXECUTION_PERIOD_IN_MINUTES;
 import static sleeper.configuration.properties.instance.QueryProperty.QUERY_PROCESSOR_LAMBDA_MEMORY_IN_MB;
 import static sleeper.configuration.properties.instance.QueryProperty.QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS;
 
-public class DummyLambdaExecutionStack extends NestedStack {
+/**
+ * A {@link NestedStack} to handle keeping lambdas warm. This consists of a {@link Rule} that runs periodically triggering
+ * a lambda {@link Function} to create the queries that are placed on the Query {@link Queue} for processing.
+ * This will trigger the query lambdas thus keeping them warm.
+ */
+public class KeepLambdaWarmStack extends NestedStack {
 
-    public DummyLambdaExecutionStack(Construct scope,
-                      String id,
-                      InstanceProperties instanceProperties,
-                      BuiltJars jars,
-                      CoreStacks coreStacks) {
+    public KeepLambdaWarmStack(Construct scope,
+            String id,
+            InstanceProperties instanceProperties,
+            BuiltJars jars,
+            CoreStacks coreStacks,
+            QueryStack queryStack) {
         super(scope, id);
 
-        // Cloudwatch rule to trigger Query Execution lambda
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-        instanceProperties.get(ID).toLowerCase(Locale.ROOT), "warm-query-executor"));
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "warm-query-executor"));
 
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
         LambdaCode queryJar = jars.lambdaCode(BuiltJar.QUERY, jarsBucket);
 
-        // Garbage collector function
+        // Keep lambda warm function
         IFunction handler = queryJar.buildFunction(this, "WarmQueryExecutorLambda", builder -> builder
                 .functionName(functionName)
                 .description("Sends a message to query-executor lambda in order for it to stay warm")
@@ -86,19 +90,19 @@ public class DummyLambdaExecutionStack extends NestedStack {
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties
                         .getInt(DEFAULT_QUERY_WARM_LAMBDA_EXECUTION_PERIOD_IN_MINUTES))))
                 .targets(Collections.singletonList(LambdaFunction.Builder
-                    .create(handler)
-                    .build()
-                    ))
+                        .create(handler)
+                        .build()))
                 .build();
 
-        IQueue queryExecutorQueue = Queue.fromQueueArn(scope, "WarmLambdaToQueryQueue", instanceProperties.get(QUERY_QUEUE_ARN));
-        queryExecutorQueue.grantSendMessages(handler);
+        queryStack.grantSendMessages(handler);
+        // IQueue queryExecutorQueue = Queue.fromQueueArn(scope, "WarmLambdaToQueryQueue", instanceProperties.get(QUERY_QUEUE_ARN));
+        // squeryExecutorQueue.grantSendMessages(handler);
 
         coreStacks.grantReadInstanceConfig(handler);
         coreStacks.grantReadTablesAndData(handler);
 
-       instanceProperties.set(QUERY_WARM_LAMBDA_CLOUDWATCH_RULE, rule.getRuleName());
-       CfnOutputProps ruleArn = new CfnOutputProps.Builder()
+        instanceProperties.set(QUERY_WARM_LAMBDA_CLOUDWATCH_RULE, rule.getRuleName());
+        CfnOutputProps ruleArn = new CfnOutputProps.Builder()
                 .value(rule.getRuleArn())
                 .exportName(instanceProperties.get(ID) + "-" + "QueryExecutionPeriodicTriggerRuleARN")
                 .build();

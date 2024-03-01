@@ -31,12 +31,13 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.S3TableProperties;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.range.Range;
 import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.StringType;
+import sleeper.core.schema.type.Type;
 import sleeper.query.model.Query;
 import sleeper.query.model.QueryProcessingConfig;
 import sleeper.query.model.QuerySerDe;
@@ -47,7 +48,6 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_QUEUE_URL;
@@ -88,32 +88,31 @@ public class WarmQueryExecutorLambda implements RequestHandler<ScheduledEvent, V
 
     @Override
     public Void handleRequest(ScheduledEvent event, Context context) {
-        List<TableProperties> tableProperties = S3TableProperties.getStore(instanceProperties, s3Client, dynamoClient)
-                    .streamAllTables().collect(Collectors.toList());
-
         LOGGER.info("Starting to build queries for the tables");
-        tableProperties.forEach(tableProperty -> {
+        S3TableProperties.getStore(instanceProperties, s3Client, dynamoClient)
+                .streamAllTables()
+                .forEach(tableProperty -> {
+                    Schema schema = tableProperty.getSchema();
+                    Field field = schema.getRowKeyFields().get(0);
+                    Type type = field.getType();
+                    Region region = new Region(Collections.singletonList(new Range.RangeFactory(schema)
+                            .createRange(field, new StringType(), "aa")));
 
-            Schema schema = tableProperty.getSchema();
-            Field field = schema.getRowKeyFields().get(0);
-            Region region = new Region(Collections.singletonList(new Range.RangeFactory(schema)
-                    .createRange(field, "a", "aa")));
+                    QuerySerDe querySerDe = new QuerySerDe(schema);
+                    Query query = Query.builder()
+                            .queryId(UUID.randomUUID().toString())
+                            .tableName(tableProperty.get(TABLE_NAME))
+                            .regions(List.of(region))
+                            .processingConfig(QueryProcessingConfig.builder()
+                                    .resultsPublisherConfig(Collections.singletonMap(ResultsOutputConstants.DESTINATION, NO_RESULTS_OUTPUT))
+                                    .statusReportDestinations(Collections.emptyList())
+                                    .build())
+                            .build();
 
-            QuerySerDe querySerDe = new QuerySerDe(schema);
-            Query query = Query.builder()
-            .queryId(UUID.randomUUID().toString())
-            .tableName(tableProperty.get(TABLE_NAME))
-            .regions(List.of(region))
-            .processingConfig(QueryProcessingConfig.builder()
-                .resultsPublisherConfig(Collections.singletonMap(ResultsOutputConstants.DESTINATION, NO_RESULTS_OUTPUT))
-                .statusReportDestinations(Collections.emptyList())
-                .build())
-            .build();
-
-            LOGGER.info("Query to be sent: " + querySerDe.toJson(query));
-            SendMessageRequest message = new SendMessageRequest(instanceProperties.get(QUERY_QUEUE_URL), querySerDe.toJson(query));
-            LOGGER.debug("Message: {}", message);
-            sqsClient.sendMessage(message);
+                    LOGGER.info("Query to be sent: " + querySerDe.toJson(query));
+                    SendMessageRequest message = new SendMessageRequest(instanceProperties.get(QUERY_QUEUE_URL), querySerDe.toJson(query));
+                    LOGGER.debug("Message: {}", message);
+                    sqsClient.sendMessage(message);
         });
         return null;
     }
