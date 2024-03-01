@@ -60,13 +60,15 @@ public class FindPartitionsToSplit {
     }
 
     public void run() {
-        tablePropertiesProvider.streamOnlineTables().forEach(tableProperties -> {
-            try {
-                findPartitionsToSplit(tableProperties, stateStoreProvider.getStateStore(tableProperties));
-            } catch (StateStoreException e) {
-                LOGGER.error("StateStoreException thrown whilst running FindPartitionsToSplit", e);
-            }
-        });
+        tablePropertiesProvider.streamOnlineTables().forEach(tableProperties -> run(tableProperties, stateStoreProvider.getStateStore(tableProperties)));
+    }
+
+    public void run(TableProperties tableProperties, StateStore stateStore) {
+        try {
+            findPartitionsToSplit(tableProperties, stateStoreProvider.getStateStore(tableProperties));
+        } catch (StateStoreException e) {
+            LOGGER.error("StateStoreException thrown whilst running FindPartitionsToSplit", e);
+        }
     }
 
     private void findPartitionsToSplit(TableProperties tableProperties, StateStore stateStore) throws StateStoreException {
