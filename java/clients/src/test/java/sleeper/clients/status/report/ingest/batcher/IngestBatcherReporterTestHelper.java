@@ -22,6 +22,7 @@ import sleeper.core.table.TableIdGenerator;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableStatusProvider;
+import sleeper.core.table.TableStatusTestHelper;
 import sleeper.ingest.batcher.FileIngestRequest;
 import sleeper.ingest.job.status.IngestJobStatus;
 
@@ -33,7 +34,7 @@ public class IngestBatcherReporterTestHelper {
     private IngestBatcherReporterTestHelper() {
     }
 
-    public static final TableStatus TEST_TABLE = TableStatus.uniqueIdAndName("test-table-id", "test-table");
+    public static final TableStatus TEST_TABLE = TableStatusTestHelper.uniqueIdAndName("test-table-id", "test-table");
 
     public static List<FileIngestRequest> onePendingAndTwoBatchedFiles() {
         return List.of(
@@ -50,8 +51,7 @@ public class IngestBatcherReporterTestHelper {
                         .fileSizeBytes(789L)
                         .tableId(TableIdGenerator.fromRandomSeed(0).generateString())
                         .receivedTime(Instant.parse("2023-09-12T13:25:00Z"))
-                        .jobId("test-job-1").build()
-        );
+                        .jobId("test-job-1").build());
     }
 
     public static List<FileIngestRequest> multiplePendingFiles() {
@@ -69,8 +69,7 @@ public class IngestBatcherReporterTestHelper {
                         .fileSizeBytes(789L)
                         .tableId(TableIdGenerator.fromRandomSeed(0).generateString())
                         .receivedTime(Instant.parse("2023-09-12T13:28:00Z"))
-                        .build()
-        );
+                        .build());
     }
 
     public static List<FileIngestRequest> filesWithLargeAndDecimalSizes() {
@@ -88,8 +87,7 @@ public class IngestBatcherReporterTestHelper {
                         .fileSizeBytes(123_400_000_000L)
                         .tableId("test-table-id")
                         .receivedTime(Instant.parse("2023-09-12T13:23:00Z"))
-                        .jobId("test-job-1").build()
-        );
+                        .jobId("test-job-1").build());
     }
 
     public static String replaceBracketedJobIds(List<IngestJobStatus> job, String example) {

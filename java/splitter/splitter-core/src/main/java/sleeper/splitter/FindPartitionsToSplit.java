@@ -20,13 +20,14 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.partition.Partition;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.TableStatus;
+import sleeper.statestore.StateStoreProvider;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -42,25 +43,33 @@ import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPL
  */
 public class FindPartitionsToSplit {
     private static final Logger LOGGER = LoggerFactory.getLogger(FindPartitionsToSplit.class);
-    private final TableStatus table;
-    private final TableProperties tableProperties;
-    private final StateStore stateStore;
+    private final TablePropertiesProvider tablePropertiesProvider;
+    private final StateStoreProvider stateStoreProvider;
     private final JobSender jobSender;
     private final int maxFilesInJob;
 
     public FindPartitionsToSplit(
             InstanceProperties instanceProperties,
-            TableProperties tableProperties,
-            StateStore stateStore,
+            TablePropertiesProvider tablePropertiesProvider,
+            StateStoreProvider stateStoreProvider,
             JobSender jobSender) {
-        this.table = tableProperties.getStatus();
-        this.tableProperties = tableProperties;
-        this.stateStore = stateStore;
+        this.tablePropertiesProvider = tablePropertiesProvider;
+        this.stateStoreProvider = stateStoreProvider;
         this.jobSender = jobSender;
         this.maxFilesInJob = instanceProperties.getInt(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB);
     }
 
-    public void run() throws StateStoreException, IOException {
+    public void run() {
+        tablePropertiesProvider.streamOnlineTables().forEach(tableProperties -> {
+            try {
+                findPartitionsToSplit(tableProperties, stateStoreProvider.getStateStore(tableProperties));
+            } catch (StateStoreException e) {
+                LOGGER.error("StateStoreException thrown whilst running FindPartitionsToSplit", e);
+            }
+        });
+    }
+
+    private void findPartitionsToSplit(TableProperties tableProperties, StateStore stateStore) throws StateStoreException {
         List<FindPartitionToSplitResult> results = getResults(tableProperties, stateStore);
         for (FindPartitionToSplitResult result : results) {
             // If there are more than PartitionSplittingMaxFilesInJob files then pick the largest ones.
@@ -75,12 +84,11 @@ public class FindPartitionsToSplit {
                                 .sorted((f1, f2) -> Long.compare(f2.getNumberOfRecords(), f1.getNumberOfRecords()))
                                 .limit(maxFilesInJob)
                                 .map(FileReference::getFilename)
-                                .collect(Collectors.toList())
-                );
+                                .collect(Collectors.toList()));
             }
             // Create job and call run to send to job queue
             SplitPartitionJobDefinition job = new SplitPartitionJobDefinition(
-                    table.getTableUniqueId(), result.getPartition(), filesForJob);
+                    tableProperties.getStatus().getTableUniqueId(), result.getPartition(), filesForJob);
             jobSender.send(job);
         }
     }

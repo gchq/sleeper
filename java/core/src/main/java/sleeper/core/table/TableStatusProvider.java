@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * This class can be used to cache table identities to avoid looking them up repeatedly in the table index database.
+ * This class can be used to cache the table statuses to avoid looking them up repeatedly in the table index database.
  */
 public class TableStatusProvider {
     private final TableIndex tableIndex;

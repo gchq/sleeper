@@ -26,10 +26,11 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
+import sleeper.core.table.TableStatus;
 import sleeper.job.common.QueueMessageCount;
 
-import java.util.Arrays;
 import java.util.Collections;
+import java.util.stream.Stream;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -59,17 +60,21 @@ public abstract class AdminClientMockStoreBase extends AdminClientTestBase {
     }
 
     @Override
-    public void startClient(AdminClientStatusStoreFactory statusStores, QueueMessageCount.Client queueClient)
-            throws InterruptedException {
+    public void startClient(AdminClientStatusStoreFactory statusStores, QueueMessageCount.Client queueClient) throws InterruptedException {
         new AdminClient(tableIndex, store, statusStores,
                 editor, out.consoleOut(), in.consoleIn(),
                 queueClient, (properties -> Collections.emptyMap()))
-                .start(instanceId);
+                        .start(instanceId);
     }
 
-    protected void setInstanceTables(InstanceProperties instanceProperties, String... tableNames) {
+    protected void setInstanceTables(InstanceProperties instanceProperties, TableStatus... tables) {
+        setInstanceTables(instanceProperties, Stream.of(tables));
+    }
+
+    protected void setInstanceTables(InstanceProperties instanceProperties, Stream<TableStatus> tables) {
         setInstanceProperties(instanceProperties);
-        when(store.listTables(instanceProperties.get(ID))).thenReturn(Arrays.asList(tableNames));
+        tables.map(table -> createValidTableProperties(instanceProperties, table))
+                .forEach(this::saveTableProperties);
     }
 
     protected void setTableProperties(String tableName) {

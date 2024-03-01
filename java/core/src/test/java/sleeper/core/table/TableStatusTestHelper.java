@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,24 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package sleeper.core.table;
 
-import java.util.Optional;
-import java.util.stream.Stream;
+public class TableStatusTestHelper {
+    private TableStatusTestHelper() {
+    }
 
-public interface TableIndex {
-    void create(TableStatus table) throws TableAlreadyExistsException;
+    public static TableStatus uniqueIdAndName(String tableUniqueId, String tableName) {
+        return TableStatus.uniqueIdAndName(tableUniqueId, tableName, true);
+    }
 
-    Stream<TableStatus> streamAllTables();
-
-    Stream<TableStatus> streamOnlineTables();
-
-    Optional<TableStatus> getTableByName(String tableName);
-
-    Optional<TableStatus> getTableByUniqueId(String tableUniqueId);
-
-    void delete(TableStatus table);
-
-    void update(TableStatus table);
 }

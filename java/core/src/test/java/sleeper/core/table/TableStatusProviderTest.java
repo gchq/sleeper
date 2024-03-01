@@ -27,12 +27,12 @@ public class TableStatusProviderTest {
     @Test
     void shouldCacheTableById() {
         // Given
-        TableStatus before = TableStatus.uniqueIdAndName("test-table-id", "test-table");
+        TableStatus before = TableStatusTestHelper.uniqueIdAndName("test-table-id", "test-table");
         tableIndex.create(before);
         tableProvider.getById("test-table-id");
 
         // When
-        TableStatus after = TableStatus.uniqueIdAndName("test-table-id", "new-table-name");
+        TableStatus after = TableStatusTestHelper.uniqueIdAndName("test-table-id", "new-table-name");
         tableIndex.update(after);
 
         // Then
@@ -53,7 +53,7 @@ public class TableStatusProviderTest {
         tableProvider.getById("table-id");
 
         // When
-        tableIndex.create(TableStatus.uniqueIdAndName("table-id", "table-name"));
+        tableIndex.create(TableStatusTestHelper.uniqueIdAndName("table-id", "table-name"));
 
         // When / Then
         assertThat(tableProvider.getById("table-id"))

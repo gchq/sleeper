@@ -48,6 +48,11 @@ public class InMemoryTableIndex implements TableIndex {
     }
 
     @Override
+    public Stream<TableStatus> streamOnlineTables() {
+        return streamAllTables().filter(TableStatus::isOnline);
+    }
+
+    @Override
     public Optional<TableStatus> getTableByName(String tableName) {
         return Optional.ofNullable(indexByName.get(tableName));
     }

@@ -28,6 +28,7 @@ import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ONLINE;
 
 public class TablePropertiesStore {
 
@@ -73,6 +74,10 @@ public class TablePropertiesStore {
         return tableIndex.streamAllTables();
     }
 
+    public Stream<TableStatus> streamOnlineTableIds() {
+        return tableIndex.streamOnlineTables();
+    }
+
     public void createTable(TableProperties tableProperties) {
         String tableName = tableProperties.get(TableProperty.TABLE_NAME);
         tableIndex.getTableByName(tableName).ifPresent(tableId -> {
@@ -86,8 +91,10 @@ public class TablePropertiesStore {
         if (existingOpt.isPresent()) {
             TableStatus existing = existingOpt.get();
             String tableName = tableProperties.get(TABLE_NAME);
-            if (!Objects.equals(existing.getTableName(), tableName)) {
-                tableIndex.update(TableStatus.uniqueIdAndName(existing.getTableUniqueId(), tableName));
+            boolean isOnline = tableProperties.getBoolean(TABLE_ONLINE);
+            if (!Objects.equals(existing.getTableName(), tableName) || !(existing.isOnline() == isOnline)) {
+                tableIndex.update(TableStatus.uniqueIdAndName(existing.getTableUniqueId(),
+                        tableName, isOnline));
             }
             tableProperties.set(TABLE_ID, existing.getTableUniqueId());
             client.saveProperties(tableProperties);

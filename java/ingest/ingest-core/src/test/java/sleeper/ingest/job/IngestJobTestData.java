@@ -17,13 +17,14 @@
 package sleeper.ingest.job;
 
 import sleeper.core.table.TableStatus;
+import sleeper.core.table.TableStatusTestHelper;
 
 import java.util.List;
 
 public class IngestJobTestData {
 
     public static final String DEFAULT_TABLE_ID = "test-table-id";
-    public static final TableStatus DEFAULT_TABLE = TableStatus.uniqueIdAndName(DEFAULT_TABLE_ID, "test-table");
+    public static final TableStatus DEFAULT_TABLE = TableStatusTestHelper.uniqueIdAndName(DEFAULT_TABLE_ID, "test-table");
 
     private IngestJobTestData() {
     }

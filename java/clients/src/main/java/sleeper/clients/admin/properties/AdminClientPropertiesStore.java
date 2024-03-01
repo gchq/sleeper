@@ -35,10 +35,8 @@ import sleeper.configuration.properties.local.SaveLocalProperties;
 import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.table.TableNotFoundException;
-import sleeper.core.table.TableStatus;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
@@ -48,7 +46,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.SleeperPropertyValues.readList;
@@ -67,8 +64,9 @@ public class AdminClientPropertiesStore {
     private final UploadDockerImages uploadDockerImages;
     private final Path generatedDirectory;
 
-    public AdminClientPropertiesStore(AmazonS3 s3, AmazonDynamoDB dynamoDB,
-                                      InvokeCdkForInstance cdk, Path generatedDirectory, UploadDockerImages uploadDockerImages) {
+    public AdminClientPropertiesStore(
+            AmazonS3 s3, AmazonDynamoDB dynamoDB, InvokeCdkForInstance cdk,
+            Path generatedDirectory, UploadDockerImages uploadDockerImages) {
         this.s3 = s3;
         this.dynamoDB = dynamoDB;
         this.dockerImageConfiguration = new DockerImageConfiguration();
@@ -92,15 +90,6 @@ public class AdminClientPropertiesStore {
         } catch (TableNotFoundException e) {
             throw new CouldNotLoadTableProperties(instanceProperties.get(ID), tableName, e);
         }
-    }
-
-    public List<String> listTables(String instanceId) {
-        return listTables(loadInstanceProperties(instanceId));
-    }
-
-    private List<String> listTables(InstanceProperties instanceProperties) {
-        return new DynamoDBTableIndex(instanceProperties, dynamoDB).streamAllTables()
-                .map(TableStatus::getTableName).collect(Collectors.toUnmodifiableList());
     }
 
     private Stream<TableProperties> streamTableProperties(InstanceProperties instanceProperties) {
@@ -167,8 +156,7 @@ public class AdminClientPropertiesStore {
             ClientUtils.clearDirectory(generatedDirectory);
             SaveLocalProperties.saveToDirectory(generatedDirectory, instanceProperties,
                     streamTableProperties(instanceProperties)
-                            .map(table -> tableName.equals(table.get(TABLE_NAME))
-                                    ? properties : table));
+                            .map(table -> tableName.equals(table.get(TABLE_NAME)) ? properties : table));
             LOGGER.info("Saving to AWS");
             S3TableProperties.getStore(instanceProperties, s3, dynamoDB).save(properties);
         } catch (IOException | AmazonS3Exception e) {

@@ -27,6 +27,7 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.table.TableStatus;
+import sleeper.core.table.TableStatusTestHelper;
 
 import java.util.List;
 import java.util.Map;
@@ -294,7 +295,7 @@ public class FileReferencePrinterTest {
     }
 
     private TableStatus table(String name) {
-        return TableStatus.uniqueIdAndName(name, name);
+        return TableStatusTestHelper.uniqueIdAndName(name, name);
     }
 
     private FileReferenceFactory fileReferenceFactory() {
