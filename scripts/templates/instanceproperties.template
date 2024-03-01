@@ -757,6 +757,10 @@ sleeper.default.gc.delay.minutes=15
 
 ## The following properties relate to compactions.
 
+# The number of tables to perform compaction job creation for in a single invocation. A separate
+# invocation of the lambda will be made for each batch when there are more tables than the batch size.
+sleeper.compaction.job.creation.batch.size=5
+
 # The visibility timeout for the queue of compaction jobs.
 sleeper.compaction.queue.visibility.timeout.seconds=900
 
