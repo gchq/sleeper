@@ -22,6 +22,10 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 
+/**
+ * When garbage collection fails, it will continue to garbage collect any remaining files and tables.
+ * This exception gathers any failures that happened, to be thrown at the end.
+ */
 public class FailedGarbageCollectionException extends RuntimeException {
 
     private final transient List<TableFailures> tableFailures;
