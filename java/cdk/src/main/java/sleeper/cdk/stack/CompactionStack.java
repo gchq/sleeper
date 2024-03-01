@@ -336,10 +336,8 @@ public class CompactionStack extends NestedStack {
         return queue;
     }
 
-    private void ecsClusterForCompactionTasks(CoreStacks coreStacks,
-            IBucket jarsBucket,
-            LambdaCode taskCreatorJar,
-            Queue compactionJobsQueue) {
+    private void ecsClusterForCompactionTasks(
+            CoreStacks coreStacks, IBucket jarsBucket, LambdaCode taskCreatorJar, Queue compactionJobsQueue) {
         VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
                 .vpcId(instanceProperties.get(VPC_ID))
                 .build();
@@ -404,8 +402,8 @@ public class CompactionStack extends NestedStack {
     }
 
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
-    private void addEC2CapacityProvider(Cluster cluster, IVpc vpc,
-            CoreStacks coreStacks, LambdaCode taskCreatorJar) {
+    private void addEC2CapacityProvider(
+            Cluster cluster, IVpc vpc, CoreStacks coreStacks, LambdaCode taskCreatorJar) {
 
         // Create some extra user data to enable ECS container metadata file
         UserData customUserData = UserData.forLinux();
@@ -514,8 +512,8 @@ public class CompactionStack extends NestedStack {
                 .build();
     }
 
-    private ContainerDefinitionOptions createFargateContainerDefinition(ContainerImage image,
-            Map<String, String> environment, InstanceProperties instanceProperties) {
+    private ContainerDefinitionOptions createFargateContainerDefinition(
+            ContainerImage image, Map<String, String> environment, InstanceProperties instanceProperties) {
         String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
         String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
         Pair<Integer, Integer> requirements = Requirements.getArchRequirements(architecture, launchType,
@@ -529,8 +527,8 @@ public class CompactionStack extends NestedStack {
                 .build();
     }
 
-    private ContainerDefinitionOptions createEC2ContainerDefinition(ContainerImage image,
-            Map<String, String> environment, InstanceProperties instanceProperties) {
+    private ContainerDefinitionOptions createEC2ContainerDefinition(
+            ContainerImage image, Map<String, String> environment, InstanceProperties instanceProperties) {
         String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
         String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
         Pair<Integer, Integer> requirements = Requirements.getArchRequirements(architecture, launchType,
@@ -580,9 +578,8 @@ public class CompactionStack extends NestedStack {
     }
 
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
-    private void lambdaToCreateCompactionTasks(CoreStacks coreStacks,
-            LambdaCode taskCreatorJar,
-            Queue compactionJobsQueue) {
+    private void lambdaToCreateCompactionTasks(
+            CoreStacks coreStacks, LambdaCode taskCreatorJar, Queue compactionJobsQueue) {
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "compaction-tasks-creator"));
 
