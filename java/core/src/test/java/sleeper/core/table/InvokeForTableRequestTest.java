@@ -30,12 +30,57 @@ public class InvokeForTableRequestTest {
     @Test
     void shouldSendRequestForTwoTables() {
         List<String> sent = new ArrayList<>();
-        InvokeForTableRequest.sendForTables(
+        InvokeForTableRequest.forTables(
                 Stream.of(table("table-1"), table("table-2")),
                 1, request -> sent.add(serDe.toJson(request)));
         assertThat(sent).extracting(serDe::fromJson).containsExactly(
                 new InvokeForTableRequest(List.of("table-1")),
                 new InvokeForTableRequest(List.of("table-2")));
+    }
+
+    @Test
+    void shouldSendBatchesOf2() {
+        List<String> sent = new ArrayList<>();
+        InvokeForTableRequest.forTables(
+                Stream.of(table("table-1"), table("table-2")),
+                2, request -> sent.add(serDe.toJson(request)));
+        assertThat(sent).extracting(serDe::fromJson).containsExactly(
+                new InvokeForTableRequest(List.of("table-1", "table-2")));
+    }
+
+    @Test
+    void shouldSendRequestForOnlyOnlineTable() {
+        // Given
+        TableIndex tableIndex = new InMemoryTableIndex();
+        tableIndex.create(table("offline-table").takeOffline());
+        tableIndex.create(table("online-table"));
+
+        // When
+        List<String> sent = new ArrayList<>();
+        InvokeForTableRequest.forTablesWithOfflineEnabled(false, tableIndex,
+                1, request -> sent.add(serDe.toJson(request)));
+
+        // Then
+        assertThat(sent).extracting(serDe::fromJson).containsExactly(
+                new InvokeForTableRequest(List.of("online-table")));
+    }
+
+    @Test
+    void shouldSendRequestForAllTablesWhenOfflineEnabled() {
+        // Given
+        TableIndex tableIndex = new InMemoryTableIndex();
+        tableIndex.create(table("offline-table").takeOffline());
+        tableIndex.create(table("online-table"));
+
+        // When
+        List<String> sent = new ArrayList<>();
+        InvokeForTableRequest.forTablesWithOfflineEnabled(true, tableIndex,
+                1, request -> sent.add(serDe.toJson(request)));
+
+        // Then
+        assertThat(sent).extracting(serDe::fromJson).containsExactly(
+                new InvokeForTableRequest(List.of("offline-table")),
+                new InvokeForTableRequest(List.of("online-table")));
     }
 
     private TableStatus table(String tableName) {
