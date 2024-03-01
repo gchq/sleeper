@@ -286,12 +286,14 @@ public class CompactionStack extends NestedStack {
 
         // Grant this function permission to read from / write to the DynamoDB table
         coreStacks.grantCreateCompactionJobs(handlerFunction);
+        coreStacks.grantReadTablesStatus(triggerFunction);
         jarsBucket.grantRead(handlerFunction);
         statusStore.grantWriteJobEvent(handlerFunction);
 
         // Grant this function permission to put messages on the compaction queue
         compactionJobsQueue.grantSendMessages(handlerFunction);
 
+        // Send messages from the trigger function to the handler function
         Queue jobCreationQueue = sqsQueueForCompactionJobCreation();
         jobCreationQueue.grantSendMessages(triggerFunction);
         handlerFunction.addEventSource(new SqsEventSource(jobCreationQueue,
@@ -304,7 +306,7 @@ public class CompactionStack extends NestedStack {
                 .description("A rule to periodically trigger the compaction job creation lambda")
                 .enabled(!shouldDeployPaused(this))
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES))))
-                .targets(Collections.singletonList(new LambdaFunction(triggerFunction)))
+                .targets(List.of(new LambdaFunction(triggerFunction)))
                 .build();
         instanceProperties.set(COMPACTION_JOB_CREATION_LAMBDA_FUNCTION, handlerFunction.getFunctionName());
         instanceProperties.set(COMPACTION_JOB_CREATION_CLOUDWATCH_RULE, rule.getRuleName());
