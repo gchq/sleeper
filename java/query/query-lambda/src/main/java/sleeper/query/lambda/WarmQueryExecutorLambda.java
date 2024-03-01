@@ -36,6 +36,11 @@ import sleeper.core.range.Range;
 import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.ByteArrayType;
+import sleeper.core.schema.type.IntType;
+import sleeper.core.schema.type.ListType;
+import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
 import sleeper.query.model.Query;
@@ -45,7 +50,9 @@ import sleeper.query.output.ResultsOutputConstants;
 import sleeper.query.runner.recordretrieval.QueryExecutor;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
@@ -94,9 +101,34 @@ public class WarmQueryExecutorLambda implements RequestHandler<ScheduledEvent, V
                 .forEach(tableProperty -> {
                     Schema schema = tableProperty.getSchema();
                     Field field = schema.getRowKeyFields().get(0);
+
+                    // Create the max and min values for the query. We don't care what they are as long as the query runs
                     Type type = field.getType();
+                    Object min, max;
+                    if (type instanceof IntType) {
+                        min = 0;
+                        max = 1;
+                    } else if (type instanceof LongType) {
+                        min = 0;
+                        max = 1;
+                    } else if (type instanceof StringType) {
+                        min = "a";
+                        max = "aa";
+                    } else if (type instanceof ByteArrayType) {
+                        min = new ByteArrayType();
+                        max = new ByteArrayType();
+                    } else if (type instanceof MapType) {
+                        min = new HashMap<>();
+                        max = new HashMap<>();
+                    } else if (type instanceof ListType) {
+                        min = new ArrayList<>();
+                        max = new ArrayList<>();
+                    } else {
+                        throw new IllegalArgumentException("Unknown type in the schema: " + type);
+                    }
+
                     Region region = new Region(Collections.singletonList(new Range.RangeFactory(schema)
-                            .createRange(field, new StringType(), "aa")));
+                            .createRange(field, min, max)));
 
                     QuerySerDe querySerDe = new QuerySerDe(schema);
                     Query query = Query.builder()
