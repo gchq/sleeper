@@ -187,19 +187,19 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .build();
     CdkDefinedInstanceProperty COMPACTION_JOB_CREATION_BATCH_QUEUE_URL = Index.propertyBuilder("sleeper.compaction.job.creation.batch.queue.url")
             .description("The URL of the queue for sending batches of tables to create compaction jobs for.")
-            .propertyGroup(InstancePropertyGroup.COMMON)
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
     CdkDefinedInstanceProperty COMPACTION_JOB_CREATION_BATCH_QUEUE_ARN = Index.propertyBuilder("sleeper.compaction.job.creation.batch.queue.arn")
             .description("The ARN of the queue for sending batches of tables to create compaction jobs for.")
-            .propertyGroup(InstancePropertyGroup.COMMON)
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
     CdkDefinedInstanceProperty COMPACTION_JOB_CREATION_BATCH_DLQ_URL = Index.propertyBuilder("sleeper.compaction.job.creation.batch.dlq.url")
             .description("The URL of the dead letter queue for sending batches of tables to create compaction jobs for.")
-            .propertyGroup(InstancePropertyGroup.COMMON)
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
     CdkDefinedInstanceProperty COMPACTION_JOB_CREATION_BATCH_DLQ_ARN = Index.propertyBuilder("sleeper.compaction.job.creation.batch.dlq.arn")
             .description("The ARN of the dead letter queue for sending batches of tables to create compaction jobs for.")
-            .propertyGroup(InstancePropertyGroup.COMMON)
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
     CdkDefinedInstanceProperty COMPACTION_JOB_QUEUE_URL = Index.propertyBuilder("sleeper.compaction.job.queue.url")
             .description("The URL of the queue for compaction jobs.")
