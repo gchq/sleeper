@@ -136,14 +136,14 @@ public class CreateCompactionJobs {
 
     public void createJobs(TableProperties table) throws StateStoreException, IOException, ObjectFactoryException {
         LOGGER.info("Performing pre-splits on files in {}", table.getStatus());
-        SplitFileReferences.from(stateStoreProvider.getStateStore(table)).split();
-        createJobsForTable(table);
+        StateStore stateStore = stateStoreProvider.getStateStore(table);
+        SplitFileReferences.from(stateStore).split();
+        createJobsForTable(table, stateStore);
     }
 
-    private void createJobsForTable(TableProperties tableProperties) throws StateStoreException, IOException, ObjectFactoryException {
+    private void createJobsForTable(TableProperties tableProperties, StateStore stateStore) throws StateStoreException, IOException, ObjectFactoryException {
         TableStatus table = tableProperties.getStatus();
         LOGGER.debug("Creating jobs for table {}", table);
-        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
 
         List<Partition> allPartitions = stateStore.getAllPartitions();
 
