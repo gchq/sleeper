@@ -220,7 +220,7 @@ public interface CompactionProperty {
             .defaultValue("12")
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
-    UserDefinedInstanceProperty DEFAULT_COMPACTION_JOB_CREATION_BATCH_SIZE = Index.propertyBuilder("sleeper.default.table.compaction.job.creation.batch.size")
+    UserDefinedInstanceProperty DEFAULT_COMPACTION_JOB_SEND_BATCH_SIZE = Index.propertyBuilder("sleeper.default.table.compaction.job.send.batch.size")
             .description("The number of compaction jobs to send in a single batch.\n" +
                     "When compaction jobs are created, there is no limit on how many jobs can be created at once. " +
                     "A batch is a group of compaction jobs that will have their creation updates applied at the same time. " +

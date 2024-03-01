@@ -46,7 +46,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.COMPACTION_JOB_CREATION_BATCH_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.COMPACTION_JOB_SEND_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
@@ -171,8 +171,8 @@ public class CreateCompactionJobs {
         if (mode == Mode.FORCE_ALL_FILES_AFTER_STRATEGY) {
             createJobsFromLeftoverFiles(tableProperties, fileReferencesWithNoJobId, allPartitions, compactionJobs);
         }
-        int creationBatchSize = tableProperties.getInt(COMPACTION_JOB_CREATION_BATCH_SIZE);
-        for (List<CompactionJob> batch : splitListIntoBatchesOf(creationBatchSize, compactionJobs)) {
+        int sendBatchSize = tableProperties.getInt(COMPACTION_JOB_SEND_BATCH_SIZE);
+        for (List<CompactionJob> batch : splitListIntoBatchesOf(sendBatchSize, compactionJobs)) {
             batchCreateJobs(stateStore, batch);
         }
     }
