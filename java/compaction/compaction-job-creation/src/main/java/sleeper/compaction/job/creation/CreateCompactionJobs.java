@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.job.creation.CreateCompactionJobsFailedException.TableFailure;
 import sleeper.compaction.strategy.CompactionStrategy;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
@@ -115,13 +116,21 @@ public class CreateCompactionJobs {
         }
     }
 
-    public void createJobs(InvokeForTableRequest request) throws StateStoreException, IOException, ObjectFactoryException {
-        List<TableProperties> tables = request.getTableIds().stream()
-                .map(tablePropertiesProvider::getById)
-                .collect(Collectors.toUnmodifiableList());
-        LOGGER.info("Running for tables: {}", tables);
-        for (TableProperties table : tables) {
-            createJobs(table);
+    public void createJobs(InvokeForTableRequest request) throws CreateCompactionJobsFailedException {
+        List<TableFailure> tableFailures = new ArrayList<>();
+        for (String tableId : request.getTableIds()) {
+            TableStatus status = TableStatus.uniqueIdAndName(tableId, "not-found", true);
+            try {
+                TableProperties tableProperties = tablePropertiesProvider.getById(tableId);
+                status = tableProperties.getStatus();
+                createJobs(tableProperties);
+            } catch (Exception e) {
+                LOGGER.error("Failed compaction job creation for table {}", status, e);
+                tableFailures.add(new TableFailure(status, e));
+            }
+        }
+        if (!tableFailures.isEmpty()) {
+            throw new CreateCompactionJobsFailedException(tableFailures);
         }
     }
 

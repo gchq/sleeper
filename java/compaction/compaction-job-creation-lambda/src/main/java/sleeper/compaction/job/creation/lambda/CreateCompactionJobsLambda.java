@@ -37,12 +37,11 @@ import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.core.statestore.StateStoreException;
+import sleeper.core.table.InvokeForTableRequestSerDe;
 import sleeper.core.util.LoggedDuration;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreProvider;
 
-import java.io.IOException;
 import java.time.Instant;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
@@ -52,16 +51,17 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
  */
 @SuppressWarnings("unused")
 public class CreateCompactionJobsLambda implements RequestHandler<SQSEvent, Void> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(CreateCompactionJobsLambda.class);
+
     private final AmazonDynamoDB dynamoDBClient;
-    private AmazonSQS sqsClient;
+    private final AmazonSQS sqsClient;
     private final InstanceProperties instanceProperties;
     private final ObjectFactory objectFactory;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final PropertiesReloader propertiesReloader;
     private final StateStoreProvider stateStoreProvider;
     private final CompactionJobStatusStore jobStatusStore;
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(CreateCompactionJobsLambda.class);
+    private final InvokeForTableRequestSerDe serDe = new InvokeForTableRequestSerDe();
 
     /**
      * No-args constructor used by Lambda service. Dynamo file table name will be obtained from an environment variable.
@@ -93,11 +93,12 @@ public class CreateCompactionJobsLambda implements RequestHandler<SQSEvent, Void
 
         CreateCompactionJobs createJobs = CreateCompactionJobs.standard(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider,
                 new SendCompactionJobToSqs(instanceProperties, sqsClient)::send, jobStatusStore);
-        try {
-            createJobs.createJobs();
-        } catch (StateStoreException | IOException | ObjectFactoryException e) {
-            LOGGER.error("Exception thrown whilst creating jobs", e);
-        }
+
+        event.getRecords().stream()
+                .map(SQSEvent.SQSMessage::getBody)
+                .peek(body -> LOGGER.info("Received message: {}", body))
+                .map(serDe::fromJson)
+                .forEach(createJobs::createJobs);
 
         Instant finishTime = Instant.now();
         LOGGER.info("Lambda finished at {} (ran for {})", finishTime, LoggedDuration.withFullOutput(startTime, finishTime));

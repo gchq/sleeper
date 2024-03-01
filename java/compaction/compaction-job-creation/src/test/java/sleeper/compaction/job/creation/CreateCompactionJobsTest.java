@@ -43,8 +43,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
@@ -277,7 +279,7 @@ public class CreateCompactionJobsTest {
                             tableProperties1.get(TABLE_NAME), stateStore1,
                             tableProperties2.get(TABLE_NAME), stateStore2)),
                     jobs::add, jobStatusStore);
-            jobCreator.createJobs(new InvokeForTableRequest(List.of(tableProperties1.get(TABLE_ID))));
+            InvokeForTableRequest.forTables(Stream.of(tableProperties1.getStatus()), 1, jobCreator::createJobs);
 
             // Then
             assertThat(jobs).singleElement().satisfies(job -> {
@@ -299,6 +301,65 @@ public class CreateCompactionJobsTest {
             });
             assertThat(stateStore2.getFileReferences())
                     .containsExactly(fileReference5, fileReference6, fileReference7, fileReference8);
+        }
+
+        @Test
+        public void shouldFailLoadingOneTableButMoveOnToAnother() throws Exception {
+            // Given
+            TableProperties tableProperties1 = CreateJobsTestUtils.createTableProperties(schema, instanceProperties);
+            TableProperties tableProperties2 = CreateJobsTestUtils.createTableProperties(schema, instanceProperties);
+            StateStore stateStore1 = inMemoryStateStoreWithSinglePartition(schema);
+            stateStore1.fixTime(DEFAULT_UPDATE_TIME);
+            StateStore stateStore2 = inMemoryStateStoreWithSinglePartition(schema);
+            stateStore2.fixTime(DEFAULT_UPDATE_TIME);
+            FileReferenceFactory factory1 = FileReferenceFactory.fromUpdatedAt(stateStore1, DEFAULT_UPDATE_TIME);
+            FileReference fileReference1 = factory1.rootFile("file1", 200L);
+            FileReference fileReference2 = factory1.rootFile("file2", 200L);
+            FileReference fileReference3 = factory1.rootFile("file3", 200L);
+            FileReference fileReference4 = factory1.rootFile("file4", 200L);
+            FileReferenceFactory factory2 = FileReferenceFactory.fromUpdatedAt(stateStore2, DEFAULT_UPDATE_TIME);
+            FileReference fileReference5 = factory2.rootFile("file5", 200L);
+            FileReference fileReference6 = factory2.rootFile("file6", 200L);
+            FileReference fileReference7 = factory2.rootFile("file7", 200L);
+            FileReference fileReference8 = factory2.rootFile("file8", 200L);
+            stateStore1.addFiles(List.of(fileReference1, fileReference2, fileReference3, fileReference4));
+            stateStore2.addFiles(List.of(fileReference5, fileReference6, fileReference7, fileReference8));
+
+            // When
+            CreateCompactionJobs jobCreator = CreateCompactionJobs.standard(
+                    ObjectFactory.noUserJars(), instanceProperties,
+                    new FixedTablePropertiesProvider(tableProperties2),
+                    new FixedStateStoreProvider(Map.of(
+                            tableProperties1.get(TABLE_NAME), stateStore1,
+                            tableProperties2.get(TABLE_NAME), stateStore2)),
+                    jobs::add, jobStatusStore);
+
+            // And / Then
+            assertThatThrownBy(() -> InvokeForTableRequest.forTables(
+                    Stream.of(tableProperties1.getStatus(), tableProperties2.getStatus()),
+                    2, jobCreator::createJobs))
+                    .isInstanceOf(CreateCompactionJobsFailedException.class);
+
+            // Then
+            assertThat(jobs).singleElement().satisfies(job -> {
+                assertThat(job).isEqualTo(CompactionJob.builder()
+                        .jobId(job.getId())
+                        .tableId(tableProperties2.get(TABLE_ID))
+                        .inputFiles(List.of("file5", "file6", "file7", "file8"))
+                        .outputFile(job.getOutputFile())
+                        .partitionId("root")
+                        .build());
+                assertThat(stateStore2.getFileReferences())
+                        .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
+                        .containsExactly(
+                                withJobId(fileReference5, job.getId()),
+                                withJobId(fileReference6, job.getId()),
+                                withJobId(fileReference7, job.getId()),
+                                withJobId(fileReference8, job.getId()));
+                verifyJobCreationReported(job);
+            });
+            assertThat(stateStore1.getFileReferences())
+                    .containsExactly(fileReference1, fileReference2, fileReference3, fileReference4);
         }
     }
 
@@ -398,6 +459,6 @@ public class CreateCompactionJobsTest {
     }
 
     private void createJobs(CreateCompactionJobs jobCreator) throws Exception {
-        jobCreator.createJobs(new InvokeForTableRequest(List.of(tableProperties.get(TABLE_ID))));
+        InvokeForTableRequest.forTables(Stream.of(tableProperties.getStatus()), 1, jobCreator::createJobs);
     }
 }
