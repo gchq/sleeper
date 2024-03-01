@@ -90,7 +90,7 @@ public class CreateCompactionJobs {
     }
 
     public enum Mode {
-        STRATEGY, ALL_FILES_WITH_STRATEGY_THEN_LEFTOVER;
+        STRATEGY, FORCE_ALL_FILES_AFTER_STRATEGY;
     }
 
     public static CreateCompactionJobs compactAllFiles(ObjectFactory objectFactory,
@@ -99,7 +99,7 @@ public class CreateCompactionJobs {
             StateStoreProvider stateStoreProvider,
             JobSender jobSender,
             CompactionJobStatusStore jobStatusStore) {
-        return new CreateCompactionJobs(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider, jobSender, jobStatusStore, Mode.ALL_FILES_WITH_STRATEGY_THEN_LEFTOVER);
+        return new CreateCompactionJobs(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider, jobSender, jobStatusStore, Mode.FORCE_ALL_FILES_AFTER_STRATEGY);
     }
 
     public static CreateCompactionJobs standard(ObjectFactory objectFactory,
@@ -168,7 +168,7 @@ public class CreateCompactionJobs {
         List<CompactionJob> compactionJobs = compactionStrategy.createCompactionJobs(fileReferencesWithJobId, fileReferencesWithNoJobId, allPartitions);
         LOGGER.info("Used {} to create {} compaction jobs for table {}", compactionStrategy.getClass().getSimpleName(), compactionJobs.size(), table);
 
-        if (mode == Mode.ALL_FILES_WITH_STRATEGY_THEN_LEFTOVER) {
+        if (mode == Mode.FORCE_ALL_FILES_AFTER_STRATEGY) {
             createJobsFromLeftoverFiles(tableProperties, fileReferencesWithNoJobId, allPartitions, compactionJobs);
         }
         int creationBatchSize = tableProperties.getInt(COMPACTION_JOB_CREATION_BATCH_SIZE);

@@ -48,7 +48,7 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
-import static sleeper.compaction.job.creation.CreateCompactionJobs.Mode.ALL_FILES_WITH_STRATEGY_THEN_LEFTOVER;
+import static sleeper.compaction.job.creation.CreateCompactionJobs.Mode.FORCE_ALL_FILES_AFTER_STRATEGY;
 import static sleeper.compaction.job.creation.CreateCompactionJobs.Mode.STRATEGY;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_BATCH_SIZE;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
@@ -59,7 +59,7 @@ public class CreateJobsClient {
 
     private static final Map<String, CreateCompactionJobs.Mode> ARG_TO_MODE = Map.of(
             "default", STRATEGY,
-            "all", ALL_FILES_WITH_STRATEGY_THEN_LEFTOVER);
+            "all", FORCE_ALL_FILES_AFTER_STRATEGY);
 
     public static void main(String[] args) throws ObjectFactoryException, StateStoreException, IOException {
         if (args.length < 2) {
