@@ -22,7 +22,7 @@ import java.util.List;
 
 public interface PartitionSplittingProperty {
     UserDefinedInstanceProperty PARTITION_SPLITTING_TRIGGER_PERIOD_IN_MINUTES = Index.propertyBuilder("sleeper.partition.splitting.period.minutes")
-            .description("The frequency in minutes with which the lambda runs to finds partitions that need splitting " +
+            .description("The frequency in minutes with which the lambda runs to find partitions that need splitting " +
                     "and send jobs to the splitting lambda.")
             .defaultValue("30")
             .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)

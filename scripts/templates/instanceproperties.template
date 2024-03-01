@@ -704,7 +704,7 @@ sleeper.bulk.import.eks.is.native.libs.image=false
 
 ## The following properties relate to the splitting of partitions.
 
-# The frequency in minutes with which the lambda runs to finds partitions that need splitting and send
+# The frequency in minutes with which the lambda runs to find partitions that need splitting and send
 # jobs to the splitting lambda.
 sleeper.partition.splitting.period.minutes=30
 
