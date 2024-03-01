@@ -34,6 +34,7 @@ import org.testcontainers.utility.DockerImageName;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobSerDe;
 import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.job.creation.CreateCompactionJobs.Mode;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -156,9 +157,9 @@ public class CreateCompactionJobsIT {
     }
 
     private CreateCompactionJobs jobCreator() throws ObjectFactoryException {
-        return CreateCompactionJobs.standard(new ObjectFactory(instanceProperties, s3, null),
+        return new CreateCompactionJobs(new ObjectFactory(instanceProperties, s3, null),
                 instanceProperties, tablePropertiesProvider, stateStoreProvider,
                 new SendCompactionJobToSqs(instanceProperties, sqs)::send,
-                CompactionJobStatusStore.NONE);
+                CompactionJobStatusStore.NONE, Mode.STRATEGY);
     }
 }
