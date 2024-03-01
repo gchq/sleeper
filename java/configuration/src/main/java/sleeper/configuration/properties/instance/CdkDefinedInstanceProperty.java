@@ -231,8 +231,8 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .description("The ARN of the dead letter queue for partition splitting.")
             .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
             .build();
-    CdkDefinedInstanceProperty PARTITION_SPLITTING_LAMBDA_FUNCTION = Index.propertyBuilder("sleeper.partition.splitting.lambda.function")
-            .description("The function name of the partition splitting lambda.")
+    CdkDefinedInstanceProperty PARTITION_SPLITTING_TRIGGER_LAMBDA_FUNCTION = Index.propertyBuilder("sleeper.partition.splitting.trigger.lambda.function")
+            .description("The function name of the lambda that finds partitions to split and sends jobs to the split partition lambda.")
             .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
             .build();
     CdkDefinedInstanceProperty PARTITION_SPLITTING_CLOUDWATCH_RULE = Index.propertyBuilder("sleeper.partition.splitting.rule")

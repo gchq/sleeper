@@ -54,11 +54,11 @@ import static sleeper.cdk.Utils.shouldDeployPaused;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_DLQ_ARN;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_DLQ_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_LAMBDA_FUNCTION;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_TRIGGER_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.PartitionSplittingProperty.FIND_PARTITIONS_TO_SPLIT_LAMBDA_MEMORY_IN_MB;
 import static sleeper.configuration.properties.instance.PartitionSplittingProperty.FIND_PARTITIONS_TO_SPLIT_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.instance.PartitionSplittingProperty.PARTITION_SPLITTING_PERIOD_IN_MINUTES;
+import static sleeper.configuration.properties.instance.PartitionSplittingProperty.PARTITION_SPLITTING_TRIGGER_PERIOD_IN_MINUTES;
 import static sleeper.configuration.properties.instance.PartitionSplittingProperty.SPLIT_PARTITIONS_LAMBDA_MEMORY_IN_MB;
 import static sleeper.configuration.properties.instance.PartitionSplittingProperty.SPLIT_PARTITIONS_TIMEOUT_IN_SECONDS;
 
@@ -163,10 +163,10 @@ public class PartitionSplittingStack extends NestedStack {
                 .ruleName(SleeperScheduleRule.PARTITION_SPLITTING.buildRuleName(instanceProperties))
                 .description("A rule to periodically trigger the lambda to look for partitions to split")
                 .enabled(!shouldDeployPaused(this))
-                .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(PARTITION_SPLITTING_PERIOD_IN_MINUTES))))
+                .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(PARTITION_SPLITTING_TRIGGER_PERIOD_IN_MINUTES))))
                 .targets(Collections.singletonList(new LambdaFunction(findPartitionsToSplitLambda)))
                 .build();
-        instanceProperties.set(PARTITION_SPLITTING_LAMBDA_FUNCTION, findPartitionsToSplitLambda.getFunctionName());
+        instanceProperties.set(PARTITION_SPLITTING_TRIGGER_LAMBDA_FUNCTION, findPartitionsToSplitLambda.getFunctionName());
         instanceProperties.set(PARTITION_SPLITTING_CLOUDWATCH_RULE, rule.getRuleName());
 
         String splitFunctionName = Utils.truncateTo64Characters(String.join("-", "sleeper",

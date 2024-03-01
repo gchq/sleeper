@@ -22,8 +22,9 @@ import sleeper.configuration.properties.SleeperPropertyIndex;
 import java.util.List;
 
 public interface PartitionSplittingProperty {
-    UserDefinedInstanceProperty PARTITION_SPLITTING_PERIOD_IN_MINUTES = Index.propertyBuilder("sleeper.partition.splitting.period.minutes")
-            .description("The frequency in minutes with which the lambda that finds partitions that need splitting runs.")
+    UserDefinedInstanceProperty PARTITION_SPLITTING_TRIGGER_PERIOD_IN_MINUTES = Index.propertyBuilder("sleeper.partition.splitting.period.minutes")
+            .description("The frequency in minutes with which the lambda that finds partitions that need splitting " +
+                    "and sends jobs to the splitting lambda runs.")
             .defaultValue("30")
             .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
             .runCdkDeployWhenChanged(true).build();
