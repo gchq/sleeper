@@ -15,7 +15,6 @@
  */
 package sleeper.compaction.job.creation.lambda;
 
-import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -84,30 +83,6 @@ public class CreateCompactionJobsLambda implements RequestHandler<SQSEvent, Void
         this.propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
         Configuration conf = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
         this.stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, conf);
-        this.jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
-    }
-
-    /**
-     * Constructor used in tests.
-     *
-     * @param  instanceProperties     The SleeperProperties
-     * @param  endpointConfiguration  The configuration of the endpoint for the DynamoDB client
-     * @throws ObjectFactoryException if user jars cannot be loaded
-     */
-    public CreateCompactionJobsLambda(InstanceProperties instanceProperties,
-            AwsClientBuilder.EndpointConfiguration endpointConfiguration) throws ObjectFactoryException {
-        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        this.instanceProperties = instanceProperties;
-
-        this.objectFactory = new ObjectFactory(instanceProperties, s3Client, "/tmp");
-
-        this.dynamoDBClient = AmazonDynamoDBClientBuilder.standard()
-                .withEndpointConfiguration(endpointConfiguration)
-                .build();
-        this.tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
-        this.propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
-        this.stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties,
-                HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties));
         this.jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
     }
 
