@@ -71,22 +71,26 @@ public class CreateCompactionJobs {
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
     private final CompactionJobStatusStore jobStatusStore;
-    private final boolean compactAllFiles;
+    private final Mode mode;
 
-    private CreateCompactionJobs(ObjectFactory objectFactory,
+    public CreateCompactionJobs(ObjectFactory objectFactory,
             InstanceProperties instanceProperties,
             TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider,
             JobSender jobSender,
             CompactionJobStatusStore jobStatusStore,
-            boolean compactAllFiles) {
+            Mode mode) {
         this.objectFactory = objectFactory;
         this.instanceProperties = instanceProperties;
         this.jobSender = jobSender;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
         this.jobStatusStore = jobStatusStore;
-        this.compactAllFiles = compactAllFiles;
+        this.mode = mode;
+    }
+
+    public enum Mode {
+        STRATEGY, ALL_FILES_WITH_STRATEGY_THEN_LEFTOVER;
     }
 
     public static CreateCompactionJobs compactAllFiles(ObjectFactory objectFactory,
@@ -95,7 +99,7 @@ public class CreateCompactionJobs {
             StateStoreProvider stateStoreProvider,
             JobSender jobSender,
             CompactionJobStatusStore jobStatusStore) {
-        return new CreateCompactionJobs(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider, jobSender, jobStatusStore, true);
+        return new CreateCompactionJobs(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider, jobSender, jobStatusStore, Mode.ALL_FILES_WITH_STRATEGY_THEN_LEFTOVER);
     }
 
     public static CreateCompactionJobs standard(ObjectFactory objectFactory,
@@ -104,7 +108,7 @@ public class CreateCompactionJobs {
             StateStoreProvider stateStoreProvider,
             JobSender jobSender,
             CompactionJobStatusStore jobStatusStore) {
-        return new CreateCompactionJobs(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider, jobSender, jobStatusStore, false);
+        return new CreateCompactionJobs(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider, jobSender, jobStatusStore, Mode.STRATEGY);
     }
 
     public void createJobs() throws StateStoreException, IOException, ObjectFactoryException {
@@ -164,7 +168,7 @@ public class CreateCompactionJobs {
         List<CompactionJob> compactionJobs = compactionStrategy.createCompactionJobs(fileReferencesWithJobId, fileReferencesWithNoJobId, allPartitions);
         LOGGER.info("Used {} to create {} compaction jobs for table {}", compactionStrategy.getClass().getSimpleName(), compactionJobs.size(), table);
 
-        if (compactAllFiles) {
+        if (mode == Mode.ALL_FILES_WITH_STRATEGY_THEN_LEFTOVER) {
             createJobsFromLeftoverFiles(tableProperties, fileReferencesWithNoJobId, allPartitions, compactionJobs);
         }
         int creationBatchSize = tableProperties.getInt(COMPACTION_JOB_CREATION_BATCH_SIZE);
