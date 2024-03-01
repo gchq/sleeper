@@ -37,8 +37,8 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.table.InvokeForTableRequest;
-import sleeper.garbagecollector.FailedGarbageCollection.FileFailure;
-import sleeper.garbagecollector.FailedGarbageCollection.TableFailures;
+import sleeper.garbagecollector.FailedGarbageCollectionException.FileFailure;
+import sleeper.garbagecollector.FailedGarbageCollectionException.TableFailures;
 import sleeper.garbagecollector.GarbageCollector.DeleteFile;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.statestore.FixedStateStoreProvider;
@@ -304,7 +304,7 @@ public class GarbageCollectorIT {
 
             // And / Then
             assertThatThrownBy(() -> collector.runAtTime(currentTime, request))
-                    .isInstanceOfSatisfying(FailedGarbageCollection.class,
+                    .isInstanceOfSatisfying(FailedGarbageCollectionException.class,
                             e -> assertThat(e.getTableFailures())
                                     .usingRecursiveFieldByFieldElementComparator()
                                     .containsExactly(fileFailure(table1, file1, failure)));

@@ -16,9 +16,9 @@
 package sleeper.garbagecollector;
 
 import sleeper.core.table.TableStatus;
-import sleeper.garbagecollector.FailedGarbageCollection.FileFailure;
-import sleeper.garbagecollector.FailedGarbageCollection.StateStoreUpdateFailure;
-import sleeper.garbagecollector.FailedGarbageCollection.TableFailures;
+import sleeper.garbagecollector.FailedGarbageCollectionException.FileFailure;
+import sleeper.garbagecollector.FailedGarbageCollectionException.StateStoreUpdateFailure;
+import sleeper.garbagecollector.FailedGarbageCollectionException.TableFailures;
 
 import java.util.ArrayList;
 import java.util.List;

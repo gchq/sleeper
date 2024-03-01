@@ -121,7 +121,7 @@ public class GarbageCollectorS3IT {
 
         // And / Then
         assertThatThrownBy(() -> collector.runAtTime(currentTime, request))
-                .isInstanceOf(FailedGarbageCollection.class);
+                .isInstanceOf(FailedGarbageCollectionException.class);
         assertThat(s3Client.doesObjectExist(TEST_BUCKET, "old-file-2.parquet")).isFalse();
         assertThat(s3Client.doesObjectExist(TEST_BUCKET, "new-file-2.parquet")).isTrue();
         assertThat(stateStore.getAllFilesWithMaxUnreferenced(10))

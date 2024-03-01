@@ -29,7 +29,7 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.InvokeForTableRequest;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
-import sleeper.garbagecollector.FailedGarbageCollection.TableFailures;
+import sleeper.garbagecollector.FailedGarbageCollectionException.TableFailures;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
@@ -73,11 +73,11 @@ public class GarbageCollector {
         this.garbageCollectorBatchSize = instanceProperties.getInt(GARBAGE_COLLECTOR_BATCH_SIZE);
     }
 
-    public void run(InvokeForTableRequest request) throws FailedGarbageCollection {
+    public void run(InvokeForTableRequest request) throws FailedGarbageCollectionException {
         runAtTime(Instant.now(), request);
     }
 
-    public void runAtTime(Instant startTime, InvokeForTableRequest request) throws FailedGarbageCollection {
+    public void runAtTime(Instant startTime, InvokeForTableRequest request) throws FailedGarbageCollectionException {
         List<TableProperties> tables = request.getTableIds().stream()
                 .map(tablePropertiesProvider::getById)
                 .collect(toUnmodifiableList());
@@ -101,7 +101,7 @@ public class GarbageCollector {
         LoggedDuration duration = LoggedDuration.withFullOutput(startTime, Instant.now());
         LOGGER.info("{} files deleted in {}", totalDeleted, duration);
         if (!failedTables.isEmpty()) {
-            throw new FailedGarbageCollection(failedTables);
+            throw new FailedGarbageCollectionException(failedTables);
         }
     }
 

@@ -22,11 +22,11 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 
-public class FailedGarbageCollection extends RuntimeException {
+public class FailedGarbageCollectionException extends RuntimeException {
 
     private final transient List<TableFailures> tableFailures;
 
-    public FailedGarbageCollection(List<TableFailures> tableFailures) {
+    public FailedGarbageCollectionException(List<TableFailures> tableFailures) {
         super(getMessage(tableFailures), getCause(tableFailures));
         this.tableFailures = tableFailures;
     }
