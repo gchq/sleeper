@@ -25,6 +25,7 @@ import software.amazon.awssdk.services.lambda.LambdaClient;
 import sleeper.clients.deploy.InvokeLambda;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.creation.CreateCompactionJobs;
+import sleeper.compaction.job.creation.CreateCompactionJobs.Mode;
 import sleeper.compaction.job.creation.SendCompactionJobToSqs;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
@@ -32,14 +33,13 @@ import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
 import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.jars.ObjectFactoryException;
-import sleeper.core.statestore.StateStoreException;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.table.InvokeForTableRequest;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -48,6 +48,7 @@ import java.util.stream.Stream;
 import static java.util.function.Predicate.not;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
 public class AwsCompactionDriver implements CompactionDriver {
@@ -83,15 +84,15 @@ public class AwsCompactionDriver implements CompactionDriver {
         CompactionJobStatusStore store = CompactionJobStatusStoreFactory
                 .getStatusStoreWithStronglyConsistentReads(dynamoDBClient, instance.getInstanceProperties());
         Set<String> jobsBefore = allJobIds(store).collect(Collectors.toSet());
-        CreateCompactionJobs createJobs = CreateCompactionJobs.compactAllFiles(
+        CreateCompactionJobs createJobs = new CreateCompactionJobs(
                 ObjectFactory.noUserJars(), instance.getInstanceProperties(),
                 instance.getTablePropertiesProvider(), instance.getStateStoreProvider(),
-                new SendCompactionJobToSqs(instance.getInstanceProperties(), sqsClient)::send, store);
-        try {
-            createJobs.createJobs();
-        } catch (StateStoreException | ObjectFactoryException | IOException e) {
-            throw new RuntimeException(e);
-        }
+                new SendCompactionJobToSqs(instance.getInstanceProperties(), sqsClient)::send, store,
+                Mode.FORCE_ALL_FILES_AFTER_STRATEGY);
+        int batchSize = instance.getInstanceProperties().getInt(COMPACTION_JOB_CREATION_BATCH_SIZE);
+        InvokeForTableRequest.forTables(
+                instance.streamTableProperties().map(TableProperties::getStatus),
+                batchSize, createJobs::createJobs);
         List<String> newJobs = allJobIds(store)
                 .filter(not(jobsBefore::contains))
                 .collect(Collectors.toUnmodifiableList());
