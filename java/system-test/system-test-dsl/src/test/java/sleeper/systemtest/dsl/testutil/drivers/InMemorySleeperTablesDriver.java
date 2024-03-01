@@ -64,7 +64,7 @@ public class InMemorySleeperTablesDriver implements SleeperTablesDriver {
     }
 
     @Override
-    public void addTable(InstanceProperties instanceProperties, TableProperties properties) {
+    public synchronized void addTable(InstanceProperties instanceProperties, TableProperties properties) {
         String instanceId = instanceProperties.get(ID);
         properties.validate();
         addInstanceIfNotPresent(instanceId);
