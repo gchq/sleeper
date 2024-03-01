@@ -25,6 +25,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.InvokeForTableRequest;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
@@ -87,26 +88,8 @@ public class GarbageCollector {
             TableStatus table = tableProperties.getStatus();
             FilesDeleted deleted = new FilesDeleted(table);
             try {
-                LOGGER.info("Obtaining StateStore for table {}", table);
-                StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-
-                LOGGER.debug("Requesting iterator of files ready for garbage collection from state store");
-                int delayBeforeDeletion = tableProperties.getInt(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION);
-                Instant deletionTime = startTime.minus(delayBeforeDeletion, ChronoUnit.MINUTES);
-                Iterator<String> readyForGC = stateStore.getReadyForGCFilenamesBefore(deletionTime).iterator();
-
-                List<String> batch = new ArrayList<>();
-                while (readyForGC.hasNext()) {
-                    String filename = readyForGC.next();
-                    batch.add(filename);
-                    if (batch.size() == garbageCollectorBatchSize) {
-                        deleteBatch(batch, stateStore, deleted);
-                        batch.clear();
-                    }
-                }
-                if (!batch.isEmpty()) {
-                    deleteBatch(batch, stateStore, deleted);
-                }
+                LOGGER.info("Starting GC for table {}", table);
+                deleteInBatches(tableProperties, startTime, deleted);
                 LOGGER.info("{} files deleted for table {}", deleted.getDeletedFilenames().size(), table);
                 totalDeleted += deleted.getDeletedFilenames().size();
                 deleted.buildTableFailures().ifPresent(failedTables::add);
@@ -120,6 +103,32 @@ public class GarbageCollector {
         if (!failedTables.isEmpty()) {
             throw new FailedGarbageCollection(failedTables);
         }
+    }
+
+    private void deleteInBatches(TableProperties tableProperties, Instant startTime, FilesDeleted deleted) throws StateStoreException {
+        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
+        Iterator<String> readyForGC = getReadyForGCIterator(tableProperties, startTime, stateStore);
+        List<String> batch = new ArrayList<>();
+        while (readyForGC.hasNext()) {
+            String filename = readyForGC.next();
+            batch.add(filename);
+            if (batch.size() == garbageCollectorBatchSize) {
+                deleteBatch(batch, stateStore, deleted);
+                batch.clear();
+            }
+        }
+        if (!batch.isEmpty()) {
+            deleteBatch(batch, stateStore, deleted);
+        }
+    }
+
+    private Iterator<String> getReadyForGCIterator(
+            TableProperties tableProperties, Instant startTime, StateStore stateStore) throws StateStoreException {
+        LOGGER.debug("Requesting iterator of files ready for garbage collection from state store");
+        int delayBeforeDeletion = tableProperties.getInt(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION);
+        Instant deletionTime = startTime.minus(delayBeforeDeletion, ChronoUnit.MINUTES);
+        Iterator<String> readyForGC = stateStore.getReadyForGCFilenamesBefore(deletionTime).iterator();
+        return readyForGC;
     }
 
     private void deleteBatch(List<String> batch, StateStore stateStore, FilesDeleted deleted) {
