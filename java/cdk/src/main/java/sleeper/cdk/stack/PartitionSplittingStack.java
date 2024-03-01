@@ -102,9 +102,11 @@ public class PartitionSplittingStack extends NestedStack {
 
         // Lambda to batch tables and put requests on the batch SQS queue, to be consumed by FindPartitionsToSplit
         createTriggerFunction(instanceProperties, splitterJar, coreStacks, environmentVariables);
+
         // Lambda to look for partitions that need splitting (for each partition that
         // needs splitting it puts a definition of the splitting job onto a queue)
         createFindPartitionsToSplitFunction(instanceProperties, splitterJar, coreStacks, environmentVariables);
+
         // Lambda to split partitions (triggered by partition splitting job
         // arriving on partitionSplittingQueue)
         createSplitPartitionFunction(instanceProperties, splitterJar, coreStacks, environmentVariables);

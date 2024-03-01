@@ -71,7 +71,7 @@ public class FindPartitionsToSplitLambda implements RequestHandler<SQSEvent, Voi
     @Override
     public Void handleRequest(SQSEvent event, Context context) {
         Instant startTime = Instant.now();
-        LOGGER.info("FindPartitionsToSplitLambda triggered at {}", startTime);
+        LOGGER.info("Lambda triggered at {}", startTime);
         event.getRecords().stream()
                 .map(SQSEvent.SQSMessage::getBody)
                 .peek(body -> LOGGER.info("Received message: {}", body))
