@@ -25,6 +25,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
+import sleeper.query.runner.recordretrieval.InMemoryDataStore;
 import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.systemtest.dsl.instance.SleeperTablesDriver;
@@ -42,6 +43,11 @@ public class InMemorySleeperTablesDriver implements SleeperTablesDriver {
     private final Map<String, TableIndex> tableIndexByInstanceId = new TreeMap<>();
     private final Map<String, TablePropertiesStore> propertiesStoreByInstanceId = new TreeMap<>();
     private final Map<String, Map<String, StateStore>> stateStoresByInstanceId = new TreeMap<>();
+    private final InMemoryDataStore data;
+
+    public InMemorySleeperTablesDriver(InMemoryDataStore data) {
+        this.data = data;
+    }
 
     @Override
     public void saveTableProperties(InstanceProperties instanceProperties, TableProperties tableProperties) {
@@ -54,6 +60,7 @@ public class InMemorySleeperTablesDriver implements SleeperTablesDriver {
         TablePropertiesStore tables = deployedInstancePropertiesStore(instanceId);
         tables.streamAllTableStatuses().forEach(tables::delete);
         stateStoresByInstanceId.put(instanceId, new TreeMap<>());
+        data.deleteAllFiles();
     }
 
     @Override

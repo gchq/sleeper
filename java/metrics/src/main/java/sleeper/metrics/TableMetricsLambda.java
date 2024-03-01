@@ -36,6 +36,8 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.table.InvokeForTableRequest;
+import sleeper.core.table.InvokeForTableRequestSerDe;
 import sleeper.core.util.LoggedDuration;
 import sleeper.statestore.StateStoreProvider;
 
@@ -51,7 +53,7 @@ public class TableMetricsLambda implements RequestHandler<SQSEvent, Void> {
     private final AmazonS3 s3Client;
     private final AmazonDynamoDB dynamoClient;
     private final String configBucketName;
-    private final CalculateTableMetricsSerDe serDe = new CalculateTableMetricsSerDe();
+    private final InvokeForTableRequestSerDe serDe = new InvokeForTableRequestSerDe();
 
     public TableMetricsLambda() {
         this(
@@ -83,7 +85,7 @@ public class TableMetricsLambda implements RequestHandler<SQSEvent, Void> {
         return null;
     }
 
-    public void publishStateStoreMetrics(CalculateTableMetricsRequest request) {
+    public void publishStateStoreMetrics(InvokeForTableRequest request) {
         LOGGER.info("Loading instance properties from config bucket {}", configBucketName);
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3(s3Client, configBucketName);
@@ -108,8 +110,7 @@ public class TableMetricsLambda implements RequestHandler<SQSEvent, Void> {
     public void publishStateStoreMetrics(MetricsLogger metricsLogger, TableMetrics metrics) {
         metricsLogger.setDimensions(DimensionSet.of(
                 "instanceId", metrics.getInstanceId(),
-                "tableName", metrics.getTableName()
-        ));
+                "tableName", metrics.getTableName()));
 
         metricsLogger.putMetric("ActiveFileCount", metrics.getFileCount(), Unit.COUNT);
         metricsLogger.putMetric("RecordCount", metrics.getRecordCount(), Unit.COUNT);

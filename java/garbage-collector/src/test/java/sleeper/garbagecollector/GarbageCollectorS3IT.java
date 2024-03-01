@@ -39,6 +39,7 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.table.InvokeForTableRequest;
 import sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils;
 import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.StateStoreProvider;
@@ -52,9 +53,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
@@ -114,8 +115,8 @@ public class GarbageCollectorS3IT {
                 List.of(oldFile1.getFilename(), oldFile2.getFilename()), newFile2);
 
         // When
-        stateStore.fixTime(currentTime);
-        createGarbageCollector(instanceProperties, stateStoreProvider).runAtTime(currentTime);
+        createGarbageCollector(instanceProperties, stateStoreProvider)
+                .runAtTime(currentTime, new InvokeForTableRequest(List.of(tableProperties.get(TABLE_ID))));
 
         // Then
         assertThat(s3Client.doesObjectExist(TEST_BUCKET, "old-file-2.parquet")).isFalse();
@@ -140,8 +141,8 @@ public class GarbageCollectorS3IT {
     }
 
     private GarbageCollector createGarbageCollector(InstanceProperties instanceProperties, StateStoreProvider stateStoreProvider) {
-        return new GarbageCollector(configuration, new FixedTablePropertiesProvider(tables), stateStoreProvider,
-                instanceProperties.getInt(GARBAGE_COLLECTOR_BATCH_SIZE));
+        return new GarbageCollector(configuration, instanceProperties,
+                new FixedTablePropertiesProvider(tables), stateStoreProvider);
     }
 
     private static Schema getSchema() {

@@ -48,4 +48,10 @@ public interface PropertiesReloader {
             AmazonS3 s3Client, InstanceProperties instanceProperties) {
         return ifConfigured(s3Client, instanceProperties, null);
     }
+
+    static PropertiesReloader alwaysReload(AmazonS3 s3Client, InstanceProperties instanceProperties) {
+        return () -> {
+            instanceProperties.loadFromS3(s3Client, instanceProperties.get(CONFIG_BUCKET));
+        };
+    }
 }

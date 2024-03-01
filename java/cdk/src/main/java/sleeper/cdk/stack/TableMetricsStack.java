@@ -53,11 +53,9 @@ import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 
 public class TableMetricsStack extends NestedStack {
-    public TableMetricsStack(Construct scope,
-                             String id,
-                             InstanceProperties instanceProperties,
-                             BuiltJars jars,
-                             CoreStacks coreStacks) {
+    public TableMetricsStack(
+            Construct scope, String id, InstanceProperties instanceProperties,
+            BuiltJars jars, CoreStacks coreStacks) {
         super(scope, id);
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
         LambdaCode metricsJar = jars.lambdaCode(BuiltJar.METRICS, jarsBucket);
@@ -85,7 +83,7 @@ public class TableMetricsStack extends NestedStack {
                 .timeout(Duration.minutes(1))
                 .logGroup(createLambdaLogGroup(this, "MetricsPublisherLogGroup", publishFunctionName, instanceProperties)));
 
-        coreStacks.grantReadTablesMetadata(tableMetricsTrigger);
+        coreStacks.grantReadTablesStatus(tableMetricsTrigger);
         coreStacks.grantReadTablesMetadata(tableMetricsPublisher);
         instanceProperties.set(TABLE_METRICS_LAMBDA_FUNCTION, tableMetricsTrigger.getFunctionName());
 
@@ -120,5 +118,7 @@ public class TableMetricsStack extends NestedStack {
         queue.grantSendMessages(tableMetricsTrigger);
         tableMetricsPublisher.addEventSource(new SqsEventSource(queue,
                 SqsEventSourceProps.builder().batchSize(1).build()));
+
+        Utils.addStackTagIfSet(this, instanceProperties);
     }
 }

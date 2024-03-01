@@ -14,20 +14,23 @@
  * limitations under the License.
  */
 
-package sleeper.metrics;
+package sleeper.core.table;
 
-import java.util.List;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
-public class CalculateTableMetricsRequest {
+/**
+ * Serialisation of {@link InvokeForTableRequest} to send and receive SQS messages.
+ */
+public class InvokeForTableRequestSerDe {
 
+    private final Gson gson = new GsonBuilder().create();
 
-    private final List<String> tableIds;
-
-    public CalculateTableMetricsRequest(List<String> tableIds) {
-        this.tableIds = tableIds;
+    public String toJson(InvokeForTableRequest request) {
+        return gson.toJson(request);
     }
 
-    public List<String> getTableIds() {
-        return tableIds;
+    public InvokeForTableRequest fromJson(String json) {
+        return gson.fromJson(json, InvokeForTableRequest.class);
     }
 }
