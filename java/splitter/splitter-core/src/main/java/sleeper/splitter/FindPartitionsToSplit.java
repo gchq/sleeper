@@ -20,7 +20,6 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.partition.Partition;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
@@ -32,6 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.instance.PartitionSplittingProperty.MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
@@ -43,32 +43,28 @@ import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPL
  */
 public class FindPartitionsToSplit {
     private static final Logger LOGGER = LoggerFactory.getLogger(FindPartitionsToSplit.class);
-    private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
     private final JobSender jobSender;
     private final int maxFilesInJob;
 
     public FindPartitionsToSplit(
             InstanceProperties instanceProperties,
-            TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider,
             JobSender jobSender) {
-        this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
         this.jobSender = jobSender;
         this.maxFilesInJob = instanceProperties.getInt(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB);
     }
 
-    public void run() {
-        tablePropertiesProvider.streamOnlineTables().forEach(this::run);
-    }
-
-    public void run(TableProperties tableProperties) {
-        try {
-            findPartitionsToSplit(tableProperties, stateStoreProvider.getStateStore(tableProperties));
-        } catch (StateStoreException e) {
-            LOGGER.error("StateStoreException thrown whilst running FindPartitionsToSplit", e);
-        }
+    public void run(Stream<TableProperties> tables) {
+        tables.forEach(table -> {
+            try {
+                findPartitionsToSplit(table, stateStoreProvider.getStateStore(table));
+            } catch (StateStoreException e) {
+                LOGGER.error("StateStoreException thrown whilst running FindPartitionsToSplit for table {}",
+                        table.getStatus(), e);
+            }
+        });
     }
 
     private void findPartitionsToSplit(TableProperties tableProperties, StateStore stateStore) throws StateStoreException {
