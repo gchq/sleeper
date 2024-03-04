@@ -104,6 +104,16 @@ public class InMemoryCompaction {
         }
 
         @Override
+        public CompactionJobStatusStore getJobStatusStore() {
+            return jobStore;
+        }
+
+        @Override
+        public void triggerCreateJobs() {
+            createJobs(Mode.STRATEGY);
+        }
+
+        @Override
         public List<String> createJobsGetIds() {
             Set<String> jobIdsBefore = jobIds();
             createJobs(Mode.STRATEGY);

@@ -27,16 +27,24 @@ import java.util.List;
 public class SystemTestCompaction {
 
     private final CompactionDriver driver;
+    private final WaitForCompactionJobCreation waitForJobCreation;
     private final WaitForJobs waitForJobs;
     private List<String> lastJobIds;
 
     public SystemTestCompaction(SystemTestContext context, SystemTestDrivers drivers) {
         this.driver = drivers.compaction(context);
+        this.waitForJobCreation = new WaitForCompactionJobCreation(context.instance(), driver);
         this.waitForJobs = drivers.waitForCompaction(context);
     }
 
     public SystemTestCompaction createJobs() {
         lastJobIds = driver.createJobsGetIds();
+        return this;
+    }
+
+    public SystemTestCompaction createJobs(int expectedJobs) {
+        lastJobIds = waitForJobCreation.createJobsGetIds(expectedJobs,
+                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofSeconds(30)));
         return this;
     }
 

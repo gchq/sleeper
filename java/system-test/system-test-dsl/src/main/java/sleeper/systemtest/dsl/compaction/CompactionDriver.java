@@ -16,12 +16,17 @@
 
 package sleeper.systemtest.dsl.compaction;
 
+import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.core.util.PollWithRetries;
 
 import java.time.Duration;
 import java.util.List;
 
 public interface CompactionDriver {
+
+    CompactionJobStatusStore getJobStatusStore();
+
+    void triggerCreateJobs();
 
     List<String> createJobsGetIds();
 
