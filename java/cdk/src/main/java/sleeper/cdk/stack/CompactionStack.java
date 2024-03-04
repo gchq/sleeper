@@ -265,7 +265,7 @@ public class CompactionStack extends NestedStack {
         IFunction handler = jobCreatorJar.buildFunction(this, "CompactionJobsCreator", builder -> builder
                 .functionName(functionName)
                 .description("Scan DynamoDB looking for files that need compacting and create appropriate job specs in DynamoDB")
-                .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
+                .runtime(JAVA_11)
                 .memorySize(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS)))
                 .handler("sleeper.compaction.job.creation.lambda.CreateCompactionJobsLambda::eventHandler")
@@ -303,7 +303,7 @@ public class CompactionStack extends NestedStack {
         String triggerFunctionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "compaction-job-creation-trigger"));
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "compaction-jobs-creation-handler"));
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "compaction-job-creation-handler"));
 
         IFunction triggerFunction = jobCreatorJar.buildFunction(this, "CompactionJobsCreationTrigger", builder -> builder
                 .functionName(triggerFunctionName)
@@ -356,7 +356,7 @@ public class CompactionStack extends NestedStack {
                         .queue(deadLetterQueue)
                         .build())
                 .visibilityTimeout(
-                        Duration.seconds(instanceProperties.getInt(COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS)))
+                        Duration.seconds(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS)))
                 .build();
         instanceProperties.set(COMPACTION_JOB_CREATION_BATCH_QUEUE_URL, queue.getQueueUrl());
         instanceProperties.set(COMPACTION_JOB_CREATION_BATCH_QUEUE_ARN, queue.getQueueArn());
