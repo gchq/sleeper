@@ -70,7 +70,7 @@ public class PollWithRetries {
                 } else {
                     String message = "Failed, expecting to find " + description;
                     LOGGER.error(message);
-                    throw new IllegalStateException(message);
+                    throw new CheckFailedException(message);
                 }
             }
             Thread.sleep(pollIntervalMillis);
@@ -100,7 +100,13 @@ public class PollWithRetries {
         }
     }
 
-    public static class TimedOutException extends RuntimeException {
+    public static class CheckFailedException extends RuntimeException {
+        private CheckFailedException(String message) {
+            super(message);
+        }
+    }
+
+    public static class TimedOutException extends CheckFailedException {
         private TimedOutException(String message) {
             super(message);
         }
