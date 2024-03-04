@@ -300,6 +300,45 @@ public class CompactionTaskTest {
                             .build());
         }
 
+        @Test
+        void shouldSaveTaskWhenOneJobFails() throws Exception {
+            Queue<Instant> times = new LinkedList<>(List.of(
+                    Instant.parse("2024-02-22T13:50:00Z"), // Start
+                    Instant.parse("2024-02-22T13:50:01Z"), // First check
+                    Instant.parse("2024-02-22T13:50:05Z"))); // Finish
+            createJobOnQueue("job1");
+
+            runTask("test-task-1", processJobs(jobFails()), times::poll);
+
+            assertThat(taskStore.getAllTasks())
+                    .containsExactly(CompactionTaskStatus.builder()
+                            .startTime(Instant.parse("2024-02-22T13:50:00Z"))
+                            .taskId("test-task-1")
+                            .finished(Instant.parse("2024-02-22T13:50:05Z"), noJobSummaries())
+                            .build());
+        }
+
+        @Test
+        void shouldSaveTaskWhenNoJobsFound() throws Exception {
+            Queue<Instant> times = new LinkedList<>(List.of(
+                    Instant.parse("2024-02-22T13:50:00Z"), // Start
+                    Instant.parse("2024-02-22T13:50:01Z"), // First check
+                    Instant.parse("2024-02-22T13:50:05Z"))); // Finish
+
+            runTask("test-task-1", processNoJobs(), times::poll);
+
+            assertThat(taskStore.getAllTasks())
+                    .containsExactly(CompactionTaskStatus.builder()
+                            .startTime(Instant.parse("2024-02-22T13:50:00Z"))
+                            .taskId("test-task-1")
+                            .finished(Instant.parse("2024-02-22T13:50:05Z"), noJobSummaries())
+                            .build());
+        }
+
+        private CompactionTaskFinishedStatus.Builder noJobSummaries() {
+            return withJobSummaries();
+        }
+
         private CompactionTaskFinishedStatus.Builder withJobSummaries(RecordsProcessedSummary... summaries) {
             CompactionTaskFinishedStatus.Builder taskFinishedBuilder = CompactionTaskFinishedStatus.builder();
             Stream.of(summaries).forEach(taskFinishedBuilder::addJobSummary);
