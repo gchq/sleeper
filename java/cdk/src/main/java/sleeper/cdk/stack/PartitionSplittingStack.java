@@ -223,7 +223,6 @@ public class PartitionSplittingStack extends NestedStack {
                 .timeout(Duration.seconds(instanceProperties.getInt(FIND_PARTITIONS_TO_SPLIT_TIMEOUT_IN_SECONDS)))
                 .handler("sleeper.splitter.lambda.FindPartitionsToSplitLambda::handleRequest")
                 .environment(environmentVariables)
-                .reservedConcurrentExecutions(1)
                 .logGroup(createLambdaLogGroup(this, "FindPartitionsToSplitLogGroup", functionName, instanceProperties)));
 
         coreStacks.grantReadTablesMetadata(findPartitionsToSplitLambda);
