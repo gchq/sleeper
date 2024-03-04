@@ -57,6 +57,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -104,7 +105,7 @@ public class FindPartitionsToSplitIT {
         writeFiles(createEvenRecordList(100, 10));
 
         // When
-        findPartitionsToSplit().run();
+        findPartitionsToSplit().run(Stream.of(tableProperties));
 
         // Then
         List<Message> messages = receivePartitionSplittingMessages();
@@ -126,7 +127,7 @@ public class FindPartitionsToSplitIT {
         writeFiles(createEvenRecordList(100, 10));
 
         // When
-        findPartitionsToSplit().run();
+        findPartitionsToSplit().run(Stream.of(tableProperties));
 
         // The
         assertThat(receivePartitionSplittingMessages()).isEmpty();
@@ -140,7 +141,7 @@ public class FindPartitionsToSplitIT {
         writeFiles(createEvenRecordList(100, 10));
 
         // When
-        findPartitionsToSplit().run();
+        findPartitionsToSplit().run(Stream.of(tableProperties));
 
         // Then
         List<Message> messages = receivePartitionSplittingMessages();
@@ -162,7 +163,7 @@ public class FindPartitionsToSplitIT {
         writeFiles(createAscendingRecordList(100, 10));
 
         // When
-        findPartitionsToSplit().run();
+        findPartitionsToSplit().run(Stream.of(tableProperties));
 
         // Then
         List<Message> messages = receivePartitionSplittingMessages();
@@ -185,7 +186,7 @@ public class FindPartitionsToSplitIT {
     }
 
     private FindPartitionsToSplit findPartitionsToSplit() {
-        return new FindPartitionsToSplit(instanceProperties, tablePropertiesProvider,
+        return new FindPartitionsToSplit(instanceProperties,
                 new FixedStateStoreProvider(tableProperties, stateStore),
                 new SqsSplitPartitionJobSender(tablePropertiesProvider, instanceProperties, sqsClient)::send);
     }
