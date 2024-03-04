@@ -35,7 +35,7 @@ public interface PartitionSplittingProperty {
             .defaultValue("50")
             .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING).build();
     UserDefinedInstanceProperty FIND_PARTITIONS_TO_SPLIT_TABLE_BATCH_SIZE = Index.propertyBuilder("sleeper.partition.splitting.finder.batch.size")
-            .description("The number of tables to perform partition splitting for in a single invocation. A separate " +
+            .description("The number of tables to find partitions to split for in a single invocation. A separate " +
                     "invocation of the lambda will be made for each batch when there are more tables than the batch " +
                     "size.")
             .defaultValue("5")
