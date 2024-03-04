@@ -60,10 +60,10 @@ public class FindPartitionsToSplit {
     }
 
     public void run() {
-        tablePropertiesProvider.streamOnlineTables().forEach(tableProperties -> run(tableProperties, stateStoreProvider.getStateStore(tableProperties)));
+        tablePropertiesProvider.streamOnlineTables().forEach(this::run);
     }
 
-    public void run(TableProperties tableProperties, StateStore stateStore) {
+    public void run(TableProperties tableProperties) {
         try {
             findPartitionsToSplit(tableProperties, stateStoreProvider.getStateStore(tableProperties));
         } catch (StateStoreException e) {

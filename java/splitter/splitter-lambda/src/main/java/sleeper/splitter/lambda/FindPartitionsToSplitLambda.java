@@ -84,11 +84,10 @@ public class FindPartitionsToSplitLambda implements RequestHandler<SQSEvent, Voi
     }
 
     private void run(InvokeForTableRequest tableRequest) {
+        FindPartitionsToSplit findPartitionsToSplit = new FindPartitionsToSplit(instanceProperties, tablePropertiesProvider, stateStoreProvider,
+                new SqsSplitPartitionJobSender(tablePropertiesProvider, instanceProperties, sqsClient)::send);
         tableRequest.getTableIds().stream()
                 .map(tablePropertiesProvider::getById)
-                .forEach(tableProperties -> {
-                    new FindPartitionsToSplit(instanceProperties, tablePropertiesProvider, stateStoreProvider,
-                            new SqsSplitPartitionJobSender(tablePropertiesProvider, instanceProperties, sqsClient)::send).run();
-                });
+                .forEach(findPartitionsToSplit::run);
     }
 }
