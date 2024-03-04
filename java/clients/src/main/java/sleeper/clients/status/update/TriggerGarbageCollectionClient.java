@@ -39,7 +39,7 @@ import static sleeper.configuration.properties.instance.GarbageCollectionPropert
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 /**
- * Triggers garbage collection for specified Sleeper tables.
+ * Command line client to trigger garbage collection for specified Sleeper tables.
  */
 public class TriggerGarbageCollectionClient {
     private TriggerGarbageCollectionClient() {

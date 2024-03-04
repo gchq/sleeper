@@ -45,7 +45,7 @@ import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 /**
- * Creates compaction jobs to be run for specified Sleeper tables.
+ * Command line client to create compaction jobs to be run for specified Sleeper tables.
  */
 public class CreateCompactionJobsClient {
     private CreateCompactionJobsClient() {
