@@ -126,7 +126,6 @@ public class CompactionTaskTest {
             instanceProperties.setNumber(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS, 3);
             Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
-                    Instant.parse("2024-02-22T13:50:03Z"),
                     Instant.parse("2024-02-22T13:50:07Z"))); // Finish
 
             // When
@@ -143,7 +142,6 @@ public class CompactionTaskTest {
             Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:02Z"), // First idle time check
-                    Instant.parse("2024-02-22T13:50:04Z"), // Second idle time check
                     Instant.parse("2024-02-22T13:50:07Z"))); // Finish
 
             // When
@@ -160,7 +158,6 @@ public class CompactionTaskTest {
             Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:01Z"), // Job completed
-                    Instant.parse("2024-02-22T13:50:05Z"), // Idle time check with empty queue
                     Instant.parse("2024-02-22T13:50:06Z"))); // Finish
             CompactionJob job = createJobOnQueue("job1");
 
@@ -182,7 +179,6 @@ public class CompactionTaskTest {
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:01Z"), // First check
                     Instant.parse("2024-02-22T13:50:02Z"), // Job completed
-                    Instant.parse("2024-02-22T13:50:06Z"), // Second check
                     Instant.parse("2024-02-22T13:50:07Z"))); // Finish
             CompactionJob job = createJob("job1");
 
@@ -211,7 +207,6 @@ public class CompactionTaskTest {
                     Instant.parse("2024-02-22T13:50:01Z"), // First check
                     Instant.parse("2024-02-22T13:50:02Z"), // Job completed
                     Instant.parse("2024-02-22T13:50:04Z"), // Second check
-                    Instant.parse("2024-02-22T13:50:06Z"), // Third check
                     Instant.parse("2024-02-22T13:50:07Z"))); // Finish
             CompactionJob job = createJob("job1");
 
@@ -279,8 +274,7 @@ public class CompactionTaskTest {
         void shouldSaveTaskWhenOneJobSucceeds() throws Exception {
             Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
-                    Instant.parse("2024-02-22T13:50:01Z"), // Job completed
-                    Instant.parse("2024-02-22T13:50:02Z"), // Second check
+                    Instant.parse("2024-02-22T13:50:02Z"), // Job completed
                     Instant.parse("2024-02-22T13:50:05Z"))); // Finish
             createJobOnQueue("job1");
 
@@ -301,11 +295,10 @@ public class CompactionTaskTest {
         }
 
         @Test
-        void shouldSaveTaskWhenMultipleJobsSucceeds() throws Exception {
+        void shouldSaveTaskWhenMultipleJobsSucceed() throws Exception {
             Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:02Z"), // Job 1 completed
-                    Instant.parse("2024-02-22T13:50:03Z"), // Second check
                     Instant.parse("2024-02-22T13:50:04Z"), // Job 2 completed
                     Instant.parse("2024-02-22T13:50:05Z"))); // Finish
             createJobOnQueue("job1");
@@ -336,7 +329,6 @@ public class CompactionTaskTest {
         void shouldSaveTaskWhenOneJobFails() throws Exception {
             Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
-                    Instant.parse("2024-02-22T13:50:01Z"), // First check
                     Instant.parse("2024-02-22T13:50:05Z"))); // Finish
             createJobOnQueue("job1");
 
@@ -354,7 +346,6 @@ public class CompactionTaskTest {
         void shouldSaveTaskWhenNoJobsFound() throws Exception {
             Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
-                    Instant.parse("2024-02-22T13:50:01Z"), // First check
                     Instant.parse("2024-02-22T13:50:05Z"))); // Finish
 
             runTask("test-task-1", processNoJobs(), times::poll);
