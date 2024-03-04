@@ -50,15 +50,15 @@ import java.util.Map;
 
 import static sleeper.cdk.Utils.createLambdaLogGroup;
 import static sleeper.cdk.Utils.shouldDeployPaused;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_BATCH_DLQ_ARN;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_BATCH_DLQ_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_BATCH_QUEUE_ARN;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_BATCH_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_JOB_DLQ_ARN;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_JOB_DLQ_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_JOB_QUEUE_ARN;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_TABLE_BATCH_DLQ_ARN;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_TABLE_BATCH_DLQ_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_TABLE_BATCH_QUEUE_ARN;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_TABLE_BATCH_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_TRIGGER_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.PartitionSplittingProperty.FIND_PARTITIONS_TO_SPLIT_LAMBDA_MEMORY_IN_MB;
@@ -130,10 +130,10 @@ public class PartitionSplittingStack extends NestedStack {
                                 .build())
                 .visibilityTimeout(Duration.seconds(instanceProperties.getInt(FIND_PARTITIONS_TO_SPLIT_TIMEOUT_IN_SECONDS)))
                 .build();
-        instanceProperties.set(PARTITION_SPLITTING_BATCH_QUEUE_URL, partitionSplittingBatchQueue.getQueueUrl());
-        instanceProperties.set(PARTITION_SPLITTING_BATCH_QUEUE_ARN, partitionSplittingBatchQueue.getQueueArn());
-        instanceProperties.set(PARTITION_SPLITTING_BATCH_DLQ_URL, partitionSplittingBatchDlq.getQueueUrl());
-        instanceProperties.set(PARTITION_SPLITTING_BATCH_DLQ_ARN, partitionSplittingBatchDlq.getQueueArn());
+        instanceProperties.set(PARTITION_SPLITTING_TABLE_BATCH_QUEUE_URL, partitionSplittingBatchQueue.getQueueUrl());
+        instanceProperties.set(PARTITION_SPLITTING_TABLE_BATCH_QUEUE_ARN, partitionSplittingBatchQueue.getQueueArn());
+        instanceProperties.set(PARTITION_SPLITTING_TABLE_BATCH_DLQ_URL, partitionSplittingBatchDlq.getQueueUrl());
+        instanceProperties.set(PARTITION_SPLITTING_TABLE_BATCH_DLQ_ARN, partitionSplittingBatchDlq.getQueueArn());
         return new QueueAndDlq(partitionSplittingBatchQueue, partitionSplittingBatchDlq);
     }
 

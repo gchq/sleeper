@@ -37,8 +37,8 @@ import sleeper.core.util.LoggedDuration;
 import java.time.Instant;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_BATCH_QUEUE_URL;
-import static sleeper.configuration.properties.instance.PartitionSplittingProperty.FIND_PARTITIONS_TO_SPLIT_TABLE_BATCH_SIZE;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_TABLE_BATCH_QUEUE_URL;
+import static sleeper.configuration.properties.instance.PartitionSplittingProperty.PARTITION_SPLITTING_TABLE_BATCH_SIZE;
 
 /**
  * A lambda to invoke {@link FindPartitionsToSplitLambda} with batches of tables.
@@ -65,8 +65,8 @@ public class FindPartitionsToSplitTriggerLambda implements RequestHandler<Schedu
         Instant startTime = Instant.now();
         LOGGER.info("Lambda triggered at {}, started at {}", event.getTime(), startTime);
         instanceProperties.loadFromS3(s3Client, configBucketName);
-        int batchSize = instanceProperties.getInt(FIND_PARTITIONS_TO_SPLIT_TABLE_BATCH_SIZE);
-        String queueUrl = instanceProperties.get(PARTITION_SPLITTING_BATCH_QUEUE_URL);
+        int batchSize = instanceProperties.getInt(PARTITION_SPLITTING_TABLE_BATCH_SIZE);
+        String queueUrl = instanceProperties.get(PARTITION_SPLITTING_TABLE_BATCH_QUEUE_URL);
         TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
         InvokeForTableRequest.forTables(tableIndex.streamOnlineTables(), batchSize,
                 request -> sqsClient.sendMessage(queueUrl, serDe.toJson(request)));
