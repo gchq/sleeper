@@ -272,18 +272,21 @@ public class CompactionTaskTest {
     class UpdateTaskStatusStore {
         @Test
         void shouldSaveTaskWhenOneJobSucceeds() throws Exception {
+            // Given
             Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:02Z"), // Job completed
                     Instant.parse("2024-02-22T13:50:05Z"))); // Finish
             createJobOnQueue("job1");
 
+            // When
             runTask("test-task-1", processJobs(
                     jobSucceeds(summary(
                             Instant.parse("2024-02-22T13:50:01Z"),
                             Instant.parse("2024-02-22T13:50:02Z"), 10L, 10L))),
                     times::poll);
 
+            // Then
             assertThat(taskStore.getAllTasks())
                     .containsExactly(CompactionTaskStatus.builder()
                             .startTime(Instant.parse("2024-02-22T13:50:00Z"))
@@ -296,6 +299,7 @@ public class CompactionTaskTest {
 
         @Test
         void shouldSaveTaskWhenMultipleJobsSucceed() throws Exception {
+            // Given
             Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:02Z"), // Job 1 completed
@@ -304,6 +308,7 @@ public class CompactionTaskTest {
             createJobOnQueue("job1");
             createJobOnQueue("job2");
 
+            // When
             runTask("test-task-1", processJobs(
                     jobSucceeds(summary(
                             Instant.parse("2024-02-22T13:50:01Z"),
@@ -313,6 +318,7 @@ public class CompactionTaskTest {
                             Instant.parse("2024-02-22T13:50:04Z"), 5L, 5L))),
                     times::poll);
 
+            // Then
             assertThat(taskStore.getAllTasks())
                     .containsExactly(CompactionTaskStatus.builder()
                             .startTime(Instant.parse("2024-02-22T13:50:00Z"))
@@ -327,13 +333,16 @@ public class CompactionTaskTest {
 
         @Test
         void shouldSaveTaskWhenOneJobFails() throws Exception {
+            // Given
             Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:05Z"))); // Finish
             createJobOnQueue("job1");
 
+            // When
             runTask("test-task-1", processJobs(jobFails()), times::poll);
 
+            // Then
             assertThat(taskStore.getAllTasks())
                     .containsExactly(CompactionTaskStatus.builder()
                             .startTime(Instant.parse("2024-02-22T13:50:00Z"))
@@ -344,12 +353,15 @@ public class CompactionTaskTest {
 
         @Test
         void shouldSaveTaskWhenNoJobsFound() throws Exception {
+            // Given
             Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:05Z"))); // Finish
 
+            // When
             runTask("test-task-1", processNoJobs(), times::poll);
 
+            // Then
             assertThat(taskStore.getAllTasks())
                     .containsExactly(CompactionTaskStatus.builder()
                             .startTime(Instant.parse("2024-02-22T13:50:00Z"))
