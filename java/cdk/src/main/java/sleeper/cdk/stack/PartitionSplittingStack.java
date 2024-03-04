@@ -227,7 +227,6 @@ public class PartitionSplittingStack extends NestedStack {
                 .logGroup(createLambdaLogGroup(this, "FindPartitionsToSplitLogGroup", functionName, instanceProperties)));
 
         coreStacks.grantReadTablesMetadata(findPartitionsToSplitLambda);
-        partitionSplittingBatchQueue.grantConsumeMessages(findPartitionsToSplitLambda);
         partitionSplittingJobQueue.grantSendMessages(findPartitionsToSplitLambda);
         findPartitionsToSplitLambda.addEventSource(new SqsEventSource(partitionSplittingBatchQueue,
                 SqsEventSourceProps.builder().batchSize(1).build()));
