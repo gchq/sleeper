@@ -49,11 +49,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS;
+import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
 
 public class CompactionTaskTest {
-
+    private static final String DEFAULT_TASK_ID = "test-task-id";
     private static final Instant DEFAULT_START_TIME = Instant.parse("2024-03-04T11:00:00Z");
     private static final Duration DEFAULT_DURATION = Duration.ofSeconds(5);
+
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Queue<CompactionJob> jobsOnQueue = new LinkedList<>();
     private final List<CompactionJob> successfulJobs = new ArrayList<>();
@@ -274,35 +276,35 @@ public class CompactionTaskTest {
     @DisplayName("Update task status store")
     class UpdateTaskStatusStore {
         @Test
-        void shouldSaveTaskWhenJobSucceeds() throws Exception {
+        void shouldSaveTaskWhenOneJobSucceeds() throws Exception {
             Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
-                    Instant.parse("2024-02-22T13:50:01Z"), // First check
+                    Instant.parse("2024-02-22T13:50:01Z"), // Job started
                     Instant.parse("2024-02-22T13:50:02Z"), // Job completed
                     Instant.parse("2024-02-22T13:50:05Z"))); // Finish
             createJobOnQueue("job1");
 
-            runTask(processJobs(
-                    jobSucceeds(summary(10L,
+            runTask("test-task-1", processJobs(
+                    jobSucceeds(summary(
                             Instant.parse("2024-02-22T13:50:01Z"),
-                            Instant.parse("2024-02-22T13:50:02Z")))),
+                            Instant.parse("2024-02-22T13:50:02Z"), 10L, 10L))),
                     times::poll);
 
             assertThat(taskStore.getAllTasks())
                     .containsExactly(CompactionTaskStatus.builder()
                             .startTime(Instant.parse("2024-02-22T13:50:00Z"))
-                            .taskId("test")
-                            .finished(Instant.parse("2024-02-22T13:50:05Z"),
-                                    CompactionTaskFinishedStatus.builder()
-                                            .addJobSummary(summary(10L,
-                                                    Instant.parse("2024-02-22T13:50:01Z"),
-                                                    Instant.parse("2024-02-22T13:50:02Z"))))
+                            .taskId("test-task-1")
+                            .finished(Instant.parse("2024-02-22T13:50:05Z"), withJobSummaries(
+                                    summary(Instant.parse("2024-02-22T13:50:01Z"),
+                                            Instant.parse("2024-02-22T13:50:02Z"), 10L, 10L)))
                             .build());
         }
-    }
 
-    private static RecordsProcessedSummary summary(long records, Instant startTime, Instant finishTime) {
-        return new RecordsProcessedSummary(new RecordsProcessed(records, records), startTime, finishTime);
+        private CompactionTaskFinishedStatus.Builder withJobSummaries(RecordsProcessedSummary... summaries) {
+            CompactionTaskFinishedStatus.Builder taskFinishedBuilder = CompactionTaskFinishedStatus.builder();
+            Stream.of(summaries).forEach(taskFinishedBuilder::addJobSummary);
+            return taskFinishedBuilder;
+        }
     }
 
     private void runTask(CompactionRunner compactor) throws Exception {
@@ -310,14 +312,26 @@ public class CompactionTaskTest {
     }
 
     private void runTask(CompactionRunner compactor, Supplier<Instant> timeSupplier) throws Exception {
-        runTask(pollQueue(), compactor, timeSupplier);
+        runTask(pollQueue(), compactor, timeSupplier, DEFAULT_TASK_ID);
+    }
+
+    private void runTask(String taskId, CompactionRunner compactor, Supplier<Instant> timeSupplier) throws Exception {
+        runTask(pollQueue(), compactor, timeSupplier, taskId);
     }
 
     private void runTask(
             MessageReceiver messageReceiver,
             CompactionRunner compactor,
             Supplier<Instant> timeSupplier) throws Exception {
-        new CompactionTask(instanceProperties, timeSupplier, messageReceiver, compactor, taskStore, "test")
+        runTask(messageReceiver, compactor, timeSupplier, DEFAULT_TASK_ID);
+    }
+
+    private void runTask(
+            MessageReceiver messageReceiver,
+            CompactionRunner compactor,
+            Supplier<Instant> timeSupplier,
+            String taskId) throws Exception {
+        new CompactionTask(instanceProperties, timeSupplier, messageReceiver, compactor, taskStore, taskId)
                 .runAt(timeSupplier.get());
     }
 
