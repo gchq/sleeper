@@ -322,7 +322,7 @@ public class CompactionStack extends NestedStack {
                 .runtime(JAVA_11)
                 .memorySize(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS)))
-                .handler("sleeper.compaction.job.creation.lambda.CreateCompactionJobsSQSLambda::eventHandler")
+                .handler("sleeper.compaction.job.creation.lambda.CreateCompactionJobsSQSLambda::handleRequest")
                 .environment(environmentVariables)
                 .logGroup(createLambdaLogGroup(this, "CompactionJobsCreationHandlerLogGroup", functionName, instanceProperties)));
 
