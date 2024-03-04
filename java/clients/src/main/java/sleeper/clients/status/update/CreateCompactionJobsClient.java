@@ -50,7 +50,6 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.compaction.job.creation.CreateCompactionJobs.Mode.FORCE_ALL_FILES_AFTER_STRATEGY;
 import static sleeper.compaction.job.creation.CreateCompactionJobs.Mode.STRATEGY;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_BATCH_SIZE;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 /**
@@ -95,8 +94,7 @@ public class CreateCompactionJobsClient {
                     new ObjectFactory(instanceProperties, s3Client, "/tmp"),
                     instanceProperties, tablePropertiesProvider, stateStoreProvider,
                     new SendCompactionJobToSqs(instanceProperties, sqsClient)::send, jobStatusStore, mode);
-            int batchSize = instanceProperties.getInt(COMPACTION_JOB_CREATION_BATCH_SIZE);
-            InvokeForTableRequest.forTables(tables.stream(), batchSize, jobCreator::createJobs);
+            InvokeForTableRequest.forTables(tables.stream(), tables.size(), jobCreator::createJobs);
         } finally {
             s3Client.shutdown();
             dynamoDBClient.shutdown();

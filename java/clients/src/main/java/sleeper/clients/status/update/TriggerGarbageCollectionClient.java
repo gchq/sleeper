@@ -35,7 +35,6 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.GARBAGE_COLLECTOR_QUEUE_URL;
-import static sleeper.configuration.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_TABLE_BATCH_SIZE;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 /**
@@ -63,10 +62,9 @@ public class TriggerGarbageCollectionClient {
                     .map(name -> tableIndex.getTableByName(name)
                             .orElseThrow(() -> TableNotFoundException.withTableName(name)))
                     .collect(toUnmodifiableList());
-            int batchSize = instanceProperties.getInt(GARBAGE_COLLECTOR_TABLE_BATCH_SIZE);
             String queueUrl = instanceProperties.get(GARBAGE_COLLECTOR_QUEUE_URL);
             InvokeForTableRequestSerDe serDe = new InvokeForTableRequestSerDe();
-            InvokeForTableRequest.forTables(tables.stream(), batchSize,
+            InvokeForTableRequest.forTables(tables.stream(), tables.size(),
                     request -> sqsClient.sendMessage(queueUrl, serDe.toJson(request)));
         } finally {
             s3Client.shutdown();
