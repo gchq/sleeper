@@ -23,8 +23,9 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
- * When garbage collection fails, it will continue to garbage collect any remaining files and tables.
- * This exception gathers any failures that happened, to be thrown at the end.
+ * Gathers failures that happened during garbage collection, to be thrown after processing a batch.
+ * When GC fails, the {@link GarbageCollector} will continue to collect any remaining files and tables, and will
+ * throw this exception after attempting to collect all eligible files in all tables it was invoked for.
  */
 public class FailedGarbageCollectionException extends RuntimeException {
 
