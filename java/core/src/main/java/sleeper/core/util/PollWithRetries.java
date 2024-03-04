@@ -68,7 +68,7 @@ public class PollWithRetries {
                     LOGGER.error(message);
                     throw new TimedOutException(message);
                 } else {
-                    String message = "Failed, expecting to find " + description;
+                    String message = "Failed, expected to find " + description;
                     LOGGER.error(message);
                     throw new CheckFailedException(message);
                 }
