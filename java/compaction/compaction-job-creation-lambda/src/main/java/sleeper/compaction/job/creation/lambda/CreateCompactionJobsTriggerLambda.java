@@ -41,7 +41,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_BATCH_SIZE;
 
 /**
- * A lambda to invoke {@link CreateCompactionJobsLambda} with batches of tables.
+ * A lambda to invoke {@link CreateCompactionJobsSQSLambda} with batches of tables.
  */
 @SuppressWarnings("unused")
 public class CreateCompactionJobsTriggerLambda implements RequestHandler<ScheduledEvent, Void> {

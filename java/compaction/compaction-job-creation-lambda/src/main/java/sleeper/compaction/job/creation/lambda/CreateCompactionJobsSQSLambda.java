@@ -51,8 +51,8 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
  * A lambda function for executing {@link CreateCompactionJobs}.
  */
 @SuppressWarnings("unused")
-public class CreateCompactionJobsLambda implements RequestHandler<SQSEvent, Void> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(CreateCompactionJobsLambda.class);
+public class CreateCompactionJobsSQSLambda implements RequestHandler<SQSEvent, Void> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(CreateCompactionJobsSQSLambda.class);
 
     private final PropertiesReloader propertiesReloader;
     private final CreateCompactionJobs createJobs;
@@ -63,7 +63,7 @@ public class CreateCompactionJobsLambda implements RequestHandler<SQSEvent, Void
      *
      * @throws ObjectFactoryException if user jars cannot be loaded
      */
-    public CreateCompactionJobsLambda() throws ObjectFactoryException {
+    public CreateCompactionJobsSQSLambda() throws ObjectFactoryException {
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         String s3Bucket = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
 
