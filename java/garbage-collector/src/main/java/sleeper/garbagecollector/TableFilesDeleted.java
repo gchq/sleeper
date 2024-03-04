@@ -25,7 +25,9 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * This class is used by {@link GarbageCollector} to track which files have need deleted for a table.
+ * Tracks which files have been deleted from a table by the garbage collector.
+ * <p>
+ * Used by {@link GarbageCollector}.
  */
 class TableFilesDeleted {
 
@@ -38,27 +40,27 @@ class TableFilesDeleted {
         this.table = table;
     }
 
-    public void deleted(String filename) {
+    void deleted(String filename) {
         deletedFilenames.add(filename);
     }
 
-    public void failed(String filename, Exception failure) {
+    void failed(String filename, Exception failure) {
         fileFailures.add(new FileFailure(filename, failure));
     }
 
-    public void failedStateStoreUpdate(List<String> filenames, Exception failure) {
+    void failedStateStoreUpdate(List<String> filenames, Exception failure) {
         stateStoreUpdateFailures.add(new StateStoreUpdateFailure(filenames, failure));
     }
 
-    public List<String> getDeletedFilenames() {
+    List<String> getDeletedFilenames() {
         return deletedFilenames;
     }
 
-    public TableFailures buildTableFailures(Exception tableFailure) {
+    TableFailures buildTableFailures(Exception tableFailure) {
         return new TableFailures(table, tableFailure, fileFailures, stateStoreUpdateFailures);
     }
 
-    public Optional<TableFailures> buildTableFailures() {
+    Optional<TableFailures> buildTableFailures() {
         if (fileFailures.isEmpty() && stateStoreUpdateFailures.isEmpty()) {
             return Optional.empty();
         } else {

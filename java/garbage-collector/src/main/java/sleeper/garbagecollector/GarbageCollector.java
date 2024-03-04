@@ -44,8 +44,10 @@ import static sleeper.configuration.properties.instance.GarbageCollectionPropert
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 
 /**
- * Queries the {@link StateStore} for files that are marked as being ready for
- * garbage collection, and deletes them.
+ * Deletes files that are ready for garbage collection and removes them from the Sleeper table.
+ * <p>
+ * Queries the {@link StateStore} for files with no references, deletes the files, then updates the state store to
+ * remove them.
  */
 public class GarbageCollector {
     private static final Logger LOGGER = LoggerFactory.getLogger(GarbageCollector.class);
