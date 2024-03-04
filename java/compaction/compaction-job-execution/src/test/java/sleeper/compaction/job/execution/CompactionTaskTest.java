@@ -280,10 +280,11 @@ public class CompactionTaskTest {
             createJobOnQueue("job1");
 
             // When
+            RecordsProcessedSummary jobSummary = summary(
+                    Instant.parse("2024-02-22T13:50:01Z"),
+                    Instant.parse("2024-02-22T13:50:02Z"), 10L, 10L);
             runTask("test-task-1", processJobs(
-                    jobSucceeds(summary(
-                            Instant.parse("2024-02-22T13:50:01Z"),
-                            Instant.parse("2024-02-22T13:50:02Z"), 10L, 10L))),
+                    jobSucceeds(jobSummary)),
                     times::poll);
 
             // Then
@@ -291,9 +292,8 @@ public class CompactionTaskTest {
                     .containsExactly(CompactionTaskStatus.builder()
                             .startTime(Instant.parse("2024-02-22T13:50:00Z"))
                             .taskId("test-task-1")
-                            .finished(Instant.parse("2024-02-22T13:50:05Z"), withJobSummaries(
-                                    summary(Instant.parse("2024-02-22T13:50:01Z"),
-                                            Instant.parse("2024-02-22T13:50:02Z"), 10L, 10L)))
+                            .finished(Instant.parse("2024-02-22T13:50:05Z"),
+                                    withJobSummaries(jobSummary))
                             .build());
         }
 
@@ -309,13 +309,15 @@ public class CompactionTaskTest {
             createJobOnQueue("job2");
 
             // When
+            RecordsProcessedSummary job1Summary = summary(
+                    Instant.parse("2024-02-22T13:50:01Z"),
+                    Instant.parse("2024-02-22T13:50:02Z"), 10L, 10L);
+            RecordsProcessedSummary job2Summary = summary(
+                    Instant.parse("2024-02-22T13:50:03Z"),
+                    Instant.parse("2024-02-22T13:50:04Z"), 5L, 5L);
             runTask("test-task-1", processJobs(
-                    jobSucceeds(summary(
-                            Instant.parse("2024-02-22T13:50:01Z"),
-                            Instant.parse("2024-02-22T13:50:02Z"), 10L, 10L)),
-                    jobSucceeds(summary(
-                            Instant.parse("2024-02-22T13:50:03Z"),
-                            Instant.parse("2024-02-22T13:50:04Z"), 5L, 5L))),
+                    jobSucceeds(job1Summary),
+                    jobSucceeds(job2Summary)),
                     times::poll);
 
             // Then
@@ -323,11 +325,8 @@ public class CompactionTaskTest {
                     .containsExactly(CompactionTaskStatus.builder()
                             .startTime(Instant.parse("2024-02-22T13:50:00Z"))
                             .taskId("test-task-1")
-                            .finished(Instant.parse("2024-02-22T13:50:05Z"), withJobSummaries(
-                                    summary(Instant.parse("2024-02-22T13:50:01Z"),
-                                            Instant.parse("2024-02-22T13:50:02Z"), 10L, 10L),
-                                    summary(Instant.parse("2024-02-22T13:50:03Z"),
-                                            Instant.parse("2024-02-22T13:50:04Z"), 5L, 5L)))
+                            .finished(Instant.parse("2024-02-22T13:50:05Z"),
+                                    withJobSummaries(job1Summary, job2Summary))
                             .build());
         }
 
