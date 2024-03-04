@@ -113,16 +113,6 @@ public class CompactionTask {
         }
     }
 
-    private class TaskResult {
-        private int totalNumberOfMessagesProcessed;
-        private int numConsecutiveFailures;
-
-        TaskResult(int totalNumberOfMessagesProcessed, int numConsecutiveFailures) {
-            this.totalNumberOfMessagesProcessed = totalNumberOfMessagesProcessed;
-            this.numConsecutiveFailures = numConsecutiveFailures;
-        }
-    }
-
     @FunctionalInterface
     interface MessageReceiver {
         Optional<MessageHandle> receiveMessage() throws InterruptedException, IOException;
