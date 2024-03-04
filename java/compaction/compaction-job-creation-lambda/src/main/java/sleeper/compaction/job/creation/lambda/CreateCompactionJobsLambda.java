@@ -48,7 +48,8 @@ import java.time.Instant;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
- * A lambda function for executing {@link CreateCompactionJobs}.
+ * Creates compaction jobs for all online tables, running in AWS Lambda.
+ * Runs compaction job creation with {@link CreateCompactionJobs}.
  */
 @SuppressWarnings("unused")
 public class CreateCompactionJobsLambda {
@@ -58,7 +59,7 @@ public class CreateCompactionJobsLambda {
     private static final Logger LOGGER = LoggerFactory.getLogger(CreateCompactionJobsLambda.class);
 
     /**
-     * No-args constructor used by Lambda service. Dynamo file table name will be obtained from an environment variable.
+     * No-args constructor used by Lambda.
      *
      * @throws ObjectFactoryException if user jars cannot be loaded
      */

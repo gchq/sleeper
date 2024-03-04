@@ -48,7 +48,8 @@ import java.time.Instant;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
- * A lambda function for executing {@link CreateCompactionJobs}.
+ * Creates compaction jobs for batches of tables sent to an SQS queue, running in AWS Lambda.
+ * Runs compaction job creation with {@link CreateCompactionJobs}.
  */
 @SuppressWarnings("unused")
 public class CreateCompactionJobsSQSLambda implements RequestHandler<SQSEvent, Void> {
@@ -59,7 +60,7 @@ public class CreateCompactionJobsSQSLambda implements RequestHandler<SQSEvent, V
     private final InvokeForTableRequestSerDe serDe = new InvokeForTableRequestSerDe();
 
     /**
-     * No-args constructor used by Lambda service. Dynamo file table name will be obtained from an environment variable.
+     * No-args constructor used by Lambda.
      *
      * @throws ObjectFactoryException if user jars cannot be loaded
      */
