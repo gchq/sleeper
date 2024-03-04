@@ -15,7 +15,6 @@
  */
 package sleeper.compaction.job.creation.lambda;
 
-import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -53,14 +52,8 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
  */
 @SuppressWarnings("unused")
 public class CreateCompactionJobsLambda {
-    private final AmazonDynamoDB dynamoDBClient;
-    private AmazonSQS sqsClient;
-    private final InstanceProperties instanceProperties;
-    private final ObjectFactory objectFactory;
-    private final TablePropertiesProvider tablePropertiesProvider;
     private final PropertiesReloader propertiesReloader;
-    private final StateStoreProvider stateStoreProvider;
-    private final CompactionJobStatusStore jobStatusStore;
+    private final CreateCompactionJobs createJobs;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CreateCompactionJobsLambda.class);
 
@@ -73,42 +66,20 @@ public class CreateCompactionJobsLambda {
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         String s3Bucket = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
 
-        this.instanceProperties = new InstanceProperties();
-        this.instanceProperties.loadFromS3(s3Client, s3Bucket);
+        InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.loadFromS3(s3Client, s3Bucket);
 
-        this.objectFactory = new ObjectFactory(instanceProperties, s3Client, "/tmp");
+        ObjectFactory objectFactory = new ObjectFactory(instanceProperties, s3Client, "/tmp");
 
-        this.dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
-        this.sqsClient = AmazonSQSClientBuilder.defaultClient();
-        this.tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
-        this.propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
+        AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
+        AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
+        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
         Configuration conf = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
-        this.stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, conf);
-        this.jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
-    }
-
-    /**
-     * Constructor used in tests.
-     *
-     * @param  instanceProperties     The SleeperProperties
-     * @param  endpointConfiguration  The configuration of the endpoint for the DynamoDB client
-     * @throws ObjectFactoryException if user jars cannot be loaded
-     */
-    public CreateCompactionJobsLambda(InstanceProperties instanceProperties,
-            AwsClientBuilder.EndpointConfiguration endpointConfiguration) throws ObjectFactoryException {
-        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        this.instanceProperties = instanceProperties;
-
-        this.objectFactory = new ObjectFactory(instanceProperties, s3Client, "/tmp");
-
-        this.dynamoDBClient = AmazonDynamoDBClientBuilder.standard()
-                .withEndpointConfiguration(endpointConfiguration)
-                .build();
-        this.tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
-        this.propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
-        this.stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties,
-                HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties));
-        this.jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, conf);
+        CompactionJobStatusStore jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
+        propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
+        createJobs = new CreateCompactionJobs(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider,
+                new SendCompactionJobToSqs(instanceProperties, sqsClient)::send, jobStatusStore, Mode.STRATEGY);
     }
 
     public void eventHandler(ScheduledEvent event, Context context) {
@@ -116,8 +87,6 @@ public class CreateCompactionJobsLambda {
         LOGGER.info("Lambda triggered at {}, started at {}", event.getTime(), startTime);
         propertiesReloader.reloadIfNeeded();
 
-        CreateCompactionJobs createJobs = new CreateCompactionJobs(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider,
-                new SendCompactionJobToSqs(instanceProperties, sqsClient)::send, jobStatusStore, Mode.STRATEGY);
         try {
             createJobs.createJobs();
         } catch (StateStoreException | IOException | ObjectFactoryException e) {
