@@ -20,7 +20,6 @@ import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.core.util.PollWithRetries;
 
 import java.time.Duration;
-import java.util.List;
 
 public interface CompactionDriver {
 
@@ -29,8 +28,6 @@ public interface CompactionDriver {
     void triggerCreateJobs();
 
     void forceCreateJobs();
-
-    List<String> forceCreateJobsGetIds();
 
     void invokeTasks(int expectedTasks, PollWithRetries poll);
 

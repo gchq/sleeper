@@ -59,9 +59,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.UUID;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
@@ -116,13 +114,6 @@ public class InMemoryCompaction {
         @Override
         public void forceCreateJobs() {
             createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY);
-        }
-
-        @Override
-        public List<String> forceCreateJobsGetIds() {
-            Set<String> jobIdsBefore = jobIds();
-            createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY);
-            return jobIdsExcept(jobIdsBefore);
         }
 
         @Override
@@ -228,16 +219,6 @@ public class InMemoryCompaction {
 
     private CreateCompactionJobs.JobSender jobSender() {
         return job -> queuedJobsById.put(job.getId(), job);
-    }
-
-    private Set<String> jobIds() {
-        return new TreeSet<>(queuedJobsById.keySet());
-    }
-
-    private List<String> jobIdsExcept(Set<String> jobIdsBefore) {
-        Set<String> jobIds = jobIds();
-        jobIds.removeAll(jobIdsBefore);
-        return new ArrayList<>(jobIds);
     }
 
     private class CountingIterator implements CloseableIterator<Record> {

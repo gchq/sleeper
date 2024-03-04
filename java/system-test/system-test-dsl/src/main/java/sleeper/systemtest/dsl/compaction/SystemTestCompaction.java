@@ -44,18 +44,13 @@ public class SystemTestCompaction {
         return this;
     }
 
-    public SystemTestCompaction forceCreateJobs() {
-        lastJobIds = driver.forceCreateJobsGetIds();
-        return this;
-    }
-
     public SystemTestCompaction forceCreateJobs(int expectedJobs) {
         lastJobIds = waitForJobCreation.createJobsGetIds(expectedJobs, PollWithRetries.noRetries(), driver::forceCreateJobs);
         return this;
     }
 
-    public SystemTestCompaction splitAndCompactFiles() {
-        forceCreateJobs().invokeTasks(1).waitForJobs(
+    public SystemTestCompaction splitFilesAndRunJobs(int expectedJobs) {
+        forceCreateJobs(expectedJobs).invokeTasks(1).waitForJobs(
                 PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(30)));
         return this;
     }

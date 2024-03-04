@@ -101,11 +101,11 @@ public class MultipleTablesIT {
 
         // When we run 3 partition splits with compactions
         sleeper.partitioning().split();
-        sleeper.compaction().splitAndCompactFiles();
+        sleeper.compaction().splitFilesAndRunJobs(2);
         sleeper.partitioning().split();
-        sleeper.compaction().splitAndCompactFiles();
+        sleeper.compaction().splitFilesAndRunJobs(4);
         sleeper.partitioning().split();
-        sleeper.compaction().splitAndCompactFiles();
+        sleeper.compaction().splitFilesAndRunJobs(8);
 
         // Then all tables have their records split over 8 leaf partitions
         assertThat(sleeper.directQuery().byQueue().allRecordsByTable())
