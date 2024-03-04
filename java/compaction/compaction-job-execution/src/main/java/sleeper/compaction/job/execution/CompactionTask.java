@@ -58,7 +58,8 @@ public class CompactionTask {
         this.taskId = taskId;
     }
 
-    public void runAt(Instant startTime) throws InterruptedException, IOException {
+    public void run() throws InterruptedException, IOException {
+        Instant startTime = timeSupplier.get();
         Instant lastActiveTime = startTime;
         CompactionTaskStatus.Builder taskStatusBuilder = CompactionTaskStatus.builder().taskId(taskId).startTime(startTime);
         LOGGER.info("Starting task {}", taskId);

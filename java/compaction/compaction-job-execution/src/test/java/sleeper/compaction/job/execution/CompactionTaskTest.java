@@ -403,7 +403,7 @@ public class CompactionTaskTest {
             Supplier<Instant> timeSupplier,
             String taskId) throws Exception {
         new CompactionTask(instanceProperties, timeSupplier, messageReceiver, compactor, taskStore, taskId)
-                .runAt(timeSupplier.get());
+                .run();
     }
 
     private CompactionJob createJobOnQueue(String jobId) {

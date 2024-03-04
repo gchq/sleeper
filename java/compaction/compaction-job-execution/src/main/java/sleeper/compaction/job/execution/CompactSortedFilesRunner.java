@@ -90,7 +90,6 @@ public class CompactSortedFilesRunner {
     }
 
     public void run() throws InterruptedException, IOException {
-        Instant startTime = Instant.now();
         // Log some basic data if running on EC2 inside ECS
         if (instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE).equalsIgnoreCase("EC2")) {
             try {
@@ -107,11 +106,9 @@ public class CompactSortedFilesRunner {
         }
 
         SqsCompactionQueueHandler queueHandler = new SqsCompactionQueueHandler(sqsClient, instanceProperties);
-        CompactionTask task = new CompactionTask(
-                instanceProperties, Instant::now, queueHandler::receiveFromSqs,
-                job -> compact(job),
-                taskStatusStore, taskId);
-        task.runAt(startTime);
+        new CompactionTask(instanceProperties, Instant::now, queueHandler::receiveFromSqs,
+                this::compact, taskStatusStore, taskId)
+                .run();
     }
 
     private RecordsProcessedSummary compact(CompactionJob compactionJob) throws IteratorException, IOException, StateStoreException {
