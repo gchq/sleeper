@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.job.creation.CreateCompactionJobsFailedException.TableFailure;
+import sleeper.compaction.job.creation.FailedCreateCompactionJobsException.TableFailure;
 import sleeper.compaction.strategy.CompactionStrategy;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
@@ -93,7 +93,7 @@ public class CreateCompactionJobs {
         STRATEGY, FORCE_ALL_FILES_AFTER_STRATEGY;
     }
 
-    public void createJobs() throws CreateCompactionJobsFailedException, StateStoreException, IOException, ObjectFactoryException {
+    public void createJobs() throws FailedCreateCompactionJobsException, StateStoreException, IOException, ObjectFactoryException {
         List<TableProperties> tables = tablePropertiesProvider.streamOnlineTables()
                 .collect(Collectors.toUnmodifiableList());
         LOGGER.info("Found {} online tables", tables.size());
@@ -102,7 +102,7 @@ public class CreateCompactionJobs {
         }
     }
 
-    public void createJobs(InvokeForTableRequest request) throws CreateCompactionJobsFailedException {
+    public void createJobs(InvokeForTableRequest request) throws FailedCreateCompactionJobsException {
         List<TableFailure> tableFailures = new ArrayList<>();
         for (String tableId : request.getTableIds()) {
             TableStatus status = TableStatus.uniqueIdAndName(tableId, "not-found", true);
@@ -116,7 +116,7 @@ public class CreateCompactionJobs {
             }
         }
         if (!tableFailures.isEmpty()) {
-            throw new CreateCompactionJobsFailedException(tableFailures);
+            throw new FailedCreateCompactionJobsException(tableFailures);
         }
     }
 

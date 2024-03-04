@@ -21,11 +21,16 @@ import java.util.List;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 
-public class CreateCompactionJobsFailedException extends RuntimeException {
+/**
+ * Gathers failures that happened during compaction job creation, to be thrown after processing a batch.
+ * When compaction job creation fails, {@link CreateCompactionJobs} will move on to the next table in the batch, and
+ * throw the exception after processing the whole batch of tables.
+ */
+public class FailedCreateCompactionJobsException extends RuntimeException {
 
     private final transient List<TableFailure> tableFailures;
 
-    public CreateCompactionJobsFailedException(List<TableFailure> tableFailures) {
+    public FailedCreateCompactionJobsException(List<TableFailure> tableFailures) {
         super(getMessage(tableFailures), getCause(tableFailures));
         this.tableFailures = tableFailures;
     }

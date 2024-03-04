@@ -324,7 +324,7 @@ public class CreateCompactionJobsTest {
             assertThatThrownBy(() -> InvokeForTableRequest.forTables(
                     Stream.of(tableProperties1.getStatus(), tableProperties2.getStatus()),
                     2, jobCreator::createJobs))
-                    .isInstanceOf(CreateCompactionJobsFailedException.class);
+                    .isInstanceOf(FailedCreateCompactionJobsException.class);
 
             // Then
             assertThat(jobs).singleElement().satisfies(job -> {
