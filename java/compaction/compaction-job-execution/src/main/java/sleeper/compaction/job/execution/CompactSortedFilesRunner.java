@@ -112,7 +112,6 @@ public class CompactSortedFilesRunner {
                 job -> compact(job),
                 taskStatusStore, taskId);
         task.runAt(startTime);
-
     }
 
     private RecordsProcessedSummary compact(CompactionJob compactionJob) throws IteratorException, IOException, StateStoreException {
