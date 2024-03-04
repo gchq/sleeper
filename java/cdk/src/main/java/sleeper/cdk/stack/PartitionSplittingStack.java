@@ -248,7 +248,6 @@ public class PartitionSplittingStack extends NestedStack {
                 .logGroup(createLambdaLogGroup(this, "SplitPartitionLogGroup", splitFunctionName, instanceProperties)));
 
         coreStacks.grantSplitPartitions(splitPartitionLambda);
-        partitionSplittingJobQueue.grantConsumeMessages(splitPartitionLambda);
         splitPartitionLambda.addEventSource(new SqsEventSource(partitionSplittingJobQueue,
                 SqsEventSourceProps.builder().batchSize(1).build()));
     }
