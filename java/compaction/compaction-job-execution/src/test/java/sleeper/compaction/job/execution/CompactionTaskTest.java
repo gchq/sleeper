@@ -25,8 +25,15 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.execution.CompactionTask.CompactionRunner;
 import sleeper.compaction.job.execution.CompactionTask.MessageHandle;
 import sleeper.compaction.job.execution.CompactionTask.MessageReceiver;
+import sleeper.compaction.task.CompactionTaskFinishedStatus;
+import sleeper.compaction.task.CompactionTaskStatus;
+import sleeper.compaction.task.CompactionTaskStatusStore;
+import sleeper.compaction.testutils.InMemoryCompactionTaskStatusStore;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.record.process.RecordsProcessed;
+import sleeper.core.record.process.RecordsProcessedSummary;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -45,10 +52,13 @@ import static sleeper.configuration.properties.instance.CompactionProperty.COMPA
 
 public class CompactionTaskTest {
 
+    private static final Instant DEFAULT_START_TIME = Instant.parse("2024-03-04T11:00:00Z");
+    private static final Duration DEFAULT_DURATION = Duration.ofSeconds(5);
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Queue<CompactionJob> jobsOnQueue = new LinkedList<>();
     private final List<CompactionJob> successfulJobs = new ArrayList<>();
     private final List<CompactionJob> failedJobs = new ArrayList<>();
+    private final CompactionTaskStatusStore taskStore = new InMemoryCompactionTaskStatusStore();
 
     @BeforeEach
     void setUp() {
@@ -113,8 +123,9 @@ public class CompactionTaskTest {
             // Given
             instanceProperties.setNumber(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS, 3);
             Queue<Instant> times = new LinkedList<>(List.of(
-                    Instant.parse("2024-02-22T13:50:00Z"),
-                    Instant.parse("2024-02-22T13:50:03Z")));
+                    Instant.parse("2024-02-22T13:50:00Z"), // Start
+                    Instant.parse("2024-02-22T13:50:03Z"),
+                    Instant.parse("2024-02-22T13:50:07Z"))); // Finish
 
             // When
             runTask(processNoJobs(), times::poll);
@@ -130,7 +141,8 @@ public class CompactionTaskTest {
             Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:02Z"), // First idle time check
-                    Instant.parse("2024-02-22T13:50:04Z"))); // Second idle time check
+                    Instant.parse("2024-02-22T13:50:04Z"), // Second idle time check
+                    Instant.parse("2024-02-22T13:50:07Z"))); // Finish
 
             // When
             runTask(processNoJobs(), times::poll);
@@ -146,7 +158,8 @@ public class CompactionTaskTest {
             Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:01Z"), // Job completed
-                    Instant.parse("2024-02-22T13:50:05Z"))); // Idle time check with empty queue
+                    Instant.parse("2024-02-22T13:50:05Z"), // Idle time check with empty queue
+                    Instant.parse("2024-02-22T13:50:06Z"))); // Finish
             CompactionJob job = createJobOnQueue("job1");
 
             // When
@@ -167,7 +180,8 @@ public class CompactionTaskTest {
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:01Z"), // First check
                     Instant.parse("2024-02-22T13:50:02Z"), // Job completed
-                    Instant.parse("2024-02-22T13:50:06Z"))); // Second check
+                    Instant.parse("2024-02-22T13:50:06Z"), // Second check
+                    Instant.parse("2024-02-22T13:50:07Z"))); // Finish
             CompactionJob job = createJob("job1");
 
             // When
@@ -195,7 +209,8 @@ public class CompactionTaskTest {
                     Instant.parse("2024-02-22T13:50:01Z"), // First check
                     Instant.parse("2024-02-22T13:50:02Z"), // Job completed
                     Instant.parse("2024-02-22T13:50:04Z"), // Second check
-                    Instant.parse("2024-02-22T13:50:06Z"))); // Third check
+                    Instant.parse("2024-02-22T13:50:06Z"), // Third check
+                    Instant.parse("2024-02-22T13:50:07Z"))); // Finish
             CompactionJob job = createJob("job1");
 
             // When
@@ -255,6 +270,41 @@ public class CompactionTaskTest {
         }
     }
 
+    @Nested
+    @DisplayName("Update task status store")
+    class UpdateTaskStatusStore {
+        @Test
+        void shouldSaveTaskWhenJobSucceeds() throws Exception {
+            Queue<Instant> times = new LinkedList<>(List.of(
+                    Instant.parse("2024-02-22T13:50:00Z"), // Start
+                    Instant.parse("2024-02-22T13:50:01Z"), // First check
+                    Instant.parse("2024-02-22T13:50:02Z"), // Job completed
+                    Instant.parse("2024-02-22T13:50:05Z"))); // Finish
+            createJobOnQueue("job1");
+
+            runTask(processJobs(
+                    jobSucceeds(summary(10L,
+                            Instant.parse("2024-02-22T13:50:01Z"),
+                            Instant.parse("2024-02-22T13:50:02Z")))),
+                    times::poll);
+
+            assertThat(taskStore.getAllTasks())
+                    .containsExactly(CompactionTaskStatus.builder()
+                            .startTime(Instant.parse("2024-02-22T13:50:00Z"))
+                            .taskId("test")
+                            .finished(Instant.parse("2024-02-22T13:50:05Z"),
+                                    CompactionTaskFinishedStatus.builder()
+                                            .addJobSummary(summary(10L,
+                                                    Instant.parse("2024-02-22T13:50:01Z"),
+                                                    Instant.parse("2024-02-22T13:50:02Z"))))
+                            .build());
+        }
+    }
+
+    private static RecordsProcessedSummary summary(long records, Instant startTime, Instant finishTime) {
+        return new RecordsProcessedSummary(new RecordsProcessed(records, records), startTime, finishTime);
+    }
+
     private void runTask(CompactionRunner compactor) throws Exception {
         runTask(compactor, Instant::now);
     }
@@ -267,7 +317,7 @@ public class CompactionTaskTest {
             MessageReceiver messageReceiver,
             CompactionRunner compactor,
             Supplier<Instant> timeSupplier) throws Exception {
-        new CompactionTask(instanceProperties, timeSupplier, messageReceiver, compactor)
+        new CompactionTask(instanceProperties, timeSupplier, messageReceiver, compactor, taskStore, "test")
                 .runAt(timeSupplier.get());
     }
 
@@ -346,12 +396,16 @@ public class CompactionTaskTest {
                 .toArray(ProcessJob[]::new));
     }
 
+    private ProcessJob jobSucceeds(RecordsProcessedSummary summary) {
+        return new ProcessJob(true, summary);
+    }
+
     private ProcessJob jobSucceeds() {
-        return new ProcessJob(true);
+        return new ProcessJob(true, 10L, DEFAULT_START_TIME, DEFAULT_DURATION);
     }
 
     private ProcessJob jobFails() {
-        return new ProcessJob(false);
+        return new ProcessJob(false, 0L, DEFAULT_START_TIME, DEFAULT_DURATION);
     }
 
     private CompactionRunner processNoJobs() {
@@ -362,7 +416,9 @@ public class CompactionTaskTest {
         Iterator<ProcessJob> getAction = List.of(actions).iterator();
         return job -> {
             if (getAction.hasNext()) {
-                getAction.next().run(job);
+                ProcessJob action = getAction.next();
+                action.run(job);
+                return action.summary;
             } else {
                 throw new IllegalStateException("Unexpected job: " + job);
             }
@@ -371,9 +427,15 @@ public class CompactionTaskTest {
 
     private class ProcessJob {
         private final boolean succeed;
+        private final RecordsProcessedSummary summary;
 
-        ProcessJob(boolean succeed) {
+        ProcessJob(boolean succeed, long records, Instant startTime, Duration duration) {
+            this(succeed, new RecordsProcessedSummary(new RecordsProcessed(records, records), startTime, duration));
+        }
+
+        ProcessJob(boolean succeed, RecordsProcessedSummary summary) {
             this.succeed = succeed;
+            this.summary = summary;
         }
 
         public void run(CompactionJob job) throws Exception {

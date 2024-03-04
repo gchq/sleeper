@@ -31,8 +31,6 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
-import sleeper.compaction.task.CompactionTaskFinishedStatus;
-import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
@@ -44,7 +42,6 @@ import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.util.LoggedDuration;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.job.common.CommonJobUtils;
 import sleeper.statestore.StateStoreProvider;
@@ -94,9 +91,6 @@ public class CompactSortedFilesRunner {
 
     public void run() throws InterruptedException, IOException {
         Instant startTime = Instant.now();
-        CompactionTaskStatus.Builder taskStatusBuilder = CompactionTaskStatus.builder().taskId(taskId).startTime(startTime);
-        LOGGER.info("Starting task {}", taskId);
-
         // Log some basic data if running on EC2 inside ECS
         if (instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE).equalsIgnoreCase("EC2")) {
             try {
@@ -112,19 +106,13 @@ public class CompactSortedFilesRunner {
             }
         }
 
-        taskStatusStore.taskStarted(taskStatusBuilder.build());
-        CompactionTaskFinishedStatus.Builder taskFinishedBuilder = CompactionTaskFinishedStatus.builder();
         SqsCompactionQueueHandler queueHandler = new SqsCompactionQueueHandler(sqsClient, instanceProperties);
         CompactionTask task = new CompactionTask(
                 instanceProperties, Instant::now, queueHandler::receiveFromSqs,
-                job -> taskFinishedBuilder.addJobSummary(compact(job)));
+                job -> compact(job),
+                taskStatusStore, taskId);
         task.runAt(startTime);
 
-        Instant finishTime = Instant.now();
-        LOGGER.info("CompactSortedFilesRunner total run time = {}", LoggedDuration.withFullOutput(startTime, finishTime));
-
-        CompactionTaskStatus taskFinished = taskStatusBuilder.finished(finishTime, taskFinishedBuilder).build();
-        taskStatusStore.taskFinished(taskFinished);
     }
 
     private RecordsProcessedSummary compact(CompactionJob compactionJob) throws IteratorException, IOException, StateStoreException {
