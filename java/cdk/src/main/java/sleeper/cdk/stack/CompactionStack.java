@@ -187,6 +187,7 @@ public class CompactionStack extends NestedStack {
         Queue compactionJobsQueue = sqsQueueForCompactionJobs(topic);
 
         // Lambda to periodically check for compaction jobs that should be created
+        lambdaToFindCompactionJobsThatShouldBeCreated(coreStacks, jarsBucket, jobCreatorJar, compactionJobsQueue);
         lambdaToCreateCompactionJobsBatchedViaSQS(coreStacks, jarsBucket, jobCreatorJar, compactionJobsQueue);
 
         // ECS cluster for compaction tasks
@@ -252,6 +253,47 @@ public class CompactionStack extends NestedStack {
         return compactionJobQ;
     }
 
+    private void lambdaToFindCompactionJobsThatShouldBeCreated(
+            CoreStacks coreStacks, IBucket jarsBucket, LambdaCode jobCreatorJar, Queue compactionJobsQueue) {
+
+        // Function to create compaction jobs
+        Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
+
+        String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "compaction-jobs-creator"));
+
+        IFunction handler = jobCreatorJar.buildFunction(this, "CompactionJobsCreator", builder -> builder
+                .functionName(functionName)
+                .description("Scan DynamoDB looking for files that need compacting and create appropriate job specs in DynamoDB")
+                .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
+                .memorySize(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_MEMORY_IN_MB))
+                .timeout(Duration.seconds(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS)))
+                .handler("sleeper.compaction.job.creation.lambda.CreateCompactionJobsLambda::eventHandler")
+                .environment(environmentVariables)
+                .reservedConcurrentExecutions(1)
+                .logGroup(createLambdaLogGroup(this, "CompactionJobsCreatorLogGroup", functionName, instanceProperties)));
+
+        // Grant this function permission to read from / write to the DynamoDB table
+        coreStacks.grantCreateCompactionJobs(handler);
+        jarsBucket.grantRead(handler);
+        statusStore.grantWriteJobEvent(handler);
+
+        // Grant this function permission to put messages on the compaction queue
+        compactionJobsQueue.grantSendMessages(handler);
+
+        // Cloudwatch rule to trigger this lambda
+        Rule rule = Rule.Builder
+                .create(this, "CompactionJobCreationPeriodicTrigger")
+                .ruleName(SleeperScheduleRule.COMPACTION_JOB_CREATION.buildRuleName(instanceProperties))
+                .description("A rule to periodically trigger the compaction job creation lambda")
+                .enabled(!shouldDeployPaused(this))
+                .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES))))
+                .targets(Collections.singletonList(new LambdaFunction(handler)))
+                .build();
+        instanceProperties.set(COMPACTION_JOB_CREATION_LAMBDA_FUNCTION, handler.getFunctionName());
+        instanceProperties.set(COMPACTION_JOB_CREATION_CLOUDWATCH_RULE, rule.getRuleName());
+    }
+
     private void lambdaToCreateCompactionJobsBatchedViaSQS(
             CoreStacks coreStacks, IBucket jarsBucket, LambdaCode jobCreatorJar, Queue compactionJobsQueue) {
 
@@ -261,7 +303,7 @@ public class CompactionStack extends NestedStack {
         String triggerFunctionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "compaction-job-creation-trigger"));
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "compaction-jobs-creator"));
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "compaction-jobs-creation-handler"));
 
         IFunction triggerFunction = jobCreatorJar.buildFunction(this, "CompactionJobsCreationTrigger", builder -> builder
                 .functionName(triggerFunctionName)
@@ -274,15 +316,15 @@ public class CompactionStack extends NestedStack {
                 .reservedConcurrentExecutions(1)
                 .logGroup(createLambdaLogGroup(this, "CompactionJobsCreationTriggerLogGroup", functionName, instanceProperties)));
 
-        IFunction handlerFunction = jobCreatorJar.buildFunction(this, "CompactionJobsCreator", builder -> builder
+        IFunction handlerFunction = jobCreatorJar.buildFunction(this, "CompactionJobsCreationHandler", builder -> builder
                 .functionName(functionName)
                 .description("Scan DynamoDB looking for files that need compacting and create appropriate job specs in DynamoDB")
                 .runtime(JAVA_11)
                 .memorySize(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS)))
-                .handler("sleeper.compaction.job.creation.lambda.CreateCompactionJobsLambda::eventHandler")
+                .handler("sleeper.compaction.job.creation.lambda.CreateCompactionJobsSQSLambda::eventHandler")
                 .environment(environmentVariables)
-                .logGroup(createLambdaLogGroup(this, "CompactionJobsCreatorLogGroup", functionName, instanceProperties)));
+                .logGroup(createLambdaLogGroup(this, "CompactionJobsCreationHandlerLogGroup", functionName, instanceProperties)));
 
         // Grant this function permission to read from / write to the DynamoDB table
         coreStacks.grantCreateCompactionJobs(handlerFunction);
@@ -298,18 +340,6 @@ public class CompactionStack extends NestedStack {
         jobCreationQueue.grantSendMessages(triggerFunction);
         handlerFunction.addEventSource(new SqsEventSource(jobCreationQueue,
                 SqsEventSourceProps.builder().batchSize(1).build()));
-
-        // Cloudwatch rule to trigger this lambda
-        Rule rule = Rule.Builder
-                .create(this, "CompactionJobCreationPeriodicTrigger")
-                .ruleName(SleeperScheduleRule.COMPACTION_JOB_CREATION.buildRuleName(instanceProperties))
-                .description("A rule to periodically trigger the compaction job creation lambda")
-                .enabled(!shouldDeployPaused(this))
-                .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES))))
-                .targets(List.of(new LambdaFunction(triggerFunction)))
-                .build();
-        instanceProperties.set(COMPACTION_JOB_CREATION_LAMBDA_FUNCTION, handlerFunction.getFunctionName());
-        instanceProperties.set(COMPACTION_JOB_CREATION_CLOUDWATCH_RULE, rule.getRuleName());
     }
 
     private Queue sqsQueueForCompactionJobCreation() {
