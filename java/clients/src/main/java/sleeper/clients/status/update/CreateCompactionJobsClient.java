@@ -53,6 +53,9 @@ import static sleeper.compaction.job.creation.CreateCompactionJobs.Mode.STRATEGY
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_BATCH_SIZE;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
+/**
+ * Command line client to create compaction jobs to be run for specified Sleeper tables.
+ */
 public class CreateCompactionJobsClient {
     private CreateCompactionJobsClient() {
     }

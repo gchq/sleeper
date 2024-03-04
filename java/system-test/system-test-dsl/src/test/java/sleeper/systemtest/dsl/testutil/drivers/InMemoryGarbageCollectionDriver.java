@@ -15,14 +15,11 @@
  */
 package sleeper.systemtest.dsl.testutil.drivers;
 
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.InvokeForTableRequest;
 import sleeper.garbagecollector.GarbageCollector;
 import sleeper.query.runner.recordretrieval.InMemoryDataStore;
 import sleeper.systemtest.dsl.gc.GarbageCollectionDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
-
-import java.io.IOException;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
@@ -44,13 +41,9 @@ public class InMemoryGarbageCollectionDriver implements GarbageCollectionDriver 
                 instance.getInstanceProperties(),
                 instance.getTablePropertiesProvider(),
                 instance.getStateStoreProvider());
-        try {
-            collector.run(new InvokeForTableRequest(instance.streamTableProperties()
-                    .map(table -> table.get(TABLE_ID))
-                    .collect(toUnmodifiableList())));
-        } catch (StateStoreException | IOException e) {
-            throw new RuntimeException(e);
-        }
+        collector.run(new InvokeForTableRequest(instance.streamTableProperties()
+                .map(table -> table.get(TABLE_ID))
+                .collect(toUnmodifiableList())));
     }
 
 }
