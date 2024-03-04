@@ -279,8 +279,8 @@ public class CompactionTaskTest {
         void shouldSaveTaskWhenOneJobSucceeds() throws Exception {
             Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
-                    Instant.parse("2024-02-22T13:50:01Z"), // Job started
-                    Instant.parse("2024-02-22T13:50:02Z"), // Job completed
+                    Instant.parse("2024-02-22T13:50:01Z"), // Job completed
+                    Instant.parse("2024-02-22T13:50:02Z"), // Second check
                     Instant.parse("2024-02-22T13:50:05Z"))); // Finish
             createJobOnQueue("job1");
 
@@ -297,6 +297,38 @@ public class CompactionTaskTest {
                             .finished(Instant.parse("2024-02-22T13:50:05Z"), withJobSummaries(
                                     summary(Instant.parse("2024-02-22T13:50:01Z"),
                                             Instant.parse("2024-02-22T13:50:02Z"), 10L, 10L)))
+                            .build());
+        }
+
+        @Test
+        void shouldSaveTaskWhenMultipleJobsSucceeds() throws Exception {
+            Queue<Instant> times = new LinkedList<>(List.of(
+                    Instant.parse("2024-02-22T13:50:00Z"), // Start
+                    Instant.parse("2024-02-22T13:50:02Z"), // Job 1 completed
+                    Instant.parse("2024-02-22T13:50:03Z"), // Second check
+                    Instant.parse("2024-02-22T13:50:04Z"), // Job 2 completed
+                    Instant.parse("2024-02-22T13:50:05Z"))); // Finish
+            createJobOnQueue("job1");
+            createJobOnQueue("job2");
+
+            runTask("test-task-1", processJobs(
+                    jobSucceeds(summary(
+                            Instant.parse("2024-02-22T13:50:01Z"),
+                            Instant.parse("2024-02-22T13:50:02Z"), 10L, 10L)),
+                    jobSucceeds(summary(
+                            Instant.parse("2024-02-22T13:50:03Z"),
+                            Instant.parse("2024-02-22T13:50:04Z"), 5L, 5L))),
+                    times::poll);
+
+            assertThat(taskStore.getAllTasks())
+                    .containsExactly(CompactionTaskStatus.builder()
+                            .startTime(Instant.parse("2024-02-22T13:50:00Z"))
+                            .taskId("test-task-1")
+                            .finished(Instant.parse("2024-02-22T13:50:05Z"), withJobSummaries(
+                                    summary(Instant.parse("2024-02-22T13:50:01Z"),
+                                            Instant.parse("2024-02-22T13:50:02Z"), 10L, 10L),
+                                    summary(Instant.parse("2024-02-22T13:50:03Z"),
+                                            Instant.parse("2024-02-22T13:50:04Z"), 5L, 5L)))
                             .build());
         }
 
