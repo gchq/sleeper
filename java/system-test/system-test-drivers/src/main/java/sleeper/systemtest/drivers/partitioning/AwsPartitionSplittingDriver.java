@@ -21,9 +21,8 @@ import software.amazon.awssdk.services.lambda.LambdaClient;
 import sleeper.clients.deploy.InvokeLambda;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.partitioning.PartitionSplittingDriver;
-import sleeper.systemtest.dsl.partitioning.WaitForPartitionSplitting;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_LAMBDA_FUNCTION;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_TRIGGER_LAMBDA_FUNCTION;
 
 public class AwsPartitionSplittingDriver implements PartitionSplittingDriver {
 
@@ -36,18 +35,6 @@ public class AwsPartitionSplittingDriver implements PartitionSplittingDriver {
     }
 
     public void splitPartitions() {
-        WaitForPartitionSplitting waitForPartitionSplitting = WaitForPartitionSplitting
-                .forCurrentPartitionsNeedingSplitting(
-                        instance.getTablePropertiesProvider(),
-                        instance.getStateStoreProvider());
-        InvokeLambda.invokeWith(lambdaClient, instance.getInstanceProperties().get(PARTITION_SPLITTING_LAMBDA_FUNCTION));
-        try {
-            waitForPartitionSplitting.pollUntilFinished(
-                    instance.getTablePropertiesProvider(),
-                    instance.getStateStoreProvider());
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
-        }
+        InvokeLambda.invokeWith(lambdaClient, instance.getInstanceProperties().get(PARTITION_SPLITTING_TRIGGER_LAMBDA_FUNCTION));
     }
 }

@@ -215,24 +215,24 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .build();
 
     // Partition splitting
-    CdkDefinedInstanceProperty PARTITION_SPLITTING_QUEUE_URL = Index.propertyBuilder("sleeper.partition.splitting.queue.url")
-            .description("The URL of the queue for partition splitting.")
+    CdkDefinedInstanceProperty PARTITION_SPLITTING_JOB_QUEUE_URL = Index.propertyBuilder("sleeper.partition.splitting.job.queue.url")
+            .description("The URL of the queue for partition splitting jobs.")
             .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
             .build();
-    CdkDefinedInstanceProperty PARTITION_SPLITTING_QUEUE_ARN = Index.propertyBuilder("sleeper.partition.splitting.queue.arn")
-            .description("The ARN of the queue for partition splitting.")
+    CdkDefinedInstanceProperty PARTITION_SPLITTING_JOB_QUEUE_ARN = Index.propertyBuilder("sleeper.partition.splitting.job.queue.arn")
+            .description("The ARN of the queue for partition splitting jobs.")
             .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
             .build();
-    CdkDefinedInstanceProperty PARTITION_SPLITTING_DLQ_URL = Index.propertyBuilder("sleeper.partition.splitting.dlq.url")
-            .description("The URL of the dead letter queue for partition splitting.")
+    CdkDefinedInstanceProperty PARTITION_SPLITTING_JOB_DLQ_URL = Index.propertyBuilder("sleeper.partition.splitting.job.dlq.url")
+            .description("The URL of the dead letter queue for partition splitting jobs.")
             .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
             .build();
-    CdkDefinedInstanceProperty PARTITION_SPLITTING_DLQ_ARN = Index.propertyBuilder("sleeper.partition.splitting.dlq.arn")
-            .description("The ARN of the dead letter queue for partition splitting.")
+    CdkDefinedInstanceProperty PARTITION_SPLITTING_JOB_DLQ_ARN = Index.propertyBuilder("sleeper.partition.splitting.job.dlq.arn")
+            .description("The ARN of the dead letter queue for partition splitting jobs.")
             .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
             .build();
-    CdkDefinedInstanceProperty PARTITION_SPLITTING_LAMBDA_FUNCTION = Index.propertyBuilder("sleeper.partition.splitting.lambda.function")
-            .description("The function name of the partition splitting lambda.")
+    CdkDefinedInstanceProperty PARTITION_SPLITTING_TRIGGER_LAMBDA_FUNCTION = Index.propertyBuilder("sleeper.partition.splitting.trigger.lambda.function")
+            .description("The function name of the lambda that finds partitions to split and sends jobs to the split partition lambda.")
             .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
             .build();
     CdkDefinedInstanceProperty PARTITION_SPLITTING_CLOUDWATCH_RULE = Index.propertyBuilder("sleeper.partition.splitting.rule")

@@ -57,6 +57,7 @@ import java.util.stream.Stream;
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithPartitions;
+import static sleeper.splitter.SplitMultiDimensionalPartitionImpl.loadFromFile;
 
 public class SplitPartitionIT {
     @TempDir
@@ -547,7 +548,7 @@ public class SplitPartitionIT {
         List<String> fileNames = stateStore.getFileReferences().stream()
                 .map(FileReference::getFilename)
                 .collect(Collectors.toList());
-        SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration(), generateIds);
+        SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, loadFromFile(schema, new Configuration()), generateIds);
         partitionSplitter.splitPartition(partition, fileNames);
     }
 
@@ -558,7 +559,7 @@ public class SplitPartitionIT {
                 .filter(file -> partitionId.equals(file.getPartitionId()))
                 .map(FileReference::getFilename)
                 .collect(Collectors.toList());
-        SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration(), generateIds);
+        SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, loadFromFile(schema, new Configuration()), generateIds);
         partitionSplitter.splitPartition(partition, fileNames);
     }
 

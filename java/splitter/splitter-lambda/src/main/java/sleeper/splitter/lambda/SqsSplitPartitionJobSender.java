@@ -28,7 +28,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.splitter.SplitPartitionJobDefinition;
 import sleeper.splitter.SplitPartitionJobDefinitionSerDe;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_JOB_QUEUE_URL;
 
 /**
  * Creates a {@link SplitPartitionJobDefinition} from the provided
@@ -47,7 +47,7 @@ public class SqsSplitPartitionJobSender {
             InstanceProperties instanceProperties,
             AmazonSQS sqs) {
         this.tablePropertiesProvider = tablePropertiesProvider;
-        this.sqsUrl = instanceProperties.get(PARTITION_SPLITTING_QUEUE_URL);
+        this.sqsUrl = instanceProperties.get(PARTITION_SPLITTING_JOB_QUEUE_URL);
         this.sqs = sqs;
     }
 

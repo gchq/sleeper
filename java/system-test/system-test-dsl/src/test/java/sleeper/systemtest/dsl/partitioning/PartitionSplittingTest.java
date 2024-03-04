@@ -13,61 +13,49 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package sleeper.systemtest.suite;
+package sleeper.systemtest.dsl.partitioning;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.partition.PartitionTree;
+import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.systemtest.dsl.SleeperSystemTest;
-import sleeper.systemtest.dsl.extension.AfterTestPurgeQueues;
-import sleeper.systemtest.dsl.extension.AfterTestReports;
-import sleeper.systemtest.dsl.reporting.SystemTestReports;
-import sleeper.systemtest.suite.fixtures.SystemTestSchema;
-import sleeper.systemtest.suite.testutil.SystemTest;
+import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.core.testutils.printers.FileReferencePrinter.printFiles;
 import static sleeper.core.testutils.printers.PartitionsPrinter.printPartitions;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStringAndZeroPadTo;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides.overrideField;
-import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
-import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.partitionsBuilder;
+import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.ROW_KEY_FIELD_NAME;
+import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.withDefaultProperties;
 
-@SystemTest
-public class PartitionSplittingIT {
-    @TempDir
-    private Path tempDir;
+@InMemoryDslTest
+public class PartitionSplittingTest {
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper, AfterTestReports reporting, AfterTestPurgeQueues purgeQueues) {
-        sleeper.connectToInstance(MAIN);
-        reporting.reportIfTestFailed(SystemTestReports.SystemTestBuilder::partitionStatus);
-        purgeQueues.purgeIfTestFailed(PARTITION_SPLITTING_JOB_QUEUE_URL, COMPACTION_JOB_QUEUE_URL);
+    void setUp(SleeperSystemTest sleeper) {
+        sleeper.connectToInstance(withDefaultProperties("main"));
     }
 
     @Test
     void shouldSplitPartitionsWith100RecordsAndThresholdOf20(SleeperSystemTest sleeper) {
         // Given
         sleeper.setGeneratorOverrides(
-                overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
+                overrideField(ROW_KEY_FIELD_NAME,
                         numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
         sleeper.updateTableProperties(Map.of(PARTITION_SPLIT_THRESHOLD, "20"));
-        sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
+        sleeper.ingest().direct(null).numberedRecords(LongStream.range(0, 100));
 
         // When
         sleeper.partitioning().split();
@@ -83,7 +71,7 @@ public class PartitionSplittingIT {
         Schema schema = sleeper.tableProperties().getSchema();
         PartitionTree partitions = sleeper.partitioning().tree();
         List<FileReference> activeFiles = sleeper.tableFiles().references();
-        PartitionTree expectedPartitions = partitionsBuilder(schema).rootFirst("root")
+        PartitionTree expectedPartitions = new PartitionsBuilder(schema).rootFirst("root")
                 .splitToNewChildren("root", "L", "R", "row-50")
                 .splitToNewChildren("L", "LL", "LR", "row-25")
                 .splitToNewChildren("R", "RL", "RR", "row-75")
@@ -104,7 +92,6 @@ public class PartitionSplittingIT {
                         fileReferenceFactory.partitionFile("RLL", 12),
                         fileReferenceFactory.partitionFile("RLR", 13),
                         fileReferenceFactory.partitionFile("RRL", 12),
-                        fileReferenceFactory.partitionFile("RRR", 13)
-                )));
+                        fileReferenceFactory.partitionFile("RRR", 13))));
     }
 }

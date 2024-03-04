@@ -22,11 +22,16 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 
-public class FailedGarbageCollection extends RuntimeException {
+/**
+ * Gathers failures that happened during garbage collection, to be thrown after processing a batch.
+ * When GC fails, the {@link GarbageCollector} will continue to collect any remaining files and tables, and will
+ * throw this exception after attempting to collect all eligible files in all tables it was invoked for.
+ */
+public class FailedGarbageCollectionException extends RuntimeException {
 
     private final transient List<TableFailures> tableFailures;
 
-    public FailedGarbageCollection(List<TableFailures> tableFailures) {
+    public FailedGarbageCollectionException(List<TableFailures> tableFailures) {
         super(getMessage(tableFailures), getCause(tableFailures));
         this.tableFailures = tableFailures;
     }

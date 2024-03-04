@@ -21,11 +21,14 @@ import sleeper.core.partition.Partition;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.splitter.SplitMultiDimensionalPartitionImpl.SketchesLoader;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Supplier;
+
+import static sleeper.splitter.SplitMultiDimensionalPartitionImpl.loadFromFile;
 
 /**
  * Splits a partition by calling {@link SplitMultiDimensionalPartitionImpl}.
@@ -33,28 +36,33 @@ import java.util.function.Supplier;
 public class SplitPartition {
     private final StateStore stateStore;
     private final Schema schema;
-    private final Configuration conf;
+    private final SketchesLoader sketchesLoader;
     private final Supplier<String> idSupplier;
 
     public SplitPartition(StateStore stateStore,
-                          Schema schema,
-                          Configuration conf) {
-        this(stateStore, schema, conf, () -> UUID.randomUUID().toString());
+            Schema schema,
+            Configuration conf) {
+        this(stateStore, schema, loadFromFile(schema, conf));
     }
 
     public SplitPartition(StateStore stateStore,
-                          Schema schema,
-                          Configuration conf,
-                          Supplier<String> idSupplier) {
+            Schema schema,
+            SketchesLoader sketchesLoader) {
+        this(stateStore, schema, sketchesLoader, () -> UUID.randomUUID().toString());
+    }
+
+    public SplitPartition(StateStore stateStore,
+            Schema schema,
+            SketchesLoader sketchesLoader,
+            Supplier<String> idSupplier) {
         this.stateStore = stateStore;
         this.schema = schema;
-        this.conf = conf;
+        this.sketchesLoader = sketchesLoader;
         this.idSupplier = idSupplier;
     }
 
-    public void splitPartition(Partition partition, List<String> fileNames)
-            throws StateStoreException, IOException {
-        new SplitMultiDimensionalPartitionImpl(stateStore, schema, partition, fileNames, conf, idSupplier)
+    public void splitPartition(Partition partition, List<String> fileNames) throws StateStoreException, IOException {
+        new SplitMultiDimensionalPartitionImpl(stateStore, schema, partition, fileNames, idSupplier, sketchesLoader)
                 .splitPartition();
     }
 }

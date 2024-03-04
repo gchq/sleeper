@@ -38,7 +38,7 @@ import java.time.Instant;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
- * A lambda for executing the {@link GarbageCollector}.
+ * Runs the garbage collector in AWS Lambda. Builds and invokes {@link GarbageCollector} for a batch of tables.
  */
 @SuppressWarnings("unused")
 public class GarbageCollectorLambda implements RequestHandler<SQSEvent, Void> {
