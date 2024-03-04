@@ -141,7 +141,7 @@ public class PartitionSplittingStack extends NestedStack {
         // Create queue for partition splitting job definitions
         Queue partitionSplittingJobDlq = Queue.Builder
                 .create(this, "PartitionSplittingDeadLetterQueue")
-                .queueName(instanceProperties.get(ID) + "-PartitionSplittingDLQueue")
+                .queueName(instanceProperties.get(ID) + "-PartitionSplittingJobDLQueue")
                 .build();
         Queue partitionSplittingJobQueue = Queue.Builder
                 .create(this, "PartitionSplittingJobQueue")
