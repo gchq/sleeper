@@ -93,6 +93,15 @@ public class CreateCompactionJobs {
         STRATEGY, FORCE_ALL_FILES_AFTER_STRATEGY;
     }
 
+    public void createJobs() throws CreateCompactionJobsFailedException, StateStoreException, IOException, ObjectFactoryException {
+        List<TableProperties> tables = tablePropertiesProvider.streamOnlineTables()
+                .collect(Collectors.toUnmodifiableList());
+        LOGGER.info("Found {} online tables", tables.size());
+        for (TableProperties table : tables) {
+            createJobs(table);
+        }
+    }
+
     public void createJobs(InvokeForTableRequest request) throws CreateCompactionJobsFailedException {
         List<TableFailure> tableFailures = new ArrayList<>();
         for (String tableId : request.getTableIds()) {
