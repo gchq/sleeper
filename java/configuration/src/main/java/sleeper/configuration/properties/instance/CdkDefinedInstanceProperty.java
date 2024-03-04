@@ -177,7 +177,7 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .description("The name of the family of Fargate task definitions used for compactions.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
-    CdkDefinedInstanceProperty COMPACTION_JOB_CREATION_LAMBDA_FUNCTION = Index.propertyBuilder("sleeper.compaction.job.creation.lambda.function")
+    CdkDefinedInstanceProperty COMPACTION_JOB_CREATION_TRIGGER_LAMBDA_FUNCTION = Index.propertyBuilder("sleeper.compaction.job.creation.lambda.function")
             .description("The function name of the compaction job creation lambda.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();

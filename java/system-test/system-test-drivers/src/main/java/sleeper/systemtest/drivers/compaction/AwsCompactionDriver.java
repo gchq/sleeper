@@ -46,7 +46,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.function.Predicate.not;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_FUNCTION;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_TRIGGER_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
@@ -71,7 +71,7 @@ public class AwsCompactionDriver implements CompactionDriver {
         CompactionJobStatusStore store = CompactionJobStatusStoreFactory
                 .getStatusStoreWithStronglyConsistentReads(dynamoDBClient, instance.getInstanceProperties());
         Set<String> jobsBefore = allJobIds(store).collect(Collectors.toSet());
-        InvokeLambda.invokeWith(lambdaClient, instance.getInstanceProperties().get(COMPACTION_JOB_CREATION_LAMBDA_FUNCTION));
+        InvokeLambda.invokeWith(lambdaClient, instance.getInstanceProperties().get(COMPACTION_JOB_CREATION_TRIGGER_LAMBDA_FUNCTION));
         List<String> newJobs = allJobIds(store)
                 .filter(not(jobsBefore::contains))
                 .collect(Collectors.toUnmodifiableList());

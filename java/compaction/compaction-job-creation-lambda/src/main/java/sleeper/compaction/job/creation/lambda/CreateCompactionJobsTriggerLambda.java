@@ -42,7 +42,7 @@ import static sleeper.configuration.properties.instance.CompactionProperty.COMPA
 
 /**
  * Creates batches of tables to create compaction jobs for.
- * Sends these batches to an SQS queue to be picked up by {@link CreateCompactionJobsSQSLambda}.
+ * Sends these batches to an SQS queue to be picked up by {@link CreateCompactionJobsLambda}.
  */
 @SuppressWarnings("unused")
 public class CreateCompactionJobsTriggerLambda implements RequestHandler<ScheduledEvent, Void> {
