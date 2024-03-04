@@ -79,6 +79,19 @@ public class AwsCompactionDriver implements CompactionDriver {
     }
 
     @Override
+    public void forceCreateJobs() {
+        CreateCompactionJobs createJobs = new CreateCompactionJobs(
+                ObjectFactory.noUserJars(), instance.getInstanceProperties(),
+                instance.getTablePropertiesProvider(), instance.getStateStoreProvider(),
+                new SendCompactionJobToSqs(instance.getInstanceProperties(), sqsClient)::send, getJobStatusStore(),
+                Mode.FORCE_ALL_FILES_AFTER_STRATEGY);
+        int batchSize = instance.getInstanceProperties().getInt(COMPACTION_JOB_CREATION_BATCH_SIZE);
+        InvokeForTableRequest.forTables(
+                instance.streamTableProperties().map(TableProperties::getStatus),
+                batchSize, createJobs::createJobs);
+    }
+
+    @Override
     public List<String> forceCreateJobsGetIds() {
         CompactionJobStatusStore store = CompactionJobStatusStoreFactory
                 .getStatusStoreWithStronglyConsistentReads(dynamoDBClient, instance.getInstanceProperties());

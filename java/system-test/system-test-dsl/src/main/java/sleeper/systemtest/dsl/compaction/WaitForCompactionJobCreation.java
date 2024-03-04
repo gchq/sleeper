@@ -18,6 +18,7 @@ package sleeper.systemtest.dsl.compaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
@@ -35,17 +36,17 @@ public class WaitForCompactionJobCreation {
     public static final Logger LOGGER = LoggerFactory.getLogger(WaitForCompactionJobCreation.class);
 
     private final SystemTestInstanceContext instance;
-    private final CompactionDriver driver;
+    private final CompactionJobStatusStore store;
 
     public WaitForCompactionJobCreation(SystemTestInstanceContext instance, CompactionDriver driver) {
         this.instance = instance;
-        this.driver = driver;
+        this.store = driver.getJobStatusStore();
     }
 
-    public List<String> createJobsGetIds(int expectedJobs, PollWithRetries poll) {
+    public List<String> createJobsGetIds(int expectedJobs, PollWithRetries poll, Runnable createJobs) {
         Set<String> jobsBefore = allJobIds()
                 .collect(Collectors.toSet());
-        driver.triggerCreateJobs();
+        createJobs.run();
         try {
             List<String> newJobs = poll.queryUntil("compaction jobs were created",
                     () -> newJobIds(jobsBefore),
@@ -70,7 +71,7 @@ public class WaitForCompactionJobCreation {
         return instance.streamTableProperties()
                 .map(properties -> properties.get(TABLE_ID))
                 .parallel()
-                .flatMap(tableId -> driver.getJobStatusStore().streamAllJobs(tableId)
+                .flatMap(tableId -> store.streamAllJobs(tableId)
                         .map(CompactionJobStatus::getJobId));
     }
 

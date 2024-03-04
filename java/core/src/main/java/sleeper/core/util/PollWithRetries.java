@@ -61,11 +61,17 @@ public class PollWithRetries {
         while (!checkFinished.getAsBoolean()) {
             polls++;
             if (polls >= maxPolls) {
-                String message = "Timed out after " + polls + " tries waiting for " +
-                        LoggedDuration.withShortOutput(Duration.ofMillis(pollIntervalMillis * polls)) +
-                        " until " + description;
-                LOGGER.error(message);
-                throw new TimedOutException(message);
+                if (polls > 1) {
+                    String message = "Timed out after " + polls + " tries waiting for " +
+                            LoggedDuration.withShortOutput(Duration.ofMillis(pollIntervalMillis * polls)) +
+                            " until " + description;
+                    LOGGER.error(message);
+                    throw new TimedOutException(message);
+                } else {
+                    String message = "Failed, expecting to find " + description;
+                    LOGGER.error(message);
+                    throw new IllegalStateException(message);
+                }
             }
             Thread.sleep(pollIntervalMillis);
         }

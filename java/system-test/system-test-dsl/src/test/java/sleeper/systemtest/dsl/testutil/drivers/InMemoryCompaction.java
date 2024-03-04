@@ -114,6 +114,11 @@ public class InMemoryCompaction {
         }
 
         @Override
+        public void forceCreateJobs() {
+            createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY);
+        }
+
+        @Override
         public List<String> forceCreateJobsGetIds() {
             Set<String> jobIdsBefore = jobIds();
             createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY);
