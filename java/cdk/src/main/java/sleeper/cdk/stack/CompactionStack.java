@@ -187,7 +187,7 @@ public class CompactionStack extends NestedStack {
         Queue compactionJobsQueue = sqsQueueForCompactionJobs(topic);
 
         // Lambda to periodically check for compaction jobs that should be created
-        lambdaToFindCompactionJobsThatShouldBeCreated(coreStacks, jarsBucket, jobCreatorJar, compactionJobsQueue);
+        lambdaToCreateCompactionJobsBatchedViaSQS(coreStacks, jarsBucket, jobCreatorJar, compactionJobsQueue);
 
         // ECS cluster for compaction tasks
         ecsClusterForCompactionTasks(coreStacks, jarsBucket, taskCreatorJar, compactionJobsQueue);
@@ -252,7 +252,7 @@ public class CompactionStack extends NestedStack {
         return compactionJobQ;
     }
 
-    private void lambdaToFindCompactionJobsThatShouldBeCreated(
+    private void lambdaToCreateCompactionJobsBatchedViaSQS(
             CoreStacks coreStacks, IBucket jarsBucket, LambdaCode jobCreatorJar, Queue compactionJobsQueue) {
 
         // Function to create compaction jobs
