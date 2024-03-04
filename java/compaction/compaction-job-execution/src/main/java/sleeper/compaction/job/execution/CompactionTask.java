@@ -67,30 +67,30 @@ public class CompactionTask {
         LOGGER.info("Starting task {}", taskId);
         taskStatusStore.taskStarted(taskStatusBuilder.build());
         CompactionTaskFinishedStatus.Builder taskFinishedBuilder = CompactionTaskFinishedStatus.builder();
-        handleMessages(startTime, taskFinishedBuilder::addJobSummary);
+        Instant finishTime = handleMessages(startTime, taskFinishedBuilder::addJobSummary);
         if (numConsecutiveFailures >= maxConsecutiveFailures) {
             LOGGER.info("Terminating compaction task as {} consecutive failures exceeds maximum of {}",
                     numConsecutiveFailures, maxConsecutiveFailures);
         }
         LOGGER.info("Total number of messages processed = {}", totalNumberOfMessagesProcessed);
-        Instant finishTime = timeSupplier.get();
         LOGGER.info("CompactSortedFilesRunner total run time = {}", LoggedDuration.withFullOutput(startTime, finishTime));
 
         CompactionTaskStatus taskFinished = taskStatusBuilder.finished(finishTime, taskFinishedBuilder).build();
         taskStatusStore.taskFinished(taskFinished);
     }
 
-    public void handleMessages(Instant startTime, Consumer<RecordsProcessedSummary> summaryConsumer) throws InterruptedException, IOException {
+    public Instant handleMessages(Instant startTime, Consumer<RecordsProcessedSummary> summaryConsumer) throws InterruptedException, IOException {
         Instant lastActiveTime = startTime;
         while (numConsecutiveFailures < maxConsecutiveFailures) {
             Optional<MessageHandle> messageOpt = messageReceiver.receiveMessage();
             if (!messageOpt.isPresent()) {
-                Duration runTime = Duration.between(lastActiveTime, timeSupplier.get());
+                Instant currentTime = timeSupplier.get();
+                Duration runTime = Duration.between(lastActiveTime, currentTime);
                 if (runTime.compareTo(maxIdleTime) >= 0) {
                     LOGGER.info("Terminating compaction task as it was idle for {}, exceeding maximum of {}",
                             LoggedDuration.withFullOutput(runTime),
                             LoggedDuration.withFullOutput(maxIdleTime));
-                    return;
+                    return currentTime;
                 } else {
                     continue;
                 }
@@ -111,6 +111,7 @@ public class CompactionTask {
                 }
             }
         }
+        return timeSupplier.get();
     }
 
     @FunctionalInterface
