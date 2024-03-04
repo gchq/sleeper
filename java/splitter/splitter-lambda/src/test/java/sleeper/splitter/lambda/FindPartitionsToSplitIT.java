@@ -61,7 +61,7 @@ import java.util.UUID;
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.PartitionSplittingProperty.MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
@@ -93,7 +93,7 @@ public class FindPartitionsToSplitIT {
     void setUp() {
         String queueName = UUID.randomUUID().toString();
         CreateQueueResult queue = sqsClient.createQueue(queueName);
-        instanceProperties.set(PARTITION_SPLITTING_QUEUE_URL, queue.getQueueUrl());
+        instanceProperties.set(PARTITION_SPLITTING_JOB_QUEUE_URL, queue.getQueueUrl());
     }
 
     @Test
@@ -246,6 +246,6 @@ public class FindPartitionsToSplitIT {
     }
 
     private List<Message> receivePartitionSplittingMessages() {
-        return sqsClient.receiveMessage(instanceProperties.get(PARTITION_SPLITTING_QUEUE_URL)).getMessages();
+        return sqsClient.receiveMessage(instanceProperties.get(PARTITION_SPLITTING_JOB_QUEUE_URL)).getMessages();
     }
 }
