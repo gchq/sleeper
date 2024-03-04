@@ -41,8 +41,8 @@ import java.time.Instant;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
- * This is triggered via a periodic Cloudwatch rule. It runs
- * {@link FindPartitionsToSplit} for each table.
+ * This is triggered when a table batch arrives on the SQS queue. It runs
+ * {@link FindPartitionsToSplit} for each table in the batch.
  */
 @SuppressWarnings("unused")
 public class FindPartitionsToSplitLambda implements RequestHandler<SQSEvent, Void> {
