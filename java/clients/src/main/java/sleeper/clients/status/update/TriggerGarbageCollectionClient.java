@@ -38,6 +38,9 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_TABLE_BATCH_SIZE;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
+/**
+ * Triggers garbage collection for specified Sleeper tables.
+ */
 public class TriggerGarbageCollectionClient {
     private TriggerGarbageCollectionClient() {
     }
