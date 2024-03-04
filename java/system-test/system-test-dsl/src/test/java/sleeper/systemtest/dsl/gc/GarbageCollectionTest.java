@@ -64,7 +64,7 @@ public class GarbageCollectionTest {
                 .numberedRecords(numbers.range(20, 30))
                 .numberedRecords(numbers.range(30, 40))
                 .numberedRecords(numbers.range(40, 50));
-        sleeper.compaction().createJobs().invokeTasks(1).waitForJobs();
+        sleeper.compaction().createJobs(1).invokeTasks(1).waitForJobs();
 
         // When
         sleeper.garbageCollection().invoke().waitFor();

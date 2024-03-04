@@ -79,19 +79,6 @@ public class AwsCompactionDriver implements CompactionDriver {
     }
 
     @Override
-    public List<String> createJobsGetIds() {
-        CompactionJobStatusStore store = CompactionJobStatusStoreFactory
-                .getStatusStoreWithStronglyConsistentReads(dynamoDBClient, instance.getInstanceProperties());
-        Set<String> jobsBefore = allJobIds(store).collect(Collectors.toSet());
-        triggerCreateJobs();
-        List<String> newJobs = allJobIds(store)
-                .filter(not(jobsBefore::contains))
-                .collect(Collectors.toUnmodifiableList());
-        LOGGER.info("Created {} new compaction jobs", newJobs.size());
-        return newJobs;
-    }
-
-    @Override
     public List<String> forceCreateJobsGetIds() {
         CompactionJobStatusStore store = CompactionJobStatusStoreFactory
                 .getStatusStoreWithStronglyConsistentReads(dynamoDBClient, instance.getInstanceProperties());

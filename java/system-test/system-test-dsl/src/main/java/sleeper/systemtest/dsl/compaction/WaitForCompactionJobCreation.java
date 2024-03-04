@@ -47,17 +47,23 @@ public class WaitForCompactionJobCreation {
                 .collect(Collectors.toSet());
         driver.triggerCreateJobs();
         try {
-            List<String> newJobs = poll.queryUntil("jobs were created",
-                    () -> allJobIds()
-                            .filter(not(jobsBefore::contains))
-                            .collect(toUnmodifiableList()),
-                    jobs -> jobs.size() >= expectedJobs);
+            List<String> newJobs = poll.queryUntil("compaction jobs were created",
+                    () -> newJobIds(jobsBefore),
+                    jobIds -> jobIds.size() == expectedJobs);
             LOGGER.info("Created {} new compaction jobs", newJobs.size());
             return newJobs;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
         }
+    }
+
+    private List<String> newJobIds(Set<String> jobsBefore) {
+        List<String> jobIds = allJobIds()
+                .filter(not(jobsBefore::contains))
+                .collect(toUnmodifiableList());
+        LOGGER.info("Found {} new compaction jobs", jobIds.size());
+        return jobIds;
     }
 
     private Stream<String> allJobIds() {

@@ -28,8 +28,6 @@ public interface CompactionDriver {
 
     void triggerCreateJobs();
 
-    List<String> createJobsGetIds();
-
     List<String> forceCreateJobsGetIds();
 
     void invokeTasks(int expectedTasks, PollWithRetries poll);
