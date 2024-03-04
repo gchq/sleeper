@@ -177,7 +177,8 @@ public class CreateCompactionJobs {
                 .collect(Collectors.toList()));
     }
 
-    private void createJobsFromLeftoverFiles(TableProperties tableProperties, List<FileReference> activeFileReferencesWithNoJobId,
+    private void createJobsFromLeftoverFiles(
+            TableProperties tableProperties, List<FileReference> activeFileReferencesWithNoJobId,
             List<Partition> allPartitions, List<CompactionJob> compactionJobs) {
         LOGGER.info("Creating compaction jobs for all files");
         int jobsBefore = compactionJobs.size();
