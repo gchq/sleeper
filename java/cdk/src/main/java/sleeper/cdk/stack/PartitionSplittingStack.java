@@ -128,7 +128,7 @@ public class PartitionSplittingStack extends NestedStack {
                                 .maxReceiveCount(1)
                                 .queue(partitionSplittingBatchDlq)
                                 .build())
-                .visibilityTimeout(Duration.seconds(instanceProperties.getInt(SPLIT_PARTITIONS_TIMEOUT_IN_SECONDS)))
+                .visibilityTimeout(Duration.seconds(instanceProperties.getInt(FIND_PARTITIONS_TO_SPLIT_TIMEOUT_IN_SECONDS)))
                 .build();
         instanceProperties.set(PARTITION_SPLITTING_BATCH_QUEUE_URL, partitionSplittingBatchQueue.getQueueUrl());
         instanceProperties.set(PARTITION_SPLITTING_BATCH_QUEUE_ARN, partitionSplittingBatchQueue.getQueueArn());
