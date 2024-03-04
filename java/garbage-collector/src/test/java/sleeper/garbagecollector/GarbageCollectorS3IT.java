@@ -50,6 +50,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
@@ -59,7 +60,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
-import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
+import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFilesReport;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
 
 @Testcontainers
@@ -115,14 +116,18 @@ public class GarbageCollectorS3IT {
                 List.of(oldFile1.getFilename(), oldFile2.getFilename()), newFile2);
 
         // When
-        createGarbageCollector(instanceProperties, stateStoreProvider)
-                .runAtTime(currentTime, new InvokeForTableRequest(List.of(tableProperties.get(TABLE_ID))));
+        GarbageCollector collector = createGarbageCollector(instanceProperties, stateStoreProvider);
+        InvokeForTableRequest request = new InvokeForTableRequest(List.of(tableProperties.get(TABLE_ID)));
 
-        // Then
+        // And / Then
+        assertThatThrownBy(() -> collector.runAtTime(currentTime, request))
+                .isInstanceOf(FailedGarbageCollectionException.class);
         assertThat(s3Client.doesObjectExist(TEST_BUCKET, "old-file-2.parquet")).isFalse();
         assertThat(s3Client.doesObjectExist(TEST_BUCKET, "new-file-2.parquet")).isTrue();
         assertThat(stateStore.getAllFilesWithMaxUnreferenced(10))
-                .isEqualTo(activeFilesReport(oldEnoughTime, newFile2));
+                .isEqualTo(activeAndReadyForGCFilesReport(oldEnoughTime,
+                        List.of(newFile2),
+                        List.of(oldFile1.getFilename())));
     }
 
     private InstanceProperties createInstanceProperties() {
