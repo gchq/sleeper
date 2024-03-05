@@ -165,16 +165,6 @@ sleeper.tables.index.dynamo.consistent.reads=true
 # This specifies whether AWS X-Ray tracing is enabled.
 sleeper.xray.tracing.enabled=true
 
-# The CPU for an AWS X-Ray daemon in a persistent task sidecar.
-# See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid
-# options.
-sleeper.xray.sidecar.cpu=256
-
-# The memory for an AWS X-Ray daemon in a persistent task sidecar.
-# See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid
-# options.
-sleeper.xray.sidecar.memory=512
-
 
 ## The following properties relate to standard ingest.
 
