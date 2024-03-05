@@ -199,7 +199,7 @@ Lambdas inherently have a startup time usually refer to as cold start.
 This can add a significant delay thus increasing a queries execution time. 
 
 To address this issue the KeepLambdaWarmStack can be enabled. This will create an Event Rule running every 5 minutes which
-triggers the query Lambdas thus ensuring it is warm state. Enabling this will incur extra charges since the Lambdas are running every 5 minutes. 
+triggers the query lambdas thus ensuring its in a warm state. Enabling this will incur extra charges since the Lambdas are running every 5 minutes. 
 
 This can be enabled by adding `KeepLambdaWarmStack` to the optional stacks. It is not enabled by default.
 

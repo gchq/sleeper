@@ -44,9 +44,9 @@ import static sleeper.cdk.Utils.createLambdaLogGroup;
 import static sleeper.cdk.Utils.shouldDeployPaused;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_WARM_LAMBDA_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.QueryProperty.DEFAULT_QUERY_WARM_LAMBDA_EXECUTION_PERIOD_IN_MINUTES;
 import static sleeper.configuration.properties.instance.QueryProperty.QUERY_PROCESSOR_LAMBDA_MEMORY_IN_MB;
 import static sleeper.configuration.properties.instance.QueryProperty.QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS;
+import static sleeper.configuration.properties.instance.QueryProperty.QUERY_WARM_LAMBDA_EXECUTION_PERIOD_IN_MINUTES;
 
 /**
  * A {@link NestedStack} to handle keeping lambdas warm. This consists of a {@link Rule} that runs periodically triggering
@@ -88,15 +88,13 @@ public class KeepLambdaWarmStack extends NestedStack {
                 .description("A rule to periodically trigger the query execution lambda")
                 .enabled(!shouldDeployPaused(this))
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties
-                        .getInt(DEFAULT_QUERY_WARM_LAMBDA_EXECUTION_PERIOD_IN_MINUTES))))
+                        .getInt(QUERY_WARM_LAMBDA_EXECUTION_PERIOD_IN_MINUTES))))
                 .targets(Collections.singletonList(LambdaFunction.Builder
                         .create(handler)
                         .build()))
                 .build();
 
         queryStack.grantSendMessages(handler);
-        // IQueue queryExecutorQueue = Queue.fromQueueArn(scope, "WarmLambdaToQueryQueue", instanceProperties.get(QUERY_QUEUE_ARN));
-        // squeryExecutorQueue.grantSendMessages(handler);
 
         coreStacks.grantReadInstanceConfig(handler);
         coreStacks.grantReadTablesAndData(handler);
