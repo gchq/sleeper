@@ -85,7 +85,7 @@ public class NewIngestTask {
     }
 
     @FunctionalInterface
-    interface MessageReceiver {
+    public interface MessageReceiver {
         Optional<MessageHandle> receiveMessage() throws InterruptedException, IOException;
     }
 
@@ -94,7 +94,7 @@ public class NewIngestTask {
         RecordsProcessedSummary ingest(IngestJob job) throws IteratorException, StateStoreException, IOException;
     }
 
-    interface MessageHandle extends AutoCloseable {
+    public interface MessageHandle extends AutoCloseable {
         IngestJob getJob();
 
         void completed(RecordsProcessedSummary summary);
