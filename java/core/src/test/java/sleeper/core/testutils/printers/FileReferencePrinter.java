@@ -32,15 +32,16 @@ public class FileReferencePrinter {
     }
 
     public static String printExpectedFilesForAllTables(
-            List<TableStatus> tables, PartitionTree partitions, List<FileReference> activeFiles) {
-        return printTableFilesExpectingIdentical(
+            List<TableStatus> tables, PartitionTree partitions, AllReferencesToAllFiles files) {
+        return printTableFilesExpectingIdenticalNew(
                 tables.stream().collect(Collectors.toMap(TableStatus::getTableName, table -> partitions)),
-                tables.stream().collect(Collectors.toMap(TableStatus::getTableName, table -> activeFiles)));
+                tables.stream().collect(Collectors.toMap(TableStatus::getTableName, table -> files)));
     }
 
-    public static String printTableFilesExpectingIdentical(
-            Map<String, PartitionTree> partitionsByTable, Map<String, List<FileReference>> activeFilesByTable) {
-        return TablesPrinter.printForAllTables(activeFilesByTable.keySet(), table -> printFiles(partitionsByTable.get(table), activeFilesByTable.get(table)));
+    public static String printTableFilesExpectingIdenticalNew(
+            Map<String, PartitionTree> partitionsByTable, Map<String, AllReferencesToAllFiles> filesByTable) {
+        return TablesPrinter.printForAllTables(filesByTable.keySet(),
+                table -> printFiles(partitionsByTable.get(table), filesByTable.get(table)));
     }
 
     public static String printFiles(PartitionTree partitionTree, List<FileReference> files) {

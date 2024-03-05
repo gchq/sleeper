@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
+import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.table.TableStatus;
@@ -184,10 +185,11 @@ public class FileReferencePrinterTest {
         void shouldPrintFilesOnceWhenTwoTablesAreIdentical() {
             // Given
             partitions.rootFirst("root");
-            List<FileReference> files = List.of(fileReferenceFactory().partitionFile("root", 10));
+            AllReferencesToAllFiles files = activeFiles(
+                    fileReferenceFactory().partitionFile("root", 10));
 
             // When
-            String printed = FileReferencePrinter.printTableFilesExpectingIdentical(
+            String printed = FileReferencePrinter.printTableFilesExpectingIdenticalNew(
                     Map.of("table-1", partitions.buildTree(), "table-2", partitions.buildTree()),
                     Map.of("table-1", files, "table-2", files));
 
@@ -199,11 +201,13 @@ public class FileReferencePrinterTest {
         void shouldPrintDifferentFilesForOneTable() {
             // Given
             partitions.rootFirst("root");
-            List<FileReference> files1 = List.of(fileReferenceFactory().partitionFile("root", 10));
-            List<FileReference> files2 = List.of(fileReferenceFactory().partitionFile("root", 20));
+            AllReferencesToAllFiles files1 = activeFiles(
+                    fileReferenceFactory().partitionFile("root", 10));
+            AllReferencesToAllFiles files2 = activeFiles(
+                    fileReferenceFactory().partitionFile("root", 20));
 
             // When
-            String printed = FileReferencePrinter.printTableFilesExpectingIdentical(
+            String printed = FileReferencePrinter.printTableFilesExpectingIdenticalNew(
                     Map.of("table-1", partitions.buildTree(), "table-2", partitions.buildTree(), "table-3", partitions.buildTree()),
                     Map.of("table-1", files1, "table-2", files2, "table-3", files1));
 
@@ -215,10 +219,11 @@ public class FileReferencePrinterTest {
         void shouldPrintOnlyOneTable() {
             // Given
             partitions.rootFirst("root");
-            List<FileReference> files = List.of(fileReferenceFactory().partitionFile("root", 10));
+            AllReferencesToAllFiles files = activeFiles(
+                    fileReferenceFactory().partitionFile("root", 10));
 
             // When
-            String printed = FileReferencePrinter.printTableFilesExpectingIdentical(
+            String printed = FileReferencePrinter.printTableFilesExpectingIdenticalNew(
                     Map.of("table-1", partitions.buildTree()),
                     Map.of("table-1", files));
 
@@ -230,14 +235,15 @@ public class FileReferencePrinterTest {
         void shouldPrintExpectedForTables() {
             // Given
             partitions.rootFirst("root");
-            List<FileReference> files = List.of(fileReferenceFactory().partitionFile("root", 10));
+            AllReferencesToAllFiles files = activeFiles(
+                    fileReferenceFactory().partitionFile("root", 10));
 
             // When
             String printed = FileReferencePrinter.printExpectedFilesForAllTables(
                     List.of(table("table-1"), table("table-2")), partitions.buildTree(), files);
 
             // Then
-            assertThat(printed).isEqualTo(FileReferencePrinter.printTableFilesExpectingIdentical(
+            assertThat(printed).isEqualTo(FileReferencePrinter.printTableFilesExpectingIdenticalNew(
                     Map.of("table-1", partitions.buildTree(), "table-2", partitions.buildTree()),
                     Map.of("table-1", files, "table-2", files)));
         }

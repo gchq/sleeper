@@ -36,8 +36,9 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
+import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFiles;
 import static sleeper.core.testutils.printers.FileReferencePrinter.printExpectedFilesForAllTables;
-import static sleeper.core.testutils.printers.FileReferencePrinter.printTableFilesExpectingIdentical;
+import static sleeper.core.testutils.printers.FileReferencePrinter.printTableFilesExpectingIdenticalNew;
 import static sleeper.core.testutils.printers.PartitionsPrinter.printExpectedPartitionsForAllTables;
 import static sleeper.core.testutils.printers.PartitionsPrinter.printTablePartitionsExpectingIdentical;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
@@ -116,7 +117,7 @@ public class MultipleTablesIT {
                                 sleeper.generateNumberedRecords(schema, LongStream.range(0, 100))));
         var tables = sleeper.tables().list();
         var partitionsByTable = sleeper.partitioning().treeByTable();
-        var filesByTable = sleeper.tableFiles().referencesByTable();
+        var filesByTable = sleeper.tableFiles().filesByTable();
         PartitionTree expectedPartitions = partitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", "row-50")
@@ -130,15 +131,17 @@ public class MultipleTablesIT {
         assertThat(printTablePartitionsExpectingIdentical(schema, partitionsByTable))
                 .isEqualTo(printExpectedPartitionsForAllTables(schema, tables, expectedPartitions));
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(expectedPartitions);
-        assertThat(printTableFilesExpectingIdentical(partitionsByTable, filesByTable))
-                .isEqualTo(printExpectedFilesForAllTables(tables, expectedPartitions, List.of(
-                        fileReferenceFactory.partitionFile("LLL", 12),
-                        fileReferenceFactory.partitionFile("LLR", 13),
-                        fileReferenceFactory.partitionFile("LRL", 12),
-                        fileReferenceFactory.partitionFile("LRR", 13),
-                        fileReferenceFactory.partitionFile("RLL", 12),
-                        fileReferenceFactory.partitionFile("RLR", 13),
-                        fileReferenceFactory.partitionFile("RRL", 12),
-                        fileReferenceFactory.partitionFile("RRR", 13))));
+        assertThat(printTableFilesExpectingIdenticalNew(partitionsByTable, filesByTable))
+                .isEqualTo(printExpectedFilesForAllTables(tables, expectedPartitions, activeAndReadyForGCFiles(
+                        List.of(
+                                fileReferenceFactory.partitionFile("LLL", 12),
+                                fileReferenceFactory.partitionFile("LLR", 13),
+                                fileReferenceFactory.partitionFile("LRL", 12),
+                                fileReferenceFactory.partitionFile("LRR", 13),
+                                fileReferenceFactory.partitionFile("RLL", 12),
+                                fileReferenceFactory.partitionFile("RLR", 13),
+                                fileReferenceFactory.partitionFile("RRL", 12),
+                                fileReferenceFactory.partitionFile("RRR", 13)),
+                        List.of("root", "L", "R", "LL", "LR", "RL", "RR"))));
     }
 }
