@@ -43,9 +43,8 @@ public class InMemoryPartitionSplittingDriver implements PartitionSplittingDrive
     public void splitPartitions() {
         new FindPartitionsToSplit(
                 instance.getInstanceProperties(),
-                instance.getTablePropertiesProvider(),
                 instance.getStateStoreProvider(),
-                splitPartition()).run();
+                splitPartition()).run(instance.streamTableProperties());
     }
 
     private JobSender splitPartition() {
