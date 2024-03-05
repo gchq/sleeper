@@ -272,7 +272,7 @@ public class CompactionStack extends NestedStack {
                 .handler("sleeper.compaction.job.creation.lambda.CreateCompactionJobsTriggerLambda::handleRequest")
                 .environment(environmentVariables)
                 .reservedConcurrentExecutions(1)
-                .logGroup(createLambdaLogGroup(this, "CompactionJobsCreationTriggerLogGroup", functionName, instanceProperties)));
+                .logGroup(createLambdaLogGroup(this, "CompactionJobsCreationTriggerLogGroup", triggerFunctionName, instanceProperties)));
 
         IFunction handlerFunction = jobCreatorJar.buildFunction(this, "CompactionJobsCreationHandler", builder -> builder
                 .functionName(functionName)
@@ -284,20 +284,20 @@ public class CompactionStack extends NestedStack {
                 .environment(environmentVariables)
                 .logGroup(createLambdaLogGroup(this, "CompactionJobsCreationHandlerLogGroup", functionName, instanceProperties)));
 
-        // Grant this function permission to read from / write to the DynamoDB table
-        coreStacks.grantCreateCompactionJobs(handlerFunction);
-        coreStacks.grantReadTablesStatus(triggerFunction);
-        jarsBucket.grantRead(handlerFunction);
-        statusStore.grantWriteJobEvent(handlerFunction);
-
-        // Grant this function permission to put messages on the compaction queue
-        compactionJobsQueue.grantSendMessages(handlerFunction);
-
         // Send messages from the trigger function to the handler function
         Queue jobCreationQueue = sqsQueueForCompactionJobCreation();
-        jobCreationQueue.grantSendMessages(triggerFunction);
         handlerFunction.addEventSource(new SqsEventSource(jobCreationQueue,
                 SqsEventSourceProps.builder().batchSize(1).build()));
+
+        // Grant permissions
+        // - Read through tables in trigger, send batches
+        // - Read/write for creating compaction jobs, access to jars bucket for compaction strategies
+        jobCreationQueue.grantSendMessages(triggerFunction);
+        coreStacks.grantReadTablesStatus(triggerFunction);
+        coreStacks.grantCreateCompactionJobs(handlerFunction);
+        jarsBucket.grantRead(handlerFunction);
+        statusStore.grantWriteJobEvent(handlerFunction);
+        compactionJobsQueue.grantSendMessages(handlerFunction);
 
         // Cloudwatch rule to trigger this lambda
         Rule rule = Rule.Builder
