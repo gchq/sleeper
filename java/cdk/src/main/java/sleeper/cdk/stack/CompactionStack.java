@@ -373,17 +373,17 @@ public class CompactionStack extends NestedStack {
             instanceProperties.set(COMPACTION_TASK_FARGATE_DEFINITION_FAMILY, taskDefinition.getFamily());
             taskDefinition.addContainer(ContainerConstants.COMPACTION_CONTAINER_NAME,
                     createFargateContainerDefinition(containerImage, environmentVariables, instanceProperties));
+
+            if (instanceProperties.getBoolean(XRAY_TRACING_ENABLED)) {
+                taskDefinition.addContainer(ContainerConstants.XRAY_CONTAINER_NAME,
+                        createXRayDaemonContainerDefinition(instanceProperties));
+            }
         } else {
             taskDefinition = compactionEC2TaskDefinition();
             instanceProperties.set(COMPACTION_TASK_EC2_DEFINITION_FAMILY, taskDefinition.getFamily());
             taskDefinition.addContainer(ContainerConstants.COMPACTION_CONTAINER_NAME,
                     createEC2ContainerDefinition(containerImage, environmentVariables, instanceProperties));
             addEC2CapacityProvider(cluster, vpc, coreStacks, taskCreatorJar);
-        }
-
-        if (instanceProperties.getBoolean(XRAY_TRACING_ENABLED)) {
-            taskDefinition.addContainer(ContainerConstants.XRAY_CONTAINER_NAME,
-                    createXRayDaemonContainerDefinition(instanceProperties));
         }
 
         coreStacks.grantRunCompactionJobs(taskDefinition.getTaskRole());
