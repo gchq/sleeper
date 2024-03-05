@@ -162,6 +162,9 @@ sleeper.table.properties.provider.timeout.minutes=60
 # consistent.
 sleeper.tables.index.dynamo.consistent.reads=true
 
+# This specifies whether AWS X-Ray tracing is enabled.
+sleeper.tracing.enabled=true
+
 
 ## The following properties relate to standard ingest.
 
