@@ -326,20 +326,20 @@ public class CompactionStack extends NestedStack {
                 .environment(environmentVariables)
                 .logGroup(createLambdaLogGroup(this, "CompactionJobsCreationHandlerLogGroup", functionName, instanceProperties)));
 
+        // Send messages from the trigger function to the handler function
+        Queue jobCreationQueue = sqsQueueForCompactionJobCreation();
+        handlerFunction.addEventSource(new SqsEventSource(jobCreationQueue,
+                SqsEventSourceProps.builder().batchSize(1).build()));
+
         // Grant permissions
-        // - Read through tables in trigger
+        // - Read through tables in trigger, send batches
         // - Read/write for creating compaction jobs, access to jars bucket for compaction strategies
+        jobCreationQueue.grantSendMessages(triggerFunction);
         coreStacks.grantReadTablesStatus(triggerFunction);
         coreStacks.grantCreateCompactionJobs(handlerFunction);
         jarsBucket.grantRead(handlerFunction);
         statusStore.grantWriteJobEvent(handlerFunction);
         compactionJobsQueue.grantSendMessages(handlerFunction);
-
-        // Send messages from the trigger function to the handler function
-        Queue jobCreationQueue = sqsQueueForCompactionJobCreation();
-        jobCreationQueue.grantSendMessages(triggerFunction);
-        handlerFunction.addEventSource(new SqsEventSource(jobCreationQueue,
-                SqsEventSourceProps.builder().batchSize(1).build()));
     }
 
     private Queue sqsQueueForCompactionJobCreation() {
