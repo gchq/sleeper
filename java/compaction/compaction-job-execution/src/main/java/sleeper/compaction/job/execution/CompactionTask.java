@@ -23,6 +23,7 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusStore;
+import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.util.LoggedDuration;
@@ -47,13 +48,15 @@ public class CompactionTask {
     private final CompactionRunner compactor;
     private final CompactionTaskStatusStore taskStatusStore;
     private final String taskId;
+    private final PropertiesReloader propertiesReloader;
     private int numConsecutiveFailures = 0;
     private int totalNumberOfMessagesProcessed = 0;
 
-    public CompactionTask(InstanceProperties instanceProperties, Supplier<Instant> timeSupplier,
+    public CompactionTask(InstanceProperties instanceProperties, PropertiesReloader propertiesReloader, Supplier<Instant> timeSupplier,
             MessageReceiver messageReceiver, CompactionRunner compactor, CompactionTaskStatusStore taskStore, String taskId) {
         maxIdleTime = Duration.ofSeconds(instanceProperties.getInt(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS));
         maxConsecutiveFailures = instanceProperties.getInt(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES);
+        this.propertiesReloader = propertiesReloader;
         this.timeSupplier = timeSupplier;
         this.messageReceiver = messageReceiver;
         this.compactor = compactor;
@@ -99,6 +102,7 @@ public class CompactionTask {
                 CompactionJob job = message.getJob();
                 LOGGER.info("CompactionJob is: {}", job);
                 try {
+                    propertiesReloader.reloadIfNeeded();
                     summaryConsumer.accept(compactor.compact(job));
                     message.completed();
                     totalNumberOfMessagesProcessed++;

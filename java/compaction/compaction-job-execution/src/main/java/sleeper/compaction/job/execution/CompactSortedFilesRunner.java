@@ -104,13 +104,12 @@ public class CompactSortedFilesRunner {
         }
 
         SqsCompactionQueueHandler queueHandler = new SqsCompactionQueueHandler(sqsClient, instanceProperties);
-        new CompactionTask(instanceProperties, Instant::now, queueHandler::receiveFromSqs,
+        new CompactionTask(instanceProperties, propertiesReloader, Instant::now, queueHandler::receiveFromSqs,
                 this::compact, taskStatusStore, taskId)
                 .run();
     }
 
     private RecordsProcessedSummary compact(CompactionJob compactionJob) throws IteratorException, IOException, StateStoreException {
-        propertiesReloader.reloadIfNeeded();
         CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties, tablePropertiesProvider,
                 stateStoreProvider, objectFactory, jobStatusStore, taskId);
         return compactSortedFiles.run(compactionJob);
