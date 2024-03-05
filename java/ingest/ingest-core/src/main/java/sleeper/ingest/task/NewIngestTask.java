@@ -22,7 +22,6 @@ import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.LoggedDuration;
-import sleeper.ingest.IngestResult;
 import sleeper.ingest.job.IngestJob;
 
 import java.io.IOException;
@@ -73,9 +72,9 @@ public class NewIngestTask {
                 IngestJob job = message.getJob();
                 LOGGER.info("IngestJob is: {}", job);
                 try {
-                    IngestResult ingestResult = ingester.ingest(job);
-                    summaryConsumer.accept(new RecordsProcessedSummary(ingestResult.asRecordsProcessed(), startTime, timeSupplier.get()));
-                    message.completed(ingestResult);
+                    RecordsProcessedSummary summary = ingester.ingest(job);
+                    summaryConsumer.accept(summary);
+                    message.completed(summary);
                     totalNumberOfMessagesProcessed++;
                 } catch (Exception e) {
                     LOGGER.error("Failed processing ingest job, putting job back on queue", e);
@@ -92,13 +91,13 @@ public class NewIngestTask {
 
     @FunctionalInterface
     interface IngestRunner {
-        IngestResult ingest(IngestJob job) throws IteratorException, StateStoreException, IOException;
+        RecordsProcessedSummary ingest(IngestJob job) throws IteratorException, StateStoreException, IOException;
     }
 
     interface MessageHandle extends AutoCloseable {
         IngestJob getJob();
 
-        void completed(IngestResult result);
+        void completed(RecordsProcessedSummary summary);
 
         void failed();
 
