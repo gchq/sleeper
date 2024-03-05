@@ -266,6 +266,21 @@
                 <artifactId>aws-xray-recorder-sdk-aws-sdk-instrumentor</artifactId>
                 <version>${aws-xray.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>aws-java-sdk-xray</artifactId>
+                <version>${aws-java-sdk.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>aws-java-sdk-core</artifactId>
+                <version>${aws-java-sdk.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>jmespath-java</artifactId>
+                <version>${aws-java-sdk.version}</version>
+            </dependency>
             <!-- Shared dependencies -->
             <dependency>
                 <groupId>io.netty</groupId>
