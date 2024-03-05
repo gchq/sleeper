@@ -145,6 +145,18 @@ public interface CompactionProperty {
             .defaultValue("4096")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty COMPACTION_TASK_XRAY_SIDECAR_CPU = Index.propertyBuilder("sleeper.compaction.task.xray.sidecar.cpu")
+            .description("The CPU for an AWS X-Ray daemon in a compaction task sidecar, if X-Ray tracing is enabled.\n" +
+                    "See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid options.")
+            .defaultValue("256")
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty COMPACTION_TASK_XRAY_SIDECAR_MEMORY = Index.propertyBuilder("sleeper.compaction.task.xray.sidecar.memory")
+            .description("The memory for an AWS X-Ray daemon in a compaction task sidecar, if X-Ray tracing is enabled.\n" +
+                    "See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid options.")
+            .defaultValue("512")
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_ECS_LAUNCHTYPE = Index.propertyBuilder("sleeper.compaction.ecs.launch.type")
             .description("What launch type should compaction containers use? Valid options: FARGATE, EC2.")
             .defaultValue("FARGATE")

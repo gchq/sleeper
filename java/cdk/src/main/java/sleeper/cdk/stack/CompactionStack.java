@@ -120,8 +120,6 @@ import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 import static sleeper.configuration.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
 import static sleeper.configuration.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
-import static sleeper.configuration.properties.instance.CommonProperty.XRAY_SIDECAR_CPU;
-import static sleeper.configuration.properties.instance.CommonProperty.XRAY_SIDECAR_MEMORY;
 import static sleeper.configuration.properties.instance.CommonProperty.XRAY_TRACING_ENABLED;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_EC2_POOL_DESIRED;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_EC2_POOL_MAXIMUM;
@@ -135,6 +133,8 @@ import static sleeper.configuration.properties.instance.CompactionProperty.COMPA
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_CPU_ARCHITECTURE;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_XRAY_SIDECAR_CPU;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_XRAY_SIDECAR_MEMORY;
 import static sleeper.configuration.properties.instance.CompactionProperty.ECR_COMPACTION_REPO;
 import static software.amazon.awscdk.services.lambda.Runtime.JAVA_11;
 
@@ -517,8 +517,8 @@ public class CompactionStack extends NestedStack {
     private ContainerDefinitionOptions createXRayDaemonContainerDefinition(InstanceProperties instanceProperties) {
         return ContainerDefinitionOptions.builder()
                 .image(ContainerImage.fromRegistry(ContainerConstants.XRAY_IMAGE))
-                .cpu(instanceProperties.getInt(XRAY_SIDECAR_CPU))
-                .memoryLimitMiB(instanceProperties.getInt(XRAY_SIDECAR_MEMORY))
+                .cpu(instanceProperties.getInt(COMPACTION_TASK_XRAY_SIDECAR_CPU))
+                .memoryLimitMiB(instanceProperties.getInt(COMPACTION_TASK_XRAY_SIDECAR_MEMORY))
                 .portMappings(List.of(PortMapping.builder()
                         .protocol(Protocol.UDP)
                         .containerPort(2000)
@@ -529,15 +529,9 @@ public class CompactionStack extends NestedStack {
 
     private ContainerDefinitionOptions createFargateContainerDefinition(
             ContainerImage image, Map<String, String> environment, InstanceProperties instanceProperties) {
-        String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
-        String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
-        Pair<Integer, Integer> requirements = Requirements.getArchRequirements(architecture, launchType,
-                instanceProperties);
         return ContainerDefinitionOptions.builder()
                 .image(image)
                 .environment(environment)
-                .cpu(requirements.getLeft())
-                .memoryLimitMiB(requirements.getRight())
                 .logging(Utils.createECSContainerLogDriver(this, instanceProperties, "FargateCompactionTasks"))
                 .build();
     }
