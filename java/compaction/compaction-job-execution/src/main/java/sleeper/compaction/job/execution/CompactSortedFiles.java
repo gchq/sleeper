@@ -80,7 +80,7 @@ public class CompactSortedFiles {
     public CompactSortedFiles(
             InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider, ObjectFactory objectFactory, CompactionJobStatusStore jobStatusStore,
-            String taskId) throws StateStoreException {
+            String taskId) {
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.objectFactory = objectFactory;

@@ -37,9 +37,6 @@ import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.core.iterator.IteratorException;
-import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.job.common.CommonJobUtils;
 import sleeper.statestore.StateStoreProvider;
@@ -52,35 +49,26 @@ import static sleeper.configuration.properties.instance.CompactionProperty.COMPA
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 /**
- * Retrieves compaction {@link CompactionJob}s from an SQS queue, and executes
+ * Retrieves {@link CompactionJob}s from an SQS queue, and executes
  * them. It delegates the actual execution of the job to an instance of
  * {@link CompactSortedFiles}, and the processing of SQS messages to {@link SqsCompactionQueueHandler}.
  */
-public class CompactSortedFilesRunner {
-    private static final Logger LOGGER = LoggerFactory.getLogger(CompactSortedFilesRunner.class);
+public class ECSCompactionTaskRunner {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ECSCompactionTaskRunner.class);
 
     private final InstanceProperties instanceProperties;
-    private final ObjectFactory objectFactory;
-    private final TablePropertiesProvider tablePropertiesProvider;
-    private final PropertiesReloader propertiesReloader;
-    private final StateStoreProvider stateStoreProvider;
-    private final CompactionJobStatusStore jobStatusStore;
-    private final CompactionTaskStatusStore taskStatusStore;
-    private final String taskId;
-    private final AmazonSQS sqsClient;
     private final AmazonECS ecsClient;
+    private final CompactionTask compactionTask;
 
-    private CompactSortedFilesRunner(Builder builder) {
+    private ECSCompactionTaskRunner(Builder builder) {
         instanceProperties = builder.instanceProperties;
-        objectFactory = builder.objectFactory;
-        tablePropertiesProvider = builder.tablePropertiesProvider;
-        propertiesReloader = builder.propertiesReloader;
-        stateStoreProvider = builder.stateStoreProvider;
-        jobStatusStore = builder.jobStatusStore;
-        taskStatusStore = builder.taskStatusStore;
-        taskId = builder.taskId;
-        sqsClient = builder.sqsClient;
         ecsClient = builder.ecsClient;
+        CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties,
+                builder.tablePropertiesProvider, builder.stateStoreProvider,
+                builder.objectFactory, builder.jobStatusStore, builder.taskId);
+        compactionTask = new CompactionTask(instanceProperties, builder.propertiesReloader, Instant::now,
+                new SqsCompactionQueueHandler(builder.sqsClient, instanceProperties)::receiveFromSqs,
+                job -> compactSortedFiles.run(job), builder.taskStatusStore, builder.taskId);
     }
 
     public static Builder builder() {
@@ -102,17 +90,7 @@ public class CompactSortedFilesRunner {
                 LOGGER.warn("EC2 instance data not available", e);
             }
         }
-
-        SqsCompactionQueueHandler queueHandler = new SqsCompactionQueueHandler(sqsClient, instanceProperties);
-        new CompactionTask(instanceProperties, propertiesReloader, Instant::now, queueHandler::receiveFromSqs,
-                this::compact, taskStatusStore, taskId)
-                .run();
-    }
-
-    private RecordsProcessedSummary compact(CompactionJob compactionJob) throws IteratorException, IOException, StateStoreException {
-        CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties, tablePropertiesProvider,
-                stateStoreProvider, objectFactory, jobStatusStore, taskId);
-        return compactSortedFiles.run(compactionJob);
+        compactionTask.run();
     }
 
     public static void main(String[] args) throws InterruptedException, IOException, ObjectFactoryException {
@@ -140,7 +118,7 @@ public class CompactSortedFilesRunner {
                 instanceProperties);
 
         ObjectFactory objectFactory = new ObjectFactory(instanceProperties, s3Client, "/tmp");
-        CompactSortedFilesRunner runner = CompactSortedFilesRunner.builder()
+        ECSCompactionTaskRunner runner = ECSCompactionTaskRunner.builder()
                 .instanceProperties(instanceProperties)
                 .objectFactory(objectFactory)
                 .tablePropertiesProvider(tablePropertiesProvider)
@@ -229,8 +207,8 @@ public class CompactSortedFilesRunner {
             return this;
         }
 
-        public CompactSortedFilesRunner build() {
-            return new CompactSortedFilesRunner(this);
+        public ECSCompactionTaskRunner build() {
+            return new ECSCompactionTaskRunner(this);
         }
     }
 }
