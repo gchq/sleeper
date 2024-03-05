@@ -216,12 +216,24 @@ public interface CommonProperty {
             .validationPredicate(Utils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
-    UserDefinedInstanceProperty TRACING_ENABLED = Index.propertyBuilder("sleeper.tracing.enabled")
+    UserDefinedInstanceProperty XRAY_TRACING_ENABLED = Index.propertyBuilder("sleeper.xray.tracing.enabled")
             .description("This specifies whether AWS X-Ray tracing is enabled.")
             .defaultValue("true")
             .validationPredicate(Utils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.COMMON)
-            .build();
+            .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty XRAY_SIDECAR_CPU = Index.propertyBuilder("sleeper.xray.sidecar.cpu")
+            .description("The CPU for an AWS X-Ray daemon in a persistent task sidecar.\n" +
+                    "See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid options.")
+            .defaultValue("256")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty XRAY_SIDECAR_MEMORY = Index.propertyBuilder("sleeper.xray.sidecar.memory")
+            .description("The memory for an AWS X-Ray daemon in a persistent task sidecar.\n" +
+                    "See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid options.")
+            .defaultValue("512")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .runCdkDeployWhenChanged(true).build();
 
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();

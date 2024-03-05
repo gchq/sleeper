@@ -19,7 +19,7 @@ import software.amazon.awscdk.services.lambda.Tracing;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 
-import static sleeper.configuration.properties.instance.CommonProperty.TRACING_ENABLED;
+import static sleeper.configuration.properties.instance.CommonProperty.XRAY_TRACING_ENABLED;
 
 public class TracingUtils {
 
@@ -27,7 +27,7 @@ public class TracingUtils {
     }
 
     public static Tracing active(InstanceProperties properties) {
-        if (properties.getBoolean(TRACING_ENABLED)) {
+        if (properties.getBoolean(XRAY_TRACING_ENABLED)) {
             return Tracing.ACTIVE;
         } else {
             return Tracing.DISABLED;
@@ -35,7 +35,7 @@ public class TracingUtils {
     }
 
     public static Tracing passThrough(InstanceProperties properties) {
-        if (properties.getBoolean(TRACING_ENABLED)) {
+        if (properties.getBoolean(XRAY_TRACING_ENABLED)) {
             return Tracing.PASS_THROUGH;
         } else {
             return Tracing.DISABLED;
