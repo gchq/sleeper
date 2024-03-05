@@ -121,8 +121,8 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
         tableProperties.setSchema(schema);
         return new CompactSortedFiles(instanceProperties,
                 new FixedTablePropertiesProvider(tableProperties),
-                ObjectFactory.noUserJars(),
-                new FixedStateStoreProvider(tableProperties, stateStore), jobStatusStore, DEFAULT_TASK_ID);
+                new FixedStateStoreProvider(tableProperties, stateStore),
+                ObjectFactory.noUserJars(), jobStatusStore, DEFAULT_TASK_ID);
     }
 
     @Test

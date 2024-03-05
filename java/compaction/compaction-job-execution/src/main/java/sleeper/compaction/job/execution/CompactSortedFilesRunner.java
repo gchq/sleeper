@@ -111,8 +111,8 @@ public class CompactSortedFilesRunner {
 
     private RecordsProcessedSummary compact(CompactionJob compactionJob) throws IteratorException, IOException, StateStoreException {
         propertiesReloader.reloadIfNeeded();
-        CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties, tablePropertiesProvider, objectFactory,
-                stateStoreProvider, jobStatusStore, taskId);
+        CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties, tablePropertiesProvider,
+                stateStoreProvider, objectFactory, jobStatusStore, taskId);
         return compactSortedFiles.run(compactionJob);
     }
 

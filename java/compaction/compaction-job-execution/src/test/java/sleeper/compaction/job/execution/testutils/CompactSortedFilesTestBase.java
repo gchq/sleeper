@@ -77,8 +77,8 @@ public class CompactSortedFilesTestBase {
         tableProperties.setSchema(schema);
         return new CompactSortedFiles(instanceProperties,
                 new FixedTablePropertiesProvider(tableProperties),
-                ObjectFactory.noUserJars(),
-                new FixedStateStoreProvider(tableProperties, stateStore), statusStore, DEFAULT_TASK_ID);
+                new FixedStateStoreProvider(tableProperties, stateStore),
+                ObjectFactory.noUserJars(), statusStore, DEFAULT_TASK_ID);
     }
 
     protected FileReference ingestRecordsGetFile(List<Record> records) throws Exception {

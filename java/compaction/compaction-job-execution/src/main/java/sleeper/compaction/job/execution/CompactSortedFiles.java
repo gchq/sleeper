@@ -78,8 +78,8 @@ public class CompactSortedFiles {
     private static final Logger LOGGER = LoggerFactory.getLogger(CompactSortedFiles.class);
 
     public CompactSortedFiles(
-            InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, ObjectFactory objectFactory,
-            StateStoreProvider stateStoreProvider, CompactionJobStatusStore jobStatusStore,
+            InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
+            StateStoreProvider stateStoreProvider, ObjectFactory objectFactory, CompactionJobStatusStore jobStatusStore,
             String taskId) throws StateStoreException {
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
