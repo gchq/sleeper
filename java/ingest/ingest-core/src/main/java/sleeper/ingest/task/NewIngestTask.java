@@ -18,11 +18,12 @@ package sleeper.ingest.task;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.LoggedDuration;
+import sleeper.ingest.IngestResult;
 import sleeper.ingest.job.IngestJob;
+import sleeper.ingest.job.IngestJobHandler;
+import sleeper.ingest.job.status.IngestJobStatusStore;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -30,19 +31,25 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import static sleeper.ingest.job.status.IngestJobFinishedEvent.ingestJobFinished;
+import static sleeper.ingest.job.status.IngestJobStartedEvent.ingestJobStarted;
+
 public class NewIngestTask {
     public static final Logger LOGGER = LoggerFactory.getLogger(NewIngestTask.class);
     private final Supplier<Instant> timeSupplier;
     private final MessageReceiver messageReceiver;
-    private final IngestRunner ingester;
+    private final IngestJobHandler ingester;
+    private final IngestJobStatusStore jobStatusStore;
     private final IngestTaskStatusStore taskStatusStore;
     private final String taskId;
     private int totalNumberOfMessagesProcessed = 0;
 
-    public NewIngestTask(Supplier<Instant> timeSupplier, MessageReceiver messageReceiver, IngestRunner ingester, IngestTaskStatusStore taskStore, String taskId) {
+    public NewIngestTask(Supplier<Instant> timeSupplier, MessageReceiver messageReceiver, IngestJobHandler ingester,
+            IngestJobStatusStore jobStatusStore, IngestTaskStatusStore taskStore, String taskId) {
         this.timeSupplier = timeSupplier;
         this.messageReceiver = messageReceiver;
         this.ingester = ingester;
+        this.jobStatusStore = jobStatusStore;
         this.taskStatusStore = taskStore;
         this.taskId = taskId;
     }
@@ -72,7 +79,12 @@ public class NewIngestTask {
                 IngestJob job = message.getJob();
                 LOGGER.info("IngestJob is: {}", job);
                 try {
-                    RecordsProcessedSummary summary = ingester.ingest(job);
+                    Instant jobStartTime = timeSupplier.get();
+                    jobStatusStore.jobStarted(ingestJobStarted(taskId, job, jobStartTime));
+                    IngestResult result = ingester.ingest(job);
+                    Instant jobFinishTime = timeSupplier.get();
+                    RecordsProcessedSummary summary = new RecordsProcessedSummary(result.asRecordsProcessed(), jobStartTime, jobFinishTime);
+                    jobStatusStore.jobFinished(ingestJobFinished(taskId, job, summary));
                     summaryConsumer.accept(summary);
                     message.completed(summary);
                     totalNumberOfMessagesProcessed++;
@@ -87,11 +99,6 @@ public class NewIngestTask {
     @FunctionalInterface
     public interface MessageReceiver {
         Optional<MessageHandle> receiveMessage() throws InterruptedException, IOException;
-    }
-
-    @FunctionalInterface
-    interface IngestRunner {
-        RecordsProcessedSummary ingest(IngestJob job) throws IteratorException, StateStoreException, IOException;
     }
 
     public interface MessageHandle extends AutoCloseable {

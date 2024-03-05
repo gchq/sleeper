@@ -19,14 +19,15 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.ingest.IngestResult;
 import sleeper.ingest.job.IngestJob;
-import sleeper.ingest.task.NewIngestTask.IngestRunner;
+import sleeper.ingest.job.IngestJobHandler;
+import sleeper.ingest.job.status.InMemoryIngestJobStatusStore;
+import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.task.NewIngestTask.MessageHandle;
 import sleeper.ingest.task.NewIngestTask.MessageReceiver;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -39,16 +40,16 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
+import static sleeper.ingest.IngestResultTestData.defaultFileIngestResult;
+import static sleeper.ingest.IngestResultTestData.defaultFileIngestResultReadAndWritten;
 
 public class NewIngestTaskTest {
     private static final String DEFAULT_TASK_ID = "test-task-id";
-    private static final Instant DEFAULT_START_TIME = Instant.parse("2024-03-04T11:00:00Z");
-    private static final Duration DEFAULT_DURATION = Duration.ofSeconds(5);
 
     private final Queue<IngestJob> jobsOnQueue = new LinkedList<>();
     private final List<IngestJob> successfulJobs = new ArrayList<>();
     private final List<IngestJob> failedJobs = new ArrayList<>();
+    private final IngestJobStatusStore jobStore = new InMemoryIngestJobStatusStore();
     private final IngestTaskStatusStore taskStore = new InMemoryIngestTaskStatusStore();
 
     @Nested
@@ -106,15 +107,15 @@ public class NewIngestTaskTest {
             // Given
             Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
+                    Instant.parse("2024-02-22T13:50:01Z"), // Job start
+                    Instant.parse("2024-02-22T13:50:02Z"), // Job finish
                     Instant.parse("2024-02-22T13:50:05Z"))); // Finish
             createJobOnQueue("job1");
 
             // When
-            RecordsProcessedSummary jobSummary = summary(
-                    Instant.parse("2024-02-22T13:50:01Z"),
-                    Instant.parse("2024-02-22T13:50:02Z"), 10L, 10L);
+            IngestResult jobResult = recordsReadAndWritten(10L, 10L);
             runTask("test-task-1", processJobs(
-                    jobSucceeds(jobSummary)),
+                    jobSucceeds(jobResult)),
                     times::poll);
 
             // Then
@@ -123,7 +124,9 @@ public class NewIngestTaskTest {
                             .startTime(Instant.parse("2024-02-22T13:50:00Z"))
                             .taskId("test-task-1")
                             .finished(Instant.parse("2024-02-22T13:50:05Z"),
-                                    withJobSummaries(jobSummary))
+                                    withJobSummaries(summary(jobResult,
+                                            Instant.parse("2024-02-22T13:50:01Z"),
+                                            Instant.parse("2024-02-22T13:50:02Z"))))
                             .build());
         }
 
@@ -132,20 +135,20 @@ public class NewIngestTaskTest {
             // Given
             Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
+                    Instant.parse("2024-02-22T13:50:01Z"), // Job 1 start
+                    Instant.parse("2024-02-22T13:50:02Z"), // Job 1 finish
+                    Instant.parse("2024-02-22T13:50:03Z"), // Job 2 start
+                    Instant.parse("2024-02-22T13:50:04Z"), // Job 2 finish
                     Instant.parse("2024-02-22T13:50:05Z"))); // Finish
             createJobOnQueue("job1");
             createJobOnQueue("job2");
 
             // When
-            RecordsProcessedSummary job1Summary = summary(
-                    Instant.parse("2024-02-22T13:50:01Z"),
-                    Instant.parse("2024-02-22T13:50:02Z"), 10L, 10L);
-            RecordsProcessedSummary job2Summary = summary(
-                    Instant.parse("2024-02-22T13:50:03Z"),
-                    Instant.parse("2024-02-22T13:50:04Z"), 5L, 5L);
+            IngestResult job1Result = recordsReadAndWritten(10L, 10L);
+            IngestResult job2Result = recordsReadAndWritten(5L, 5L);
             runTask("test-task-1", processJobs(
-                    jobSucceeds(job1Summary),
-                    jobSucceeds(job2Summary)),
+                    jobSucceeds(job1Result),
+                    jobSucceeds(job2Result)),
                     times::poll);
 
             // Then
@@ -154,7 +157,13 @@ public class NewIngestTaskTest {
                             .startTime(Instant.parse("2024-02-22T13:50:00Z"))
                             .taskId("test-task-1")
                             .finished(Instant.parse("2024-02-22T13:50:05Z"),
-                                    withJobSummaries(job1Summary, job2Summary))
+                                    withJobSummaries(
+                                            summary(job1Result,
+                                                    Instant.parse("2024-02-22T13:50:01Z"),
+                                                    Instant.parse("2024-02-22T13:50:02Z")),
+                                            summary(job2Result,
+                                                    Instant.parse("2024-02-22T13:50:03Z"),
+                                                    Instant.parse("2024-02-22T13:50:04Z"))))
                             .build());
         }
 
@@ -163,6 +172,7 @@ public class NewIngestTaskTest {
             // Given
             Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
+                    Instant.parse("2024-02-22T13:50:01Z"), // Job starts
                     Instant.parse("2024-02-22T13:50:05Z"))); // Finish
             createJobOnQueue("job1");
 
@@ -208,31 +218,24 @@ public class NewIngestTaskTest {
         }
     }
 
-    private void runTask(IngestRunner ingestRunner) throws Exception {
+    private void runTask(IngestJobHandler ingestRunner) throws Exception {
         runTask(ingestRunner, Instant::now);
     }
 
-    private void runTask(IngestRunner ingestRunner, Supplier<Instant> timeSupplier) throws Exception {
+    private void runTask(IngestJobHandler ingestRunner, Supplier<Instant> timeSupplier) throws Exception {
         runTask(pollQueue(), ingestRunner, timeSupplier, DEFAULT_TASK_ID);
     }
 
-    private void runTask(String taskId, IngestRunner ingestRunner, Supplier<Instant> timeSupplier) throws Exception {
+    private void runTask(String taskId, IngestJobHandler ingestRunner, Supplier<Instant> timeSupplier) throws Exception {
         runTask(pollQueue(), ingestRunner, timeSupplier, taskId);
     }
 
     private void runTask(
             MessageReceiver messageReceiver,
-            IngestRunner ingestRunner,
-            Supplier<Instant> timeSupplier) throws Exception {
-        runTask(messageReceiver, ingestRunner, timeSupplier, DEFAULT_TASK_ID);
-    }
-
-    private void runTask(
-            MessageReceiver messageReceiver,
-            IngestRunner ingestRunner,
+            IngestJobHandler ingestRunner,
             Supplier<Instant> timeSupplier,
             String taskId) throws Exception {
-        new NewIngestTask(timeSupplier, messageReceiver, ingestRunner, taskStore, taskId)
+        new NewIngestTask(timeSupplier, messageReceiver, ingestRunner, jobStore, taskStore, taskId)
                 .run();
     }
 
@@ -258,29 +261,37 @@ public class NewIngestTaskTest {
         return job;
     }
 
-    private IngestRunner jobsSucceed(int numJobs) {
+    private IngestResult recordsReadAndWritten(long recordsRead, long recordsWritten) {
+        return defaultFileIngestResultReadAndWritten("test-file", recordsRead, recordsWritten);
+    }
+
+    private RecordsProcessedSummary summary(IngestResult result, Instant startTime, Instant finishTime) {
+        return new RecordsProcessedSummary(result.asRecordsProcessed(), startTime, finishTime);
+    }
+
+    private IngestJobHandler jobsSucceed(int numJobs) {
         return processJobs(Stream.generate(() -> jobSucceeds())
                 .limit(numJobs)
                 .toArray(ProcessJob[]::new));
     }
 
-    private ProcessJob jobSucceeds(RecordsProcessedSummary summary) {
-        return new ProcessJob(true, summary);
+    private ProcessJob jobSucceeds(IngestResult result) {
+        return new ProcessJob(true, result);
     }
 
     private ProcessJob jobSucceeds() {
-        return new ProcessJob(true, 10L, DEFAULT_START_TIME, DEFAULT_DURATION);
+        return new ProcessJob(true, defaultFileIngestResult("test-file"));
     }
 
     private ProcessJob jobFails() {
-        return new ProcessJob(false, 0L, DEFAULT_START_TIME, DEFAULT_DURATION);
+        return new ProcessJob(false, defaultFileIngestResult("test-file"));
     }
 
-    private IngestRunner processNoJobs() {
+    private IngestJobHandler processNoJobs() {
         return processJobs();
     }
 
-    private IngestRunner processJobs(ProcessJob... actions) {
+    private IngestJobHandler processJobs(ProcessJob... actions) {
         Iterator<ProcessJob> getAction = List.of(actions).iterator();
         return job -> {
             if (getAction.hasNext()) {
@@ -290,7 +301,7 @@ public class NewIngestTaskTest {
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
-                return action.summary;
+                return action.result;
             } else {
                 throw new IllegalStateException("Unexpected job: " + job);
             }
@@ -299,15 +310,11 @@ public class NewIngestTaskTest {
 
     private class ProcessJob {
         private final boolean succeed;
-        private final RecordsProcessedSummary summary;
+        private final IngestResult result;
 
-        ProcessJob(boolean succeed, long records, Instant startTime, Duration duration) {
-            this(succeed, new RecordsProcessedSummary(new RecordsProcessed(records, records), startTime, duration));
-        }
-
-        ProcessJob(boolean succeed, RecordsProcessedSummary summary) {
+        ProcessJob(boolean succeed, IngestResult result) {
             this.succeed = succeed;
-            this.summary = summary;
+            this.result = result;
         }
 
         public void run(IngestJob job) throws Exception {
