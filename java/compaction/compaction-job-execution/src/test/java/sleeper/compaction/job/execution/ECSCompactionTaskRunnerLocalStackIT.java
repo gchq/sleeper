@@ -214,7 +214,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
         sqs.sendMessage(sendMessageRequest);
 
         // When
-        createJobRunner("task-id").run();
+        createTaskRunner("task-id").run();
 
         // Then
         // - There should be no messages left on the queue
@@ -234,7 +234,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
         String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", "not-a-file.parquet");
 
         // When
-        createJobRunner("task-id").run();
+        createTaskRunner("task-id").run();
 
         // Then
         // - The compaction job should be put back on the queue
@@ -252,7 +252,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
         String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", "not-a-file.parquet");
 
         // When
-        createJobRunner("task-id").run();
+        createTaskRunner("task-id").run();
 
         // Then
         // - The compaction job should no longer be on the job queue
@@ -276,7 +276,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
         String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", fileReference1, fileReference2);
 
         // When
-        createJobRunner("task-id", new FixedStateStoreProvider(tableProperties, stateStore)).run();
+        createTaskRunner("task-id", new FixedStateStoreProvider(tableProperties, stateStore)).run();
 
         // Then
         // - The compaction job should be put back on the queue
@@ -299,7 +299,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
 
         // When
         StateStoreProvider provider = new FixedStateStoreProvider(tableProperties, stateStore);
-        createJobRunner("task-id", provider).run();
+        createTaskRunner("task-id", provider).run();
 
         // Then
         // - The compaction job should no longer be on the job queue
@@ -333,16 +333,16 @@ public class ECSCompactionTaskRunnerLocalStackIT {
         instanceProperties.set(COMPACTION_JOB_DLQ_URL, jobDlqUrl);
     }
 
-    private ECSCompactionTaskRunner createJobRunner(String taskId) {
-        return createJobRunner(taskId, stateStoreProvider);
+    private ECSCompactionTaskRunner createTaskRunner(String taskId) {
+        return createTaskRunner(taskId, stateStoreProvider);
     }
 
-    private ECSCompactionTaskRunner createJobRunner(String taskId, StateStoreProvider stateStoreProvider) {
-        return jobRunnerBuilder(taskId, stateStoreProvider)
+    private ECSCompactionTaskRunner createTaskRunner(String taskId, StateStoreProvider stateStoreProvider) {
+        return taskRunnerBuilder(taskId, stateStoreProvider)
                 .build();
     }
 
-    private ECSCompactionTaskRunner.Builder jobRunnerBuilder(String taskId, StateStoreProvider stateStoreProvider) {
+    private ECSCompactionTaskRunner.Builder taskRunnerBuilder(String taskId, StateStoreProvider stateStoreProvider) {
         return ECSCompactionTaskRunner.builder()
                 .instanceProperties(instanceProperties)
                 .objectFactory(ObjectFactory.noUserJars())
