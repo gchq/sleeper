@@ -119,7 +119,7 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
     private CompactSortedFiles createCompactSortedFiles(Schema schema, CompactionJob compactionJob, StateStore stateStore) throws Exception {
         tableProperties.setSchema(schema);
         return new CompactSortedFiles(instanceProperties, tableProperties, ObjectFactory.noUserJars(),
-                compactionJob, stateStore, jobStatusStore, DEFAULT_TASK_ID);
+                stateStore, jobStatusStore, DEFAULT_TASK_ID);
     }
 
     @Test
@@ -141,7 +141,7 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
 
         // When
         CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, stateStore);
-        RecordsProcessedSummary summary = compactSortedFiles.run();
+        RecordsProcessedSummary summary = compactSortedFiles.run(compactionJob);
 
         // Then
         //  - Read output file and check that it contains the right results

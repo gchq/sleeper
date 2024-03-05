@@ -116,8 +116,8 @@ public class CompactSortedFilesRunner {
         TableProperties tableProperties = tablePropertiesProvider.getById(compactionJob.getTableId());
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties, tableProperties, objectFactory,
-                compactionJob, stateStore, jobStatusStore, taskId);
-        return compactSortedFiles.run();
+                stateStore, jobStatusStore, taskId);
+        return compactSortedFiles.run(compactionJob);
     }
 
     public static void main(String[] args) throws InterruptedException, IOException, ObjectFactoryException {

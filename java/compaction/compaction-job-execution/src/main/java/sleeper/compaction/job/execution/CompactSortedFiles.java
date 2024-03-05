@@ -70,8 +70,6 @@ public class CompactSortedFiles {
     private final TableProperties tableProperties;
     private final Schema schema;
     private final ObjectFactory objectFactory;
-    private final CompactionJob compactionJob;
-    private final Partition partition;
     private final StateStore stateStore;
     private final CompactionJobStatusStore jobStatusStore;
     private final String taskId;
@@ -80,28 +78,27 @@ public class CompactSortedFiles {
 
     public CompactSortedFiles(
             InstanceProperties instanceProperties, TableProperties tableProperties, ObjectFactory objectFactory,
-            CompactionJob compactionJob, StateStore stateStore, CompactionJobStatusStore jobStatusStore,
+            StateStore stateStore, CompactionJobStatusStore jobStatusStore,
             String taskId) throws StateStoreException {
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
         this.schema = this.tableProperties.getSchema();
         this.objectFactory = objectFactory;
-        this.compactionJob = compactionJob;
-        this.partition = stateStore.getAllPartitions().stream()
-                .filter(partition -> Objects.equals(compactionJob.getPartitionId(), partition.getId()))
-                .findFirst().orElseThrow(() -> new NoSuchElementException("Partition not found for compaction job"));
         this.stateStore = stateStore;
         this.jobStatusStore = jobStatusStore;
         this.taskId = taskId;
     }
 
-    public RecordsProcessedSummary run() throws IOException, IteratorException, StateStoreException {
+    public RecordsProcessedSummary run(CompactionJob compactionJob) throws IOException, IteratorException, StateStoreException {
         Instant startTime = Instant.now();
         String id = compactionJob.getId();
         LOGGER.info("Compaction job {}: compaction called at {}", id, startTime);
+        Partition partition = stateStore.getAllPartitions().stream()
+                .filter(p -> Objects.equals(compactionJob.getPartitionId(), p.getId()))
+                .findFirst().orElseThrow(() -> new NoSuchElementException("Partition not found for compaction job"));
         jobStatusStore.jobStarted(compactionJob, startTime, taskId);
 
-        RecordsProcessed recordsProcessed = compact();
+        RecordsProcessed recordsProcessed = compact(compactionJob, partition);
 
         Instant finishTime = Instant.now();
         // Print summary
@@ -115,14 +112,14 @@ public class CompactSortedFiles {
         return summary;
     }
 
-    private RecordsProcessed compact() throws IOException, IteratorException, StateStoreException {
+    private RecordsProcessed compact(CompactionJob compactionJob, Partition partition) throws IOException, IteratorException, StateStoreException {
         Configuration conf = getConfiguration();
 
         // Create a reader for each file
-        List<CloseableIterator<Record>> inputIterators = createInputIterators(conf);
+        List<CloseableIterator<Record>> inputIterators = createInputIterators(compactionJob, partition, conf);
 
-        // Merge these iterator into one sorted iterator
         CloseableIterator<Record> mergingIterator = getMergingIterator(objectFactory, schema, compactionJob, inputIterators);
+        // Merge these iterator into one sorted iterator
 
         // Create writer
         LOGGER.debug("Creating writer for file {}", compactionJob.getOutputFile());
@@ -172,7 +169,7 @@ public class CompactSortedFiles {
         return new RecordsProcessed(totalNumberOfRecordsRead, recordsWritten);
     }
 
-    private List<CloseableIterator<Record>> createInputIterators(Configuration conf) throws IOException {
+    private List<CloseableIterator<Record>> createInputIterators(CompactionJob compactionJob, Partition partition, Configuration conf) throws IOException {
         List<CloseableIterator<Record>> inputIterators = new ArrayList<>();
         FilterCompat.Filter partitionFilter = FilterCompat.get(RangeQueryUtils.getFilterPredicate(partition));
         for (String file : compactionJob.getInputFiles()) {

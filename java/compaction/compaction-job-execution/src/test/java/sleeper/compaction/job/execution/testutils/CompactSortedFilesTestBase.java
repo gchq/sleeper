@@ -75,7 +75,7 @@ public class CompactSortedFilesTestBase {
             Schema schema, CompactionJob compactionJob, CompactionJobStatusStore statusStore) throws Exception {
         tableProperties.setSchema(schema);
         return new CompactSortedFiles(instanceProperties, tableProperties, ObjectFactory.noUserJars(),
-                compactionJob, stateStore, statusStore, DEFAULT_TASK_ID);
+                stateStore, statusStore, DEFAULT_TASK_ID);
     }
 
     protected FileReference ingestRecordsGetFile(List<Record> records) throws Exception {
