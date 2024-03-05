@@ -59,11 +59,11 @@ public class PartitionSplittingTest {
 
         // When
         sleeper.partitioning().split();
-        sleeper.compaction().splitAndCompactFiles();
+        sleeper.compaction().splitFilesAndRunJobs(2);
         sleeper.partitioning().split();
-        sleeper.compaction().splitAndCompactFiles();
+        sleeper.compaction().splitFilesAndRunJobs(4);
         sleeper.partitioning().split();
-        sleeper.compaction().splitAndCompactFiles();
+        sleeper.compaction().splitFilesAndRunJobs(8);
 
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())

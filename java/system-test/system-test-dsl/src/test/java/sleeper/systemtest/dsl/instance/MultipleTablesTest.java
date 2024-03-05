@@ -19,19 +19,34 @@ package sleeper.systemtest.dsl.instance;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.partition.PartitionTree;
+import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 
+import java.util.List;
+import java.util.Map;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
+import static sleeper.core.testutils.printers.FileReferencePrinter.printExpectedFilesForAllTables;
+import static sleeper.core.testutils.printers.FileReferencePrinter.printTableFilesExpectingIdentical;
+import static sleeper.core.testutils.printers.PartitionsPrinter.printExpectedPartitionsForAllTables;
+import static sleeper.core.testutils.printers.PartitionsPrinter.printTablePartitionsExpectingIdentical;
+import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
+import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStringAndZeroPadTo;
+import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides.overrideField;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.DEFAULT_SCHEMA;
+import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.ROW_KEY_FIELD_NAME;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.withDefaultProperties;
 
 @InMemoryDslTest
 public class MultipleTablesTest {
     private final Schema schema = DEFAULT_SCHEMA;
+    private static final int NUMBER_OF_TABLES = 5;
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper) {
@@ -42,7 +57,7 @@ public class MultipleTablesTest {
     void shouldIngestOneFileToMultipleTables(SleeperSystemTest sleeper) {
         // Given we have several tables
         // And we have one source file to be ingested
-        sleeper.tables().createMany(5, schema);
+        sleeper.tables().createMany(NUMBER_OF_TABLES, schema);
         sleeper.sourceFiles().createWithNumberedRecords(schema, "file.parquet", LongStream.range(0, 100));
 
         // When we send an ingest job with the source file to all tables
@@ -52,12 +67,67 @@ public class MultipleTablesTest {
         // Then all tables should contain the source file records
         // And all tables should have one active file
         assertThat(sleeper.query().byQueue().allRecordsByTable())
-                .hasSize(5)
+                .hasSize(NUMBER_OF_TABLES)
                 .allSatisfy(((table, records) -> assertThat(records).containsExactlyElementsOf(
                         sleeper.generateNumberedRecords(schema, LongStream.range(0, 100)))));
         assertThat(sleeper.tableFiles().referencesByTable())
-                .hasSize(5)
+                .hasSize(NUMBER_OF_TABLES)
                 .allSatisfy((table, files) -> assertThat(files).hasSize(1));
+    }
+
+    @Test
+    void shouldSplitPartitionsOfMultipleTables(SleeperSystemTest sleeper) {
+        // Given we have several tables with a split threshold of 20
+        // And we ingest a file of 100 records to each table
+        sleeper.tables().createManyWithProperties(NUMBER_OF_TABLES, schema,
+                Map.of(PARTITION_SPLIT_THRESHOLD, "20"));
+        sleeper.setGeneratorOverrides(
+                overrideField(ROW_KEY_FIELD_NAME,
+                        numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
+        sleeper.sourceFiles().createWithNumberedRecords(schema, "file.parquet", LongStream.range(0, 100));
+        sleeper.ingest().byQueue().sendSourceFilesToAllTables("file.parquet")
+                .invokeTask().waitForJobs();
+
+        // When we run 3 partition splits with compactions
+        sleeper.partitioning().split();
+        sleeper.compaction().splitFilesAndRunJobs(NUMBER_OF_TABLES * 2);
+        sleeper.partitioning().split();
+        sleeper.compaction().splitFilesAndRunJobs(NUMBER_OF_TABLES * 4);
+        sleeper.partitioning().split();
+        sleeper.compaction().splitFilesAndRunJobs(NUMBER_OF_TABLES * 8);
+
+        // Then all tables have their records split over 8 leaf partitions
+        assertThat(sleeper.directQuery().byQueue().allRecordsByTable())
+                .hasSize(NUMBER_OF_TABLES)
+                .allSatisfy((table, records) -> assertThat(records)
+                        .containsExactlyInAnyOrderElementsOf(
+                                sleeper.generateNumberedRecords(schema, LongStream.range(0, 100))));
+        var tables = sleeper.tables().list();
+        var partitionsByTable = sleeper.partitioning().treeByTable();
+        var filesByTable = sleeper.tableFiles().referencesByTable();
+        PartitionTree expectedPartitions = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", "row-50")
+                .splitToNewChildren("L", "LL", "LR", "row-25")
+                .splitToNewChildren("R", "RL", "RR", "row-75")
+                .splitToNewChildren("LL", "LLL", "LLR", "row-12")
+                .splitToNewChildren("LR", "LRL", "LRR", "row-37")
+                .splitToNewChildren("RL", "RLL", "RLR", "row-62")
+                .splitToNewChildren("RR", "RRL", "RRR", "row-87")
+                .buildTree();
+        assertThat(printTablePartitionsExpectingIdentical(schema, partitionsByTable))
+                .isEqualTo(printExpectedPartitionsForAllTables(schema, tables, expectedPartitions));
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(expectedPartitions);
+        assertThat(printTableFilesExpectingIdentical(partitionsByTable, filesByTable))
+                .isEqualTo(printExpectedFilesForAllTables(tables, expectedPartitions, List.of(
+                        fileReferenceFactory.partitionFile("LLL", 12),
+                        fileReferenceFactory.partitionFile("LLR", 13),
+                        fileReferenceFactory.partitionFile("LRL", 12),
+                        fileReferenceFactory.partitionFile("LRR", 13),
+                        fileReferenceFactory.partitionFile("RLL", 12),
+                        fileReferenceFactory.partitionFile("RLR", 13),
+                        fileReferenceFactory.partitionFile("RRL", 12),
+                        fileReferenceFactory.partitionFile("RRR", 13))));
     }
 
 }

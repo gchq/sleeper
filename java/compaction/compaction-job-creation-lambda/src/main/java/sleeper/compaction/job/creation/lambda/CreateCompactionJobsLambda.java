@@ -18,7 +18,8 @@ package sleeper.compaction.job.creation.lambda;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
-import com.amazonaws.services.lambda.runtime.events.ScheduledEvent;
+import com.amazonaws.services.lambda.runtime.RequestHandler;
+import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
@@ -37,26 +38,26 @@ import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.core.statestore.StateStoreException;
+import sleeper.core.table.InvokeForTableRequestSerDe;
 import sleeper.core.util.LoggedDuration;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreProvider;
 
-import java.io.IOException;
 import java.time.Instant;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
- * Creates compaction jobs for all online tables, running in AWS Lambda.
+ * Creates compaction jobs for batches of tables sent to an SQS queue, running in AWS Lambda.
  * Runs compaction job creation with {@link CreateCompactionJobs}.
  */
 @SuppressWarnings("unused")
-public class CreateCompactionJobsLambda {
+public class CreateCompactionJobsLambda implements RequestHandler<SQSEvent, Void> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(CreateCompactionJobsLambda.class);
+
     private final PropertiesReloader propertiesReloader;
     private final CreateCompactionJobs createJobs;
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(CreateCompactionJobsLambda.class);
+    private final InvokeForTableRequestSerDe serDe = new InvokeForTableRequestSerDe();
 
     /**
      * No-args constructor used by Lambda.
@@ -79,22 +80,24 @@ public class CreateCompactionJobsLambda {
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, conf);
         CompactionJobStatusStore jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
         propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
-        createJobs = new CreateCompactionJobs(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider,
+        createJobs = new CreateCompactionJobs(
+                objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider,
                 new SendCompactionJobToSqs(instanceProperties, sqsClient)::send, jobStatusStore, Mode.STRATEGY);
     }
 
-    public void eventHandler(ScheduledEvent event, Context context) {
+    public Void handleRequest(SQSEvent event, Context context) {
         Instant startTime = Instant.now();
-        LOGGER.info("Lambda triggered at {}, started at {}", event.getTime(), startTime);
+        LOGGER.info("Lambda started at {}", startTime);
         propertiesReloader.reloadIfNeeded();
 
-        try {
-            createJobs.createJobs();
-        } catch (StateStoreException | IOException | ObjectFactoryException e) {
-            LOGGER.error("Exception thrown whilst creating jobs", e);
-        }
+        event.getRecords().stream()
+                .map(SQSEvent.SQSMessage::getBody)
+                .peek(body -> LOGGER.info("Received message: {}", body))
+                .map(serDe::fromJson)
+                .forEach(createJobs::createJobs);
 
         Instant finishTime = Instant.now();
         LOGGER.info("Lambda finished at {} (ran for {})", finishTime, LoggedDuration.withFullOutput(startTime, finishTime));
+        return null;
     }
 }
