@@ -40,8 +40,8 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_CLUSTER;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_DLQ_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_DLQ_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_JOB_DLQ_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_DLQ_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_LAMBDA_ROLE;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_QUEUE_URL;
@@ -248,8 +248,8 @@ class InstancePropertiesTest {
         instanceProperties.set(JARS_BUCKET, "bucket");
         instanceProperties.set(ECR_COMPACTION_REPO, "sleeper-compaction");
         instanceProperties.set(ECR_INGEST_REPO, "sleeper-ingest");
-        instanceProperties.set(PARTITION_SPLITTING_QUEUE_URL, "url");
-        instanceProperties.set(PARTITION_SPLITTING_DLQ_URL, "url2");
+        instanceProperties.set(PARTITION_SPLITTING_JOB_QUEUE_URL, "url");
+        instanceProperties.set(PARTITION_SPLITTING_JOB_DLQ_URL, "url2");
         instanceProperties.set(COMPACTION_JOB_QUEUE_URL, "url3");
         instanceProperties.set(COMPACTION_JOB_DLQ_URL, "url4");
         instanceProperties.set(COMPACTION_CLUSTER, "ecsCluster1");

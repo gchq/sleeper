@@ -28,4 +28,4 @@ VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
 echo "-------------------------------------------------------"
 echo "Running compaction job creation"
 echo "-------------------------------------------------------"
-java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar" sleeper.clients.status.update.CreateJobsClient "$@"
+java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar" sleeper.clients.status.update.CreateCompactionJobsClient "$@"

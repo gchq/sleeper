@@ -16,8 +16,8 @@
 set -e
 unset CDPATH
 
-if [ "$#" -lt 1 ] || [ "$#" -gt 2 ]; then
-  echo "Usage: $0 <instance-id> <optional-table-name>"
+if [ "$#" -lt 2 ]; then
+  echo "Usage: $0 <instance-id> <table-names-as-args>"
   exit 1
 fi
 
@@ -29,6 +29,6 @@ JAR_DIR=${SCRIPTS_DIR}/jars
 VERSION=$(cat "${TEMPLATE_DIR}/version.txt")
 
 echo "-------------------------------------------------------"
-echo "Running compaction job creation"
+echo "Triggering garbage collection"
 echo "-------------------------------------------------------"
-java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" sleeper.clients.status.update.CreateCompactionJobsClient DEFAULT "$@"
+java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" sleeper.clients.status.update.TriggerGarbageCollectionClient "$@"
