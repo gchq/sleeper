@@ -68,6 +68,7 @@ import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.s3.S3StateStoreCreator;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -214,7 +215,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
         sqs.sendMessage(sendMessageRequest);
 
         // When
-        createTaskRunner("task-id").run();
+        createTask("task-id").run();
 
         // Then
         // - There should be no messages left on the queue
@@ -234,7 +235,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
         String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", "not-a-file.parquet");
 
         // When
-        createTaskRunner("task-id").run();
+        createTask("task-id").run();
 
         // Then
         // - The compaction job should be put back on the queue
@@ -252,7 +253,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
         String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", "not-a-file.parquet");
 
         // When
-        createTaskRunner("task-id").run();
+        createTask("task-id").run();
 
         // Then
         // - The compaction job should no longer be on the job queue
@@ -276,7 +277,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
         String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", fileReference1, fileReference2);
 
         // When
-        createTaskRunner("task-id", new FixedStateStoreProvider(tableProperties, stateStore)).run();
+        createTask("task-id", new FixedStateStoreProvider(tableProperties, stateStore)).run();
 
         // Then
         // - The compaction job should be put back on the queue
@@ -299,7 +300,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
 
         // When
         StateStoreProvider provider = new FixedStateStoreProvider(tableProperties, stateStore);
-        createTaskRunner("task-id", provider).run();
+        createTask("task-id", provider).run();
 
         // Then
         // - The compaction job should no longer be on the job queue
@@ -333,26 +334,18 @@ public class ECSCompactionTaskRunnerLocalStackIT {
         instanceProperties.set(COMPACTION_JOB_DLQ_URL, jobDlqUrl);
     }
 
-    private ECSCompactionTaskRunner createTaskRunner(String taskId) {
-        return createTaskRunner(taskId, stateStoreProvider);
+    private CompactionTask createTask(String taskId) {
+        return createTask(taskId, stateStoreProvider);
     }
 
-    private ECSCompactionTaskRunner createTaskRunner(String taskId, StateStoreProvider stateStoreProvider) {
-        return taskRunnerBuilder(taskId, stateStoreProvider)
-                .build();
-    }
-
-    private ECSCompactionTaskRunner.Builder taskRunnerBuilder(String taskId, StateStoreProvider stateStoreProvider) {
-        return ECSCompactionTaskRunner.builder()
-                .instanceProperties(instanceProperties)
-                .objectFactory(ObjectFactory.noUserJars())
-                .tablePropertiesProvider(tablePropertiesProvider)
-                .propertiesReloader(PropertiesReloader.neverReload())
-                .stateStoreProvider(stateStoreProvider)
-                .jobStatusStore(jobStatusStore)
-                .taskStatusStore(taskStatusStore)
-                .taskId(taskId)
-                .sqsClient(sqs);
+    private CompactionTask createTask(String taskId, StateStoreProvider stateStoreProvider) {
+        CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties,
+                tablePropertiesProvider, stateStoreProvider,
+                ObjectFactory.noUserJars(), jobStatusStore, taskId);
+        CompactionTask task = new CompactionTask(instanceProperties, PropertiesReloader.neverReload(), Instant::now,
+                new SqsCompactionQueueHandler(sqs, instanceProperties)::receiveFromSqs,
+                job -> compactSortedFiles.run(job), taskStatusStore, taskId);
+        return task;
     }
 
     private FileReference ingestFileWith100Records() throws Exception {

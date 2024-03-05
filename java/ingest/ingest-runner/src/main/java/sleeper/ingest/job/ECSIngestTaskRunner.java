@@ -59,10 +59,10 @@ import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
  * and the processing of SQS messages to {@link IngestJobQueueConsumer}.
  */
 public class ECSIngestTaskRunner {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ECSIngestTaskRunner.class);
+
     private ECSIngestTaskRunner() {
     }
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(ECSIngestTaskRunner.class);
 
     public static void main(String[] args) throws IOException, StateStoreException, IteratorException, ObjectFactoryException, InterruptedException {
         if (1 != args.length) {
