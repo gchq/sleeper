@@ -88,7 +88,7 @@ public class MultipleTablesIT {
     }
 
     @Test
-    void shouldSplitPartitionsOfMultipleTablesWith100RecordsAndThresholdOf20(SleeperSystemTest sleeper) {
+    void shouldSplitPartitionsOfMultipleTables(SleeperSystemTest sleeper) {
         // Given we have several tables with a split threshold of 20
         // And we ingest a file of 100 records to each table
         sleeper.tables().createManyWithProperties(NUMBER_OF_TABLES, schema,
