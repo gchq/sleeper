@@ -25,6 +25,10 @@ AWS Lambda Java Events SDK (com.amazonaws:aws-lambda-java-events:3.11.2):
 
 - Apache License, Version 2.0
 
+AWS X-Ray SDK for Java (com.amazonaws:aws-xray-recorder-sdk-*:2.15.1):
+
+- Apache License, Version 2.0
+
 WildFly OpenSSL (org.wildfly.openssl:wildfly-openssl:1.1.3.Final):
 
 - Apache License, Version 2.0

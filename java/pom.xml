@@ -113,6 +113,7 @@
         <aws-lambda-java-events.version>3.11.2</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.2.2</aws-lambda-java-core.version>
         <aws-lambda-powertools.version>1.16.0</aws-lambda-powertools.version>
+        <aws-xray.version>2.15.1</aws-xray.version>
         <commons-lang3.version>3.12.0</commons-lang3.version>
         <commons-codec.version>1.16.0</commons-codec.version>
         <commons-io.version>2.13.0</commons-io.version>
@@ -249,6 +250,21 @@
                 <groupId>software.amazon.awssdk.crt</groupId>
                 <artifactId>aws-crt</artifactId>
                 <version>${aws-crt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>aws-xray-recorder-sdk-core</artifactId>
+                <version>${aws-xray.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>aws-xray-recorder-sdk-aws-sdk</artifactId>
+                <version>${aws-xray.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>aws-xray-recorder-sdk-aws-sdk-instrumentor</artifactId>
+                <version>${aws-xray.version}</version>
             </dependency>
             <!-- Shared dependencies -->
             <dependency>
