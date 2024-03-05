@@ -49,6 +49,7 @@ import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
+import sleeper.cdk.TracingUtils;
 import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
@@ -162,8 +163,7 @@ public class IngestStack extends NestedStack {
                 .create(this, "IngestAlarm")
                 .alarmDescription("Alarms if there are any messages on the dead letter queue for the ingest queue")
                 .metric(ingestDLQ.metricApproximateNumberOfMessagesVisible()
-                        .with(MetricOptions.builder().statistic("Sum").period(Duration.seconds(60)).build())
-                )
+                        .with(MetricOptions.builder().statistic("Sum").period(Duration.seconds(60)).build()))
                 .comparisonOperator(ComparisonOperator.GREATER_THAN_THRESHOLD)
                 .threshold(0)
                 .evaluationPeriods(1)
@@ -271,7 +271,8 @@ public class IngestStack extends NestedStack {
                 .handler("sleeper.ingest.starter.RunTasksLambda::eventHandler")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(1)
-                .logGroup(createLambdaLogGroup(this, "IngestTasksCreatorLogGroup", functionName, instanceProperties)));
+                .logGroup(createLambdaLogGroup(this, "IngestTasksCreatorLogGroup", functionName, instanceProperties))
+                .tracing(TracingUtils.active(instanceProperties)));
 
         // Grant this function permission to read from the S3 bucket
         coreStacks.grantReadInstanceConfig(handler);

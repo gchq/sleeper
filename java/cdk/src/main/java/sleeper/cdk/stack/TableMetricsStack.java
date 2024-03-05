@@ -31,6 +31,7 @@ import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
+import sleeper.cdk.TracingUtils;
 import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
@@ -72,7 +73,8 @@ public class TableMetricsStack extends NestedStack {
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .memorySize(256)
                 .timeout(Duration.minutes(1))
-                .logGroup(createLambdaLogGroup(this, "MetricsTriggerLogGroup", triggerFunctionName, instanceProperties)));
+                .logGroup(createLambdaLogGroup(this, "MetricsTriggerLogGroup", triggerFunctionName, instanceProperties))
+                .tracing(TracingUtils.active(instanceProperties)));
         IFunction tableMetricsPublisher = metricsJar.buildFunction(this, "MetricsPublisher", builder -> builder
                 .functionName(publishFunctionName)
                 .description("Generates metrics for a Sleeper table based on info in its state store, and publishes them to CloudWatch")
@@ -81,7 +83,8 @@ public class TableMetricsStack extends NestedStack {
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .memorySize(1024)
                 .timeout(Duration.minutes(1))
-                .logGroup(createLambdaLogGroup(this, "MetricsPublisherLogGroup", publishFunctionName, instanceProperties)));
+                .logGroup(createLambdaLogGroup(this, "MetricsPublisherLogGroup", publishFunctionName, instanceProperties))
+                .tracing(TracingUtils.passThrough(instanceProperties)));
 
         coreStacks.grantReadTablesStatus(tableMetricsTrigger);
         coreStacks.grantReadTablesMetadata(tableMetricsPublisher);
