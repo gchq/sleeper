@@ -326,13 +326,13 @@ public class CompactionStack extends NestedStack {
                 .environment(environmentVariables)
                 .logGroup(createLambdaLogGroup(this, "CompactionJobsCreationHandlerLogGroup", functionName, instanceProperties)));
 
-        // Grant this function permission to read from / write to the DynamoDB table
-        coreStacks.grantCreateCompactionJobs(handlerFunction);
+        // Grant permissions
+        // - Read through tables in trigger
+        // - Read/write for creating compaction jobs, access to jars bucket for compaction strategies
         coreStacks.grantReadTablesStatus(triggerFunction);
+        coreStacks.grantCreateCompactionJobs(handlerFunction);
         jarsBucket.grantRead(handlerFunction);
         statusStore.grantWriteJobEvent(handlerFunction);
-
-        // Grant this function permission to put messages on the compaction queue
         compactionJobsQueue.grantSendMessages(handlerFunction);
 
         // Send messages from the trigger function to the handler function
