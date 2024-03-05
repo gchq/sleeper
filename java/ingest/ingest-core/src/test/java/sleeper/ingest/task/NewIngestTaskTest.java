@@ -39,6 +39,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
 
 public class NewIngestTaskTest {
     private static final String DEFAULT_TASK_ID = "test-task-id";
@@ -66,22 +67,172 @@ public class NewIngestTaskTest {
             assertThat(failedJobs).isEmpty();
             assertThat(jobsOnQueue).isEmpty();
         }
+
+        @Test
+        void shouldFailJobFromQueueThenTerminate() throws Exception {
+            // Given
+            IngestJob job = createJobOnQueue("job1");
+
+            // When
+            runTask(processJobs(jobFails()));
+
+            // Then
+            assertThat(successfulJobs).isEmpty();
+            assertThat(failedJobs).containsExactly(job);
+            assertThat(jobsOnQueue).isEmpty();
+        }
+
+        @Test
+        void shouldProcessTwoJobsFromQueueThenTerminate() throws Exception {
+            // Given
+            IngestJob job1 = createJobOnQueue("job1");
+            IngestJob job2 = createJobOnQueue("job2");
+
+            // When
+            runTask(processJobs(jobSucceeds(), jobFails()));
+
+            // Then
+            assertThat(successfulJobs).containsExactly(job1);
+            assertThat(failedJobs).containsExactly(job2);
+            assertThat(jobsOnQueue).isEmpty();
+        }
     }
 
-    private void runTask(IngestRunner compactor) throws Exception {
-        runTask(compactor, Instant::now);
+    @Nested
+    @DisplayName("Update task status store")
+    class UpdateTaskStatusStore {
+        @Test
+        void shouldSaveTaskWhenOneJobSucceeds() throws Exception {
+            // Given
+            Queue<Instant> times = new LinkedList<>(List.of(
+                    Instant.parse("2024-02-22T13:50:00Z"), // Start
+                    Instant.parse("2024-02-22T13:50:05Z"))); // Finish
+            createJobOnQueue("job1");
+
+            // When
+            RecordsProcessedSummary jobSummary = summary(
+                    Instant.parse("2024-02-22T13:50:01Z"),
+                    Instant.parse("2024-02-22T13:50:02Z"), 10L, 10L);
+            runTask("test-task-1", processJobs(
+                    jobSucceeds(jobSummary)),
+                    times::poll);
+
+            // Then
+            assertThat(taskStore.getAllTasks())
+                    .containsExactly(IngestTaskStatus.builder()
+                            .startTime(Instant.parse("2024-02-22T13:50:00Z"))
+                            .taskId("test-task-1")
+                            .finished(Instant.parse("2024-02-22T13:50:05Z"),
+                                    withJobSummaries(jobSummary))
+                            .build());
+        }
+
+        @Test
+        void shouldSaveTaskWhenMultipleJobsSucceed() throws Exception {
+            // Given
+            Queue<Instant> times = new LinkedList<>(List.of(
+                    Instant.parse("2024-02-22T13:50:00Z"), // Start
+                    Instant.parse("2024-02-22T13:50:05Z"))); // Finish
+            createJobOnQueue("job1");
+            createJobOnQueue("job2");
+
+            // When
+            RecordsProcessedSummary job1Summary = summary(
+                    Instant.parse("2024-02-22T13:50:01Z"),
+                    Instant.parse("2024-02-22T13:50:02Z"), 10L, 10L);
+            RecordsProcessedSummary job2Summary = summary(
+                    Instant.parse("2024-02-22T13:50:03Z"),
+                    Instant.parse("2024-02-22T13:50:04Z"), 5L, 5L);
+            runTask("test-task-1", processJobs(
+                    jobSucceeds(job1Summary),
+                    jobSucceeds(job2Summary)),
+                    times::poll);
+
+            // Then
+            assertThat(taskStore.getAllTasks())
+                    .containsExactly(IngestTaskStatus.builder()
+                            .startTime(Instant.parse("2024-02-22T13:50:00Z"))
+                            .taskId("test-task-1")
+                            .finished(Instant.parse("2024-02-22T13:50:05Z"),
+                                    withJobSummaries(job1Summary, job2Summary))
+                            .build());
+        }
+
+        @Test
+        void shouldSaveTaskWhenOneJobFails() throws Exception {
+            // Given
+            Queue<Instant> times = new LinkedList<>(List.of(
+                    Instant.parse("2024-02-22T13:50:00Z"), // Start
+                    Instant.parse("2024-02-22T13:50:05Z"))); // Finish
+            createJobOnQueue("job1");
+
+            // When
+            runTask("test-task-1", processJobs(jobFails()), times::poll);
+
+            // Then
+            assertThat(taskStore.getAllTasks())
+                    .containsExactly(IngestTaskStatus.builder()
+                            .startTime(Instant.parse("2024-02-22T13:50:00Z"))
+                            .taskId("test-task-1")
+                            .finished(Instant.parse("2024-02-22T13:50:05Z"), noJobSummaries())
+                            .build());
+        }
+
+        @Test
+        void shouldSaveTaskWhenNoJobsFound() throws Exception {
+            // Given
+            Queue<Instant> times = new LinkedList<>(List.of(
+                    Instant.parse("2024-02-22T13:50:00Z"), // Start
+                    Instant.parse("2024-02-22T13:50:05Z"))); // Finish
+
+            // When
+            runTask("test-task-1", processNoJobs(), times::poll);
+
+            // Then
+            assertThat(taskStore.getAllTasks())
+                    .containsExactly(IngestTaskStatus.builder()
+                            .startTime(Instant.parse("2024-02-22T13:50:00Z"))
+                            .taskId("test-task-1")
+                            .finished(Instant.parse("2024-02-22T13:50:05Z"), noJobSummaries())
+                            .build());
+        }
+
+        private IngestTaskFinishedStatus.Builder noJobSummaries() {
+            return withJobSummaries();
+        }
+
+        private IngestTaskFinishedStatus.Builder withJobSummaries(RecordsProcessedSummary... summaries) {
+            IngestTaskFinishedStatus.Builder taskFinishedBuilder = IngestTaskFinishedStatus.builder();
+            Stream.of(summaries).forEach(taskFinishedBuilder::addJobSummary);
+            return taskFinishedBuilder;
+        }
     }
 
-    private void runTask(IngestRunner compactor, Supplier<Instant> timeSupplier) throws Exception {
-        runTask(pollQueue(), compactor, timeSupplier, DEFAULT_TASK_ID);
+    private void runTask(IngestRunner ingestRunner) throws Exception {
+        runTask(ingestRunner, Instant::now);
+    }
+
+    private void runTask(IngestRunner ingestRunner, Supplier<Instant> timeSupplier) throws Exception {
+        runTask(pollQueue(), ingestRunner, timeSupplier, DEFAULT_TASK_ID);
+    }
+
+    private void runTask(String taskId, IngestRunner ingestRunner, Supplier<Instant> timeSupplier) throws Exception {
+        runTask(pollQueue(), ingestRunner, timeSupplier, taskId);
     }
 
     private void runTask(
             MessageReceiver messageReceiver,
-            IngestRunner compactor,
+            IngestRunner ingestRunner,
+            Supplier<Instant> timeSupplier) throws Exception {
+        runTask(messageReceiver, ingestRunner, timeSupplier, DEFAULT_TASK_ID);
+    }
+
+    private void runTask(
+            MessageReceiver messageReceiver,
+            IngestRunner ingestRunner,
             Supplier<Instant> timeSupplier,
             String taskId) throws Exception {
-        new NewIngestTask(timeSupplier, messageReceiver, compactor, taskStore, taskId)
+        new NewIngestTask(timeSupplier, messageReceiver, ingestRunner, taskStore, taskId)
                 .run();
     }
 
@@ -113,8 +264,20 @@ public class NewIngestTaskTest {
                 .toArray(ProcessJob[]::new));
     }
 
+    private ProcessJob jobSucceeds(RecordsProcessedSummary summary) {
+        return new ProcessJob(true, summary);
+    }
+
     private ProcessJob jobSucceeds() {
         return new ProcessJob(true, 10L, DEFAULT_START_TIME, DEFAULT_DURATION);
+    }
+
+    private ProcessJob jobFails() {
+        return new ProcessJob(false, 0L, DEFAULT_START_TIME, DEFAULT_DURATION);
+    }
+
+    private IngestRunner processNoJobs() {
+        return processJobs();
     }
 
     private IngestRunner processJobs(ProcessJob... actions) {
