@@ -27,7 +27,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
@@ -49,9 +48,8 @@ import static sleeper.configuration.properties.instance.CompactionProperty.COMPA
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 /**
- * Retrieves {@link CompactionJob}s from an SQS queue, and executes
- * them. It delegates the actual execution of the job to an instance of
- * {@link CompactSortedFiles}, and the processing of SQS messages to {@link SqsCompactionQueueHandler}.
+ * Executes a {@link CompactionTask}, delegating the running of compaction jobs to {@link CompactSortedFiles},
+ * and the processing of SQS messages to {@link SqsCompactionQueueHandler}.
  */
 public class ECSCompactionTaskRunner {
     private static final Logger LOGGER = LoggerFactory.getLogger(ECSCompactionTaskRunner.class);

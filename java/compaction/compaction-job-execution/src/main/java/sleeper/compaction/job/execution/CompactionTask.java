@@ -38,6 +38,9 @@ import java.util.function.Supplier;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS;
 
+/**
+ * Runs a compaction task, updating the {@link CompactionTaskStatusStore} with progress of the task.
+ */
 public class CompactionTask {
     private static final Logger LOGGER = LoggerFactory.getLogger(CompactionTask.class);
 

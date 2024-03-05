@@ -64,7 +64,7 @@ import static sleeper.core.metrics.MetricsLogger.METRICS_LOGGER;
 import static sleeper.sketches.s3.SketchesSerDeToS3.sketchesPathForDataFile;
 
 /**
- * Executes a compaction {@link CompactionJob}, i.e. compacts N input files into a single
+ * Executes a {@link CompactionJob}, i.e. compacts N input files into a single
  * output file.
  */
 public class CompactSortedFiles {
