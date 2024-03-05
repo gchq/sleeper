@@ -314,7 +314,7 @@ public class CompactionStack extends NestedStack {
                 .handler("sleeper.compaction.job.creation.lambda.CreateCompactionJobsTriggerLambda::handleRequest")
                 .environment(environmentVariables)
                 .reservedConcurrentExecutions(1)
-                .logGroup(createLambdaLogGroup(this, "CompactionJobsCreationTriggerLogGroup", functionName, instanceProperties)));
+                .logGroup(createLambdaLogGroup(this, "CompactionJobsCreationTriggerLogGroup", triggerFunctionName, instanceProperties)));
 
         IFunction handlerFunction = jobCreatorJar.buildFunction(this, "CompactionJobsCreationHandler", builder -> builder
                 .functionName(functionName)
