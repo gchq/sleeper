@@ -24,6 +24,7 @@ import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.execution.CompactSortedFiles;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
@@ -74,8 +75,10 @@ public class CompactSortedFilesTestBase {
     protected CompactSortedFiles createCompactSortedFiles(
             Schema schema, CompactionJob compactionJob, CompactionJobStatusStore statusStore) throws Exception {
         tableProperties.setSchema(schema);
-        return new CompactSortedFiles(instanceProperties, tableProperties, ObjectFactory.noUserJars(),
-                stateStore, statusStore, DEFAULT_TASK_ID);
+        return new CompactSortedFiles(instanceProperties,
+                new FixedTablePropertiesProvider(tableProperties),
+                ObjectFactory.noUserJars(),
+                new FixedStateStoreProvider(tableProperties, stateStore), statusStore, DEFAULT_TASK_ID);
     }
 
     protected FileReference ingestRecordsGetFile(List<Record> records) throws Exception {

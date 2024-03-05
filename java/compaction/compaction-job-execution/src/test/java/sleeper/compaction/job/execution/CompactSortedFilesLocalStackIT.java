@@ -37,6 +37,7 @@ import sleeper.compaction.job.execution.testutils.CompactSortedFilesTestData;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStoreCreator;
 import sleeper.configuration.jars.ObjectFactory;
+import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.PartitionTree;
@@ -118,8 +119,10 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
 
     private CompactSortedFiles createCompactSortedFiles(Schema schema, CompactionJob compactionJob, StateStore stateStore) throws Exception {
         tableProperties.setSchema(schema);
-        return new CompactSortedFiles(instanceProperties, tableProperties, ObjectFactory.noUserJars(),
-                stateStore, jobStatusStore, DEFAULT_TASK_ID);
+        return new CompactSortedFiles(instanceProperties,
+                new FixedTablePropertiesProvider(tableProperties),
+                ObjectFactory.noUserJars(),
+                new FixedStateStoreProvider(tableProperties, stateStore), jobStatusStore, DEFAULT_TASK_ID);
     }
 
     @Test

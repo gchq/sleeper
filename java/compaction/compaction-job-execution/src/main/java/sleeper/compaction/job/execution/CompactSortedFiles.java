@@ -30,6 +30,7 @@ import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.iterator.MergingIterator;
@@ -49,6 +50,7 @@ import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.io.parquet.utils.RangeQueryUtils;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
+import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -67,24 +69,22 @@ import static sleeper.sketches.s3.SketchesSerDeToS3.sketchesPathForDataFile;
  */
 public class CompactSortedFiles {
     private final InstanceProperties instanceProperties;
-    private final TableProperties tableProperties;
-    private final Schema schema;
+    private final TablePropertiesProvider tablePropertiesProvider;
     private final ObjectFactory objectFactory;
-    private final StateStore stateStore;
+    private final StateStoreProvider stateStoreProvider;
     private final CompactionJobStatusStore jobStatusStore;
     private final String taskId;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CompactSortedFiles.class);
 
     public CompactSortedFiles(
-            InstanceProperties instanceProperties, TableProperties tableProperties, ObjectFactory objectFactory,
-            StateStore stateStore, CompactionJobStatusStore jobStatusStore,
+            InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, ObjectFactory objectFactory,
+            StateStoreProvider stateStoreProvider, CompactionJobStatusStore jobStatusStore,
             String taskId) throws StateStoreException {
         this.instanceProperties = instanceProperties;
-        this.tableProperties = tableProperties;
-        this.schema = this.tableProperties.getSchema();
+        this.tablePropertiesProvider = tablePropertiesProvider;
         this.objectFactory = objectFactory;
-        this.stateStore = stateStore;
+        this.stateStoreProvider = stateStoreProvider;
         this.jobStatusStore = jobStatusStore;
         this.taskId = taskId;
     }
@@ -93,12 +93,9 @@ public class CompactSortedFiles {
         Instant startTime = Instant.now();
         String id = compactionJob.getId();
         LOGGER.info("Compaction job {}: compaction called at {}", id, startTime);
-        Partition partition = stateStore.getAllPartitions().stream()
-                .filter(p -> Objects.equals(compactionJob.getPartitionId(), p.getId()))
-                .findFirst().orElseThrow(() -> new NoSuchElementException("Partition not found for compaction job"));
         jobStatusStore.jobStarted(compactionJob, startTime, taskId);
 
-        RecordsProcessed recordsProcessed = compact(compactionJob, partition);
+        RecordsProcessed recordsProcessed = compact(compactionJob);
 
         Instant finishTime = Instant.now();
         // Print summary
@@ -112,11 +109,17 @@ public class CompactSortedFiles {
         return summary;
     }
 
-    private RecordsProcessed compact(CompactionJob compactionJob, Partition partition) throws IOException, IteratorException, StateStoreException {
+    private RecordsProcessed compact(CompactionJob compactionJob) throws IOException, IteratorException, StateStoreException {
+        TableProperties tableProperties = tablePropertiesProvider.getById(compactionJob.getTableId());
+        Schema schema = tableProperties.getSchema();
+        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
+        Partition partition = stateStore.getAllPartitions().stream()
+                .filter(p -> Objects.equals(compactionJob.getPartitionId(), p.getId()))
+                .findFirst().orElseThrow(() -> new NoSuchElementException("Partition not found for compaction job"));
         Configuration conf = getConfiguration();
 
         // Create a reader for each file
-        List<CloseableIterator<Record>> inputIterators = createInputIterators(compactionJob, partition, conf);
+        List<CloseableIterator<Record>> inputIterators = createInputIterators(compactionJob, partition, schema, conf);
 
         CloseableIterator<Record> mergingIterator = getMergingIterator(objectFactory, schema, compactionJob, inputIterators);
         // Merge these iterator into one sorted iterator
@@ -169,7 +172,7 @@ public class CompactSortedFiles {
         return new RecordsProcessed(totalNumberOfRecordsRead, recordsWritten);
     }
 
-    private List<CloseableIterator<Record>> createInputIterators(CompactionJob compactionJob, Partition partition, Configuration conf) throws IOException {
+    private List<CloseableIterator<Record>> createInputIterators(CompactionJob compactionJob, Partition partition, Schema schema, Configuration conf) throws IOException {
         List<CloseableIterator<Record>> inputIterators = new ArrayList<>();
         FilterCompat.Filter partitionFilter = FilterCompat.get(RangeQueryUtils.getFilterPredicate(partition));
         for (String file : compactionJob.getInputFiles()) {

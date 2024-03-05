@@ -36,11 +36,9 @@ import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.job.common.CommonJobUtils;
@@ -113,10 +111,8 @@ public class CompactSortedFilesRunner {
 
     private RecordsProcessedSummary compact(CompactionJob compactionJob) throws IteratorException, IOException, StateStoreException {
         propertiesReloader.reloadIfNeeded();
-        TableProperties tableProperties = tablePropertiesProvider.getById(compactionJob.getTableId());
-        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-        CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties, tableProperties, objectFactory,
-                stateStore, jobStatusStore, taskId);
+        CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties, tablePropertiesProvider, objectFactory,
+                stateStoreProvider, jobStatusStore, taskId);
         return compactSortedFiles.run(compactionJob);
     }
 
