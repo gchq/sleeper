@@ -134,7 +134,7 @@ public class ECSCompactionTaskRunner {
                     .ecsClient(ecsClient)
                     .build();
             runner.run();
-        } catch (InterruptedException | IOException | ObjectFactoryException | RuntimeException e) {
+        } catch (Exception e) {
             segment.addException(e);
             throw e;
         } finally {
