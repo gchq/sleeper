@@ -23,6 +23,8 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import com.amazonaws.xray.AWSXRay;
+import com.amazonaws.xray.entities.Segment;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -96,48 +98,56 @@ public class ECSCompactionTaskRunner {
             System.err.println("Error: must have 1 argument (config bucket), got " + args.length + " arguments (" + StringUtils.join(args, ',') + ")");
             System.exit(1);
         }
-
+        String s3Bucket = args[0];
+        String taskId = UUID.randomUUID().toString();
+        Segment segment = AWSXRay.beginSegment("CompactionTask");
+        segment.putAnnotation("taskId", taskId);
         AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
         AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
         AmazonECS ecsClient = buildAwsV1Client(AmazonECSClientBuilder.standard());
 
-        String s3Bucket = args[0];
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.loadFromS3(s3Client, s3Bucket);
+        try {
+            InstanceProperties instanceProperties = new InstanceProperties();
+            instanceProperties.loadFromS3(s3Client, s3Bucket);
 
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
-        PropertiesReloader propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties,
-                HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
-        CompactionJobStatusStore jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient,
-                instanceProperties);
-        CompactionTaskStatusStore taskStatusStore = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDBClient,
-                instanceProperties);
+            TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
+            PropertiesReloader propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
+            StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties,
+                    HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
+            CompactionJobStatusStore jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient,
+                    instanceProperties);
+            CompactionTaskStatusStore taskStatusStore = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDBClient,
+                    instanceProperties);
 
-        ObjectFactory objectFactory = new ObjectFactory(instanceProperties, s3Client, "/tmp");
-        ECSCompactionTaskRunner runner = ECSCompactionTaskRunner.builder()
-                .instanceProperties(instanceProperties)
-                .objectFactory(objectFactory)
-                .tablePropertiesProvider(tablePropertiesProvider)
-                .propertiesReloader(propertiesReloader)
-                .stateStoreProvider(stateStoreProvider)
-                .jobStatusStore(jobStatusStore)
-                .taskStatusStore(taskStatusStore)
-                .taskId(UUID.randomUUID().toString())
-                .sqsClient(sqsClient)
-                .ecsClient(ecsClient)
-                .build();
-        runner.run();
-
-        sqsClient.shutdown();
-        LOGGER.info("Shut down sqsClient");
-        dynamoDBClient.shutdown();
-        LOGGER.info("Shut down dynamoDBClient");
-        s3Client.shutdown();
-        LOGGER.info("Shut down s3Client");
-        ecsClient.shutdown();
-        LOGGER.info("Shut down ecsClient");
+            ObjectFactory objectFactory = new ObjectFactory(instanceProperties, s3Client, "/tmp");
+            ECSCompactionTaskRunner runner = ECSCompactionTaskRunner.builder()
+                    .instanceProperties(instanceProperties)
+                    .objectFactory(objectFactory)
+                    .tablePropertiesProvider(tablePropertiesProvider)
+                    .propertiesReloader(propertiesReloader)
+                    .stateStoreProvider(stateStoreProvider)
+                    .jobStatusStore(jobStatusStore)
+                    .taskStatusStore(taskStatusStore)
+                    .taskId(taskId)
+                    .sqsClient(sqsClient)
+                    .ecsClient(ecsClient)
+                    .build();
+            runner.run();
+        } catch (Exception e) {
+            segment.addException(e);
+            throw e;
+        } finally {
+            sqsClient.shutdown();
+            LOGGER.info("Shut down sqsClient");
+            dynamoDBClient.shutdown();
+            LOGGER.info("Shut down dynamoDBClient");
+            s3Client.shutdown();
+            LOGGER.info("Shut down s3Client");
+            ecsClient.shutdown();
+            LOGGER.info("Shut down ecsClient");
+            AWSXRay.endSegment();
+        }
     }
 
     public static final class Builder {
