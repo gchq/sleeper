@@ -42,6 +42,12 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ingest.IngestResultTestData.defaultFileIngestResult;
 import static sleeper.ingest.IngestResultTestData.defaultFileIngestResultReadAndWritten;
+import static sleeper.ingest.job.IngestJobTestData.DEFAULT_TABLE_ID;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestJob;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestJob;
+import static sleeper.ingest.task.IngestTaskStatusTestData.finishedMultipleJobs;
+import static sleeper.ingest.task.IngestTaskStatusTestData.finishedNoJobs;
+import static sleeper.ingest.task.IngestTaskStatusTestData.finishedOneJob;
 
 public class NewIngestTaskTest {
     private static final String DEFAULT_TASK_ID = "test-task-id";
@@ -100,17 +106,17 @@ public class NewIngestTaskTest {
     }
 
     @Nested
-    @DisplayName("Update task status store")
-    class UpdateTaskStatusStore {
+    @DisplayName("Update status stores")
+    class UpdateStatusStores {
         @Test
-        void shouldSaveTaskWhenOneJobSucceeds() throws Exception {
+        void shouldSaveTaskAndJobWhenOneJobSucceeds() throws Exception {
             // Given
             Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:01Z"), // Job start
                     Instant.parse("2024-02-22T13:50:02Z"), // Job finish
                     Instant.parse("2024-02-22T13:50:05Z"))); // Finish
-            createJobOnQueue("job1");
+            IngestJob job = createJobOnQueue("job1");
 
             // When
             IngestResult jobResult = recordsReadAndWritten(10L, 10L);
@@ -120,18 +126,17 @@ public class NewIngestTaskTest {
 
             // Then
             assertThat(taskStore.getAllTasks())
-                    .containsExactly(IngestTaskStatus.builder()
-                            .startTime(Instant.parse("2024-02-22T13:50:00Z"))
-                            .taskId("test-task-1")
-                            .finished(Instant.parse("2024-02-22T13:50:05Z"),
-                                    withJobSummaries(summary(jobResult,
-                                            Instant.parse("2024-02-22T13:50:01Z"),
-                                            Instant.parse("2024-02-22T13:50:02Z"))))
-                            .build());
+                    .containsExactly(finishedOneJob("test-task-1",
+                            Instant.parse("2024-02-22T13:50:00Z"), Instant.parse("2024-02-22T13:50:05Z"),
+                            Instant.parse("2024-02-22T13:50:01Z"), Instant.parse("2024-02-22T13:50:02Z"), 10L, 10L));
+            assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
+                    finishedIngestJob(job, DEFAULT_TASK_ID, summary(jobResult,
+                            Instant.parse("2024-02-22T13:50:01Z"),
+                            Instant.parse("2024-02-22T13:50:02Z"))));
         }
 
         @Test
-        void shouldSaveTaskWhenMultipleJobsSucceed() throws Exception {
+        void shouldSaveTaskAndJobWhenMultipleJobsSucceed() throws Exception {
             // Given
             Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
@@ -140,8 +145,8 @@ public class NewIngestTaskTest {
                     Instant.parse("2024-02-22T13:50:03Z"), // Job 2 start
                     Instant.parse("2024-02-22T13:50:04Z"), // Job 2 finish
                     Instant.parse("2024-02-22T13:50:05Z"))); // Finish
-            createJobOnQueue("job1");
-            createJobOnQueue("job2");
+            IngestJob job1 = createJobOnQueue("job1");
+            IngestJob job2 = createJobOnQueue("job2");
 
             // When
             IngestResult job1Result = recordsReadAndWritten(10L, 10L);
@@ -153,18 +158,22 @@ public class NewIngestTaskTest {
 
             // Then
             assertThat(taskStore.getAllTasks())
-                    .containsExactly(IngestTaskStatus.builder()
-                            .startTime(Instant.parse("2024-02-22T13:50:00Z"))
-                            .taskId("test-task-1")
-                            .finished(Instant.parse("2024-02-22T13:50:05Z"),
-                                    withJobSummaries(
-                                            summary(job1Result,
-                                                    Instant.parse("2024-02-22T13:50:01Z"),
-                                                    Instant.parse("2024-02-22T13:50:02Z")),
-                                            summary(job2Result,
-                                                    Instant.parse("2024-02-22T13:50:03Z"),
-                                                    Instant.parse("2024-02-22T13:50:04Z"))))
-                            .build());
+                    .containsExactly(finishedMultipleJobs(DEFAULT_TASK_ID,
+                            Instant.parse("2024-02-22T13:50:00Z"),
+                            Instant.parse("2024-02-22T13:50:05Z"),
+                            summary(job1Result,
+                                    Instant.parse("2024-02-22T13:50:01Z"),
+                                    Instant.parse("2024-02-22T13:50:02Z")),
+                            summary(job2Result,
+                                    Instant.parse("2024-02-22T13:50:03Z"),
+                                    Instant.parse("2024-02-22T13:50:04Z"))));
+            assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
+                    finishedIngestJob(job1, DEFAULT_TASK_ID, summary(job1Result,
+                            Instant.parse("2024-02-22T13:50:01Z"),
+                            Instant.parse("2024-02-22T13:50:02Z"))),
+                    finishedIngestJob(job2, DEFAULT_TASK_ID, summary(job2Result,
+                            Instant.parse("2024-02-22T13:50:03Z"),
+                            Instant.parse("2024-02-22T13:50:04Z"))));
         }
 
         @Test
@@ -174,18 +183,19 @@ public class NewIngestTaskTest {
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:01Z"), // Job starts
                     Instant.parse("2024-02-22T13:50:05Z"))); // Finish
-            createJobOnQueue("job1");
+            IngestJob job = createJobOnQueue("job1");
 
             // When
             runTask("test-task-1", processJobs(jobFails()), times::poll);
 
             // Then
-            assertThat(taskStore.getAllTasks())
-                    .containsExactly(IngestTaskStatus.builder()
-                            .startTime(Instant.parse("2024-02-22T13:50:00Z"))
-                            .taskId("test-task-1")
-                            .finished(Instant.parse("2024-02-22T13:50:05Z"), noJobSummaries())
-                            .build());
+            assertThat(taskStore.getAllTasks()).containsExactly(
+                    finishedNoJobs("test-task-1",
+                            Instant.parse("2024-02-22T13:50:00Z"),
+                            Instant.parse("2024-02-22T13:50:05Z")));
+            assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID))
+                    .containsExactly(
+                            startedIngestJob(job, "test-task-1", Instant.parse("2024-02-22T13:50:01Z")));
         }
 
         @Test
@@ -199,22 +209,11 @@ public class NewIngestTaskTest {
             runTask("test-task-1", processNoJobs(), times::poll);
 
             // Then
-            assertThat(taskStore.getAllTasks())
-                    .containsExactly(IngestTaskStatus.builder()
-                            .startTime(Instant.parse("2024-02-22T13:50:00Z"))
-                            .taskId("test-task-1")
-                            .finished(Instant.parse("2024-02-22T13:50:05Z"), noJobSummaries())
-                            .build());
-        }
-
-        private IngestTaskFinishedStatus.Builder noJobSummaries() {
-            return withJobSummaries();
-        }
-
-        private IngestTaskFinishedStatus.Builder withJobSummaries(RecordsProcessedSummary... summaries) {
-            IngestTaskFinishedStatus.Builder taskFinishedBuilder = IngestTaskFinishedStatus.builder();
-            Stream.of(summaries).forEach(taskFinishedBuilder::addJobSummary);
-            return taskFinishedBuilder;
+            assertThat(taskStore.getAllTasks()).containsExactly(
+                    finishedNoJobs("test-task-1",
+                            Instant.parse("2024-02-22T13:50:00Z"),
+                            Instant.parse("2024-02-22T13:50:05Z")));
+            assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).isEmpty();
         }
     }
 
@@ -252,7 +251,7 @@ public class NewIngestTaskTest {
 
     private IngestJob createJobOnQueue(String jobId) {
         IngestJob job = IngestJob.builder()
-                .tableId("test-table-id")
+                .tableId(DEFAULT_TABLE_ID)
                 .tableName("test-table")
                 .files(UUID.randomUUID().toString())
                 .id(jobId)
