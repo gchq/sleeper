@@ -34,7 +34,6 @@ import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
 import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
 
 import static sleeper.cdk.Utils.createLogGroupWithRetentionDays;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
@@ -58,14 +57,16 @@ public class SystemTestPropertiesStack extends NestedStack {
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 systemTestProperties.get(SYSTEM_TEST_ID).toLowerCase(Locale.ROOT), "properties-writer"));
 
-        IFunction propertiesWriterLambda = jar.buildFunction(this, "PropertiesWriterLambda", builder -> builder
-                .functionName(functionName)
-                .handler("sleeper.cdk.custom.PropertiesWriterLambda::handleEvent")
-                .memorySize(2048)
-                .environment(Map.of(CONFIG_BUCKET.toEnvironmentVariable(), bucketStack.getBucket().getBucketName()))
-                .description("Lambda for writing system test properties to S3 upon initialisation and teardown")
-                .logGroup(createLogGroupWithRetentionDays(this, "PropertiesWriterLambdaLogGroup", 30))
-                .runtime(Runtime.JAVA_11));
+        IFunction propertiesWriterLambda = jar.createFunction(this, "PropertiesWriterLambda")
+                .environmentVariable(CONFIG_BUCKET.toEnvironmentVariable(), bucketStack.getBucket().getBucketName())
+                .config(builder -> builder
+                        .functionName(functionName)
+                        .handler("sleeper.cdk.custom.PropertiesWriterLambda::handleEvent")
+                        .memorySize(2048)
+                        .description("Lambda for writing system test properties to S3 upon initialisation and teardown")
+                        .logGroup(createLogGroupWithRetentionDays(this, "PropertiesWriterLambdaLogGroup", 30))
+                        .runtime(Runtime.JAVA_11))
+                .build();
 
         bucketStack.getBucket().grantWrite(propertiesWriterLambda);
 
