@@ -134,7 +134,7 @@ public class IngestJobQueueConsumer implements MessageReceiver {
 
         public IngestJob getJob() {
             return job;
-        };
+        }
 
         public void completed(RecordsProcessedSummary summary) {
             // Delete message from queue
@@ -156,16 +156,16 @@ public class IngestJobQueueConsumer implements MessageReceiver {
                             .withDimensions(
                                     new Dimension().withName("instanceId").withValue(instanceId),
                                     new Dimension().withName("tableName").withValue(job.getTableName()))));
-        };
+        }
 
         public void failed() {
-        };
+        }
 
         public void close() {
             LOGGER.info("Ingest job {}: Stopping background thread to keep SQS messages alive", job.getId());
             if (keepAliveRunnable != null) {
                 keepAliveRunnable.stop();
             }
-        };
+        }
     }
 }
