@@ -89,8 +89,9 @@ public class IngestTask {
                     message.completed(summary);
                     totalNumberOfMessagesProcessed++;
                 } catch (Exception e) {
-                    LOGGER.error("Failed processing ingest job, putting job back on queue", e);
+                    LOGGER.error("Failed processing ingest job, terminating task", e);
                     message.failed();
+                    return timeSupplier.get();
                 }
             }
         }
