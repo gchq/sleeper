@@ -39,7 +39,7 @@ public class WaitForS3BucketToEmptyIT extends JarsBucketITBase {
 
         // Then
         assertThatThrownBy(waitForS3BucketToEmpty::pollUntilFinished)
-                .isInstanceOf(PollWithRetries.TimedOutException.class);
+                .isInstanceOf(PollWithRetries.CheckFailedException.class);
     }
 
     @Test

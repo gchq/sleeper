@@ -71,11 +71,11 @@ public class PartitionSplittingIT {
 
         // When
         sleeper.partitioning().split();
-        sleeper.compaction().splitAndCompactFiles();
+        sleeper.compaction().splitFilesAndRunJobs(2);
         sleeper.partitioning().split();
-        sleeper.compaction().splitAndCompactFiles();
+        sleeper.compaction().splitFilesAndRunJobs(4);
         sleeper.partitioning().split();
-        sleeper.compaction().splitAndCompactFiles();
+        sleeper.compaction().splitFilesAndRunJobs(8);
 
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())
@@ -104,7 +104,6 @@ public class PartitionSplittingIT {
                         fileReferenceFactory.partitionFile("RLL", 12),
                         fileReferenceFactory.partitionFile("RLR", 13),
                         fileReferenceFactory.partitionFile("RRL", 12),
-                        fileReferenceFactory.partitionFile("RRR", 13)
-                )));
+                        fileReferenceFactory.partitionFile("RRR", 13))));
     }
 }

@@ -29,6 +29,6 @@ JAR_DIR=${SCRIPTS_DIR}/jars
 VERSION=$(cat "${TEMPLATE_DIR}/version.txt")
 
 echo "-------------------------------------------------------"
-echo "Forcing compaction job creation"
+echo "Triggering garbage collection"
 echo "-------------------------------------------------------"
-java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" sleeper.clients.status.update.CreateCompactionJobsClient ALL "$@"
+java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" sleeper.clients.status.update.TriggerGarbageCollectionClient "$@"

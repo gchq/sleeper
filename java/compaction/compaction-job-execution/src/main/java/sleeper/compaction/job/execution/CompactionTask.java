@@ -79,7 +79,7 @@ public class CompactionTask {
                     numConsecutiveFailures, maxConsecutiveFailures);
         }
         LOGGER.info("Total number of messages processed = {}", totalNumberOfMessagesProcessed);
-        LOGGER.info("CompactSortedFilesRunner total run time = {}", LoggedDuration.withFullOutput(startTime, finishTime));
+        LOGGER.info("Total run time = {}", LoggedDuration.withFullOutput(startTime, finishTime));
 
         CompactionTaskStatus taskFinished = taskStatusBuilder.finished(finishTime, taskFinishedBuilder).build();
         taskStatusStore.taskFinished(taskFinished);

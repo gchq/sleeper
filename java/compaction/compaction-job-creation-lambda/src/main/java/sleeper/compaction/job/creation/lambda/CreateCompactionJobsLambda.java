@@ -15,11 +15,11 @@
  */
 package sleeper.compaction.job.creation.lambda;
 
-import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
-import com.amazonaws.services.lambda.runtime.events.ScheduledEvent;
+import com.amazonaws.services.lambda.runtime.RequestHandler;
+import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.creation.CreateCompactionJobs;
+import sleeper.compaction.job.creation.CreateCompactionJobs.Mode;
 import sleeper.compaction.job.creation.SendCompactionJobToSqs;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.jars.ObjectFactory;
@@ -37,34 +38,29 @@ import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.core.statestore.StateStoreException;
+import sleeper.core.table.InvokeForTableRequestSerDe;
 import sleeper.core.util.LoggedDuration;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreProvider;
 
-import java.io.IOException;
 import java.time.Instant;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
- * A lambda function for executing {@link CreateCompactionJobs}.
+ * Creates compaction jobs for batches of tables sent to an SQS queue, running in AWS Lambda.
+ * Runs compaction job creation with {@link CreateCompactionJobs}.
  */
 @SuppressWarnings("unused")
-public class CreateCompactionJobsLambda {
-    private final AmazonDynamoDB dynamoDBClient;
-    private AmazonSQS sqsClient;
-    private final InstanceProperties instanceProperties;
-    private final ObjectFactory objectFactory;
-    private final TablePropertiesProvider tablePropertiesProvider;
-    private final PropertiesReloader propertiesReloader;
-    private final StateStoreProvider stateStoreProvider;
-    private final CompactionJobStatusStore jobStatusStore;
-
+public class CreateCompactionJobsLambda implements RequestHandler<SQSEvent, Void> {
     private static final Logger LOGGER = LoggerFactory.getLogger(CreateCompactionJobsLambda.class);
 
+    private final PropertiesReloader propertiesReloader;
+    private final CreateCompactionJobs createJobs;
+    private final InvokeForTableRequestSerDe serDe = new InvokeForTableRequestSerDe();
+
     /**
-     * No-args constructor used by Lambda service. Dynamo file table name will be obtained from an environment variable.
+     * No-args constructor used by Lambda.
      *
      * @throws ObjectFactoryException if user jars cannot be loaded
      */
@@ -72,58 +68,36 @@ public class CreateCompactionJobsLambda {
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         String s3Bucket = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
 
-        this.instanceProperties = new InstanceProperties();
-        this.instanceProperties.loadFromS3(s3Client, s3Bucket);
+        InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.loadFromS3(s3Client, s3Bucket);
 
-        this.objectFactory = new ObjectFactory(instanceProperties, s3Client, "/tmp");
+        ObjectFactory objectFactory = new ObjectFactory(instanceProperties, s3Client, "/tmp");
 
-        this.dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
-        this.sqsClient = AmazonSQSClientBuilder.defaultClient();
-        this.tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
-        this.propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
+        AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
+        AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
+        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
         Configuration conf = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
-        this.stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, conf);
-        this.jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, conf);
+        CompactionJobStatusStore jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
+        propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
+        createJobs = new CreateCompactionJobs(
+                objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider,
+                new SendCompactionJobToSqs(instanceProperties, sqsClient)::send, jobStatusStore, Mode.STRATEGY);
     }
 
-    /**
-     * Constructor used in tests.
-     *
-     * @param instanceProperties    The SleeperProperties
-     * @param endpointConfiguration The configuration of the endpoint for the DynamoDB client
-     * @throws ObjectFactoryException if user jars cannot be loaded
-     */
-    public CreateCompactionJobsLambda(InstanceProperties instanceProperties,
-                                      AwsClientBuilder.EndpointConfiguration endpointConfiguration) throws ObjectFactoryException {
-        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        this.instanceProperties = instanceProperties;
-
-        this.objectFactory = new ObjectFactory(instanceProperties, s3Client, "/tmp");
-
-        this.dynamoDBClient = AmazonDynamoDBClientBuilder.standard()
-                .withEndpointConfiguration(endpointConfiguration)
-                .build();
-        this.tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
-        this.propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
-        this.stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties,
-                HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties));
-        this.jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
-    }
-
-    public void eventHandler(ScheduledEvent event, Context context) {
+    public Void handleRequest(SQSEvent event, Context context) {
         Instant startTime = Instant.now();
-        LOGGER.info("Lambda triggered at {}, started at {}", event.getTime(), startTime);
+        LOGGER.info("Lambda started at {}", startTime);
         propertiesReloader.reloadIfNeeded();
 
-        CreateCompactionJobs createJobs = CreateCompactionJobs.standard(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider,
-                new SendCompactionJobToSqs(instanceProperties, sqsClient)::send, jobStatusStore);
-        try {
-            createJobs.createJobs();
-        } catch (StateStoreException | IOException | ObjectFactoryException e) {
-            LOGGER.error("Exception thrown whilst creating jobs", e);
-        }
+        event.getRecords().stream()
+                .map(SQSEvent.SQSMessage::getBody)
+                .peek(body -> LOGGER.info("Received message: {}", body))
+                .map(serDe::fromJson)
+                .forEach(createJobs::createJobs);
 
         Instant finishTime = Instant.now();
         LOGGER.info("Lambda finished at {} (ran for {})", finishTime, LoggedDuration.withFullOutput(startTime, finishTime));
+        return null;
     }
 }
