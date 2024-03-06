@@ -333,17 +333,17 @@ public class CompactSortedFilesRunnerLocalStackIT {
         instanceProperties.set(COMPACTION_JOB_DLQ_URL, jobDlqUrl);
     }
 
-    private CompactSortedFilesRunner createJobRunner(String taskId) {
+    private ECSCompactionTaskRunner createJobRunner(String taskId) {
         return createJobRunner(taskId, stateStoreProvider);
     }
 
-    private CompactSortedFilesRunner createJobRunner(String taskId, StateStoreProvider stateStoreProvider) {
+    private ECSCompactionTaskRunner createJobRunner(String taskId, StateStoreProvider stateStoreProvider) {
         return jobRunnerBuilder(taskId, stateStoreProvider)
                 .build();
     }
 
-    private CompactSortedFilesRunner.Builder jobRunnerBuilder(String taskId, StateStoreProvider stateStoreProvider) {
-        return CompactSortedFilesRunner.builder()
+    private ECSCompactionTaskRunner.Builder jobRunnerBuilder(String taskId, StateStoreProvider stateStoreProvider) {
+        return ECSCompactionTaskRunner.builder()
                 .instanceProperties(instanceProperties)
                 .objectFactory(ObjectFactory.noUserJars())
                 .tablePropertiesProvider(tablePropertiesProvider)
