@@ -269,7 +269,6 @@ public class IngestStack extends NestedStack {
                 .memorySize(instanceProperties.getInt(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS)))
                 .handler("sleeper.ingest.starter.RunTasksLambda::eventHandler")
-                .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(1)
                 .logGroup(createLambdaLogGroup(this, "IngestTasksCreatorLogGroup", functionName, instanceProperties))
                 .tracing(TracingUtils.active(instanceProperties)));

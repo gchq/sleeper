@@ -89,7 +89,6 @@ public class GarbageCollectorStack extends NestedStack {
                 .description("Creates batches of Sleeper tables to perform garbage collection for and puts them on a queue to be processed")
                 .runtime(Runtime.JAVA_11)
                 .handler("sleeper.garbagecollector.GarbageCollectorTriggerLambda::handleRequest")
-                .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .memorySize(256)
                 .timeout(Duration.minutes(1))
                 .logGroup(createLambdaLogGroup(this, "GarbageCollectorTriggerLogGroup", triggerFunctionName, instanceProperties))
@@ -101,7 +100,6 @@ public class GarbageCollectorStack extends NestedStack {
                 .memorySize(instanceProperties.getInt(GARBAGE_COLLECTOR_LAMBDA_MEMORY_IN_MB))
                 .timeout(handlerTimeout)
                 .handler("sleeper.garbagecollector.GarbageCollectorLambda::handleRequest")
-                .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .logGroup(createLambdaLogGroup(this, "GarbageCollectorLambdaLogGroup", functionName, instanceProperties))
                 .tracing(TracingUtils.passThrough(instanceProperties)));
         instanceProperties.set(GARBAGE_COLLECTOR_LAMBDA_FUNCTION, triggerFunction.getFunctionName());

@@ -18,14 +18,28 @@ package sleeper.cdk.jars;
 import com.amazonaws.services.s3.AmazonS3;
 import software.amazon.awscdk.services.s3.IBucket;
 
+import sleeper.configuration.properties.instance.InstanceProperties;
+
+import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
+
 public class BuiltJars {
 
     private final AmazonS3 s3;
     private final String bucketName;
+    private final LambdaBuilder.Configuration globalConfig;
+
+    public BuiltJars(AmazonS3 s3, InstanceProperties instanceProperties) {
+        this(s3, instanceProperties.get(JARS_BUCKET), new GlobalLambdaConfiguration(instanceProperties));
+    }
 
     public BuiltJars(AmazonS3 s3, String bucketName) {
+        this(s3, bucketName, LambdaBuilder.Configuration.none());
+    }
+
+    private BuiltJars(AmazonS3 s3, String bucketName, LambdaBuilder.Configuration globalConfig) {
         this.s3 = s3;
         this.bucketName = bucketName;
+        this.globalConfig = globalConfig;
     }
 
     public String bucketName() {
@@ -33,7 +47,7 @@ public class BuiltJars {
     }
 
     public LambdaCode lambdaCode(BuiltJar jar, IBucket bucketConstruct) {
-        return new LambdaCode(bucketConstruct, jar.getFileName(), getLatestVersionId(jar));
+        return new LambdaCode(bucketConstruct, jar.getFileName(), getLatestVersionId(jar), globalConfig);
     }
 
     public String getLatestVersionId(BuiltJar jar) {

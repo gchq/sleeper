@@ -62,7 +62,6 @@ import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 
@@ -95,24 +94,24 @@ public class SleeperCdkApp extends Stack {
     }
 
     private static final List<String> BULK_IMPORT_STACK_NAMES = Stream.of(
-                    EmrBulkImportStack.class,
-                    EmrServerlessBulkImportStack.class,
-                    PersistentEmrBulkImportStack.class,
-                    EksBulkImportStack.class)
+            EmrBulkImportStack.class,
+            EmrServerlessBulkImportStack.class,
+            PersistentEmrBulkImportStack.class,
+            EksBulkImportStack.class)
             .map(Class::getSimpleName).collect(Collectors.toList());
 
     private static final List<String> EMR_BULK_IMPORT_STACK_NAMES = Stream.of(
-                    EmrBulkImportStack.class,
-                    EmrServerlessBulkImportStack.class,
-                    PersistentEmrBulkImportStack.class)
+            EmrBulkImportStack.class,
+            EmrServerlessBulkImportStack.class,
+            PersistentEmrBulkImportStack.class)
             .map(Class::getSimpleName).collect(Collectors.toList());
 
     public static final List<String> INGEST_STACK_NAMES = Stream.of(
-                    IngestStack.class,
-                    EmrBulkImportStack.class,
-                    EmrServerlessBulkImportStack.class,
-                    PersistentEmrBulkImportStack.class,
-                    EksBulkImportStack.class)
+            IngestStack.class,
+            EmrBulkImportStack.class,
+            EmrServerlessBulkImportStack.class,
+            PersistentEmrBulkImportStack.class,
+            EksBulkImportStack.class)
             .map(Class::getSimpleName).collect(Collectors.toList());
 
     public void create() {
@@ -162,8 +161,7 @@ public class SleeperCdkApp extends Stack {
                     bulkImportBucketStack,
                     topicStack,
                     coreStacks,
-                    ingestStatusStoreStack.getResources()
-            );
+                    ingestStatusStoreStack.getResources());
 
             // Stack to created EMR studio to be used to access EMR Serverless
             if (optionalStacks.contains(EmrStudioStack.class.getSimpleName())) {
@@ -179,8 +177,7 @@ public class SleeperCdkApp extends Stack {
                     emrBulkImportCommonStack,
                     topicStack,
                     coreStacks,
-                    ingestStatusStoreStack.getResources()
-            );
+                    ingestStatusStoreStack.getResources());
         }
 
         // Stack to run bulk import jobs via a persistent EMR cluster
@@ -192,8 +189,7 @@ public class SleeperCdkApp extends Stack {
                     emrBulkImportCommonStack,
                     topicStack,
                     coreStacks,
-                    ingestStatusStoreStack.getResources()
-            );
+                    ingestStatusStoreStack.getResources());
         }
 
         // Stack to run bulk import jobs via EKS
@@ -204,8 +200,7 @@ public class SleeperCdkApp extends Stack {
                     bulkImportBucketStack,
                     coreStacks,
                     topicStack,
-                    ingestStatusStoreStack
-            );
+                    ingestStatusStoreStack);
         }
 
         // Stack to garbage collect old files
@@ -267,8 +262,7 @@ public class SleeperCdkApp extends Stack {
                     ingestStack,
                     compactionStack,
                     partitionSplittingStack,
-                    instanceProperties
-            );
+                    instanceProperties);
         }
 
         this.generateProperties();
@@ -313,7 +307,7 @@ public class SleeperCdkApp extends Stack {
                 .account(instanceProperties.get(ACCOUNT))
                 .region(instanceProperties.get(REGION))
                 .build();
-        BuiltJars jars = new BuiltJars(AmazonS3ClientBuilder.defaultClient(), instanceProperties.get(JARS_BUCKET));
+        BuiltJars jars = new BuiltJars(AmazonS3ClientBuilder.defaultClient(), instanceProperties);
 
         new SleeperCdkApp(app, id, StackProps.builder()
                 .stackName(id)

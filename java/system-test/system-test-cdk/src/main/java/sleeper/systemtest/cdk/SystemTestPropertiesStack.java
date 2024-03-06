@@ -44,10 +44,10 @@ import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JA
 public class SystemTestPropertiesStack extends NestedStack {
 
     public SystemTestPropertiesStack(Construct scope,
-                                     String id,
-                                     SystemTestStandaloneProperties systemTestProperties,
-                                     SystemTestBucketStack bucketStack,
-                                     BuiltJars jars) {
+            String id,
+            SystemTestStandaloneProperties systemTestProperties,
+            SystemTestBucketStack bucketStack,
+            BuiltJars jars) {
         super(scope, id);
 
         String jarsBucketName = systemTestProperties.get(SYSTEM_TEST_JARS_BUCKET);

@@ -28,25 +28,23 @@ public class LambdaCode {
     private final IBucket bucket;
     private final String filename;
     private final String versionId;
+    private final LambdaBuilder.Configuration globalConfig;
 
-    public LambdaCode(IBucket bucket, String filename, String versionId) {
+    LambdaCode(IBucket bucket, String filename, String versionId, LambdaBuilder.Configuration globalConfig) {
         this.bucket = bucket;
         this.filename = filename;
         this.versionId = versionId;
+        this.globalConfig = globalConfig;
     }
 
     public IVersion buildFunction(Construct scope, String id, Consumer<Function.Builder> config) {
+        return createFunction(scope, id).config(config).build();
+    }
 
-        Function.Builder builder = Function.Builder.create(scope, id)
-                .code(Code.fromBucket(bucket, filename, versionId));
-        config.accept(builder);
-        Function function = builder.build();
-
-        // This is needed to tell the CDK to update the functions with new code when it changes in the jars bucket.
-        // See the following:
-        // https://www.define.run/posts/cdk-not-updating-lambda/
-        // https://awsteele.com/blog/2020/12/24/aws-lambda-latest-is-dangerous.html
-        // https://docs.aws.amazon.com/cdk/api/v1/java/software/amazon/awscdk/services/lambda/Version.html
-        return function.getCurrentVersion();
+    public LambdaBuilder createFunction(Construct scope, String id) {
+        LambdaBuilder builder = new LambdaBuilder(Function.Builder.create(scope, id)
+                .code(Code.fromBucket(bucket, filename, versionId)));
+        globalConfig.apply(scope, id, builder);
+        return builder;
     }
 }

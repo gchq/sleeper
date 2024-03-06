@@ -256,8 +256,6 @@ public class CompactionStack extends NestedStack {
             CoreStacks coreStacks, IBucket jarsBucket, LambdaCode jobCreatorJar, Queue compactionJobsQueue) {
 
         // Function to create compaction jobs
-        Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
-
         String triggerFunctionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "compaction-job-creation-trigger"));
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
@@ -270,7 +268,6 @@ public class CompactionStack extends NestedStack {
                 .memorySize(256)
                 .timeout(Duration.seconds(30))
                 .handler("sleeper.compaction.job.creation.lambda.CreateCompactionJobsTriggerLambda::handleRequest")
-                .environment(environmentVariables)
                 .reservedConcurrentExecutions(1)
                 .logGroup(createLambdaLogGroup(this, "CompactionJobsCreationTriggerLogGroup", triggerFunctionName, instanceProperties))
                 .tracing(TracingUtils.active(instanceProperties)));
@@ -282,7 +279,6 @@ public class CompactionStack extends NestedStack {
                 .memorySize(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS)))
                 .handler("sleeper.compaction.job.creation.lambda.CreateCompactionJobsLambda::handleRequest")
-                .environment(environmentVariables)
                 .logGroup(createLambdaLogGroup(this, "CompactionJobsCreationHandlerLogGroup", functionName, instanceProperties))
                 .tracing(TracingUtils.passThrough(instanceProperties)));
 
@@ -535,15 +531,12 @@ public class CompactionStack extends NestedStack {
     private IFunction lambdaForCustomTerminationPolicy(CoreStacks coreStacks, LambdaCode taskCreatorJar) {
 
         // Run tasks function
-        Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
-
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "compaction-custom-termination"));
 
         IFunction handler = taskCreatorJar.buildFunction(this, "CompactionTerminator", builder -> builder
                 .functionName(functionName)
                 .description("Custom termination policy for ECS auto scaling group. Only terminate empty instances.")
-                .environment(environmentVariables)
                 .handler("sleeper.compaction.task.creation.SafeTerminationLambda::handleRequest")
                 .logGroup(createLambdaLogGroup(this, "CompactionTerminatorLogGroup", functionName, instanceProperties))
                 .memorySize(512)
@@ -577,7 +570,6 @@ public class CompactionStack extends NestedStack {
                 .memorySize(instanceProperties.getInt(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS)))
                 .handler("sleeper.compaction.task.creation.RunTasksLambda::eventHandler")
-                .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(1)
                 .logGroup(createLambdaLogGroup(this, "CompactionTasksCreatorLogGroup", functionName, instanceProperties)));
 

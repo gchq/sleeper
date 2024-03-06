@@ -154,25 +154,25 @@ public final class EksBulkImportStack extends NestedStack {
         instanceProperties.set(BULK_IMPORT_EKS_JOB_QUEUE_ARN, bulkImportJobQueue.getQueueArn());
         bulkImportJobQueue.grantSendMessages(coreStacks.getIngestPolicy());
 
-        Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
-        env.put("BULK_IMPORT_PLATFORM", "EKS");
         IBucket jarsBucket = Bucket.fromBucketName(this, "CodeBucketEKS", instanceProperties.get(JARS_BUCKET));
         LambdaCode bulkImportStarterJar = jars.lambdaCode(BuiltJar.BULK_IMPORT_STARTER, jarsBucket);
 
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceId.toLowerCase(Locale.ROOT), "eks-bulk-import-job-starter"));
 
-        IFunction bulkImportJobStarter = bulkImportStarterJar.buildFunction(this, "BulkImportEKSJobStarter", builder -> builder
-                .functionName(functionName)
-                .description("Function to start EKS bulk import jobs")
-                .memorySize(1024)
-                .timeout(Duration.minutes(2))
-                .environment(env)
-                .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
-                .handler("sleeper.bulkimport.starter.BulkImportStarterLambda")
-                .logGroup(createLambdaLogGroup(this, "BulkImportEKSJobStarterLogGroup", functionName, instanceProperties))
-                .events(Lists.newArrayList(SqsEventSource.Builder.create(bulkImportJobQueue).batchSize(1).build()))
-                .tracing(TracingUtils.passThrough(instanceProperties)));
+        IFunction bulkImportJobStarter = bulkImportStarterJar.createFunction(this, "BulkImportEKSJobStarter")
+                .environmentVariable("BULK_IMPORT_PLATFORM", "EKS")
+                .config(builder -> builder
+                        .functionName(functionName)
+                        .description("Function to start EKS bulk import jobs")
+                        .memorySize(1024)
+                        .timeout(Duration.minutes(2))
+                        .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
+                        .handler("sleeper.bulkimport.starter.BulkImportStarterLambda")
+                        .logGroup(createLambdaLogGroup(this, "BulkImportEKSJobStarterLogGroup", functionName, instanceProperties))
+                        .events(Lists.newArrayList(SqsEventSource.Builder.create(bulkImportJobQueue).batchSize(1).build()))
+                        .tracing(TracingUtils.passThrough(instanceProperties)))
+                .build();
         configureJobStarterFunction(bulkImportJobStarter);
 
         importBucketStack.getImportBucket().grantReadWrite(bulkImportJobStarter);

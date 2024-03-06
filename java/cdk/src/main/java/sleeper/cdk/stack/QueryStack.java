@@ -72,7 +72,6 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Objects;
 
 import static sleeper.cdk.Utils.createLambdaLogGroup;
@@ -160,7 +159,6 @@ public class QueryStack extends NestedStack {
                 .memorySize(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS)))
                 .handler(handler)
-                .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .logGroup(createLambdaLogGroup(this, id + "LogGroup", functionName, instanceProperties))
                 .tracing(TracingUtils.passThrough(instanceProperties)));
     }
@@ -466,14 +464,12 @@ public class QueryStack extends NestedStack {
             LambdaCode queryJar, InstanceProperties instanceProperties,
             Queue queriesQueue, IFunction queryExecutorLambda, IFunction leafPartitionQueryLambda,
             CoreStacks coreStacks) {
-        Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "websocket-api-handler"));
         IFunction handler = queryJar.buildFunction(this, "WebSocketApiHandler", builder -> builder
                 .functionName(functionName)
                 .description("Prepares queries received via the WebSocket API and queues them for processing")
                 .handler("sleeper.query.lambda.WebSocketQueryProcessorLambda::handleRequest")
-                .environment(env)
                 .memorySize(256)
                 .logGroup(createLambdaLogGroup(this, "WebSocketApiHandlerLogGroup", functionName, instanceProperties))
                 .timeout(Duration.seconds(29))
