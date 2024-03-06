@@ -103,6 +103,25 @@ public class IngestTaskTest {
             assertThat(failedJobs).containsExactly(job2);
             assertThat(jobsOnQueue).isEmpty();
         }
+
+        @Test
+        void shouldTerminateTaskEarlyWhenJobFails() throws Exception {
+            // Given
+            IngestJob job1 = createJobOnQueue("job1");
+            IngestJob job2 = createJobOnQueue("job2");
+            IngestJob job3 = createJobOnQueue("job3");
+
+            // When
+            runTask(processJobs(
+                    jobSucceeds(),
+                    jobFails(),
+                    jobSucceeds()));
+
+            // Then
+            assertThat(successfulJobs).containsExactly(job1);
+            assertThat(failedJobs).containsExactly(job2);
+            assertThat(jobsOnQueue).containsExactly(job3);
+        }
     }
 
     @Nested
