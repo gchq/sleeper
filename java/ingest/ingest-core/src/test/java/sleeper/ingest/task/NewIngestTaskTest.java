@@ -125,10 +125,37 @@ public class NewIngestTaskTest {
                     times::poll);
 
             // Then
-            assertThat(taskStore.getAllTasks())
-                    .containsExactly(finishedOneJob("test-task-1",
+            assertThat(taskStore.getAllTasks()).containsExactly(
+                    finishedOneJob("test-task-1",
                             Instant.parse("2024-02-22T13:50:00Z"), Instant.parse("2024-02-22T13:50:05Z"),
                             Instant.parse("2024-02-22T13:50:01Z"), Instant.parse("2024-02-22T13:50:02Z"), 10L, 10L));
+            assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
+                    finishedIngestJob(job, "test-task-1", summary(jobResult,
+                            Instant.parse("2024-02-22T13:50:01Z"),
+                            Instant.parse("2024-02-22T13:50:02Z"))));
+        }
+
+        @Test
+        void shouldSaveTaskAndJobWhenOneJobSucceedsWithDifferentReadAndWrittenCounts() throws Exception {
+            // Given
+            Queue<Instant> times = new LinkedList<>(List.of(
+                    Instant.parse("2024-02-22T13:50:00Z"), // Start
+                    Instant.parse("2024-02-22T13:50:01Z"), // Job start
+                    Instant.parse("2024-02-22T13:50:02Z"), // Job finish
+                    Instant.parse("2024-02-22T13:50:05Z"))); // Finish
+            IngestJob job = createJobOnQueue("job1");
+
+            // When
+            IngestResult jobResult = recordsReadAndWritten(10L, 5L);
+            runTask("test-task-1", processJobs(
+                    jobSucceeds(jobResult)),
+                    times::poll);
+
+            // Then
+            assertThat(taskStore.getAllTasks()).containsExactly(
+                    finishedOneJob("test-task-1",
+                            Instant.parse("2024-02-22T13:50:00Z"), Instant.parse("2024-02-22T13:50:05Z"),
+                            Instant.parse("2024-02-22T13:50:01Z"), Instant.parse("2024-02-22T13:50:02Z"), 10L, 5L));
             assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
                     finishedIngestJob(job, "test-task-1", summary(jobResult,
                             Instant.parse("2024-02-22T13:50:01Z"),
@@ -157,8 +184,8 @@ public class NewIngestTaskTest {
                     times::poll);
 
             // Then
-            assertThat(taskStore.getAllTasks())
-                    .containsExactly(finishedMultipleJobs("test-task-1",
+            assertThat(taskStore.getAllTasks()).containsExactly(
+                    finishedMultipleJobs("test-task-1",
                             Instant.parse("2024-02-22T13:50:00Z"),
                             Instant.parse("2024-02-22T13:50:05Z"),
                             summary(job1Result,
@@ -193,9 +220,8 @@ public class NewIngestTaskTest {
                     finishedNoJobs("test-task-1",
                             Instant.parse("2024-02-22T13:50:00Z"),
                             Instant.parse("2024-02-22T13:50:05Z")));
-            assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID))
-                    .containsExactly(
-                            startedIngestJob(job, "test-task-1", Instant.parse("2024-02-22T13:50:01Z")));
+            assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
+                    startedIngestJob(job, "test-task-1", Instant.parse("2024-02-22T13:50:01Z")));
         }
 
         @Test
@@ -233,8 +259,8 @@ public class NewIngestTaskTest {
                     times::poll);
 
             // Then
-            assertThat(taskStore.getAllTasks())
-                    .containsExactly(finishedOneJob("test-task-1",
+            assertThat(taskStore.getAllTasks()).containsExactly(
+                    finishedOneJob("test-task-1",
                             Instant.parse("2024-02-22T13:50:00Z"), Instant.parse("2024-02-22T13:50:05Z"),
                             Instant.parse("2024-02-22T13:50:01Z"), Instant.parse("2024-02-22T13:50:02Z"), 0L, 0L));
             assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
