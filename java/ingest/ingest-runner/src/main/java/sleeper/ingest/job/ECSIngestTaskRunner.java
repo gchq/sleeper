@@ -53,11 +53,11 @@ import java.util.UUID;
 import static sleeper.configuration.properties.instance.IngestProperty.S3A_INPUT_FADVISE;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
-public class ECSIngestTask {
-    private ECSIngestTask() {
+public class ECSIngestTaskRunner {
+    private ECSIngestTaskRunner() {
     }
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ECSIngestTask.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ECSIngestTaskRunner.class);
 
     public static void main(String[] args) throws IOException, StateStoreException, IteratorException, ObjectFactoryException, InterruptedException {
         if (1 != args.length) {
