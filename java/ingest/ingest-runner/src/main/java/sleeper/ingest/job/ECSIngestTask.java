@@ -41,8 +41,8 @@ import sleeper.ingest.impl.partitionfilewriter.AsyncS3PartitionFileWriterFactory
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
+import sleeper.ingest.task.IngestTask;
 import sleeper.ingest.task.IngestTaskStatusStore;
-import sleeper.ingest.task.NewIngestTask;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreProvider;
 
@@ -79,7 +79,7 @@ public class ECSIngestTask {
         String localDir = "/mnt/scratch";
         String taskId = UUID.randomUUID().toString();
 
-        NewIngestTask ingestTask = createIngestTask(objectFactory, instanceProperties, localDir,
+        IngestTask ingestTask = createIngestTask(objectFactory, instanceProperties, localDir,
                 taskId, s3Client, dynamoDBClient, sqsClient, cloudWatchClient,
                 AsyncS3PartitionFileWriterFactory.s3AsyncClientFromProperties(instanceProperties),
                 ingestHadoopConfiguration(instanceProperties));
@@ -94,7 +94,7 @@ public class ECSIngestTask {
         LOGGER.info("IngestFromIngestJobsQueueRunner total run time = {}", LoggedDuration.withFullOutput(startTime, Instant.now()));
     }
 
-    public static NewIngestTask createIngestTask(
+    public static IngestTask createIngestTask(
             ObjectFactory objectFactory, InstanceProperties instanceProperties, String localDir, String taskId,
             AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, AmazonSQS sqsClient, AmazonCloudWatch cloudWatchClient,
             S3AsyncClient s3AsyncClient, Configuration hadoopConfiguration) {
@@ -109,7 +109,7 @@ public class ECSIngestTask {
         NewIngestJobQueueConsumer queueConsumer = new NewIngestJobQueueConsumer(
                 sqsClient, cloudWatchClient, instanceProperties, hadoopConfiguration,
                 new DynamoDBTableIndex(instanceProperties, dynamoDBClient), jobStore);
-        return new NewIngestTask(Instant::now, queueConsumer, ingestJobRunner, jobStore, taskStore, taskId);
+        return new IngestTask(Instant::now, queueConsumer, ingestJobRunner, jobStore, taskStore, taskId);
     }
 
     private static Configuration ingestHadoopConfiguration(InstanceProperties instanceProperties) {

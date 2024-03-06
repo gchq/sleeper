@@ -34,8 +34,8 @@ import java.util.function.Supplier;
 import static sleeper.ingest.job.status.IngestJobFinishedEvent.ingestJobFinished;
 import static sleeper.ingest.job.status.IngestJobStartedEvent.ingestJobStarted;
 
-public class NewIngestTask {
-    public static final Logger LOGGER = LoggerFactory.getLogger(NewIngestTask.class);
+public class IngestTask {
+    public static final Logger LOGGER = LoggerFactory.getLogger(IngestTask.class);
     private final Supplier<Instant> timeSupplier;
     private final MessageReceiver messageReceiver;
     private final IngestJobHandler ingester;
@@ -44,7 +44,7 @@ public class NewIngestTask {
     private final String taskId;
     private int totalNumberOfMessagesProcessed = 0;
 
-    public NewIngestTask(Supplier<Instant> timeSupplier, MessageReceiver messageReceiver, IngestJobHandler ingester,
+    public IngestTask(Supplier<Instant> timeSupplier, MessageReceiver messageReceiver, IngestJobHandler ingester,
             IngestJobStatusStore jobStatusStore, IngestTaskStatusStore taskStore, String taskId) {
         this.timeSupplier = timeSupplier;
         this.messageReceiver = messageReceiver;

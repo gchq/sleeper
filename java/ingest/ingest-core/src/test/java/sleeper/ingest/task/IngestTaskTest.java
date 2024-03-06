@@ -25,8 +25,8 @@ import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.IngestJobHandler;
 import sleeper.ingest.job.status.InMemoryIngestJobStatusStore;
 import sleeper.ingest.job.status.IngestJobStatusStore;
-import sleeper.ingest.task.NewIngestTask.MessageHandle;
-import sleeper.ingest.task.NewIngestTask.MessageReceiver;
+import sleeper.ingest.task.IngestTask.MessageHandle;
+import sleeper.ingest.task.IngestTask.MessageReceiver;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -319,7 +319,7 @@ public class IngestTaskTest {
             IngestJobHandler ingestRunner,
             Supplier<Instant> timeSupplier,
             String taskId) throws Exception {
-        new NewIngestTask(timeSupplier, messageReceiver, ingestRunner, jobStore, taskStore, taskId)
+        new IngestTask(timeSupplier, messageReceiver, ingestRunner, jobStore, taskStore, taskId)
                 .run();
     }
 
