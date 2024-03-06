@@ -14,4 +14,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-java -cp /compaction-job-execution.jar sleeper.compaction.job.execution.CompactSortedFilesRunner $*
+java -cp /compaction-job-execution.jar sleeper.compaction.job.execution.ECSCompactionTaskRunner $*
