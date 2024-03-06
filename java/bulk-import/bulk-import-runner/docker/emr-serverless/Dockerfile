@@ -17,6 +17,11 @@ FROM public.ecr.aws/emr-serverless/spark/emr-6.13.0:latest as build_no_tracing
 
 FROM build_no_tracing as build_tracing
 
+ONBUILD ADD https://github.com/aws-observability/aws-otel-java-instrumentation/releases/latest/download/aws-opentelemetry-agent.jar /opt/aws-opentelemetry-agent.jar
+ONBUILD ENV JAVA_TOOL_OPTIONS=-javaagent:/opt/aws-opentelemetry-agent.jar
+
+FROM build_${MODE}
+
 USER root
 
 # Install JDK 11
