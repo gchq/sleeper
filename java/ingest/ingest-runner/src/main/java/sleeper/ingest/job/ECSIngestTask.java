@@ -91,6 +91,8 @@ public class ECSIngestTask {
         LOGGER.info("Shut down sqsClient");
         dynamoDBClient.shutdown();
         LOGGER.info("Shut down dynamoDBClient");
+        cloudWatchClient.shutdown();
+        LOGGER.info("Shut down cloudWatchClient");
         LOGGER.info("Total run time = {}", LoggedDuration.withFullOutput(startTime, Instant.now()));
     }
 
