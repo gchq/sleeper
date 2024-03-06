@@ -11,8 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+ARG MODE=no_tracing
 
-FROM public.ecr.aws/emr-serverless/spark/emr-6.13.0:latest
+FROM public.ecr.aws/emr-serverless/spark/emr-6.13.0:latest as build_no_tracing
+
+FROM build_no_tracing as build_tracing
 
 USER root
 

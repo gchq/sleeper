@@ -29,12 +29,14 @@ import static sleeper.configuration.properties.instance.CommonProperty.ECR_REPOS
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
+import static sleeper.configuration.properties.instance.CommonProperty.TRACING_ENABLED;
 
 public class StacksForDockerUpload {
     private final String ecrPrefix;
     private final String account;
     private final String region;
     private final String version;
+    private final boolean tracingEnabled;
     private final List<String> stacks;
 
     private StacksForDockerUpload(Builder builder) {
@@ -42,6 +44,7 @@ public class StacksForDockerUpload {
         account = requireNonNull(builder.account, "account must not be null");
         region = requireNonNull(builder.region, "region must not be null");
         version = requireNonNull(builder.version, "version must not be null");
+        tracingEnabled = builder.tracingEnabled;
         stacks = requireNonNull(builder.stacks, "stacks must not be null");
     }
 
@@ -60,6 +63,7 @@ public class StacksForDockerUpload {
                 .account(properties.get(ACCOUNT))
                 .region(properties.get(REGION))
                 .version(version)
+                .tracingEnabled(properties.getBoolean(TRACING_ENABLED))
                 .stacks(properties.getList(OPTIONAL_STACKS)).build();
     }
 
@@ -77,6 +81,10 @@ public class StacksForDockerUpload {
 
     public String getVersion() {
         return version;
+    }
+
+    public boolean isTracingEnabled() {
+        return tracingEnabled;
     }
 
     public List<String> getStacks() {
@@ -120,6 +128,7 @@ public class StacksForDockerUpload {
         private String account;
         private String region;
         private String version;
+        private boolean tracingEnabled;
         private List<String> stacks;
 
         private Builder() {
@@ -142,6 +151,11 @@ public class StacksForDockerUpload {
 
         public Builder version(String version) {
             this.version = version;
+            return this;
+        }
+
+        public Builder tracingEnabled(boolean tracingEnabled) {
+            this.tracingEnabled = tracingEnabled;
             return this;
         }
 

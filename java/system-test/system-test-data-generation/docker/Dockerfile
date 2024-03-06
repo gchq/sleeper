@@ -11,7 +11,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-FROM amazoncorretto:11
+ARG MODE=no_tracing
+
+FROM amazoncorretto:11 as build_no_tracing
+
+FROM build_no_tracing as build_tracing
+
+ONBUILD ADD https://github.com/aws-observability/aws-otel-java-instrumentation/releases/latest/download/aws-opentelemetry-agent.jar /opt/aws-opentelemetry-agent.jar
+ONBUILD ENV JAVA_TOOL_OPTIONS=-javaagent:/opt/aws-opentelemetry-agent.jar
+
+FROM build_${MODE}
 
 COPY system-test.jar /system-test.jar
 COPY run.sh /run.sh

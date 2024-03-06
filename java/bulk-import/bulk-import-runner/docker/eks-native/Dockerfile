@@ -17,6 +17,8 @@ ARG BUILDER_IMAGE_TAG=3.8-openjdk-8-slim
 ARG BASE_IMAGE_NAME=amazoncorretto
 ARG BASE_IMAGE_TAG=11
 
+ARG MODE=no_tracing
+
 ARG SPARK_VERSION=3.4.1
 ARG HADOOP_VERSION=3.3.3
 ARG SPARK_DOWNLOAD_FILENAME=spark-${SPARK_VERSION}-bin-hadoop3
@@ -57,7 +59,14 @@ RUN echo "Before slimming: $(du -sh /opt/${SPARK_DIRNAME})" && \
 # Add workdir
 RUN mkdir /opt/${SPARK_DIRNAME}/workdir
 
-FROM ${BASE_IMAGE_NAME}:${BASE_IMAGE_TAG}
+FROM ${BASE_IMAGE_NAME}:${BASE_IMAGE_TAG} as base_no_tracing
+
+FROM base_no_tracing as base_tracing
+
+ONBUILD ADD https://github.com/aws-observability/aws-otel-java-instrumentation/releases/latest/download/aws-opentelemetry-agent.jar /opt/aws-opentelemetry-agent.jar
+ONBUILD ENV JAVA_TOOL_OPTIONS=-javaagent:/opt/aws-opentelemetry-agent.jar
+
+FROM base_${MODE}
 
 ARG SPARK_VERSION
 ARG HADOOP_VERSION
