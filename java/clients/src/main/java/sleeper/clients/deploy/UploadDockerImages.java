@@ -93,9 +93,10 @@ public class UploadDockerImages {
                     runCommand.runOrThrow("docker", "buildx", "build",
                             "--platform", "linux/amd64,linux/arm64",
                             "-t", tag, "--push", directory,
-                            "--build-arg", "MODE=" + (data.isTracingEnabled() ? "tracing" : "no_tracing"));
+                            "--build-arg", "MODE=" + data.getMode());
                 } else {
-                    runCommand.runOrThrow("docker", "build", "-t", tag, directory);
+                    runCommand.runOrThrow("docker", "build",
+                            "-t", tag, "--build-arg", "MODE=" + data.getMode(), directory);
                     runCommand.runOrThrow("docker", "push", tag);
                 }
             } catch (Exception e) {

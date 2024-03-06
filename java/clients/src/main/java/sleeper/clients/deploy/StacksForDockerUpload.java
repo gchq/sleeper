@@ -83,8 +83,8 @@ public class StacksForDockerUpload {
         return version;
     }
 
-    public boolean isTracingEnabled() {
-        return tracingEnabled;
+    public String getMode() {
+        return tracingEnabled ? "tracing" : "no_tracing";
     }
 
     public List<String> getStacks() {

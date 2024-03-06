@@ -56,8 +56,7 @@ public class UploadDockerImagesTest {
             "IngestStack", dockerBuildImage("ingest"),
             "EksBulkImportStack", dockerBuildImage("bulk-import-runner"),
             "BuildxStack", dockerBuildxImage("buildx"),
-            "EmrServerlessBulkImportStack", emrServerlessImage("bulk-import-runner-emr-serverless")
-    );
+            "EmrServerlessBulkImportStack", emrServerlessImage("bulk-import-runner-emr-serverless"));
     private final InMemoryEcrRepositories ecrClient = new InMemoryEcrRepositories();
     private final InstanceProperties properties = createTestInstanceProperties();
     private final DockerImageConfiguration dockerImageConfiguration = new DockerImageConfiguration(STACK_DOCKER_IMAGES);
@@ -141,8 +140,7 @@ public class UploadDockerImagesTest {
             assertThat(commandsThatRan).containsExactly(
                     loginDockerCommand(),
                     buildImageCommand(expectedTag, "./docker/ingest"),
-                    pushImageCommand(expectedTag)
-            );
+                    pushImageCommand(expectedTag));
             assertThat(ecrClient.getRepositories())
                     .containsExactlyInAnyOrder("custom-ecr-prefix/ingest");
         }
@@ -222,8 +220,7 @@ public class UploadDockerImagesTest {
                     createNewBuildxBuilderInstanceCommand(),
                     buildImageCommand(expectedTag1, "./docker/ingest"),
                     pushImageCommand(expectedTag1),
-                    buildAndPushImageWithBuildxCommand(expectedTag2, "./docker/buildx")
-            );
+                    buildAndPushImageWithBuildxCommand(expectedTag2, "./docker/buildx"));
 
             assertThat(ecrClient.getRepositories())
                     .containsExactlyInAnyOrder("test-instance/buildx", "test-instance/ingest");
@@ -269,9 +266,7 @@ public class UploadDockerImagesTest {
             properties.set(OPTIONAL_STACKS, "IngestStack");
 
             // When / Then
-            assertThatThrownBy(() ->
-                    uploader().upload(returningExitCode(123), StacksForDockerUpload.from(properties))
-            ).isInstanceOfSatisfying(CommandFailedException.class, e -> {
+            assertThatThrownBy(() -> uploader().upload(returningExitCode(123), StacksForDockerUpload.from(properties))).isInstanceOfSatisfying(CommandFailedException.class, e -> {
                 assertThat(e.getCommand()).isEqualTo(loginDockerCommand());
                 assertThat(e.getExitCode()).isEqualTo(123);
             });
@@ -305,13 +300,11 @@ public class UploadDockerImagesTest {
             properties.set(OPTIONAL_STACKS, "BuildxStack");
 
             // When / Then
-            assertThatThrownBy(() ->
-                    uploader().upload(returningExitCodeForCommand(123, createNewBuildxBuilderInstanceCommand()),
-                            StacksForDockerUpload.from(properties))
-            ).isInstanceOfSatisfying(CommandFailedException.class, e -> {
-                assertThat(e.getCommand()).isEqualTo(createNewBuildxBuilderInstanceCommand());
-                assertThat(e.getExitCode()).isEqualTo(123);
-            });
+            assertThatThrownBy(() -> uploader().upload(returningExitCodeForCommand(123, createNewBuildxBuilderInstanceCommand()),
+                    StacksForDockerUpload.from(properties))).isInstanceOfSatisfying(CommandFailedException.class, e -> {
+                        assertThat(e.getCommand()).isEqualTo(createNewBuildxBuilderInstanceCommand());
+                        assertThat(e.getExitCode()).isEqualTo(123);
+                    });
             assertThat(ecrClient.getRepositories()).isEmpty();
         }
 
@@ -324,13 +317,11 @@ public class UploadDockerImagesTest {
             CommandPipeline buildImageCommand = buildImageCommand(
                     "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0",
                     "./docker/ingest");
-            assertThatThrownBy(() ->
-                    uploader().upload(returningExitCodeForCommand(42, buildImageCommand),
-                            StacksForDockerUpload.from(properties))
-            ).isInstanceOfSatisfying(CommandFailedException.class, e -> {
-                assertThat(e.getCommand()).isEqualTo(buildImageCommand);
-                assertThat(e.getExitCode()).isEqualTo(42);
-            });
+            assertThatThrownBy(() -> uploader().upload(returningExitCodeForCommand(42, buildImageCommand),
+                    StacksForDockerUpload.from(properties))).isInstanceOfSatisfying(CommandFailedException.class, e -> {
+                        assertThat(e.getCommand()).isEqualTo(buildImageCommand);
+                        assertThat(e.getExitCode()).isEqualTo(42);
+                    });
             assertThat(ecrClient.getRepositories()).isEmpty();
         }
     }
@@ -383,7 +374,7 @@ public class UploadDockerImagesTest {
     }
 
     private CommandPipeline buildImageCommand(String tag, String dockerDirectory) {
-        return pipeline(command("docker", "build", "-t", tag, dockerDirectory));
+        return pipeline(command("docker", "build", "-t", tag, "--build-arg", "MODE=tracing", dockerDirectory));
     }
 
     private CommandPipeline pushImageCommand(String tag) {
@@ -400,7 +391,7 @@ public class UploadDockerImagesTest {
 
     private CommandPipeline buildAndPushImageWithBuildxCommand(String tag, String dockerDirectory) {
         return pipeline(command("docker", "buildx", "build", "--platform", "linux/amd64,linux/arm64",
-                "-t", tag, "--push", dockerDirectory));
+                "-t", tag, "--push", dockerDirectory, "--build-arg", "MODE=tracing"));
     }
 
     private List<CommandPipeline> commandsToLoginDockerAndPushImages(String... images) {
