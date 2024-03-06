@@ -25,7 +25,6 @@ import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.IngestJobHandler;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -54,7 +53,7 @@ public class IngestTask {
         this.taskId = taskId;
     }
 
-    public void run() throws InterruptedException, IOException {
+    public void run() {
         Instant startTime = timeSupplier.get();
         IngestTaskStatus.Builder taskStatusBuilder = IngestTaskStatus.builder().taskId(taskId).startTime(startTime);
         LOGGER.info("Starting task {}", taskId);
@@ -68,7 +67,7 @@ public class IngestTask {
         taskStatusStore.taskFinished(taskFinished);
     }
 
-    public Instant handleMessages(Instant startTime, Consumer<RecordsProcessedSummary> summaryConsumer) throws InterruptedException, IOException {
+    public Instant handleMessages(Instant startTime, Consumer<RecordsProcessedSummary> summaryConsumer) {
         while (true) {
             Optional<MessageHandle> messageOpt = messageReceiver.receiveMessage();
             if (!messageOpt.isPresent()) {
@@ -100,7 +99,7 @@ public class IngestTask {
 
     @FunctionalInterface
     public interface MessageReceiver {
-        Optional<MessageHandle> receiveMessage() throws InterruptedException, IOException;
+        Optional<MessageHandle> receiveMessage();
     }
 
     public interface MessageHandle extends AutoCloseable {

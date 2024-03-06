@@ -35,8 +35,6 @@ import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
-import sleeper.core.iterator.IteratorException;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.impl.partitionfilewriter.AsyncS3PartitionFileWriterFactory;
 import sleeper.ingest.job.status.IngestJobStatusStore;
@@ -47,7 +45,6 @@ import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreProvider;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -64,7 +61,7 @@ public class ECSIngestTaskRunner {
     private ECSIngestTaskRunner() {
     }
 
-    public static void main(String[] args) throws IOException, StateStoreException, IteratorException, ObjectFactoryException, InterruptedException {
+    public static void main(String[] args) throws ObjectFactoryException {
         if (1 != args.length) {
             System.err.println("Error: must have 1 argument (config bucket), got " + args.length + " arguments (" + StringUtils.join(args, ',') + ")");
             System.exit(1);
