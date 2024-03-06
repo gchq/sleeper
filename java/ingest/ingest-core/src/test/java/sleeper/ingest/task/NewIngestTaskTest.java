@@ -130,7 +130,7 @@ public class NewIngestTaskTest {
                             Instant.parse("2024-02-22T13:50:00Z"), Instant.parse("2024-02-22T13:50:05Z"),
                             Instant.parse("2024-02-22T13:50:01Z"), Instant.parse("2024-02-22T13:50:02Z"), 10L, 10L));
             assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
-                    finishedIngestJob(job, DEFAULT_TASK_ID, summary(jobResult,
+                    finishedIngestJob(job, "test-task-1", summary(jobResult,
                             Instant.parse("2024-02-22T13:50:01Z"),
                             Instant.parse("2024-02-22T13:50:02Z"))));
         }
@@ -158,7 +158,7 @@ public class NewIngestTaskTest {
 
             // Then
             assertThat(taskStore.getAllTasks())
-                    .containsExactly(finishedMultipleJobs(DEFAULT_TASK_ID,
+                    .containsExactly(finishedMultipleJobs("test-task-1",
                             Instant.parse("2024-02-22T13:50:00Z"),
                             Instant.parse("2024-02-22T13:50:05Z"),
                             summary(job1Result,
@@ -167,11 +167,11 @@ public class NewIngestTaskTest {
                             summary(job2Result,
                                     Instant.parse("2024-02-22T13:50:03Z"),
                                     Instant.parse("2024-02-22T13:50:04Z"))));
-            assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
-                    finishedIngestJob(job1, DEFAULT_TASK_ID, summary(job1Result,
+            assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactlyInAnyOrder(
+                    finishedIngestJob(job1, "test-task-1", summary(job1Result,
                             Instant.parse("2024-02-22T13:50:01Z"),
                             Instant.parse("2024-02-22T13:50:02Z"))),
-                    finishedIngestJob(job2, DEFAULT_TASK_ID, summary(job2Result,
+                    finishedIngestJob(job2, "test-task-1", summary(job2Result,
                             Instant.parse("2024-02-22T13:50:03Z"),
                             Instant.parse("2024-02-22T13:50:04Z"))));
         }
@@ -215,6 +215,33 @@ public class NewIngestTaskTest {
                             Instant.parse("2024-02-22T13:50:05Z")));
             assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).isEmpty();
         }
+
+        @Test
+        void shouldSaveTaskWhenJobWithNoFilesSucceeds() throws Exception {
+            // Given
+            Queue<Instant> times = new LinkedList<>(List.of(
+                    Instant.parse("2024-02-22T13:50:00Z"), // Start
+                    Instant.parse("2024-02-22T13:50:01Z"), // Job start
+                    Instant.parse("2024-02-22T13:50:02Z"), // Job finish
+                    Instant.parse("2024-02-22T13:50:05Z"))); // Finish
+            IngestJob job = createJobOnQueueNoFiles("job1");
+
+            // When
+            IngestResult jobResult = IngestResult.noFiles();
+            runTask("test-task-1", processJobs(
+                    jobSucceeds(jobResult)),
+                    times::poll);
+
+            // Then
+            assertThat(taskStore.getAllTasks())
+                    .containsExactly(finishedOneJob("test-task-1",
+                            Instant.parse("2024-02-22T13:50:00Z"), Instant.parse("2024-02-22T13:50:05Z"),
+                            Instant.parse("2024-02-22T13:50:01Z"), Instant.parse("2024-02-22T13:50:02Z"), 0L, 0L));
+            assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
+                    finishedIngestJob(job, "test-task-1", summary(jobResult,
+                            Instant.parse("2024-02-22T13:50:01Z"),
+                            Instant.parse("2024-02-22T13:50:02Z"))));
+        }
     }
 
     private void runTask(IngestJobHandler ingestRunner) throws Exception {
@@ -254,6 +281,17 @@ public class NewIngestTaskTest {
                 .tableId(DEFAULT_TABLE_ID)
                 .tableName("test-table")
                 .files(UUID.randomUUID().toString())
+                .id(jobId)
+                .build();
+        jobsOnQueue.add(job);
+        return job;
+    }
+
+    private IngestJob createJobOnQueueNoFiles(String jobId) {
+        IngestJob job = IngestJob.builder()
+                .tableId(DEFAULT_TABLE_ID)
+                .tableName("test-table")
+                .files(List.of())
                 .id(jobId)
                 .build();
         jobsOnQueue.add(job);
