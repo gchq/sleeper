@@ -38,7 +38,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFiles;
 import static sleeper.core.testutils.printers.FileReferencePrinter.printExpectedFilesForAllTables;
-import static sleeper.core.testutils.printers.FileReferencePrinter.printTableFilesExpectingIdenticalNew;
+import static sleeper.core.testutils.printers.FileReferencePrinter.printTableFilesExpectingIdentical;
 import static sleeper.core.testutils.printers.PartitionsPrinter.printExpectedPartitionsForAllTables;
 import static sleeper.core.testutils.printers.PartitionsPrinter.printTablePartitionsExpectingIdentical;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
@@ -131,7 +131,7 @@ public class MultipleTablesIT {
         assertThat(printTablePartitionsExpectingIdentical(schema, partitionsByTable))
                 .isEqualTo(printExpectedPartitionsForAllTables(schema, tables, expectedPartitions));
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(expectedPartitions);
-        assertThat(printTableFilesExpectingIdenticalNew(partitionsByTable, filesByTable))
+        assertThat(printTableFilesExpectingIdentical(partitionsByTable, filesByTable))
                 .isEqualTo(printExpectedFilesForAllTables(tables, expectedPartitions, activeAndReadyForGCFiles(
                         List.of(
                                 fileReferenceFactory.partitionFile("LLL", 12),

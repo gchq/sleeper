@@ -189,7 +189,7 @@ public class FileReferencePrinterTest {
                     fileReferenceFactory().partitionFile("root", 10));
 
             // When
-            String printed = FileReferencePrinter.printTableFilesExpectingIdenticalNew(
+            String printed = FileReferencePrinter.printTableFilesExpectingIdentical(
                     Map.of("table-1", partitions.buildTree(), "table-2", partitions.buildTree()),
                     Map.of("table-1", files, "table-2", files));
 
@@ -207,7 +207,7 @@ public class FileReferencePrinterTest {
                     fileReferenceFactory().partitionFile("root", 20));
 
             // When
-            String printed = FileReferencePrinter.printTableFilesExpectingIdenticalNew(
+            String printed = FileReferencePrinter.printTableFilesExpectingIdentical(
                     Map.of("table-1", partitions.buildTree(), "table-2", partitions.buildTree(), "table-3", partitions.buildTree()),
                     Map.of("table-1", files1, "table-2", files2, "table-3", files1));
 
@@ -223,7 +223,7 @@ public class FileReferencePrinterTest {
                     fileReferenceFactory().partitionFile("root", 10));
 
             // When
-            String printed = FileReferencePrinter.printTableFilesExpectingIdenticalNew(
+            String printed = FileReferencePrinter.printTableFilesExpectingIdentical(
                     Map.of("table-1", partitions.buildTree()),
                     Map.of("table-1", files));
 
@@ -243,7 +243,7 @@ public class FileReferencePrinterTest {
                     List.of(table("table-1"), table("table-2")), partitions.buildTree(), files);
 
             // Then
-            assertThat(printed).isEqualTo(FileReferencePrinter.printTableFilesExpectingIdenticalNew(
+            assertThat(printed).isEqualTo(FileReferencePrinter.printTableFilesExpectingIdentical(
                     Map.of("table-1", partitions.buildTree(), "table-2", partitions.buildTree()),
                     Map.of("table-1", files, "table-2", files)));
         }
