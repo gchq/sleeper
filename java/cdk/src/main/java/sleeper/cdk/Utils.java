@@ -76,8 +76,10 @@ public class Utils {
 
     public static Map<String, String> createDefaultEnvironment(InstanceProperties instanceProperties) {
         Map<String, String> environmentVariables = new HashMap<>();
-        environmentVariables.put(CONFIG_BUCKET.toEnvironmentVariable(),
-                instanceProperties.get(CONFIG_BUCKET));
+        if (instanceProperties.isSet(CONFIG_BUCKET)) {
+            environmentVariables.put(CONFIG_BUCKET.toEnvironmentVariable(),
+                    instanceProperties.get(CONFIG_BUCKET));
+        }
 
         environmentVariables.put("JAVA_TOOL_OPTIONS", createToolOptions(instanceProperties,
                 LOGGING_LEVEL,
