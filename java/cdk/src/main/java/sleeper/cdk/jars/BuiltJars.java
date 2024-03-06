@@ -20,6 +20,9 @@ import software.amazon.awscdk.services.s3.IBucket;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 
 public class BuiltJars {
@@ -27,6 +30,7 @@ public class BuiltJars {
     private final AmazonS3 s3;
     private final String bucketName;
     private final LambdaBuilder.Configuration globalConfig;
+    private final Map<String, String> jarFilenameToVersionId = new HashMap<>();
 
     public BuiltJars(AmazonS3 s3, InstanceProperties instanceProperties) {
         this(s3, instanceProperties.get(JARS_BUCKET), new GlobalLambdaConfiguration(instanceProperties));
@@ -51,6 +55,7 @@ public class BuiltJars {
     }
 
     public String getLatestVersionId(BuiltJar jar) {
-        return s3.getObjectMetadata(bucketName, jar.getFileName()).getVersionId();
+        return jarFilenameToVersionId.computeIfAbsent(jar.getFileName(),
+                filename -> s3.getObjectMetadata(bucketName, filename).getVersionId());
     }
 }
