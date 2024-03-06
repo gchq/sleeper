@@ -204,11 +204,11 @@ public class NewIngestTaskTest {
         }
 
         @Test
-        void shouldSaveTaskWhenOneJobFails() throws Exception {
+        void shouldSaveTaskWhenOnlyJobFails() throws Exception {
             // Given
             Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
-                    Instant.parse("2024-02-22T13:50:01Z"), // Job starts
+                    Instant.parse("2024-02-22T13:50:01Z"), // Job start + fail
                     Instant.parse("2024-02-22T13:50:05Z"))); // Finish
             IngestJob job = createJobOnQueue("job1");
 
@@ -222,6 +222,38 @@ public class NewIngestTaskTest {
                             Instant.parse("2024-02-22T13:50:05Z")));
             assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
                     startedIngestJob(job, "test-task-1", Instant.parse("2024-02-22T13:50:01Z")));
+        }
+
+        @Test
+        void shouldSaveTaskAndJobWhenSecondJobFails() throws Exception {
+            // Given
+            Queue<Instant> times = new LinkedList<>(List.of(
+                    Instant.parse("2024-02-22T13:50:00Z"), // Start
+                    Instant.parse("2024-02-22T13:50:01Z"), // Job 1 start
+                    Instant.parse("2024-02-22T13:50:02Z"), // Job 1 finish
+                    Instant.parse("2024-02-22T13:50:03Z"), // Job 2 start + fail
+                    Instant.parse("2024-02-22T13:50:05Z"))); // Finish
+            IngestJob job1 = createJobOnQueue("job1");
+            IngestJob job2 = createJobOnQueue("job2");
+
+            // When
+            IngestResult job1Result = recordsReadAndWritten(10L, 10L);
+            runTask("test-task-1", processJobs(
+                    jobSucceeds(job1Result),
+                    jobFails()),
+                    times::poll);
+
+            // Then
+            assertThat(taskStore.getAllTasks()).containsExactly(
+                    finishedOneJob("test-task-1",
+                            Instant.parse("2024-02-22T13:50:00Z"), Instant.parse("2024-02-22T13:50:05Z"),
+                            Instant.parse("2024-02-22T13:50:01Z"), Instant.parse("2024-02-22T13:50:02Z"), 10L, 10L));
+            assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactlyInAnyOrder(
+                    finishedIngestJob(job1, "test-task-1", summary(job1Result,
+                            Instant.parse("2024-02-22T13:50:01Z"),
+                            Instant.parse("2024-02-22T13:50:02Z"))),
+                    startedIngestJob(job2, "test-task-1",
+                            Instant.parse("2024-02-22T13:50:03Z")));
         }
 
         @Test
