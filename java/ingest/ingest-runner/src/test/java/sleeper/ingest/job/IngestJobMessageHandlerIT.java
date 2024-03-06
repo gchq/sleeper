@@ -59,7 +59,7 @@ public class IngestJobMessageHandlerIT {
     private final Instant validationTime = Instant.parse("2023-10-17T14:15:00Z");
     private final TableIndex tableIndex = new InMemoryTableIndex();
     private final IngestJobStatusStore ingestJobStatusStore = new InMemoryIngestJobStatusStore();
-    private final IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = NewIngestJobQueueConsumer.messageHandler(
+    private final IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = IngestJobQueueConsumer.messageHandler(
             properties, createHadoopConfiguration(), tableIndex, ingestJobStatusStore)
             .jobIdSupplier(() -> "job-id")
             .timeSupplier(() -> validationTime)

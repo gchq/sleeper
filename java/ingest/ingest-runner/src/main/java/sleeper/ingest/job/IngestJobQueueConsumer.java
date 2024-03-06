@@ -50,8 +50,8 @@ import static sleeper.configuration.properties.instance.CommonProperty.QUEUE_VIS
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_JOB_QUEUE_WAIT_TIME;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_KEEP_ALIVE_PERIOD_IN_SECONDS;
 
-public class NewIngestJobQueueConsumer implements MessageReceiver {
-    public static final Logger LOGGER = LoggerFactory.getLogger(NewIngestJobQueueConsumer.class);
+public class IngestJobQueueConsumer implements MessageReceiver {
+    public static final Logger LOGGER = LoggerFactory.getLogger(IngestJobQueueConsumer.class);
     private final AmazonSQS sqsClient;
     private final AmazonCloudWatch cloudWatchClient;
     private final InstanceProperties instanceProperties;
@@ -60,7 +60,7 @@ public class NewIngestJobQueueConsumer implements MessageReceiver {
     private final int visibilityTimeoutInSeconds;
     private final IngestJobMessageHandler<IngestJob> ingestJobMessageHandler;
 
-    public NewIngestJobQueueConsumer(AmazonSQS sqsClient,
+    public IngestJobQueueConsumer(AmazonSQS sqsClient,
             AmazonCloudWatch cloudWatchClient,
             InstanceProperties instanceProperties,
             Configuration configuration,
