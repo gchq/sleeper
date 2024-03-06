@@ -55,8 +55,6 @@ import software.amazon.awscdk.services.ecs.FargateTaskDefinition;
 import software.amazon.awscdk.services.ecs.MachineImageType;
 import software.amazon.awscdk.services.ecs.NetworkMode;
 import software.amazon.awscdk.services.ecs.OperatingSystemFamily;
-import software.amazon.awscdk.services.ecs.PortMapping;
-import software.amazon.awscdk.services.ecs.Protocol;
 import software.amazon.awscdk.services.ecs.RuntimePlatform;
 import software.amazon.awscdk.services.ecs.TaskDefinition;
 import software.amazon.awscdk.services.events.Rule;
@@ -120,7 +118,6 @@ import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 import static sleeper.configuration.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
 import static sleeper.configuration.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
-import static sleeper.configuration.properties.instance.CommonProperty.XRAY_TRACING_ENABLED;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_EC2_POOL_DESIRED;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_EC2_POOL_MAXIMUM;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_EC2_POOL_MINIMUM;
@@ -371,11 +368,6 @@ public class CompactionStack extends NestedStack {
             instanceProperties.set(COMPACTION_TASK_FARGATE_DEFINITION_FAMILY, taskDefinition.getFamily());
             taskDefinition.addContainer(ContainerConstants.COMPACTION_CONTAINER_NAME,
                     createFargateContainerDefinition(containerImage, environmentVariables, instanceProperties));
-
-            if (instanceProperties.getBoolean(XRAY_TRACING_ENABLED)) {
-                taskDefinition.addContainer(ContainerConstants.XRAY_CONTAINER_NAME,
-                        createXRayDaemonContainerDefinition(instanceProperties));
-            }
         } else {
             taskDefinition = compactionEC2TaskDefinition();
             instanceProperties.set(COMPACTION_TASK_EC2_DEFINITION_FAMILY, taskDefinition.getFamily());
@@ -509,17 +501,6 @@ public class CompactionStack extends NestedStack {
                 .create(this, "CompactionEC2TaskDefinition")
                 .family(instanceProperties.get(ID) + "CompactionEC2TaskFamily")
                 .networkMode(NetworkMode.BRIDGE)
-                .build();
-    }
-
-    private ContainerDefinitionOptions createXRayDaemonContainerDefinition(InstanceProperties instanceProperties) {
-        return ContainerDefinitionOptions.builder()
-                .image(ContainerImage.fromRegistry(ContainerConstants.XRAY_IMAGE))
-                .portMappings(List.of(PortMapping.builder()
-                        .protocol(Protocol.UDP)
-                        .containerPort(2000)
-                        .build()))
-                .logging(Utils.createECSContainerLogDriver(this, instanceProperties, "CompactionTasksXRayDaemon"))
                 .build();
     }
 

@@ -216,8 +216,8 @@ public interface CommonProperty {
             .validationPredicate(Utils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
-    UserDefinedInstanceProperty XRAY_TRACING_ENABLED = Index.propertyBuilder("sleeper.xray.tracing.enabled")
-            .description("This specifies whether AWS X-Ray tracing is enabled.")
+    UserDefinedInstanceProperty TRACING_ENABLED = Index.propertyBuilder("sleeper.opentelemetry.tracing.enabled")
+            .description("This specifies whether OpenTelemetry tracing is enabled.")
             .defaultValue("true")
             .validationPredicate(Utils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.COMMON)
