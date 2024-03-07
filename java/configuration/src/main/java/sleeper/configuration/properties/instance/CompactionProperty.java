@@ -28,6 +28,13 @@ public interface CompactionProperty {
                     "should have been uploaded to an ECR repository of this name in this account.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty COMPACTION_JOB_CREATION_BATCH_SIZE = Index.propertyBuilder("sleeper.compaction.job.creation.batch.size")
+            .description("The number of tables to perform compaction job creation for in a single invocation. A separate " +
+                    "invocation of the lambda will be made for each batch when there are more tables than the batch " +
+                    "size.")
+            .defaultValue("5")
+            .validationPredicate(Utils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.queue.visibility.timeout.seconds")
             .description("The visibility timeout for the queue of compaction jobs.")
             .defaultValue("900")
@@ -213,7 +220,7 @@ public interface CompactionProperty {
             .defaultValue("12")
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
-    UserDefinedInstanceProperty DEFAULT_COMPACTION_JOB_CREATION_BATCH_SIZE = Index.propertyBuilder("sleeper.default.table.compaction.job.creation.batch.size")
+    UserDefinedInstanceProperty DEFAULT_COMPACTION_JOB_SEND_BATCH_SIZE = Index.propertyBuilder("sleeper.default.table.compaction.job.send.batch.size")
             .description("The number of compaction jobs to send in a single batch.\n" +
                     "When compaction jobs are created, there is no limit on how many jobs can be created at once. " +
                     "A batch is a group of compaction jobs that will have their creation updates applied at the same time. " +

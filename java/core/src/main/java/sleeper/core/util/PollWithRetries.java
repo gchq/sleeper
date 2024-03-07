@@ -61,11 +61,17 @@ public class PollWithRetries {
         while (!checkFinished.getAsBoolean()) {
             polls++;
             if (polls >= maxPolls) {
-                String message = "Timed out after " + polls + " tries waiting for " +
-                        LoggedDuration.withShortOutput(Duration.ofMillis(pollIntervalMillis * polls)) +
-                        " until " + description;
-                LOGGER.error(message);
-                throw new TimedOutException(message);
+                if (polls > 1) {
+                    String message = "Timed out after " + polls + " tries waiting for " +
+                            LoggedDuration.withShortOutput(Duration.ofMillis(pollIntervalMillis * polls)) +
+                            " until " + description;
+                    LOGGER.error(message);
+                    throw new TimedOutException(message);
+                } else {
+                    String message = "Failed, expected to find " + description;
+                    LOGGER.error(message);
+                    throw new CheckFailedException(message);
+                }
             }
             Thread.sleep(pollIntervalMillis);
         }
@@ -94,7 +100,13 @@ public class PollWithRetries {
         }
     }
 
-    public static class TimedOutException extends RuntimeException {
+    public static class CheckFailedException extends RuntimeException {
+        private CheckFailedException(String message) {
+            super(message);
+        }
+    }
+
+    public static class TimedOutException extends CheckFailedException {
         private TimedOutException(String message) {
             super(message);
         }

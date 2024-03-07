@@ -181,12 +181,28 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .description("The name of the family of Fargate task definitions used for compactions.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
-    CdkDefinedInstanceProperty COMPACTION_JOB_CREATION_LAMBDA_FUNCTION = Index.propertyBuilder("sleeper.compaction.job.creation.lambda.function")
-            .description("The function name of the compaction job creation lambda.")
+    CdkDefinedInstanceProperty COMPACTION_JOB_CREATION_TRIGGER_LAMBDA_FUNCTION = Index.propertyBuilder("sleeper.compaction.job.creation.trigger.lambda.function")
+            .description("The function name of the lambda to trigger compaction job creation for all tables.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
     CdkDefinedInstanceProperty COMPACTION_JOB_CREATION_CLOUDWATCH_RULE = Index.propertyBuilder("sleeper.compaction.job.creation.rule")
             .description("The name of the CloudWatch rule that periodically triggers the compaction job creation lambda.")
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .build();
+    CdkDefinedInstanceProperty COMPACTION_JOB_CREATION_BATCH_QUEUE_URL = Index.propertyBuilder("sleeper.compaction.job.creation.batch.queue.url")
+            .description("The URL of the queue for sending batches of tables to create compaction jobs for.")
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .build();
+    CdkDefinedInstanceProperty COMPACTION_JOB_CREATION_BATCH_QUEUE_ARN = Index.propertyBuilder("sleeper.compaction.job.creation.batch.queue.arn")
+            .description("The ARN of the queue for sending batches of tables to create compaction jobs for.")
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .build();
+    CdkDefinedInstanceProperty COMPACTION_JOB_CREATION_BATCH_DLQ_URL = Index.propertyBuilder("sleeper.compaction.job.creation.batch.dlq.url")
+            .description("The URL of the dead letter queue for sending batches of tables to create compaction jobs for.")
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .build();
+    CdkDefinedInstanceProperty COMPACTION_JOB_CREATION_BATCH_DLQ_ARN = Index.propertyBuilder("sleeper.compaction.job.creation.batch.dlq.arn")
+            .description("The ARN of the dead letter queue for sending batches of tables to create compaction jobs for.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
     CdkDefinedInstanceProperty COMPACTION_JOB_QUEUE_URL = Index.propertyBuilder("sleeper.compaction.job.queue.url")
@@ -275,19 +291,19 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .build();
     CdkDefinedInstanceProperty GARBAGE_COLLECTOR_QUEUE_URL = Index.propertyBuilder("sleeper.gc.queue.url")
             .description("The URL of the queue for sending batches of garbage collection requests.")
-            .propertyGroup(InstancePropertyGroup.COMMON)
+            .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR)
             .build();
     CdkDefinedInstanceProperty GARBAGE_COLLECTOR_QUEUE_ARN = Index.propertyBuilder("sleeper.gc.queue.arn")
             .description("The ARN of the queue for sending batches of garbage collection requests.")
-            .propertyGroup(InstancePropertyGroup.COMMON)
+            .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR)
             .build();
     CdkDefinedInstanceProperty GARBAGE_COLLECTOR_DLQ_URL = Index.propertyBuilder("sleeper.gc.dlq.url")
             .description("The URL of the dead letter queue for sending batches of garbage collection requests.")
-            .propertyGroup(InstancePropertyGroup.COMMON)
+            .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR)
             .build();
     CdkDefinedInstanceProperty GARBAGE_COLLECTOR_DLQ_ARN = Index.propertyBuilder("sleeper.gc.dlq.arn")
             .description("The ARN of the dead letter queue for sending batches of garbage collection requests.")
-            .propertyGroup(InstancePropertyGroup.COMMON)
+            .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR)
             .build();
 
     // Ingest

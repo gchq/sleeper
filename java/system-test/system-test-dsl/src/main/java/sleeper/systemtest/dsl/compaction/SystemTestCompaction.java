@@ -27,26 +27,30 @@ import java.util.List;
 public class SystemTestCompaction {
 
     private final CompactionDriver driver;
+    private final WaitForCompactionJobCreation waitForJobCreation;
     private final WaitForJobs waitForJobs;
     private List<String> lastJobIds;
 
     public SystemTestCompaction(SystemTestContext context, SystemTestDrivers drivers) {
         this.driver = drivers.compaction(context);
+        this.waitForJobCreation = new WaitForCompactionJobCreation(context.instance(), driver);
         this.waitForJobs = drivers.waitForCompaction(context);
     }
 
-    public SystemTestCompaction createJobs() {
-        lastJobIds = driver.createJobsGetIds();
+    public SystemTestCompaction createJobs(int expectedJobs) {
+        lastJobIds = waitForJobCreation.createJobsGetIds(expectedJobs,
+                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofSeconds(30)),
+                driver::triggerCreateJobs);
         return this;
     }
 
-    public SystemTestCompaction forceCreateJobs() {
-        lastJobIds = driver.forceCreateJobsGetIds();
+    public SystemTestCompaction forceCreateJobs(int expectedJobs) {
+        lastJobIds = waitForJobCreation.createJobsGetIds(expectedJobs, PollWithRetries.noRetries(), driver::forceCreateJobs);
         return this;
     }
 
-    public SystemTestCompaction splitAndCompactFiles() {
-        forceCreateJobs().invokeTasks(1).waitForJobs(
+    public SystemTestCompaction splitFilesAndRunJobs(int expectedJobs) {
+        forceCreateJobs(expectedJobs).invokeTasks(1).waitForJobs(
                 PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(30)));
         return this;
     }

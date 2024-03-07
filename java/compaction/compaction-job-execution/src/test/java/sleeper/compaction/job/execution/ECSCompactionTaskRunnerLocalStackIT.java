@@ -99,7 +99,7 @@ import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildA
 import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
 @Testcontainers
-public class CompactSortedFilesRunnerLocalStackIT {
+public class ECSCompactionTaskRunnerLocalStackIT {
 
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE)).withServices(
@@ -333,17 +333,17 @@ public class CompactSortedFilesRunnerLocalStackIT {
         instanceProperties.set(COMPACTION_JOB_DLQ_URL, jobDlqUrl);
     }
 
-    private CompactSortedFilesRunner createJobRunner(String taskId) {
+    private ECSCompactionTaskRunner createJobRunner(String taskId) {
         return createJobRunner(taskId, stateStoreProvider);
     }
 
-    private CompactSortedFilesRunner createJobRunner(String taskId, StateStoreProvider stateStoreProvider) {
+    private ECSCompactionTaskRunner createJobRunner(String taskId, StateStoreProvider stateStoreProvider) {
         return jobRunnerBuilder(taskId, stateStoreProvider)
                 .build();
     }
 
-    private CompactSortedFilesRunner.Builder jobRunnerBuilder(String taskId, StateStoreProvider stateStoreProvider) {
-        return CompactSortedFilesRunner.builder()
+    private ECSCompactionTaskRunner.Builder jobRunnerBuilder(String taskId, StateStoreProvider stateStoreProvider) {
+        return ECSCompactionTaskRunner.builder()
                 .instanceProperties(instanceProperties)
                 .objectFactory(ObjectFactory.noUserJars())
                 .tablePropertiesProvider(tablePropertiesProvider)

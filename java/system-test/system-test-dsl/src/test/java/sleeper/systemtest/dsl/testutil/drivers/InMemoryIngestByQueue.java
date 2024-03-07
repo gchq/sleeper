@@ -67,12 +67,12 @@ public class InMemoryIngestByQueue {
                     .tableName(tableName)
                     .files(files)
                     .build();
-            queuedJobs.add(job);
+            send(job);
             return job.getId();
         };
     }
 
-    public void send(IngestJob job) {
+    public synchronized void send(IngestJob job) {
         queuedJobs.add(job);
     }
 
