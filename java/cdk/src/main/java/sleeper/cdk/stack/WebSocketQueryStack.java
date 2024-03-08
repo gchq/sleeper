@@ -57,7 +57,7 @@ public class WebSocketQueryStack extends NestedStack {
             CoreStacks coreStacks,
             QueryStack queryStack) {
         super(scope, id);
-        setupWebSocketApi(instanceProperties, queryStack, coreStacks);
+        setupWebSocketApi(instanceProperties, coreStacks, queryStack);
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
@@ -65,10 +65,10 @@ public class WebSocketQueryStack extends NestedStack {
      * Creates the web socket API.
      *
      * @param instanceProperties containing configuration details
-     * @param queryStack         the base query stack
      * @param coreStacks         the core stacks this belongs to
+     * @param queryStack         the base query stack
      */
-    protected void setupWebSocketApi(InstanceProperties instanceProperties, QueryStack queryStack, CoreStacks coreStacks) {
+    protected void setupWebSocketApi(InstanceProperties instanceProperties, CoreStacks coreStacks, QueryStack queryStack) {
         Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "websocket-api-handler"));
