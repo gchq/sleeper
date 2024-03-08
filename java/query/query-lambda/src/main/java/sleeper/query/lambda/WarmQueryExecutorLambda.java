@@ -38,20 +38,17 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
-import sleeper.core.schema.type.ListType;
 import sleeper.core.schema.type.LongType;
-import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
 import sleeper.query.model.Query;
 import sleeper.query.model.QueryProcessingConfig;
 import sleeper.query.model.QuerySerDe;
 import sleeper.query.output.ResultsOutputConstants;
+import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
@@ -78,6 +75,7 @@ public class WarmQueryExecutorLambda implements RequestHandler<ScheduledEvent, V
     private final AmazonDynamoDB dynamoClient;
     private QueryMessageHandler messageHandler;
     private SqsQueryProcessor processor;
+    private final DynamoDBQueryTracker queryTracker;
 
     public WarmQueryExecutorLambda() throws ObjectFactoryException {
         this(AmazonS3ClientBuilder.defaultClient(), AmazonSQSClientBuilder.defaultClient(),
@@ -90,6 +88,7 @@ public class WarmQueryExecutorLambda implements RequestHandler<ScheduledEvent, V
         this.dynamoClient = dynamoClient;
         instanceProperties = loadInstanceProperties(s3Client, configBucket);
         tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
+        queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
     }
 
     @Override
@@ -108,20 +107,14 @@ public class WarmQueryExecutorLambda implements RequestHandler<ScheduledEvent, V
                         min = 0;
                         max = 1;
                     } else if (type instanceof LongType) {
-                        min = 0;
-                        max = 1;
+                        min = 0L;
+                        max = 1L;
                     } else if (type instanceof StringType) {
                         min = "a";
-                        max = "aa";
+                        max = min;
                     } else if (type instanceof ByteArrayType) {
-                        min = new ByteArrayType();
-                        max = new ByteArrayType();
-                    } else if (type instanceof MapType) {
-                        min = new HashMap<>();
-                        max = new HashMap<>();
-                    } else if (type instanceof ListType) {
-                        min = new ArrayList<>();
-                        max = new ArrayList<>();
+                        min = new byte[]{'a'};
+                        max = min;
                     } else {
                         throw new IllegalArgumentException("Unknown type in the schema: " + type);
                     }
