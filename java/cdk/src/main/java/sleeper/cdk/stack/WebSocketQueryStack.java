@@ -34,9 +34,14 @@ import software.amazon.awscdk.services.iam.IGrantable;
 import software.amazon.awscdk.services.iam.ServicePrincipal;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.Permission;
+import software.amazon.awscdk.services.s3.Bucket;
+import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
 import sleeper.cdk.Utils;
+import sleeper.cdk.jars.BuiltJar;
+import sleeper.cdk.jars.BuiltJars;
+import sleeper.cdk.jars.LambdaCode;
 import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
@@ -50,14 +55,18 @@ import static sleeper.configuration.properties.instance.CommonProperty.ID;
 public class WebSocketQueryStack extends NestedStack {
 
     private CfnApi webSocketApi;
+    private WebSocketStage stage;
+    private IFunction webSocketApiHandler;
 
     public WebSocketQueryStack(Construct scope,
             String id,
             InstanceProperties instanceProperties,
-            CoreStacks coreStacks,
-            QueryStack queryStack) {
+            BuiltJars jars, CoreStacks coreStacks) {
         super(scope, id);
-        setupWebSocketApi(instanceProperties, coreStacks, queryStack);
+
+        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
+        LambdaCode queryJar = jars.lambdaCode(BuiltJar.QUERY, jarsBucket);
+        setupWebSocketApi(instanceProperties, queryJar, coreStacks);
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
@@ -65,14 +74,14 @@ public class WebSocketQueryStack extends NestedStack {
      * Creates the web socket API.
      *
      * @param instanceProperties containing configuration details
+     * @param queryJar           the query jar lambda code
      * @param coreStacks         the core stacks this belongs to
-     * @param queryStack         the base query stack
      */
-    protected void setupWebSocketApi(InstanceProperties instanceProperties, CoreStacks coreStacks, QueryStack queryStack) {
+    protected void setupWebSocketApi(InstanceProperties instanceProperties, LambdaCode queryJar, CoreStacks coreStacks) {
         Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "websocket-api-handler"));
-        IFunction handler = queryStack.getQueryJar().buildFunction(this, "WebSocketApiHandler", builder -> builder
+        webSocketApiHandler = queryJar.buildFunction(this, "WebSocketApiHandler", builder -> builder
                 .functionName(functionName)
                 .description("Prepares queries received via the WebSocket API and queues them for processing")
                 .handler("sleeper.query.lambda.WebSocketQueryProcessorLambda::handleRequest")
@@ -82,8 +91,8 @@ public class WebSocketQueryStack extends NestedStack {
                 .timeout(Duration.seconds(29))
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11));
 
-        queryStack.getQueryQueue().grantSendMessages(handler);
-        coreStacks.grantReadTablesConfig(handler);
+        //queryStack.getQueryQueue().grantSendMessages(handler);
+        coreStacks.grantReadTablesConfig(webSocketApiHandler);
 
         CfnApi api = CfnApi.Builder.create(this, "api")
                 .name("sleeper-" + instanceProperties.get(ID) + "-query-api")
@@ -97,7 +106,7 @@ public class WebSocketQueryStack extends NestedStack {
                 .service("apigateway")
                 .account("lambda")
                 .resource("path/2015-03-31/functions")
-                .resourceName(handler.getFunctionArn() + "/invocations")
+                .resourceName(webSocketApiHandler.getFunctionArn() + "/invocations")
                 .build());
 
         CfnIntegration integration = CfnIntegration.Builder.create(this, "integration")
@@ -124,7 +133,7 @@ public class WebSocketQueryStack extends NestedStack {
                 .target("integrations/" + integration.getRef())
                 .build();
 
-        handler.addPermission("apigateway-access-to-lambda", Permission.builder()
+        webSocketApiHandler.addPermission("apigateway-access-to-lambda", Permission.builder()
                 .principal(new ServicePrincipal("apigateway.amazonaws.com"))
                 .sourceArn(Stack.of(this).formatArn(ArnComponents.builder()
                         .service("execute-api")
@@ -133,16 +142,16 @@ public class WebSocketQueryStack extends NestedStack {
                         .build()))
                 .build());
 
-        WebSocketStage stage = WebSocketStage.Builder.create(this, "stage")
+        stage = WebSocketStage.Builder.create(this, "stage")
                 .webSocketApi(WebSocketApi.fromWebSocketApiAttributes(this, "imported-api", WebSocketApiAttributes.builder()
                         .webSocketId(api.getRef())
                         .build()))
                 .stageName("live")
                 .autoDeploy(true)
                 .build();
-        stage.grantManagementApiAccess(handler);
-        stage.grantManagementApiAccess(queryStack.getQueryExecutorLambda());
-        stage.grantManagementApiAccess(queryStack.getLeafPartitionQueryLambda());
+        stage.grantManagementApiAccess(webSocketApiHandler);
+        // stage.grantManagementApiAccess(queryStack.getQueryExecutorLambda());
+        // stage.grantManagementApiAccess(queryStack.getLeafPartitionQueryLambda());
 
         new CfnOutput(this, "WebSocketApiUrl", CfnOutputProps.builder()
                 .value(stage.getUrl())
@@ -166,5 +175,13 @@ public class WebSocketQueryStack extends NestedStack {
                         .build())
                         + "/live/*"))
                 .build());
+    }
+
+    public void grantStageApiAccess(IGrantable grantable) {
+        stage.grantManagementApiAccess(grantable);
+    }
+
+    public IFunction getWebSocketApiHandler() {
+        return webSocketApiHandler;
     }
 }

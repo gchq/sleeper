@@ -246,10 +246,13 @@ public class SleeperCdkApp extends Stack {
 
         // Stack to execute queries using the web socket API
         if (optionalStacks.contains(WebSocketQueryStack.class.getSimpleName())) {
-            new WebSocketQueryStack(this,
+            WebSocketQueryStack webSocketQueryStack = new WebSocketQueryStack(this,
                     "WebSocketQuery",
-                    instanceProperties,
-                    coreStacks, queryStack);
+                    instanceProperties, jars,
+                    coreStacks);
+            queryStack.getQueryQueue().grantSendMessages(webSocketQueryStack.getWebSocketApiHandler());
+            webSocketQueryStack.grantStageApiAccess(queryStack.getQueryExecutorLambda());
+            webSocketQueryStack.grantStageApiAccess(queryStack.getLeafPartitionQueryLambda());
         }
         // Stack for ingest jobs
         if (optionalStacks.contains(IngestStack.class.getSimpleName())) {

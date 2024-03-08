@@ -23,13 +23,13 @@ import software.amazon.awscdk.CfnOutputProps;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.RemovalPolicy;
-import software.amazon.awscdk.services.apigatewayv2.CfnApi;
 import software.amazon.awscdk.services.dynamodb.Attribute;
 import software.amazon.awscdk.services.dynamodb.AttributeType;
 import software.amazon.awscdk.services.dynamodb.BillingMode;
 import software.amazon.awscdk.services.dynamodb.ITable;
 import software.amazon.awscdk.services.dynamodb.Table;
 import software.amazon.awscdk.services.iam.Effect;
+import software.amazon.awscdk.services.iam.IGrantable;
 import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.Policy;
 import software.amazon.awscdk.services.iam.PolicyStatement;
@@ -86,7 +86,6 @@ public class QueryStack extends NestedStack {
     public static final String QUERY_RESULTS_QUEUE_URL = "QueryResultsQueueUrl";
     public static final String QUERY_LAMBDA_ROLE_ARN = "QueryLambdaRoleArn";
 
-    private CfnApi webSocketApi;
     private LambdaCode queryJar;
     private Queue queryQueriesQueue;
     private IFunction queryExecutorLambda;
@@ -455,4 +454,7 @@ public class QueryStack extends NestedStack {
         return leafPartitionQueryLambda;
     }
 
+    public void grantSendMessages(IGrantable grantable) {
+        queryQueriesQueue.grantSendMessages(grantable);
+    }
 }
