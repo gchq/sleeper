@@ -63,7 +63,7 @@ import static sleeper.sketches.s3.SketchesSerDeToS3.sketchesPathForDataFile;
  * Executes a {@link CompactionJob}, i.e. compacts N input files into a single
  * output file.
  */
-public class CompactSortedFiles {
+public class CompactSortedFiles implements CompactionTask.CompactionRunner {
     private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final ObjectFactory objectFactory;
@@ -80,7 +80,7 @@ public class CompactSortedFiles {
         this.stateStoreProvider = stateStoreProvider;
     }
 
-    public RecordsProcessed run(CompactionJob compactionJob) throws IOException, IteratorException, StateStoreException {
+    public RecordsProcessed compact(CompactionJob compactionJob) throws IOException, IteratorException, StateStoreException {
         TableProperties tableProperties = tablePropertiesProvider.getById(compactionJob.getTableId());
         Schema schema = tableProperties.getSchema();
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);

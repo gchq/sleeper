@@ -68,7 +68,6 @@ import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.s3.S3StateStoreCreator;
 
 import java.io.IOException;
-import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -342,9 +341,9 @@ public class ECSCompactionTaskRunnerLocalStackIT {
         CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties,
                 tablePropertiesProvider, stateStoreProvider,
                 ObjectFactory.noUserJars());
-        CompactionTask task = new CompactionTask(instanceProperties, PropertiesReloader.neverReload(), Instant::now,
-                new SqsCompactionQueueHandler(sqs, instanceProperties)::receiveFromSqs,
-                job -> compactSortedFiles.run(job), jobStatusStore, taskStatusStore, taskId);
+        CompactionTask task = new CompactionTask(instanceProperties, PropertiesReloader.neverReload(),
+                new SqsCompactionQueueHandler(sqs, instanceProperties),
+                compactSortedFiles, jobStatusStore, taskStatusStore, taskId);
         return task;
     }
 

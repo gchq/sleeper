@@ -34,8 +34,10 @@ import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS;
 import static sleeper.core.metrics.MetricsLogger.METRICS_LOGGER;
@@ -47,8 +49,10 @@ public class CompactionTask {
     private static final Logger LOGGER = LoggerFactory.getLogger(CompactionTask.class);
 
     private final Supplier<Instant> timeSupplier;
+    private final Consumer<Duration> sleepForTime;
     private final int maxConsecutiveFailures;
     private final Duration maxIdleTime;
+    private final Duration delayBeforeRetry;
     private final MessageReceiver messageReceiver;
     private final CompactionRunner compactor;
     private final CompactionJobStatusStore jobStatusStore;
@@ -59,20 +63,28 @@ public class CompactionTask {
     private int totalNumberOfMessagesProcessed = 0;
 
     public CompactionTask(InstanceProperties instanceProperties, PropertiesReloader propertiesReloader,
-            Supplier<Instant> timeSupplier, MessageReceiver messageReceiver, CompactionRunner compactor,
-            CompactionJobStatusStore jobStatusStore, CompactionTaskStatusStore taskStore, String taskId) {
+            MessageReceiver messageReceiver, CompactionRunner compactor,
+            CompactionJobStatusStore jobStore, CompactionTaskStatusStore taskStore, String taskId) {
+        this(instanceProperties, propertiesReloader, messageReceiver, compactor, jobStore, taskStore, taskId, Instant::now, threadSleep());
+    }
+
+    public CompactionTask(InstanceProperties instanceProperties, PropertiesReloader propertiesReloader,
+            MessageReceiver messageReceiver, CompactionRunner compactor, CompactionJobStatusStore jobStore,
+            CompactionTaskStatusStore taskStore, String taskId, Supplier<Instant> timeSupplier, Consumer<Duration> sleepForTime) {
         maxIdleTime = Duration.ofSeconds(instanceProperties.getInt(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS));
         maxConsecutiveFailures = instanceProperties.getInt(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES);
+        delayBeforeRetry = Duration.ofSeconds(instanceProperties.getInt(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS));
         this.propertiesReloader = propertiesReloader;
         this.timeSupplier = timeSupplier;
+        this.sleepForTime = sleepForTime;
         this.messageReceiver = messageReceiver;
         this.compactor = compactor;
-        this.jobStatusStore = jobStatusStore;
+        this.jobStatusStore = jobStore;
         this.taskStatusStore = taskStore;
         this.taskId = taskId;
     }
 
-    public void run() throws InterruptedException, IOException {
+    public void run() throws IOException {
         Instant startTime = timeSupplier.get();
         CompactionTaskStatus.Builder taskStatusBuilder = CompactionTaskStatus.builder().taskId(taskId).startTime(startTime);
         LOGGER.info("Starting task {}", taskId);
@@ -90,7 +102,7 @@ public class CompactionTask {
         taskStatusStore.taskFinished(taskFinished);
     }
 
-    public Instant handleMessages(Instant startTime, CompactionTaskFinishedStatus.Builder taskFinishedBuilder) throws InterruptedException, IOException {
+    public Instant handleMessages(Instant startTime, CompactionTaskFinishedStatus.Builder taskFinishedBuilder) throws IOException {
         Instant lastActiveTime = startTime;
         while (numConsecutiveFailures < maxConsecutiveFailures) {
             Optional<MessageHandle> messageOpt = messageReceiver.receiveMessage();
@@ -103,6 +115,11 @@ public class CompactionTask {
                             LoggedDuration.withFullOutput(maxIdleTime));
                     return currentTime;
                 } else {
+                    if (!delayBeforeRetry.isZero()) {
+                        LOGGER.info("Received no messages, waiting {} before trying again",
+                                LoggedDuration.withFullOutput(delayBeforeRetry));
+                        sleepForTime.accept(delayBeforeRetry);
+                    }
                     continue;
                 }
             }
@@ -150,7 +167,7 @@ public class CompactionTask {
 
     @FunctionalInterface
     interface MessageReceiver {
-        Optional<MessageHandle> receiveMessage() throws InterruptedException, IOException;
+        Optional<MessageHandle> receiveMessage() throws IOException;
     }
 
     @FunctionalInterface
@@ -166,5 +183,16 @@ public class CompactionTask {
         void failed();
 
         void close();
+    }
+
+    private static Consumer<Duration> threadSleep() {
+        return time -> {
+            try {
+                Thread.sleep(time.toMillis());
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(e);
+            }
+        };
     }
 }

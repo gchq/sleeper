@@ -68,8 +68,7 @@ class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
 
         // When
         CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema);
-        RecordsProcessed summary = compactSortedFiles.run(compactionJob);
-
+        RecordsProcessed summary = compactSortedFiles.compact(compactionJob);
         // Then
         //  - Read output files and check that they contain the right results
         assertThat(summary.getRecordsRead()).isEqualTo(200L);
