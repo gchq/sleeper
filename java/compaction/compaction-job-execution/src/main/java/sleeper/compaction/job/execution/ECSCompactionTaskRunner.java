@@ -91,7 +91,7 @@ public class ECSCompactionTaskRunner {
                 objectFactory, jobStatusStore, taskId);
         CompactionTask task = new CompactionTask(instanceProperties, propertiesReloader, Instant::now,
                 new SqsCompactionQueueHandler(sqsClient, instanceProperties)::receiveFromSqs,
-                job -> compactSortedFiles.run(job), taskStatusStore, taskId);
+                job -> compactSortedFiles.run(job), null, taskStatusStore, taskId);
         task.run();
 
         sqsClient.shutdown();
