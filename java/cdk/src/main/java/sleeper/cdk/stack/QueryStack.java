@@ -442,10 +442,6 @@ public class QueryStack extends NestedStack {
         return queryJar;
     }
 
-    public Queue getQueryQueue() {
-        return queryQueriesQueue;
-    }
-
     public IFunction getQueryExecutorLambda() {
         return queryExecutorLambda;
     }

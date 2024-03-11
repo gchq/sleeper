@@ -36,6 +36,8 @@ import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.Permission;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
+import software.amazon.awscdk.services.sqs.IQueue;
+import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.cdk.Utils;
@@ -50,6 +52,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import static sleeper.cdk.Utils.createLambdaLogGroup;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
 public class WebSocketQueryStack extends NestedStack {
@@ -67,6 +70,8 @@ public class WebSocketQueryStack extends NestedStack {
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
         LambdaCode queryJar = jars.lambdaCode(BuiltJar.QUERY, jarsBucket);
         setupWebSocketApi(instanceProperties, queryJar, coreStacks);
+        IQueue queryQueue = Queue.fromQueueArn(scope, id, instanceProperties.get(QUERY_QUEUE_URL));
+        queryQueue.grantSendMessages(webSocketApiHandler);
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
