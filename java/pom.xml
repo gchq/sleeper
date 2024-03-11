@@ -92,6 +92,8 @@
         <json-smart.version>2.4.11</json-smart.version>
         <!-- Hadoop declares an old version of Kerby with vulnerabilities. Managed from 1.0.1. -->
         <kerby.version>2.0.3</kerby.version>
+        <!-- Hadoop declares an old version of XNIO with vulnerabilities. Managed from 3.8.8.Final. -->
+        <xnio.version>3.8.13.Final</xnio.version>
         <!-- Spark declares an old version of OkHttp with vulnerabilities. Managed from 4.10.0. -->
         <okhttp3.version>4.11.0</okhttp3.version>
         <!--
@@ -489,6 +491,11 @@
                 <groupId>org.apache.kerby</groupId>
                 <artifactId>kerb-simplekdc</artifactId>
                 <version>${kerby.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.xnio</groupId>
+                <artifactId>xnio-api</artifactId>
+                <version>${xnio.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.squareup.okhttp3</groupId>
