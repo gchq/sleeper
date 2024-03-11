@@ -22,7 +22,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.execution.CompactionTask.CompactionRunner;
 import sleeper.compaction.job.execution.CompactionTask.MessageHandle;
 import sleeper.compaction.job.execution.CompactionTask.MessageReceiver;
@@ -49,13 +48,17 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
+import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
 
 public class CompactionTaskTest {
+    private static final String DEFAULT_TABLE_ID = "test-table-id";
     private static final String DEFAULT_TASK_ID = "test-task-id";
+    private static final Instant DEFAULT_CREATED_TIME = Instant.parse("2024-03-04T10:50:00Z");
     private static final Instant DEFAULT_START_TIME = Instant.parse("2024-03-04T11:00:00Z");
     private static final Duration DEFAULT_DURATION = Duration.ofSeconds(5);
 
@@ -63,7 +66,7 @@ public class CompactionTaskTest {
     private final Queue<CompactionJob> jobsOnQueue = new LinkedList<>();
     private final List<CompactionJob> successfulJobs = new ArrayList<>();
     private final List<CompactionJob> failedJobs = new ArrayList<>();
-    private final CompactionJobStatusStore jobStore = new InMemoryCompactionJobStatusStore();
+    private final InMemoryCompactionJobStatusStore jobStore = new InMemoryCompactionJobStatusStore();
     private final CompactionTaskStatusStore taskStore = new InMemoryCompactionTaskStatusStore();
 
     @BeforeEach
@@ -279,9 +282,10 @@ public class CompactionTaskTest {
             // Given
             Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
+                    Instant.parse("2024-02-22T13:50:01Z"), // Job started
                     Instant.parse("2024-02-22T13:50:02Z"), // Job completed
                     Instant.parse("2024-02-22T13:50:05Z"))); // Finish
-            createJobOnQueue("job1");
+            CompactionJob job = createJobOnQueue("job1");
 
             // When
             RecordsProcessedSummary jobSummary = summary(
@@ -297,6 +301,9 @@ public class CompactionTaskTest {
                             Instant.parse("2024-02-22T13:50:00Z"),
                             Instant.parse("2024-02-22T13:50:05Z"),
                             jobSummary));
+            assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
+                    jobCreated(job, DEFAULT_CREATED_TIME,
+                            finishedCompactionRun("test-task-1", jobSummary)));
         }
 
         @Test
@@ -374,7 +381,7 @@ public class CompactionTaskTest {
         private CompactionTaskStatus finishedCompactionTask(String taskId, Instant startTime, Instant finishTime, RecordsProcessedSummary... summaries) {
             return CompactionTaskStatus.builder()
                     .startTime(startTime)
-                    .taskId("test-task-1")
+                    .taskId(taskId)
                     .finished(finishTime, withJobSummaries(summaries))
                     .build();
         }
@@ -412,12 +419,13 @@ public class CompactionTaskTest {
     private CompactionJob createJobOnQueue(String jobId) {
         CompactionJob job = createJob(jobId);
         jobsOnQueue.add(job);
+        jobStore.jobCreated(job, DEFAULT_CREATED_TIME);
         return job;
     }
 
     private CompactionJob createJob(String jobId) {
         return CompactionJob.builder()
-                .tableId("test-table-id")
+                .tableId(DEFAULT_TABLE_ID)
                 .jobId(jobId)
                 .partitionId("root")
                 .inputFiles(List.of(UUID.randomUUID().toString()))

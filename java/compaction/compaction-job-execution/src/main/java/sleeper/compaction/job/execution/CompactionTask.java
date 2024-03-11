@@ -38,6 +38,7 @@ import java.util.function.Supplier;
 
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS;
+import static sleeper.core.metrics.MetricsLogger.METRICS_LOGGER;
 
 /**
  * Runs a compaction task, updating the {@link CompactionTaskStatusStore} with progress of the task.
@@ -107,14 +108,25 @@ public class CompactionTask {
             }
             try (MessageHandle message = messageOpt.get()) {
                 CompactionJob job = message.getJob();
-                LOGGER.info("CompactionJob is: {}", job);
+                Instant jobStartTime = timeSupplier.get();
+                String id = job.getId();
+                LOGGER.info("Compaction job {}: compaction called at {}", id, jobStartTime);
+                jobStatusStore.jobStarted(job, jobStartTime, taskId);
                 try {
                     propertiesReloader.reloadIfNeeded();
-                    summaryConsumer.accept(compactor.compact(job));
+                    RecordsProcessedSummary summary = compactor.compact(job);
+                    summaryConsumer.accept(summary);
                     message.completed();
                     totalNumberOfMessagesProcessed++;
                     numConsecutiveFailures = 0;
                     lastActiveTime = timeSupplier.get();
+                    // Print summary
+                    LOGGER.info("Compaction job {}: finished at {}", id, lastActiveTime);
+                    METRICS_LOGGER.info("Compaction job {}: compaction run time = {}", id, summary.getDurationInSeconds());
+                    METRICS_LOGGER.info("Compaction job {}: compaction read {} records at {} per second", id, summary.getRecordsRead(), String.format("%.1f", summary.getRecordsReadPerSecond()));
+                    METRICS_LOGGER.info("Compaction job {}: compaction wrote {} records at {} per second", id, summary.getRecordsWritten(),
+                            String.format("%.1f", summary.getRecordsWrittenPerSecond()));
+                    jobStatusStore.jobFinished(job, summary, taskId);
                 } catch (Exception e) {
                     LOGGER.error("Failed processing compaction job, putting job back on queue", e);
                     numConsecutiveFailures++;
