@@ -211,6 +211,32 @@ public class FileReferencePrinterTest {
             // Then see approved output
             Approvals.verify(printed);
         }
+
+        @Test
+        void shouldSortPartialFilesByNumberOfRecordsWithinPartition() {
+            // Given
+            partitions.singlePartition("root")
+                    .splitToNewChildren("root", "L", "R", "row-50");
+            FileReferenceFactory fileReferenceFactory = fileReferenceFactory();
+            FileReference first = fileReferenceFactory.rootFile("first.parquet", 200);
+            FileReference another = fileReferenceFactory.rootFile("another.parquet", 400);
+            FileReference file = fileReferenceFactory.rootFile("file.parquet", 100);
+            FileReference other = fileReferenceFactory.rootFile("other.parquet", 300);
+
+            // When
+            String printed = FileReferencePrinter.printFiles(partitions.buildTree(), activeFiles(
+                    referenceForChildPartition(first, "L"),
+                    referenceForChildPartition(first, "R"),
+                    referenceForChildPartition(another, "L"),
+                    referenceForChildPartition(another, "R"),
+                    referenceForChildPartition(file, "L"),
+                    referenceForChildPartition(file, "R"),
+                    referenceForChildPartition(other, "L"),
+                    referenceForChildPartition(other, "R")));
+
+            // Then see approved output
+            Approvals.verify(printed);
+        }
     }
 
     @Nested
