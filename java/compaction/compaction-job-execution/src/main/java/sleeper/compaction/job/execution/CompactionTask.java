@@ -34,7 +34,6 @@ import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
@@ -79,7 +78,7 @@ public class CompactionTask {
         LOGGER.info("Starting task {}", taskId);
         taskStatusStore.taskStarted(taskStatusBuilder.build());
         CompactionTaskFinishedStatus.Builder taskFinishedBuilder = CompactionTaskFinishedStatus.builder();
-        Instant finishTime = handleMessages(startTime, taskFinishedBuilder::addJobSummary);
+        Instant finishTime = handleMessages(startTime, taskFinishedBuilder);
         if (numConsecutiveFailures >= maxConsecutiveFailures) {
             LOGGER.info("Terminating compaction task as {} consecutive failures exceeds maximum of {}",
                     numConsecutiveFailures, maxConsecutiveFailures);
@@ -91,7 +90,7 @@ public class CompactionTask {
         taskStatusStore.taskFinished(taskFinished);
     }
 
-    public Instant handleMessages(Instant startTime, Consumer<RecordsProcessedSummary> summaryConsumer) throws InterruptedException, IOException {
+    public Instant handleMessages(Instant startTime, CompactionTaskFinishedStatus.Builder taskFinishedBuilder) throws InterruptedException, IOException {
         Instant lastActiveTime = startTime;
         while (numConsecutiveFailures < maxConsecutiveFailures) {
             Optional<MessageHandle> messageOpt = messageReceiver.receiveMessage();
@@ -111,7 +110,7 @@ public class CompactionTask {
                 CompactionJob job = message.getJob();
                 try {
                     RecordsProcessedSummary summary = compact(job);
-                    summaryConsumer.accept(summary);
+                    taskFinishedBuilder.addJobSummary(summary);
                     message.completed();
                     totalNumberOfMessagesProcessed++;
                     numConsecutiveFailures = 0;
