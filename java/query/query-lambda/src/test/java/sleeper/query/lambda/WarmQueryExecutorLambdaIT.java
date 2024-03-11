@@ -117,13 +117,13 @@ public class WarmQueryExecutorLambdaIT {
 
     @Test
     public void shouldCreateAQueryWithKeyTypeOfString() throws Exception {
-        // When
+        // Given
         Schema schema = getStringKeySchema();
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         createTable(tableProperties);
         querySerDe = new QuerySerDe(schema);
 
-        // Given
+        // When
         lambda.handleRequest(new ScheduledEvent(), null);
 
         // Then
@@ -143,13 +143,13 @@ public class WarmQueryExecutorLambdaIT {
 
     @Test
     public void shouldCreateAQueryWithKeyTypeOfByteArray() throws Exception {
-        // When
+        // Given
         Schema schema = getByteArrayKeySchema();
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         createTable(tableProperties);
         querySerDe = new QuerySerDe(schema);
 
-        // Given
+        // When
         lambda.handleRequest(new ScheduledEvent(), null);
 
         // Then
@@ -170,13 +170,13 @@ public class WarmQueryExecutorLambdaIT {
 
     @Test
     public void shouldCreateAQueryWithKeyTypeOfInt() throws Exception {
-        // When
+        // Given
         Schema schema = getIntKeySchema();
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         createTable(tableProperties);
         querySerDe = new QuerySerDe(schema);
 
-        // Given
+        // When
         lambda.handleRequest(new ScheduledEvent(), null);
 
         // Then
@@ -196,13 +196,13 @@ public class WarmQueryExecutorLambdaIT {
 
     @Test
     public void shouldCreateAQueryWithKeyTypeOfLong() throws Exception {
-        // When
+        // Given
         Schema schema = getLongKeySchema();
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         createTable(tableProperties);
         querySerDe = new QuerySerDe(schema);
 
-        // Given
+        // When
         lambda.handleRequest(new ScheduledEvent(), null);
 
         // Then
