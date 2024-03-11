@@ -27,7 +27,9 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import static org.assertj.core.api.Assertions.entry;
+import static java.util.Comparator.comparing;
+import static java.util.function.Predicate.not;
+import static java.util.stream.Collectors.toUnmodifiableList;
 
 public class FileReferencePrinter {
 
@@ -58,12 +60,16 @@ public class FileReferencePrinter {
     }
 
     private static void printFiles(PartitionTree partitionTree, AllReferencesToAllFiles files, PrintWriter out) {
-        List<FileReference> references = files.listFileReferences();
+        List<FileReference> references = files.getFilesWithReferences().stream()
+                .flatMap(file -> file.getInternalReferences().stream())
+                .sorted(comparing(FileReference::getNumberOfRecords).reversed())
+                .collect(toUnmodifiableList());
         out.println("File references: " + references.size());
         AtomicInteger partialCount = new AtomicInteger();
-        Map<String, Integer> numberByPartialFilename = files.getFiles().stream()
-                .filter(file -> file.getInternalReferences().size() > 1)
-                .map(file -> entry(file.getFilename(), partialCount.incrementAndGet()))
+        Map<String, Integer> numberByPartialFilename = references.stream()
+                .filter(not(FileReference::onlyContainsDataForThisPartition))
+                .map(FileReference::getFilename).distinct()
+                .map(filename -> Map.entry(filename, partialCount.incrementAndGet()))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         Map<String, List<FileReference>> filesByPartition = references.stream()
                 .collect(Collectors.groupingBy(FileReference::getPartitionId));
