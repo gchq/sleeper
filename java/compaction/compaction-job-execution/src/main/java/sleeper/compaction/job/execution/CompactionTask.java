@@ -109,11 +109,10 @@ public class CompactionTask {
             }
             try (MessageHandle message = messageOpt.get()) {
                 CompactionJob job = message.getJob();
-                Instant jobStartTime = timeSupplier.get();
-                String id = job.getId();
-                LOGGER.info("Compaction job {}: compaction called at {}", id, jobStartTime);
-                jobStatusStore.jobStarted(job, jobStartTime, taskId);
                 try {
+                    Instant jobStartTime = timeSupplier.get();
+                    LOGGER.info("Compaction job {}: compaction called at {}", job.getId(), jobStartTime);
+                    jobStatusStore.jobStarted(job, jobStartTime, taskId);
                     propertiesReloader.reloadIfNeeded();
                     RecordsProcessed recordsProcessed = compactor.compact(job);
                     Instant jobFinishTime = timeSupplier.get();
@@ -123,11 +122,12 @@ public class CompactionTask {
                     totalNumberOfMessagesProcessed++;
                     numConsecutiveFailures = 0;
                     // Print summary
-                    LOGGER.info("Compaction job {}: finished at {}", id, lastActiveTime);
-                    METRICS_LOGGER.info("Compaction job {}: compaction run time = {}", id, summary.getDurationInSeconds());
-                    METRICS_LOGGER.info("Compaction job {}: compaction read {} records at {} per second", id, summary.getRecordsRead(), String.format("%.1f", summary.getRecordsReadPerSecond()));
-                    METRICS_LOGGER.info("Compaction job {}: compaction wrote {} records at {} per second", id, summary.getRecordsWritten(),
-                            String.format("%.1f", summary.getRecordsWrittenPerSecond()));
+                    LOGGER.info("Compaction job {}: finished at {}", job.getId(), lastActiveTime);
+                    METRICS_LOGGER.info("Compaction job {}: compaction run time = {}", job.getId(), summary.getDurationInSeconds());
+                    METRICS_LOGGER.info("Compaction job {}: compaction read {} records at {} per second", job.getId(),
+                            summary.getRecordsRead(), String.format("%.1f", summary.getRecordsReadPerSecond()));
+                    METRICS_LOGGER.info("Compaction job {}: compaction wrote {} records at {} per second", job.getId(),
+                            summary.getRecordsWritten(), String.format("%.1f", summary.getRecordsWrittenPerSecond()));
                     jobStatusStore.jobFinished(job, summary, taskId);
                     lastActiveTime = jobFinishTime;
                 } catch (Exception e) {
