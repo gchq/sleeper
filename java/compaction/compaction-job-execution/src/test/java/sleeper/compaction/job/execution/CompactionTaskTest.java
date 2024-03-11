@@ -311,7 +311,9 @@ public class CompactionTaskTest {
             // Given
             Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
+                    Instant.parse("2024-02-22T13:50:01Z"), // Job 1 started
                     Instant.parse("2024-02-22T13:50:02Z"), // Job 1 completed
+                    Instant.parse("2024-02-22T13:50:03Z"), // Job 2 started
                     Instant.parse("2024-02-22T13:50:04Z"), // Job 2 completed
                     Instant.parse("2024-02-22T13:50:05Z"))); // Finish
             createJobOnQueue("job1");
@@ -342,6 +344,7 @@ public class CompactionTaskTest {
             // Given
             Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
+                    Instant.parse("2024-02-22T13:50:01Z"), // Job started
                     Instant.parse("2024-02-22T13:50:05Z"))); // Finish
             createJobOnQueue("job1");
 
