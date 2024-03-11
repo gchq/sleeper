@@ -109,9 +109,11 @@ public class CompactionTask {
                             LoggedDuration.withFullOutput(maxIdleTime));
                     return currentTime;
                 } else {
-                    LOGGER.info("Received no messages, waiting {} before trying again",
-                            LoggedDuration.withFullOutput(delayBeforeRetry));
-                    sleepForTime.accept(delayBeforeRetry);
+                    if (!delayBeforeRetry.isZero()) {
+                        LOGGER.info("Received no messages, waiting {} before trying again",
+                                LoggedDuration.withFullOutput(delayBeforeRetry));
+                        sleepForTime.accept(delayBeforeRetry);
+                    }
                     continue;
                 }
             }

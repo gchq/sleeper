@@ -239,6 +239,24 @@ public class CompactionTaskTest {
             assertThat(jobsOnQueue).isEmpty();
             assertThat(sleeps).containsExactly(Duration.ofSeconds(2), Duration.ofSeconds(2));
         }
+
+        @Test
+        void shouldNotDelayRetryIfSetToZero() throws Exception {
+            // Given
+            instanceProperties.setNumber(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS, 3);
+            instanceProperties.setNumber(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS, 0);
+            Queue<Instant> times = new LinkedList<>(List.of(
+                    Instant.parse("2024-02-22T13:50:00Z"), // Start
+                    Instant.parse("2024-02-22T13:50:02Z"), // First idle time check
+                    Instant.parse("2024-02-22T13:50:04Z"))); // Second idle time check + finish
+
+            // When
+            runTask(processNoJobs(), times::poll);
+
+            // Then
+            assertThat(times).isEmpty();
+            assertThat(sleeps).isEmpty();
+        }
     }
 
     @Nested
