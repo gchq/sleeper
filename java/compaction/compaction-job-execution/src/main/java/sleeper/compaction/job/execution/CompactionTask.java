@@ -110,26 +110,12 @@ public class CompactionTask {
             try (MessageHandle message = messageOpt.get()) {
                 CompactionJob job = message.getJob();
                 try {
-                    Instant jobStartTime = timeSupplier.get();
-                    LOGGER.info("Compaction job {}: compaction called at {}", job.getId(), jobStartTime);
-                    jobStatusStore.jobStarted(job, jobStartTime, taskId);
-                    propertiesReloader.reloadIfNeeded();
-                    RecordsProcessed recordsProcessed = compactor.compact(job);
-                    Instant jobFinishTime = timeSupplier.get();
-                    RecordsProcessedSummary summary = new RecordsProcessedSummary(recordsProcessed, jobStartTime, jobFinishTime);
+                    RecordsProcessedSummary summary = compact(job);
                     summaryConsumer.accept(summary);
                     message.completed();
                     totalNumberOfMessagesProcessed++;
                     numConsecutiveFailures = 0;
-                    // Print summary
-                    LOGGER.info("Compaction job {}: finished at {}", job.getId(), lastActiveTime);
-                    METRICS_LOGGER.info("Compaction job {}: compaction run time = {}", job.getId(), summary.getDurationInSeconds());
-                    METRICS_LOGGER.info("Compaction job {}: compaction read {} records at {} per second", job.getId(),
-                            summary.getRecordsRead(), String.format("%.1f", summary.getRecordsReadPerSecond()));
-                    METRICS_LOGGER.info("Compaction job {}: compaction wrote {} records at {} per second", job.getId(),
-                            summary.getRecordsWritten(), String.format("%.1f", summary.getRecordsWrittenPerSecond()));
-                    jobStatusStore.jobFinished(job, summary, taskId);
-                    lastActiveTime = jobFinishTime;
+                    lastActiveTime = summary.getFinishTime();
                 } catch (Exception e) {
                     LOGGER.error("Failed processing compaction job, putting job back on queue", e);
                     numConsecutiveFailures++;
@@ -138,6 +124,32 @@ public class CompactionTask {
             }
         }
         return timeSupplier.get();
+    }
+
+    private RecordsProcessedSummary compact(CompactionJob job) throws Exception {
+        Instant jobStartTime = timeSupplier.get();
+        LOGGER.info("Compaction job {}: compaction called at {}", job.getId(), jobStartTime);
+        jobStatusStore.jobStarted(job, jobStartTime, taskId);
+        propertiesReloader.reloadIfNeeded();
+        RecordsProcessed recordsProcessed = compactor.compact(job);
+        Instant jobFinishTime = timeSupplier.get();
+        RecordsProcessedSummary summary = new RecordsProcessedSummary(recordsProcessed, jobStartTime, jobFinishTime);
+        totalNumberOfMessagesProcessed++;
+        numConsecutiveFailures = 0;
+        jobStatusStore.jobFinished(job, summary, taskId);
+        logMetrics(job, summary);
+        return summary;
+    }
+
+    private void logMetrics(CompactionJob job, RecordsProcessedSummary summary) {
+        // Print summary
+        LOGGER.info("Compaction job {}: finished at {}", job.getId(), summary.getFinishTime());
+        METRICS_LOGGER.info("Compaction job {}: compaction run time = {}", job.getId(), summary.getDurationInSeconds());
+        METRICS_LOGGER.info("Compaction job {}: compaction read {} records at {} per second", job.getId(),
+                summary.getRecordsRead(), String.format("%.1f", summary.getRecordsReadPerSecond()));
+        METRICS_LOGGER.info("Compaction job {}: compaction wrote {} records at {} per second", job.getId(),
+                summary.getRecordsWritten(), String.format("%.1f", summary.getRecordsWrittenPerSecond()));
+        jobStatusStore.jobFinished(job, summary, taskId);
     }
 
     @FunctionalInterface
