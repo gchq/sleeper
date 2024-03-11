@@ -31,6 +31,10 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.QueryProperty.QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS;
 
+/**
+ * A {@link NestedStack} consisting of a {@link Queue} that queries are sent to, to be processed by
+ * lambdas defined in the {@link QueryStack}.
+ */
 public class QueryQueueStack extends NestedStack {
     public static final String QUERY_QUEUE_NAME = "QueryQueueName";
     public static final String QUERY_QUEUE_URL = "QueryQueueUrl";

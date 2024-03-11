@@ -69,15 +69,11 @@ import static sleeper.configuration.properties.instance.QueryProperty.QUERY_PROC
 import static sleeper.configuration.properties.instance.QueryProperty.QUERY_RESULTS_BUCKET_EXPIRY_IN_DAYS;
 
 /**
- * A {@link NestedStack} to handle queries. This consists of a {@link Queue} that
- * queries are put on, a lambda {@link Function} to process them and another
- * {@link Queue} for the results to be posted to.
+ * A {@link NestedStack} to handle queries. This consists of a lambda {@link Function} to
+ * process them and a {@link Queue} for the results to be posted to.
  */
 @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
 public class QueryStack extends NestedStack {
-    public static final String QUERY_QUEUE_NAME = "QueryQueueName";
-    public static final String QUERY_QUEUE_URL = "QueryQueueUrl";
-    public static final String QUERY_DL_QUEUE_URL = "QueryDLQueueUrl";
     public static final String LEAF_PARTITION_QUERY_QUEUE_NAME = "LeafPartitionQueryQueueName";
     public static final String LEAF_PARTITION_QUERY_QUEUE_URL = "LeafPartitionQueryQueueUrl";
     public static final String LEAF_PARTITION_QUERY_DL_QUEUE_URL = "LeafPartitionQueryDLQueueUrl";
