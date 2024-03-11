@@ -1,7 +1,7 @@
 Unreferenced files: 0
 Referenced files: 2
 File references: 4
-Partition at LL: 50 records (approx) in partial file 2
-Partition at LR: 50 records (approx) in partial file 2
-Partition at R: 100 records (approx) in partial file 1
-Partition at L: 100 records (approx) in partial file 1
+Partition at LL: 50 records (approx) in partial file 1
+Partition at LR: 50 records (approx) in partial file 1
+Partition at R: 100 records (approx) in partial file 2
+Partition at L: 100 records (approx) in partial file 2

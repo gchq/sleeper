@@ -22,14 +22,13 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.table.TableStatus;
 
 import java.io.PrintWriter;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static java.util.Comparator.comparing;
-import static java.util.function.Predicate.not;
-import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 public class FileReferencePrinter {
@@ -63,9 +62,10 @@ public class FileReferencePrinter {
     private static void printFiles(PartitionTree partitionTree, AllReferencesToAllFiles files, PrintWriter out) {
         List<FileReference> references = sortFileReferences(files);
         out.println("File references: " + references.size());
-        Map<String, Integer> numberByPartialFilename = numberPartialFiles(references);
         Map<String, List<FileReference>> filesByPartition = references.stream()
                 .collect(Collectors.groupingBy(FileReference::getPartitionId));
+        AtomicInteger partialCount = new AtomicInteger();
+        Map<String, Integer> numberByPartialFilename = new HashMap<>();
         partitionTree.traverseLeavesFirst().forEach(partition -> {
             List<FileReference> partitionFiles = filesByPartition.get(partition.getId());
             if (partitionFiles == null) {
@@ -86,7 +86,9 @@ public class FileReferencePrinter {
                 if (file.onlyContainsDataForThisPartition()) {
                     out.println("in file");
                 } else {
-                    out.println("in partial file " + numberByPartialFilename.get(file.getFilename()));
+                    int partialFileNumber = numberByPartialFilename.computeIfAbsent(
+                            file.getFilename(), name -> partialCount.incrementAndGet());
+                    out.println("in partial file " + partialFileNumber);
                 }
             }
         });
@@ -98,14 +100,4 @@ public class FileReferencePrinter {
                 .sorted(comparing(FileReference::getNumberOfRecords).reversed())
                 .collect(toUnmodifiableList());
     }
-
-    private static Map<String, Integer> numberPartialFiles(List<FileReference> references) {
-        AtomicInteger partialCount = new AtomicInteger();
-        return references.stream()
-                .filter(not(FileReference::onlyContainsDataForThisPartition))
-                .map(FileReference::getFilename).distinct()
-                .map(filename -> Map.entry(filename, partialCount.incrementAndGet()))
-                .collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
-    }
-
 }
