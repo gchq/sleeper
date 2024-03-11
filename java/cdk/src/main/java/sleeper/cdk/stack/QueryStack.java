@@ -29,7 +29,6 @@ import software.amazon.awscdk.services.dynamodb.BillingMode;
 import software.amazon.awscdk.services.dynamodb.ITable;
 import software.amazon.awscdk.services.dynamodb.Table;
 import software.amazon.awscdk.services.iam.Effect;
-import software.amazon.awscdk.services.iam.IGrantable;
 import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.Policy;
 import software.amazon.awscdk.services.iam.PolicyStatement;
@@ -87,7 +86,6 @@ public class QueryStack extends NestedStack {
     public static final String QUERY_LAMBDA_ROLE_ARN = "QueryLambdaRoleArn";
 
     private LambdaCode queryJar;
-    private Queue queryQueriesQueue;
     private IFunction queryExecutorLambda;
     private IFunction leafPartitionQueryLambda;
 
@@ -95,7 +93,8 @@ public class QueryStack extends NestedStack {
             String id,
             InstanceProperties instanceProperties,
             BuiltJars jars,
-            CoreStacks coreStacks) {
+            CoreStacks coreStacks,
+            QueryQueueStack queryQueueStack) {
         super(scope, id);
 
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
@@ -120,9 +119,8 @@ public class QueryStack extends NestedStack {
         instanceProperties.set(QUERY_TRACKER_TABLE_NAME, queryTrackingTable.getTableName());
 
         queryJar = jars.lambdaCode(BuiltJar.QUERY, jarsBucket);
-        queryQueriesQueue = setupQueriesQueryQueue(instanceProperties);
 
-        queryExecutorLambda = setupQueriesQueryLambda(coreStacks, instanceProperties, queryJar, queryQueriesQueue, jarsBucket, queryTrackingTable);
+        queryExecutorLambda = setupQueriesQueryLambda(coreStacks, queryQueueStack, instanceProperties, queryJar, jarsBucket, queryTrackingTable);
         leafPartitionQueryLambda = setupLeafPartitionQueryQueueAndLambda(coreStacks, instanceProperties, queryJar, jarsBucket, queryTrackingTable);
         Utils.addStackTagIfSet(this, instanceProperties);
     }
@@ -161,8 +159,8 @@ public class QueryStack extends NestedStack {
      * @param  queryTrackingTable used to track a query
      * @return                    the lambda created
      */
-    private IFunction setupQueriesQueryLambda(CoreStacks coreStacks, InstanceProperties instanceProperties, LambdaCode queryJar,
-            IQueue queryQueriesQueue, IBucket jarsBucket, ITable queryTrackingTable) {
+    private IFunction setupQueriesQueryLambda(CoreStacks coreStacks, QueryQueueStack queryQueueStack, InstanceProperties instanceProperties, LambdaCode queryJar,
+            IBucket jarsBucket, ITable queryTrackingTable) {
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "query-executor"));
         IFunction lambda = createFunction("QueryExecutorLambda", queryJar, instanceProperties, functionName,
@@ -176,9 +174,9 @@ public class QueryStack extends NestedStack {
                 .batchSize(1)
                 .build();
 
-        lambda.addEventSource(new SqsEventSource(queryQueriesQueue, eventSourceProps));
+        lambda.addEventSource(new SqsEventSource(queryQueueStack.getQueue(), eventSourceProps));
 
-        setPermissionsForLambda(coreStacks, jarsBucket, lambda, queryTrackingTable, queryQueriesQueue);
+        setPermissionsForLambda(coreStacks, jarsBucket, lambda, queryTrackingTable, queryQueueStack.getQueue());
 
         /*
          * Output the role of the lambda as a property so that clients that want the results of queries written
@@ -247,55 +245,6 @@ public class QueryStack extends NestedStack {
         Policy policy = new Policy(this, policyName);
         policy.addStatements(policyStatement);
         Objects.requireNonNull(lambda.getRole()).attachInlinePolicy(policy);
-    }
-
-    /***
-     * Creates the queue used for queries.
-     *
-     * @param  instanceProperties containing configuration details
-     * @return                    the queue to be used for queries
-     */
-    private Queue setupQueriesQueryQueue(InstanceProperties instanceProperties) {
-        String dlQueueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-QueryDLQ");
-        Queue queryQueueForDLs = Queue.Builder
-                .create(this, "QueriesDeadLetterQueue")
-                .queueName(dlQueueName)
-                .build();
-        DeadLetterQueue queryDeadLetterQueue = DeadLetterQueue.builder()
-                .maxReceiveCount(1)
-                .queue(queryQueueForDLs)
-                .build();
-        String queryQueueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-QueriesQueue");
-        Queue queryQueue = Queue.Builder
-                .create(this, "QueriesQueue")
-                .queueName(queryQueueName)
-                .deadLetterQueue(queryDeadLetterQueue)
-                .visibilityTimeout(Duration.seconds(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS)))
-                .build();
-        instanceProperties.set(CdkDefinedInstanceProperty.QUERY_QUEUE_URL, queryQueue.getQueueUrl());
-        instanceProperties.set(CdkDefinedInstanceProperty.QUERY_QUEUE_ARN, queryQueue.getQueueArn());
-        instanceProperties.set(CdkDefinedInstanceProperty.QUERY_DLQ_URL, queryQueueForDLs.getQueueUrl());
-        instanceProperties.set(CdkDefinedInstanceProperty.QUERY_DLQ_ARN, queryQueueForDLs.getQueueArn());
-
-        CfnOutputProps queriesQueueOutputNameProps = new CfnOutputProps.Builder()
-                .value(queryQueue.getQueueName())
-                .exportName(instanceProperties.get(ID) + "-" + QUERY_QUEUE_NAME)
-                .build();
-        new CfnOutput(this, QUERY_QUEUE_NAME, queriesQueueOutputNameProps);
-
-        CfnOutputProps queriesQueueOutputProps = new CfnOutputProps.Builder()
-                .value(queryQueue.getQueueUrl())
-                .exportName(instanceProperties.get(ID) + "-" + QUERY_QUEUE_URL)
-                .build();
-        new CfnOutput(this, QUERY_QUEUE_URL, queriesQueueOutputProps);
-
-        CfnOutputProps queriesDLQueueOutputProps = new CfnOutputProps.Builder()
-                .value(queryQueueForDLs.getQueueUrl())
-                .exportName(instanceProperties.get(ID) + "-" + QUERY_DL_QUEUE_URL)
-                .build();
-        new CfnOutput(this, QUERY_DL_QUEUE_URL, queriesDLQueueOutputProps);
-
-        return queryQueue;
     }
 
     /***
@@ -448,9 +397,5 @@ public class QueryStack extends NestedStack {
 
     public IFunction getLeafPartitionQueryLambda() {
         return leafPartitionQueryLambda;
-    }
-
-    public void grantSendMessages(IGrantable grantable) {
-        queryQueriesQueue.grantSendMessages(grantable);
     }
 }

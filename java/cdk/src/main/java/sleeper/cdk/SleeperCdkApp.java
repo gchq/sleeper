@@ -39,6 +39,7 @@ import sleeper.cdk.stack.IngestStatusStoreStack;
 import sleeper.cdk.stack.ManagedPoliciesStack;
 import sleeper.cdk.stack.PartitionSplittingStack;
 import sleeper.cdk.stack.PropertiesStack;
+import sleeper.cdk.stack.QueryQueueStack;
 import sleeper.cdk.stack.QueryStack;
 import sleeper.cdk.stack.S3StateStoreStack;
 import sleeper.cdk.stack.StateStoreStacks;
@@ -238,20 +239,20 @@ public class SleeperCdkApp extends Stack {
 
         // Stack to execute queries
         if (QUERY_STACK_NAMES.stream().anyMatch(optionalStacks::contains)) {
+            QueryQueueStack queryQueueStack = new QueryQueueStack(this, "QueryQueue", instanceProperties);
             queryStack = new QueryStack(this,
                     "Query",
                     instanceProperties, jars,
-                    coreStacks);
-        }
-
-        // Stack to execute queries using the web socket API
-        if (optionalStacks.contains(WebSocketQueryStack.class.getSimpleName())) {
-            WebSocketQueryStack webSocketQueryStack = new WebSocketQueryStack(this,
-                    "WebSocketQuery",
-                    instanceProperties, jars,
-                    coreStacks);
-            webSocketQueryStack.grantStageApiAccess(queryStack.getQueryExecutorLambda());
-            webSocketQueryStack.grantStageApiAccess(queryStack.getLeafPartitionQueryLambda());
+                    coreStacks, queryQueueStack);
+            // Stack to execute queries using the web socket API
+            if (optionalStacks.contains(WebSocketQueryStack.class.getSimpleName())) {
+                WebSocketQueryStack webSocketQueryStack = new WebSocketQueryStack(this,
+                        "WebSocketQuery",
+                        instanceProperties, jars,
+                        coreStacks, queryQueueStack);
+                webSocketQueryStack.grantStageApiAccess(queryStack.getQueryExecutorLambda());
+                webSocketQueryStack.grantStageApiAccess(queryStack.getLeafPartitionQueryLambda());
+            }
         }
         // Stack for ingest jobs
         if (optionalStacks.contains(IngestStack.class.getSimpleName())) {
