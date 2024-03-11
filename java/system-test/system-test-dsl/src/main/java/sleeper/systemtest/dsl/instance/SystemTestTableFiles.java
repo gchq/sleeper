@@ -53,6 +53,12 @@ public class SystemTestTableFiles {
         }
     }
 
+    public Map<String, AllReferencesToAllFiles> filesByTable() {
+        return instance.streamTableProperties().parallel()
+                .map(this::getFiles)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
     public Map<String, List<FileReference>> referencesByTable() {
         return instance.streamTableProperties().parallel()
                 .map(this::getReferences)
@@ -63,6 +69,17 @@ public class SystemTestTableFiles {
         StateStore stateStore = instance.getStateStore(properties);
         try {
             return entry(properties.get(TABLE_NAME), stateStore.getFileReferences());
+        } catch (StateStoreException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private Map.Entry<String, AllReferencesToAllFiles> getFiles(TableProperties properties) {
+        StateStore stateStore = instance.getStateStore(properties);
+        try {
+            return entry(
+                    properties.get(TABLE_NAME),
+                    stateStore.getAllFilesWithMaxUnreferenced(100));
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
         }
