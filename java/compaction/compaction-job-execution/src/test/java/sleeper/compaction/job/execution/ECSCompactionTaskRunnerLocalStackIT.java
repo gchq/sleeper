@@ -342,7 +342,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
                 tablePropertiesProvider, stateStoreProvider,
                 ObjectFactory.noUserJars(), jobStatusStore, taskId);
         CompactionTask task = new CompactionTask(instanceProperties, PropertiesReloader.neverReload(),
-                new SqsCompactionQueueHandler(sqs, instanceProperties)::receiveFromSqs,
+                new SqsCompactionQueueHandler(sqs, instanceProperties),
                 compactSortedFiles, taskStatusStore, taskId);
         return task;
     }

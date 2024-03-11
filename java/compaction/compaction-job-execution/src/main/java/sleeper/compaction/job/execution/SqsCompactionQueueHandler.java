@@ -39,7 +39,7 @@ import static sleeper.configuration.properties.instance.CompactionProperty.COMPA
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_WAIT_TIME_IN_SECONDS;
 
-public class SqsCompactionQueueHandler {
+public class SqsCompactionQueueHandler implements CompactionTask.MessageReceiver {
     private static final Logger LOGGER = LoggerFactory.getLogger(SqsCompactionQueueHandler.class);
 
     private final AmazonSQS sqsClient;
@@ -50,7 +50,7 @@ public class SqsCompactionQueueHandler {
         this.instanceProperties = instanceProperties;
     }
 
-    public Optional<MessageHandle> receiveFromSqs() throws IOException {
+    public Optional<MessageHandle> receiveMessage() throws IOException {
         int waitTimeSeconds = instanceProperties.getInt(COMPACTION_TASK_WAIT_TIME_IN_SECONDS);
         int keepAliveFrequency = instanceProperties.getInt(COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS);
         String sqsJobQueueUrl = instanceProperties.get(COMPACTION_JOB_QUEUE_URL);

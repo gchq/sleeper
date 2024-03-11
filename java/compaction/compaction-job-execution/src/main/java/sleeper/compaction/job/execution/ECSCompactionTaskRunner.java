@@ -89,7 +89,7 @@ public class ECSCompactionTaskRunner {
                 tablePropertiesProvider, stateStoreProvider,
                 objectFactory, jobStatusStore, taskId);
         CompactionTask task = new CompactionTask(instanceProperties, propertiesReloader,
-                new SqsCompactionQueueHandler(sqsClient, instanceProperties)::receiveFromSqs,
+                new SqsCompactionQueueHandler(sqsClient, instanceProperties),
                 compactSortedFiles, taskStatusStore, taskId);
         task.run();
 
