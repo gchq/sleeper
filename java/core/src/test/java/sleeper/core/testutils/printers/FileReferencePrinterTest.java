@@ -38,6 +38,7 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFiles;
 import static sleeper.core.statestore.FilesReportTestHelper.activeFiles;
 import static sleeper.core.statestore.FilesReportTestHelper.noFiles;
+import static sleeper.core.statestore.FilesReportTestHelper.readyForGCFiles;
 import static sleeper.core.statestore.SplitFileReference.referenceForChildPartition;
 
 public class FileReferencePrinterTest {
@@ -58,10 +59,10 @@ public class FileReferencePrinterTest {
             // When
             FileReferenceFactory fileReferenceFactory = fileReferenceFactory();
             String printed = FileReferencePrinter.printFiles(partitions.buildTree(), activeFiles(
-                    fileReferenceFactory.partitionFile("L", "l1.parquet", 10),
-                    fileReferenceFactory.partitionFile("L", "l2.parquet", 20),
-                    fileReferenceFactory.partitionFile("R", "r1.parquet", 30),
-                    fileReferenceFactory.partitionFile("R", "r2.parquet", 40)));
+                    fileReferenceFactory.partitionFile("L", "l1.parquet", 40),
+                    fileReferenceFactory.partitionFile("L", "l2.parquet", 30),
+                    fileReferenceFactory.partitionFile("R", "r1.parquet", 20),
+                    fileReferenceFactory.partitionFile("R", "r2.parquet", 10)));
 
             // Then see approved output
             Approvals.verify(printed);
@@ -72,8 +73,8 @@ public class FileReferencePrinterTest {
             // Given
             partitions.rootFirst("root")
                     .splitToNewChildren("root", "L", "R", "row-50");
-            FileReference file1 = fileReferenceFactory().rootFile("a.parquet", 100);
-            FileReference file2 = fileReferenceFactory().rootFile("b.parquet", 200);
+            FileReference file1 = fileReferenceFactory().rootFile("a.parquet", 200);
+            FileReference file2 = fileReferenceFactory().rootFile("b.parquet", 100);
 
             // When
             String printed = FileReferencePrinter.printFiles(partitions.buildTree(), activeFiles(
@@ -91,9 +92,9 @@ public class FileReferencePrinterTest {
             // Given
             partitions.rootFirst("root")
                     .splitToNewChildren("root", "L", "R", "row-50");
-            FileReference leftFile = fileReferenceFactory().partitionFile("L", 100);
+            FileReference leftFile = fileReferenceFactory().partitionFile("L", 300);
             FileReference rightFile = fileReferenceFactory().partitionFile("R", 200);
-            FileReference splitFile = fileReferenceFactory().rootFile("a.parquet", 300);
+            FileReference splitFile = fileReferenceFactory().rootFile("a.parquet", 100);
 
             // When
             String printed = FileReferencePrinter.printFiles(partitions.buildTree(), activeFiles(
@@ -333,17 +334,13 @@ public class FileReferencePrinterTest {
         }
 
         @Test
-        void shouldPrintFileSplitAcrossPartitions() {
+        void shouldPrintOnlyUnreferencedFiles() {
             // Given
-            partitions.rootFirst("root")
-                    .splitToNewChildren("root", "L", "R", "row-50");
+            partitions.singlePartition("root");
 
             // When
-            FileReference rootFile = fileReferenceFactory().rootFile(20);
             String printed = FileReferencePrinter.printFiles(partitions.buildTree(),
-                    activeFiles(
-                            referenceForChildPartition(rootFile, "L"),
-                            referenceForChildPartition(rootFile, "R")));
+                    readyForGCFiles("oldFile1.parquet", "oldFile2.parquet"));
 
             // Then see approved output
             Approvals.verify(printed);
