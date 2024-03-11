@@ -174,7 +174,7 @@
         <!-- Maven plugins -->
         <checkstyle.plugin.version>3.2.0</checkstyle.plugin.version>
         <release.plugin.version>3.0.0-M7</release.plugin.version>
-        <surefire.plugin.version>3.1.2</surefire.plugin.version>
+        <surefire.plugin.version>3.2.5</surefire.plugin.version>
         <failsafe.plugin.version>${surefire.plugin.version}</failsafe.plugin.version>
         <surefire.report.plugin.version>${surefire.plugin.version}</surefire.report.plugin.version>
         <shade.plugin.version>3.5.2</shade.plugin.version>
