@@ -165,7 +165,8 @@ public class CompactionTaskTest {
             instanceProperties.setNumber(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS, 3);
             Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
-                    Instant.parse("2024-02-22T13:50:01Z"), // Job completed
+                    Instant.parse("2024-02-22T13:50:01Z"), // Job started
+                    Instant.parse("2024-02-22T13:50:02Z"), // Job completed
                     Instant.parse("2024-02-22T13:50:05Z"))); // Idle time check with empty queue and finish
             CompactionJob job = createJobOnQueue("job1");
 
@@ -186,6 +187,7 @@ public class CompactionTaskTest {
             Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:01Z"), // First check
+                    Instant.parse("2024-02-22T13:50:02Z"), // Job started
                     Instant.parse("2024-02-22T13:50:02Z"), // Job completed
                     Instant.parse("2024-02-22T13:50:06Z"))); // Second check + finish
             CompactionJob job = createJob("job1");
@@ -213,7 +215,8 @@ public class CompactionTaskTest {
             Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:01Z"), // First check
-                    Instant.parse("2024-02-22T13:50:02Z"), // Job completed
+                    Instant.parse("2024-02-22T13:50:02Z"), // Job started
+                    Instant.parse("2024-02-22T13:50:03Z"), // Job completed
                     Instant.parse("2024-02-22T13:50:04Z"), // Second check
                     Instant.parse("2024-02-22T13:50:06Z"))); // Third check + finish
             CompactionJob job = createJob("job1");
@@ -293,7 +296,7 @@ public class CompactionTaskTest {
                     Instant.parse("2024-02-22T13:50:01Z"),
                     Instant.parse("2024-02-22T13:50:02Z"), 10L, 10L);
             runTask("test-task-1", processJobs(
-                    jobSucceeds(jobSummary)),
+                    jobSucceeds(jobSummary.getRecordsProcessed())),
                     times::poll);
 
             // Then
@@ -328,8 +331,8 @@ public class CompactionTaskTest {
                     Instant.parse("2024-02-22T13:50:03Z"),
                     Instant.parse("2024-02-22T13:50:04Z"), 5L, 5L);
             runTask("test-task-1", processJobs(
-                    jobSucceeds(job1Summary),
-                    jobSucceeds(job2Summary)),
+                    jobSucceeds(job1Summary.getRecordsProcessed()),
+                    jobSucceeds(job2Summary.getRecordsProcessed())),
                     times::poll);
 
             // Then
@@ -505,16 +508,16 @@ public class CompactionTaskTest {
                 .toArray(ProcessJob[]::new));
     }
 
-    private ProcessJob jobSucceeds(RecordsProcessedSummary summary) {
+    private ProcessJob jobSucceeds(RecordsProcessed summary) {
         return new ProcessJob(true, summary);
     }
 
     private ProcessJob jobSucceeds() {
-        return new ProcessJob(true, 10L, DEFAULT_START_TIME, DEFAULT_DURATION);
+        return new ProcessJob(true, 10L);
     }
 
     private ProcessJob jobFails() {
-        return new ProcessJob(false, 0L, DEFAULT_START_TIME, DEFAULT_DURATION);
+        return new ProcessJob(false, 0L);
     }
 
     private CompactionRunner processNoJobs() {
@@ -536,13 +539,13 @@ public class CompactionTaskTest {
 
     private class ProcessJob {
         private final boolean succeed;
-        private final RecordsProcessedSummary summary;
+        private final RecordsProcessed summary;
 
-        ProcessJob(boolean succeed, long records, Instant startTime, Duration duration) {
-            this(succeed, new RecordsProcessedSummary(new RecordsProcessed(records, records), startTime, duration));
+        ProcessJob(boolean succeed, long records) {
+            this(succeed, new RecordsProcessed(records, records));
         }
 
-        ProcessJob(boolean succeed, RecordsProcessedSummary summary) {
+        ProcessJob(boolean succeed, RecordsProcessed summary) {
             this.succeed = succeed;
             this.summary = summary;
         }

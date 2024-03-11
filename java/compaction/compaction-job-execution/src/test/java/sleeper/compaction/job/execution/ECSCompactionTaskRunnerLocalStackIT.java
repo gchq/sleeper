@@ -341,7 +341,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
     private CompactionTask createTask(String taskId, StateStoreProvider stateStoreProvider) {
         CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties,
                 tablePropertiesProvider, stateStoreProvider,
-                ObjectFactory.noUserJars(), jobStatusStore, taskId);
+                ObjectFactory.noUserJars());
         CompactionTask task = new CompactionTask(instanceProperties, PropertiesReloader.neverReload(), Instant::now,
                 new SqsCompactionQueueHandler(sqs, instanceProperties)::receiveFromSqs,
                 job -> compactSortedFiles.run(job), jobStatusStore, taskStatusStore, taskId);

@@ -26,6 +26,7 @@ import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.util.LoggedDuration;
 
@@ -114,12 +115,13 @@ public class CompactionTask {
                 jobStatusStore.jobStarted(job, jobStartTime, taskId);
                 try {
                     propertiesReloader.reloadIfNeeded();
-                    RecordsProcessedSummary summary = compactor.compact(job);
+                    RecordsProcessed recordsProcessed = compactor.compact(job);
+                    lastActiveTime = timeSupplier.get();
+                    RecordsProcessedSummary summary = new RecordsProcessedSummary(recordsProcessed, jobStartTime, lastActiveTime);
                     summaryConsumer.accept(summary);
                     message.completed();
                     totalNumberOfMessagesProcessed++;
                     numConsecutiveFailures = 0;
-                    lastActiveTime = timeSupplier.get();
                     // Print summary
                     LOGGER.info("Compaction job {}: finished at {}", id, lastActiveTime);
                     METRICS_LOGGER.info("Compaction job {}: compaction run time = {}", id, summary.getDurationInSeconds());
@@ -144,7 +146,7 @@ public class CompactionTask {
 
     @FunctionalInterface
     interface CompactionRunner {
-        RecordsProcessedSummary compact(CompactionJob job) throws Exception;
+        RecordsProcessed compact(CompactionJob job) throws Exception;
     }
 
     interface MessageHandle extends AutoCloseable {
