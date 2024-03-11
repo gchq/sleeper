@@ -1,3 +1,5 @@
+Unreferenced files: 0
+Referenced files: 2
 File references: 4
 Partition at L:
 50 records (approx) in partial file
