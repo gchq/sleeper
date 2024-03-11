@@ -224,4 +224,21 @@
         <packageUrl regex="true">^pkg:maven/software\.amazon\.ion/ion\-java@.*$</packageUrl>
         <cve>CVE-2024-21634</cve>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+        XNIO is a dependency for Hadoop, used by Kerby's kerb-admin module, which is a transitive dependency for Hadoop
+        authentication. At time of writing, there's no version of XNIO without this problem.
+
+        Since HDFS is not used, it doesn't seem like this should be needed as a dependency. We can look at removing this
+        from the classpath.
+
+        We're using Hadoop for our integration with Parquet, and for bulk import jobs on Spark. The Parquet integration
+        only talks to S3 in practice, although the Hadoop integration is designed for HDFS, which may be why this is a
+        dependency. Spark also seems to only use Hadoop authentication when talking to HDFS:
+
+        https://spark.apache.org/docs/latest/security.html#kerberos
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.jboss\.xnio/xnio\-api@.*$</packageUrl>
+        <vulnerabilityName>CVE-2023-5685</vulnerabilityName>
+    </suppress>
 </suppressions>
