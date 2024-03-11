@@ -41,7 +41,6 @@ import sleeper.job.common.CommonJobUtils;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
-import java.time.Instant;
 import java.util.UUID;
 
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
@@ -57,7 +56,7 @@ public class ECSCompactionTaskRunner {
     private ECSCompactionTaskRunner() {
     }
 
-    public static void main(String[] args) throws InterruptedException, IOException, ObjectFactoryException {
+    public static void main(String[] args) throws IOException, ObjectFactoryException {
         if (1 != args.length) {
             System.err.println("Error: must have 1 argument (config bucket), got " + args.length + " arguments (" + StringUtils.join(args, ',') + ")");
             System.exit(1);
@@ -89,9 +88,9 @@ public class ECSCompactionTaskRunner {
         CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties,
                 tablePropertiesProvider, stateStoreProvider,
                 objectFactory, jobStatusStore, taskId);
-        CompactionTask task = new CompactionTask(instanceProperties, propertiesReloader, Instant::now,
-                new SqsCompactionQueueHandler(sqsClient, instanceProperties)::receiveFromSqs,
-                job -> compactSortedFiles.run(job), taskStatusStore, taskId);
+        CompactionTask task = new CompactionTask(instanceProperties, propertiesReloader,
+                new SqsCompactionQueueHandler(sqsClient, instanceProperties),
+                compactSortedFiles, taskStatusStore, taskId);
         task.run();
 
         sqsClient.shutdown();

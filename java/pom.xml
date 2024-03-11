@@ -123,7 +123,7 @@
         <commons-text.version>1.10.0</commons-text.version>
         <janino.version>3.1.9</janino.version>
         <commons-net.version>3.9.0</commons-net.version>
-        <jackson.version>2.15.2</jackson.version>
+        <jackson.version>2.16.2</jackson.version>
         <!-- Trino integration uses a different version of JJWT, this is the version used in the build module -->
         <jjwt.build.version>0.12.5</jjwt.build.version>
         <facebook.collections.version>0.1.32</facebook.collections.version>
@@ -154,7 +154,7 @@
         <jakarta.xml.bind.version>2.3.3</jakarta.xml.bind.version>
         <jungrapht.version>1.4</jungrapht.version>
         <!-- Testing -->
-        <junit.version>5.10.1</junit.version>
+        <junit.version>5.10.2</junit.version>
         <junit.platform.version>1.10.1</junit.platform.version>
         <mockito.version>4.11.0</mockito.version>
         <testcontainers.version>1.19.0</testcontainers.version>
@@ -174,10 +174,10 @@
         <!-- Maven plugins -->
         <checkstyle.plugin.version>3.2.0</checkstyle.plugin.version>
         <release.plugin.version>3.0.0-M7</release.plugin.version>
-        <surefire.plugin.version>3.1.2</surefire.plugin.version>
+        <surefire.plugin.version>3.2.5</surefire.plugin.version>
         <failsafe.plugin.version>${surefire.plugin.version}</failsafe.plugin.version>
         <surefire.report.plugin.version>${surefire.plugin.version}</surefire.report.plugin.version>
-        <shade.plugin.version>3.4.1</shade.plugin.version>
+        <shade.plugin.version>3.5.2</shade.plugin.version>
         <assembly.plugin.version>3.3.0</assembly.plugin.version>
         <jar.plugin.version>3.3.0</jar.plugin.version>
         <compiler.plugin.version>3.10.1</compiler.plugin.version>
