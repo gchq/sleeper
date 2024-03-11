@@ -52,7 +52,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import static sleeper.cdk.Utils.createLambdaLogGroup;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_QUEUE_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_QUEUE_ARN;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
 public class WebSocketQueryStack extends NestedStack {
@@ -70,7 +70,7 @@ public class WebSocketQueryStack extends NestedStack {
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
         LambdaCode queryJar = jars.lambdaCode(BuiltJar.QUERY, jarsBucket);
         setupWebSocketApi(instanceProperties, queryJar, coreStacks);
-        IQueue queryQueue = Queue.fromQueueArn(scope, id, instanceProperties.get(QUERY_QUEUE_URL));
+        IQueue queryQueue = Queue.fromQueueArn(this, id, instanceProperties.get(QUERY_QUEUE_ARN));
         queryQueue.grantSendMessages(webSocketApiHandler);
         Utils.addStackTagIfSet(this, instanceProperties);
     }
