@@ -44,14 +44,6 @@ public class FileReferencePrinter {
                 table -> printFiles(partitionsByTable.get(table), filesByTable.get(table)));
     }
 
-    public static String printFiles(PartitionTree partitionTree, List<FileReference> files) {
-        ToStringPrintStream printer = new ToStringPrintStream();
-        PrintWriter out = printer.getPrintWriter();
-        printFiles(partitionTree, files, out);
-        out.flush();
-        return printer.toString();
-    }
-
     public static String printFiles(PartitionTree tree, AllReferencesToAllFiles files) {
         ToStringPrintStream printer = new ToStringPrintStream();
         PrintWriter out = printer.getPrintWriter();
