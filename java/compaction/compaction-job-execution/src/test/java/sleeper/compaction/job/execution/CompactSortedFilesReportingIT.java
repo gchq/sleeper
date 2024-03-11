@@ -60,7 +60,7 @@ class CompactSortedFilesReportingIT extends CompactSortedFilesTestBase {
         assignJobIdToInputFiles(stateStore, compactionJob);
 
         // When
-        RecordsProcessedSummary summary = createCompactSortedFiles(schema, compactionJob, jobStatusStore).run(compactionJob);
+        RecordsProcessedSummary summary = createCompactSortedFiles(schema, compactionJob, jobStatusStore).compact(compactionJob);
 
         // Then
         InOrder order = Mockito.inOrder(jobStatusStore);
