@@ -53,7 +53,6 @@ import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompacti
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS;
-import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
 
 public class CompactionTaskTest {
     private static final String DEFAULT_TABLE_ID = "test-table-id";
@@ -289,14 +288,15 @@ public class CompactionTaskTest {
             CompactionJob job = createJobOnQueue("job1");
 
             // When
-            RecordsProcessedSummary jobSummary = summary(
-                    Instant.parse("2024-02-22T13:50:01Z"),
-                    Instant.parse("2024-02-22T13:50:02Z"), 10L, 10L);
+            RecordsProcessed recordsProcessed = new RecordsProcessed(10L, 10L);
             runTask("test-task-1", processJobs(
-                    jobSucceeds(jobSummary.getRecordsProcessed())),
+                    jobSucceeds(recordsProcessed)),
                     times::poll);
 
             // Then
+            RecordsProcessedSummary jobSummary = new RecordsProcessedSummary(recordsProcessed,
+                    Instant.parse("2024-02-22T13:50:01Z"),
+                    Instant.parse("2024-02-22T13:50:02Z"));
             assertThat(taskStore.getAllTasks()).containsExactly(
                     finishedCompactionTask("test-task-1",
                             Instant.parse("2024-02-22T13:50:00Z"),
@@ -321,18 +321,20 @@ public class CompactionTaskTest {
             CompactionJob job2 = createJobOnQueue("job2");
 
             // When
-            RecordsProcessedSummary job1Summary = summary(
-                    Instant.parse("2024-02-22T13:50:01Z"),
-                    Instant.parse("2024-02-22T13:50:02Z"), 10L, 10L);
-            RecordsProcessedSummary job2Summary = summary(
-                    Instant.parse("2024-02-22T13:50:03Z"),
-                    Instant.parse("2024-02-22T13:50:04Z"), 5L, 5L);
+            RecordsProcessed job1RecordsProcessed = new RecordsProcessed(10L, 10L);
+            RecordsProcessed job2RecordsProcessed = new RecordsProcessed(5L, 5L);
             runTask("test-task-1", processJobs(
-                    jobSucceeds(job1Summary.getRecordsProcessed()),
-                    jobSucceeds(job2Summary.getRecordsProcessed())),
+                    jobSucceeds(job1RecordsProcessed),
+                    jobSucceeds(job2RecordsProcessed)),
                     times::poll);
 
             // Then
+            RecordsProcessedSummary job1Summary = new RecordsProcessedSummary(job1RecordsProcessed,
+                    Instant.parse("2024-02-22T13:50:01Z"),
+                    Instant.parse("2024-02-22T13:50:02Z"));
+            RecordsProcessedSummary job2Summary = new RecordsProcessedSummary(job2RecordsProcessed,
+                    Instant.parse("2024-02-22T13:50:03Z"),
+                    Instant.parse("2024-02-22T13:50:04Z"));
             assertThat(taskStore.getAllTasks()).containsExactly(
                     finishedCompactionTask("test-task-1",
                             Instant.parse("2024-02-22T13:50:00Z"),
