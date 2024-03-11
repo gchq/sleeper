@@ -92,6 +92,8 @@
         <json-smart.version>2.4.11</json-smart.version>
         <!-- Hadoop declares an old version of Kerby with vulnerabilities. Managed from 1.0.1. -->
         <kerby.version>2.0.3</kerby.version>
+        <!-- Hadoop declares an old version of XNIO with vulnerabilities. Managed from 3.8.8.Final. -->
+        <xnio.version>3.8.13.Final</xnio.version>
         <!-- Spark declares an old version of OkHttp with vulnerabilities. Managed from 4.10.0. -->
         <okhttp3.version>4.11.0</okhttp3.version>
         <!--
@@ -123,7 +125,7 @@
         <commons-net.version>3.9.0</commons-net.version>
         <jackson.version>2.15.2</jackson.version>
         <!-- Trino integration uses a different version of JJWT, this is the version used in the build module -->
-        <jjwt.build.version>0.12.3</jjwt.build.version>
+        <jjwt.build.version>0.12.5</jjwt.build.version>
         <facebook.collections.version>0.1.32</facebook.collections.version>
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
         <guava.version>32.0.1-jre</guava.version>
@@ -144,7 +146,7 @@
         <!-- Build module uses Jersey for communicating with GitHub API -->
         <jersey.version>2.38</jersey.version>
         <!-- Netty version is managed because S3, Athena and Arrow depend on it but use incompatible versions -->
-        <netty.version>4.1.94.Final</netty.version>
+        <netty.version>4.1.107.Final</netty.version>
         <!-- Jetty and Jakarta versions are managed because WireMock and Hadoop use different versions. -->
         <!-- We want to avoid mixing them but they should be compatible. -->
         <jetty.version>9.4.53.v20231009</jetty.version>
@@ -489,6 +491,11 @@
                 <groupId>org.apache.kerby</groupId>
                 <artifactId>kerb-simplekdc</artifactId>
                 <version>${kerby.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.xnio</groupId>
+                <artifactId>xnio-api</artifactId>
+                <version>${xnio.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.squareup.okhttp3</groupId>

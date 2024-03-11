@@ -61,6 +61,10 @@ Apache Kerby (org.apache.kerby:*:2.0.3):
 
 - Apache License, Version 2.0
 
+XNIO (org.jboss.xnio:xnio-api:3.8.13.Final):
+
+- Apache License, Version 2.0
+
 Kotlin Stdlib (org.jetbrains.kotlin:*:1.6.20):
 
 - Apache License, Version 2.0
