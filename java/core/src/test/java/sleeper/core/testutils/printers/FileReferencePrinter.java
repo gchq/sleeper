@@ -54,7 +54,7 @@ public class FileReferencePrinter {
         return printer.toString();
     }
 
-    public static void printFiles(PartitionTree partitionTree, List<FileReference> files, PrintWriter out) {
+    private static void printFiles(PartitionTree partitionTree, List<FileReference> files, PrintWriter out) {
         out.println("File references: " + files.size());
         Map<String, List<FileReference>> filesByPartition = files.stream()
                 .collect(Collectors.groupingBy(FileReference::getPartitionId));
