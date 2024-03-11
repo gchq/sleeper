@@ -22,12 +22,14 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.execution.CompactionTask.CompactionRunner;
 import sleeper.compaction.job.execution.CompactionTask.MessageHandle;
 import sleeper.compaction.job.execution.CompactionTask.MessageReceiver;
 import sleeper.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusStore;
+import sleeper.compaction.testutils.InMemoryCompactionJobStatusStore;
 import sleeper.compaction.testutils.InMemoryCompactionTaskStatusStore;
 import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -61,6 +63,7 @@ public class CompactionTaskTest {
     private final Queue<CompactionJob> jobsOnQueue = new LinkedList<>();
     private final List<CompactionJob> successfulJobs = new ArrayList<>();
     private final List<CompactionJob> failedJobs = new ArrayList<>();
+    private final CompactionJobStatusStore jobStore = new InMemoryCompactionJobStatusStore();
     private final CompactionTaskStatusStore taskStore = new InMemoryCompactionTaskStatusStore();
 
     @BeforeEach
@@ -269,10 +272,10 @@ public class CompactionTaskTest {
     }
 
     @Nested
-    @DisplayName("Update task status store")
-    class UpdateTaskStatusStore {
+    @DisplayName("Update status stores")
+    class UpdateStatusStores {
         @Test
-        void shouldSaveTaskWhenOneJobSucceeds() throws Exception {
+        void shouldSaveTaskAndJobWhenOneJobSucceeds() throws Exception {
             // Given
             Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
@@ -289,17 +292,15 @@ public class CompactionTaskTest {
                     times::poll);
 
             // Then
-            assertThat(taskStore.getAllTasks())
-                    .containsExactly(CompactionTaskStatus.builder()
-                            .startTime(Instant.parse("2024-02-22T13:50:00Z"))
-                            .taskId("test-task-1")
-                            .finished(Instant.parse("2024-02-22T13:50:05Z"),
-                                    withJobSummaries(jobSummary))
-                            .build());
+            assertThat(taskStore.getAllTasks()).containsExactly(
+                    finishedCompactionTask("test-task-1",
+                            Instant.parse("2024-02-22T13:50:00Z"),
+                            Instant.parse("2024-02-22T13:50:05Z"),
+                            jobSummary));
         }
 
         @Test
-        void shouldSaveTaskWhenMultipleJobsSucceed() throws Exception {
+        void shouldSaveTaskAndJobsWhenMultipleJobsSucceed() throws Exception {
             // Given
             Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
@@ -322,17 +323,15 @@ public class CompactionTaskTest {
                     times::poll);
 
             // Then
-            assertThat(taskStore.getAllTasks())
-                    .containsExactly(CompactionTaskStatus.builder()
-                            .startTime(Instant.parse("2024-02-22T13:50:00Z"))
-                            .taskId("test-task-1")
-                            .finished(Instant.parse("2024-02-22T13:50:05Z"),
-                                    withJobSummaries(job1Summary, job2Summary))
-                            .build());
+            assertThat(taskStore.getAllTasks()).containsExactly(
+                    finishedCompactionTask("test-task-1",
+                            Instant.parse("2024-02-22T13:50:00Z"),
+                            Instant.parse("2024-02-22T13:50:05Z"),
+                            job1Summary, job2Summary));
         }
 
         @Test
-        void shouldSaveTaskWhenOneJobFails() throws Exception {
+        void shouldSaveTaskAndJobWhenOneJobFails() throws Exception {
             // Given
             Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
@@ -343,12 +342,10 @@ public class CompactionTaskTest {
             runTask("test-task-1", processJobs(jobFails()), times::poll);
 
             // Then
-            assertThat(taskStore.getAllTasks())
-                    .containsExactly(CompactionTaskStatus.builder()
-                            .startTime(Instant.parse("2024-02-22T13:50:00Z"))
-                            .taskId("test-task-1")
-                            .finished(Instant.parse("2024-02-22T13:50:05Z"), noJobSummaries())
-                            .build());
+            assertThat(taskStore.getAllTasks()).containsExactly(
+                    finishedCompactionTask("test-task-1",
+                            Instant.parse("2024-02-22T13:50:00Z"),
+                            Instant.parse("2024-02-22T13:50:05Z")));
         }
 
         @Test
@@ -362,22 +359,24 @@ public class CompactionTaskTest {
             runTask("test-task-1", processNoJobs(), times::poll);
 
             // Then
-            assertThat(taskStore.getAllTasks())
-                    .containsExactly(CompactionTaskStatus.builder()
-                            .startTime(Instant.parse("2024-02-22T13:50:00Z"))
-                            .taskId("test-task-1")
-                            .finished(Instant.parse("2024-02-22T13:50:05Z"), noJobSummaries())
-                            .build());
-        }
-
-        private CompactionTaskFinishedStatus.Builder noJobSummaries() {
-            return withJobSummaries();
+            assertThat(taskStore.getAllTasks()).containsExactly(
+                    finishedCompactionTask("test-task-1",
+                            Instant.parse("2024-02-22T13:50:00Z"),
+                            Instant.parse("2024-02-22T13:50:05Z")));
         }
 
         private CompactionTaskFinishedStatus.Builder withJobSummaries(RecordsProcessedSummary... summaries) {
             CompactionTaskFinishedStatus.Builder taskFinishedBuilder = CompactionTaskFinishedStatus.builder();
             Stream.of(summaries).forEach(taskFinishedBuilder::addJobSummary);
             return taskFinishedBuilder;
+        }
+
+        private CompactionTaskStatus finishedCompactionTask(String taskId, Instant startTime, Instant finishTime, RecordsProcessedSummary... summaries) {
+            return CompactionTaskStatus.builder()
+                    .startTime(startTime)
+                    .taskId("test-task-1")
+                    .finished(finishTime, withJobSummaries(summaries))
+                    .build();
         }
     }
 
@@ -406,7 +405,7 @@ public class CompactionTaskTest {
             Supplier<Instant> timeSupplier,
             String taskId) throws Exception {
         new CompactionTask(instanceProperties, PropertiesReloader.neverReload(), timeSupplier, messageReceiver,
-                compactor, taskStore, taskId)
+                compactor, jobStore, taskStore, taskId)
                 .run();
     }
 

@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusStore;
@@ -49,20 +50,23 @@ public class CompactionTask {
     private final Duration maxIdleTime;
     private final MessageReceiver messageReceiver;
     private final CompactionRunner compactor;
+    private final CompactionJobStatusStore jobStatusStore;
     private final CompactionTaskStatusStore taskStatusStore;
     private final String taskId;
     private final PropertiesReloader propertiesReloader;
     private int numConsecutiveFailures = 0;
     private int totalNumberOfMessagesProcessed = 0;
 
-    public CompactionTask(InstanceProperties instanceProperties, PropertiesReloader propertiesReloader, Supplier<Instant> timeSupplier,
-            MessageReceiver messageReceiver, CompactionRunner compactor, CompactionTaskStatusStore taskStore, String taskId) {
+    public CompactionTask(InstanceProperties instanceProperties, PropertiesReloader propertiesReloader,
+            Supplier<Instant> timeSupplier, MessageReceiver messageReceiver, CompactionRunner compactor,
+            CompactionJobStatusStore jobStatusStore, CompactionTaskStatusStore taskStore, String taskId) {
         maxIdleTime = Duration.ofSeconds(instanceProperties.getInt(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS));
         maxConsecutiveFailures = instanceProperties.getInt(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES);
         this.propertiesReloader = propertiesReloader;
         this.timeSupplier = timeSupplier;
         this.messageReceiver = messageReceiver;
         this.compactor = compactor;
+        this.jobStatusStore = jobStatusStore;
         this.taskStatusStore = taskStore;
         this.taskId = taskId;
     }
