@@ -35,7 +35,6 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -60,8 +59,6 @@ public class CompactionTaskTest {
     private static final String DEFAULT_TABLE_ID = "test-table-id";
     private static final String DEFAULT_TASK_ID = "test-task-id";
     private static final Instant DEFAULT_CREATED_TIME = Instant.parse("2024-03-04T10:50:00Z");
-    private static final Instant DEFAULT_START_TIME = Instant.parse("2024-03-04T11:00:00Z");
-    private static final Duration DEFAULT_DURATION = Duration.ofSeconds(5);
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Queue<CompactionJob> jobsOnQueue = new LinkedList<>();
