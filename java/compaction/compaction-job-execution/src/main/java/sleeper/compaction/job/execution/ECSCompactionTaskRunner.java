@@ -41,7 +41,6 @@ import sleeper.job.common.CommonJobUtils;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
-import java.time.Instant;
 import java.util.UUID;
 
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
@@ -89,7 +88,7 @@ public class ECSCompactionTaskRunner {
         CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties,
                 tablePropertiesProvider, stateStoreProvider,
                 objectFactory, jobStatusStore, taskId);
-        CompactionTask task = new CompactionTask(instanceProperties, propertiesReloader, Instant::now,
+        CompactionTask task = new CompactionTask(instanceProperties, propertiesReloader,
                 new SqsCompactionQueueHandler(sqsClient, instanceProperties)::receiveFromSqs,
                 job -> compactSortedFiles.run(job), taskStatusStore, taskId);
         task.run();
