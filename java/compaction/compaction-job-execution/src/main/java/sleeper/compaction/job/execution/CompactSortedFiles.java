@@ -81,11 +81,6 @@ public class CompactSortedFiles {
     }
 
     public RecordsProcessed run(CompactionJob compactionJob) throws IOException, IteratorException, StateStoreException {
-        RecordsProcessed recordsProcessed = compact(compactionJob);
-        return recordsProcessed;
-    }
-
-    private RecordsProcessed compact(CompactionJob compactionJob) throws IOException, IteratorException, StateStoreException {
         TableProperties tableProperties = tablePropertiesProvider.getById(compactionJob.getTableId());
         Schema schema = tableProperties.getSchema();
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
