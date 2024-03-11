@@ -123,7 +123,7 @@
         <commons-text.version>1.10.0</commons-text.version>
         <janino.version>3.1.9</janino.version>
         <commons-net.version>3.9.0</commons-net.version>
-        <jackson.version>2.15.2</jackson.version>
+        <jackson.version>2.16.2</jackson.version>
         <!-- Trino integration uses a different version of JJWT, this is the version used in the build module -->
         <jjwt.build.version>0.12.5</jjwt.build.version>
         <facebook.collections.version>0.1.32</facebook.collections.version>
