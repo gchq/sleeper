@@ -23,6 +23,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,8 +35,6 @@ import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
-import sleeper.core.iterator.IteratorException;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.impl.partitionfilewriter.AsyncS3PartitionFileWriterFactory;
 import sleeper.ingest.job.status.IngestJobStatusStore;
@@ -46,22 +45,25 @@ import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreProvider;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.util.UUID;
 
 import static sleeper.configuration.properties.instance.IngestProperty.S3A_INPUT_FADVISE;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
-public class ECSIngestTask {
-    private ECSIngestTask() {
+/**
+ * Executes an {@link IngestTask}, delegating the running of ingest jobs to {@link IngestJobRunner},
+ * and the processing of SQS messages to {@link IngestJobQueueConsumer}.
+ */
+public class ECSIngestTaskRunner {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ECSIngestTaskRunner.class);
+
+    private ECSIngestTaskRunner() {
     }
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ECSIngestTask.class);
-
-    public static void main(String[] args) throws IOException, StateStoreException, IteratorException, ObjectFactoryException {
+    public static void main(String[] args) throws ObjectFactoryException {
         if (1 != args.length) {
-            System.err.println("Error: must have 1 argument (s3Bucket)");
+            System.err.println("Error: must have 1 argument (config bucket), got " + args.length + " arguments (" + StringUtils.join(args, ',') + ")");
             System.exit(1);
         }
 
@@ -91,39 +93,27 @@ public class ECSIngestTask {
         LOGGER.info("Shut down sqsClient");
         dynamoDBClient.shutdown();
         LOGGER.info("Shut down dynamoDBClient");
-        LOGGER.info("IngestFromIngestJobsQueueRunner total run time = {}", LoggedDuration.withFullOutput(startTime, Instant.now()));
+        cloudWatchClient.shutdown();
+        LOGGER.info("Shut down cloudWatchClient");
+        LOGGER.info("Total run time = {}", LoggedDuration.withFullOutput(startTime, Instant.now()));
     }
 
-    public static IngestTask createIngestTask(ObjectFactory objectFactory,
-                                              InstanceProperties instanceProperties,
-                                              String localDir,
-                                              String taskId,
-                                              AmazonS3 s3Client,
-                                              AmazonDynamoDB dynamoDBClient,
-                                              AmazonSQS sqsClient,
-                                              AmazonCloudWatch cloudWatchClient,
-                                              S3AsyncClient s3AsyncClient,
-                                              Configuration hadoopConfiguration) {
+    public static IngestTask createIngestTask(
+            ObjectFactory objectFactory, InstanceProperties instanceProperties, String localDir, String taskId,
+            AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, AmazonSQS sqsClient, AmazonCloudWatch cloudWatchClient,
+            S3AsyncClient s3AsyncClient, Configuration hadoopConfiguration) {
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, hadoopConfiguration);
         IngestTaskStatusStore taskStore = IngestTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
         IngestJobStatusStore jobStore = IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
         PropertiesReloader propertiesReloader = PropertiesReloader.ifConfigured(
                 s3Client, instanceProperties, tablePropertiesProvider);
-        IngestJobRunner ingestJobRunner = new IngestJobRunner(
-                objectFactory,
-                instanceProperties,
-                tablePropertiesProvider,
-                propertiesReloader,
-                stateStoreProvider,
-                localDir,
-                s3AsyncClient,
-                hadoopConfiguration);
+        IngestJobRunner ingestJobRunner = new IngestJobRunner(objectFactory, instanceProperties, tablePropertiesProvider,
+                propertiesReloader, stateStoreProvider, localDir, s3AsyncClient, hadoopConfiguration);
         IngestJobQueueConsumer queueConsumer = new IngestJobQueueConsumer(
                 sqsClient, cloudWatchClient, instanceProperties, hadoopConfiguration,
                 new DynamoDBTableIndex(instanceProperties, dynamoDBClient), jobStore);
-        return new IngestTask(
-                queueConsumer, taskId, taskStore, jobStore, ingestJobRunner);
+        return new IngestTask(Instant::now, queueConsumer, ingestJobRunner, jobStore, taskStore, taskId);
     }
 
     private static Configuration ingestHadoopConfiguration(InstanceProperties instanceProperties) {
