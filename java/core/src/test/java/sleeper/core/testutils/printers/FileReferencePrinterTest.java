@@ -238,6 +238,27 @@ public class FileReferencePrinterTest {
             // Then see approved output
             Approvals.verify(printed);
         }
+
+        @Test
+        void shouldNumberPartialFilesInOrderOfAppearanceWhenLargerFileAppearsLater() {
+            // Given
+            partitions.singlePartition("root")
+                    .splitToNewChildren("root", "L", "R", "row-50")
+                    .splitToNewChildren("L", "LL", "LR", "row-25");
+            FileReferenceFactory fileReferenceFactory = fileReferenceFactory();
+            FileReference big = fileReferenceFactory.rootFile("big.parquet", 200);
+            FileReference small = fileReferenceFactory.rootFile("small.parquet", 100);
+
+            // When
+            String printed = FileReferencePrinter.printFiles(partitions.buildTree(), activeFiles(
+                    referenceForChildPartition(big, "L"),
+                    referenceForChildPartition(big, "R"),
+                    referenceForChildPartition(small, "LL"),
+                    referenceForChildPartition(small, "LR")));
+
+            // Then see approved output
+            Approvals.verify(printed);
+        }
     }
 
     @Nested
