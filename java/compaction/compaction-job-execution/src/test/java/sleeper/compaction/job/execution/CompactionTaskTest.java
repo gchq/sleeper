@@ -29,6 +29,7 @@ import sleeper.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.compaction.testutils.InMemoryCompactionTaskStatusStore;
+import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
@@ -404,7 +405,8 @@ public class CompactionTaskTest {
             CompactionRunner compactor,
             Supplier<Instant> timeSupplier,
             String taskId) throws Exception {
-        new CompactionTask(instanceProperties, timeSupplier, messageReceiver, compactor, taskStore, taskId)
+        new CompactionTask(instanceProperties, PropertiesReloader.neverReload(), timeSupplier, messageReceiver,
+                compactor, taskStore, taskId)
                 .run();
     }
 

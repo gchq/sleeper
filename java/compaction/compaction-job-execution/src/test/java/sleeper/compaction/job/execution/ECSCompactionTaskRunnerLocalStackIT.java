@@ -68,6 +68,7 @@ import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.s3.S3StateStoreCreator;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -99,7 +100,7 @@ import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildA
 import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
 @Testcontainers
-public class CompactSortedFilesRunnerLocalStackIT {
+public class ECSCompactionTaskRunnerLocalStackIT {
 
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE)).withServices(
@@ -214,7 +215,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
         sqs.sendMessage(sendMessageRequest);
 
         // When
-        createJobRunner("task-id").run();
+        createTask("task-id").run();
 
         // Then
         // - There should be no messages left on the queue
@@ -234,7 +235,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
         String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", "not-a-file.parquet");
 
         // When
-        createJobRunner("task-id").run();
+        createTask("task-id").run();
 
         // Then
         // - The compaction job should be put back on the queue
@@ -252,7 +253,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
         String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", "not-a-file.parquet");
 
         // When
-        createJobRunner("task-id").run();
+        createTask("task-id").run();
 
         // Then
         // - The compaction job should no longer be on the job queue
@@ -276,7 +277,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
         String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", fileReference1, fileReference2);
 
         // When
-        createJobRunner("task-id", new FixedStateStoreProvider(tableProperties, stateStore)).run();
+        createTask("task-id", new FixedStateStoreProvider(tableProperties, stateStore)).run();
 
         // Then
         // - The compaction job should be put back on the queue
@@ -299,7 +300,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
 
         // When
         StateStoreProvider provider = new FixedStateStoreProvider(tableProperties, stateStore);
-        createJobRunner("task-id", provider).run();
+        createTask("task-id", provider).run();
 
         // Then
         // - The compaction job should no longer be on the job queue
@@ -333,26 +334,18 @@ public class CompactSortedFilesRunnerLocalStackIT {
         instanceProperties.set(COMPACTION_JOB_DLQ_URL, jobDlqUrl);
     }
 
-    private CompactSortedFilesRunner createJobRunner(String taskId) {
-        return createJobRunner(taskId, stateStoreProvider);
+    private CompactionTask createTask(String taskId) {
+        return createTask(taskId, stateStoreProvider);
     }
 
-    private CompactSortedFilesRunner createJobRunner(String taskId, StateStoreProvider stateStoreProvider) {
-        return jobRunnerBuilder(taskId, stateStoreProvider)
-                .build();
-    }
-
-    private CompactSortedFilesRunner.Builder jobRunnerBuilder(String taskId, StateStoreProvider stateStoreProvider) {
-        return CompactSortedFilesRunner.builder()
-                .instanceProperties(instanceProperties)
-                .objectFactory(ObjectFactory.noUserJars())
-                .tablePropertiesProvider(tablePropertiesProvider)
-                .propertiesReloader(PropertiesReloader.neverReload())
-                .stateStoreProvider(stateStoreProvider)
-                .jobStatusStore(jobStatusStore)
-                .taskStatusStore(taskStatusStore)
-                .taskId(taskId)
-                .sqsClient(sqs);
+    private CompactionTask createTask(String taskId, StateStoreProvider stateStoreProvider) {
+        CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties,
+                tablePropertiesProvider, stateStoreProvider,
+                ObjectFactory.noUserJars(), jobStatusStore, taskId);
+        CompactionTask task = new CompactionTask(instanceProperties, PropertiesReloader.neverReload(), Instant::now,
+                new SqsCompactionQueueHandler(sqs, instanceProperties)::receiveFromSqs,
+                job -> compactSortedFiles.run(job), taskStatusStore, taskId);
+        return task;
     }
 
     private FileReference ingestFileWith100Records() throws Exception {
