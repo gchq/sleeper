@@ -87,6 +87,25 @@ public class FileReferencePrinterTest {
         }
 
         @Test
+        void shouldPrintPartialAndWholeFiles() {
+            // Given
+            partitions.rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", "row-50");
+            FileReference leftFile = fileReferenceFactory().partitionFile("L", 100);
+            FileReference rightFile = fileReferenceFactory().partitionFile("R", 200);
+            FileReference splitFile = fileReferenceFactory().rootFile("a.parquet", 300);
+
+            // When
+            String printed = FileReferencePrinter.printFiles(partitions.buildTree(), activeFiles(
+                    referenceForChildPartition(splitFile, "L"),
+                    referenceForChildPartition(splitFile, "R"),
+                    leftFile, rightFile));
+
+            // Then see approved output
+            Approvals.verify(printed);
+        }
+
+        @Test
         void shouldPrintFilesOnLeaves() {
             // Given
             partitions.rootFirst("root")
