@@ -116,8 +116,8 @@ public class CompactionTask {
                 try {
                     propertiesReloader.reloadIfNeeded();
                     RecordsProcessed recordsProcessed = compactor.compact(job);
-                    lastActiveTime = timeSupplier.get();
-                    RecordsProcessedSummary summary = new RecordsProcessedSummary(recordsProcessed, jobStartTime, lastActiveTime);
+                    Instant jobFinishTime = timeSupplier.get();
+                    RecordsProcessedSummary summary = new RecordsProcessedSummary(recordsProcessed, jobStartTime, jobFinishTime);
                     summaryConsumer.accept(summary);
                     message.completed();
                     totalNumberOfMessagesProcessed++;
@@ -129,6 +129,7 @@ public class CompactionTask {
                     METRICS_LOGGER.info("Compaction job {}: compaction wrote {} records at {} per second", id, summary.getRecordsWritten(),
                             String.format("%.1f", summary.getRecordsWrittenPerSecond()));
                     jobStatusStore.jobFinished(job, summary, taskId);
+                    lastActiveTime = jobFinishTime;
                 } catch (Exception e) {
                     LOGGER.error("Failed processing compaction job, putting job back on queue", e);
                     numConsecutiveFailures++;
