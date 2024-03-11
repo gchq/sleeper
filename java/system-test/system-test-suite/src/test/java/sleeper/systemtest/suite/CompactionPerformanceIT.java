@@ -54,7 +54,7 @@ public class CompactionPerformanceIT {
             properties.setNumber(NUMBER_OF_RECORDS_PER_WRITER, 40_000_000);
         }).generateData(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(20)));
 
-        sleeper.compaction().createJobs().invokeTasks(10)
+        sleeper.compaction().createJobs(10).invokeTasks(10)
                 .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(40)));
 
         assertThat(sleeper.tableFiles().references())
@@ -63,7 +63,7 @@ public class CompactionPerformanceIT {
                         "contain 4.4 billion records");
         assertThat(sleeper.reporting().compactionJobs().finishedStatistics())
                 .matches(stats -> stats.isAllFinishedOneRunEach(10)
-                                && stats.isMinAverageRunRecordsPerSecond(300000),
+                        && stats.isMinAverageRunRecordsPerSecond(300000),
                         "meets minimum performance");
     }
 }

@@ -46,11 +46,11 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.ingest.job.IngestJobTestData.createJobWithTableAndFiles;
 import static sleeper.ingest.testutils.ResultVerifier.readMergedRecordsFromPartitionDataFiles;
 
-public class ECSIngestTaskIT extends IngestJobQueueConsumerTestBase {
+public class ECSIngestTaskRunnerIT extends IngestJobQueueConsumerTestBase {
     private void runTask(String localDir, String taskId) throws Exception {
-        ECSIngestTask.createIngestTask(
-                        ObjectFactory.noUserJars(), instanceProperties, localDir, taskId,
-                        s3, dynamoDB, sqs, cloudWatch, s3Async, hadoopConfiguration)
+        ECSIngestTaskRunner.createIngestTask(
+                ObjectFactory.noUserJars(), instanceProperties, localDir, taskId,
+                s3, dynamoDB, sqs, cloudWatch, s3Async, hadoopConfiguration)
                 .run();
     }
 
@@ -93,8 +93,7 @@ public class ECSIngestTaskIT extends IngestJobQueueConsumerTestBase {
                 recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
                 recordListAndSchema,
                 actualFiles,
-                hadoopConfiguration
-        );
+                hadoopConfiguration);
     }
 
     @Test
@@ -139,8 +138,7 @@ public class ECSIngestTaskIT extends IngestJobQueueConsumerTestBase {
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
                 actualFiles,
-                hadoopConfiguration
-        );
+                hadoopConfiguration);
     }
 
     private void sendJobs(List<IngestJob> jobs) {

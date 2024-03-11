@@ -82,7 +82,7 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
 
     @Override
     public IngestSourceFilesDriver sourceFiles(SystemTestContext context) {
-        return new InMemorySourceFilesDriver(sourceFiles);
+        return new InMemorySourceFilesDriver(sourceFiles, data, sketches);
     }
 
     @Override

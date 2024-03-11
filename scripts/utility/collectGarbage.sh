@@ -1,5 +1,4 @@
-#!/bin/sh
-
+#!/usr/bin/env bash
 # Copyright 2022-2024 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,4 +13,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-java -cp /compaction-job-execution.jar sleeper.compaction.job.execution.ECSCompactionTaskRunner $*
+set -e
+unset CDPATH
+
+if [ "$#" -lt 2 ]; then
+  echo "Usage: $0 <instance-id> <table-names-as-args>"
+  exit 1
+fi
+
+SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
+
+TEMPLATE_DIR=${SCRIPTS_DIR}/templates
+JAR_DIR=${SCRIPTS_DIR}/jars
+
+VERSION=$(cat "${TEMPLATE_DIR}/version.txt")
+
+echo "-------------------------------------------------------"
+echo "Triggering garbage collection"
+echo "-------------------------------------------------------"
+java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" sleeper.clients.status.update.TriggerGarbageCollectionClient "$@"

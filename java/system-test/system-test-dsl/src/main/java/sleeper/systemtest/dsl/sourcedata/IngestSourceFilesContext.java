@@ -36,6 +36,7 @@ import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
 public class IngestSourceFilesContext {
 
@@ -43,16 +44,19 @@ public class IngestSourceFilesContext {
 
     private final SystemTestInstanceContext instance;
     private final Map<String, String> filenameToPath = new TreeMap<>();
-    private final String testFolderName = UUID.randomUUID().toString();
+    private final String sourceBucketFolderName = UUID.randomUUID().toString();
     private Supplier<String> bucketName;
+    private Supplier<String> testFolderName;
 
     public IngestSourceFilesContext(DeployedSystemTestResources systemTest, SystemTestInstanceContext instance) {
         this.instance = instance;
         bucketName = systemTest::getSystemTestBucketName;
+        testFolderName = () -> sourceBucketFolderName;
     }
 
     public void useDataBucket() {
         bucketName = () -> instance.getInstanceProperties().get(DATA_BUCKET);
+        testFolderName = () -> instance.getTableProperties().get(TABLE_ID);
     }
 
     public void writeFile(IngestSourceFilesDriver driver, String filename, boolean writeSketches, Stream<Record> records) {
@@ -93,7 +97,7 @@ public class IngestSourceFilesContext {
     }
 
     private String generateFilePathNoFs(String filename) {
-        return bucketName.get() + "/" + testFolderName + "/" + filename;
+        return bucketName.get() + "/" + testFolderName.get() + "/" + filename;
     }
 
     public String getSourceBucketName() {

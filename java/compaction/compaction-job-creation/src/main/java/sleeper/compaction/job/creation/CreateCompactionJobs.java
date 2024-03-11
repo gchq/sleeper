@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.job.creation.FailedCreateCompactionJobsException.TableFailure;
 import sleeper.compaction.strategy.CompactionStrategy;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
@@ -32,6 +33,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.SplitFileReferences;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.table.InvokeForTableRequest;
 import sleeper.core.table.TableStatus;
 import sleeper.statestore.StateStoreProvider;
 
@@ -44,7 +46,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.COMPACTION_JOB_CREATION_BATCH_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.COMPACTION_JOB_SEND_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
@@ -69,40 +71,26 @@ public class CreateCompactionJobs {
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
     private final CompactionJobStatusStore jobStatusStore;
-    private final boolean compactAllFiles;
+    private final Mode mode;
 
-    private CreateCompactionJobs(ObjectFactory objectFactory,
-                                 InstanceProperties instanceProperties,
-                                 TablePropertiesProvider tablePropertiesProvider,
-                                 StateStoreProvider stateStoreProvider,
-                                 JobSender jobSender,
-                                 CompactionJobStatusStore jobStatusStore,
-                                 boolean compactAllFiles) {
+    public CreateCompactionJobs(ObjectFactory objectFactory,
+            InstanceProperties instanceProperties,
+            TablePropertiesProvider tablePropertiesProvider,
+            StateStoreProvider stateStoreProvider,
+            JobSender jobSender,
+            CompactionJobStatusStore jobStatusStore,
+            Mode mode) {
         this.objectFactory = objectFactory;
         this.instanceProperties = instanceProperties;
         this.jobSender = jobSender;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
         this.jobStatusStore = jobStatusStore;
-        this.compactAllFiles = compactAllFiles;
+        this.mode = mode;
     }
 
-    public static CreateCompactionJobs compactAllFiles(ObjectFactory objectFactory,
-                                                       InstanceProperties instanceProperties,
-                                                       TablePropertiesProvider tablePropertiesProvider,
-                                                       StateStoreProvider stateStoreProvider,
-                                                       JobSender jobSender,
-                                                       CompactionJobStatusStore jobStatusStore) {
-        return new CreateCompactionJobs(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider, jobSender, jobStatusStore, true);
-    }
-
-    public static CreateCompactionJobs standard(ObjectFactory objectFactory,
-                                                InstanceProperties instanceProperties,
-                                                TablePropertiesProvider tablePropertiesProvider,
-                                                StateStoreProvider stateStoreProvider,
-                                                JobSender jobSender,
-                                                CompactionJobStatusStore jobStatusStore) {
-        return new CreateCompactionJobs(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider, jobSender, jobStatusStore, false);
+    public enum Mode {
+        STRATEGY, FORCE_ALL_FILES_AFTER_STRATEGY;
     }
 
     public void createJobs() throws StateStoreException, IOException, ObjectFactoryException {
@@ -114,16 +102,34 @@ public class CreateCompactionJobs {
         }
     }
 
-    public void createJobs(TableProperties table) throws StateStoreException, IOException, ObjectFactoryException {
-        LOGGER.info("Performing pre-splits on files in {}", table.getStatus());
-        SplitFileReferences.from(stateStoreProvider.getStateStore(table)).split();
-        createJobsForTable(table);
+    public void createJobs(InvokeForTableRequest request) throws FailedCreateCompactionJobsException {
+        List<TableFailure> tableFailures = new ArrayList<>();
+        for (String tableId : request.getTableIds()) {
+            TableStatus status = TableStatus.uniqueIdAndName(tableId, "not-found", true);
+            try {
+                TableProperties tableProperties = tablePropertiesProvider.getById(tableId);
+                status = tableProperties.getStatus();
+                createJobs(tableProperties);
+            } catch (Exception e) {
+                LOGGER.error("Failed compaction job creation for table {}", status, e);
+                tableFailures.add(new TableFailure(status, e));
+            }
+        }
+        if (!tableFailures.isEmpty()) {
+            throw new FailedCreateCompactionJobsException(tableFailures);
+        }
     }
 
-    private void createJobsForTable(TableProperties tableProperties) throws StateStoreException, IOException, ObjectFactoryException {
+    private void createJobs(TableProperties table) throws StateStoreException, IOException, ObjectFactoryException {
+        LOGGER.info("Performing pre-splits on files in {}", table.getStatus());
+        StateStore stateStore = stateStoreProvider.getStateStore(table);
+        SplitFileReferences.from(stateStore).split();
+        createJobsForTable(table, stateStore);
+    }
+
+    private void createJobsForTable(TableProperties tableProperties, StateStore stateStore) throws StateStoreException, IOException, ObjectFactoryException {
         TableStatus table = tableProperties.getStatus();
         LOGGER.debug("Creating jobs for table {}", table);
-        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
 
         List<Partition> allPartitions = stateStore.getAllPartitions();
 
@@ -144,11 +150,11 @@ public class CreateCompactionJobs {
         List<CompactionJob> compactionJobs = compactionStrategy.createCompactionJobs(fileReferencesWithJobId, fileReferencesWithNoJobId, allPartitions);
         LOGGER.info("Used {} to create {} compaction jobs for table {}", compactionStrategy.getClass().getSimpleName(), compactionJobs.size(), table);
 
-        if (compactAllFiles) {
+        if (mode == Mode.FORCE_ALL_FILES_AFTER_STRATEGY) {
             createJobsFromLeftoverFiles(tableProperties, fileReferencesWithNoJobId, allPartitions, compactionJobs);
         }
-        int creationBatchSize = tableProperties.getInt(COMPACTION_JOB_CREATION_BATCH_SIZE);
-        for (List<CompactionJob> batch : splitListIntoBatchesOf(creationBatchSize, compactionJobs)) {
+        int sendBatchSize = tableProperties.getInt(COMPACTION_JOB_SEND_BATCH_SIZE);
+        for (List<CompactionJob> batch : splitListIntoBatchesOf(sendBatchSize, compactionJobs)) {
             batchCreateJobs(stateStore, batch);
         }
     }
@@ -171,8 +177,9 @@ public class CreateCompactionJobs {
                 .collect(Collectors.toList()));
     }
 
-    private void createJobsFromLeftoverFiles(TableProperties tableProperties, List<FileReference> activeFileReferencesWithNoJobId,
-                                             List<Partition> allPartitions, List<CompactionJob> compactionJobs) {
+    private void createJobsFromLeftoverFiles(
+            TableProperties tableProperties, List<FileReference> activeFileReferencesWithNoJobId,
+            List<Partition> allPartitions, List<CompactionJob> compactionJobs) {
         LOGGER.info("Creating compaction jobs for all files");
         int jobsBefore = compactionJobs.size();
         int batchSize = tableProperties.getInt(COMPACTION_FILES_BATCH_SIZE);

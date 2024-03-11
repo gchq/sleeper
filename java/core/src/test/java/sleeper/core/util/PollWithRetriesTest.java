@@ -15,7 +15,6 @@
  */
 package sleeper.core.util;
 
-
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
@@ -93,5 +92,18 @@ class PollWithRetriesTest {
         // Then
         assertThat(iterator).isExhausted();
         assertThat(result).isEqualTo("b");
+    }
+
+    @Test
+    void shouldFailSingleCheck() {
+        // Given
+        PollWithRetries poll = PollWithRetries.noRetries();
+        Iterator<Boolean> iterator = List.of(false).iterator();
+
+        // When / Then
+        assertThatThrownBy(() -> poll.pollUntil("iterator returns true", iterator::next))
+                .isInstanceOf(PollWithRetries.CheckFailedException.class)
+                .hasMessage("Failed, expected to find iterator returns true");
+        assertThat(iterator).isExhausted();
     }
 }

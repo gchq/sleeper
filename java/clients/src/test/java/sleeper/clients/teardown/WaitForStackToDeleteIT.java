@@ -71,7 +71,7 @@ class WaitForStackToDeleteIT {
 
         // When/Then
         assertThatThrownBy(() -> waitForStacksToDelete(runtimeInfo, "test-stack"))
-                .isInstanceOf(PollWithRetries.TimedOutException.class);
+                .isInstanceOf(PollWithRetries.CheckFailedException.class);
     }
 
     @Test
@@ -88,8 +88,8 @@ class WaitForStackToDeleteIT {
 
     private static void waitForStacksToDelete(WireMockRuntimeInfo runtimeInfo, String stackName) throws InterruptedException {
         WaitForStackToDelete.from(
-                        PollWithRetries.noRetries(),
-                        wiremockCloudFormationClient(runtimeInfo), stackName)
+                PollWithRetries.noRetries(),
+                wiremockCloudFormationClient(runtimeInfo), stackName)
                 .pollUntilFinished();
     }
 
