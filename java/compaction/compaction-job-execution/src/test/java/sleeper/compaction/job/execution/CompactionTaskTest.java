@@ -50,6 +50,7 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
+import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionRun;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS;
@@ -316,8 +317,8 @@ public class CompactionTaskTest {
                     Instant.parse("2024-02-22T13:50:03Z"), // Job 2 started
                     Instant.parse("2024-02-22T13:50:04Z"), // Job 2 completed
                     Instant.parse("2024-02-22T13:50:05Z"))); // Finish
-            createJobOnQueue("job1");
-            createJobOnQueue("job2");
+            CompactionJob job1 = createJobOnQueue("job1");
+            CompactionJob job2 = createJobOnQueue("job2");
 
             // When
             RecordsProcessedSummary job1Summary = summary(
@@ -337,6 +338,11 @@ public class CompactionTaskTest {
                             Instant.parse("2024-02-22T13:50:00Z"),
                             Instant.parse("2024-02-22T13:50:05Z"),
                             job1Summary, job2Summary));
+            assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactlyInAnyOrder(
+                    jobCreated(job1, DEFAULT_CREATED_TIME,
+                            finishedCompactionRun("test-task-1", job1Summary)),
+                    jobCreated(job2, DEFAULT_CREATED_TIME,
+                            finishedCompactionRun("test-task-1", job2Summary)));
         }
 
         @Test
@@ -346,7 +352,7 @@ public class CompactionTaskTest {
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:01Z"), // Job started
                     Instant.parse("2024-02-22T13:50:05Z"))); // Finish
-            createJobOnQueue("job1");
+            CompactionJob job = createJobOnQueue("job1");
 
             // When
             runTask("test-task-1", processJobs(jobFails()), times::poll);
@@ -356,6 +362,9 @@ public class CompactionTaskTest {
                     finishedCompactionTask("test-task-1",
                             Instant.parse("2024-02-22T13:50:00Z"),
                             Instant.parse("2024-02-22T13:50:05Z")));
+            assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
+                    jobCreated(job, DEFAULT_CREATED_TIME,
+                            startedCompactionRun("test-task-1", Instant.parse("2024-02-22T13:50:01Z"))));
         }
 
         @Test
@@ -373,6 +382,7 @@ public class CompactionTaskTest {
                     finishedCompactionTask("test-task-1",
                             Instant.parse("2024-02-22T13:50:00Z"),
                             Instant.parse("2024-02-22T13:50:05Z")));
+            assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).isEmpty();
         }
 
         private CompactionTaskFinishedStatus.Builder withJobSummaries(RecordsProcessedSummary... summaries) {
