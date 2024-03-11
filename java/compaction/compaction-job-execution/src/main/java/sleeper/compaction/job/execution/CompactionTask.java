@@ -134,7 +134,6 @@ public class CompactionTask {
         RecordsProcessed recordsProcessed = compactor.compact(job);
         Instant jobFinishTime = timeSupplier.get();
         RecordsProcessedSummary summary = new RecordsProcessedSummary(recordsProcessed, jobStartTime, jobFinishTime);
-        ;
         jobStatusStore.jobFinished(job, summary, taskId);
         logMetrics(job, summary);
         return summary;
