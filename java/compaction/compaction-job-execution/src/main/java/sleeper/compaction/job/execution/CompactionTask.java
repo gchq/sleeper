@@ -162,7 +162,6 @@ public class CompactionTask {
                 summary.getRecordsRead(), String.format("%.1f", summary.getRecordsReadPerSecond()));
         METRICS_LOGGER.info("Compaction job {}: compaction wrote {} records at {} per second", job.getId(),
                 summary.getRecordsWritten(), String.format("%.1f", summary.getRecordsWrittenPerSecond()));
-        jobStatusStore.jobFinished(job, summary, taskId);
     }
 
     @FunctionalInterface
