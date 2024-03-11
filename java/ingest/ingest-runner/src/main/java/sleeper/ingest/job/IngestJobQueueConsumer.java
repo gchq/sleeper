@@ -39,7 +39,6 @@ import sleeper.job.common.action.ActionException;
 import sleeper.job.common.action.MessageReference;
 import sleeper.job.common.action.thread.PeriodicActionRunnable;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
@@ -87,7 +86,7 @@ public class IngestJobQueueConsumer implements MessageReceiver {
     }
 
     @Override
-    public Optional<MessageHandle> receiveMessage() throws InterruptedException, IOException {
+    public Optional<MessageHandle> receiveMessage() {
         while (true) {
             ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(sqsJobQueueUrl)
                     .withMaxNumberOfMessages(1)
