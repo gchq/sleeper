@@ -140,7 +140,6 @@ public class CompactionTask {
     }
 
     private void logMetrics(CompactionJob job, RecordsProcessedSummary summary) {
-        // Print summary
         LOGGER.info("Compaction job {}: finished at {}", job.getId(), summary.getFinishTime());
         METRICS_LOGGER.info("Compaction job {}: compaction run time = {}", job.getId(), summary.getDurationInSeconds());
         METRICS_LOGGER.info("Compaction job {}: compaction read {} records at {} per second", job.getId(),
