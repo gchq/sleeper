@@ -31,10 +31,8 @@ import org.testcontainers.utility.DockerImageName;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.execution.testutils.CompactSortedFilesTestBase;
 import sleeper.compaction.job.execution.testutils.CompactSortedFilesTestData;
-import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStoreCreator;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
@@ -43,7 +41,7 @@ import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
-import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
@@ -78,7 +76,6 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
     private static AmazonDynamoDB dynamoDBClient;
     private static AmazonS3 s3Client;
     private static S3AsyncClient s3AsyncClient;
-    private CompactionJobStatusStore jobStatusStore;
 
     @BeforeAll
     public static void beforeAll() {
@@ -100,7 +97,6 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
         s3Client.createBucket(instanceProperties.get(DATA_BUCKET));
         new S3StateStoreCreator(instanceProperties, dynamoDBClient).create();
         DynamoDBCompactionJobStatusStoreCreator.create(instanceProperties, dynamoDBClient);
-        jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
     }
 
     protected FileReference ingestRecordsGetFile(StateStore stateStore, List<Record> records) throws Exception {
@@ -117,12 +113,12 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
                 .getStateStore(tableProperties);
     }
 
-    private CompactSortedFiles createCompactSortedFiles(Schema schema, CompactionJob compactionJob, StateStore stateStore) throws Exception {
+    private CompactSortedFiles createCompactSortedFiles(Schema schema, StateStore stateStore) throws Exception {
         tableProperties.setSchema(schema);
         return new CompactSortedFiles(instanceProperties,
                 new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties, stateStore),
-                ObjectFactory.noUserJars(), jobStatusStore, DEFAULT_TASK_ID);
+                ObjectFactory.noUserJars());
     }
 
     @Test
@@ -143,8 +139,8 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
         assignJobIdToInputFiles(stateStore, compactionJob);
 
         // When
-        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, stateStore);
-        RecordsProcessedSummary summary = compactSortedFiles.run(compactionJob);
+        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, stateStore);
+        RecordsProcessed summary = compactSortedFiles.compact(compactionJob);
 
         // Then
         //  - Read output file and check that it contains the right results

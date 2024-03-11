@@ -1,3 +1,5 @@
+Unreferenced files: 0
+Referenced files: 4
 File references: 4
 Partition at L:
 10 records in file

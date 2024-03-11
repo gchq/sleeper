@@ -61,6 +61,10 @@ Apache Kerby (org.apache.kerby:*:2.0.3):
 
 - Apache License, Version 2.0
 
+XNIO (org.jboss.xnio:xnio-api:3.8.13.Final):
+
+- Apache License, Version 2.0
+
 Kotlin Stdlib (org.jetbrains.kotlin:*:1.6.20):
 
 - Apache License, Version 2.0
@@ -79,7 +83,7 @@ Guava: Google Core Libraries For Java (com.google.guava:guava:32.0.1-jre):
 
 - Apache License, Version 2.0
 
-Fasterxml Jackson (com.fasterxml.jackson.core:*:2.15.2, com.fasterxml.jackson.module:*:2.15.2)
+Fasterxml Jackson (com.fasterxml.jackson.core:*:2.16.2, com.fasterxml.jackson.module:*:2.16.2)
 
 - Apache License, Version 2.0
 
@@ -151,7 +155,7 @@ Java Websocket (org.java-websocket:Java-WebSocket:1.5.3):
 
 - MIT License
 
-Junit (org.junit.jupiter:junit-jupiter-api:5.9.1):
+JUnit (org.junit.jupiter:junit-jupiter-*:5.10.2):
 
 - Eclipse Public License 1.0
 
@@ -207,7 +211,7 @@ Jersey Client (org.glassfish.jersey.core:jersey-client:2.38):
 
 - Eclipse Public License 2.0 (https://projects.eclipse.org/projects/ee4j.jersey)
 
-Netty (io.netty:*:4.1.94.Final):
+Netty (io.netty:*:4.1.107.Final):
 
 - Apache License, Version 2.0
 
@@ -217,7 +221,7 @@ Eclipse Jetty (org.eclipse.jetty:*:9.4.53.v20231009):
 - Apache License, Version 2.0
 - Eclipse Public License 1.0
 
-JJWT (io.jsonwebtoken:*:0.12.3):
+JJWT (io.jsonwebtoken:*:0.12.5):
 
 - Apache License, Version 2.0
 

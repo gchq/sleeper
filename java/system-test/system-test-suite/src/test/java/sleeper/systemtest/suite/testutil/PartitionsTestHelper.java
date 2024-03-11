@@ -20,8 +20,6 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 
 import java.io.IOException;
@@ -30,9 +28,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Function;
-
-import static sleeper.core.testutils.printers.FileReferencePrinter.printFiles;
 
 public class PartitionsTestHelper {
 
@@ -77,11 +72,5 @@ public class PartitionsTestHelper {
 
     public static PartitionTree singleRootPartition(Schema schema) {
         return partitionsBuilder(schema).singlePartition("root").buildTree();
-    }
-
-    public static String printFilesInSingleRootPartition(
-            Schema schema, Function<FileReferenceFactory, List<FileReference>> files) {
-        PartitionTree partitions = singleRootPartition(schema);
-        return printFiles(partitions, files.apply(FileReferenceFactory.from(partitions)));
     }
 }

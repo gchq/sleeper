@@ -37,10 +37,9 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_WAIT_TIME_IN_SECONDS;
 
-public class SqsCompactionQueueHandler {
+public class SqsCompactionQueueHandler implements CompactionTask.MessageReceiver {
     private static final Logger LOGGER = LoggerFactory.getLogger(SqsCompactionQueueHandler.class);
 
     private final AmazonSQS sqsClient;
@@ -51,9 +50,8 @@ public class SqsCompactionQueueHandler {
         this.instanceProperties = instanceProperties;
     }
 
-    public Optional<MessageHandle> receiveFromSqs() throws InterruptedException, IOException {
+    public Optional<MessageHandle> receiveMessage() throws IOException {
         int waitTimeSeconds = instanceProperties.getInt(COMPACTION_TASK_WAIT_TIME_IN_SECONDS);
-        int delayBeforeRetry = instanceProperties.getInt(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS);
         int keepAliveFrequency = instanceProperties.getInt(COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS);
         String sqsJobQueueUrl = instanceProperties.get(COMPACTION_JOB_QUEUE_URL);
         ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(sqsJobQueueUrl)
@@ -61,9 +59,7 @@ public class SqsCompactionQueueHandler {
                 .withWaitTimeSeconds(waitTimeSeconds); // Must be >= 0 and <= 20
         ReceiveMessageResult receiveMessageResult = sqsClient.receiveMessage(receiveMessageRequest);
         if (receiveMessageResult.getMessages().isEmpty()) {
-            LOGGER.info("Received no messages in {} seconds. Waiting {} seconds before trying again",
-                    waitTimeSeconds, delayBeforeRetry);
-            Thread.sleep(delayBeforeRetry * 1000L);
+            LOGGER.info("Received no messages in {} seconds", waitTimeSeconds);
             return Optional.empty();
         } else {
             Message message = receiveMessageResult.getMessages().get(0);

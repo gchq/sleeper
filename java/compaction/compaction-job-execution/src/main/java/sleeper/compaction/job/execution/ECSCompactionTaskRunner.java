@@ -41,7 +41,6 @@ import sleeper.job.common.CommonJobUtils;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
-import java.time.Instant;
 import java.util.UUID;
 
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
@@ -54,44 +53,10 @@ import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 public class ECSCompactionTaskRunner {
     private static final Logger LOGGER = LoggerFactory.getLogger(ECSCompactionTaskRunner.class);
 
-    private final InstanceProperties instanceProperties;
-    private final AmazonECS ecsClient;
-    private final CompactionTask compactionTask;
-
-    private ECSCompactionTaskRunner(Builder builder) {
-        instanceProperties = builder.instanceProperties;
-        ecsClient = builder.ecsClient;
-        CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties,
-                builder.tablePropertiesProvider, builder.stateStoreProvider,
-                builder.objectFactory, builder.jobStatusStore, builder.taskId);
-        compactionTask = new CompactionTask(instanceProperties, builder.propertiesReloader, Instant::now,
-                new SqsCompactionQueueHandler(builder.sqsClient, instanceProperties)::receiveFromSqs,
-                job -> compactSortedFiles.run(job), builder.taskStatusStore, builder.taskId);
+    private ECSCompactionTaskRunner() {
     }
 
-    public static Builder builder() {
-        return new Builder();
-    }
-
-    public void run() throws InterruptedException, IOException {
-        // Log some basic data if running on EC2 inside ECS
-        if (instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE).equalsIgnoreCase("EC2")) {
-            try {
-                if (this.ecsClient != null) {
-                    CommonJobUtils.retrieveContainerMetadata(ecsClient).ifPresent(info -> LOGGER.info(
-                            "Task running on EC2 instance ID {} in AZ {} with ARN {} in cluster {} with status {}",
-                            info.instanceID, info.az, info.instanceARN, info.clusterName, info.status));
-                } else {
-                    LOGGER.warn("ECS client is null");
-                }
-            } catch (IOException e) {
-                LOGGER.warn("EC2 instance data not available", e);
-            }
-        }
-        compactionTask.run();
-    }
-
-    public static void main(String[] args) throws InterruptedException, IOException, ObjectFactoryException {
+    public static void main(String[] args) throws IOException, ObjectFactoryException {
         if (1 != args.length) {
             System.err.println("Error: must have 1 argument (config bucket), got " + args.length + " arguments (" + StringUtils.join(args, ',') + ")");
             System.exit(1);
@@ -106,6 +71,9 @@ public class ECSCompactionTaskRunner {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3(s3Client, s3Bucket);
 
+        // Log some basic data if running on EC2 inside ECS
+        logEC2Metadata(instanceProperties, ecsClient);
+
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
         PropertiesReloader propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties,
@@ -114,21 +82,15 @@ public class ECSCompactionTaskRunner {
                 instanceProperties);
         CompactionTaskStatusStore taskStatusStore = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDBClient,
                 instanceProperties);
+        String taskId = UUID.randomUUID().toString();
 
         ObjectFactory objectFactory = new ObjectFactory(instanceProperties, s3Client, "/tmp");
-        ECSCompactionTaskRunner runner = ECSCompactionTaskRunner.builder()
-                .instanceProperties(instanceProperties)
-                .objectFactory(objectFactory)
-                .tablePropertiesProvider(tablePropertiesProvider)
-                .propertiesReloader(propertiesReloader)
-                .stateStoreProvider(stateStoreProvider)
-                .jobStatusStore(jobStatusStore)
-                .taskStatusStore(taskStatusStore)
-                .taskId(UUID.randomUUID().toString())
-                .sqsClient(sqsClient)
-                .ecsClient(ecsClient)
-                .build();
-        runner.run();
+        CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties,
+                tablePropertiesProvider, stateStoreProvider, objectFactory);
+        CompactionTask task = new CompactionTask(instanceProperties, propertiesReloader,
+                new SqsCompactionQueueHandler(sqsClient, instanceProperties),
+                compactSortedFiles, jobStatusStore, taskStatusStore, taskId);
+        task.run();
 
         sqsClient.shutdown();
         LOGGER.info("Shut down sqsClient");
@@ -140,73 +102,20 @@ public class ECSCompactionTaskRunner {
         LOGGER.info("Shut down ecsClient");
     }
 
-    public static final class Builder {
-        private InstanceProperties instanceProperties;
-        private ObjectFactory objectFactory;
-        private TablePropertiesProvider tablePropertiesProvider;
-        private PropertiesReloader propertiesReloader;
-        private StateStoreProvider stateStoreProvider;
-        private CompactionJobStatusStore jobStatusStore;
-        private CompactionTaskStatusStore taskStatusStore;
-        private String taskId;
-        private AmazonSQS sqsClient;
-        private AmazonECS ecsClient;
-
-        private Builder() {
-        }
-
-        public Builder instanceProperties(InstanceProperties instanceProperties) {
-            this.instanceProperties = instanceProperties;
-            return this;
-        }
-
-        public Builder objectFactory(ObjectFactory objectFactory) {
-            this.objectFactory = objectFactory;
-            return this;
-        }
-
-        public Builder tablePropertiesProvider(TablePropertiesProvider tablePropertiesProvider) {
-            this.tablePropertiesProvider = tablePropertiesProvider;
-            return this;
-        }
-
-        public Builder propertiesReloader(PropertiesReloader propertiesReloader) {
-            this.propertiesReloader = propertiesReloader;
-            return this;
-        }
-
-        public Builder stateStoreProvider(StateStoreProvider stateStoreProvider) {
-            this.stateStoreProvider = stateStoreProvider;
-            return this;
-        }
-
-        public Builder jobStatusStore(CompactionJobStatusStore jobStatusStore) {
-            this.jobStatusStore = jobStatusStore;
-            return this;
-        }
-
-        public Builder taskStatusStore(CompactionTaskStatusStore taskStatusStore) {
-            this.taskStatusStore = taskStatusStore;
-            return this;
-        }
-
-        public Builder taskId(String taskId) {
-            this.taskId = taskId;
-            return this;
-        }
-
-        public Builder sqsClient(AmazonSQS sqsClient) {
-            this.sqsClient = sqsClient;
-            return this;
-        }
-
-        public Builder ecsClient(AmazonECS ecsClient) {
-            this.ecsClient = ecsClient;
-            return this;
-        }
-
-        public ECSCompactionTaskRunner build() {
-            return new ECSCompactionTaskRunner(this);
+    public static void logEC2Metadata(InstanceProperties instanceProperties, AmazonECS ecsClient) {
+        // Log some basic data if running on EC2 inside ECS
+        if (instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE).equalsIgnoreCase("EC2")) {
+            try {
+                if (ecsClient != null) {
+                    CommonJobUtils.retrieveContainerMetadata(ecsClient).ifPresent(info -> LOGGER.info(
+                            "Task running on EC2 instance ID {} in AZ {} with ARN {} in cluster {} with status {}",
+                            info.instanceID, info.az, info.instanceARN, info.clusterName, info.status));
+                } else {
+                    LOGGER.warn("ECS client is null");
+                }
+            } catch (IOException e) {
+                LOGGER.warn("EC2 instance data not available", e);
+            }
         }
     }
 }

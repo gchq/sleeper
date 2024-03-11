@@ -32,23 +32,16 @@ public class FileReferencePrinter {
     }
 
     public static String printExpectedFilesForAllTables(
-            List<TableStatus> tables, PartitionTree partitions, List<FileReference> activeFiles) {
+            List<TableStatus> tables, PartitionTree partitions, AllReferencesToAllFiles files) {
         return printTableFilesExpectingIdentical(
                 tables.stream().collect(Collectors.toMap(TableStatus::getTableName, table -> partitions)),
-                tables.stream().collect(Collectors.toMap(TableStatus::getTableName, table -> activeFiles)));
+                tables.stream().collect(Collectors.toMap(TableStatus::getTableName, table -> files)));
     }
 
     public static String printTableFilesExpectingIdentical(
-            Map<String, PartitionTree> partitionsByTable, Map<String, List<FileReference>> activeFilesByTable) {
-        return TablesPrinter.printForAllTables(activeFilesByTable.keySet(), table -> printFiles(partitionsByTable.get(table), activeFilesByTable.get(table)));
-    }
-
-    public static String printFiles(PartitionTree partitionTree, List<FileReference> files) {
-        ToStringPrintStream printer = new ToStringPrintStream();
-        PrintWriter out = printer.getPrintWriter();
-        printFiles(partitionTree, files, out);
-        out.flush();
-        return printer.toString();
+            Map<String, PartitionTree> partitionsByTable, Map<String, AllReferencesToAllFiles> filesByTable) {
+        return TablesPrinter.printForAllTables(filesByTable.keySet(),
+                table -> printFiles(partitionsByTable.get(table), filesByTable.get(table)));
     }
 
     public static String printFiles(PartitionTree tree, AllReferencesToAllFiles files) {
@@ -61,7 +54,7 @@ public class FileReferencePrinter {
         return printer.toString();
     }
 
-    public static void printFiles(PartitionTree partitionTree, List<FileReference> files, PrintWriter out) {
+    private static void printFiles(PartitionTree partitionTree, List<FileReference> files, PrintWriter out) {
         out.println("File references: " + files.size());
         Map<String, List<FileReference>> filesByPartition = files.stream()
                 .collect(Collectors.groupingBy(FileReference::getPartitionId));
