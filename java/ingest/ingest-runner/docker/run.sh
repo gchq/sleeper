@@ -13,4 +13,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-java -cp /ingest.jar sleeper.ingest.job.ECSIngestTask "$@"
+java -cp /ingest.jar sleeper.ingest.job.ECSIngestTaskRunner "$@"
