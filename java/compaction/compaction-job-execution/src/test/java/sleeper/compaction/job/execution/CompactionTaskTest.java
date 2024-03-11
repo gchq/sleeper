@@ -48,6 +48,7 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
@@ -62,6 +63,7 @@ public class CompactionTaskTest {
     private final List<CompactionJob> successfulJobs = new ArrayList<>();
     private final List<CompactionJob> failedJobs = new ArrayList<>();
     private final CompactionTaskStatusStore taskStore = new InMemoryCompactionTaskStatusStore();
+    private final List<Duration> sleeps = new ArrayList<>();
 
     @BeforeEach
     void setUp() {
@@ -125,6 +127,7 @@ public class CompactionTaskTest {
         void shouldTerminateIfNoJobsArePresentAfterRunningForIdleTime() throws Exception {
             // Given
             instanceProperties.setNumber(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS, 3);
+            instanceProperties.setNumber(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS, 2);
             Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:03Z"))); // Finish
@@ -134,12 +137,14 @@ public class CompactionTaskTest {
 
             // Then
             assertThat(times).isEmpty();
+            assertThat(sleeps).isEmpty();
         }
 
         @Test
         void shouldTerminateIfNoJobsArePresentAfterRunningForIdleTimeWithTwoQueuePolls() throws Exception {
             // Given
             instanceProperties.setNumber(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS, 3);
+            instanceProperties.setNumber(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS, 2);
             Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:02Z"), // First idle time check
@@ -150,12 +155,14 @@ public class CompactionTaskTest {
 
             // Then
             assertThat(times).isEmpty();
+            assertThat(sleeps).containsExactly(Duration.ofSeconds(2));
         }
 
         @Test
         void shouldTerminateAfterRunningJobAndWaitingForIdleTime() throws Exception {
             // Given
             instanceProperties.setNumber(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS, 3);
+            instanceProperties.setNumber(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS, 2);
             Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:01Z"), // Job completed
@@ -170,12 +177,14 @@ public class CompactionTaskTest {
             assertThat(successfulJobs).containsExactly(job);
             assertThat(failedJobs).isEmpty();
             assertThat(jobsOnQueue).isEmpty();
+            assertThat(sleeps).isEmpty();
         }
 
         @Test
         void shouldTerminateWhenMaxIdleTimeNotMetOnFirstCheckThenIdleAfterProcessingJob() throws Exception {
             // Given
             instanceProperties.setNumber(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS, 3);
+            instanceProperties.setNumber(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS, 2);
             Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:01Z"), // First check
@@ -197,12 +206,14 @@ public class CompactionTaskTest {
             assertThat(successfulJobs).containsExactly(job);
             assertThat(failedJobs).isEmpty();
             assertThat(jobsOnQueue).isEmpty();
+            assertThat(sleeps).containsExactly(Duration.ofSeconds(2));
         }
 
         @Test
         void shouldTerminateWhenMaxIdleTimeNotMetOnFirstCheckThenNotMetAfterProcessingJob() throws Exception {
             // Given
             instanceProperties.setNumber(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS, 3);
+            instanceProperties.setNumber(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS, 2);
             Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:01Z"), // First check
@@ -226,6 +237,7 @@ public class CompactionTaskTest {
             assertThat(successfulJobs).containsExactly(job);
             assertThat(failedJobs).isEmpty();
             assertThat(jobsOnQueue).isEmpty();
+            assertThat(sleeps).containsExactly(Duration.ofSeconds(2), Duration.ofSeconds(2));
         }
     }
 
@@ -405,7 +417,7 @@ public class CompactionTaskTest {
             CompactionRunner compactor,
             Supplier<Instant> timeSupplier,
             String taskId) throws Exception {
-        new CompactionTask(instanceProperties, PropertiesReloader.neverReload(), timeSupplier, messageReceiver,
+        new CompactionTask(instanceProperties, PropertiesReloader.neverReload(), timeSupplier, sleeps::add, messageReceiver,
                 compactor, taskStore, taskId)
                 .run();
     }
