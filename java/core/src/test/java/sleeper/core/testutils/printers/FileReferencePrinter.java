@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Comparator.comparing;
 import static java.util.function.Predicate.not;
+import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 public class FileReferencePrinter {
@@ -60,17 +61,9 @@ public class FileReferencePrinter {
     }
 
     private static void printFiles(PartitionTree partitionTree, AllReferencesToAllFiles files, PrintWriter out) {
-        List<FileReference> references = files.getFilesWithReferences().stream()
-                .flatMap(file -> file.getInternalReferences().stream())
-                .sorted(comparing(FileReference::getNumberOfRecords).reversed())
-                .collect(toUnmodifiableList());
+        List<FileReference> references = sortFileReferences(files);
         out.println("File references: " + references.size());
-        AtomicInteger partialCount = new AtomicInteger();
-        Map<String, Integer> numberByPartialFilename = references.stream()
-                .filter(not(FileReference::onlyContainsDataForThisPartition))
-                .map(FileReference::getFilename).distinct()
-                .map(filename -> Map.entry(filename, partialCount.incrementAndGet()))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        Map<String, Integer> numberByPartialFilename = numberPartialFiles(references);
         Map<String, List<FileReference>> filesByPartition = references.stream()
                 .collect(Collectors.groupingBy(FileReference::getPartitionId));
         partitionTree.traverseLeavesFirst().forEach(partition -> {
@@ -97,6 +90,22 @@ public class FileReferencePrinter {
                 }
             }
         });
+    }
+
+    private static List<FileReference> sortFileReferences(AllReferencesToAllFiles files) {
+        return files.getFilesWithReferences().stream()
+                .flatMap(file -> file.getInternalReferences().stream())
+                .sorted(comparing(FileReference::getNumberOfRecords).reversed())
+                .collect(toUnmodifiableList());
+    }
+
+    private static Map<String, Integer> numberPartialFiles(List<FileReference> references) {
+        AtomicInteger partialCount = new AtomicInteger();
+        return references.stream()
+                .filter(not(FileReference::onlyContainsDataForThisPartition))
+                .map(FileReference::getFilename).distinct()
+                .map(filename -> Map.entry(filename, partialCount.incrementAndGet()))
+                .collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
 }
