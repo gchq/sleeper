@@ -48,6 +48,7 @@ import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides.o
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.DEFAULT_SCHEMA;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.ROW_KEY_FIELD_NAME;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.withDefaultProperties;
+import static sleeper.systemtest.dsl.testutil.SystemTestTableMetricsHelper.tableMetrics;
 
 @InMemoryDslTest
 public class MultipleTablesTest {
@@ -173,4 +174,32 @@ public class MultipleTablesTest {
                         List.of("root", "L", "R", "LL", "LR", "RL", "RR"))));
     }
 
+    @Test
+    void shouldGenerateMetricsForMultipleTables(SleeperSystemTest sleeper) {
+        // Given we have several tables
+        // And we ingest two source files as separate jobs
+        sleeper.tables().createManyWithProperties(NUMBER_OF_TABLES, schema, Map.of(
+                COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
+                COMPACTION_FILES_BATCH_SIZE, "2",
+                GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "0"));
+        sleeper.sourceFiles()
+                .createWithNumberedRecords(schema, "file1.parquet", LongStream.range(0, 50))
+                .createWithNumberedRecords(schema, "file2.parquet", LongStream.range(50, 100));
+        sleeper.ingest().byQueue()
+                .sendSourceFilesToAllTables("file1.parquet")
+                .sendSourceFilesToAllTables("file2.parquet")
+                .invokeTask().waitForJobs();
+
+        // When we compute table metrics
+        sleeper.tableMetrics().generate();
+
+        // Then each table has the expected metrics
+        sleeper.tables().forEach(() -> {
+            assertThat(sleeper.tableMetrics().get()).isEqualTo(tableMetrics(sleeper)
+                    .partitionCount(1).leafPartitionCount(1)
+                    .fileCount(2).recordCount(100)
+                    .averageActiveFilesPerPartition(2)
+                    .build());
+        });
+    }
 }

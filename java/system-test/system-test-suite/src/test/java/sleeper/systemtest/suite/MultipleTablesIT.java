@@ -50,6 +50,7 @@ import static sleeper.core.testutils.printers.PartitionsPrinter.printTablePartit
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStringAndZeroPadTo;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides.overrideField;
+import static sleeper.systemtest.dsl.testutil.SystemTestTableMetricsHelper.tableMetrics;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 
 @SystemTest
@@ -183,5 +184,34 @@ public class MultipleTablesIT {
                                 fileReferenceFactory.partitionFile("RRL", 12),
                                 fileReferenceFactory.partitionFile("RRR", 13)),
                         List.of("root", "L", "R", "LL", "LR", "RL", "RR"))));
+    }
+
+    @Test
+    void shouldGenerateMetricsForMultipleTables(SleeperSystemTest sleeper) {
+        // Given we have several tables
+        // And we ingest two source files as separate jobs
+        sleeper.tables().createManyWithProperties(NUMBER_OF_TABLES, schema, Map.of(
+                COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
+                COMPACTION_FILES_BATCH_SIZE, "2",
+                GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "0"));
+        sleeper.sourceFiles()
+                .createWithNumberedRecords(schema, "file1.parquet", LongStream.range(0, 50))
+                .createWithNumberedRecords(schema, "file2.parquet", LongStream.range(50, 100));
+        sleeper.ingest().byQueue()
+                .sendSourceFilesToAllTables("file1.parquet")
+                .sendSourceFilesToAllTables("file2.parquet")
+                .invokeTask().waitForJobs();
+
+        // When we compute table metrics
+        sleeper.tableMetrics().generate();
+
+        // Then each table has the expected metrics
+        sleeper.tables().forEach(() -> {
+            assertThat(sleeper.tableMetrics().get()).isEqualTo(tableMetrics(sleeper)
+                    .partitionCount(1).leafPartitionCount(1)
+                    .fileCount(2).recordCount(100)
+                    .averageActiveFilesPerPartition(2)
+                    .build());
+        });
     }
 }
