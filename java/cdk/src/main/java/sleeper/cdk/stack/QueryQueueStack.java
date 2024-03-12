@@ -45,7 +45,7 @@ public class QueryQueueStack extends NestedStack {
             String id,
             InstanceProperties instanceProperties) {
         super(scope, id);
-        queryQueue = setupQueriesQueryQueue(instanceProperties);
+        queryQueue = setupQueryQueue(instanceProperties);
     }
 
     /***
@@ -54,7 +54,7 @@ public class QueryQueueStack extends NestedStack {
      * @param  instanceProperties containing configuration details
      * @return                    the queue to be used for queries
      */
-    private Queue setupQueriesQueryQueue(InstanceProperties instanceProperties) {
+    private Queue setupQueryQueue(InstanceProperties instanceProperties) {
         String dlQueueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-QueryDLQ");
         Queue queryQueueForDLs = Queue.Builder
                 .create(this, "QueriesDeadLetterQueue")
