@@ -3,11 +3,6 @@
 This section documents some of the planned functionality and improvements:
 
 - Query optimisation:
-    - Separate the query lambda into two. The first will be the query planner that needs to know
-    the information from the state store. The second executes the subqueries. This second
-    lambda does not need to know any information from the state store and so should be able to
-    start up quickly. By splitting the query functionality into two lambdas we can reduce the
-    number of calls to the statestore.
     - Add an option for the system to automatically keep the lambdas warm by periodically
     calling them with dummy queries.
     - Optimise the start-up time of the lambdas, see https://docs.aws.amazon.com/lambda/latest/dg/snapstart.html
