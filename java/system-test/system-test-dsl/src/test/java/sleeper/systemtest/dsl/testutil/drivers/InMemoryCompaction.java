@@ -29,7 +29,6 @@ import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.compaction.testutils.InMemoryCompactionJobStatusStore;
 import sleeper.compaction.testutils.InMemoryCompactionTaskStatusStore;
 import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.iterator.CloseableIterator;
@@ -137,12 +136,12 @@ public class InMemoryCompaction {
 
         private CreateCompactionJobs jobCreator(Mode mode) {
             return new CreateCompactionJobs(ObjectFactory.noUserJars(), instance.getInstanceProperties(),
-                    tablePropertiesProvider(instance), instance.getStateStoreProvider(), jobSender(), jobStore, mode);
+                    instance.getTablePropertiesProvider(), instance.getStateStoreProvider(), jobSender(), jobStore, mode);
         }
     }
 
     private void finishJobs(SystemTestInstanceContext instance, String taskId) {
-        TablePropertiesProvider tablesProvider = tablePropertiesProvider(instance);
+        TablePropertiesProvider tablesProvider = instance.getTablePropertiesProvider();
         for (CompactionJob job : queuedJobsById.values()) {
             TableProperties tableProperties = tablesProvider.getById(job.getTableId());
             RecordsProcessedSummary summary = compact(job, tableProperties, instance.getStateStore(tableProperties), taskId);
@@ -210,11 +209,6 @@ public class InMemoryCompaction {
                 .map(it -> (CountingIterator) it)
                 .mapToLong(it -> it.count)
                 .sum());
-    }
-
-    private static TablePropertiesProvider tablePropertiesProvider(SystemTestInstanceContext instance) {
-        return new FixedTablePropertiesProvider(
-                instance.streamTableProperties().collect(toUnmodifiableList()));
     }
 
     private CreateCompactionJobs.JobSender jobSender() {
