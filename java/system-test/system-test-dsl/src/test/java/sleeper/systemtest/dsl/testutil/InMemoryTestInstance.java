@@ -23,12 +23,16 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
+import sleeper.systemtest.dsl.compaction.ParallelCompactionsTest;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration;
+
+import java.util.function.Consumer;
 
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
+import static sleeper.configuration.properties.instance.CompactionProperty.MAXIMUM_CONCURRENT_COMPACTION_TASKS;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
@@ -48,16 +52,23 @@ public class InMemoryTestInstance {
             .valueFields(new Field(VALUE_FIELD_NAME, new StringType()))
             .build();
     public static final SystemTestInstanceConfiguration MAIN = withDefaultProperties("main");
+    public static final SystemTestInstanceConfiguration PARALLEL_COMPACTIONS = withInstanceProperties("compact", properties -> {
+        properties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, ParallelCompactionsTest.NUMBER_OF_COMPACTIONS);
+    });
 
     public static SystemTestInstanceConfiguration withDefaultProperties(String identifier) {
+        return withInstanceProperties(identifier, properties -> {
+        });
+    }
+
+    public static SystemTestInstanceConfiguration withInstanceProperties(
+            String identifier, Consumer<InstanceProperties> config) {
         return usingSystemTestDefaults(identifier, () -> {
             InstanceProperties instanceProperties = createDslInstanceProperties();
-            TableProperties tableProperties = createTestTableProperties(instanceProperties, DEFAULT_SCHEMA);
-            tableProperties.unset(TABLE_ID);
-            tableProperties.set(TABLE_NAME, "system-test");
+            config.accept(instanceProperties);
             return DeployInstanceConfiguration.builder()
                     .instanceProperties(instanceProperties)
-                    .tableProperties(tableProperties)
+                    .tableProperties(createDslTableProperties(instanceProperties))
                     .build();
         });
     }
@@ -69,5 +80,12 @@ public class InMemoryTestInstance {
         instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
         instanceProperties.set(INGEST_JOB_QUEUE_URL, "in-memory-ingest-job-queue-url");
         return instanceProperties;
+    }
+
+    public static TableProperties createDslTableProperties(InstanceProperties instanceProperties) {
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, DEFAULT_SCHEMA);
+        tableProperties.unset(TABLE_ID);
+        tableProperties.set(TABLE_NAME, "system-test");
+        return tableProperties;
     }
 }

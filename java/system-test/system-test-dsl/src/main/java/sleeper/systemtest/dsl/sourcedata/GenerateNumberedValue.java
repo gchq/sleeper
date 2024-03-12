@@ -45,13 +45,13 @@ public interface GenerateNumberedValue {
         }
         if (fieldType instanceof StringType) {
             switch (keyType) {
-                case ROW:
-                default:
-                    return numberStringAndZeroPadTo(19).then(addPrefix("row-"));
-                case SORT:
-                    return numberStringAndZeroPadTo(19).then(addPrefix("sort-"));
-                case VALUE:
-                    return numberStringAndZeroPadTo(19).then(addPrefix("Value "));
+            case ROW:
+            default:
+                return numberStringAndZeroPadTo(19).then(addPrefix("row-"));
+            case SORT:
+                return numberStringAndZeroPadTo(19).then(addPrefix("sort-"));
+            case VALUE:
+                return numberStringAndZeroPadTo(19).then(addPrefix("Value "));
             }
         }
         if (fieldType instanceof ByteArrayType) {
@@ -65,7 +65,11 @@ public interface GenerateNumberedValue {
     }
 
     static GenerateNumberedValue numberStringAndZeroPadTo(int size) {
-        return num -> StringUtils.leftPad(num + "", size, "0");
+        return num -> numberStringAndZeroPadTo(size, num);
+    }
+
+    static String numberStringAndZeroPadTo(int size, long number) {
+        return StringUtils.leftPad(number + "", size, "0");
     }
 
     static UnaryOperator<Object> addPrefix(String prefix) {
