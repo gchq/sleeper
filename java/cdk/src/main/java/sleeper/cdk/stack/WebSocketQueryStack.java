@@ -61,13 +61,12 @@ public class WebSocketQueryStack extends NestedStack {
     public WebSocketQueryStack(Construct scope,
             String id,
             InstanceProperties instanceProperties,
-            BuiltJars jars, CoreStacks coreStacks, QueryQueueStack queryQueueStack) {
+            BuiltJars jars, CoreStacks coreStacks, QueryQueueStack queryQueueStack, QueryStack queryStack) {
         super(scope, id);
 
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
         LambdaCode queryJar = jars.lambdaCode(BuiltJar.QUERY, jarsBucket);
-        setupWebSocketApi(instanceProperties, queryJar, coreStacks);
-        queryQueueStack.grantSendMessages(webSocketApiHandler);
+        setupWebSocketApi(instanceProperties, queryJar, coreStacks, queryQueueStack, queryStack);
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
@@ -77,8 +76,11 @@ public class WebSocketQueryStack extends NestedStack {
      * @param instanceProperties containing configuration details
      * @param queryJar           the query jar lambda code
      * @param coreStacks         the core stacks this belongs to
+     * @param queryQueueStack    the stack responsible for the query queue
+     * @param queryStack         the stack responsible for the query lambdas
      */
-    protected void setupWebSocketApi(InstanceProperties instanceProperties, LambdaCode queryJar, CoreStacks coreStacks) {
+    protected void setupWebSocketApi(InstanceProperties instanceProperties, LambdaCode queryJar,
+            CoreStacks coreStacks, QueryQueueStack queryQueueStack, QueryStack queryStack) {
         Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "websocket-api-handler"));
@@ -92,7 +94,7 @@ public class WebSocketQueryStack extends NestedStack {
                 .timeout(Duration.seconds(29))
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11));
 
-        //queryStack.getQueryQueue().grantSendMessages(handler);
+        queryQueueStack.grantSendMessages(webSocketApiHandler);
         coreStacks.grantReadTablesConfig(webSocketApiHandler);
 
         CfnApi api = CfnApi.Builder.create(this, "api")
@@ -151,8 +153,8 @@ public class WebSocketQueryStack extends NestedStack {
                 .autoDeploy(true)
                 .build();
         stage.grantManagementApiAccess(webSocketApiHandler);
-        // stage.grantManagementApiAccess(queryStack.getQueryExecutorLambda());
-        // stage.grantManagementApiAccess(queryStack.getLeafPartitionQueryLambda());
+        stage.grantManagementApiAccess(queryStack.getQueryExecutorLambda());
+        stage.grantManagementApiAccess(queryStack.getLeafPartitionQueryLambda());
 
         new CfnOutput(this, "WebSocketApiUrl", CfnOutputProps.builder()
                 .value(stage.getUrl())
@@ -176,13 +178,5 @@ public class WebSocketQueryStack extends NestedStack {
                         .build())
                         + "/live/*"))
                 .build());
-    }
-
-    public void grantStageApiAccess(IGrantable grantable) {
-        stage.grantManagementApiAccess(grantable);
-    }
-
-    public IFunction getWebSocketApiHandler() {
-        return webSocketApiHandler;
     }
 }
