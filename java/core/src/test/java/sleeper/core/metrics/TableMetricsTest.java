@@ -53,10 +53,10 @@ public class TableMetricsTest {
             createTable("test-table", inMemoryStateStoreWithFixedSinglePartition(schema));
 
             // When
-            List<TableMetrics> metrics = tableMetrics();
+            TableMetrics metrics = tableMetrics();
 
             // Then
-            assertThat(metrics).containsExactly(TableMetrics.builder()
+            assertThat(metrics).isEqualTo(TableMetrics.builder()
                     .instanceId("test-instance")
                     .tableName("test-table")
                     .fileCount(0).recordCount(0)
@@ -74,10 +74,10 @@ public class TableMetricsTest {
                     .buildStateStore());
 
             // When
-            List<TableMetrics> metrics = tableMetrics();
+            TableMetrics metrics = tableMetrics();
 
             // Then
-            assertThat(metrics).containsExactly(TableMetrics.builder()
+            assertThat(metrics).isEqualTo(TableMetrics.builder()
                     .instanceId("test-instance")
                     .tableName("test-table")
                     .fileCount(1).recordCount(100)
@@ -98,10 +98,10 @@ public class TableMetricsTest {
                     .buildStateStore());
 
             // When
-            List<TableMetrics> metrics = tableMetrics();
+            TableMetrics metrics = tableMetrics();
 
             // Then
-            assertThat(metrics).containsExactly(TableMetrics.builder()
+            assertThat(metrics).isEqualTo(TableMetrics.builder()
                     .instanceId("test-instance")
                     .tableName("test-table")
                     .fileCount(2).recordCount(300)
@@ -126,10 +126,10 @@ public class TableMetricsTest {
             createTable("test-table", inMemoryStateStoreWithFixedPartitions(partitions));
 
             // When
-            List<TableMetrics> metrics = tableMetrics();
+            TableMetrics metrics = tableMetrics();
 
             // Then
-            assertThat(metrics).containsExactly(TableMetrics.builder()
+            assertThat(metrics).isEqualTo(TableMetrics.builder()
                     .instanceId("test-instance")
                     .tableName("test-table")
                     .fileCount(0).recordCount(0)
@@ -152,10 +152,10 @@ public class TableMetricsTest {
                     .buildStateStore());
 
             // When
-            List<TableMetrics> metrics = tableMetrics();
+            TableMetrics metrics = tableMetrics();
 
             // Then
-            assertThat(metrics).containsExactly(TableMetrics.builder()
+            assertThat(metrics).isEqualTo(TableMetrics.builder()
                     .instanceId("test-instance")
                     .tableName("test-table")
                     .fileCount(3).recordCount(123)
@@ -178,10 +178,10 @@ public class TableMetricsTest {
                     .buildStateStore());
 
             // When
-            List<TableMetrics> metrics = tableMetrics();
+            TableMetrics metrics = tableMetrics();
 
             // Then
-            assertThat(metrics).containsExactly(TableMetrics.builder()
+            assertThat(metrics).isEqualTo(TableMetrics.builder()
                     .instanceId("test-instance")
                     .tableName("test-table")
                     .fileCount(3).recordCount(30)
@@ -202,10 +202,10 @@ public class TableMetricsTest {
                     .buildStateStore());
 
             // When
-            List<TableMetrics> metrics = tableMetrics();
+            TableMetrics metrics = tableMetrics();
 
             // Then
-            assertThat(metrics).containsExactly(TableMetrics.builder()
+            assertThat(metrics).isEqualTo(TableMetrics.builder()
                     .instanceId("test-instance")
                     .tableName("test-table")
                     .fileCount(1).recordCount(10)
@@ -232,10 +232,10 @@ public class TableMetricsTest {
                     .buildStateStore());
 
             // When
-            List<TableMetrics> metrics = tableMetrics();
+            TableMetrics metrics = tableMetrics();
 
             // Then
-            assertThat(metrics).containsExactly(TableMetrics.builder()
+            assertThat(metrics).isEqualTo(TableMetrics.builder()
                     .instanceId("test-instance")
                     .tableName("test-table")
                     .fileCount(1).recordCount(100)
@@ -258,10 +258,10 @@ public class TableMetricsTest {
                     .buildStateStore());
 
             // When
-            List<TableMetrics> metrics = tableMetrics();
+            TableMetrics metrics = tableMetrics();
 
             // Then
-            assertThat(metrics).containsExactly(TableMetrics.builder()
+            assertThat(metrics).isEqualTo(TableMetrics.builder()
                     .instanceId("test-instance")
                     .tableName("test-table")
                     .fileCount(2).recordCount(123)
@@ -280,11 +280,7 @@ public class TableMetricsTest {
         this.stateStore = stateStore;
     }
 
-    private List<TableMetrics> tableMetrics() {
-        return List.of(singleTableMetrics());
-    }
-
-    private TableMetrics singleTableMetrics() {
+    private TableMetrics tableMetrics() {
         try {
             return TableMetrics.from(instanceId, table, stateStore);
         } catch (StateStoreException e) {
