@@ -62,8 +62,9 @@ This will print the results to standard out as they appear on the queue.
 
 ## Using websockets to submit queries to be executed via lambda
 
-You can also submit queries to be executed using websockets. These queries will then be executed using lambda and the
-results returned directly to the websocket client. This can be done using:
+If you have the `WebSocketQueryStack` optional stack deployed, you can also submit queries to be executed using websockets.
+These queries will then be executed using lambda and the results returned directly to the websocket client.
+This can be done using:
 
 ```bash
 INSTANCE_ID=myInstanceId

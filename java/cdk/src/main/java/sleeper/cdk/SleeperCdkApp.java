@@ -40,6 +40,7 @@ import sleeper.cdk.stack.KeepLambdaWarmStack;
 import sleeper.cdk.stack.ManagedPoliciesStack;
 import sleeper.cdk.stack.PartitionSplittingStack;
 import sleeper.cdk.stack.PropertiesStack;
+import sleeper.cdk.stack.QueryQueueStack;
 import sleeper.cdk.stack.QueryStack;
 import sleeper.cdk.stack.S3StateStoreStack;
 import sleeper.cdk.stack.StateStoreStacks;
@@ -48,6 +49,7 @@ import sleeper.cdk.stack.TableIndexStack;
 import sleeper.cdk.stack.TableMetricsStack;
 import sleeper.cdk.stack.TopicStack;
 import sleeper.cdk.stack.VpcStack;
+import sleeper.cdk.stack.WebSocketQueryStack;
 import sleeper.cdk.stack.bulkimport.BulkImportBucketStack;
 import sleeper.cdk.stack.bulkimport.CommonEmrBulkImportStack;
 import sleeper.cdk.stack.bulkimport.EksBulkImportStack;
@@ -87,6 +89,7 @@ public class SleeperCdkApp extends Stack {
     private PersistentEmrBulkImportStack persistentEmrBulkImportStack;
     private EksBulkImportStack eksBulkImportStack;
     private IngestStatusStoreStack ingestStatusStoreStack;
+    private QueryStack queryStack;
 
     public SleeperCdkApp(App app, String id, StackProps props, InstanceProperties instanceProperties, BuiltJars jars) {
         super(app, id, props);
@@ -96,24 +99,28 @@ public class SleeperCdkApp extends Stack {
     }
 
     private static final List<String> BULK_IMPORT_STACK_NAMES = Stream.of(
-                    EmrBulkImportStack.class,
-                    EmrServerlessBulkImportStack.class,
-                    PersistentEmrBulkImportStack.class,
-                    EksBulkImportStack.class)
+            EmrBulkImportStack.class,
+            EmrServerlessBulkImportStack.class,
+            PersistentEmrBulkImportStack.class,
+            EksBulkImportStack.class)
             .map(Class::getSimpleName).collect(Collectors.toList());
 
     private static final List<String> EMR_BULK_IMPORT_STACK_NAMES = Stream.of(
-                    EmrBulkImportStack.class,
-                    EmrServerlessBulkImportStack.class,
-                    PersistentEmrBulkImportStack.class)
+            EmrBulkImportStack.class,
+            EmrServerlessBulkImportStack.class,
+            PersistentEmrBulkImportStack.class)
             .map(Class::getSimpleName).collect(Collectors.toList());
 
     public static final List<String> INGEST_STACK_NAMES = Stream.of(
-                    IngestStack.class,
-                    EmrBulkImportStack.class,
-                    EmrServerlessBulkImportStack.class,
-                    PersistentEmrBulkImportStack.class,
-                    EksBulkImportStack.class)
+            IngestStack.class,
+            EmrBulkImportStack.class,
+            EmrServerlessBulkImportStack.class,
+            PersistentEmrBulkImportStack.class,
+            EksBulkImportStack.class)
+            .map(Class::getSimpleName).collect(Collectors.toList());
+    public static final List<String> QUERY_STACK_NAMES = Stream.of(
+            QueryStack.class,
+            WebSocketQueryStack.class)
             .map(Class::getSimpleName).collect(Collectors.toList());
 
     public void create() {
@@ -163,8 +170,7 @@ public class SleeperCdkApp extends Stack {
                     bulkImportBucketStack,
                     topicStack,
                     coreStacks,
-                    ingestStatusStoreStack.getResources()
-            );
+                    ingestStatusStoreStack.getResources());
 
             // Stack to created EMR studio to be used to access EMR Serverless
             if (optionalStacks.contains(EmrStudioStack.class.getSimpleName())) {
@@ -180,8 +186,7 @@ public class SleeperCdkApp extends Stack {
                     emrBulkImportCommonStack,
                     topicStack,
                     coreStacks,
-                    ingestStatusStoreStack.getResources()
-            );
+                    ingestStatusStoreStack.getResources());
         }
 
         // Stack to run bulk import jobs via a persistent EMR cluster
@@ -193,8 +198,7 @@ public class SleeperCdkApp extends Stack {
                     emrBulkImportCommonStack,
                     topicStack,
                     coreStacks,
-                    ingestStatusStoreStack.getResources()
-            );
+                    ingestStatusStoreStack.getResources());
         }
 
         // Stack to run bulk import jobs via EKS
@@ -205,8 +209,7 @@ public class SleeperCdkApp extends Stack {
                     bulkImportBucketStack,
                     coreStacks,
                     topicStack,
-                    ingestStatusStoreStack
-            );
+                    ingestStatusStoreStack);
         }
 
         // Stack to garbage collect old files
@@ -237,13 +240,20 @@ public class SleeperCdkApp extends Stack {
 
         QueryStack queryStack = null;
         // Stack to execute queries
-        if (optionalStacks.contains(QueryStack.class.getSimpleName())) {
+        if (QUERY_STACK_NAMES.stream().anyMatch(optionalStacks::contains)) {
+            QueryQueueStack queryQueueStack = new QueryQueueStack(this, "QueryQueue", instanceProperties);
             queryStack = new QueryStack(this,
                     "Query",
                     instanceProperties, jars,
-                    coreStacks);
+                    coreStacks, queryQueueStack);
+            // Stack to execute queries using the web socket API
+            if (optionalStacks.contains(WebSocketQueryStack.class.getSimpleName())) {
+                new WebSocketQueryStack(this,
+                        "WebSocketQuery",
+                        instanceProperties, jars,
+                        coreStacks, queryQueueStack, queryStack);
+            }
         }
-
         // Stack for ingest jobs
         if (optionalStacks.contains(IngestStack.class.getSimpleName())) {
             ingestStack = new IngestStack(this,
@@ -269,8 +279,7 @@ public class SleeperCdkApp extends Stack {
                     ingestStack,
                     compactionStack,
                     partitionSplittingStack,
-                    instanceProperties
-            );
+                    instanceProperties);
         }
 
         if (optionalStacks.contains(KeepLambdaWarmStack.class.getSimpleName())) {
