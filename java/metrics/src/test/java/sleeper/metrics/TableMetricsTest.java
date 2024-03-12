@@ -20,36 +20,28 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.inmemory.StateStoreTestBuilder;
-import sleeper.statestore.FixedStateStoreProvider;
+import sleeper.core.table.TableStatus;
+import sleeper.core.table.TableStatusTestHelper;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 
 public class TableMetricsTest {
-    private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = schemaWithKey("key", new LongType());
-    private final List<TableProperties> tables = new ArrayList<>();
-    private final Map<String, StateStore> stateStoreByTableName = new HashMap<>();
+    private String instanceId;
+    private TableStatus table;
+    private StateStore stateStore;
 
     @Nested
     @DisplayName("One partition")
@@ -57,7 +49,7 @@ public class TableMetricsTest {
         @Test
         void shouldReportMetricsWithEmptyTable() {
             // Given
-            instanceProperties.set(ID, "test-instance");
+            createInstance("test-instance");
             createTable("test-table", inMemoryStateStoreWithFixedSinglePartition(schema));
 
             // When
@@ -76,7 +68,7 @@ public class TableMetricsTest {
         @Test
         void shouldReportMetricsWithOneFileInOnePartition() {
             // Given
-            instanceProperties.set(ID, "test-instance");
+            createInstance("test-instance");
             createTable("test-table", StateStoreTestBuilder.withSinglePartition(schema)
                     .singleFileInEachLeafPartitionWithRecords(100L)
                     .buildStateStore());
@@ -97,7 +89,7 @@ public class TableMetricsTest {
         @Test
         void shouldReportMetricsForMultipleFilesWithDifferentRecordCounts() {
             // Given
-            instanceProperties.set(ID, "test-instance");
+            createInstance("test-instance");
             PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema)
                     .singlePartition("root");
             createTable("test-table", StateStoreTestBuilder.from(partitionsBuilder)
@@ -126,7 +118,7 @@ public class TableMetricsTest {
         @Test
         void shouldReportMetricsWithMultiplePartitions() {
             // Given
-            instanceProperties.set(ID, "test-instance");
+            createInstance("test-instance");
             List<Partition> partitions = new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "left", "right", 10L)
@@ -149,7 +141,7 @@ public class TableMetricsTest {
         @Test
         void shouldReportMetricsWithTwoFilesInOnePartitionAndOneFileInOther() {
             // Given
-            instanceProperties.set(ID, "test-instance");
+            createInstance("test-instance");
             PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", 100L);
@@ -175,7 +167,7 @@ public class TableMetricsTest {
         @Test
         void shouldReportMetricsForMultiplePartitionsWithDifferentFileCounts() {
             // Given
-            instanceProperties.set(ID, "test-instance");
+            createInstance("test-instance");
             PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "left", "right", 10L);
@@ -201,7 +193,7 @@ public class TableMetricsTest {
         @Test
         void shouldReportMetricsForMultiplePartitionsWhenOneLeafPartitionHasNoFiles() {
             // Given
-            instanceProperties.set(ID, "test-instance");
+            createInstance("test-instance");
             PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "left", "right", 10L);
@@ -230,7 +222,7 @@ public class TableMetricsTest {
         @Test
         void shouldReportMetricsWithOneFileInMultiplePartitions() {
             // Given
-            instanceProperties.set(ID, "test-instance");
+            createInstance("test-instance");
             PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", 100L);
@@ -255,7 +247,7 @@ public class TableMetricsTest {
         @Test
         void shouldReportMetricsWithOneFileInMultiplePartitionsAndOneFileInOnePartition() {
             // Given
-            instanceProperties.set(ID, "test-instance");
+            createInstance("test-instance");
             PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", 100L);
@@ -279,52 +271,24 @@ public class TableMetricsTest {
         }
     }
 
-    @Nested
-    @DisplayName("Multiple tables")
-    class MultipleTables {
-
-        @Test
-        void shouldReportMetricsForMultipleTablesWithOnePartitionAndOneFileEach() {
-            // Given
-            instanceProperties.set(ID, "multiple-tables-instance");
-            createTable("table-1", StateStoreTestBuilder.withSinglePartition(schema)
-                    .singleFileInEachLeafPartitionWithRecords(10L)
-                    .buildStateStore());
-            createTable("table-2", StateStoreTestBuilder.withSinglePartition(schema)
-                    .singleFileInEachLeafPartitionWithRecords(10L)
-                    .buildStateStore());
-
-            // When
-            List<TableMetrics> metrics = tableMetrics();
-
-            // Then
-            assertThat(metrics).containsExactly(
-                    TableMetrics.builder()
-                            .instanceId("multiple-tables-instance")
-                            .tableName("table-1")
-                            .fileCount(1).recordCount(10)
-                            .partitionCount(1).leafPartitionCount(1)
-                            .averageActiveFilesPerPartition(1)
-                            .build(),
-                    TableMetrics.builder()
-                            .instanceId("multiple-tables-instance")
-                            .tableName("table-2")
-                            .fileCount(1).recordCount(10)
-                            .partitionCount(1).leafPartitionCount(1)
-                            .averageActiveFilesPerPartition(1)
-                            .build());
-        }
+    private void createInstance(String instanceId) {
+        this.instanceId = instanceId;
     }
 
     private void createTable(String tableName, StateStore stateStore) {
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        tableProperties.set(TABLE_NAME, tableName);
-        tables.add(tableProperties);
-        stateStoreByTableName.put(tableName, stateStore);
+        this.table = TableStatusTestHelper.uniqueIdAndName(tableName, tableName);
+        this.stateStore = stateStore;
     }
 
     private List<TableMetrics> tableMetrics() {
-        return TableMetrics.streamFrom(instanceProperties, tables, new FixedStateStoreProvider(stateStoreByTableName))
-                .collect(Collectors.toUnmodifiableList());
+        return List.of(singleTableMetrics());
+    }
+
+    private TableMetrics singleTableMetrics() {
+        try {
+            return TableMetrics.from(instanceId, table, stateStore);
+        } catch (StateStoreException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

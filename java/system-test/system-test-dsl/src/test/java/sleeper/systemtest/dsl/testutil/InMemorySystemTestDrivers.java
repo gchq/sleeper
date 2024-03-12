@@ -30,6 +30,7 @@ import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
 import sleeper.systemtest.dsl.instance.SleeperTablesDriver;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentDriver;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
+import sleeper.systemtest.dsl.metrics.TableMetricsDriver;
 import sleeper.systemtest.dsl.partitioning.PartitionSplittingDriver;
 import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
@@ -48,6 +49,7 @@ import sleeper.systemtest.dsl.testutil.drivers.InMemorySleeperInstanceDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySleeperTablesDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySourceFilesDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySystemTestDeploymentDriver;
+import sleeper.systemtest.dsl.testutil.drivers.InMemoryTableMetricsDriver;
 import sleeper.systemtest.dsl.util.PurgeQueueDriver;
 import sleeper.systemtest.dsl.util.SystemTestDriversBase;
 import sleeper.systemtest.dsl.util.WaitForJobs;
@@ -158,6 +160,11 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
     @Override
     public PartitionSplittingDriver partitionSplitting(SystemTestContext context) {
         return new InMemoryPartitionSplittingDriver(context.instance(), sketches);
+    }
+
+    @Override
+    public TableMetricsDriver tableMetrics(SystemTestContext context) {
+        return new InMemoryTableMetricsDriver();
     }
 
     public InMemoryDataStore data() {
