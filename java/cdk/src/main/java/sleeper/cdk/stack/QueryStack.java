@@ -81,7 +81,6 @@ public class QueryStack extends NestedStack {
     public static final String QUERY_RESULTS_QUEUE_URL = "QueryResultsQueueUrl";
     public static final String QUERY_LAMBDA_ROLE_ARN = "QueryLambdaRoleArn";
 
-    private LambdaCode queryJar;
     private IFunction queryExecutorLambda;
     private IFunction leafPartitionQueryLambda;
 
@@ -114,7 +113,7 @@ public class QueryStack extends NestedStack {
 
         instanceProperties.set(QUERY_TRACKER_TABLE_NAME, queryTrackingTable.getTableName());
 
-        queryJar = jars.lambdaCode(BuiltJar.QUERY, jarsBucket);
+        LambdaCode queryJar = jars.lambdaCode(BuiltJar.QUERY, jarsBucket);
 
         queryExecutorLambda = setupQueriesQueryLambda(coreStacks, queryQueueStack, instanceProperties, queryJar, jarsBucket, queryTrackingTable);
         leafPartitionQueryLambda = setupLeafPartitionQueryQueueAndLambda(coreStacks, instanceProperties, queryJar, jarsBucket, queryTrackingTable);
@@ -381,10 +380,6 @@ public class QueryStack extends NestedStack {
         setPermissionsForLambda(coreStacks, jarsBucket, lambda, queryTrackingTable, queue);
         resultsBucket.grantReadWrite(lambda);
         resultsQueue.grantSendMessages(lambda);
-    }
-
-    public LambdaCode getQueryJar() {
-        return queryJar;
     }
 
     public IFunction getQueryExecutorLambda() {
