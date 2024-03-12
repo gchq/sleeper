@@ -196,6 +196,12 @@
             <property name="illegalClasses"
                       value="^org\.junit\.jupiter\.api\.Assertions, ^org\.junit\.(?!jupiter|platform).+"/>
         </module>
+        <module name="Indentation">
+            <property name="id" value="indentation"/>
+        </module>
+        <module name="UnnecessarySemicolonAfterTypeMemberDeclaration">
+            <property name="id" value="unnecessarySemicolonAfterTypeMemberDeclaration"/>
+        </module>
     </module>
     <module name="UniqueProperties">
         <property name="id" value="uniqueProperties"/>
