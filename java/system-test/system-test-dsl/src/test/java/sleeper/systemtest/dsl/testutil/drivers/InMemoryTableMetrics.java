@@ -64,6 +64,11 @@ public class InMemoryTableMetrics {
                     "PartitionCount", List.of((double) metrics.getPartitionCount()),
                     "RecordCount", List.of((double) metrics.getRecordCount()));
         }
+
+        @Override
+        public TableMetrics getMetrics() {
+            return metricsByTableName.get(instance.getTableName());
+        }
     }
 
     private void add(TableMetrics metrics) {
