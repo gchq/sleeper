@@ -35,6 +35,7 @@ import software.amazon.lambda.powertools.metrics.MetricsUtils;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.core.metrics.TableMetrics;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.table.InvokeForTableRequest;
 import sleeper.core.table.InvokeForTableRequestSerDe;

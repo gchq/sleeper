@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.metrics;
+package sleeper.core.metrics;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
