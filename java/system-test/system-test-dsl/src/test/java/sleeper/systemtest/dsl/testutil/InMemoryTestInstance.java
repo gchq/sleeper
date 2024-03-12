@@ -47,6 +47,7 @@ public class InMemoryTestInstance {
             .sortKeyFields(new Field(SORT_KEY_FIELD_NAME, new LongType()))
             .valueFields(new Field(VALUE_FIELD_NAME, new StringType()))
             .build();
+    public static final SystemTestInstanceConfiguration MAIN = withDefaultProperties("main");
 
     public static SystemTestInstanceConfiguration withDefaultProperties(String identifier) {
         return usingSystemTestDefaults(identifier, () -> {

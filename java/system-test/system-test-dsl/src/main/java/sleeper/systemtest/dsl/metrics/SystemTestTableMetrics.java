@@ -16,8 +16,7 @@
 
 package sleeper.systemtest.dsl.metrics;
 
-import java.util.List;
-import java.util.Map;
+import sleeper.core.metrics.TableMetrics;
 
 public class SystemTestTableMetrics {
 
@@ -32,7 +31,7 @@ public class SystemTestTableMetrics {
         return this;
     }
 
-    public Map<String, List<Double>> get() {
+    public TableMetrics get() {
         return driver.getTableMetrics();
     }
 }
