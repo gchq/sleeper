@@ -39,13 +39,13 @@ public class QueryQueueStack extends NestedStack {
     public static final String QUERY_QUEUE_NAME = "QueryQueueName";
     public static final String QUERY_QUEUE_URL = "QueryQueueUrl";
     public static final String QUERY_DL_QUEUE_URL = "QueryDLQueueUrl";
-    private Queue queryQueriesQueue;
+    private Queue queryQueue;
 
     public QueryQueueStack(Construct scope,
             String id,
             InstanceProperties instanceProperties) {
         super(scope, id);
-        queryQueriesQueue = setupQueriesQueryQueue(instanceProperties);
+        queryQueue = setupQueriesQueryQueue(instanceProperties);
     }
 
     /***
@@ -98,10 +98,10 @@ public class QueryQueueStack extends NestedStack {
     }
 
     public void grantSendMessages(IGrantable grantable) {
-        queryQueriesQueue.grantSendMessages(grantable);
+        queryQueue.grantSendMessages(grantable);
     }
 
     public Queue getQueue() {
-        return queryQueriesQueue;
+        return queryQueue;
     }
 }
