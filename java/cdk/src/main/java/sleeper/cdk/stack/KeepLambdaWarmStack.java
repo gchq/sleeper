@@ -60,7 +60,7 @@ public class KeepLambdaWarmStack extends NestedStack {
             InstanceProperties instanceProperties,
             BuiltJars jars,
             CoreStacks coreStacks,
-            QueryStack queryStack) {
+            QueryQueueStack queryQueueStack) {
         super(scope, id);
 
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
@@ -94,7 +94,7 @@ public class KeepLambdaWarmStack extends NestedStack {
                         .build()))
                 .build();
 
-        queryStack.grantSendMessages(handler);
+        queryQueueStack.grantSendMessages(handler);
 
         coreStacks.grantReadInstanceConfig(handler);
         coreStacks.grantReadTablesAndData(handler);

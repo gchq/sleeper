@@ -89,7 +89,7 @@ public class SleeperCdkApp extends Stack {
     private PersistentEmrBulkImportStack persistentEmrBulkImportStack;
     private EksBulkImportStack eksBulkImportStack;
     private IngestStatusStoreStack ingestStatusStoreStack;
-    private QueryStack queryStack;
+    private QueryQueueStack queryQueueStack;
 
     public SleeperCdkApp(App app, String id, StackProps props, InstanceProperties instanceProperties, BuiltJars jars) {
         super(app, id, props);
@@ -241,7 +241,7 @@ public class SleeperCdkApp extends Stack {
         QueryStack queryStack = null;
         // Stack to execute queries
         if (QUERY_STACK_NAMES.stream().anyMatch(optionalStacks::contains)) {
-            QueryQueueStack queryQueueStack = new QueryQueueStack(this, "QueryQueue", instanceProperties);
+            queryQueueStack = new QueryQueueStack(this, "QueryQueue", instanceProperties);
             queryStack = new QueryStack(this,
                     "Query",
                     instanceProperties, jars,
@@ -288,7 +288,7 @@ public class SleeperCdkApp extends Stack {
                     instanceProperties,
                     jars,
                     coreStacks,
-                    queryStack);
+                    queryQueueStack);
         }
 
         this.generateProperties();
