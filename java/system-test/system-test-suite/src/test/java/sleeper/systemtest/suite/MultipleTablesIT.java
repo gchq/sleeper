@@ -56,7 +56,7 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 @SystemTest
 public class MultipleTablesIT {
     private final Schema schema = SystemTestSchema.DEFAULT_SCHEMA;
-    private static final int NUMBER_OF_TABLES = 5;
+    private static final int NUMBER_OF_TABLES = 200;
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, AfterTestPurgeQueues purgeQueues) {
