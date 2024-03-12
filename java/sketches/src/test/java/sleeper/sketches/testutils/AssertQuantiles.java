@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -45,9 +46,9 @@ public class AssertQuantiles {
         return new Builder(sketch);
     }
 
-    private static final double[] DECILES_QUANTILE_BOUNDARIES = new double[]{
-            0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0
-    };
+    private static final double[] DECILES_QUANTILE_BOUNDARIES = DoubleStream.of(
+            0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0)
+            .toArray();
 
     public static Map<String, Map<Double, Object>> asDecilesMaps(Sketches sketches) {
         return sketches.getQuantilesSketches().entrySet().stream()
