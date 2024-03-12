@@ -42,6 +42,7 @@ import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.range.Range;
+import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -51,6 +52,7 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.query.model.Query;
+import sleeper.query.model.QueryProcessingConfig;
 import sleeper.query.model.QuerySerDe;
 import sleeper.query.output.ResultsOutputConstants;
 import sleeper.query.runner.tracker.DynamoDBQueryTrackerCreator;
@@ -60,6 +62,8 @@ import sleeper.statestore.s3.S3StateStoreCreator;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 import static java.nio.file.Files.createTempDirectory;
@@ -131,14 +135,9 @@ public class WarmQueryExecutorLambdaIT {
         assertThat(result.getMessages()).hasSize(1);
 
         Query query = querySerDe.fromJson(result.getMessages().get(0).getBody());
-        assertThat(query.getTableName().equals(tableProperties.get(TABLE_NAME)));
-        assertThat(query.getResultsPublisherConfig().get(ResultsOutputConstants.DESTINATION).equals(NO_RESULTS_OUTPUT));
-        query.getRegions().forEach(region -> {
-            Range range = region.getRange("key");
-            assertThat(range.getField().getType()).isInstanceOf(StringType.class);
-            assertThat(range.getMin()).isEqualTo("a");
-            assertThat(range.getMax()).isEqualTo("a");
-        });
+        Query expected = buildExpectedQuery(query.getQueryId(), tableProperties.get(TABLE_NAME), schema, "a", "a");
+
+        assertThat(query).isEqualTo(expected);
     }
 
     @Test
@@ -157,15 +156,11 @@ public class WarmQueryExecutorLambdaIT {
         assertThat(result.getMessages()).hasSize(1);
 
         Query query = querySerDe.fromJson(result.getMessages().get(0).getBody());
-        assertThat(query.getTableName().equals(tableProperties.get(TABLE_NAME)));
-        assertThat(query.getResultsPublisherConfig().get(ResultsOutputConstants.DESTINATION).equals(NO_RESULTS_OUTPUT));
-        query.getRegions().forEach(region -> {
-            Range range = region.getRange("key");
-            byte[] value = new byte[]{'a'};
-            assertThat(range.getField().getType()).isInstanceOf(ByteArrayType.class);
-            assertThat(range.getMin()).isEqualTo(value);
-            assertThat(range.getMax()).isEqualTo(value);
-        });
+
+        byte[] value = new byte[]{'a'};
+        Query expected = buildExpectedQuery(query.getQueryId(), tableProperties.get(TABLE_NAME), schema, value, value);
+
+        assertThat(query).isEqualTo(expected);
     }
 
     @Test
@@ -184,14 +179,9 @@ public class WarmQueryExecutorLambdaIT {
         assertThat(result.getMessages()).hasSize(1);
 
         Query query = querySerDe.fromJson(result.getMessages().get(0).getBody());
-        assertThat(query.getTableName().equals(tableProperties.get(TABLE_NAME)));
-        assertThat(query.getResultsPublisherConfig().get(ResultsOutputConstants.DESTINATION).equals(NO_RESULTS_OUTPUT));
-        query.getRegions().forEach(region -> {
-            Range range = region.getRange("key");
-            assertThat(range.getField().getType()).isInstanceOf(IntType.class);
-            assertThat(range.getMin()).isEqualTo(0);
-            assertThat(range.getMax()).isEqualTo(1);
-        });
+        Query expected = buildExpectedQuery(query.getQueryId(), tableProperties.get(TABLE_NAME), schema, 0, 1);
+
+        assertThat(query).isEqualTo(expected);
     }
 
     @Test
@@ -210,14 +200,9 @@ public class WarmQueryExecutorLambdaIT {
         assertThat(result.getMessages()).hasSize(1);
 
         Query query = querySerDe.fromJson(result.getMessages().get(0).getBody());
-        assertThat(query.getTableName().equals(tableProperties.get(TABLE_NAME)));
-        assertThat(query.getResultsPublisherConfig().get(ResultsOutputConstants.DESTINATION).equals(NO_RESULTS_OUTPUT));
-        query.getRegions().forEach(region -> {
-            Range range = region.getRange("key");
-            assertThat(range.getField().getType()).isInstanceOf(LongType.class);
-            assertThat(range.getMin()).isEqualTo(0L);
-            assertThat(range.getMax()).isEqualTo(1L);
-        });
+        Query expected = buildExpectedQuery(query.getQueryId(), tableProperties.get(TABLE_NAME), schema, 0L, 1L);
+
+        assertThat(query).isEqualTo(expected);
     }
 
     private Schema getStringKeySchema() {
@@ -245,6 +230,21 @@ public class WarmQueryExecutorLambdaIT {
         return Schema.builder()
                 .rowKeyFields(new Field("key", new LongType()))
                 .valueFields(new Field("value", new LongType()))
+                .build();
+    }
+
+    private Query buildExpectedQuery(String id, String tableName, Schema schema, Object min, Object max) {
+        Region region = new Region(Collections.singletonList(new Range.RangeFactory(schema)
+                .createRange(schema.getField("key").get(), min, max)));
+
+        return Query.builder()
+                .queryId(id)
+                .tableName(tableName)
+                .regions(List.of(region))
+                .processingConfig(QueryProcessingConfig.builder()
+                        .resultsPublisherConfig(Collections.singletonMap(ResultsOutputConstants.DESTINATION, NO_RESULTS_OUTPUT))
+                        .statusReportDestinations(Collections.emptyList())
+                        .build())
                 .build();
     }
 
