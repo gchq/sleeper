@@ -55,8 +55,6 @@ import static sleeper.configuration.properties.instance.CommonProperty.ID;
 public class WebSocketQueryStack extends NestedStack {
 
     private CfnApi webSocketApi;
-    private WebSocketStage stage;
-    private IFunction webSocketApiHandler;
 
     public WebSocketQueryStack(Construct scope,
             String id,
@@ -84,7 +82,7 @@ public class WebSocketQueryStack extends NestedStack {
         Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "websocket-api-handler"));
-        webSocketApiHandler = queryJar.buildFunction(this, "WebSocketApiHandler", builder -> builder
+        IFunction webSocketApiHandler = queryJar.buildFunction(this, "WebSocketApiHandler", builder -> builder
                 .functionName(functionName)
                 .description("Prepares queries received via the WebSocket API and queues them for processing")
                 .handler("sleeper.query.lambda.WebSocketQueryProcessorLambda::handleRequest")
@@ -145,7 +143,7 @@ public class WebSocketQueryStack extends NestedStack {
                         .build()))
                 .build());
 
-        stage = WebSocketStage.Builder.create(this, "stage")
+        WebSocketStage stage = WebSocketStage.Builder.create(this, "stage")
                 .webSocketApi(WebSocketApi.fromWebSocketApiAttributes(this, "imported-api", WebSocketApiAttributes.builder()
                         .webSocketId(api.getRef())
                         .build()))
