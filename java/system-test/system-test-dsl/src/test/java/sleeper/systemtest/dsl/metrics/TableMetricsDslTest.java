@@ -16,7 +16,6 @@
 package sleeper.systemtest.dsl.metrics;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionsBuilder;
@@ -37,7 +36,6 @@ import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.MAIN;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.ROW_KEY_FIELD_NAME;
 
 @InMemoryDslTest
-@Disabled("TODO")
 public class TableMetricsDslTest {
     private final Path tempDir = null;
 

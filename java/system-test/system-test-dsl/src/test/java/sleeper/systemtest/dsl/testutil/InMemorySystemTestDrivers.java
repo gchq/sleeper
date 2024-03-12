@@ -49,7 +49,7 @@ import sleeper.systemtest.dsl.testutil.drivers.InMemorySleeperInstanceDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySleeperTablesDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySourceFilesDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySystemTestDeploymentDriver;
-import sleeper.systemtest.dsl.testutil.drivers.InMemoryTableMetricsDriver;
+import sleeper.systemtest.dsl.testutil.drivers.InMemoryTableMetrics;
 import sleeper.systemtest.dsl.util.PurgeQueueDriver;
 import sleeper.systemtest.dsl.util.SystemTestDriversBase;
 import sleeper.systemtest.dsl.util.WaitForJobs;
@@ -65,6 +65,7 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
     private final InMemoryIngestBatcherStore batcherStore = new InMemoryIngestBatcherStore();
     private final InMemoryIngestByQueue ingestByQueue = new InMemoryIngestByQueue(sourceFiles, data, sketches);
     private final InMemoryCompaction compaction = new InMemoryCompaction(data, sketches);
+    private final InMemoryTableMetrics metrics = new InMemoryTableMetrics();
     private long fileSizeBytesForBatcher = 1024;
 
     @Override
@@ -164,7 +165,7 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
 
     @Override
     public TableMetricsDriver tableMetrics(SystemTestContext context) {
-        return new InMemoryTableMetricsDriver();
+        return metrics.driver(context);
     }
 
     public InMemoryDataStore data() {
