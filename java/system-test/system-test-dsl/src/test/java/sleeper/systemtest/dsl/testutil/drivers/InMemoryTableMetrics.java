@@ -22,7 +22,6 @@ import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.metrics.TableMetricsDriver;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
@@ -55,18 +54,7 @@ public class InMemoryTableMetrics {
         }
 
         @Override
-        public Map<String, List<Double>> getTableMetrics() {
-            TableMetrics metrics = metricsByTableName.get(instance.getTableName());
-            return Map.of(
-                    "ActiveFileCount", List.of((double) metrics.getFileCount()),
-                    "AverageActiveFilesPerPartition", List.of(metrics.getAverageActiveFilesPerPartition()),
-                    "LeafPartitionCount", List.of((double) metrics.getLeafPartitionCount()),
-                    "PartitionCount", List.of((double) metrics.getPartitionCount()),
-                    "RecordCount", List.of((double) metrics.getRecordCount()));
-        }
-
-        @Override
-        public TableMetrics getMetrics() {
+        public TableMetrics getTableMetrics() {
             return metricsByTableName.get(instance.getTableName());
         }
     }

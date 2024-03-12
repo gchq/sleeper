@@ -87,12 +87,7 @@ public class AwsTableMetricsDriver implements TableMetricsDriver {
     }
 
     @Override
-    public Map<String, List<Double>> getTableMetrics() {
-        return pollTableMetrics(new Dimensions(instance));
-    }
-
-    @Override
-    public TableMetrics getMetrics() {
+    public TableMetrics getTableMetrics() {
         Dimensions dimensions = new Dimensions(instance);
         Map<String, List<Double>> map = pollTableMetrics(dimensions);
         return TableMetrics.builder()
