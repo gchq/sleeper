@@ -25,6 +25,10 @@ This section documents some of the planned functionality and improvements:
 
 - Create a predicate language for specifying filters on queries.
 
+- Create a suite of automated system tests.
+
+- Create a library of repeatable, sustained, large-scale performance tests.
+
 - Review and extend the integrations with Athena and Trino. Review how Trino can
     be used to run SQL queries over the entire table.
 
