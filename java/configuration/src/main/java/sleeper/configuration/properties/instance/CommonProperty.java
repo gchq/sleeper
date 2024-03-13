@@ -194,36 +194,35 @@ public interface CommonProperty {
             .validationPredicate(Utils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty TABLE_INDEX_DYNAMO_POINT_IN_TIME_RECOVERY = Index.propertyBuilder("sleeper.tables.index.dynamo.pointintimerecovery")
+    UserDefinedInstanceProperty TABLE_INDEX_DYNAMO_POINT_IN_TIME_RECOVERY = Index.propertyBuilder("sleeper.common.table.index.dynamo.pointintimerecovery")
             .description("This specifies whether point in time recovery is enabled for the Sleeper table index. " +
                     "This is set on the DynamoDB tables.")
             .defaultValue("false")
             .validationPredicate(Utils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCdkDeployWhenChanged(true).build();
-
-    UserDefinedInstanceProperty TABLE_PROPERTIES_PROVIDER_TIMEOUT_IN_MINS = Index.propertyBuilder("sleeper.table.properties.provider.timeout.minutes")
-            .description("The timeout in minutes for when the table properties provider cache should be cleared, " +
-                    "forcing table properties to be reloaded from S3.")
-            .defaultValue("60")
-            .validationPredicate(Utils::isPositiveInteger)
-            .propertyGroup(InstancePropertyGroup.COMMON)
-            .build();
-    UserDefinedInstanceProperty TABLE_INDEX_DYNAMO_STRONGLY_CONSISTENT_READS = Index.propertyBuilder("sleeper.tables.index.dynamo.consistent.reads")
+    UserDefinedInstanceProperty TABLE_INDEX_DYNAMO_STRONGLY_CONSISTENT_READS = Index.propertyBuilder("sleeper.common.table.index.dynamo.consistent.reads")
             .description("This specifies whether queries and scans against the table index DynamoDB tables " +
                     "are strongly consistent.")
             .defaultValue("true")
             .validationPredicate(Utils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
-    UserDefinedInstanceProperty TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB = Index.propertyBuilder("sleeper.table.batching.lambdas.memory")
+    UserDefinedInstanceProperty TABLE_PROPERTIES_PROVIDER_TIMEOUT_IN_MINS = Index.propertyBuilder("sleeper.common.table.properties.provider.timeout.minutes")
+            .description("The timeout in minutes for when the table properties provider cache should be cleared, " +
+                    "forcing table properties to be reloaded from S3.")
+            .defaultValue("60")
+            .validationPredicate(Utils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+    UserDefinedInstanceProperty TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB = Index.propertyBuilder("sleeper.common.table.batching.lambdas.memory")
             .description("The amount of memory for lambdas that create batches of tables to run some operation against, " +
                     "eg. create compaction jobs, run garbage collection, perform partition splitting.")
             .defaultValue("1024")
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
-    UserDefinedInstanceProperty TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.table.batching.lambdas.timeout.seconds")
+    UserDefinedInstanceProperty TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.common.table.batching.lambdas.timeout.seconds")
             .description("The timeout in seconds for lambdas that create batches of tables to run some operation against, " +
                     "eg. create compaction jobs, run garbage collection, perform partition splitting.")
             .defaultValue("60")
