@@ -194,14 +194,14 @@ public interface CommonProperty {
             .validationPredicate(Utils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty TABLE_INDEX_DYNAMO_POINT_IN_TIME_RECOVERY = Index.propertyBuilder("sleeper.common.table.index.dynamo.pointintimerecovery")
+    UserDefinedInstanceProperty TABLE_INDEX_DYNAMO_POINT_IN_TIME_RECOVERY = Index.propertyBuilder("sleeper.tables.index.dynamo.pointintimerecovery")
             .description("This specifies whether point in time recovery is enabled for the Sleeper table index. " +
                     "This is set on the DynamoDB tables.")
             .defaultValue("false")
             .validationPredicate(Utils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty TABLE_INDEX_DYNAMO_STRONGLY_CONSISTENT_READS = Index.propertyBuilder("sleeper.common.table.index.dynamo.consistent.reads")
+    UserDefinedInstanceProperty TABLE_INDEX_DYNAMO_STRONGLY_CONSISTENT_READS = Index.propertyBuilder("sleeper.tables.index.dynamo.consistent.reads")
             .description("This specifies whether queries and scans against the table index DynamoDB tables " +
                     "are strongly consistent.")
             .defaultValue("true")
