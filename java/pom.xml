@@ -69,7 +69,7 @@
         Hadoop AWS uses an old version of wildfly-openssl.
         Review when Hadoop is upgraded from 3.3.3, as it might upgrade to v2.
         -->
-        <wildfly-openssl.version>1.1.3.Final</wildfly-openssl.version>
+        <wildfly-openssl.version>2.2.5.Final</wildfly-openssl.version>
         <!--
         Hadoop client uses an old version of woodstox-core.
         Review when Hadoop is upgraded from 3.3.3, as it might upgrade to v6.
@@ -121,7 +121,7 @@
         <commons-configuration.version>2.9.0</commons-configuration.version>
         <commons-compress.version>1.26.0</commons-compress.version>
         <commons-text.version>1.10.0</commons-text.version>
-        <janino.version>3.1.9</janino.version>
+        <janino.version>3.1.12</janino.version>
         <commons-net.version>3.9.0</commons-net.version>
         <jackson.version>2.16.2</jackson.version>
         <!-- Trino integration uses a different version of JJWT, this is the version used in the build module -->
