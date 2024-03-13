@@ -132,7 +132,10 @@ public class CompactSortedFilesTestData {
     }
 
     private static byte[] nthByteArray(int n) {
-        return new byte[]{(byte) (n / 128), (byte) (n % 128)};
+        return new byte[]{
+            (byte) (n / 128),
+            (byte) (n % 128)
+        };
     }
 
     public static List<Record> combineSortedBySingleKey(List<Record> data1, List<Record> data2) {
