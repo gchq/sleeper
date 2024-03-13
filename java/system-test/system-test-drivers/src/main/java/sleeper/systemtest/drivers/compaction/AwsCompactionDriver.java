@@ -69,13 +69,13 @@ public class AwsCompactionDriver implements CompactionDriver {
     }
 
     @Override
-    public void triggerCreateJobs() {
+    public void invokeCreateJobsForInstance() {
         InvokeLambda.invokeWith(lambdaClient,
                 instance.getInstanceProperties().get(COMPACTION_JOB_CREATION_TRIGGER_LAMBDA_FUNCTION));
     }
 
     @Override
-    public void createJobs() {
+    public void sendCreateJobs() {
         int batchSize = instance.getInstanceProperties().getInt(COMPACTION_JOB_CREATION_BATCH_SIZE);
         String queueUrl = instance.getInstanceProperties().get(COMPACTION_JOB_CREATION_BATCH_QUEUE_URL);
         InvokeForTableRequest.forTables(

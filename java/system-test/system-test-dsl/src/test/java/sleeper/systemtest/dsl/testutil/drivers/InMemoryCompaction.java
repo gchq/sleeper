@@ -106,12 +106,12 @@ public class InMemoryCompaction {
         }
 
         @Override
-        public void triggerCreateJobs() {
+        public void invokeCreateJobsForInstance() {
             createJobs(Mode.STRATEGY);
         }
 
         @Override
-        public void createJobs() {
+        public void sendCreateJobs() {
             createJobs(Mode.STRATEGY);
         }
 

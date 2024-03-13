@@ -25,9 +25,9 @@ public interface CompactionDriver {
 
     CompactionJobStatusStore getJobStatusStore();
 
-    void triggerCreateJobs();
+    void invokeCreateJobsForInstance();
 
-    void createJobs();
+    void sendCreateJobs();
 
     void forceCreateJobs();
 
