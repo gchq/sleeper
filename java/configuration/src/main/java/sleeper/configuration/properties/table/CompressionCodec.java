@@ -22,5 +22,5 @@ public enum CompressionCodec {
     LZO,
     BROTLI,
     LZ4,
-    ZSTD;
+    ZSTD
 }

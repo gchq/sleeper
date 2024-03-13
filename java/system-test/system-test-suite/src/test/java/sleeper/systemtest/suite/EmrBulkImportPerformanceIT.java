@@ -51,7 +51,8 @@ public class EmrBulkImportPerformanceIT {
     @Test
     void shouldMeetBulkImportPerformanceStandardsAcrossManyPartitions(SleeperSystemTest sleeper) {
         sleeper.partitioning().setPartitions(create512StringPartitions(sleeper));
-        sleeper.systemTestCluster().updateProperties(properties -> {
+        sleeper.systemTestCluster()
+                .updateProperties(properties -> {
                     properties.setEnum(INGEST_MODE, GENERATE_ONLY);
                     properties.setNumber(NUMBER_OF_WRITERS, 100);
                     properties.setNumber(NUMBER_OF_RECORDS_PER_WRITER, 10_000_000);
@@ -70,7 +71,7 @@ public class EmrBulkImportPerformanceIT {
                         "contain 5 billion records");
         assertThat(sleeper.reporting().ingestJobs().finishedStatistics())
                 .matches(stats -> stats.isAllFinishedOneRunEach(5)
-                                && stats.isMinAverageRunRecordsPerSecond(3_500_000),
+                        && stats.isMinAverageRunRecordsPerSecond(3_500_000),
                         "meets minimum performance");
     }
 }

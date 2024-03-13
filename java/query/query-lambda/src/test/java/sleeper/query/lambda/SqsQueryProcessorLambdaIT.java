@@ -346,11 +346,11 @@ public class SqsQueryProcessorLambdaIT {
         assertThat(queryTracker.getAllQueries())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastUpdateTime", "expiryDate")
                 .containsExactlyInAnyOrder(trackedQuery()
-                                .queryId("abc")
-                                .subQueryId("-")
-                                .lastKnownState(COMPLETED)
-                                .recordCount(10L)
-                                .build(),
+                        .queryId("abc")
+                        .subQueryId("-")
+                        .lastKnownState(COMPLETED)
+                        .recordCount(10L)
+                        .build(),
                         trackedQuery()
                                 .queryId("abc")
                                 .subQueryId(subQueryId.orElseThrow())
@@ -521,7 +521,6 @@ public class SqsQueryProcessorLambdaIT {
         }
     }
 
-
     @Test
     public void shouldPublishResultsToWebSocketInBatches() throws Exception {
         // Given
@@ -620,8 +619,7 @@ public class SqsQueryProcessorLambdaIT {
                     matchingJsonPath("$.queryId", equalTo("abc"))));
             wireMockServer.verify(1, postRequestedFor(url).withRequestBody(
                     matchingJsonPath("$.message", equalTo("completed"))
-                            .and(matchingJsonPath("$.recordCount", equalTo("28")))
-            ));
+                            .and(matchingJsonPath("$.recordCount", equalTo("28")))));
         } finally {
             wireMockServer.stop();
         }
@@ -674,16 +672,13 @@ public class SqsQueryProcessorLambdaIT {
             wireMockServer.verify(1, postRequestedFor(url).withRequestBody(
                     matchingJsonPath("$.queryId", equalTo("abc"))
                             .and(matchingJsonPath("$.message", equalTo("subqueries")))
-                            .and(matchingJsonPath("$.queryIds"))
-            ));
+                            .and(matchingJsonPath("$.queryIds"))));
             wireMockServer.verify(1, postRequestedFor(url).withRequestBody(
                     matchingJsonPath("$.message", equalTo("completed"))
-                            .and(matchingJsonPath("$.recordCount", equalTo("3")))
-            ));
+                            .and(matchingJsonPath("$.recordCount", equalTo("3")))));
             wireMockServer.verify(1, postRequestedFor(url).withRequestBody(
                     matchingJsonPath("$.message", equalTo("completed"))
-                            .and(matchingJsonPath("$.recordCount", equalTo("25")))
-            ));
+                            .and(matchingJsonPath("$.recordCount", equalTo("25")))));
         } finally {
             wireMockServer.stop();
         }
@@ -741,10 +736,10 @@ public class SqsQueryProcessorLambdaIT {
         sqsClient.receiveMessage(new ReceiveMessageRequest()
                 .withQueueUrl(instanceProperties.get(LEAF_PARTITION_QUERY_QUEUE_URL))
                 .withMaxNumberOfMessages(maxMessages)).getMessages().forEach(message -> {
-            SQSMessage leafMessage = new SQSMessage();
-            leafMessage.setBody(message.getBody());
-            leafPartitionQueries.add(leafMessage);
-        });
+                    SQSMessage leafMessage = new SQSMessage();
+                    leafMessage.setBody(message.getBody());
+                    leafPartitionQueries.add(leafMessage);
+                });
 
         SQSEvent leafEvent = new SQSEvent();
         leafEvent.setRecords(Lists.newArrayList(leafPartitionQueries));
