@@ -35,6 +35,7 @@ import software.amazon.lambda.powertools.metrics.MetricsUtils;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.core.metrics.TableMetrics;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.table.InvokeForTableRequest;
 import sleeper.core.table.InvokeForTableRequestSerDe;
@@ -44,6 +45,7 @@ import sleeper.statestore.StateStoreProvider;
 import java.time.Instant;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.METRICS_NAMESPACE;
 
 @SuppressWarnings("unused")
@@ -99,7 +101,8 @@ public class TableMetricsLambda implements RequestHandler<SQSEvent, Void> {
             try {
                 TableProperties tableProperties = tablePropertiesProvider.getById(tableId);
                 StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-                TableMetrics metrics = TableMetrics.from(instanceProperties, tableProperties, stateStore);
+                TableMetrics metrics = TableMetrics.from(
+                        instanceProperties.get(ID), tableProperties.getStatus(), stateStore);
                 publishStateStoreMetrics(metricsLogger, metrics);
             } catch (Exception e) {
                 LOGGER.error("Failed publishing metrics for table {}", tableId, e);

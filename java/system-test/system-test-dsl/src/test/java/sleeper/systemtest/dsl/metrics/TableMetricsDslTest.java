@@ -13,18 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package sleeper.systemtest.suite;
+package sleeper.systemtest.dsl.metrics;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.metrics.TableMetrics;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.systemtest.dsl.SleeperSystemTest;
-import sleeper.systemtest.suite.fixtures.SystemTestSchema;
-import sleeper.systemtest.suite.testutil.SystemTest;
+import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -34,20 +31,19 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStringAndZeroPadTo;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides.overrideField;
+import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.DEFAULT_SCHEMA;
+import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.MAIN;
+import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.ROW_KEY_FIELD_NAME;
 import static sleeper.systemtest.dsl.testutil.SystemTestTableMetricsHelper.tableMetrics;
-import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
-import static sleeper.systemtest.suite.fixtures.SystemTestSchema.DEFAULT_SCHEMA;
 
-@SystemTest
-public class TableMetricsIT {
-
-    @TempDir
-    private Path tempDir;
+@InMemoryDslTest
+public class TableMetricsDslTest {
+    private final Path tempDir = null;
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper) {
         sleeper.setGeneratorOverrides(
-                overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
+                overrideField(ROW_KEY_FIELD_NAME,
                         numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
     }
 
@@ -110,4 +106,5 @@ public class TableMetricsIT {
                 .averageActiveFilesPerPartition(1)
                 .build());
     }
+
 }

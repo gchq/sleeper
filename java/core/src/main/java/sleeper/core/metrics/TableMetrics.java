@@ -14,20 +14,18 @@
  * limitations under the License.
  */
 
-package sleeper.metrics;
+package sleeper.core.metrics;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.statestore.StateStoreProvider;
+import sleeper.core.table.TableStatus;
 
 import java.util.Collection;
 import java.util.List;
@@ -35,10 +33,6 @@ import java.util.LongSummaryStatistics;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class TableMetrics {
     private static final Logger LOGGER = LoggerFactory.getLogger(TableMetrics.class);
@@ -65,46 +59,32 @@ public class TableMetrics {
         return new Builder();
     }
 
-    public static Stream<TableMetrics> streamFrom(InstanceProperties instanceProperties, List<TableProperties> tables,
-                                                  StateStoreProvider stateStoreProvider) {
-        return tables.stream()
-                .map(table -> {
-                    try {
-                        return from(instanceProperties, table, stateStoreProvider.getStateStore(table));
-                    } catch (StateStoreException e) {
-                        throw new RuntimeException(e);
-                    }
-                });
-    }
+    public static TableMetrics from(String instanceId, TableStatus table, StateStore stateStore) throws StateStoreException {
 
-    public static TableMetrics from(InstanceProperties instanceProperties, TableProperties tableProperties,
-                                    StateStore stateStore) throws StateStoreException {
-        String tableName = tableProperties.get(TABLE_NAME);
-
-        LOGGER.info("Querying state store for table {} for files", tableName);
+        LOGGER.info("Querying state store for table {} for files", table);
         AllReferencesToAllFiles files = stateStore.getAllFilesWithMaxUnreferenced(0);
         Collection<AllReferencesToAFile> referencedFiles = files.getFilesWithReferences();
         List<FileReference> fileReferences = files.listFileReferences();
-        LOGGER.info("Found {} files for table {}", referencedFiles.size(), tableName);
-        LOGGER.info("Found {} file references for table {}", fileReferences.size(), tableName);
+        LOGGER.info("Found {} files for table {}", referencedFiles.size(), table);
+        LOGGER.info("Found {} file references for table {}", fileReferences.size(), table);
         long recordCount = fileReferences.stream().mapToLong(FileReference::getNumberOfRecords).sum();
-        LOGGER.info("Total number of records in table {} is {}", tableName, recordCount);
+        LOGGER.info("Total number of records in table {} is {}", table, recordCount);
 
         Map<String, Long> fileCountByPartitionId = fileReferences.stream()
                 .collect(Collectors.groupingBy(FileReference::getPartitionId, Collectors.counting()));
         LongSummaryStatistics filesPerPartitionStats = fileCountByPartitionId.values().stream()
                 .mapToLong(value -> value).summaryStatistics();
-        LOGGER.info("Files per partition for table {}: {}", tableName, filesPerPartitionStats);
+        LOGGER.info("Files per partition for table {}: {}", table, filesPerPartitionStats);
 
-        LOGGER.info("Querying state store for table {} for partitions", tableName);
+        LOGGER.info("Querying state store for table {} for partitions", table);
         List<Partition> partitions = stateStore.getAllPartitions();
         int partitionCount = partitions.size();
         int leafPartitionCount = (int) partitions.stream().filter(Partition::isLeafPartition).count();
-        LOGGER.info("Found {} partitions and {} leaf partitions for table {}", partitionCount, leafPartitionCount, tableName);
+        LOGGER.info("Found {} partitions and {} leaf partitions for table {}", partitionCount, leafPartitionCount, table);
 
         return TableMetrics.builder()
-                .instanceId(instanceProperties.get(ID))
-                .tableName(tableName)
+                .instanceId(instanceId)
+                .tableName(table.getTableName())
                 .partitionCount(partitionCount)
                 .leafPartitionCount(leafPartitionCount)
                 .fileCount(referencedFiles.size())
