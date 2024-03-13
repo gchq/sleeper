@@ -115,8 +115,7 @@ public class IngestCoordinatorCommonIT {
                 Arguments.of(Named.of("Direct write, backed by ArrayList, no S3",
                         TestIngestType.directWriteBackedByArrayListWriteToLocalFile())),
                 Arguments.of(Named.of("Direct write, backed by ArrayList, using S3",
-                        TestIngestType.directWriteBackedByArrayListWriteToS3()))
-        );
+                        TestIngestType.directWriteBackedByArrayListWriteToS3())));
     }
 
     @BeforeEach
@@ -133,8 +132,7 @@ public class IngestCoordinatorCommonIT {
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
-    public void shouldWriteRecordsCorrectly(TestIngestType ingestType)
-            throws StateStoreException, IOException, IteratorException {
+    public void shouldWriteRecordsCorrectly(TestIngestType ingestType) throws StateStoreException, IOException, IteratorException {
         // Given
         RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(
                 new LongType(),
@@ -175,14 +173,12 @@ public class IngestCoordinatorCommonIT {
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
                 actualFiles,
-                hadoopConfiguration
-        );
+                hadoopConfiguration);
     }
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
-    public void shouldWriteRecordsSplitByPartitionIntKey(TestIngestType ingestType)
-            throws StateStoreException, IOException, IteratorException {
+    public void shouldWriteRecordsSplitByPartitionIntKey(TestIngestType ingestType) throws StateStoreException, IOException, IteratorException {
         // Given
         RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(
                 new IntType(),
@@ -230,14 +226,12 @@ public class IngestCoordinatorCommonIT {
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
                 actualFiles,
-                hadoopConfiguration
-        );
+                hadoopConfiguration);
     }
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
-    public void shouldWriteRecordsSplitByPartitionLongKey(TestIngestType ingestType)
-            throws StateStoreException, IOException, IteratorException {
+    public void shouldWriteRecordsSplitByPartitionLongKey(TestIngestType ingestType) throws StateStoreException, IOException, IteratorException {
         // Given
         RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(
                 new LongType(),
@@ -283,14 +277,12 @@ public class IngestCoordinatorCommonIT {
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
                 actualFiles,
-                hadoopConfiguration
-        );
+                hadoopConfiguration);
     }
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
-    public void shouldWriteRecordsSplitByPartitionStringKey(TestIngestType ingestType)
-            throws Exception {
+    public void shouldWriteRecordsSplitByPartitionStringKey(TestIngestType ingestType) throws Exception {
         // Given
         // RandomStringGenerator generates random unicode strings to test both standard and unusual character sets
         Supplier<String> randomString = randomStringGeneratorWithMaxLength(25);
@@ -317,7 +309,6 @@ public class IngestCoordinatorCommonIT {
         // When
         ingestRecords(recordListAndSchema, parameters, ingestType);
 
-
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
@@ -342,14 +333,12 @@ public class IngestCoordinatorCommonIT {
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
                 actualFiles,
-                hadoopConfiguration
-        );
+                hadoopConfiguration);
     }
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
-    public void shouldWriteRecordsSplitByPartitionByteArrayKey(TestIngestType ingestType)
-            throws StateStoreException, IOException, IteratorException {
+    public void shouldWriteRecordsSplitByPartitionByteArrayKey(TestIngestType ingestType) throws StateStoreException, IOException, IteratorException {
         // Given
         RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(
                 new ByteArrayType(),
@@ -400,14 +389,12 @@ public class IngestCoordinatorCommonIT {
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
                 actualFiles,
-                hadoopConfiguration
-        );
+                hadoopConfiguration);
     }
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
-    public void shouldWriteRecordsSplitByPartitionStringKeyLongSortKey(TestIngestType ingestType)
-            throws Exception {
+    public void shouldWriteRecordsSplitByPartitionStringKeyLongSortKey(TestIngestType ingestType) throws Exception {
         // Given
         // RandomStringGenerator generates random unicode strings to test both standard and unusual character sets
         Supplier<String> randomString = randomStringGeneratorWithMaxLength(25);
@@ -469,14 +456,12 @@ public class IngestCoordinatorCommonIT {
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
                 actualFiles,
-                hadoopConfiguration
-        );
+                hadoopConfiguration);
     }
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
-    public void shouldWriteRecordsSplitByPartition2DimensionalByteArrayKey(TestIngestType ingestType)
-            throws StateStoreException, IOException, IteratorException {
+    public void shouldWriteRecordsSplitByPartition2DimensionalByteArrayKey(TestIngestType ingestType) throws StateStoreException, IOException, IteratorException {
         // Given
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey2D(
                 new ByteArrayType(), new ByteArrayType(),
@@ -533,21 +518,18 @@ public class IngestCoordinatorCommonIT {
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
                 actualFiles,
-                hadoopConfiguration
-        );
+                hadoopConfiguration);
         ResultVerifier.assertOnSketch(
                 recordListAndSchema.sleeperSchema.getField("key1").orElseThrow(),
                 recordListAndSchema,
                 actualFiles,
-                hadoopConfiguration
-        );
+                hadoopConfiguration);
     }
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
     public void shouldWriteRecordsSplitByPartition2DimensionalIntLongKeyWhenSplitOnDim1(
-            TestIngestType ingestType)
-            throws StateStoreException, IOException, IteratorException {
+            TestIngestType ingestType) throws StateStoreException, IOException, IteratorException {
         // Given
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey2D(
                 new IntType(), new LongType(),
@@ -598,21 +580,18 @@ public class IngestCoordinatorCommonIT {
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
                 actualFiles,
-                hadoopConfiguration
-        );
+                hadoopConfiguration);
         ResultVerifier.assertOnSketch(
                 recordListAndSchema.sleeperSchema.getField("key1").orElseThrow(),
                 recordListAndSchema,
                 actualFiles,
-                hadoopConfiguration
-        );
+                hadoopConfiguration);
     }
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
     public void shouldWriteRecordsSplitByPartition2DimensionalLongStringKeyWhenSplitOnDim1(
-            TestIngestType ingestType)
-            throws StateStoreException, IOException, IteratorException {
+            TestIngestType ingestType) throws StateStoreException, IOException, IteratorException {
         // Given
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey2D(
                 new LongType(), new StringType(),
@@ -657,35 +636,30 @@ public class IngestCoordinatorCommonIT {
                 .containsExactlyElementsOf(LongStream.concat(LongStream.range(-100L, 2L), LongStream.range(10L, 20L))
                         .boxed()
                         .map(x -> List.<Object>of(x, String.valueOf(x)))
-                        .collect(Collectors.toList())
-                );
+                        .collect(Collectors.toList()));
         assertThat(rightRecords)
                 .extracting(record -> record.getValues(List.of("key0", "key1")))
                 .containsExactlyElementsOf(LongStream.concat(LongStream.range(2L, 10L), LongStream.range(20L, 100L))
                         .boxed()
                         .map(x -> List.<Object>of(x, String.valueOf(x)))
-                        .collect(Collectors.toList())
-                );
+                        .collect(Collectors.toList()));
 
         ResultVerifier.assertOnSketch(
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
                 actualFiles,
-                hadoopConfiguration
-        );
+                hadoopConfiguration);
         ResultVerifier.assertOnSketch(
                 recordListAndSchema.sleeperSchema.getField("key1").orElseThrow(),
                 recordListAndSchema,
                 actualFiles,
-                hadoopConfiguration
-        );
+                hadoopConfiguration);
     }
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
     public void shouldWriteRecordsSplitByPartitionWhenThereIsOnlyDataInOnePartition(
-            TestIngestType ingestType)
-            throws StateStoreException, IOException, IteratorException {
+            TestIngestType ingestType) throws StateStoreException, IOException, IteratorException {
         // Given
         RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(
                 new LongType(),
@@ -725,15 +699,13 @@ public class IngestCoordinatorCommonIT {
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
                 actualFiles,
-                hadoopConfiguration
-        );
+                hadoopConfiguration);
     }
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
     public void shouldWriteDuplicateRecords(
-            TestIngestType ingestType)
-            throws StateStoreException, IOException, IteratorException {
+            TestIngestType ingestType) throws StateStoreException, IOException, IteratorException {
         // Given
         RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(
                 new LongType(),
@@ -778,14 +750,12 @@ public class IngestCoordinatorCommonIT {
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 duplicatedRecordListAndSchema,
                 actualFiles,
-                hadoopConfiguration
-        );
+                hadoopConfiguration);
     }
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
-    public void shouldWriteNoRecordsSuccessfully(TestIngestType ingestType)
-            throws StateStoreException, IOException, IteratorException {
+    public void shouldWriteNoRecordsSuccessfully(TestIngestType ingestType) throws StateStoreException, IOException, IteratorException {
         // Given
         RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(
                 new LongType(),
@@ -816,8 +786,7 @@ public class IngestCoordinatorCommonIT {
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
     public void shouldApplyIterator(
-            TestIngestType ingestType)
-            throws StateStoreException, IOException, IteratorException {
+            TestIngestType ingestType) throws StateStoreException, IOException, IteratorException {
         // Given
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.byteArrayRowKeyLongSortKey(
                 Arrays.asList(new byte[]{1, 1}, new byte[]{1, 1}, new byte[]{11, 12}, new byte[]{11, 12}),
@@ -827,12 +796,11 @@ public class IngestCoordinatorCommonIT {
                 new Record(Map.of(
                         "key", new byte[]{1, 1},
                         "sort", 1L,
-                        "value", 3L
-                )), new Record(Map.of(
+                        "value", 3L)),
+                new Record(Map.of(
                         "key", new byte[]{11, 12},
                         "sort", 2L,
-                        "value", 7L
-                )));
+                        "value", 7L)));
         StateStore stateStore = createStateStore(recordListAndSchema.sleeperSchema);
         PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
@@ -865,8 +833,7 @@ public class IngestCoordinatorCommonIT {
                 recordListAndSchema.sleeperSchema.getField("key").orElseThrow(),
                 new RecordGenerator.RecordListAndSchema(expectedRecords, recordListAndSchema.sleeperSchema),
                 actualFiles,
-                hadoopConfiguration
-        );
+                hadoopConfiguration);
     }
 
     private static Supplier<String> randomStringGeneratorWithMaxLength(Integer maxLength) {
@@ -877,21 +844,17 @@ public class IngestCoordinatorCommonIT {
         return () -> randomStringGenerator.generate(random.nextInt(maxLength));
     }
 
-
     private static void ingestRecords(
             RecordGenerator.RecordListAndSchema recordListAndSchema,
             IngestCoordinatorTestParameters ingestCoordinatorTestParameters,
-            TestIngestType ingestType
-    ) throws StateStoreException, IteratorException, IOException {
-        try (IngestCoordinator<Record> ingestCoordinator =
-                     ingestType.createIngestCoordinator(
-                             ingestCoordinatorTestParameters)) {
+            TestIngestType ingestType) throws StateStoreException, IteratorException, IOException {
+        try (IngestCoordinator<Record> ingestCoordinator = ingestType.createIngestCoordinator(
+                ingestCoordinatorTestParameters)) {
             for (Record record : recordListAndSchema.recordList) {
                 ingestCoordinator.write(record);
             }
         }
     }
-
 
     private IngestCoordinatorTestParameters.Builder createTestParameterBuilder() {
         return IngestCoordinatorTestParameters

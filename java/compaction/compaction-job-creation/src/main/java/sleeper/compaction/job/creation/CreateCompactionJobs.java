@@ -90,7 +90,7 @@ public class CreateCompactionJobs {
     }
 
     public enum Mode {
-        STRATEGY, FORCE_ALL_FILES_AFTER_STRATEGY;
+        STRATEGY, FORCE_ALL_FILES_AFTER_STRATEGY
     }
 
     public void createJobs() throws StateStoreException, IOException, ObjectFactoryException {
