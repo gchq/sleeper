@@ -56,7 +56,7 @@ public class AwsGarbageCollectionDriver implements GarbageCollectionDriver {
         boolean offlineEnabled = instance.getInstanceProperties().getBoolean(GARBAGE_COLLECT_OFFLINE_TABLES);
         InvokeForTableRequest.forTables(instance.streamTableProperties()
                 .map(TableProperties::getStatus)
-                .filter(table -> table.isOnline() || (!table.isOnline() && offlineEnabled)),
+                .filter(table -> table.isOnline() || offlineEnabled),
                 batchSize, request -> sqsClient.sendMessage(queueUrl, serDe.toJson(request)));
     }
 }
