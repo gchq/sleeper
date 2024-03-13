@@ -36,6 +36,11 @@ public class InMemoryGarbageCollectionDriver implements GarbageCollectionDriver 
 
     @Override
     public void invokeGarbageCollectionForInstance() {
+        invokeGarbageCollectionForInstance();
+    }
+
+    @Override
+    public void sendGarbageCollection() {
         GarbageCollector collector = new GarbageCollector(
                 data::deleteFile,
                 instance.getInstanceProperties(),
@@ -44,10 +49,5 @@ public class InMemoryGarbageCollectionDriver implements GarbageCollectionDriver 
         collector.run(new InvokeForTableRequest(instance.streamTableProperties()
                 .map(table -> table.get(TABLE_ID))
                 .collect(toUnmodifiableList())));
-    }
-
-    @Override
-    public void sendGarbageCollection() {
-        invokeGarbageCollectionForInstance();
     }
 }
