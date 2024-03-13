@@ -53,7 +53,7 @@ public class RecordsProcessed {
 
     @Override
     public String toString() {
-        return "CompactionJobRecordsProcessed{" +
+        return "RecordsProcessed{" +
                 "recordsRead=" + recordsRead +
                 ", recordsWritten=" + recordsWritten +
                 '}';

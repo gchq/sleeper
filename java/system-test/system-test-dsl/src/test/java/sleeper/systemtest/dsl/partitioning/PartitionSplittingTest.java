@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
@@ -32,6 +32,7 @@ import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
+import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFiles;
 import static sleeper.core.testutils.printers.FileReferencePrinter.printFiles;
 import static sleeper.core.testutils.printers.PartitionsPrinter.printPartitions;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
@@ -70,7 +71,7 @@ public class PartitionSplittingTest {
                 .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
         Schema schema = sleeper.tableProperties().getSchema();
         PartitionTree partitions = sleeper.partitioning().tree();
-        List<FileReference> activeFiles = sleeper.tableFiles().references();
+        AllReferencesToAllFiles files = sleeper.tableFiles().all();
         PartitionTree expectedPartitions = new PartitionsBuilder(schema).rootFirst("root")
                 .splitToNewChildren("root", "L", "R", "row-50")
                 .splitToNewChildren("L", "LL", "LR", "row-25")
@@ -83,15 +84,17 @@ public class PartitionSplittingTest {
         assertThat(printPartitions(schema, partitions))
                 .isEqualTo(printPartitions(schema, expectedPartitions));
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(expectedPartitions);
-        assertThat(printFiles(partitions, activeFiles))
-                .isEqualTo(printFiles(expectedPartitions, List.of(
-                        fileReferenceFactory.partitionFile("LLL", 12),
-                        fileReferenceFactory.partitionFile("LLR", 13),
-                        fileReferenceFactory.partitionFile("LRL", 12),
-                        fileReferenceFactory.partitionFile("LRR", 13),
-                        fileReferenceFactory.partitionFile("RLL", 12),
-                        fileReferenceFactory.partitionFile("RLR", 13),
-                        fileReferenceFactory.partitionFile("RRL", 12),
-                        fileReferenceFactory.partitionFile("RRR", 13))));
+        assertThat(printFiles(partitions, files))
+                .isEqualTo(printFiles(expectedPartitions, activeAndReadyForGCFiles(
+                        List.of(
+                                fileReferenceFactory.partitionFile("LLL", 12),
+                                fileReferenceFactory.partitionFile("LLR", 13),
+                                fileReferenceFactory.partitionFile("LRL", 12),
+                                fileReferenceFactory.partitionFile("LRR", 13),
+                                fileReferenceFactory.partitionFile("RLL", 12),
+                                fileReferenceFactory.partitionFile("RLR", 13),
+                                fileReferenceFactory.partitionFile("RRL", 12),
+                                fileReferenceFactory.partitionFile("RRR", 13)),
+                        List.of("root", "L", "R", "LL", "LR", "RL", "RR"))));
     }
 }

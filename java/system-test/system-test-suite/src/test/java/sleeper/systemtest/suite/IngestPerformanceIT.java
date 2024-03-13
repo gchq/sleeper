@@ -52,7 +52,8 @@ public class IngestPerformanceIT {
     @Test
     void shouldMeetIngestPerformanceStandardsAcrossManyPartitions(SleeperSystemTest sleeper) {
         sleeper.partitioning().setPartitions(create128StringPartitions(sleeper));
-        sleeper.systemTestCluster().updateProperties(properties -> {
+        sleeper.systemTestCluster()
+                .updateProperties(properties -> {
                     properties.setEnum(INGEST_MODE, QUEUE);
                     properties.setEnum(INGEST_QUEUE, STANDARD_INGEST);
                     properties.setNumber(NUMBER_OF_WRITERS, 11);
@@ -69,7 +70,7 @@ public class IngestPerformanceIT {
                         "contain 440 million records");
         assertThat(sleeper.reporting().ingestJobs().finishedStatistics())
                 .matches(stats -> stats.isAllFinishedOneRunEach(11)
-                                && stats.isMinAverageRunRecordsPerSecond(130_000),
+                        && stats.isMinAverageRunRecordsPerSecond(130_000),
                         "meets minimum performance");
     }
 }

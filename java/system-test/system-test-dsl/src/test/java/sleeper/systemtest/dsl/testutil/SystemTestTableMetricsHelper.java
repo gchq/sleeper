@@ -13,14 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package sleeper.systemtest.dsl.metrics;
+package sleeper.systemtest.dsl.testutil;
 
 import sleeper.core.metrics.TableMetrics;
+import sleeper.systemtest.dsl.SleeperSystemTest;
 
-public interface TableMetricsDriver {
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
-    void generateTableMetrics();
+public class SystemTestTableMetricsHelper {
 
-    TableMetrics getTableMetrics();
+    private SystemTestTableMetricsHelper() {
+    }
+
+    public static TableMetrics.Builder tableMetrics(SleeperSystemTest sleeper) {
+        return TableMetrics.builder()
+                .instanceId(sleeper.instanceProperties().get(ID))
+                .tableName(sleeper.tableProperties().get(TABLE_NAME));
+    }
+
 }

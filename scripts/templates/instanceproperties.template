@@ -162,6 +162,14 @@ sleeper.table.properties.provider.timeout.minutes=60
 # consistent.
 sleeper.tables.index.dynamo.consistent.reads=true
 
+# The amount of memory for lambdas that create batches of tables to run some operation against, eg.
+# create compaction jobs, run garbage collection, perform partition splitting.
+sleeper.table.batching.lambdas.memory=1024
+
+# The timeout in seconds for lambdas that create batches of tables to run some operation against, eg.
+# create compaction jobs, run garbage collection, perform partition splitting.
+sleeper.table.batching.lambdas.timeout.seconds=60
+
 # This specifies whether AWS X-Ray tracing is enabled.
 sleeper.xray.tracing.enabled=true
 

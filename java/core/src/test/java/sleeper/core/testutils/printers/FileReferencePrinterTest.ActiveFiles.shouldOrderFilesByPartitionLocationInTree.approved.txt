@@ -1,3 +1,5 @@
+Unreferenced files: 0
+Referenced files: 11
 File references: 11
 Partition at LLL: 13 records in file
 Partition at LLR: 25 records in file

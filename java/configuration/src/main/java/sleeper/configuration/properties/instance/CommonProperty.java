@@ -216,6 +216,20 @@ public interface CommonProperty {
             .validationPredicate(Utils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
+    UserDefinedInstanceProperty TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB = Index.propertyBuilder("sleeper.table.batching.lambdas.memory")
+            .description("The amount of memory for lambdas that create batches of tables to run some operation against, " +
+                    "eg. create compaction jobs, run garbage collection, perform partition splitting.")
+            .defaultValue("1024")
+            .validationPredicate(Utils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+    UserDefinedInstanceProperty TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.table.batching.lambdas.timeout.seconds")
+            .description("The timeout in seconds for lambdas that create batches of tables to run some operation against, " +
+                    "eg. create compaction jobs, run garbage collection, perform partition splitting.")
+            .defaultValue("60")
+            .validationPredicate(Utils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
     UserDefinedInstanceProperty XRAY_TRACING_ENABLED = Index.propertyBuilder("sleeper.xray.tracing.enabled")
             .description("This specifies whether AWS X-Ray tracing is enabled.")
             .defaultValue("true")

@@ -133,8 +133,8 @@ public class CompactSortedFilesTestData {
 
     private static byte[] nthByteArray(int n) {
         return new byte[]{
-                (byte) (n / 128),
-                (byte) (n % 128)
+            (byte) (n / 128),
+            (byte) (n % 128)
         };
     }
 

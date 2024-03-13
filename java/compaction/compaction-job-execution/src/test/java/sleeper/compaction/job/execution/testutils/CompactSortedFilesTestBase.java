@@ -18,9 +18,7 @@ package sleeper.compaction.job.execution.testutils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobFactory;
-import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.execution.CompactSortedFiles;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -68,17 +66,12 @@ public class CompactSortedFilesTestBase {
         return new CompactionJobFactory(instanceProperties, tableProperties);
     }
 
-    protected CompactSortedFiles createCompactSortedFiles(Schema schema, CompactionJob compactionJob) throws Exception {
-        return createCompactSortedFiles(schema, compactionJob, CompactionJobStatusStore.NONE);
-    }
-
-    protected CompactSortedFiles createCompactSortedFiles(
-            Schema schema, CompactionJob compactionJob, CompactionJobStatusStore statusStore) throws Exception {
+    protected CompactSortedFiles createCompactSortedFiles(Schema schema) throws Exception {
         tableProperties.setSchema(schema);
         return new CompactSortedFiles(instanceProperties,
                 new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties, stateStore),
-                ObjectFactory.noUserJars(), statusStore, DEFAULT_TASK_ID);
+                ObjectFactory.noUserJars());
     }
 
     protected FileReference ingestRecordsGetFile(List<Record> records) throws Exception {
