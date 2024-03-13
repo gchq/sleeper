@@ -193,8 +193,17 @@
         <module name="Indentation">
             <property name="id" value="indentation"/>
         </module>
+        <module name="UnnecessarySemicolonAfterOuterTypeDeclaration">
+            <property name="id" value="unnecessarySemicolonAfterOuterTypeDeclaration"/>
+        </module>
         <module name="UnnecessarySemicolonAfterTypeMemberDeclaration">
             <property name="id" value="unnecessarySemicolonAfterTypeMemberDeclaration"/>
+        </module>
+        <module name="UnnecessarySemicolonInEnumeration">
+            <property name="id" value="unnecessarySemicolonInEnumeration"/>
+        </module>
+        <module name="UnnecessarySemicolonInTryWithResources">
+            <property name="id" value="unnecessarySemicolonInTryWithResources"/>
         </module>
     </module>
     <module name="UniqueProperties">
