@@ -45,13 +45,13 @@ public interface GenerateNumberedValue {
         }
         if (fieldType instanceof StringType) {
             switch (keyType) {
-            case ROW:
-            default:
-                return numberStringAndZeroPadTo(19).then(addPrefix("row-"));
-            case SORT:
-                return numberStringAndZeroPadTo(19).then(addPrefix("sort-"));
-            case VALUE:
-                return numberStringAndZeroPadTo(19).then(addPrefix("Value "));
+                case ROW:
+                default:
+                    return numberStringAndZeroPadTo(19).then(addPrefix("row-"));
+                case SORT:
+                    return numberStringAndZeroPadTo(19).then(addPrefix("sort-"));
+                case VALUE:
+                    return numberStringAndZeroPadTo(19).then(addPrefix("Value "));
             }
         }
         if (fieldType instanceof ByteArrayType) {
