@@ -72,7 +72,6 @@ public class TableMetricsStack extends NestedStack {
                 .description("Creates batches of Sleeper tables to calculate metrics for and puts them on a queue to be published")
                 .runtime(Runtime.JAVA_11)
                 .handler("sleeper.metrics.TableMetricsTriggerLambda::handleRequest")
-                .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .memorySize(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS)))
                 .logGroup(createLambdaLogGroup(this, "MetricsTriggerLogGroup", triggerFunctionName, instanceProperties))
