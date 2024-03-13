@@ -34,7 +34,7 @@ public class SystemTestGarbageCollection {
     }
 
     public SystemTestGarbageCollection invoke() {
-        driver.invokeGarbageCollection();
+        driver.sendGarbageCollection();
         return this;
     }
 

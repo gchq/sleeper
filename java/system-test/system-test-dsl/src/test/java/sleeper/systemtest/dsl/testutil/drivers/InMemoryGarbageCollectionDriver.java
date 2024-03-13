@@ -35,7 +35,7 @@ public class InMemoryGarbageCollectionDriver implements GarbageCollectionDriver 
     }
 
     @Override
-    public void invokeGarbageCollection() {
+    public void invokeGarbageCollectionForInstance() {
         GarbageCollector collector = new GarbageCollector(
                 data::deleteFile,
                 instance.getInstanceProperties(),
@@ -46,4 +46,8 @@ public class InMemoryGarbageCollectionDriver implements GarbageCollectionDriver 
                 .collect(toUnmodifiableList())));
     }
 
+    @Override
+    public void sendGarbageCollection() {
+        invokeGarbageCollectionForInstance();
+    }
 }
