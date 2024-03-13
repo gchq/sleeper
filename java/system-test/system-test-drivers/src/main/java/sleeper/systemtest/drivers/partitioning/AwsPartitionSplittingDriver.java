@@ -34,7 +34,10 @@ public class AwsPartitionSplittingDriver implements PartitionSplittingDriver {
         this.lambdaClient = lambdaClient;
     }
 
-    public void splitPartitions() {
+    public void invokeSplitPartitionsForInstance() {
         InvokeLambda.invokeWith(lambdaClient, instance.getInstanceProperties().get(PARTITION_SPLITTING_TRIGGER_LAMBDA_FUNCTION));
+    }
+
+    public void sendSplitPartitions() {
     }
 }

@@ -47,7 +47,7 @@ public class SystemTestPartitioning {
                 .forCurrentPartitionsNeedingSplitting(
                         instance.getTablePropertiesProvider(),
                         instance.getStateStoreProvider());
-        drivers.partitionSplitting(context).splitPartitions();
+        drivers.partitionSplitting(context).invokeSplitPartitionsForInstance();
         try {
             waitForPartitionSplitting.pollUntilFinished(
                     instance.getTablePropertiesProvider(),

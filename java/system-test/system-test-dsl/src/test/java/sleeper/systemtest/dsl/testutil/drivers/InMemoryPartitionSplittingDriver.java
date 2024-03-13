@@ -40,7 +40,12 @@ public class InMemoryPartitionSplittingDriver implements PartitionSplittingDrive
     }
 
     @Override
-    public void splitPartitions() {
+    public void invokeSplitPartitionsForInstance() {
+        sendSplitPartitions();
+    }
+
+    @Override
+    public void sendSplitPartitions() {
         new FindPartitionsToSplit(
                 instance.getInstanceProperties(),
                 instance.getStateStoreProvider(),

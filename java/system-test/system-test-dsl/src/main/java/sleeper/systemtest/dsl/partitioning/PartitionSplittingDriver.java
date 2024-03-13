@@ -18,5 +18,7 @@ package sleeper.systemtest.dsl.partitioning;
 
 public interface PartitionSplittingDriver {
 
-    void splitPartitions();
+    void invokeSplitPartitionsForInstance();
+
+    void sendSplitPartitions();
 }
