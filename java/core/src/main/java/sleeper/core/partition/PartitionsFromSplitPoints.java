@@ -32,7 +32,6 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -109,18 +108,18 @@ public class PartitionsFromSplitPoints {
                 ranges.add(rangeForDim0);
                 Region region = new Region(ranges);
                 String id = UUID.randomUUID().toString();
+                List<String> childPartitionIds = List.of(leftPartition.getId(), rightPartition.getId());
                 Partition.Builder parent = Partition.builder()
                         .id(id)
                         .parentPartitionId(null)
-                        .childPartitionIds(Arrays.asList(leftPartition.getId(), rightPartition.getId()))
+                        .childPartitionIds(childPartitionIds)
                         .leafPartition(false)
                         .dimension(0)
                         .rowKeyTypes(schema.getRowKeyTypes())
                         .region(region);
-
                 leftPartition.parentPartitionId(id);
                 rightPartition.parentPartitionId(id);
-
+                LOGGER.debug("Created parent partition " + id + " joining partitions " + childPartitionIds);
                 parents.add(parent);
             }
         }
@@ -133,7 +132,6 @@ public class PartitionsFromSplitPoints {
         }
 
         LOGGER.info("Created layer of {} partitions from previous layer of {} partitions", parents.size(), partitionsInLayer.size());
-        LOGGER.debug("New partitions are {}", parents);
 
         return parents;
     }
@@ -142,18 +140,19 @@ public class PartitionsFromSplitPoints {
         List<Region> leafRegions = leafRegionsFromSplitPoints(schema, splitPoints);
         List<Partition.Builder> leafPartitions = new ArrayList<>();
         for (Region region : leafRegions) {
+            String id = UUID.randomUUID().toString();
             Partition.Builder partition = Partition.builder()
                     .rowKeyTypes(schema.getRowKeyTypes())
                     .region(region)
-                    .id(UUID.randomUUID().toString())
+                    .id(id)
                     .leafPartition(true)
                     .parentPartitionId(null)
                     .childPartitionIds(new ArrayList<>())
                     .dimension(-1);
+            LOGGER.debug("Created leaf partition " + id + " for region " + region);
             leafPartitions.add(partition);
         }
         LOGGER.info("Created {} leaf partitions from {} split points", leafPartitions.size(), splitPoints.size());
-        LOGGER.debug("Partitions are {}", leafPartitions);
         return leafPartitions;
     }
 
