@@ -25,7 +25,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -38,7 +37,6 @@ import sleeper.core.iterator.SortedRecordIterator;
 import sleeper.core.partition.Partition;
 import sleeper.core.record.Record;
 import sleeper.core.record.process.RecordsProcessed;
-import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
@@ -53,63 +51,36 @@ import sleeper.sketches.s3.SketchesSerDeToS3;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 
-import static sleeper.core.metrics.MetricsLogger.METRICS_LOGGER;
 import static sleeper.sketches.s3.SketchesSerDeToS3.sketchesPathForDataFile;
 
 /**
  * Executes a {@link CompactionJob}, i.e. compacts N input files into a single
  * output file.
  */
-public class CompactSortedFiles {
+public class CompactSortedFiles implements CompactionTask.CompactionRunner {
     private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final ObjectFactory objectFactory;
     private final StateStoreProvider stateStoreProvider;
-    private final CompactionJobStatusStore jobStatusStore;
-    private final String taskId;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CompactSortedFiles.class);
 
     public CompactSortedFiles(
             InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
-            StateStoreProvider stateStoreProvider, ObjectFactory objectFactory, CompactionJobStatusStore jobStatusStore,
-            String taskId) {
+            StateStoreProvider stateStoreProvider, ObjectFactory objectFactory) {
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.objectFactory = objectFactory;
         this.stateStoreProvider = stateStoreProvider;
-        this.jobStatusStore = jobStatusStore;
-        this.taskId = taskId;
     }
 
-    public RecordsProcessedSummary run(CompactionJob compactionJob) throws IOException, IteratorException, StateStoreException {
-        Instant startTime = Instant.now();
-        String id = compactionJob.getId();
-        LOGGER.info("Compaction job {}: compaction called at {}", id, startTime);
-        jobStatusStore.jobStarted(compactionJob, startTime, taskId);
-
-        RecordsProcessed recordsProcessed = compact(compactionJob);
-
-        Instant finishTime = Instant.now();
-        // Print summary
-        LOGGER.info("Compaction job {}: finished at {}", id, finishTime);
-
-        RecordsProcessedSummary summary = new RecordsProcessedSummary(recordsProcessed, startTime, finishTime);
-        METRICS_LOGGER.info("Compaction job {}: compaction run time = {}", id, summary.getDurationInSeconds());
-        METRICS_LOGGER.info("Compaction job {}: compaction read {} records at {} per second", id, summary.getRecordsRead(), String.format("%.1f", summary.getRecordsReadPerSecond()));
-        METRICS_LOGGER.info("Compaction job {}: compaction wrote {} records at {} per second", id, summary.getRecordsWritten(), String.format("%.1f", summary.getRecordsWrittenPerSecond()));
-        jobStatusStore.jobFinished(compactionJob, summary, taskId);
-        return summary;
-    }
-
-    private RecordsProcessed compact(CompactionJob compactionJob) throws IOException, IteratorException, StateStoreException {
+    public RecordsProcessed compact(CompactionJob compactionJob) throws IOException, IteratorException, StateStoreException {
         TableProperties tableProperties = tablePropertiesProvider.getById(compactionJob.getTableId());
         Schema schema = tableProperties.getSchema();
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);

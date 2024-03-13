@@ -28,6 +28,7 @@ import sleeper.compaction.job.execution.CompactionTask.MessageReceiver;
 import sleeper.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusStore;
+import sleeper.compaction.testutils.InMemoryCompactionJobStatusStore;
 import sleeper.compaction.testutils.InMemoryCompactionTaskStatusStore;
 import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -47,21 +48,26 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
+import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
+import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionRun;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS;
-import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
 
 public class CompactionTaskTest {
+    private static final String DEFAULT_TABLE_ID = "test-table-id";
     private static final String DEFAULT_TASK_ID = "test-task-id";
-    private static final Instant DEFAULT_START_TIME = Instant.parse("2024-03-04T11:00:00Z");
-    private static final Duration DEFAULT_DURATION = Duration.ofSeconds(5);
+    private static final Instant DEFAULT_CREATED_TIME = Instant.parse("2024-03-04T10:50:00Z");
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Queue<CompactionJob> jobsOnQueue = new LinkedList<>();
     private final List<CompactionJob> successfulJobs = new ArrayList<>();
     private final List<CompactionJob> failedJobs = new ArrayList<>();
+    private final InMemoryCompactionJobStatusStore jobStore = new InMemoryCompactionJobStatusStore();
     private final CompactionTaskStatusStore taskStore = new InMemoryCompactionTaskStatusStore();
+    private final List<Duration> sleeps = new ArrayList<>();
 
     @BeforeEach
     void setUp() {
@@ -125,6 +131,7 @@ public class CompactionTaskTest {
         void shouldTerminateIfNoJobsArePresentAfterRunningForIdleTime() throws Exception {
             // Given
             instanceProperties.setNumber(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS, 3);
+            instanceProperties.setNumber(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS, 2);
             Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:03Z"))); // Finish
@@ -134,12 +141,14 @@ public class CompactionTaskTest {
 
             // Then
             assertThat(times).isEmpty();
+            assertThat(sleeps).isEmpty();
         }
 
         @Test
         void shouldTerminateIfNoJobsArePresentAfterRunningForIdleTimeWithTwoQueuePolls() throws Exception {
             // Given
             instanceProperties.setNumber(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS, 3);
+            instanceProperties.setNumber(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS, 2);
             Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:02Z"), // First idle time check
@@ -150,15 +159,18 @@ public class CompactionTaskTest {
 
             // Then
             assertThat(times).isEmpty();
+            assertThat(sleeps).containsExactly(Duration.ofSeconds(2));
         }
 
         @Test
         void shouldTerminateAfterRunningJobAndWaitingForIdleTime() throws Exception {
             // Given
             instanceProperties.setNumber(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS, 3);
+            instanceProperties.setNumber(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS, 2);
             Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
-                    Instant.parse("2024-02-22T13:50:01Z"), // Job completed
+                    Instant.parse("2024-02-22T13:50:01Z"), // Job started
+                    Instant.parse("2024-02-22T13:50:02Z"), // Job completed
                     Instant.parse("2024-02-22T13:50:05Z"))); // Idle time check with empty queue and finish
             CompactionJob job = createJobOnQueue("job1");
 
@@ -170,15 +182,18 @@ public class CompactionTaskTest {
             assertThat(successfulJobs).containsExactly(job);
             assertThat(failedJobs).isEmpty();
             assertThat(jobsOnQueue).isEmpty();
+            assertThat(sleeps).isEmpty();
         }
 
         @Test
         void shouldTerminateWhenMaxIdleTimeNotMetOnFirstCheckThenIdleAfterProcessingJob() throws Exception {
             // Given
             instanceProperties.setNumber(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS, 3);
+            instanceProperties.setNumber(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS, 2);
             Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:01Z"), // First check
+                    Instant.parse("2024-02-22T13:50:02Z"), // Job started
                     Instant.parse("2024-02-22T13:50:02Z"), // Job completed
                     Instant.parse("2024-02-22T13:50:06Z"))); // Second check + finish
             CompactionJob job = createJob("job1");
@@ -197,16 +212,19 @@ public class CompactionTaskTest {
             assertThat(successfulJobs).containsExactly(job);
             assertThat(failedJobs).isEmpty();
             assertThat(jobsOnQueue).isEmpty();
+            assertThat(sleeps).containsExactly(Duration.ofSeconds(2));
         }
 
         @Test
         void shouldTerminateWhenMaxIdleTimeNotMetOnFirstCheckThenNotMetAfterProcessingJob() throws Exception {
             // Given
             instanceProperties.setNumber(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS, 3);
+            instanceProperties.setNumber(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS, 2);
             Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:01Z"), // First check
-                    Instant.parse("2024-02-22T13:50:02Z"), // Job completed
+                    Instant.parse("2024-02-22T13:50:02Z"), // Job started
+                    Instant.parse("2024-02-22T13:50:03Z"), // Job completed
                     Instant.parse("2024-02-22T13:50:04Z"), // Second check
                     Instant.parse("2024-02-22T13:50:06Z"))); // Third check + finish
             CompactionJob job = createJob("job1");
@@ -226,6 +244,25 @@ public class CompactionTaskTest {
             assertThat(successfulJobs).containsExactly(job);
             assertThat(failedJobs).isEmpty();
             assertThat(jobsOnQueue).isEmpty();
+            assertThat(sleeps).containsExactly(Duration.ofSeconds(2), Duration.ofSeconds(2));
+        }
+
+        @Test
+        void shouldNotDelayRetryIfSetToZero() throws Exception {
+            // Given
+            instanceProperties.setNumber(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS, 3);
+            instanceProperties.setNumber(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS, 0);
+            Queue<Instant> times = new LinkedList<>(List.of(
+                    Instant.parse("2024-02-22T13:50:00Z"), // Start
+                    Instant.parse("2024-02-22T13:50:02Z"), // First idle time check
+                    Instant.parse("2024-02-22T13:50:04Z"))); // Second idle time check + finish
+
+            // When
+            runTask(processNoJobs(), times::poll);
+
+            // Then
+            assertThat(times).isEmpty();
+            assertThat(sleeps).isEmpty();
         }
     }
 
@@ -269,86 +306,98 @@ public class CompactionTaskTest {
     }
 
     @Nested
-    @DisplayName("Update task status store")
-    class UpdateTaskStatusStore {
+    @DisplayName("Update status stores")
+    class UpdateStatusStores {
         @Test
-        void shouldSaveTaskWhenOneJobSucceeds() throws Exception {
+        void shouldSaveTaskAndJobWhenOneJobSucceeds() throws Exception {
             // Given
             Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
+                    Instant.parse("2024-02-22T13:50:01Z"), // Job started
                     Instant.parse("2024-02-22T13:50:02Z"), // Job completed
                     Instant.parse("2024-02-22T13:50:05Z"))); // Finish
-            createJobOnQueue("job1");
+            CompactionJob job = createJobOnQueue("job1");
 
             // When
-            RecordsProcessedSummary jobSummary = summary(
-                    Instant.parse("2024-02-22T13:50:01Z"),
-                    Instant.parse("2024-02-22T13:50:02Z"), 10L, 10L);
+            RecordsProcessed recordsProcessed = new RecordsProcessed(10L, 10L);
             runTask("test-task-1", processJobs(
-                    jobSucceeds(jobSummary)),
+                    jobSucceeds(recordsProcessed)),
                     times::poll);
 
             // Then
-            assertThat(taskStore.getAllTasks())
-                    .containsExactly(CompactionTaskStatus.builder()
-                            .startTime(Instant.parse("2024-02-22T13:50:00Z"))
-                            .taskId("test-task-1")
-                            .finished(Instant.parse("2024-02-22T13:50:05Z"),
-                                    withJobSummaries(jobSummary))
-                            .build());
+            RecordsProcessedSummary jobSummary = new RecordsProcessedSummary(recordsProcessed,
+                    Instant.parse("2024-02-22T13:50:01Z"),
+                    Instant.parse("2024-02-22T13:50:02Z"));
+            assertThat(taskStore.getAllTasks()).containsExactly(
+                    finishedCompactionTask("test-task-1",
+                            Instant.parse("2024-02-22T13:50:00Z"),
+                            Instant.parse("2024-02-22T13:50:05Z"),
+                            jobSummary));
+            assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
+                    jobCreated(job, DEFAULT_CREATED_TIME,
+                            finishedCompactionRun("test-task-1", jobSummary)));
         }
 
         @Test
-        void shouldSaveTaskWhenMultipleJobsSucceed() throws Exception {
+        void shouldSaveTaskAndJobsWhenMultipleJobsSucceed() throws Exception {
             // Given
             Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
+                    Instant.parse("2024-02-22T13:50:01Z"), // Job 1 started
                     Instant.parse("2024-02-22T13:50:02Z"), // Job 1 completed
+                    Instant.parse("2024-02-22T13:50:03Z"), // Job 2 started
                     Instant.parse("2024-02-22T13:50:04Z"), // Job 2 completed
                     Instant.parse("2024-02-22T13:50:05Z"))); // Finish
-            createJobOnQueue("job1");
-            createJobOnQueue("job2");
+            CompactionJob job1 = createJobOnQueue("job1");
+            CompactionJob job2 = createJobOnQueue("job2");
 
             // When
-            RecordsProcessedSummary job1Summary = summary(
-                    Instant.parse("2024-02-22T13:50:01Z"),
-                    Instant.parse("2024-02-22T13:50:02Z"), 10L, 10L);
-            RecordsProcessedSummary job2Summary = summary(
-                    Instant.parse("2024-02-22T13:50:03Z"),
-                    Instant.parse("2024-02-22T13:50:04Z"), 5L, 5L);
+            RecordsProcessed job1RecordsProcessed = new RecordsProcessed(10L, 10L);
+            RecordsProcessed job2RecordsProcessed = new RecordsProcessed(5L, 5L);
             runTask("test-task-1", processJobs(
-                    jobSucceeds(job1Summary),
-                    jobSucceeds(job2Summary)),
+                    jobSucceeds(job1RecordsProcessed),
+                    jobSucceeds(job2RecordsProcessed)),
                     times::poll);
 
             // Then
-            assertThat(taskStore.getAllTasks())
-                    .containsExactly(CompactionTaskStatus.builder()
-                            .startTime(Instant.parse("2024-02-22T13:50:00Z"))
-                            .taskId("test-task-1")
-                            .finished(Instant.parse("2024-02-22T13:50:05Z"),
-                                    withJobSummaries(job1Summary, job2Summary))
-                            .build());
+            RecordsProcessedSummary job1Summary = new RecordsProcessedSummary(job1RecordsProcessed,
+                    Instant.parse("2024-02-22T13:50:01Z"),
+                    Instant.parse("2024-02-22T13:50:02Z"));
+            RecordsProcessedSummary job2Summary = new RecordsProcessedSummary(job2RecordsProcessed,
+                    Instant.parse("2024-02-22T13:50:03Z"),
+                    Instant.parse("2024-02-22T13:50:04Z"));
+            assertThat(taskStore.getAllTasks()).containsExactly(
+                    finishedCompactionTask("test-task-1",
+                            Instant.parse("2024-02-22T13:50:00Z"),
+                            Instant.parse("2024-02-22T13:50:05Z"),
+                            job1Summary, job2Summary));
+            assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactlyInAnyOrder(
+                    jobCreated(job1, DEFAULT_CREATED_TIME,
+                            finishedCompactionRun("test-task-1", job1Summary)),
+                    jobCreated(job2, DEFAULT_CREATED_TIME,
+                            finishedCompactionRun("test-task-1", job2Summary)));
         }
 
         @Test
-        void shouldSaveTaskWhenOneJobFails() throws Exception {
+        void shouldSaveTaskAndJobWhenOneJobFails() throws Exception {
             // Given
             Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
+                    Instant.parse("2024-02-22T13:50:01Z"), // Job started
                     Instant.parse("2024-02-22T13:50:05Z"))); // Finish
-            createJobOnQueue("job1");
+            CompactionJob job = createJobOnQueue("job1");
 
             // When
             runTask("test-task-1", processJobs(jobFails()), times::poll);
 
             // Then
-            assertThat(taskStore.getAllTasks())
-                    .containsExactly(CompactionTaskStatus.builder()
-                            .startTime(Instant.parse("2024-02-22T13:50:00Z"))
-                            .taskId("test-task-1")
-                            .finished(Instant.parse("2024-02-22T13:50:05Z"), noJobSummaries())
-                            .build());
+            assertThat(taskStore.getAllTasks()).containsExactly(
+                    finishedCompactionTask("test-task-1",
+                            Instant.parse("2024-02-22T13:50:00Z"),
+                            Instant.parse("2024-02-22T13:50:05Z")));
+            assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
+                    jobCreated(job, DEFAULT_CREATED_TIME,
+                            startedCompactionRun("test-task-1", Instant.parse("2024-02-22T13:50:01Z"))));
         }
 
         @Test
@@ -362,22 +411,25 @@ public class CompactionTaskTest {
             runTask("test-task-1", processNoJobs(), times::poll);
 
             // Then
-            assertThat(taskStore.getAllTasks())
-                    .containsExactly(CompactionTaskStatus.builder()
-                            .startTime(Instant.parse("2024-02-22T13:50:00Z"))
-                            .taskId("test-task-1")
-                            .finished(Instant.parse("2024-02-22T13:50:05Z"), noJobSummaries())
-                            .build());
-        }
-
-        private CompactionTaskFinishedStatus.Builder noJobSummaries() {
-            return withJobSummaries();
+            assertThat(taskStore.getAllTasks()).containsExactly(
+                    finishedCompactionTask("test-task-1",
+                            Instant.parse("2024-02-22T13:50:00Z"),
+                            Instant.parse("2024-02-22T13:50:05Z")));
+            assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).isEmpty();
         }
 
         private CompactionTaskFinishedStatus.Builder withJobSummaries(RecordsProcessedSummary... summaries) {
             CompactionTaskFinishedStatus.Builder taskFinishedBuilder = CompactionTaskFinishedStatus.builder();
             Stream.of(summaries).forEach(taskFinishedBuilder::addJobSummary);
             return taskFinishedBuilder;
+        }
+
+        private CompactionTaskStatus finishedCompactionTask(String taskId, Instant startTime, Instant finishTime, RecordsProcessedSummary... summaries) {
+            return CompactionTaskStatus.builder()
+                    .startTime(startTime)
+                    .taskId(taskId)
+                    .finished(finishTime, withJobSummaries(summaries))
+                    .build();
         }
     }
 
@@ -405,20 +457,21 @@ public class CompactionTaskTest {
             CompactionRunner compactor,
             Supplier<Instant> timeSupplier,
             String taskId) throws Exception {
-        new CompactionTask(instanceProperties, PropertiesReloader.neverReload(), timeSupplier, messageReceiver,
-                compactor, taskStore, taskId)
+        new CompactionTask(instanceProperties, PropertiesReloader.neverReload(),
+                messageReceiver, compactor, jobStore, taskStore, taskId, timeSupplier, sleeps::add)
                 .run();
     }
 
     private CompactionJob createJobOnQueue(String jobId) {
         CompactionJob job = createJob(jobId);
         jobsOnQueue.add(job);
+        jobStore.jobCreated(job, DEFAULT_CREATED_TIME);
         return job;
     }
 
     private CompactionJob createJob(String jobId) {
         return CompactionJob.builder()
-                .tableId("test-table-id")
+                .tableId(DEFAULT_TABLE_ID)
                 .jobId(jobId)
                 .partitionId("root")
                 .inputFiles(List.of(UUID.randomUUID().toString()))
@@ -485,16 +538,16 @@ public class CompactionTaskTest {
                 .toArray(ProcessJob[]::new));
     }
 
-    private ProcessJob jobSucceeds(RecordsProcessedSummary summary) {
+    private ProcessJob jobSucceeds(RecordsProcessed summary) {
         return new ProcessJob(true, summary);
     }
 
     private ProcessJob jobSucceeds() {
-        return new ProcessJob(true, 10L, DEFAULT_START_TIME, DEFAULT_DURATION);
+        return new ProcessJob(true, 10L);
     }
 
     private ProcessJob jobFails() {
-        return new ProcessJob(false, 0L, DEFAULT_START_TIME, DEFAULT_DURATION);
+        return new ProcessJob(false, 0L);
     }
 
     private CompactionRunner processNoJobs() {
@@ -516,13 +569,13 @@ public class CompactionTaskTest {
 
     private class ProcessJob {
         private final boolean succeed;
-        private final RecordsProcessedSummary summary;
+        private final RecordsProcessed summary;
 
-        ProcessJob(boolean succeed, long records, Instant startTime, Duration duration) {
-            this(succeed, new RecordsProcessedSummary(new RecordsProcessed(records, records), startTime, duration));
+        ProcessJob(boolean succeed, long records) {
+            this(succeed, new RecordsProcessed(records, records));
         }
 
-        ProcessJob(boolean succeed, RecordsProcessedSummary summary) {
+        ProcessJob(boolean succeed, RecordsProcessed summary) {
             this.succeed = succeed;
             this.summary = summary;
         }

@@ -5,25 +5,27 @@ The following steps explain how to prepare and publish a release for Sleeper, by
 
 1. Update CHANGELOG.md with a summary of the issues fixed and improvements made in this version.
 
-2. Create an issue for the release, and create a branch for that issue.
+2. Update the [roadmap](16-roadmap.md) and remove any planned features that have been implemented in this release.
 
-3. Set the new version number using `./scripts/dev/updateVersionNumber.sh`, e.g.
+3. Create an issue for the release, and create a branch for that issue.
+
+4. Set the new version number using `./scripts/dev/updateVersionNumber.sh`, e.g.
 
 ```bash
 VERSION=0.12.0
 ./scripts/dev/updateVersionNumber.sh ${VERSION}
 ```
 
-4. Push the branch to GitHub and open a pull request so that the tests run. If there are any failures, fix them.
+5. Push the branch to GitHub and open a pull request so that the tests run. If there are any failures, fix them.
 
-5. Get the performance figures from the nightly system tests.
+6. Get the performance figures from the nightly system tests.
 
 There should be a cron job configured to run these nightly. Running it manually and retrieving the results is documented
 in the [system tests guide](13-system-tests.md#nightly-test-scripts).
 
 Update the performance figures in the [system tests guide](13-system-tests.md#performance-benchmarks).
 
-6. Run a deployment of the deployAll system test to test the functionality of the system. Note that it is best to
+7. Run a deployment of the deployAll system test to test the functionality of the system. Note that it is best to
    provide a fresh instance ID that has not been used before:
 
 ```bash
@@ -37,7 +39,7 @@ The following tests can be used as a quick check that all is working correctly. 
 all aspects of the system. Any changes made by pull requests should be tested by doing a system test deployment on AWS
 if they are likely to either affect performance or involve changes to the way the system is deployed to AWS.
 
-7. Test a simple query:
+8. Test a simple query:
 
 ```bash
 ./scripts/utility/query.sh ${ID}
@@ -47,7 +49,7 @@ Choose a range query, choose 'y' for the first two questions and then choose a r
 As the data that is ingested is random, it is not possible to say exactly how many results will be returned, but it
 should be in the region of 900 results.
 
-8. Test a query that will be executed by lambda:
+9. Test a query that will be executed by lambda:
 
 ```bash
 ./scripts/utility/lambdaQuery.sh ${ID}
@@ -57,7 +59,7 @@ Choose the S3 results bucket option and then choose the same options as above. I
 The first query executed by lambda is a little slower than subsequent ones due to the start-up costs. The second query
 should be quicker.
 
-9. Test a query that will be executed by lambda with the results being returned over a websocket:
+10. Test a query that will be executed by lambda with the results being returned over a websocket:
 
 ```bash
 ./scripts/utility/webSocketQuery.sh ${ID}
@@ -65,5 +67,5 @@ should be quicker.
 
 Choose the same options as above, and results should be returned.
 
-10. Once the above tests have been done, merge the pull request into main. Then checkout the main branch,
+11. Once the above tests have been done, merge the pull request into main. Then checkout the main branch,
     set the tag to `v${VERSION}` and push the tag using `git push --tags`.

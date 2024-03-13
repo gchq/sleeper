@@ -25,7 +25,7 @@ import sleeper.compaction.job.execution.testutils.CompactSortedFilesTestUtils;
 import sleeper.core.iterator.impl.AgeOffIterator;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
-import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
@@ -67,9 +67,8 @@ class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
         assignJobIdToInputFiles(stateStore, compactionJob);
 
         // When
-        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);
-        RecordsProcessedSummary summary = compactSortedFiles.run(compactionJob);
-
+        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema);
+        RecordsProcessed summary = compactSortedFiles.compact(compactionJob);
         // Then
         //  - Read output files and check that they contain the right results
         assertThat(summary.getRecordsRead()).isEqualTo(200L);

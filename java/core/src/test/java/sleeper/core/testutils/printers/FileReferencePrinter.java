@@ -22,9 +22,14 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.table.TableStatus;
 
 import java.io.PrintWriter;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+
+import static java.util.Comparator.comparing;
+import static java.util.stream.Collectors.toUnmodifiableList;
 
 public class FileReferencePrinter {
 
@@ -32,23 +37,16 @@ public class FileReferencePrinter {
     }
 
     public static String printExpectedFilesForAllTables(
-            List<TableStatus> tables, PartitionTree partitions, List<FileReference> activeFiles) {
+            List<TableStatus> tables, PartitionTree partitions, AllReferencesToAllFiles files) {
         return printTableFilesExpectingIdentical(
                 tables.stream().collect(Collectors.toMap(TableStatus::getTableName, table -> partitions)),
-                tables.stream().collect(Collectors.toMap(TableStatus::getTableName, table -> activeFiles)));
+                tables.stream().collect(Collectors.toMap(TableStatus::getTableName, table -> files)));
     }
 
     public static String printTableFilesExpectingIdentical(
-            Map<String, PartitionTree> partitionsByTable, Map<String, List<FileReference>> activeFilesByTable) {
-        return TablesPrinter.printForAllTables(activeFilesByTable.keySet(), table -> printFiles(partitionsByTable.get(table), activeFilesByTable.get(table)));
-    }
-
-    public static String printFiles(PartitionTree partitionTree, List<FileReference> files) {
-        ToStringPrintStream printer = new ToStringPrintStream();
-        PrintWriter out = printer.getPrintWriter();
-        printFiles(partitionTree, files, out);
-        out.flush();
-        return printer.toString();
+            Map<String, PartitionTree> partitionsByTable, Map<String, AllReferencesToAllFiles> filesByTable) {
+        return TablesPrinter.printForAllTables(filesByTable.keySet(),
+                table -> printFiles(partitionsByTable.get(table), filesByTable.get(table)));
     }
 
     public static String printFiles(PartitionTree tree, AllReferencesToAllFiles files) {
@@ -56,15 +54,18 @@ public class FileReferencePrinter {
         PrintWriter out = printer.getPrintWriter();
         out.println("Unreferenced files: " + files.getFilesWithNoReferences().size());
         out.println("Referenced files: " + files.getFilesWithReferences().size());
-        printFiles(tree, files.listFileReferences(), out);
+        printFiles(tree, files, out);
         out.flush();
         return printer.toString();
     }
 
-    public static void printFiles(PartitionTree partitionTree, List<FileReference> files, PrintWriter out) {
-        out.println("File references: " + files.size());
-        Map<String, List<FileReference>> filesByPartition = files.stream()
+    private static void printFiles(PartitionTree partitionTree, AllReferencesToAllFiles files, PrintWriter out) {
+        List<FileReference> references = sortFileReferences(files);
+        out.println("File references: " + references.size());
+        Map<String, List<FileReference>> filesByPartition = references.stream()
                 .collect(Collectors.groupingBy(FileReference::getPartitionId));
+        AtomicInteger partialCount = new AtomicInteger();
+        Map<String, Integer> numberByPartialFilename = new HashMap<>();
         partitionTree.traverseLeavesFirst().forEach(partition -> {
             List<FileReference> partitionFiles = filesByPartition.get(partition.getId());
             if (partitionFiles == null) {
@@ -85,10 +86,18 @@ public class FileReferencePrinter {
                 if (file.onlyContainsDataForThisPartition()) {
                     out.println("in file");
                 } else {
-                    out.println("in partial file");
+                    int partialFileNumber = numberByPartialFilename.computeIfAbsent(
+                            file.getFilename(), name -> partialCount.incrementAndGet());
+                    out.println("in partial file " + partialFileNumber);
                 }
             }
         });
     }
 
+    private static List<FileReference> sortFileReferences(AllReferencesToAllFiles files) {
+        return files.getFilesWithReferences().stream()
+                .flatMap(file -> file.getInternalReferences().stream())
+                .sorted(comparing(FileReference::getNumberOfRecords).reversed())
+                .collect(toUnmodifiableList());
+    }
 }

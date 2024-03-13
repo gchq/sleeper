@@ -59,6 +59,10 @@ public class FilesReportTestHelper {
         return new AllReferencesToAllFiles(activeAndReadyForGCFiles(updateTime, activeFiles, readyForGCFiles), false);
     }
 
+    public static AllReferencesToAllFiles readyForGCFiles(String... filenames) {
+        return readyForGCFilesReport(DEFAULT_UPDATE_TIME, filenames);
+    }
+
     public static AllReferencesToAllFiles readyForGCFilesReport(Instant updateTime, String... filenames) {
         return new AllReferencesToAllFiles(activeAndReadyForGCFiles(updateTime, List.of(), List.of(filenames)), false);
     }
