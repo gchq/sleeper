@@ -40,7 +40,7 @@ public class SystemTestCompaction {
     public SystemTestCompaction createJobs(int expectedJobs) {
         lastJobIds = waitForJobCreation.createJobsGetIds(expectedJobs,
                 PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofSeconds(30)),
-                driver::triggerCreateJobs);
+                driver::createJobs);
         return this;
     }
 

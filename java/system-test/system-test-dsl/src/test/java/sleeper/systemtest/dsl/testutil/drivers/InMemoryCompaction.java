@@ -111,6 +111,11 @@ public class InMemoryCompaction {
         }
 
         @Override
+        public void createJobs() {
+            createJobs(Mode.STRATEGY);
+        }
+
+        @Override
         public void forceCreateJobs() {
             createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY);
         }

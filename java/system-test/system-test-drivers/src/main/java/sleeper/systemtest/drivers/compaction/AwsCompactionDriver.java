@@ -34,11 +34,14 @@ import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.table.InvokeForTableRequest;
+import sleeper.core.table.InvokeForTableRequestSerDe;
+import sleeper.core.table.TableStatus;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_BATCH_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_TRIGGER_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_BATCH_SIZE;
@@ -46,6 +49,7 @@ import static sleeper.configuration.properties.instance.CompactionProperty.COMPA
 public class AwsCompactionDriver implements CompactionDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(AwsCompactionDriver.class);
 
+    private final InvokeForTableRequestSerDe serDe = new InvokeForTableRequestSerDe();
     private final SystemTestInstanceContext instance;
     private final LambdaClient lambdaClient;
     private final AmazonDynamoDB dynamoDBClient;
@@ -68,6 +72,17 @@ public class AwsCompactionDriver implements CompactionDriver {
     public void triggerCreateJobs() {
         InvokeLambda.invokeWith(lambdaClient,
                 instance.getInstanceProperties().get(COMPACTION_JOB_CREATION_TRIGGER_LAMBDA_FUNCTION));
+    }
+
+    @Override
+    public void createJobs() {
+        int batchSize = instance.getInstanceProperties().getInt(COMPACTION_JOB_CREATION_BATCH_SIZE);
+        String queueUrl = instance.getInstanceProperties().get(COMPACTION_JOB_CREATION_BATCH_QUEUE_URL);
+        InvokeForTableRequest.forTables(
+                instance.streamTableProperties()
+                        .map(TableProperties::getStatus)
+                        .filter(TableStatus::isOnline),
+                batchSize, request -> sqsClient.sendMessage(queueUrl, serDe.toJson(request)));
     }
 
     @Override
