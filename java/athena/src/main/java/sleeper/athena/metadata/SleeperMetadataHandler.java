@@ -83,10 +83,9 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
 /**
- * The {@link SleeperMetadataHandler} deals with requests about the layout for a Sleeper instance. It provides
- * information about the tables and schemas of those tables. When a query is run, Athena will first make a request to
- * this handler to find out what partitions it needs to query. These are split and forwarded to the Record handler used
- * to retrieve the data.
+ * Deals with requests about the layout of a Sleeper instance. It provides information about the tables and schemas of
+ * those tables. When a query is run, Athena will first make a request to this handler to find out what partitions it
+ * needs to query. These are split and forwarded to the record handler used to retrieve the data.
  */
 public abstract class SleeperMetadataHandler extends MetadataHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(SleeperMetadataHandler.class);
@@ -244,9 +243,9 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
     protected abstract void addExtraSchemaEnhancements(SchemaBuilder partitionSchemaBuilder, GetTableLayoutRequest request);
 
     /**
-     * Used to get the partitions that must be read from the request table in order to satisfy the requested predicate.
-     * It iterates through the partitions, eliminating those which don't contain data that satisfy the key requirements.
-     * At the end of processing it returns the relevant partitions for this query.
+     * Finds partitions that can satisfy the predicate. It iterates through the partitions, eliminating those which
+     * don't contain data that satisfy the key requirements. At the end of processing it returns the relevant partitions
+     * for this query.
      *
      * @param blockWriter           Used to write rows (partitions) into the Apache Arrow response.
      * @param getTableLayoutRequest Provides details of the catalog, database, and table being queried as well as any
