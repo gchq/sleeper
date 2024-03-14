@@ -104,7 +104,7 @@ public class PropertiesWriterLambdaIT {
         client.createBucket(bucketName);
         PropertiesWriterLambda propertiesWriterLambda = new PropertiesWriterLambda(client, bucketName);
 
-        client.putObject(bucketName, "config", "foo");
+        client.putObject(bucketName, "instance.properties", "foo");
 
         // When
         InstanceProperties instanceProperties = createDefaultProperties("bar", bucketName);
@@ -165,7 +165,7 @@ public class PropertiesWriterLambdaIT {
         AmazonS3 client = createClient();
         String bucketName = UUID.randomUUID().toString();
         client.createBucket(bucketName);
-        client.putObject(bucketName, "config", "foo");
+        client.putObject(bucketName, "instance.properties", "foo");
 
         // When
         InstanceProperties instanceProperties = createDefaultProperties("foo", bucketName);
