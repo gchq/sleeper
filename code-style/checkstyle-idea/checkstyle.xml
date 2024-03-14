@@ -81,11 +81,14 @@
         <module name="JavadocType">
             <property name="id" value="javadocStyle"/>
         </module>
-        <module name="SingleLineJavadoc">
-            <property name="id" value="singleLineJavadoc"/>
-        </module>
         <module name="NonEmptyAtclauseDescription">
             <property name="id" value="nonEmptyAtClause"/>
+        </module>
+        <module name="RequireEmptyLineBeforeBlockTagGroup">
+            <property name="id" value="requireEmptyLineBeforeBlockTagGroup"/>
+        </module>
+        <module name="SingleLineJavadoc">
+            <property name="id" value="singleLineJavadoc"/>
         </module>
         <module name="ConstantName">
             <property name="id" value="constantName"/>
