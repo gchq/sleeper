@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.systemtest.dsl.compaction;
+package sleeper.systemtest.suite;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -24,7 +24,7 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.systemtest.dsl.SleeperSystemTest;
-import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
+import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.util.HashSet;
 import java.util.List;
@@ -41,12 +41,12 @@ import static sleeper.configuration.properties.table.TableProperty.INGEST_FILE_W
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStringAndZeroPadTo;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides.overrideField;
-import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.DEFAULT_SCHEMA;
-import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.MAIN;
-import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.ROW_KEY_FIELD_NAME;
+import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
+import static sleeper.systemtest.suite.fixtures.SystemTestSchema.DEFAULT_SCHEMA;
+import static sleeper.systemtest.suite.fixtures.SystemTestSchema.ROW_KEY_FIELD_NAME;
 
-@InMemoryDslTest
-public class ParallelCompactionsTest {
+@SystemTest
+public class ParallelCompactionsIT {
     private final Schema schema = DEFAULT_SCHEMA;
     public static final int NUMBER_OF_COMPACTIONS = 5;
 
