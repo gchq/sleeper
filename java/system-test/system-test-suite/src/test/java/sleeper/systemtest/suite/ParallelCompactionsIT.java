@@ -71,12 +71,12 @@ public class ParallelCompactionsIT {
                 .leavesWithSplits(leafIds, splitPoints)
                 .anyTreeJoiningAllLeaves()
                 .buildTree());
+        // And we have records spread across all partitions in two files per partition
         // And we configure to compact every partition
         sleeper.updateTableProperties(Map.of(
                 INGEST_FILE_WRITING_STRATEGY, IngestFileWritingStrategy.ONE_FILE_PER_LEAF.toString(),
                 COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
                 COMPACTION_FILES_BATCH_SIZE, "2"));
-        // And we have records spread across all partitions in two files per partition
         sleeper.ingest().direct(null)
                 .numberedRecords(LongStream.range(0, 10000))
                 .numberedRecords(LongStream.range(0, 10000));
