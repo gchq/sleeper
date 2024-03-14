@@ -76,7 +76,7 @@
         </module>
         <module name="JavadocStyle">
             <property name="id" value="javadocStyle"/>
-            <property name="checkFirstSentence" value="false"/>
+            <property name="checkEmptyJavadoc" value="true"/>
         </module>
         <module name="SingleLineJavadoc">
             <property name="id" value="singleLineJavadoc"/>
