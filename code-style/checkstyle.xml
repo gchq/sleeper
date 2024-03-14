@@ -90,6 +90,10 @@
         <module name="SingleLineJavadoc">
             <property name="id" value="singleLineJavadoc"/>
         </module>
+        <module name="SummaryJavadoc">
+            <property name="id" value="summaryJavadoc"/>
+            <property name="forbiddenSummaryFragments" value="^$|\{|@|<"/>
+        </module>
         <module name="ConstantName">
             <property name="id" value="constantName"/>
         </module>
