@@ -39,7 +39,7 @@ public class SystemTestGarbageCollection {
     }
 
     public void waitFor() {
-        WaitForGC.waitUntilNoUnreferencedFiles(instance.getStateStore(),
+        WaitForGC.waitUntilNoUnreferencedFiles(instance,
                 PollWithRetries.intervalAndPollingTimeout(
                         Duration.ofSeconds(5), Duration.ofSeconds(30)));
     }
