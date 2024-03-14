@@ -55,6 +55,9 @@
         <module name="AtclauseOrder">
             <property name="id" value="atClauseOrder"/>
         </module>
+        <module name="InvalidJavadocPosition">
+            <property name="id" value="invalidJavadocPosition"/>
+        </module>
         <module name="JavadocMethod">
             <property name="id" value="javadocOnMethod"/>
             <property name="allowMissingParamTags" value="true"/>
