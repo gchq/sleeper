@@ -83,7 +83,11 @@ public class PartitionsFromSplitPoints {
         }
 
         List<Partition> builtPartitions = allPartitions.stream().map(Partition.Builder::build).collect(Collectors.toList());
-
+        LOGGER.debug("Created the following partitions (ordered by leaves first):");
+        PartitionTree tree = new PartitionTree(builtPartitions);
+        tree.traverseLeavesFirst().forEach(partition -> {
+            LOGGER.debug(partition.toString());
+        });
         return builtPartitions;
     }
 
@@ -119,7 +123,6 @@ public class PartitionsFromSplitPoints {
                         .region(region);
                 leftPartition.parentPartitionId(id);
                 rightPartition.parentPartitionId(id);
-                LOGGER.debug("Created parent partition {} joining partitions {}", id, childPartitionIds);
                 parents.add(parent);
             }
         }
@@ -149,7 +152,6 @@ public class PartitionsFromSplitPoints {
                     .parentPartitionId(null)
                     .childPartitionIds(new ArrayList<>())
                     .dimension(-1);
-            LOGGER.debug("Created leaf partition {} for region {}", id, region);
             leafPartitions.add(partition);
         }
         LOGGER.info("Created {} leaf partitions from {} split points", leafPartitions.size(), splitPoints.size());
