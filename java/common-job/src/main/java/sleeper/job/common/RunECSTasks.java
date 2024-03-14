@@ -62,12 +62,6 @@ public class RunECSTasks {
         return new Builder();
     }
 
-    public static void runTasks(AmazonECS ecsClient, RunTaskRequest runTaskRequest, int numberOfTasksToCreate) {
-        runTasks(builder -> builder.ecsClient(ecsClient)
-                .runTaskRequest(runTaskRequest)
-                .numberOfTasksToCreate(numberOfTasksToCreate));
-    }
-
     public static void runTasks(Consumer<RunECSTasks.Builder> configuration) {
         Builder builder = builder();
         configuration.accept(builder);
