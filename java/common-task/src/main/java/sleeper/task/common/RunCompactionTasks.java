@@ -80,15 +80,6 @@ public class RunCompactionTasks {
     }
 
     public RunCompactionTasks(
-            AmazonECS ecsClient, AmazonS3 s3Client, AmazonAutoScaling asClient,
-            InstanceProperties instanceProperties) {
-        this(instanceProperties,
-                (clusterName) -> ECSTaskCount.getNumPendingAndRunningTasks(clusterName, ecsClient),
-                createEC2Scaler(instanceProperties, asClient, ecsClient),
-                (startTime, numberOfTasksToCreate) -> launchTasks(ecsClient, instanceProperties, startTime, numberOfTasksToCreate));
-    }
-
-    public RunCompactionTasks(
             InstanceProperties instanceProperties, TaskCounts taskCounts, Scaler scaler, TaskLauncher launchTasks) {
         this.instanceProperties = instanceProperties;
         this.taskCounts = taskCounts;
