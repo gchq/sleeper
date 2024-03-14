@@ -26,11 +26,12 @@ public interface ArrowRecordWriter<T> {
     /**
      * An interface which supports writing Arrow records. The interface allows the source data to come in different
      * formats, including those where each insert generates multiple Arrow records.
-     * @param allFields A List of all of the fields to store
-     * @param vectorSchemaRoot The Arrow in-memory store to store the records in
-     * @param data The data to write
-     * @param insertAtRowNo The location in the VectorSchemaRoot to use to insert the data
-     * @return The index to use when this method is next called
+     *
+     * @param  allFields        A List of all of the fields to store
+     * @param  vectorSchemaRoot The Arrow in-memory store to store the records in
+     * @param  data             The data to write
+     * @param  insertAtRowNo    The location in the VectorSchemaRoot to use to insert the data
+     * @return                  The index to use when this method is next called
      */
     int insert(List<Field> allFields, VectorSchemaRoot vectorSchemaRoot, T data, int insertAtRowNo);
 }
