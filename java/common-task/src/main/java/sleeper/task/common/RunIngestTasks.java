@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.ingest.starter;
+package sleeper.task.common;
 
 import com.amazonaws.services.ecs.AmazonECS;
 import com.amazonaws.services.ecs.model.AwsVpcConfiguration;
@@ -29,9 +29,6 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.task.common.ECSUtils;
-import sleeper.task.common.QueueMessageCount;
-import sleeper.task.common.RunECSTasks;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,8 +44,8 @@ import static sleeper.configuration.properties.instance.IngestProperty.MAXIMUM_C
 /**
  * Finds the number of messages on a queue, and starts up one Fargate task for each, up to a configurable maximum.
  */
-public class RunTasks {
-    private static final Logger LOGGER = LoggerFactory.getLogger(RunTasks.class);
+public class RunIngestTasks {
+    private static final Logger LOGGER = LoggerFactory.getLogger(RunIngestTasks.class);
 
     private final AmazonSQS sqsClient;
     private final AmazonECS ecsClient;
@@ -56,7 +53,7 @@ public class RunTasks {
     private final PropertiesReloader propertiesReloader;
     private final String containerName;
 
-    public RunTasks(AmazonSQS sqsClient,
+    public RunIngestTasks(AmazonSQS sqsClient,
             AmazonECS ecsClient,
             InstanceProperties properties,
             PropertiesReloader propertiesReloader,
