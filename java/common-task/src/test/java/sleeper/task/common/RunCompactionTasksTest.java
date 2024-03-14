@@ -13,17 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.task.creation;
+package sleeper.task.common;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.compaction.task.creation.RunTasks.Scaler;
-import sleeper.compaction.task.creation.RunTasks.TaskCounts;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.task.common.InMemoryQueueMessageCounts;
-import sleeper.task.common.QueueMessageCount;
+import sleeper.task.common.RunCompactionTasks.Scaler;
+import sleeper.task.common.RunCompactionTasks.TaskCounts;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -37,7 +35,7 @@ import static sleeper.configuration.properties.instance.CompactionProperty.COMPA
 import static sleeper.configuration.properties.instance.CompactionProperty.MAXIMUM_CONCURRENT_COMPACTION_TASKS;
 import static sleeper.task.common.QueueMessageCount.approximateNumberVisibleAndNotVisible;
 
-public class RunTasksTest {
+public class RunCompactionTasksTest {
     private static final String TEST_JOB_QUEUE = "test-job-queue";
     private static final String TEST_AUTO_SCALING_GROUP = "test-scaling-group";
     private final InstanceProperties instanceProperties = createInstance();
@@ -67,7 +65,7 @@ public class RunTasksTest {
 
         private int runTasks(QueueMessageCount.Client queueMessageClient, TaskCounts taskCounts) {
             AtomicInteger tasksLaunched = new AtomicInteger();
-            RunTasks runTasks = new RunTasks(instanceProperties, queueMessageClient, taskCounts, scaler, (startTime, numberOfTasksToCreate) -> {
+            RunCompactionTasks runTasks = new RunCompactionTasks(instanceProperties, queueMessageClient, taskCounts, scaler, (startTime, numberOfTasksToCreate) -> {
                 tasksLaunched.set(numberOfTasksToCreate);
             });
             runTasks.run();
@@ -184,7 +182,7 @@ public class RunTasksTest {
 
     private int runTasks(int requestedTasks, TaskCounts taskCounts) {
         AtomicInteger tasksLaunched = new AtomicInteger();
-        RunTasks runTasks = new RunTasks(instanceProperties, noMessagesOnQueue(), taskCounts, scaler, (startTime, numberOfTasksToCreate) -> {
+        RunCompactionTasks runTasks = new RunCompactionTasks(instanceProperties, noMessagesOnQueue(), taskCounts, scaler, (startTime, numberOfTasksToCreate) -> {
             tasksLaunched.set(numberOfTasksToCreate);
         });
         runTasks.run(requestedTasks);

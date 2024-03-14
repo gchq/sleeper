@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.task.creation;
+package sleeper.task.common;
 
 import com.amazonaws.services.autoscaling.AmazonAutoScaling;
 import com.amazonaws.services.autoscaling.AmazonAutoScalingClientBuilder;
@@ -36,9 +36,6 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.Requirements;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.task.common.ECSUtils;
-import sleeper.task.common.QueueMessageCount;
-import sleeper.task.common.RunECSTasks;
 
 import java.util.List;
 import java.util.Locale;
@@ -62,8 +59,8 @@ import static sleeper.core.ContainerConstants.COMPACTION_CONTAINER_NAME;
  * Finds the number of messages on a queue, and starts up one EC2 or Fargate task for each, up to a
  * configurable maximum.
  */
-public class RunTasks {
-    private static final Logger LOGGER = LoggerFactory.getLogger(RunTasks.class);
+public class RunCompactionTasks {
+    private static final Logger LOGGER = LoggerFactory.getLogger(RunCompactionTasks.class);
 
     private final InstanceProperties instanceProperties;
     private final String sqsJobQueueUrl;
@@ -75,7 +72,7 @@ public class RunTasks {
     private final Scaler scaler;
     private final TaskLauncher launchTasks;
 
-    public RunTasks(AmazonSQS sqsClient,
+    public RunCompactionTasks(AmazonSQS sqsClient,
             AmazonECS ecsClient,
             AmazonS3 s3Client,
             AmazonAutoScaling asClient,
@@ -86,7 +83,7 @@ public class RunTasks {
                 (startTime, numberOfTasksToCreate) -> launchTasks(ecsClient, instanceProperties, startTime, numberOfTasksToCreate));
     }
 
-    public RunTasks(InstanceProperties instanceProperties,
+    public RunCompactionTasks(InstanceProperties instanceProperties,
             QueueMessageCount.Client queueMessageCount,
             TaskCounts taskCounts,
             Scaler scaler,
@@ -168,7 +165,7 @@ public class RunTasks {
         }
 
         return new EC2Scaler(asClient, ecsClient, instanceProperties.get(COMPACTION_AUTO_SCALING_GROUP),
-                instanceProperties.get(COMPACTION_CLUSTER), requirements.getLeft(), requirements.getRight());
+                instanceProperties.get(COMPACTION_CLUSTER), requirements.getLeft(), requirements.getRight())::scaleTo;
     }
 
     /**
@@ -200,7 +197,7 @@ public class RunTasks {
                     // This lambda is triggered every minute so abort once get
                     // close to 1 minute
                     if (System.currentTimeMillis() - startTime > 50 * 1000L) {
-                        LOGGER.info("RunTasks has been running for more than 50 seconds, aborting");
+                        LOGGER.info("Running for more than 50 seconds, aborting");
                         return true;
                     } else {
                         return false;
@@ -285,7 +282,7 @@ public class RunTasks {
         try {
             InstanceProperties instanceProperties = new InstanceProperties();
             instanceProperties.loadFromS3(s3Client, s3Bucket);
-            new RunTasks(sqsClient, ecsClient, s3Client, asClient, instanceProperties)
+            new RunCompactionTasks(sqsClient, ecsClient, s3Client, asClient, instanceProperties)
                     .run(numberOfTasks);
         } finally {
             sqsClient.shutdown();
