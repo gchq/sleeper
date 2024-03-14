@@ -89,10 +89,10 @@ public abstract class SleeperRecordHandler extends RecordHandler {
      * will depend on the {@link com.amazonaws.athena.connector.lambda.handlers.MetadataHandler} supplying the splits.
      * The way that the iterator is created from the request will depend on implementation.
      *
-     * @param spiller            a mechanism to write data
-     * @param recordsRequest     The request from the user
-     * @param queryStatusChecker a means of checking the status of the query
-     * @throws Exception If something goes wrong
+     * @param  spiller            a mechanism to write data
+     * @param  recordsRequest     The request from the user
+     * @param  queryStatusChecker a means of checking the status of the query
+     * @throws Exception          If something goes wrong
      */
     @Override
     protected void readWithConstraint(BlockSpiller spiller, ReadRecordsRequest recordsRequest, QueryStatusChecker queryStatusChecker) throws Exception {
@@ -124,9 +124,9 @@ public abstract class SleeperRecordHandler extends RecordHandler {
      * Implementation dependent code to create the schema used to read the data. Some implementations may be able to
      * slim down the schema to reduce the amount of data read per query, thereby making queries cheaper.
      *
-     * @param schema         the original schema associated with the table being queried
-     * @param recordsRequest the records request made by the user
-     * @return a schema to use for reading the files.
+     * @param  schema         the original schema associated with the table being queried
+     * @param  recordsRequest the records request made by the user
+     * @return                a schema to use for reading the files.
      */
     protected abstract Schema createSchemaForDataRead(Schema schema, ReadRecordsRequest recordsRequest);
 
@@ -134,12 +134,12 @@ public abstract class SleeperRecordHandler extends RecordHandler {
      * Implementation dependent iterator creation code. The entire request which contains the user, split and schema is
      * passed to this method along with the table properties.
      *
-     * @param recordsRequest  the request
-     * @param schema          the table schema to use for reading
-     * @param tableProperties The table properties to use for reading the table
-     * @return an iterator of records
-     * @throws Exception when an iterator is not created
-     * @implNote Do not use the schema in the table properties as it could differ from the schema provided.
+     * @param    recordsRequest  the request
+     * @param    schema          the table schema to use for reading
+     * @param    tableProperties The table properties to use for reading the table
+     * @return                   an iterator of records
+     * @throws   Exception       when an iterator is not created
+     * @implNote                 Do not use the schema in the table properties as it could differ from the schema provided.
      */
     protected abstract CloseableIterator<Record> createRecordIterator(ReadRecordsRequest recordsRequest, Schema schema, TableProperties tableProperties) throws Exception;
 
@@ -174,7 +174,7 @@ public abstract class SleeperRecordHandler extends RecordHandler {
     }
 
     /**
-     * Adds an extractor for byte arrays
+     * Adds an extractor for byte arrays.
      *
      * @param rowWriterBuilder the WriterBuilder
      * @param name             the name of the field
@@ -194,19 +194,18 @@ public abstract class SleeperRecordHandler extends RecordHandler {
      * @param name             the name of the field
      */
     private void addListExtractorFactory(GeneratedRowWriter.RowWriterBuilder rowWriterBuilder, String name, ListType type) {
-        rowWriterBuilder.withFieldWriterFactory(name, (vector, extractor, constraint) ->
-                (context, rowNum) -> {
-                    Record record = (Record) context;
-                    Object object = record.get(name);
-                    if (object != null) {
-                        BlockUtils.setComplexValue(vector, rowNum, FieldResolver.DEFAULT, object);
-                    }
-                    return true;
-                });
+        rowWriterBuilder.withFieldWriterFactory(name, (vector, extractor, constraint) -> (context, rowNum) -> {
+            Record record = (Record) context;
+            Object object = record.get(name);
+            if (object != null) {
+                BlockUtils.setComplexValue(vector, rowNum, FieldResolver.DEFAULT, object);
+            }
+            return true;
+        });
     }
 
     /**
-     * Adds an extractor for Strings
+     * Adds an extractor for Strings.
      *
      * @param rowWriterBuilder the WriterBuilder
      * @param name             the name of the field
@@ -220,7 +219,7 @@ public abstract class SleeperRecordHandler extends RecordHandler {
     }
 
     /**
-     * Adds an extractor for Longs
+     * Adds an extractor for Longs.
      *
      * @param rowWriterBuilder the WriterBuilder
      * @param name             the name of the field
@@ -234,7 +233,7 @@ public abstract class SleeperRecordHandler extends RecordHandler {
     }
 
     /**
-     * Adds an extractor for Integers
+     * Adds an extractor for Integers.
      *
      * @param rowWriterBuilder the WriterBuilder
      * @param name             the name of the field
@@ -248,10 +247,10 @@ public abstract class SleeperRecordHandler extends RecordHandler {
     }
 
     /**
-     * Gets the Hadoop configuration set in the table and instance
+     * Gets the Hadoop configuration set in the table and instance.
      *
-     * @param tableProperties the table properties
-     * @return the Hadoop configuration
+     * @param  tableProperties the table properties
+     * @return                 the Hadoop configuration
      */
     protected Configuration getConfigurationForTable(TableProperties tableProperties) {
         Configuration conf = HadoopConfigurationProvider.getConfigurationForQueryLambdas(instanceProperties, tableProperties);

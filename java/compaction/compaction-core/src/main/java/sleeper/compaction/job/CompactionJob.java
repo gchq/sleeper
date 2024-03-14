@@ -22,8 +22,11 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * Contains the definition of a compaction job, including the id of the job,
- * a list of the input files, the output file or files, and the id of the partition
+ * Contains the definition of a compaction job. This includes the ID of the job,
+ * a list of the input files, the output file or files, and the ID of the partition.
+ * <p>
+ * This should fully define the job to be performed, so that no further queries of
+ * the state store should be required in order to start it.
  */
 public class CompactionJob {
     private final String tableId;
@@ -68,8 +71,8 @@ public class CompactionJob {
     /**
      * Checks that there are no duplicate entries present in the list of files.
      *
-     * @param <T>   generic type of list
-     * @param files list of entries to check
+     * @param  <T>                      generic type of list
+     * @param  files                    list of entries to check
      * @throws IllegalArgumentException if there are any duplicate entries
      */
     private static <T> void checkDuplicates(List<T> files) {

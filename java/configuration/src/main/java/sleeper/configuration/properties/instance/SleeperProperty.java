@@ -61,6 +61,8 @@ public interface SleeperProperty {
     }
 
     /**
+     * Whether or not the system must be redeployed to apply a change to the property.
+     *
      * @return True if the property can only be applied by running the CDK, and not just by saving it to S3
      */
     boolean isRunCdkDeployWhenChanged();

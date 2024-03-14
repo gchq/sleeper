@@ -123,11 +123,15 @@
         </module>
         <module name="ImportOrder">
             <property name="id" value="importOrder"/>
-            <property name="groups" value="*,uk.gov.gchq,/^javax\./,java"/>
+            <property name="groups" value="*,sleeper,/^javax\./,java"/>
             <property name="ordered" value="true"/>
             <property name="separated" value="true"/>
             <property name="option" value="bottom"/>
             <property name="sortStaticImportsAlphabetically" value="true"/>
+        </module>
+        <module name="MethodLength">
+            <property name="id" value="methodLengthMax"/>
+            <property name="max" value="200"/>
         </module>
         <module name="EmptyForIteratorPad">
             <property name="id" value="emptyForIterator"/>
@@ -203,7 +207,9 @@
             <property name="id" value="upperEll"/>
         </module>
         <module name="IllegalImport">
-            <property name="illegalPkgs" value="org.junit.jupiter.api.Assertions"/>
+            <property name="regexp" value="true"/>
+            <property name="illegalClasses"
+                      value="^org\.junit\.jupiter\.api\.Assertions, ^org\.junit\.(?!jupiter|platform).+"/>
         </module>
         <module name="Indentation">
             <property name="id" value="indentation"/>
