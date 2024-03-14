@@ -58,6 +58,9 @@
         <module name="InvalidJavadocPosition">
             <property name="id" value="invalidJavadocPosition"/>
         </module>
+        <module name="JavadocBlockTagLocation">
+            <property name="id" value="javadocBlockTagLocation"/>
+        </module>
         <module name="JavadocMethod">
             <property name="id" value="javadocOnMethod"/>
             <property name="allowMissingParamTags" value="true"/>
