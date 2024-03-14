@@ -68,6 +68,9 @@
             <property name="id" value="javadocOnMethod"/>
             <property name="allowMissingParamTags" value="true"/>
         </module>
+        <module name="JavadocMissingLeadingAsterisk">
+            <property name="id" value="javadocMissingLeadingAsterisk"/>
+        </module>
         <module name="JavadocStyle">
             <property name="id" value="javadocStyle"/>
             <property name="checkFirstSentence" value="false"/>
