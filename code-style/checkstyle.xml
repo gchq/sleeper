@@ -78,6 +78,9 @@
             <property name="id" value="javadocStyle"/>
             <property name="checkEmptyJavadoc" value="true"/>
         </module>
+        <module name="JavadocType">
+            <property name="id" value="javadocStyle"/>
+        </module>
         <module name="SingleLineJavadoc">
             <property name="id" value="singleLineJavadoc"/>
         </module>
