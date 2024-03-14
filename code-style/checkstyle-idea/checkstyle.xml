@@ -71,6 +71,9 @@
         <module name="JavadocMissingLeadingAsterisk">
             <property name="id" value="javadocMissingLeadingAsterisk"/>
         </module>
+        <module name="JavadocMissingWhitespaceAfterAsterisk">
+            <property name="id" value="javadocMissingWhitespaceAfterAsterisk"/>
+        </module>
         <module name="JavadocStyle">
             <property name="id" value="javadocStyle"/>
             <property name="checkFirstSentence" value="false"/>
