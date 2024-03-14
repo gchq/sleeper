@@ -74,24 +74,26 @@ public class PartitionsFromSplitPoints {
         LOGGER.info("Split points are valid");
 
         // There is at least 1 split point. Use the split points to create leaf partitions.
-        List<List<Partition.Builder>> partitionsByLayer = new ArrayList<>();
         List<Partition.Builder> leafPartitions = createLeafPartitions();
         List<Partition.Builder> allPartitions = new ArrayList<>(leafPartitions);
-        partitionsByLayer.add(leafPartitions);
 
         List<Partition.Builder> nextLayer = addLayer(leafPartitions, allPartitions);
-        partitionsByLayer.add(nextLayer);
         while (1 != nextLayer.size()) {
             nextLayer = addLayer(nextLayer, allPartitions);
-            partitionsByLayer.add(nextLayer);
         }
 
         List<Partition> builtPartitions = allPartitions.stream().map(Partition.Builder::build).collect(Collectors.toList());
         LOGGER.debug("Created the following partitions by layer (root first)");
         int layer = 1;
-        for (int i = partitionsByLayer.size() - 1; i >= 0; i--) {
-            LOGGER.debug("Layer {}:", layer++);
-            partitionsByLayer.get(i).stream().map(Partition.Builder::build).forEach(partition -> LOGGER.debug(partition.toString()));
+        PartitionTree tree = new PartitionTree(builtPartitions);
+        List<Partition> partitionsInLayer = List.of(tree.getRootPartition());
+        while (!partitionsInLayer.isEmpty()) {
+            LOGGER.debug("Layer {}", layer++);
+            partitionsInLayer.forEach(partition -> LOGGER.debug(partition.toString()));
+            partitionsInLayer = partitionsInLayer.stream()
+                    .map(partition -> partition.getChildPartitionIds())
+                    .flatMap(List::stream)
+                    .map(tree::getPartition).collect(Collectors.toList());
         }
         return builtPartitions;
     }
