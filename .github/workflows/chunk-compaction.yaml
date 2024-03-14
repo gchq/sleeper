@@ -18,6 +18,7 @@ on:
       - 'java/compaction/compaction-core/**'
       - 'java/splitter/splitter-core/**'
       - 'java/splitter/splitter-lambda/**'
+      - 'java/common-task/**'
       - 'java/ingest/ingest-runner/**'
       - 'java/common-job/**'
       - 'java/ingest/ingest-status-store/**'

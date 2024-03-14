@@ -31,12 +31,12 @@ import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
 import sleeper.ingest.task.IngestTaskStatusStore;
-import sleeper.job.common.QueueMessageCount;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.reporting.IngestReportsDriver;
 import sleeper.systemtest.dsl.reporting.ReportingContext;
 import sleeper.systemtest.dsl.reporting.SystemTestReport;
+import sleeper.task.common.QueueMessageCount;
 
 import java.time.Instant;
 import java.util.List;
@@ -48,7 +48,7 @@ public class AwsIngestReportsDriver implements IngestReportsDriver {
     private final AmazonElasticMapReduce emr;
 
     public AwsIngestReportsDriver(SystemTestInstanceContext instance,
-                                  SystemTestClients clients) {
+            SystemTestClients clients) {
         this.instance = instance;
         this.dynamoDB = clients.getDynamoDB();
         this.queueMessages = QueueMessageCount.withSqsClient(clients.getSqs());
@@ -60,20 +60,18 @@ public class AwsIngestReportsDriver implements IngestReportsDriver {
     }
 
     public SystemTestReport tasksReport() {
-        return (out, startTime) ->
-                new IngestTaskStatusReport(taskStore(),
-                        new StandardIngestTaskStatusReporter(out),
-                        IngestTaskQuery.forPeriod(startTime, Instant.MAX))
-                        .run();
+        return (out, startTime) -> new IngestTaskStatusReport(taskStore(),
+                new StandardIngestTaskStatusReporter(out),
+                IngestTaskQuery.forPeriod(startTime, Instant.MAX))
+                .run();
     }
 
     public SystemTestReport jobsReport() {
-        return (out, startTime) ->
-                new IngestJobStatusReport(jobStore(),
-                        new RangeJobsQuery(instance.getTableStatus(), startTime, Instant.MAX),
-                        new StandardIngestJobStatusReporter(out), queueMessages, instance.getInstanceProperties(),
-                        PersistentEMRStepCount.byStatus(instance.getInstanceProperties(), emr))
-                        .run();
+        return (out, startTime) -> new IngestJobStatusReport(jobStore(),
+                new RangeJobsQuery(instance.getTableStatus(), startTime, Instant.MAX),
+                new StandardIngestJobStatusReporter(out), queueMessages, instance.getInstanceProperties(),
+                PersistentEMRStepCount.byStatus(instance.getInstanceProperties(), emr))
+                .run();
     }
 
     public List<IngestJobStatus> jobs(ReportingContext reportingContext) {

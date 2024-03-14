@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.task.creation;
+package sleeper.task.common;
 
 import com.amazonaws.services.autoscaling.AmazonAutoScaling;
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
@@ -24,8 +24,6 @@ import com.amazonaws.services.ecs.AmazonECS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.compaction.task.creation.RunTasks.Scaler;
-
 import java.util.Map;
 import java.util.Optional;
 
@@ -33,7 +31,7 @@ import java.util.Optional;
  * ECS EC2 auto scaler. This makes decisions on how many instances to start and stop based on the
  * amount of work there is to do.
  */
-public class EC2Scaler implements Scaler {
+public class EC2Scaler {
     /**
      * AutoScaling client
      */
@@ -84,9 +82,9 @@ public class EC2Scaler implements Scaler {
      * @param  instanceDetails cluster EC2 details
      * @return                 the number of containers that can fit
      */
-    public int calculateAvailableClusterContainerCapacity(Map<String, InstanceDetails> instanceDetails) {
+    public int calculateAvailableClusterContainerCapacity(Map<String, EC2InstanceDetails> instanceDetails) {
         int total = 0;
-        for (InstanceDetails d : instanceDetails.values()) {
+        for (EC2InstanceDetails d : instanceDetails.values()) {
             total += Math.min(d.availableCPU / this.cpuReservation,
                     d.availableRAM / this.memoryReservation);
         }
@@ -123,7 +121,6 @@ public class EC2Scaler implements Scaler {
         scaleTo(asGroupName, numberContainers);
     }
 
-    @Override
     public void scaleTo(String asGroupName, int numberContainers) {
         // If we have any information set the number of containers per instance
         checkContainersPerInstance(null);
@@ -154,22 +151,22 @@ public class EC2Scaler implements Scaler {
      *
      * @param passedDetails optional details of cluster container instances, maybe null
      */
-    private void checkContainersPerInstance(Map<String, InstanceDetails> passedDetails) {
+    private void checkContainersPerInstance(Map<String, EC2InstanceDetails> passedDetails) {
         if (containerPerInstanceKnown()) {
             return;
         }
 
         // If details were passed in, use them, otherwise find them ourselves
-        Map<String, InstanceDetails> details;
+        Map<String, EC2InstanceDetails> details;
         if (passedDetails == null) {
             // fetch details from ECS cluster
-            details = InstanceDetails.fetchInstanceDetails(this.ecsClusterName, ecsClient);
+            details = EC2InstanceDetails.fetchInstanceDetails(this.ecsClusterName, ecsClient);
         } else {
             details = passedDetails;
         }
 
         // Get the first one, we assume the containers are homogenous
-        Optional<InstanceDetails> det = details.values().stream().findFirst();
+        Optional<EC2InstanceDetails> det = details.values().stream().findFirst();
         det.ifPresent(d -> this.cachedInstanceContainers = Math.min(d.totalCPU / this.cpuReservation,
                 d.totalRAM / this.memoryReservation));
     }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.job.common;
+package sleeper.task.common;
 
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
@@ -37,8 +37,7 @@ class QueueMessageCountIT {
 
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE)).withServices(
-            LocalStackContainer.Service.SQS
-    );
+            LocalStackContainer.Service.SQS);
 
     private AmazonSQS createSQSClient() {
         return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.SQS, AmazonSQSClientBuilder.standard());
