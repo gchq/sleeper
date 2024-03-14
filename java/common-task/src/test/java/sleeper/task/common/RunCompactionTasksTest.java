@@ -65,10 +65,10 @@ public class RunCompactionTasksTest {
 
         private int runTasks(QueueMessageCount.Client queueMessageClient, TaskCounts taskCounts) {
             AtomicInteger tasksLaunched = new AtomicInteger();
-            RunCompactionTasks runTasks = new RunCompactionTasks(instanceProperties, queueMessageClient, taskCounts, scaler, (startTime, numberOfTasksToCreate) -> {
+            RunCompactionTasks runTasks = new RunCompactionTasks(instanceProperties, taskCounts, scaler, (startTime, numberOfTasksToCreate) -> {
                 tasksLaunched.set(numberOfTasksToCreate);
             });
-            runTasks.run();
+            runTasks.run(queueMessageClient);
             return tasksLaunched.get();
         }
     }
@@ -182,7 +182,7 @@ public class RunCompactionTasksTest {
 
     private int runTasks(int requestedTasks, TaskCounts taskCounts) {
         AtomicInteger tasksLaunched = new AtomicInteger();
-        RunCompactionTasks runTasks = new RunCompactionTasks(instanceProperties, noMessagesOnQueue(), taskCounts, scaler, (startTime, numberOfTasksToCreate) -> {
+        RunCompactionTasks runTasks = new RunCompactionTasks(instanceProperties, taskCounts, scaler, (startTime, numberOfTasksToCreate) -> {
             tasksLaunched.set(numberOfTasksToCreate);
         });
         runTasks.run(requestedTasks);

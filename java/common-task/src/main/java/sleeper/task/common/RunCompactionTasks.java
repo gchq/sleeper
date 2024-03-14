@@ -67,29 +67,30 @@ public class RunCompactionTasks {
     private final String clusterName;
     private final String launchType;
     private final int maximumRunningTasks;
-    private final QueueMessageCount.Client queueMessageCount;
     private final TaskCounts taskCounts;
     private final Scaler scaler;
     private final TaskLauncher launchTasks;
 
-    public RunCompactionTasks(AmazonSQS sqsClient,
-            AmazonECS ecsClient,
-            AmazonS3 s3Client,
-            AmazonAutoScaling asClient,
-            InstanceProperties instanceProperties) {
-        this(instanceProperties, QueueMessageCount.withSqsClient(sqsClient),
+    public RunCompactionTasks(
+            InstanceProperties instanceProperties, AmazonECS ecsClient, AmazonAutoScaling asClient) {
+        this(instanceProperties,
                 (clusterName) -> ECSTaskCount.getNumPendingAndRunningTasks(clusterName, ecsClient),
                 createEC2Scaler(instanceProperties, asClient, ecsClient),
                 (startTime, numberOfTasksToCreate) -> launchTasks(ecsClient, instanceProperties, startTime, numberOfTasksToCreate));
     }
 
-    public RunCompactionTasks(InstanceProperties instanceProperties,
-            QueueMessageCount.Client queueMessageCount,
-            TaskCounts taskCounts,
-            Scaler scaler,
-            TaskLauncher launchTasks) {
+    public RunCompactionTasks(
+            AmazonECS ecsClient, AmazonS3 s3Client, AmazonAutoScaling asClient,
+            InstanceProperties instanceProperties) {
+        this(instanceProperties,
+                (clusterName) -> ECSTaskCount.getNumPendingAndRunningTasks(clusterName, ecsClient),
+                createEC2Scaler(instanceProperties, asClient, ecsClient),
+                (startTime, numberOfTasksToCreate) -> launchTasks(ecsClient, instanceProperties, startTime, numberOfTasksToCreate));
+    }
+
+    public RunCompactionTasks(
+            InstanceProperties instanceProperties, TaskCounts taskCounts, Scaler scaler, TaskLauncher launchTasks) {
         this.instanceProperties = instanceProperties;
-        this.queueMessageCount = queueMessageCount;
         this.taskCounts = taskCounts;
         this.scaler = scaler;
         this.launchTasks = launchTasks;
@@ -111,7 +112,7 @@ public class RunCompactionTasks {
         void scaleTo(String asGroupName, int numberContainers);
     }
 
-    public void run() {
+    public void run(QueueMessageCount.Client queueMessageCount) {
         long startTime = System.currentTimeMillis();
         LOGGER.info("Queue URL is {}", sqsJobQueueUrl);
         // Find out number of messages in queue that are not being processed
@@ -282,7 +283,7 @@ public class RunCompactionTasks {
         try {
             InstanceProperties instanceProperties = new InstanceProperties();
             instanceProperties.loadFromS3(s3Client, s3Bucket);
-            new RunCompactionTasks(sqsClient, ecsClient, s3Client, asClient, instanceProperties)
+            new RunCompactionTasks(instanceProperties, ecsClient, asClient)
                     .run(numberOfTasks);
         } finally {
             sqsClient.shutdown();

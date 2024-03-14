@@ -60,6 +60,11 @@ public class SystemTestCompaction {
         return this;
     }
 
+    public SystemTestCompaction forceStartTasks(int expectedTasks) {
+        driver.forceStartTasks(expectedTasks);
+        return this;
+    }
+
     public SystemTestCompaction waitForJobs() {
         waitForJobs.waitForJobs(lastJobIds);
         return this;

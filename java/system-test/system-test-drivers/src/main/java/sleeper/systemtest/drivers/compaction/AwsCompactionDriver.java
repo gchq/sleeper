@@ -16,7 +16,9 @@
 
 package sleeper.systemtest.drivers.compaction;
 
+import com.amazonaws.services.autoscaling.AmazonAutoScaling;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.ecs.AmazonECS;
 import com.amazonaws.services.sqs.AmazonSQS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,6 +40,7 @@ import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
+import sleeper.task.common.RunCompactionTasks;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_TRIGGER_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
@@ -50,12 +53,16 @@ public class AwsCompactionDriver implements CompactionDriver {
     private final LambdaClient lambdaClient;
     private final AmazonDynamoDB dynamoDBClient;
     private final AmazonSQS sqsClient;
+    private final AmazonECS ecsClient;
+    private final AmazonAutoScaling asClient;
 
     public AwsCompactionDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
         this.instance = instance;
         this.lambdaClient = clients.getLambda();
         this.dynamoDBClient = clients.getDynamoDB();
         this.sqsClient = clients.getSqs();
+        this.ecsClient = clients.getEcs();
+        this.asClient = clients.getAutoScaling();
     }
 
     @Override
@@ -93,6 +100,24 @@ public class AwsCompactionDriver implements CompactionDriver {
                 long tasksStarted = store.getAllTasks().size() - tasksFinishedBefore;
                 LOGGER.info("Found {} running compaction tasks", tasksStarted);
                 return tasksStarted >= expectedTasks;
+            });
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void forceStartTasks(int numberOfTasks, PollWithRetries poll) {
+        CompactionTaskStatusStore store = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instance.getInstanceProperties());
+        long tasksFinishedBefore = store.getAllTasks().stream().filter(CompactionTaskStatus::isFinished).count();
+        new RunCompactionTasks(instance.getInstanceProperties(), ecsClient, asClient)
+                .run(numberOfTasks);
+        try {
+            poll.pollUntil("tasks are started", () -> {
+                long tasksStarted = store.getAllTasks().size() - tasksFinishedBefore;
+                LOGGER.info("Found {} running compaction tasks", tasksStarted);
+                return tasksStarted >= numberOfTasks;
             });
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

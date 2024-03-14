@@ -82,7 +82,10 @@ public class ParallelCompactionsTest {
                 .numberedRecords(LongStream.range(0, 10000));
 
         // When we run compaction
-        sleeper.compaction().createJobs(NUMBER_OF_COMPACTIONS).invokeTasks(NUMBER_OF_COMPACTIONS).waitForJobs();
+        sleeper.compaction()
+                .forceStartTasks(NUMBER_OF_COMPACTIONS)
+                .createJobs(NUMBER_OF_COMPACTIONS)
+                .waitForJobs();
 
         // Then we have one output file per compaction
         assertThat(sleeper.tableFiles().references())
