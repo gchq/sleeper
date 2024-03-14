@@ -22,8 +22,8 @@ import org.junit.jupiter.api.Test;
 import sleeper.compaction.task.creation.RunTasks.Scaler;
 import sleeper.compaction.task.creation.RunTasks.TaskCounts;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.job.common.InMemoryQueueMessageCounts;
-import sleeper.job.common.QueueMessageCount;
+import sleeper.task.common.InMemoryQueueMessageCounts;
+import sleeper.task.common.QueueMessageCount;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -35,7 +35,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
 import static sleeper.configuration.properties.instance.CompactionProperty.MAXIMUM_CONCURRENT_COMPACTION_TASKS;
-import static sleeper.job.common.QueueMessageCount.approximateNumberVisibleAndNotVisible;
+import static sleeper.task.common.QueueMessageCount.approximateNumberVisibleAndNotVisible;
 
 public class RunTasksTest {
     private static final String TEST_JOB_QUEUE = "test-job-queue";

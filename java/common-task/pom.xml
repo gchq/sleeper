@@ -28,6 +28,11 @@
     <dependencies>
         <dependency>
             <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-sqs</artifactId>
+            <version>${aws-java-sdk.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-ecs</artifactId>
             <version>${aws-java-sdk.version}</version>
         </dependency>
@@ -45,11 +50,6 @@
             <artifactId>commons-lang3</artifactId>
         </dependency>
         <!-- Sleeper dependencies -->
-        <dependency>
-            <groupId>sleeper</groupId>
-            <artifactId>common-job</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
         <dependency>
             <groupId>sleeper</groupId>
             <artifactId>core</artifactId>

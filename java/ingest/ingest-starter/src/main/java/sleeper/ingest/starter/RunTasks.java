@@ -29,8 +29,8 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.job.common.QueueMessageCount;
 import sleeper.task.common.ECSUtils;
+import sleeper.task.common.QueueMessageCount;
 import sleeper.task.common.RunECSTasks;
 
 import java.util.ArrayList;
