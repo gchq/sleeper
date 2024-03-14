@@ -162,8 +162,7 @@ public class IngestStack extends NestedStack {
                 .create(this, "IngestAlarm")
                 .alarmDescription("Alarms if there are any messages on the dead letter queue for the ingest queue")
                 .metric(ingestDLQ.metricApproximateNumberOfMessagesVisible()
-                        .with(MetricOptions.builder().statistic("Sum").period(Duration.seconds(60)).build())
-                )
+                        .with(MetricOptions.builder().statistic("Sum").period(Duration.seconds(60)).build()))
                 .comparisonOperator(ComparisonOperator.GREATER_THAN_THRESHOLD)
                 .threshold(0)
                 .evaluationPeriods(1)
@@ -268,7 +267,7 @@ public class IngestStack extends NestedStack {
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .memorySize(instanceProperties.getInt(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS)))
-                .handler("sleeper.ingest.starter.RunTasksLambda::eventHandler")
+                .handler("sleeper.ingest.starter.RunIngestTasksLambda::eventHandler")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(1)
                 .logGroup(createLambdaLogGroup(this, "IngestTasksCreatorLogGroup", functionName, instanceProperties)));

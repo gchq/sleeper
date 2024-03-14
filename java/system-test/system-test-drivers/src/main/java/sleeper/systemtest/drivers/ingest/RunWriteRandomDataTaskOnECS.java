@@ -35,11 +35,11 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.job.common.RunECSTasks;
 import sleeper.systemtest.configuration.SystemTestProperties;
 import sleeper.systemtest.configuration.SystemTestPropertyValues;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 import sleeper.systemtest.drivers.ingest.json.TasksJson;
+import sleeper.task.common.RunECSTasks;
 
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -77,7 +77,7 @@ public class RunWriteRandomDataTaskOnECS {
     }
 
     public RunWriteRandomDataTaskOnECS(InstanceProperties instanceProperties, TableProperties tableProperties,
-                                       SystemTestStandaloneProperties systemTestProperties, AmazonECS ecsClient) {
+            SystemTestStandaloneProperties systemTestProperties, AmazonECS ecsClient) {
         this.instanceProperties = instanceProperties;
         this.systemTestProperties = systemTestProperties;
         this.ecsClient = ecsClient;

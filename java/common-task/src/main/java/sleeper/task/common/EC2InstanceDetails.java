@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.task.creation;
+package sleeper.task.common;
 
 import com.amazonaws.services.ecs.AmazonECS;
 import com.amazonaws.services.ecs.model.ContainerInstance;
@@ -38,7 +38,7 @@ import java.util.Queue;
 /**
  * Details about EC2 instances in an ECS cluster.
  */
-public class InstanceDetails {
+public class EC2InstanceDetails {
     /**
      * EC2 Instance ID.
      */
@@ -81,11 +81,11 @@ public class InstanceDetails {
      */
     public static final int INSTANCE_PAGE_SIZE = 75;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(InstanceDetails.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(EC2InstanceDetails.class);
 
-    public InstanceDetails(String instanceId, String instanceArn, Instant registered, int availableCPU,
-                           int availableRAM, int totalCPU,
-                           int totalRAM, int numRunningTasks, int numPendingTasks) {
+    public EC2InstanceDetails(String instanceId, String instanceArn, Instant registered, int availableCPU,
+            int availableRAM, int totalCPU,
+            int totalRAM, int numRunningTasks, int numPendingTasks) {
         super();
         this.instanceId = instanceId;
         this.instanceArn = instanceArn;
@@ -120,7 +120,7 @@ public class InstanceDetails {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        InstanceDetails other = (InstanceDetails) obj;
+        EC2InstanceDetails other = (EC2InstanceDetails) obj;
         return availableCPU == other.availableCPU && availableRAM == other.availableRAM && Objects.equals(instanceArn, other.instanceArn) && Objects.equals(instanceId, other.instanceId)
                 && numPendingTasks == other.numPendingTasks && numRunningTasks == other.numRunningTasks && Objects.equals(registered, other.registered) && totalCPU == other.totalCPU
                 && totalRAM == other.totalRAM;
@@ -130,13 +130,13 @@ public class InstanceDetails {
      * Find details of EC2 instances in an ECS cluster. Inspects the cluster to find the details of
      * all the instances.
      *
-     * @param ecsClusterName the cluster name
-     * @param ecsClient      the client connection
-     * @return map of instance IDs to details
+     * @param  ecsClusterName the cluster name
+     * @param  ecsClient      the client connection
+     * @return                map of instance IDs to details
      */
-    public static Map<String, InstanceDetails> fetchInstanceDetails(String ecsClusterName, AmazonECS ecsClient) {
-        Map<String, InstanceDetails> details = new HashMap<>();
-        for (InstanceDetails d : iterateInstances(ecsClusterName, ecsClient)) {
+    public static Map<String, EC2InstanceDetails> fetchInstanceDetails(String ecsClusterName, AmazonECS ecsClient) {
+        Map<String, EC2InstanceDetails> details = new HashMap<>();
+        for (EC2InstanceDetails d : iterateInstances(ecsClusterName, ecsClient)) {
             details.put(d.instanceId, d);
         }
         return details;
@@ -146,18 +146,18 @@ public class InstanceDetails {
      * Gets an {@link java.lang.Iterable} object that iterates over the instance details of machines
      * in a cluster.
      *
-     * @param ecsClusterName ECS cluster name to inspect
-     * @param ecsClient      Amazon ECS client
-     * @return iterable object for instances in a cluster
+     * @param  ecsClusterName ECS cluster name to inspect
+     * @param  ecsClient      Amazon ECS client
+     * @return                iterable object for instances in a cluster
      */
-    public static Iterable<InstanceDetails> iterateInstances(String ecsClusterName, AmazonECS ecsClient) {
+    public static Iterable<EC2InstanceDetails> iterateInstances(String ecsClusterName, AmazonECS ecsClient) {
         return new InstanceDetailsIterable(ecsClusterName, ecsClient);
     }
 
     /**
      * Class that iterates over EC2 machines in a cluster.
      */
-    private static class InstanceDetailsIterable implements Iterable<InstanceDetails> {
+    private static class InstanceDetailsIterable implements Iterable<EC2InstanceDetails> {
         /**
          * The ECS cluster name.
          */
@@ -173,11 +173,11 @@ public class InstanceDetails {
         }
 
         @Override
-        public Iterator<InstanceDetails> iterator() {
+        public Iterator<EC2InstanceDetails> iterator() {
             return new InstanceDetailsIterator(INSTANCE_PAGE_SIZE);
         }
 
-        private class InstanceDetailsIterator implements Iterator<InstanceDetails> {
+        private class InstanceDetailsIterator implements Iterator<EC2InstanceDetails> {
             /**
              * How many EC2 instances to get data for in one API call.
              */
@@ -193,7 +193,7 @@ public class InstanceDetails {
             /**
              * Queue to serve instances from.
              */
-            private Queue<InstanceDetails> instanceQueue = new ArrayDeque<>();
+            private Queue<EC2InstanceDetails> instanceQueue = new ArrayDeque<>();
 
             InstanceDetailsIterator(int pageSize) {
                 if (pageSize < 1) {
@@ -240,7 +240,7 @@ public class InstanceDetails {
                         // find the cpu and memory requirements
                         List<Resource> totalResources = c.getRegisteredResources();
                         List<Resource> remainingResources = c.getRemainingResources();
-                        instanceQueue.add(new InstanceDetails(
+                        instanceQueue.add(new EC2InstanceDetails(
                                 c.getEc2InstanceId(),
                                 c.getContainerInstanceArn(),
                                 c.getRegisteredAt().toInstant(),
@@ -268,7 +268,7 @@ public class InstanceDetails {
             }
 
             @Override
-            public InstanceDetails next() {
+            public EC2InstanceDetails next() {
                 if (hasNext()) {
                     return instanceQueue.remove();
                 } else {
@@ -282,9 +282,9 @@ public class InstanceDetails {
      * Find the amount of the given resource in the list of resources. The list is inspected for the
      * named resource and returned as an integer.
      *
-     * @param name      the resource name to find
-     * @param resources the list of resources
-     * @return the amount, or 0 if not known
+     * @param  name                  the resource name to find
+     * @param  resources             the list of resources
+     * @return                       the amount, or 0 if not known
      * @throws IllegalStateException if the resource type is not INTEGER
      */
     public static int findResourceAmount(String name, List<Resource> resources) {

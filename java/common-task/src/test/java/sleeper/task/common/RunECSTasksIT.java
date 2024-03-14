@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.job.common;
+package sleeper.task.common;
 
 import com.amazonaws.services.ecs.AmazonECS;
 import com.amazonaws.services.ecs.model.AmazonECSException;
@@ -49,7 +49,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.job.common.WiremockTestHelper.wiremockEcsClient;
+import static sleeper.task.common.WiremockTestHelper.wiremockEcsClient;
 
 @WireMockTest
 class RunECSTasksIT {

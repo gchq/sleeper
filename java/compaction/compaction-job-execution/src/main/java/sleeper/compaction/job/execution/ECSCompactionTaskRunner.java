@@ -37,7 +37,7 @@ import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
-import sleeper.job.common.CommonJobUtils;
+import sleeper.job.common.EC2ContainerMetadata;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
@@ -107,7 +107,7 @@ public class ECSCompactionTaskRunner {
         if (instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE).equalsIgnoreCase("EC2")) {
             try {
                 if (ecsClient != null) {
-                    CommonJobUtils.retrieveContainerMetadata(ecsClient).ifPresent(info -> LOGGER.info(
+                    EC2ContainerMetadata.retrieveContainerMetadata(ecsClient).ifPresent(info -> LOGGER.info(
                             "Task running on EC2 instance ID {} in AZ {} with ARN {} in cluster {} with status {}",
                             info.instanceID, info.az, info.instanceARN, info.clusterName, info.status));
                 } else {

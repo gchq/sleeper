@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.job.common;
+package sleeper.task.common;
 
 import com.amazonaws.services.sqs.model.QueueDoesNotExistException;
 
@@ -21,7 +21,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 
-import static sleeper.job.common.QueueMessageCount.approximateNumberVisibleAndNotVisible;
+import static sleeper.task.common.QueueMessageCount.approximateNumberVisibleAndNotVisible;
 
 public class InMemoryQueueMessageCounts implements QueueMessageCount.Client {
 

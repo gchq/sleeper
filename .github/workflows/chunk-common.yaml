@@ -8,13 +8,14 @@ on:
       - 'code-style/checkstyle*.xml'
       - 'code-style/spotbugs*.xml'
       - 'java/pom.xml'
-      - 'java/build/**'
-      - 'java/common-job/**'
-      - 'java/dynamodb-tools/**'
-      - 'java/parquet/**'
-      - 'java/sketches/**'
-      - 'java/configuration/**'
       - 'java/core/**'
+      - 'java/configuration/**'
+      - 'java/sketches/**'
+      - 'java/parquet/**'
+      - 'java/common-job/**'
+      - 'java/common-task/**'
+      - 'java/build/**'
+      - 'java/dynamodb-tools/**'
 
 jobs:
   chunk-workflow:

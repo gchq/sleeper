@@ -21,6 +21,7 @@ on:
       - 'java/bulk-import/bulk-import-starter/**'
       - 'java/clients/**'
       - 'java/ingest/ingest-batcher-submitter/**'
+      - 'java/common-task/**'
       - 'java/ingest/ingest-batcher-store/**'
       - 'java/bulk-import/bulk-import-common/**'
       - 'java/splitter/splitter-core/**'
