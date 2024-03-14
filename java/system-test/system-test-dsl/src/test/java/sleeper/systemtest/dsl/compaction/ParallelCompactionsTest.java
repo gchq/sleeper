@@ -26,10 +26,9 @@ import sleeper.core.schema.Schema;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
@@ -78,8 +77,8 @@ public class ParallelCompactionsTest {
                 COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
                 COMPACTION_FILES_BATCH_SIZE, "2"));
         sleeper.ingest().direct(null)
-                .numberedRecords(LongStream.range(0, 10000))
-                .numberedRecords(LongStream.range(0, 10000));
+                .numberedRecords(LongStream.range(0, 5000).map(i -> i * 2)) // Evens
+                .numberedRecords(LongStream.range(0, 5000).map(i -> i * 2 + 1)); // Odds
 
         // When we run compaction
         sleeper.compaction()
@@ -93,14 +92,13 @@ public class ParallelCompactionsTest {
         // And we have the same records afterwards
         assertThat(inAnyOrder(sleeper.directQuery().allRecordsInTable()))
                 .isEqualTo(inAnyOrder(sleeper.generateNumberedRecords(
-                        LongStream.range(0, 10000)
-                                .flatMap(i -> LongStream.of(i, i)))));
+                        LongStream.range(0, 10000))));
     }
 
-    private static Set<Record> inAnyOrder(Iterable<Record> records) {
-        Set<Record> set = new HashSet<>();
-        records.forEach(set::add);
-        return set;
+    private static Map<Record, Integer> inAnyOrder(Iterable<Record> records) {
+        Map<Record, Integer> map = new HashMap<>();
+        records.forEach(record -> map.compute(record, (r, count) -> count == null ? 1 : count + 1));
+        return map;
     }
 
 }
