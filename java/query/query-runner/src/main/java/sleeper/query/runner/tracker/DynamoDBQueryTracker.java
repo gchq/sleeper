@@ -220,9 +220,6 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
                     .mapToLong(query -> query.getRecordCount() != null ? query.getRecordCount() : 0).sum();
             LOGGER.info("Updating state of parent to {}", parentState);
             updateState(leafQueryEntry.updateParent(parentState, totalRecordCount));
-        } else {
-            LOGGER.info("Not updating state of parent query, {} leaf queries are still in progress",
-                    children.stream().filter(child -> child.getLastKnownState() != QueryState.COMPLETED).count());
         }
     }
 
@@ -230,6 +227,7 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
         boolean allCompleted = true;
         boolean allSucceeded = true;
         boolean allFailed = true;
+        long activeCount = 0;
         for (TrackedQuery child : children) {
             switch (child.getLastKnownState()) {
                 case FAILED:
@@ -240,6 +238,7 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
                     allFailed = false;
                     break;
                 default:
+                    activeCount++;
                     allCompleted = false;
             }
         }
@@ -251,6 +250,8 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
         } else if (allCompleted) {
             return QueryState.PARTIALLY_FAILED;
         } else {
+            LOGGER.info("Not updating state of parent query, {} leaf queries are still either in progress or queued",
+                    activeCount);
             return null;
         }
     }
