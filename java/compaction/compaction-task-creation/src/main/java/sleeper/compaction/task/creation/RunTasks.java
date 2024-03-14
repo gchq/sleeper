@@ -36,9 +36,9 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.Requirements;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.job.common.ECSUtils;
 import sleeper.job.common.QueueMessageCount;
-import sleeper.job.common.RunECSTasks;
+import sleeper.task.common.ECSUtils;
+import sleeper.task.common.RunECSTasks;
 
 import java.util.List;
 import java.util.Locale;

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.job.common;
+package sleeper.task.common;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.ecs.AmazonECS;
@@ -60,6 +60,12 @@ public class RunECSTasks {
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    public static void runTasks(AmazonECS ecsClient, RunTaskRequest runTaskRequest, int numberOfTasksToCreate) {
+        runTasks(builder -> builder.ecsClient(ecsClient)
+                .runTaskRequest(runTaskRequest)
+                .numberOfTasksToCreate(numberOfTasksToCreate));
     }
 
     public static void runTasks(Consumer<RunECSTasks.Builder> configuration) {

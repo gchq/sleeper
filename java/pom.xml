@@ -39,6 +39,7 @@
         <module>sketches</module>
         <module>athena</module>
         <module>common-job</module>
+        <module>common-task</module>
         <module>bulk-import</module>
         <module>cdk-custom-resources</module>
         <module>cdk-environment</module>

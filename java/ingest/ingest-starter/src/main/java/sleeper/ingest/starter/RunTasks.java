@@ -29,9 +29,9 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.job.common.CommonJobUtils;
 import sleeper.job.common.QueueMessageCount;
-import sleeper.job.common.RunECSTasks;
+import sleeper.task.common.ECSUtils;
+import sleeper.task.common.RunECSTasks;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -57,10 +57,10 @@ public class RunTasks {
     private final String containerName;
 
     public RunTasks(AmazonSQS sqsClient,
-                    AmazonECS ecsClient,
-                    InstanceProperties properties,
-                    PropertiesReloader propertiesReloader,
-                    String containerName) {
+            AmazonECS ecsClient,
+            InstanceProperties properties,
+            PropertiesReloader propertiesReloader,
+            String containerName) {
         this.sqsClient = sqsClient;
         this.ecsClient = ecsClient;
         this.properties = properties;
@@ -82,7 +82,7 @@ public class RunTasks {
         }
 
         // Find out number of pending and running tasks
-        int numRunningAndPendingTasks = CommonJobUtils.getNumPendingAndRunningTasks(
+        int numRunningAndPendingTasks = ECSUtils.getNumPendingAndRunningTasks(
                 properties.get(INGEST_CLUSTER), ecsClient);
         LOGGER.info("Number of running and pending tasks is {}", numRunningAndPendingTasks);
 
