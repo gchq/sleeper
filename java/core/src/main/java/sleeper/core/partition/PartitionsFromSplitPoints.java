@@ -131,6 +131,7 @@ public class PartitionsFromSplitPoints {
                 leftPartition.parentPartitionId(id);
                 rightPartition.parentPartitionId(id);
                 parents.add(parent);
+                LOGGER.debug("Created parent partition {} joining partitions {}", id, childPartitionIds);
             }
         }
         allPartitions.addAll(parents);
@@ -160,6 +161,7 @@ public class PartitionsFromSplitPoints {
                     .childPartitionIds(new ArrayList<>())
                     .dimension(-1);
             leafPartitions.add(partition);
+            LOGGER.debug("Created leaf partition {} for region {}", id, region);
         }
         LOGGER.info("Created {} leaf partitions from {} split points", leafPartitions.size(), splitPoints.size());
         return leafPartitions;
