@@ -27,8 +27,8 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * An {@link Iterator} of {@link Row}s that takes an existing {@link Iterator}
- * of {@link Row}s and adds the id of the partition the key from each {@link Row}.
+ * Adds an ID to each row iterated over, identifying which Sleeper partition it belongs to. Uses the internal ID of each
+ * Sleeper partition.
  */
 public class AddPartitionIterator implements Iterator<Row> {
     private final Iterator<Row> input;
