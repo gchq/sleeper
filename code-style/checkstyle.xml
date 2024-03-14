@@ -92,7 +92,7 @@
         </module>
         <module name="SummaryJavadoc">
             <property name="id" value="summaryJavadoc"/>
-            <property name="forbiddenSummaryFragments" value="^$|\{|@|<"/>
+            <property name="forbiddenSummaryFragments" value="^$|\{|@|&lt;"/>
         </module>
         <module name="ConstantName">
             <property name="id" value="constantName"/>
