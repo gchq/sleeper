@@ -220,6 +220,13 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
                     .mapToLong(query -> query.getRecordCount() != null ? query.getRecordCount() : 0).sum();
             LOGGER.info("Updating state of parent to {}", parentState);
             updateState(leafQueryEntry.updateParent(parentState, totalRecordCount));
+        } else {
+            if (children.isEmpty()) {
+                LOGGER.info("Could not find subqueries with id {}", leafQueryEntry.getQueryId());
+            } else {
+                LOGGER.info("Not updating state of parent query, {} leaf queries are still in progress",
+                        children.stream().filter(child -> child.getLastKnownState() != QueryState.COMPLETED).count());
+            }
         }
     }
 
