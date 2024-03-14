@@ -21,9 +21,9 @@ import com.amazonaws.services.ecs.model.DescribeClustersRequest;
 
 import java.util.List;
 
-public class ECSUtils {
+public class ECSTaskCount {
 
-    private ECSUtils() {
+    private ECSTaskCount() {
     }
 
     public static int getNumPendingAndRunningTasks(String clusterName, AmazonECS ecsClient) throws DescribeClusterException {

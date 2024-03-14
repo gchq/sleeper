@@ -79,7 +79,7 @@ public class RunIngestTasks {
         }
 
         // Find out number of pending and running tasks
-        int numRunningAndPendingTasks = ECSUtils.getNumPendingAndRunningTasks(
+        int numRunningAndPendingTasks = ECSTaskCount.getNumPendingAndRunningTasks(
                 properties.get(INGEST_CLUSTER), ecsClient);
         LOGGER.info("Number of running and pending tasks is {}", numRunningAndPendingTasks);
 

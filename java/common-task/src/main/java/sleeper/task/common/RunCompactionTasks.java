@@ -78,7 +78,7 @@ public class RunCompactionTasks {
             AmazonAutoScaling asClient,
             InstanceProperties instanceProperties) {
         this(instanceProperties, QueueMessageCount.withSqsClient(sqsClient),
-                (clusterName) -> ECSUtils.getNumPendingAndRunningTasks(clusterName, ecsClient),
+                (clusterName) -> ECSTaskCount.getNumPendingAndRunningTasks(clusterName, ecsClient),
                 createEC2Scaler(instanceProperties, asClient, ecsClient),
                 (startTime, numberOfTasksToCreate) -> launchTasks(ecsClient, instanceProperties, startTime, numberOfTasksToCreate));
     }
