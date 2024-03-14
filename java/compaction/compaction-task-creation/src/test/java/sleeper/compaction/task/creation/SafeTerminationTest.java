@@ -21,6 +21,8 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.LambdaLogger;
 import org.junit.jupiter.api.Test;
 
+import sleeper.task.common.EC2InstanceDetails;
+
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
@@ -234,15 +236,15 @@ class SafeTerminationTest {
     public static final String JSON_RESPONSE = "{\"InstanceIDs\":[\"id1\",\"id2\",\"id3\"]}";
     public static final String JSON_RESPONSE_LIMIT = "{\"InstanceIDs\":[\"id1\"]}";
 
-    public static final List<InstanceDetails> INSTANCE_LIST = new ArrayList<>();
-    public static final List<InstanceDetails> INSTANCE_LIST_LIMIT = new ArrayList<>();
+    public static final List<EC2InstanceDetails> INSTANCE_LIST = new ArrayList<>();
+    public static final List<EC2InstanceDetails> INSTANCE_LIST_LIMIT = new ArrayList<>();
 
     static {
-        INSTANCE_LIST.add(new InstanceDetails("id1", "arn1", Instant.now(), 1, 1, 1, 1, 0, 0));
-        INSTANCE_LIST.add(new InstanceDetails("id2", "arn2", Instant.now(), 1, 1, 1, 1, 0, 0));
-        INSTANCE_LIST.add(new InstanceDetails("id3", "arn3", Instant.now(), 1, 1, 1, 1, 0, 0));
+        INSTANCE_LIST.add(new EC2InstanceDetails("id1", "arn1", Instant.now(), 1, 1, 1, 1, 0, 0));
+        INSTANCE_LIST.add(new EC2InstanceDetails("id2", "arn2", Instant.now(), 1, 1, 1, 1, 0, 0));
+        INSTANCE_LIST.add(new EC2InstanceDetails("id3", "arn3", Instant.now(), 1, 1, 1, 1, 0, 0));
 
-        INSTANCE_LIST_LIMIT.add(new InstanceDetails("id1", "arn1", Instant.now(), 1, 1, 1, 1, 0, 0));
+        INSTANCE_LIST_LIMIT.add(new EC2InstanceDetails("id1", "arn1", Instant.now(), 1, 1, 1, 1, 0, 0));
     }
 
     @Test
@@ -254,7 +256,7 @@ class SafeTerminationTest {
 
     @Test
     void throwOnNegativeSize() {
-        List<InstanceDetails> instanceDetails = new ArrayList<>();
+        List<EC2InstanceDetails> instanceDetails = new ArrayList<>();
         Context context = new FakeContext();
         assertThatThrownBy(() -> SafeTerminationLambda.findEmptyInstances(instanceDetails, -1, context))
                 .isInstanceOf(IllegalArgumentException.class);
@@ -262,19 +264,18 @@ class SafeTerminationTest {
 
     @Test
     void throwOnNullContext() {
-        List<InstanceDetails> instanceDetails = new ArrayList<>();
-        assertThatThrownBy(() ->
-                SafeTerminationLambda.findEmptyInstances(instanceDetails, 0, null))
+        List<EC2InstanceDetails> instanceDetails = new ArrayList<>();
+        assertThatThrownBy(() -> SafeTerminationLambda.findEmptyInstances(instanceDetails, 0, null))
                 .isInstanceOf(NullPointerException.class);
     }
 
     @Test
     void shouldFindZeroEmptyInstances() {
         // Given
-        List<InstanceDetails> details = new ArrayList<>();
-        details.add(new InstanceDetails("id1", "someARN", Instant.now(), 1, 1, 1, 1, 1, 1));
-        details.add(new InstanceDetails("id2", "someARN", Instant.now(), 1, 1, 1, 1, 0, 1));
-        details.add(new InstanceDetails("id3", "someARN", Instant.now(), 1, 1, 1, 1, 1, 0));
+        List<EC2InstanceDetails> details = new ArrayList<>();
+        details.add(new EC2InstanceDetails("id1", "someARN", Instant.now(), 1, 1, 1, 1, 1, 1));
+        details.add(new EC2InstanceDetails("id2", "someARN", Instant.now(), 1, 1, 1, 1, 0, 1));
+        details.add(new EC2InstanceDetails("id3", "someARN", Instant.now(), 1, 1, 1, 1, 1, 0));
 
         // When
         Set<String> empties = SafeTerminationLambda.findEmptyInstances(details, 3, new FakeContext());
@@ -286,10 +287,10 @@ class SafeTerminationTest {
     @Test
     void shouldFindOneEmptyInstances() {
         // Given
-        List<InstanceDetails> details = new ArrayList<>();
-        details.add(new InstanceDetails("id1", "someARN", Instant.now(), 1, 1, 1, 1, 1, 1));
-        details.add(new InstanceDetails("id2", "someARN", Instant.now(), 1, 1, 1, 1, 0, 1));
-        details.add(new InstanceDetails("id3", "someARN", Instant.now(), 1, 1, 1, 1, 0, 0));
+        List<EC2InstanceDetails> details = new ArrayList<>();
+        details.add(new EC2InstanceDetails("id1", "someARN", Instant.now(), 1, 1, 1, 1, 1, 1));
+        details.add(new EC2InstanceDetails("id2", "someARN", Instant.now(), 1, 1, 1, 1, 0, 1));
+        details.add(new EC2InstanceDetails("id3", "someARN", Instant.now(), 1, 1, 1, 1, 0, 0));
 
         // When
         Set<String> single = SafeTerminationLambda.findEmptyInstances(details, 3, new FakeContext());
@@ -301,10 +302,10 @@ class SafeTerminationTest {
     @Test
     void shouldFindMultiEmptyInstances() {
         // Given
-        List<InstanceDetails> details = new ArrayList<>();
-        details.add(new InstanceDetails("id1", "someARN", Instant.now(), 1, 1, 1, 1, 0, 0));
-        details.add(new InstanceDetails("id2", "someARN", Instant.now(), 1, 1, 1, 1, 0, 1));
-        details.add(new InstanceDetails("id3", "someARN", Instant.now(), 1, 1, 1, 1, 0, 0));
+        List<EC2InstanceDetails> details = new ArrayList<>();
+        details.add(new EC2InstanceDetails("id1", "someARN", Instant.now(), 1, 1, 1, 1, 0, 0));
+        details.add(new EC2InstanceDetails("id2", "someARN", Instant.now(), 1, 1, 1, 1, 0, 1));
+        details.add(new EC2InstanceDetails("id3", "someARN", Instant.now(), 1, 1, 1, 1, 0, 0));
 
         // When
         Set<String> multi = SafeTerminationLambda.findEmptyInstances(details, 3, new FakeContext());
@@ -316,10 +317,10 @@ class SafeTerminationTest {
     @Test
     void shouldFindAndLimitMultiEmptyInstances() {
         // Given
-        List<InstanceDetails> details = new ArrayList<>();
-        details.add(new InstanceDetails("id1", "someARN", Instant.now(), 1, 1, 1, 1, 0, 0));
-        details.add(new InstanceDetails("id2", "someARN", Instant.now(), 1, 1, 1, 1, 0, 1));
-        details.add(new InstanceDetails("id3", "someARN", Instant.now(), 1, 1, 1, 1, 0, 0));
+        List<EC2InstanceDetails> details = new ArrayList<>();
+        details.add(new EC2InstanceDetails("id1", "someARN", Instant.now(), 1, 1, 1, 1, 0, 0));
+        details.add(new EC2InstanceDetails("id2", "someARN", Instant.now(), 1, 1, 1, 1, 0, 1));
+        details.add(new EC2InstanceDetails("id3", "someARN", Instant.now(), 1, 1, 1, 1, 0, 0));
 
         // When
         Set<String> multi = SafeTerminationLambda.findEmptyInstances(details, 1, new FakeContext());

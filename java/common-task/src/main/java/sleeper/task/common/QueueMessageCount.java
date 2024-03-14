@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.job.common;
+package sleeper.task.common;
 
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.GetQueueAttributesRequest;
@@ -91,7 +91,6 @@ public class QueueMessageCount {
     public String toString() {
         return Map.of(
                 ApproximateNumberOfMessages.toString(), getApproximateNumberOfMessages(),
-                ApproximateNumberOfMessagesNotVisible.toString(), getApproximateNumberOfMessagesNotVisible()
-        ).toString();
+                ApproximateNumberOfMessagesNotVisible.toString(), getApproximateNumberOfMessagesNotVisible()).toString();
     }
 }

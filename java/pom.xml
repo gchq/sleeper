@@ -39,6 +39,7 @@
         <module>sketches</module>
         <module>athena</module>
         <module>common-job</module>
+        <module>common-task</module>
         <module>bulk-import</module>
         <module>cdk-custom-resources</module>
         <module>cdk-environment</module>
@@ -111,7 +112,7 @@
         <logback.version>1.4.14</logback.version>
         <aws-java-sdk.version>1.12.498</aws-java-sdk.version>
         <aws-java-sdk-v2.version>2.25.9</aws-java-sdk-v2.version>
-        <aws-crt.version>0.22.2</aws-crt.version>
+        <aws-crt.version>0.29.11</aws-crt.version>
         <aws-lambda-java-events.version>3.11.2</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.2.2</aws-lambda-java-core.version>
         <aws-lambda-powertools.version>1.16.0</aws-lambda-powertools.version>

@@ -83,7 +83,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_RULE;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.job.common.WiremockTestHelper.wiremockEcsClient;
+import static sleeper.task.common.WiremockTestHelper.wiremockEcsClient;
 
 @WireMockTest
 class ShutdownSystemProcessesIT {
@@ -297,7 +297,6 @@ class ShutdownSystemProcessesIT {
             verify(1, listActiveClustersRequested());
         }
     }
-
 
     @Nested
     @DisplayName("Terminate running EMR Serverless Applications")

@@ -27,7 +27,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatus;
-import sleeper.job.common.QueueMessageCount;
+import sleeper.task.common.QueueMessageCount;
 
 import java.util.Collections;
 import java.util.stream.Stream;
@@ -64,7 +64,7 @@ public abstract class AdminClientMockStoreBase extends AdminClientTestBase {
         new AdminClient(tableIndex, store, statusStores,
                 editor, out.consoleOut(), in.consoleIn(),
                 queueClient, (properties -> Collections.emptyMap()))
-                        .start(instanceId);
+                .start(instanceId);
     }
 
     protected void setInstanceTables(InstanceProperties instanceProperties, TableStatus... tables) {

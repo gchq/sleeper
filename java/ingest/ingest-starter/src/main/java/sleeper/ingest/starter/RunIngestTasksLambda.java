@@ -27,17 +27,18 @@ import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.ContainerConstants;
+import sleeper.task.common.RunIngestTasks;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
- * A lambda function to execute {@link RunTasks}.
+ * A lambda function to execute {@link RunIngestTasks}.
  */
 @SuppressWarnings("unused")
-public class RunTasksLambda {
-    private final RunTasks runTasks;
+public class RunIngestTasksLambda {
+    private final RunIngestTasks runTasks;
 
-    public RunTasksLambda() {
+    public RunIngestTasksLambda() {
         AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
         AmazonECS ecsClient = AmazonECSClientBuilder.defaultClient();
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
@@ -46,7 +47,7 @@ public class RunTasksLambda {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3(s3Client, s3Bucket);
 
-        this.runTasks = new RunTasks(sqsClient,
+        this.runTasks = new RunIngestTasks(sqsClient,
                 ecsClient, instanceProperties,
                 PropertiesReloader.ifConfigured(s3Client, instanceProperties),
                 ContainerConstants.INGEST_CONTAINER_NAME);

@@ -47,7 +47,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.configuration.utils.AwsV1ClientHelper;
 import sleeper.core.table.TableIndex;
-import sleeper.job.common.QueueMessageCount;
+import sleeper.task.common.QueueMessageCount;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -66,8 +66,8 @@ public class AdminClient {
     private final Function<InstanceProperties, Map<String, Integer>> getStepCount;
 
     public AdminClient(TableIndex tableIndex, AdminClientPropertiesStore store, AdminClientStatusStoreFactory statusStores,
-                       UpdatePropertiesWithTextEditor editor, ConsoleOutput out, ConsoleInput in,
-                       QueueMessageCount.Client queueClient, Function<InstanceProperties, Map<String, Integer>> getStepCount) {
+            UpdatePropertiesWithTextEditor editor, ConsoleOutput out, ConsoleInput in,
+            QueueMessageCount.Client queueClient, Function<InstanceProperties, Map<String, Integer>> getStepCount) {
         this.tableIndex = tableIndex;
         this.store = store;
         this.statusStores = statusStores;
@@ -110,10 +110,10 @@ public class AdminClient {
     }
 
     public static int start(String instanceId, AmazonS3 s3Client, AmazonDynamoDB dynamoDB,
-                            InvokeCdkForInstance cdk, Path generatedDir, UploadDockerImages uploadDockerImages,
-                            ConsoleOutput out, ConsoleInput in, UpdatePropertiesWithTextEditor editor,
-                            QueueMessageCount.Client queueClient,
-                            Function<InstanceProperties, Map<String, Integer>> getStepCount) throws InterruptedException {
+            InvokeCdkForInstance cdk, Path generatedDir, UploadDockerImages uploadDockerImages,
+            ConsoleOutput out, ConsoleInput in, UpdatePropertiesWithTextEditor editor,
+            QueueMessageCount.Client queueClient,
+            Function<InstanceProperties, Map<String, Integer>> getStepCount) throws InterruptedException {
         AdminClientPropertiesStore store = new AdminClientPropertiesStore(
                 s3Client, dynamoDB, cdk, generatedDir, uploadDockerImages);
         InstanceProperties instanceProperties;
