@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.job.common;
+package sleeper.task.common;
 
 import com.amazonaws.services.sqs.model.QueueDoesNotExistException;
 import org.junit.jupiter.api.Test;
@@ -22,7 +22,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.job.common.QueueMessageCount.approximateNumberVisibleAndNotVisible;
+import static sleeper.task.common.QueueMessageCount.approximateNumberVisibleAndNotVisible;
 
 class InMemoryQueueMessageCountsTest {
 

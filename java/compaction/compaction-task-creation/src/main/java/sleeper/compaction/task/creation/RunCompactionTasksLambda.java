@@ -27,17 +27,18 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.task.common.RunCompactionTasks;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
- * A lambda function to execute {@link RunTasks}.
+ * A lambda function to execute {@link RunCompactionTasks}.
  */
 @SuppressWarnings("unused")
-public class RunTasksLambda {
-    private final RunTasks runTasks;
+public class RunCompactionTasksLambda {
+    private final RunCompactionTasks runTasks;
 
-    public RunTasksLambda() {
+    public RunCompactionTasksLambda() {
         String s3Bucket = validateParameter(CONFIG_BUCKET.toEnvironmentVariable());
         AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
         AmazonECS ecsClient = AmazonECSClientBuilder.defaultClient();
@@ -45,7 +46,7 @@ public class RunTasksLambda {
         AmazonAutoScaling asClient = AmazonAutoScalingClientBuilder.defaultClient();
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3(s3Client, s3Bucket);
-        this.runTasks = new RunTasks(sqsClient, ecsClient, s3Client, asClient, instanceProperties);
+        this.runTasks = new RunCompactionTasks(sqsClient, ecsClient, s3Client, asClient, instanceProperties);
     }
 
     public void eventHandler(ScheduledEvent event, Context context) {

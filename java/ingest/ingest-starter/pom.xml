@@ -54,7 +54,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>common-job</artifactId>
+            <artifactId>common-task</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
     </dependencies>

@@ -18,7 +18,7 @@ package sleeper.clients.status.report.ingest.job;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.InstanceProperty;
-import sleeper.job.common.QueueMessageCount;
+import sleeper.task.common.QueueMessageCount;
 
 import java.io.PrintStream;
 import java.util.Objects;

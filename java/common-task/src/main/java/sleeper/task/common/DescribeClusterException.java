@@ -13,11 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.job.common;
+package sleeper.task.common;
 
-public class ECSAbortException extends RuntimeException {
+public class DescribeClusterException extends RuntimeException {
 
-    public ECSAbortException() {
-        super("Run tasks aborted");
+    public DescribeClusterException(Throwable cause) {
+        super(cause);
+    }
+
+    public DescribeClusterException(String message, Throwable e) {
+        super(message, e);
+    }
+
+    public DescribeClusterException(String message) {
+        super(message);
     }
 }
