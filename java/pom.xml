@@ -139,7 +139,7 @@
         <java-websocket.version>1.5.3</java-websocket.version>
         <arrow.version>11.0.0</arrow.version>
         <bouncycastle.version>1.75</bouncycastle.version>
-        <athena.version>2023.3.1</athena.version>
+        <athena.version>2024.10.1</athena.version>
         <trino.version>390</trino.version>
         <!-- Trino's AssertJ plugin is not compatible with the latest version -->
         <trino.assertj.version>3.18.1</trino.assertj.version>
