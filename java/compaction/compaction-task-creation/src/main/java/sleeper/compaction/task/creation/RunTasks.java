@@ -36,7 +36,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.Requirements;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.job.common.CommonJobUtils;
+import sleeper.job.common.ECSUtils;
 import sleeper.job.common.QueueMessageCount;
 import sleeper.job.common.RunECSTasks;
 
@@ -81,7 +81,7 @@ public class RunTasks {
             AmazonAutoScaling asClient,
             InstanceProperties instanceProperties) {
         this(instanceProperties, QueueMessageCount.withSqsClient(sqsClient),
-                (clusterName) -> CommonJobUtils.getNumPendingAndRunningTasks(clusterName, ecsClient),
+                (clusterName) -> ECSUtils.getNumPendingAndRunningTasks(clusterName, ecsClient),
                 createEC2Scaler(instanceProperties, asClient, ecsClient),
                 (startTime, numberOfTasksToCreate) -> launchTasks(ecsClient, instanceProperties, startTime, numberOfTasksToCreate));
     }
@@ -100,22 +100,6 @@ public class RunTasks {
         this.clusterName = instanceProperties.get(COMPACTION_CLUSTER);
         this.maximumRunningTasks = instanceProperties.getInt(MAXIMUM_CONCURRENT_COMPACTION_TASKS);
         this.launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
-    }
-
-    private static Scaler createEC2Scaler(InstanceProperties instanceProperties, AmazonAutoScaling asClient, AmazonECS ecsClient) {
-        String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
-        String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
-        Pair<Integer, Integer> requirements = Requirements.getArchRequirements(architecture, launchType, instanceProperties);
-        // Bit hacky: EC2s don't give 100% of their memory for container use (OS
-        // headroom, system tasks, etc.) so we have to make sure to reduce
-        // the EC2 memory requirement by 5%. If we don't we end up asking for
-        // 16GiB of RAM on a 16GiB box for example and container allocation will fail.
-        if (launchType.equalsIgnoreCase("EC2")) {
-            requirements = Pair.of(requirements.getLeft(), (int) (requirements.getRight() * 0.95));
-        }
-
-        return new EC2Scaler(asClient, ecsClient, instanceProperties.get(COMPACTION_AUTO_SCALING_GROUP),
-                instanceProperties.get(COMPACTION_CLUSTER), requirements.getLeft(), requirements.getRight());
     }
 
     public interface TaskCounts {
@@ -169,6 +153,22 @@ public class RunTasks {
         }
 
         launchTasks.launchTasks(startTime, numberOfTasksToCreate);
+    }
+
+    private static Scaler createEC2Scaler(InstanceProperties instanceProperties, AmazonAutoScaling asClient, AmazonECS ecsClient) {
+        String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
+        String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
+        Pair<Integer, Integer> requirements = Requirements.getArchRequirements(architecture, launchType, instanceProperties);
+        // Bit hacky: EC2s don't give 100% of their memory for container use (OS
+        // headroom, system tasks, etc.) so we have to make sure to reduce
+        // the EC2 memory requirement by 5%. If we don't we end up asking for
+        // 16GiB of RAM on a 16GiB box for example and container allocation will fail.
+        if (launchType.equalsIgnoreCase("EC2")) {
+            requirements = Pair.of(requirements.getLeft(), (int) (requirements.getRight() * 0.95));
+        }
+
+        return new EC2Scaler(asClient, ecsClient, instanceProperties.get(COMPACTION_AUTO_SCALING_GROUP),
+                instanceProperties.get(COMPACTION_CLUSTER), requirements.getLeft(), requirements.getRight());
     }
 
     /**
