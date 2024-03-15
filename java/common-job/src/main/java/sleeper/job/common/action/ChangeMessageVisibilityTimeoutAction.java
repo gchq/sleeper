@@ -25,7 +25,7 @@ import java.util.Arrays;
 import java.util.stream.Collectors;
 
 /**
- * An {@link Action} that sets the visibility timeout of the message with the provided receipt handle.
+ * Sets the visibility timeout of an SQS message with the provided receipt handle.
  */
 public class ChangeMessageVisibilityTimeoutAction implements Action {
     private static final Logger LOGGER = LoggerFactory.getLogger(ChangeMessageVisibilityTimeoutAction.class);

@@ -166,7 +166,7 @@ public class EC2Scaler {
     }
 
     /**
-     * Do we know how many containers can fit into an instance?
+     * Whether we know how many containers can fit into an instance.
      *
      * @return true if the value is known
      */
