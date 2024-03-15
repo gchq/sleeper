@@ -15,7 +15,6 @@
  */
 package sleeper.environment.cdk.buildec2;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -30,13 +29,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 class KeyPairUtilIT {
     @TempDir
     private Path tempDir;
-
-    @BeforeEach
-    public void setup() throws IOException {
-        KeyPair pair = KeyPairUtil.generate();
-        Files.writeString(tempDir.resolve("private.pem"), KeyPairUtil.privatePem(pair));
-        Files.writeString(tempDir.resolve("public.base64"), KeyPairUtil.publicBase64(pair));
-    }
 
     @Test
     void shouldGenerateKeyPairAndReconstructFromPem() throws Exception {
@@ -54,6 +46,11 @@ class KeyPairUtilIT {
 
     @Test
     void shouldGetPublicKeyInBase64() throws Exception {
+        // Given
+        KeyPair pair = KeyPairUtil.generate();
+        Files.writeString(tempDir.resolve("private.pem"), KeyPairUtil.privatePem(pair));
+        Files.writeString(tempDir.resolve("public.base64"), KeyPairUtil.publicBase64(pair));
+
         // When / Then
         assertThat(KeyPairUtil.publicBase64(loadKeyPair(tempDir.resolve("private.pem"))))
                 .isEqualTo(Files.readString(tempDir.resolve("public.base64")));
@@ -61,6 +58,10 @@ class KeyPairUtilIT {
 
     @Test
     void shouldBuildPemStringFromKeyPair() throws Exception {
+        // Given
+        KeyPair pair = KeyPairUtil.generate();
+        Files.writeString(tempDir.resolve("private.pem"), KeyPairUtil.privatePem(pair));
+
         // When / Then
         assertThat(KeyPairUtil.privatePem(loadKeyPair(tempDir.resolve("private.pem"))))
                 .isEqualTo(Files.readString(tempDir.resolve("private.pem")));
@@ -68,6 +69,10 @@ class KeyPairUtilIT {
 
     @Test
     void shouldWritePrivateKeyFile() throws Exception {
+        // Given
+        KeyPair pair = KeyPairUtil.generate();
+        Files.writeString(tempDir.resolve("private.pem"), KeyPairUtil.privatePem(pair));
+
         // When
         Path expectedPath = tempDir.resolve("WriteKey.pem");
         KeyPairUtil.writePrivateToFile(loadKeyPair(tempDir.resolve("private.pem")),
@@ -81,6 +86,8 @@ class KeyPairUtilIT {
     @Test
     void shouldOverwritePrivateKeyFile() throws Exception {
         // Given
+        KeyPair pair = KeyPairUtil.generate();
+        Files.writeString(tempDir.resolve("private.pem"), KeyPairUtil.privatePem(pair));
         Path expectedPath = tempDir.resolve("OverwriteKey.pem");
         Files.createFile(expectedPath);
 
