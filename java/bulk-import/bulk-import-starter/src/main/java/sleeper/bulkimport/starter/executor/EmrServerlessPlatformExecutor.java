@@ -33,14 +33,13 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
- * A {@link PlatformExecutor} which runs a bulk import job on EMR Serverless.
+ * Starts a bulk import job on EMR Serverless.
  */
 public class EmrServerlessPlatformExecutor implements PlatformExecutor {
     private final EmrServerlessClient emrClient;
     private final InstanceProperties instanceProperties;
 
-    public EmrServerlessPlatformExecutor(EmrServerlessClient emrClient,
-                                         InstanceProperties instanceProperties) {
+    public EmrServerlessPlatformExecutor(EmrServerlessClient emrClient, InstanceProperties instanceProperties) {
         this.emrClient = emrClient;
         this.instanceProperties = instanceProperties;
     }
