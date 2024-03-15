@@ -39,13 +39,13 @@ public class PartitionFileWriterUtils {
     }
 
     /**
-     * Create a reference to a new file to add to the state store.
+     * Create a reference to a new file to add to the state store. This should be passed to
+     * {@link sleeper.core.statestore.StateStore.addFile}.
      *
-     * @param  filename        The full path to the file, including file system
-     * @param  partitionId     The ID of the partition the reference should be added to
-     * @param  numberOfRecords The number of records in the file
-     * @return                 The {@link FileReference} object
-     * @see                    sleeper.core.statestore.StateStore.addFile
+     * @param  filename        the full path to the file, including file system
+     * @param  partitionId     the ID of the partition the reference should be added to
+     * @param  numberOfRecords the number of records in the file
+     * @return                 the {@link FileReference} object
      */
     public static FileReference createFileReference(
             String filename, String partitionId, long numberOfRecords) {
@@ -59,8 +59,8 @@ public class PartitionFileWriterUtils {
     }
 
     /**
-     * Create a map with an empty sketch for all row keys in a schema.
-     * This is to be used with {@link #updateQuantileSketchMap} to create sketches for a file.
+     * Create a map with an empty sketch for all row keys in a schema. This is to be used with
+     * {@link #updateQuantileSketchMap} to create sketches for a file.
      *
      * @param  sleeperSchema The schema to create sketches for
      * @return               A map from each row key field name to an empty sketch
