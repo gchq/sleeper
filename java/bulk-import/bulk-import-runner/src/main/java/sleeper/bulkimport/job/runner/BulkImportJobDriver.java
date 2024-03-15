@@ -53,10 +53,9 @@ import static sleeper.ingest.job.status.IngestJobFinishedEvent.ingestJobFinished
 import static sleeper.ingest.job.status.IngestJobStartedEvent.validatedIngestJobStarted;
 
 /**
- * This class executes a Spark job that reads in input Parquet files and writes
- * out files of {@link sleeper.core.record.Record}s. This takes a {@link BulkImportJobRunner} implementation,
- * which takes rows from the input files and outputs a file for each Sleeper partition.
- * These will then be used to update the {@link StateStore}.
+ * Executes a Spark job that reads in input Parquet files and writes to a Sleeper table. This takes a
+ * {@link BulkImportJobRunner} implementation, which takes rows from the input files and outputs a file for each Sleeper
+ * partition. These will then be added to the {@link StateStore}.
  */
 public class BulkImportJobDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportJobDriver.class);
@@ -68,10 +67,10 @@ public class BulkImportJobDriver {
     private final Supplier<Instant> getTime;
 
     public BulkImportJobDriver(SessionRunner sessionRunner,
-                               TablePropertiesProvider tablePropertiesProvider,
-                               StateStoreProvider stateStoreProvider,
-                               IngestJobStatusStore statusStore,
-                               Supplier<Instant> getTime) {
+            TablePropertiesProvider tablePropertiesProvider,
+            StateStoreProvider stateStoreProvider,
+            IngestJobStatusStore statusStore,
+            Supplier<Instant> getTime) {
         this.sessionRunner = sessionRunner;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
@@ -80,15 +79,15 @@ public class BulkImportJobDriver {
     }
 
     public static BulkImportJobDriver from(BulkImportJobRunner jobRunner, InstanceProperties instanceProperties,
-                                           AmazonS3 s3Client, AmazonDynamoDB dynamoClient, Configuration conf) {
+            AmazonS3 s3Client, AmazonDynamoDB dynamoClient, Configuration conf) {
         return from(jobRunner, instanceProperties, s3Client, dynamoClient, conf,
                 IngestJobStatusStoreFactory.getStatusStore(dynamoClient, instanceProperties), Instant::now);
     }
 
     public static BulkImportJobDriver from(BulkImportJobRunner jobRunner, InstanceProperties instanceProperties,
-                                           AmazonS3 s3Client, AmazonDynamoDB dynamoClient, Configuration conf,
-                                           IngestJobStatusStore statusStore,
-                                           Supplier<Instant> getTime) {
+            AmazonS3 s3Client, AmazonDynamoDB dynamoClient, Configuration conf,
+            IngestJobStatusStore statusStore,
+            Supplier<Instant> getTime) {
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoClient, instanceProperties, conf);
         return new BulkImportJobDriver(new BulkImportSparkSessionRunner(
