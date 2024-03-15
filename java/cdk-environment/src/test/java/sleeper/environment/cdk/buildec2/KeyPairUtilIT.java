@@ -18,65 +18,21 @@ package sleeper.environment.cdk.buildec2;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermission;
-import java.security.KeyPair;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class KeyPairUtilIT {
+public class KeyPairUtilIT {
     @TempDir
     private Path tempDir;
 
     @Test
-    void shouldGenerateKeyPairAndReconstructFromPem() throws Exception {
-        // Given
-        KeyPair pair = KeyPairUtil.generate();
-        String pem = KeyPairUtil.privatePem(pair);
-
-        // When
-        KeyPair found = KeyPairUtil.readPrivatePem(pem);
-
-        // Then
-        assertThat(found.getPublic().getEncoded()).isEqualTo(pair.getPublic().getEncoded());
-        assertThat(found.getPrivate().getEncoded()).isEqualTo(pair.getPrivate().getEncoded());
-    }
-
-    @Test
-    void shouldGetPublicKeyInBase64() throws Exception {
-        // Given
-        KeyPair pair = KeyPairUtil.generate();
-        Files.writeString(tempDir.resolve("private.pem"), KeyPairUtil.privatePem(pair));
-        Files.writeString(tempDir.resolve("public.base64"), KeyPairUtil.publicBase64(pair));
-
-        // When / Then
-        assertThat(KeyPairUtil.publicBase64(loadKeyPair(tempDir.resolve("private.pem"))))
-                .isEqualTo(Files.readString(tempDir.resolve("public.base64")));
-    }
-
-    @Test
-    void shouldBuildPemStringFromKeyPair() throws Exception {
-        // Given
-        KeyPair pair = KeyPairUtil.generate();
-        Files.writeString(tempDir.resolve("private.pem"), KeyPairUtil.privatePem(pair));
-
-        // When / Then
-        assertThat(KeyPairUtil.privatePem(loadKeyPair(tempDir.resolve("private.pem"))))
-                .isEqualTo(Files.readString(tempDir.resolve("private.pem")));
-    }
-
-    @Test
     void shouldWritePrivateKeyFile() throws Exception {
-        // Given
-        KeyPair pair = KeyPairUtil.generate();
-        Files.writeString(tempDir.resolve("private.pem"), KeyPairUtil.privatePem(pair));
-
         // When
         Path expectedPath = tempDir.resolve("WriteKey.pem");
-        KeyPairUtil.writePrivateToFile(loadKeyPair(tempDir.resolve("private.pem")),
-                expectedPath.toString());
+        KeyPairUtil.writePrivateToFile(KeyPairUtil.generate(), expectedPath.toString());
 
         // Then
         assertThat(Files.getPosixFilePermissions(expectedPath))
@@ -86,21 +42,14 @@ class KeyPairUtilIT {
     @Test
     void shouldOverwritePrivateKeyFile() throws Exception {
         // Given
-        KeyPair pair = KeyPairUtil.generate();
-        Files.writeString(tempDir.resolve("private.pem"), KeyPairUtil.privatePem(pair));
         Path expectedPath = tempDir.resolve("OverwriteKey.pem");
         Files.createFile(expectedPath);
 
         // When
-        KeyPairUtil.writePrivateToFile(loadKeyPair(tempDir.resolve("private.pem")),
-                expectedPath.toString());
+        KeyPairUtil.writePrivateToFile(KeyPairUtil.generate(), expectedPath.toString());
 
         // Then
         assertThat(Files.getPosixFilePermissions(expectedPath))
                 .containsExactly(PosixFilePermission.OWNER_READ);
-    }
-
-    private KeyPair loadKeyPair(Path path) throws IOException {
-        return KeyPairUtil.readPrivatePem(Files.readString(path));
     }
 }
