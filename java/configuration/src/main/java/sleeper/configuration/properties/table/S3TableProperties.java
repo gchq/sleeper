@@ -78,6 +78,6 @@ public class S3TableProperties implements TablePropertiesStore.Client {
     }
 
     private String getS3Key(TableStatus table) {
-        return "tables/" + table.getTableUniqueId();
+        return "tables/table-" + table.getTableUniqueId() + ".properties";
     }
 }
