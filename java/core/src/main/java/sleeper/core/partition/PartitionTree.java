@@ -150,7 +150,7 @@ public class PartitionTree {
     }
 
     /**
-     * Traverse the partition tree visiting the leaves first, then proceed in steps where you remove the current leaf
+     * Traverse the partition tree visiting the leaves first. Proceeds in steps where you remove the current leaf
      * partitions and visit the new leaves.
      * <p>
      * The partitions are also ordered by the min and max of their ranges. Each time the tree is split, the partition
