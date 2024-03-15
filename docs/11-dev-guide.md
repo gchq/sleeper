@@ -102,6 +102,19 @@ cd java
 mvn clean compile checkstyle:check spotbugs:check
 ```
 
+### Javadoc
+
+We try to ensure that all classes have Javadoc. Most methods should also have Javadoc. Private methods, as well as
+getters, setters and builder methods can be skipped unless there's something important to know.
+
+See Oracle's standards for Javadoc:
+https://www.oracle.com/technical-resources/articles/java/javadoc-tool.html
+
+Note that the first sentence in a Javadoc comment will be used as a summary fragment in generated documentation. This
+should not contain any links or formatting, to read normally as an item in a list.
+
+Checkstyle checks for most of our criteria.
+
 ### Testing
 
 The Maven project includes unit tests, integration tests and system tests. We use JUnit 5, with AssertJ for assertions.
