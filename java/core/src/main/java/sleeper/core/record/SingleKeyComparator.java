@@ -28,7 +28,7 @@ import java.util.Comparator;
 /**
  * A {@link Comparator} for a 1-dimensional key.
  */
-public class SingleKeyComparator implements Comparator<Object> {
+public final class SingleKeyComparator implements Comparator<Object> {
     private final PrimitiveType type;
 
     public SingleKeyComparator(PrimitiveType type) {

@@ -36,7 +36,7 @@ import java.util.Optional;
  * The {@link Region} must be in canonical form, i.e. all the ranges must contain
  * their minimum but not contain their maximum.
  */
-public class Partition {
+public final class Partition {
     private final List<PrimitiveType> rowKeyTypes;
     private final Region region;
     private final String id;
@@ -89,7 +89,6 @@ public class Partition {
     public int getDimension() {
         return dimension;
     }
-
 
     public boolean isRowKeyInPartition(Schema schema, Key rowKey) {
         return region.isKeyInRegion(schema, rowKey);
@@ -173,12 +172,10 @@ public class Partition {
             return this;
         }
 
-
         public Builder parentPartitionId(String parentPartitionId) {
             this.parentPartitionId = parentPartitionId;
             return this;
         }
-
 
         public Builder childPartitionIds(List<String> childPartitionIds) {
             this.childPartitionIds = childPartitionIds;

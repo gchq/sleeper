@@ -47,7 +47,7 @@ import java.util.Map;
 /**
  * Serialises and deserialises a {@link Record} to and from a JSON {@link String}.
  */
-public class RecordJSONSerDe {
+public final class RecordJSONSerDe {
     private final Gson gson;
     private final Gson gsonPrettyPrinting;
 

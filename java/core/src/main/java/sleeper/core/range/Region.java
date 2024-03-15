@@ -31,7 +31,7 @@ import java.util.Objects;
  * specified for a dimension then it is implicitly assumed to cover the entire
  * space in that dimension.)
  */
-public class Region {
+public final class Region {
     private final Map<String, Range> rowKeyFieldNameToRange;
 
     public Region(List<Range> ranges) {

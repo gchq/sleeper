@@ -36,7 +36,7 @@ import java.util.stream.Stream;
 /**
  * A Schema describes the fields found in a particular table in a Sleeper instance.
  */
-public class Schema {
+public final class Schema {
     private final List<Field> rowKeyFields;
     private final List<Field> sortKeyFields;
     private final List<Field> valueFields;

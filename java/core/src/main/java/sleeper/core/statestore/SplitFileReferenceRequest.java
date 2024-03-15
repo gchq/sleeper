@@ -23,7 +23,7 @@ import java.util.Objects;
  * A request to split a {@link FileReference} in the state store.
  * The old reference will be deleted and new references will be created in one transaction.
  */
-public class SplitFileReferenceRequest {
+public final class SplitFileReferenceRequest {
     private final FileReference oldReference;
     private final List<FileReference> newReferences;
 

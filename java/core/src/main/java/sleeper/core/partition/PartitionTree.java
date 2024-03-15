@@ -33,7 +33,7 @@ import java.util.stream.Stream;
  * ancestors of a partition, i.e. all partitions that are either parents of the
  * partition, or grandparents, or great-grandparents.
  */
-public class PartitionTree {
+public final class PartitionTree {
     private final Map<String, Partition> idToPartition;
     private final Partition rootPartition;
 

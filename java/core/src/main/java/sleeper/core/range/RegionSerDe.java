@@ -46,7 +46,7 @@ import java.util.Set;
 /**
  * Serialises a {@link Region} to and from a JSON string.
  */
-public class RegionSerDe {
+public final class RegionSerDe {
     public static final String MIN = "min";
     public static final String MAX = "max";
     public static final String MIN_INCLUSIVE = "minInclusive";
@@ -192,11 +192,9 @@ public class RegionSerDe {
 
         private Range convertJsonObjectToRange(String fieldName, JsonObject json, boolean stringsBase64Encoded) {
             Object min = getObject(MIN, fieldName, json, stringsBase64Encoded);
-            boolean minInclusive = json.has(MIN_INCLUSIVE) ?
-                    json.get(MIN_INCLUSIVE).getAsBoolean() : true;
+            boolean minInclusive = json.has(MIN_INCLUSIVE) ? json.get(MIN_INCLUSIVE).getAsBoolean() : true;
             Object max = getObject(MAX, fieldName, json, stringsBase64Encoded);
-            boolean maxInclusive = json.has(MAX_INCLUSIVE) ?
-                    json.get(MAX_INCLUSIVE).getAsBoolean() : false;
+            boolean maxInclusive = json.has(MAX_INCLUSIVE) ? json.get(MAX_INCLUSIVE).getAsBoolean() : false;
             return rangeFactory.createRange(schema.getField(fieldName).get(), min, minInclusive, max, maxInclusive);
         }
 

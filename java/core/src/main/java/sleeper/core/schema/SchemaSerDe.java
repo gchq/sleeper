@@ -46,7 +46,7 @@ import java.nio.charset.Charset;
 /**
  * Serialises a {@link Schema} to and from a JSON {@link String}.
  */
-public class SchemaSerDe {
+public final class SchemaSerDe {
     private final Gson gson;
     private final Gson gsonPrettyPrinting;
 

@@ -38,7 +38,7 @@ import java.util.List;
 /**
  * Serialises a {@link Partition} to and from a JSON string.
  */
-public class PartitionSerDe {
+public final class PartitionSerDe {
     public static final String PARTITION_ID = "partitionId";
     public static final String IS_LEAF_PARTITION = "isLeafPartition";
     public static final String PARENT_PARTITION_ID = "parentPartitionId";
