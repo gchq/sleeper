@@ -19,8 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Converts a {@link Region} into canonical form by converting each {@link Range}
- * into canonical form.
+ * Converts each range in a region into canonical form. Uses {@link RangeCanonicaliser}.
  */
 public class RegionCanonicaliser {
 
