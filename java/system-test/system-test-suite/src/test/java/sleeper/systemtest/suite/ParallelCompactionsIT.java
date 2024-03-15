@@ -17,6 +17,7 @@ package sleeper.systemtest.suite;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.compaction.strategy.impl.BasicCompactionStrategy;
 import sleeper.configuration.properties.validation.IngestFileWritingStrategy;
@@ -26,6 +27,7 @@ import sleeper.core.schema.Schema;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,8 +48,10 @@ import static sleeper.systemtest.suite.fixtures.SystemTestSchema.ROW_KEY_FIELD_N
 
 @SystemTest
 public class ParallelCompactionsIT {
-    private final Schema schema = DEFAULT_SCHEMA;
     public static final int NUMBER_OF_COMPACTIONS = 5;
+    private final Schema schema = DEFAULT_SCHEMA;
+    @TempDir
+    private Path tempDir;
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper) throws Exception {
@@ -76,7 +80,7 @@ public class ParallelCompactionsIT {
                 INGEST_FILE_WRITING_STRATEGY, IngestFileWritingStrategy.ONE_FILE_PER_LEAF.toString(),
                 COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
                 COMPACTION_FILES_BATCH_SIZE, "2"));
-        sleeper.ingest().direct(null)
+        sleeper.ingest().direct(tempDir)
                 .numberedRecords(LongStream.range(0, 5000).map(i -> i * 2)) // Evens
                 .numberedRecords(LongStream.range(0, 5000).map(i -> i * 2 + 1)); // Odds
 

@@ -26,6 +26,7 @@ import sleeper.core.schema.Schema;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,8 +47,9 @@ import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.ROW_KEY_FIELD
 
 @InMemoryDslTest
 public class ParallelCompactionsTest {
-    private final Schema schema = DEFAULT_SCHEMA;
     public static final int NUMBER_OF_COMPACTIONS = 5;
+    private final Schema schema = DEFAULT_SCHEMA;
+    private final Path tempDir = null;
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper) throws Exception {
@@ -76,7 +78,7 @@ public class ParallelCompactionsTest {
                 INGEST_FILE_WRITING_STRATEGY, IngestFileWritingStrategy.ONE_FILE_PER_LEAF.toString(),
                 COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
                 COMPACTION_FILES_BATCH_SIZE, "2"));
-        sleeper.ingest().direct(null)
+        sleeper.ingest().direct(tempDir)
                 .numberedRecords(LongStream.range(0, 5000).map(i -> i * 2)) // Evens
                 .numberedRecords(LongStream.range(0, 5000).map(i -> i * 2 + 1)); // Odds
 
