@@ -185,7 +185,7 @@
         <enforcer.plugin.version>3.1.0</enforcer.plugin.version>
         <distribution.format>dir</distribution.format>
         <spotbugs.version>4.7.3</spotbugs.version>
-        <spotbugs.plugin.version>4.7.3.0</spotbugs.plugin.version>
+        <spotbugs.plugin.version>4.8.3.1</spotbugs.plugin.version>
         <go-offline.plugin.version>1.2.8</go-offline.plugin.version>
         <dependency-check.plugin.version>8.3.1</dependency-check.plugin.version>
         <site.plugin.version>3.12.1</site.plugin.version>
