@@ -30,6 +30,7 @@ import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
+import sleeper.cdk.TracingUtils;
 import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
@@ -93,7 +94,8 @@ public class GarbageCollectorStack extends NestedStack {
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .memorySize(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS)))
-                .logGroup(createLambdaLogGroup(this, "GarbageCollectorTriggerLogGroup", triggerFunctionName, instanceProperties)));
+                .logGroup(createLambdaLogGroup(this, "GarbageCollectorTriggerLogGroup", triggerFunctionName, instanceProperties))
+                .tracing(TracingUtils.active(instanceProperties)));
         IFunction handlerFunction = gcJar.buildFunction(this, "GarbageCollectorLambda", builder -> builder
                 .functionName(functionName)
                 .description("Scan the state store looking for files that need deleting and delete them")
@@ -102,7 +104,8 @@ public class GarbageCollectorStack extends NestedStack {
                 .timeout(handlerTimeout)
                 .handler("sleeper.garbagecollector.GarbageCollectorLambda::handleRequest")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
-                .logGroup(createLambdaLogGroup(this, "GarbageCollectorLambdaLogGroup", functionName, instanceProperties)));
+                .logGroup(createLambdaLogGroup(this, "GarbageCollectorLambdaLogGroup", functionName, instanceProperties))
+                .tracing(TracingUtils.passThrough(instanceProperties)));
         instanceProperties.set(GARBAGE_COLLECTOR_LAMBDA_FUNCTION, triggerFunction.getFunctionName());
 
         // Grant this function permission delete files from the data bucket and

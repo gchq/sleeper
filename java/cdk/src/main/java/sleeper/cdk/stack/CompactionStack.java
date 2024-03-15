@@ -52,11 +52,13 @@ import software.amazon.awscdk.services.ecs.Ec2TaskDefinition;
 import software.amazon.awscdk.services.ecs.EcsOptimizedImage;
 import software.amazon.awscdk.services.ecs.EcsOptimizedImageOptions;
 import software.amazon.awscdk.services.ecs.FargateTaskDefinition;
-import software.amazon.awscdk.services.ecs.ITaskDefinition;
 import software.amazon.awscdk.services.ecs.MachineImageType;
 import software.amazon.awscdk.services.ecs.NetworkMode;
 import software.amazon.awscdk.services.ecs.OperatingSystemFamily;
+import software.amazon.awscdk.services.ecs.PortMapping;
+import software.amazon.awscdk.services.ecs.Protocol;
 import software.amazon.awscdk.services.ecs.RuntimePlatform;
+import software.amazon.awscdk.services.ecs.TaskDefinition;
 import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
@@ -76,6 +78,7 @@ import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
+import sleeper.cdk.TracingUtils;
 import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
@@ -91,7 +94,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Consumer;
 
 import static sleeper.cdk.Utils.createLambdaLogGroup;
 import static sleeper.cdk.Utils.shouldDeployPaused;
@@ -120,6 +122,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.TABLE_BAT
 import static sleeper.configuration.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
 import static sleeper.configuration.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
+import static sleeper.configuration.properties.instance.CommonProperty.XRAY_TRACING_ENABLED;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_EC2_POOL_DESIRED;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_EC2_POOL_MAXIMUM;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_EC2_POOL_MINIMUM;
@@ -274,7 +277,8 @@ public class CompactionStack extends NestedStack {
                 .handler("sleeper.compaction.job.creation.lambda.CreateCompactionJobsTriggerLambda::handleRequest")
                 .environment(environmentVariables)
                 .reservedConcurrentExecutions(1)
-                .logGroup(createLambdaLogGroup(this, "CompactionJobsCreationTriggerLogGroup", triggerFunctionName, instanceProperties)));
+                .logGroup(createLambdaLogGroup(this, "CompactionJobsCreationTriggerLogGroup", triggerFunctionName, instanceProperties))
+                .tracing(TracingUtils.active(instanceProperties)));
 
         IFunction handlerFunction = jobCreatorJar.buildFunction(this, "CompactionJobsCreationHandler", builder -> builder
                 .functionName(functionName)
@@ -284,7 +288,8 @@ public class CompactionStack extends NestedStack {
                 .timeout(Duration.seconds(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS)))
                 .handler("sleeper.compaction.job.creation.lambda.CreateCompactionJobsLambda::handleRequest")
                 .environment(environmentVariables)
-                .logGroup(createLambdaLogGroup(this, "CompactionJobsCreationHandlerLogGroup", functionName, instanceProperties)));
+                .logGroup(createLambdaLogGroup(this, "CompactionJobsCreationHandlerLogGroup", functionName, instanceProperties))
+                .tracing(TracingUtils.passThrough(instanceProperties)));
 
         // Send messages from the trigger function to the handler function
         Queue jobCreationQueue = sqsQueueForCompactionJobCreation();
@@ -361,41 +366,36 @@ public class CompactionStack extends NestedStack {
         Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
         environmentVariables.put(Utils.AWS_REGION, instanceProperties.get(REGION));
 
-        Consumer<ITaskDefinition> grantPermissions = taskDef -> {
-            coreStacks.grantRunCompactionJobs(taskDef.getTaskRole());
-            jarsBucket.grantRead(taskDef.getTaskRole());
-            statusStore.grantWriteJobEvent(taskDef.getTaskRole());
-            statusStore.grantWriteTaskEvent(taskDef.getTaskRole());
-
-            taskDef.getTaskRole().addToPrincipalPolicy(PolicyStatement.Builder
-                    .create()
-                    .resources(Collections.singletonList("*"))
-                    .actions(List.of("ecs:DescribeContainerInstances"))
-                    .build());
-
-            compactionJobsQueue.grantConsumeMessages(taskDef.getTaskRole());
-        };
-
         String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
+        TaskDefinition taskDefinition;
         if (launchType.equalsIgnoreCase("FARGATE")) {
-            FargateTaskDefinition fargateTaskDefinition = compactionFargateTaskDefinition();
-            String fargateTaskDefinitionFamily = fargateTaskDefinition.getFamily();
-            instanceProperties.set(COMPACTION_TASK_FARGATE_DEFINITION_FAMILY, fargateTaskDefinitionFamily);
-            ContainerDefinitionOptions fargateContainerDefinitionOptions = createFargateContainerDefinition(containerImage,
-                    environmentVariables, instanceProperties);
-            fargateTaskDefinition.addContainer(ContainerConstants.COMPACTION_CONTAINER_NAME,
-                    fargateContainerDefinitionOptions);
-            grantPermissions.accept(fargateTaskDefinition);
+            taskDefinition = compactionFargateTaskDefinition();
+            instanceProperties.set(COMPACTION_TASK_FARGATE_DEFINITION_FAMILY, taskDefinition.getFamily());
+            taskDefinition.addContainer(ContainerConstants.COMPACTION_CONTAINER_NAME,
+                    createFargateContainerDefinition(containerImage, environmentVariables, instanceProperties));
+
+            if (instanceProperties.getBoolean(XRAY_TRACING_ENABLED)) {
+                taskDefinition.addContainer(ContainerConstants.XRAY_CONTAINER_NAME,
+                        createXRayDaemonContainerDefinition(instanceProperties));
+            }
         } else {
-            Ec2TaskDefinition ec2TaskDefinition = compactionEC2TaskDefinition();
-            String ec2TaskDefinitionFamily = ec2TaskDefinition.getFamily();
-            instanceProperties.set(COMPACTION_TASK_EC2_DEFINITION_FAMILY, ec2TaskDefinitionFamily);
-            ContainerDefinitionOptions ec2ContainerDefinitionOptions = createEC2ContainerDefinition(containerImage,
-                    environmentVariables, instanceProperties);
-            ec2TaskDefinition.addContainer(ContainerConstants.COMPACTION_CONTAINER_NAME, ec2ContainerDefinitionOptions);
-            grantPermissions.accept(ec2TaskDefinition);
+            taskDefinition = compactionEC2TaskDefinition();
+            instanceProperties.set(COMPACTION_TASK_EC2_DEFINITION_FAMILY, taskDefinition.getFamily());
+            taskDefinition.addContainer(ContainerConstants.COMPACTION_CONTAINER_NAME,
+                    createEC2ContainerDefinition(containerImage, environmentVariables, instanceProperties));
             addEC2CapacityProvider(cluster, vpc, coreStacks, taskCreatorJar);
         }
+
+        coreStacks.grantRunCompactionJobs(taskDefinition.getTaskRole());
+        jarsBucket.grantRead(taskDefinition.getTaskRole());
+        statusStore.grantWriteJobEvent(taskDefinition.getTaskRole());
+        statusStore.grantWriteTaskEvent(taskDefinition.getTaskRole());
+        taskDefinition.getTaskRole().addToPrincipalPolicy(PolicyStatement.Builder
+                .create()
+                .resources(Collections.singletonList("*"))
+                .actions(List.of("ecs:DescribeContainerInstances"))
+                .build());
+        compactionJobsQueue.grantConsumeMessages(taskDefinition.getTaskRole());
 
         CfnOutputProps compactionClusterProps = new CfnOutputProps.Builder()
                 .value(cluster.getClusterName())
@@ -514,17 +514,22 @@ public class CompactionStack extends NestedStack {
                 .build();
     }
 
+    private ContainerDefinitionOptions createXRayDaemonContainerDefinition(InstanceProperties instanceProperties) {
+        return ContainerDefinitionOptions.builder()
+                .image(ContainerImage.fromRegistry(ContainerConstants.XRAY_IMAGE))
+                .portMappings(List.of(PortMapping.builder()
+                        .protocol(Protocol.UDP)
+                        .containerPort(2000)
+                        .build()))
+                .logging(Utils.createECSContainerLogDriver(this, instanceProperties, "CompactionTasksXRayDaemon"))
+                .build();
+    }
+
     private ContainerDefinitionOptions createFargateContainerDefinition(
             ContainerImage image, Map<String, String> environment, InstanceProperties instanceProperties) {
-        String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
-        String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
-        Pair<Integer, Integer> requirements = Requirements.getArchRequirements(architecture, launchType,
-                instanceProperties);
         return ContainerDefinitionOptions.builder()
                 .image(image)
                 .environment(environment)
-                .cpu(requirements.getLeft())
-                .memoryLimitMiB(requirements.getRight())
                 .logging(Utils.createECSContainerLogDriver(this, instanceProperties, "FargateCompactionTasks"))
                 .build();
     }
@@ -564,7 +569,8 @@ public class CompactionStack extends NestedStack {
                 .logGroup(createLambdaLogGroup(this, "CompactionTerminatorLogGroup", functionName, instanceProperties))
                 .memorySize(512)
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
-                .timeout(Duration.seconds(10)));
+                .timeout(Duration.seconds(10))
+                .tracing(TracingUtils.active(instanceProperties)));
 
         coreStacks.grantReadInstanceConfig(handler);
         // Grant this function permission to query ECS for the number of tasks.

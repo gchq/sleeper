@@ -229,6 +229,12 @@ public interface CommonProperty {
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
+    UserDefinedInstanceProperty XRAY_TRACING_ENABLED = Index.propertyBuilder("sleeper.xray.tracing.enabled")
+            .description("This specifies whether AWS X-Ray tracing is enabled.")
+            .defaultValue("true")
+            .validationPredicate(Utils::isTrueOrFalse)
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .runCdkDeployWhenChanged(true).build();
 
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();

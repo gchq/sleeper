@@ -170,6 +170,9 @@ sleeper.batch.table.lambdas.memory=1024
 # create compaction jobs, run garbage collection, perform partition splitting.
 sleeper.batch.table.lambdas.timeout.seconds=60
 
+# This specifies whether AWS X-Ray tracing is enabled.
+sleeper.xray.tracing.enabled=true
+
 
 ## The following properties relate to standard ingest.
 

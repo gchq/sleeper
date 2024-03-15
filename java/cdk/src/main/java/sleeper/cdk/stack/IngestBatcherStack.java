@@ -34,6 +34,7 @@ import software.amazon.awscdk.services.sqs.IQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
+import sleeper.cdk.TracingUtils;
 import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
@@ -139,7 +140,8 @@ public class IngestBatcherStack extends NestedStack {
                 .handler("sleeper.ingest.batcher.submitter.IngestBatcherSubmitterLambda::handleRequest")
                 .environment(environmentVariables)
                 .logGroup(createLambdaLogGroup(this, "SubmitToIngestBatcherLogGroup", submitterName, instanceProperties))
-                .events(List.of(new SqsEventSource(submitQueue))));
+                .events(List.of(new SqsEventSource(submitQueue)))
+                .tracing(TracingUtils.passThrough(instanceProperties)));
         instanceProperties.set(INGEST_BATCHER_SUBMIT_REQUEST_FUNCTION, submitterLambda.getFunctionName());
 
         ingestRequestsTable.grantReadWriteData(submitterLambda);
@@ -156,7 +158,8 @@ public class IngestBatcherStack extends NestedStack {
                 .handler("sleeper.ingest.batcher.job.creator.IngestBatcherJobCreatorLambda::eventHandler")
                 .environment(environmentVariables)
                 .reservedConcurrentExecutions(1)
-                .logGroup(createLambdaLogGroup(this, "IngestBatcherJobCreationLogGroup", jobCreatorName, instanceProperties)));
+                .logGroup(createLambdaLogGroup(this, "IngestBatcherJobCreationLogGroup", jobCreatorName, instanceProperties))
+                .tracing(TracingUtils.active(instanceProperties)));
         instanceProperties.set(INGEST_BATCHER_JOB_CREATION_FUNCTION, jobCreatorLambda.getFunctionName());
 
         ingestRequestsTable.grantReadWriteData(jobCreatorLambda);

@@ -47,6 +47,7 @@ import software.amazon.awscdk.services.sqs.IQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
+import sleeper.cdk.TracingUtils;
 import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
@@ -141,7 +142,8 @@ public class QueryStack extends NestedStack {
                 .timeout(Duration.seconds(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS)))
                 .handler(handler)
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
-                .logGroup(createLambdaLogGroup(this, id + "LogGroup", functionName, instanceProperties)));
+                .logGroup(createLambdaLogGroup(this, id + "LogGroup", functionName, instanceProperties))
+                .tracing(TracingUtils.passThrough(instanceProperties)));
     }
 
     /***

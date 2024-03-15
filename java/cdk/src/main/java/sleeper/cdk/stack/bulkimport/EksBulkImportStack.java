@@ -65,6 +65,7 @@ import software.amazon.awscdk.services.stepfunctions.TaskInput;
 import software.amazon.awscdk.services.stepfunctions.tasks.SnsPublish;
 import software.constructs.Construct;
 
+import sleeper.cdk.TracingUtils;
 import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
@@ -127,7 +128,8 @@ public final class EksBulkImportStack extends NestedStack {
                 .queue(queueForDLs)
                 .build();
 
-        queueForDLs.metricApproximateNumberOfMessagesVisible().with(MetricOptions.builder()
+        queueForDLs.metricApproximateNumberOfMessagesVisible()
+                .with(MetricOptions.builder()
                         .period(Duration.seconds(60))
                         .statistic("Sum")
                         .build())
@@ -169,7 +171,8 @@ public final class EksBulkImportStack extends NestedStack {
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .handler("sleeper.bulkimport.starter.BulkImportStarterLambda")
                 .logGroup(createLambdaLogGroup(this, "BulkImportEKSJobStarterLogGroup", functionName, instanceProperties))
-                .events(Lists.newArrayList(SqsEventSource.Builder.create(bulkImportJobQueue).batchSize(1).build())));
+                .events(Lists.newArrayList(SqsEventSource.Builder.create(bulkImportJobQueue).batchSize(1).build()))
+                .tracing(TracingUtils.passThrough(instanceProperties)));
         configureJobStarterFunction(bulkImportJobStarter);
 
         importBucketStack.getImportBucket().grantReadWrite(bulkImportJobStarter);
@@ -251,7 +254,7 @@ public final class EksBulkImportStack extends NestedStack {
     }
 
     private StateMachine createStateMachine(Cluster cluster, InstanceProperties instanceProperties,
-                                            ITopic errorsTopic) {
+            ITopic errorsTopic) {
         String imageName = instanceProperties.get(ACCOUNT) +
                 ".dkr.ecr." +
                 instanceProperties.get(REGION) +
@@ -295,8 +298,8 @@ public final class EksBulkImportStack extends NestedStack {
                                                         .next(CustomState.Builder.create(this, "DeleteJob")
                                                                 .stateJson(deleteJobState).build()))
                                         .otherwise(createErrorMessage.next(publishError).next(Fail.Builder
-                                                .create(this, "FailedJobState").cause("Spark job failed").build()))))
-                ).build();
+                                                .create(this, "FailedJobState").cause("Spark job failed").build())))))
+                .build();
     }
 
     private KubernetesManifest createNamespace(Cluster bulkImportCluster, String bulkImportNamespace) {
@@ -314,18 +317,18 @@ public final class EksBulkImportStack extends NestedStack {
         }
     }
 
-    private void createManifests(Cluster cluster, KubernetesManifest namespace, String namespaceName,
-                                 IRole stateMachineRole) {
+    private void createManifests(
+            Cluster cluster, KubernetesManifest namespace, String namespaceName, IRole stateMachineRole) {
         Lists.newArrayList(
-                        createManifestFromResource(cluster, "SparkSubmitRole", namespaceName, "/k8s/spark-submit-role.json"),
-                        createManifestFromResource(cluster, "SparkSubmitRoleBinding", namespaceName,
-                                "/k8s/spark-submit-role-binding.json"),
-                        createManifestFromResource(cluster, "SparkRole", namespaceName, "/k8s/spark-role.json"),
-                        createManifestFromResource(cluster, "SparkRoleBinding", namespaceName, "/k8s/spark-role-binding.json"),
-                        createManifestFromResource(cluster, "StepFunctionRole", namespaceName, "/k8s/step-function-role.json"),
-                        createManifestFromResource(cluster, "StepFunctionRoleBinding", namespaceName,
-                                "/k8s/step-function-role-binding.json",
-                                replacements(Map.of("user-placeholder", stateMachineRole.getRoleArn()))))
+                createManifestFromResource(cluster, "SparkSubmitRole", namespaceName, "/k8s/spark-submit-role.json"),
+                createManifestFromResource(cluster, "SparkSubmitRoleBinding", namespaceName,
+                        "/k8s/spark-submit-role-binding.json"),
+                createManifestFromResource(cluster, "SparkRole", namespaceName, "/k8s/spark-role.json"),
+                createManifestFromResource(cluster, "SparkRoleBinding", namespaceName, "/k8s/spark-role-binding.json"),
+                createManifestFromResource(cluster, "StepFunctionRole", namespaceName, "/k8s/step-function-role.json"),
+                createManifestFromResource(cluster, "StepFunctionRoleBinding", namespaceName,
+                        "/k8s/step-function-role-binding.json",
+                        replacements(Map.of("user-placeholder", stateMachineRole.getRoleArn()))))
                 .forEach(manifest -> manifest.getNode().addDependency(namespace));
     }
 
@@ -333,8 +336,8 @@ public final class EksBulkImportStack extends NestedStack {
         return createManifestFromResource(cluster, id, namespace, resource, json -> json);
     }
 
-    private static KubernetesManifest createManifestFromResource(Cluster cluster, String id, String namespace, String resource,
-                                                                 Function<String, String> replacements) {
+    private static KubernetesManifest createManifestFromResource(
+            Cluster cluster, String id, String namespace, String resource, Function<String, String> replacements) {
         return cluster.addManifest(id, parseJsonWithNamespace(resource, namespace, replacements));
     }
 
