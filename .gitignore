@@ -18,7 +18,6 @@ scripts/**/version.txt
 scripts/trino/etc
 scripts/trino/jars
 __pycache__
-*.pem
 *.drawio.bkp
 *.drawio.dtmp
 python/build/
