@@ -36,7 +36,7 @@ import java.util.Optional;
  * The {@link Region} must be in canonical form, i.e. all the ranges must contain
  * their minimum but not contain their maximum.
  */
-public final class Partition {
+public class Partition {
     private final List<PrimitiveType> rowKeyTypes;
     private final Region region;
     private final String id;
@@ -53,9 +53,6 @@ public final class Partition {
         parentPartitionId = builder.parentPartitionId;
         childPartitionIds = Optional.ofNullable(builder.childPartitionIds).orElse(Collections.emptyList());
         dimension = builder.dimension;
-        if (region != null && !RegionCanonicaliser.isRegionInCanonicalForm(region)) {
-            throw new IllegalArgumentException("Region must be in canonical form");
-        }
     }
 
     public static Builder builder() {
@@ -192,6 +189,9 @@ public final class Partition {
         }
 
         public Partition build() {
+            if (region != null && !RegionCanonicaliser.isRegionInCanonicalForm(region)) {
+                throw new IllegalArgumentException("Region must be in canonical form");
+            }
             return new Partition(this);
         }
 
