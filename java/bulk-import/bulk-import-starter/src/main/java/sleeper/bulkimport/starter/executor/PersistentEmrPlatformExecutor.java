@@ -31,9 +31,6 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
-/**
- *
- */
 public class PersistentEmrPlatformExecutor implements PlatformExecutor {
     private static final Logger LOGGER = LoggerFactory.getLogger(PersistentEmrPlatformExecutor.class);
 

@@ -16,6 +16,8 @@
 
 package sleeper.systemtest.drivers.util;
 
+import com.amazonaws.services.autoscaling.AmazonAutoScaling;
+import com.amazonaws.services.autoscaling.AmazonAutoScalingClientBuilder;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.ecr.AmazonECR;
@@ -53,6 +55,7 @@ public class SystemTestClients {
     private final EmrServerlessClient emrServerless = EmrServerlessClient.create();
     private final AmazonElasticMapReduce emr = AmazonElasticMapReduceClientBuilder.defaultClient();
     private final AmazonECS ecs = AmazonECSClientBuilder.defaultClient();
+    private final AmazonAutoScaling autoScaling = AmazonAutoScalingClientBuilder.defaultClient();
     private final AmazonECR ecr = AmazonECRClientBuilder.defaultClient();
     private final CloudWatchClient cloudWatch = CloudWatchClient.create();
 
@@ -98,6 +101,10 @@ public class SystemTestClients {
 
     public AmazonECS getEcs() {
         return ecs;
+    }
+
+    public AmazonAutoScaling getAutoScaling() {
+        return autoScaling;
     }
 
     public AmazonECR getEcr() {
