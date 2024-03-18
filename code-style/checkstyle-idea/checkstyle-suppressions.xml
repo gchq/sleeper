@@ -79,4 +79,8 @@
     <suppress files="[\\/]query[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]trino[\\/].*" id="missingJavadocMethod"/>
     <suppress files="[\\/]trino[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]metrics[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]metrics[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]build[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]build[\\/].*" id="missingJavadocType"/>
 </suppressions>
