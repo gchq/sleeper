@@ -81,6 +81,10 @@
         <module name="JavadocType">
             <property name="id" value="javadocStyle"/>
         </module>
+        <module name="MissingJavadocType">
+            <property name="id" value="missingJavadocType"/>
+            <property name="scope" value="private" />
+        </module>
         <module name="NonEmptyAtclauseDescription">
             <property name="id" value="nonEmptyAtClause"/>
         </module>
