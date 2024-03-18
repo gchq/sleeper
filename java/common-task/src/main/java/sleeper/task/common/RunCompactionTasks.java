@@ -111,36 +111,34 @@ public class RunCompactionTasks {
                 .getApproximateNumberOfMessages();
         LOGGER.info("Queue size is {}", queueSize);
         // Request 1 task for each item on the queue
-        run(startTime, queueSize);
+        LOGGER.info("Maximum concurrent tasks is {}", maximumRunningTasks);
+        runToMeetTargetTasks(startTime, Math.min(queueSize, maximumRunningTasks));
     }
 
-    public void run(int requestedTasks) {
-        run(System.currentTimeMillis(), requestedTasks);
+    public void runToMeetTargetTasks(int requestedTasks) {
+        runToMeetTargetTasks(System.currentTimeMillis(), requestedTasks);
     }
 
-    private void run(long startTime, int requestedTasks) {
-        if (requestedTasks == 0) {
-            LOGGER.info("Finishing as number of tasks requested was 0");
+    private void runToMeetTargetTasks(long startTime, int targetTasks) {
+        if (targetTasks == 0) {
+            LOGGER.info("Finishing as target tasks was 0");
             return;
         }
-        // Find out number of pending and running tasks
+        LOGGER.info("Target concurrent tasks is {}", targetTasks);
+
         int numRunningAndPendingTasks = taskCounts.getRunningAndPending(clusterName);
         LOGGER.info("Number of running and pending tasks is {}", numRunningAndPendingTasks);
-
-        if (numRunningAndPendingTasks >= maximumRunningTasks) {
-            LOGGER.info("Finishing as maximum running tasks of {} has been reached", maximumRunningTasks);
+        if (numRunningAndPendingTasks >= targetTasks) {
+            LOGGER.info("Finishing as target has been reached");
             return;
         }
-        int maxNumTasksToCreate = maximumRunningTasks - numRunningAndPendingTasks;
-        LOGGER.info("Maximum concurrent tasks is {}", maximumRunningTasks);
-        LOGGER.info("Maximum number of tasks that can be created is {}", maxNumTasksToCreate);
-        int numberOfTasksToCreate = Math.min(requestedTasks, maxNumTasksToCreate);
+
         if (launchType.equalsIgnoreCase("EC2")) {
-            int totalTasks = numberOfTasksToCreate + numRunningAndPendingTasks;
-            LOGGER.info("Total number of tasks if all launches succeed {}", totalTasks);
-            scaler.scaleTo(instanceProperties.get(COMPACTION_AUTO_SCALING_GROUP), totalTasks);
+            scaler.scaleTo(instanceProperties.get(COMPACTION_AUTO_SCALING_GROUP), targetTasks);
         }
 
+        int numberOfTasksToCreate = targetTasks - numRunningAndPendingTasks;
+        LOGGER.info("Tasks to create is {}", numberOfTasksToCreate);
         launchTasks.launchTasks(startTime, numberOfTasksToCreate);
     }
 
@@ -275,7 +273,7 @@ public class RunCompactionTasks {
             InstanceProperties instanceProperties = new InstanceProperties();
             instanceProperties.loadFromS3(s3Client, s3Bucket);
             new RunCompactionTasks(instanceProperties, ecsClient, asClient)
-                    .run(numberOfTasks);
+                    .runToMeetTargetTasks(numberOfTasks);
         } finally {
             sqsClient.shutdown();
             ecsClient.shutdown();

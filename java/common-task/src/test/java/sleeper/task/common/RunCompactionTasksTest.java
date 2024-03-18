@@ -26,6 +26,7 @@ import sleeper.task.common.RunCompactionTasks.TaskCounts;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -62,15 +63,6 @@ public class RunCompactionTasksTest {
             // Then
             assertThat(tasksCreated).isEqualTo(5);
         }
-
-        private int runTasks(QueueMessageCount.Client queueMessageClient, TaskCounts taskCounts) {
-            AtomicInteger tasksLaunched = new AtomicInteger();
-            RunCompactionTasks runTasks = new RunCompactionTasks(instanceProperties, taskCounts, scaler, (startTime, numberOfTasksToCreate) -> {
-                tasksLaunched.set(numberOfTasksToCreate);
-            });
-            runTasks.run(queueMessageClient);
-            return tasksLaunched.get();
-        }
     }
 
     @DisplayName("Launch tasks with tasks already running")
@@ -89,7 +81,7 @@ public class RunCompactionTasksTest {
         }
 
         @Test
-        void shouldCreateTasksWhenMaximumConcurrentTasksHasBeenMet() {
+        void shouldCreateTasksUpToMaximumConcurrentTasks() {
             // Given
             instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 1);
 
@@ -135,6 +127,18 @@ public class RunCompactionTasksTest {
             // Then
             assertThat(tasksCreated).isZero();
         }
+
+        @Test
+        void shouldForceCreateTasksOverMaximumConcurrentTasks() {
+            // Given
+            instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 1);
+
+            // When
+            int tasksCreated = runToMeetTargetTasks(2, noRunningOrPendingTasks());
+
+            // Then
+            assertThat(tasksCreated).isEqualTo(2);
+        }
     }
 
     @DisplayName("Auto scale if needed")
@@ -172,7 +176,7 @@ public class RunCompactionTasksTest {
             instanceProperties.set(COMPACTION_ECS_LAUNCHTYPE, "EC2");
 
             // When
-            runTasks(2, runningOrPendingTasks(3));
+            runTasks(5, runningOrPendingTasks(3));
 
             // Then
             assertThat(numContainersByScalingGroup).isEqualTo(Map.of(
@@ -180,12 +184,24 @@ public class RunCompactionTasksTest {
         }
     }
 
+    private int runTasks(QueueMessageCount.Client queueMessageClient, TaskCounts taskCounts) {
+        return run(taskCounts, runTasks -> runTasks.run(queueMessageClient));
+    }
+
     private int runTasks(int requestedTasks, TaskCounts taskCounts) {
+        return runTasks(messagesOnQueue(requestedTasks), taskCounts);
+    }
+
+    private int runToMeetTargetTasks(int requestedTasks, TaskCounts taskCounts) {
+        return run(taskCounts, runTasks -> runTasks.runToMeetTargetTasks(requestedTasks));
+    }
+
+    private int run(TaskCounts taskCounts, Consumer<RunCompactionTasks> run) {
         AtomicInteger tasksLaunched = new AtomicInteger();
         RunCompactionTasks runTasks = new RunCompactionTasks(instanceProperties, taskCounts, scaler, (startTime, numberOfTasksToCreate) -> {
             tasksLaunched.set(numberOfTasksToCreate);
         });
-        runTasks.run(requestedTasks);
+        run.accept(runTasks);
         return tasksLaunched.get();
     }
 
