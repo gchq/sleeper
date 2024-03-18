@@ -48,7 +48,7 @@ public class Region {
         return new Region(rowKeyFieldNameToRange);
     }
 
-    public Region(Map<String, Range> rowKeyFieldNameToRange) {
+    private Region(Map<String, Range> rowKeyFieldNameToRange) {
         this.rowKeyFieldNameToRange = rowKeyFieldNameToRange;
     }
 

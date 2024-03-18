@@ -46,7 +46,7 @@ public class PartitionTree {
         return new PartitionTree(partitions, rootPartitions.get(0));
     }
 
-    public PartitionTree(List<Partition> partitions, Partition rootPartition) {
+    private PartitionTree(List<Partition> partitions, Partition rootPartition) {
         this.idToPartition = new HashMap<>();
         partitions.forEach(p -> this.idToPartition.put(p.getId(), p));
         this.rootPartition = rootPartition;
