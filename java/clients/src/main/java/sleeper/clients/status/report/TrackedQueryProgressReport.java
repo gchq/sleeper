@@ -26,7 +26,7 @@ import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 import sleeper.query.tracker.QueryTrackerException;
 
 /**
- *
+ * Reports progress of a specified query.
  */
 public class TrackedQueryProgressReport {
 

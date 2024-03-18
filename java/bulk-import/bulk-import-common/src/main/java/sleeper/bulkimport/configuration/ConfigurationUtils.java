@@ -68,7 +68,7 @@ import static sleeper.configuration.properties.validation.EmrInstanceArchitectur
 import static sleeper.configuration.properties.validation.EmrInstanceArchitecture.X86_64;
 
 /**
- * Properties in this class are based on the recommended values in this blog:
+ * Properties in this class are based on AWS recommended values. See this blog for details:
  * https://aws.amazon.com/blogs/big-data/best-practices-for-successfully-managing-memory-for-apache-spark-applications-on-amazon-emr/
  */
 public class ConfigurationUtils {
@@ -78,8 +78,8 @@ public class ConfigurationUtils {
     private ConfigurationUtils() {
     }
 
-    public static Map<String, String> getSparkConfigurationFromInstanceProperties(InstanceProperties instanceProperties,
-                                                                                  EmrInstanceArchitecture arch) {
+    public static Map<String, String> getSparkConfigurationFromInstanceProperties(
+            InstanceProperties instanceProperties, EmrInstanceArchitecture arch) {
         Map<String, String> sparkConf = new HashMap<>();
 
         // spark.driver properties
@@ -142,8 +142,8 @@ public class ConfigurationUtils {
         return sparkConf;
     }
 
-    public static Map<String, String> getSparkServerlessConfigurationFromInstanceProperties(InstanceProperties instanceProperties,
-                                                                                            EmrInstanceArchitecture arch) {
+    public static Map<String, String> getSparkServerlessConfigurationFromInstanceProperties(
+            InstanceProperties instanceProperties, EmrInstanceArchitecture arch) {
         Map<String, String> sparkConf = new HashMap<>();
         // spark.driver properties
         sparkConf.put("spark.driver.cores", instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES));
