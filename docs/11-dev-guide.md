@@ -105,7 +105,7 @@ mvn clean compile checkstyle:check spotbugs:check
 ### Javadoc
 
 We try to ensure that all classes have Javadoc. Most methods should also have Javadoc. Private methods, as well as
-getters, setters and builder methods can be skipped unless there's something important to know.
+getters and setters can be skipped unless there's something important to know.
 
 See Oracle's standards for Javadoc:
 https://www.oracle.com/technical-resources/articles/java/javadoc-tool.html
