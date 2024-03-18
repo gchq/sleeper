@@ -104,7 +104,7 @@ public class SleeperSplitSource implements ConnectorSplitSource {
     }
 
     /**
-     * Create a future which will wait until filter has narrowed as far as it possibly can.
+     * Create a future which will wait until the filter has narrowed as far as it possibly can.
      *
      * @param  dynamicFilter the dynamic filter that must be narrowed
      * @return               a {@link CompletableFuture} which completes when the dynamic filter has fully narrowed
