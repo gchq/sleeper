@@ -25,8 +25,8 @@ import java.io.IOException;
 import java.util.NoSuchElementException;
 
 /**
- * This class is a {@link CloseableIterator} of {@link Record}s, where those records are read from a {@link
- * ArrowStreamReader}.
+ * Reads through records read into memory with Arrow. This is a {@link CloseableIterator} of {@link Record}s, where
+ * those records are read from a {@link ArrowStreamReader}.
  * <p>
  * The rows are read from the file in small batches, which correspond to the small batches that were used when the file
  * was orginally written.
@@ -37,20 +37,14 @@ class RecordIteratorFromArrowStreamReader implements CloseableIterator<Record> {
     private long totalNoOfRecordsRead = 0L;
     private boolean nextBatchLoaded;
 
-    /**
-     * Construct an ArrowStreamIterator.
-     *
-     * @param arrowStreamReader The {@link ArrowStreamReader} to use to read the small batchea from the file.
-     * @throws IOException -
-     */
     RecordIteratorFromArrowStreamReader(ArrowStreamReader arrowStreamReader) throws IOException {
         this.arrowStreamReader = arrowStreamReader;
         this.loadNextBatch();
     }
 
     /**
-     * Instruct the {@link ArrowStreamReader} to read the next small batch of rows from the file, into its internal
-     * {@link VectorSchemaRoot}
+     * Read the next small batch of rows from the source file. Instruct the {@link ArrowStreamReader} to read into its
+     * internal {@link VectorSchemaRoot}.
      *
      * @throws IOException -
      */
@@ -100,4 +94,3 @@ class RecordIteratorFromArrowStreamReader implements CloseableIterator<Record> {
         return totalNoOfRecordsRead;
     }
 }
-

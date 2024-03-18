@@ -59,7 +59,7 @@ import static sleeper.configuration.properties.instance.LoggingLevelsProperty.PA
 import static sleeper.configuration.properties.instance.LoggingLevelsProperty.ROOT_LOGGING_LEVEL;
 
 /**
- * Collection of utility methods related to the CDK deployment
+ * Collection of utility methods related to the CDK deployment.
  */
 public class Utils {
 
@@ -111,7 +111,8 @@ public class Utils {
     }
 
     /**
-     * Valid values are taken from <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-logs-loggroup.html">here</a>
+     * Valid values are taken from
+     * <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-logs-loggroup.html">here</a>
      * A value of -1 represents an infinite number of days.
      *
      * @param  numberOfDays number of days you want to retain the logs

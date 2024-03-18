@@ -44,7 +44,7 @@ import java.util.UUID;
 import static java.util.Objects.requireNonNull;
 
 /**
- * This class implements a {@link RecordBatch} where the batch of records is stored in an ArrayList in memory,
+ * Stores a batch of records in an array in memory. This class implements a {@link RecordBatch} backed by an ArrayList,
  * and spilled to local disk as Parquet files when the ArrayList contains a set number of records. Each time the records
  * are spilled to disk, they are sorted.
  * <p>
@@ -88,10 +88,10 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
      * @param maxNoOfRecordsInLocalStore The maximum number of records to store on the local disk
      */
     public ArrayListRecordBatch(ParquetConfiguration parquetConfiguration,
-                                ArrayListRecordMapper<INCOMINGDATATYPE> recordMapper,
-                                String localWorkingDirectory,
-                                int maxNoOfRecordsInMemory,
-                                long maxNoOfRecordsInLocalStore) {
+            ArrayListRecordMapper<INCOMINGDATATYPE> recordMapper,
+            String localWorkingDirectory,
+            int maxNoOfRecordsInMemory,
+            long maxNoOfRecordsInLocalStore) {
         this.parquetConfiguration = requireNonNull(parquetConfiguration);
         this.sleeperSchema = parquetConfiguration.getTableProperties().getSchema();
         this.recordMapper = recordMapper;
@@ -111,7 +111,7 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
     /**
      * Internal method to add a record to the internal batch, flushing to local disk first if necessary.
      *
-     * @param record The record to add to the batch
+     * @param  record      The record to add to the batch
      * @throws IOException -
      */
     protected void addRecordToBatch(Record record) throws IOException {
@@ -152,7 +152,7 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
             LoggedDuration sortDuration = LoggedDuration.withShortOutput(startTime, writeTime);
             LoggedDuration writeDuration = LoggedDuration.withShortOutput(writeTime, finishTime);
             LOGGER.info("Wrote {} records to local file in {} ({}/s) " +
-                            "[sorting {} ({}/s), writing {} ({}/s)] - filename: {}",
+                    "[sorting {} ({}/s), writing {} ({}/s)] - filename: {}",
                     inMemoryBatch.size(),
                     wholeDuration,
                     FORMATTER.format(inMemoryBatch.size() / (double) wholeDuration.getSeconds()),
@@ -174,8 +174,8 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
     }
 
     /**
-     * This batch is considered full when the in-memory batch is full and when, if it were written to disk, the total
-     * number of records on disk would exceed the limit specified during construction.
+     * Indicates whether the batch is full. This is considered full when the in-memory batch is full and when, if it
+     * were written to disk, the total number of records on disk would exceed the limit specified during construction.
      *
      * @return A flag indicating whether or not the batch is full.
      */
@@ -190,7 +190,7 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
      * <p>
      * Note that this method may only be called once.
      *
-     * @return An iterator of the sorted records.
+     * @return             An iterator of the sorted records.
      * @throws IOException -
      */
     @Override
@@ -228,7 +228,7 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
     }
 
     /**
-     * Close this batch, remove all local files and free resources
+     * Close this batch, remove all local files and free resources.
      */
     @Override
     public void close() {
@@ -241,10 +241,10 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
     }
 
     /**
-     * Create a {@link ParquetReader} using the parameters specified during construction.
+     * Create a reader for a local Parquet file. Uses the parameters specified during construction.
      *
-     * @param inputFile The Parquet file to read
-     * @return The {@link ParquetReader}
+     * @param  inputFile   The Parquet file to read
+     * @return             The {@link ParquetReader}
      * @throws IOException Thrown when the reader cannot be created
      */
     private ParquetReader<Record> createParquetReader(String inputFile) throws IOException {
