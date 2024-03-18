@@ -31,13 +31,17 @@ import java.util.Comparator;
 public final class SingleKeyComparator implements Comparator<Object> {
     private final PrimitiveType type;
 
-    public SingleKeyComparator(PrimitiveType type) {
+    public static SingleKeyComparator from(PrimitiveType type) {
         if (!(type instanceof IntType)
                 && !(type instanceof LongType)
                 && !(type instanceof StringType)
                 && !(type instanceof ByteArrayType)) {
             throw new IllegalArgumentException("type must be one of IntType, LongType, StringType, ByteArrayType");
         }
+        return new SingleKeyComparator(type);
+    }
+
+    public SingleKeyComparator(PrimitiveType type) {
         this.type = type;
     }
 
