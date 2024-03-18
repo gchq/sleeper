@@ -46,8 +46,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 /**
- * A {@link LeafPartitionRecordRetrieverImpl} pulls back records for a single leaf partition according to
- * a provided predicate.
+ * Pulls back records for a single leaf partition according to a provided predicate.
  */
 public class LeafPartitionRecordRetrieverImpl implements LeafPartitionRecordRetriever {
     private static final Logger LOGGER = LoggerFactory.getLogger(LeafPartitionRecordRetrieverImpl.class);
@@ -130,8 +129,7 @@ public class LeafPartitionRecordRetrieverImpl implements LeafPartitionRecordRetr
         return getRecords(files, dataReadSchema, filterPredicate);
     }
 
-    private ParquetReader<Record> createParquetReader(Schema readSchema, String fileName, FilterPredicate filterPredicate)
-            throws IOException {
+    private ParquetReader<Record> createParquetReader(Schema readSchema, String fileName, FilterPredicate filterPredicate) throws IOException {
         // NB Do not create a ParquetReaderIterator here as that forces the
         // opening of the file which needs to be done in parallel.
         return new ParquetRecordReader.Builder(new Path(fileName), readSchema)
