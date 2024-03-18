@@ -25,6 +25,8 @@
     <suppress files="[\\/]src[\\/]test[\\/].*" id="missingSwitchDefault"/>
     <suppress files="[\\/]src[\\/]test[\\/].*" id="methodLengthMax"/>
     <suppress files="[\\/]src[\\/]test[\\/].*" id="parameterNumber"/>
+    <suppress files="[\\/]src[\\/]test[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]src[\\/]test[\\/].*" id="missingJavadocType"/>
     <suppress files=".*Application.java" id="hideUtilityClassConstructor"/>
     <suppress files="[\\/]athena[\\/].*" id="summaryJavadoc"/>
     <suppress files="[\\/]bulk-import[\\/].*" id="summaryJavadoc"/>
