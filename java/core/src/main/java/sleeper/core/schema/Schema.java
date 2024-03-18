@@ -184,12 +184,11 @@ public class Schema {
         }
 
         public Schema build() {
-            validateNoNullFields(rowKeyFields, sortKeyFields, valueFields);
+            rowKeyFields = validateRowKeys(rowKeyFields);
+            sortKeyFields = validateSortKeys(sortKeyFields);
+            valueFields = validateValueKeys(valueFields);
             validateNoDuplicates(streamAllFields(rowKeyFields, sortKeyFields, valueFields));
-            return new Schema(
-                    validateRowKeys(rowKeyFields),
-                    validateSortKeys(sortKeyFields),
-                    validateValueKeys(valueFields));
+            return new Schema(rowKeyFields, sortKeyFields, valueFields);
         }
     }
 
