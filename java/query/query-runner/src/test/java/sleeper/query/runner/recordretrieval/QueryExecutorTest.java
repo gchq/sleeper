@@ -65,7 +65,6 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
 
-
 public class QueryExecutorTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final InMemoryDataStore recordStore = new InMemoryDataStore();
@@ -172,8 +171,7 @@ public class QueryExecutorTest {
                             "key", 1L,
                             "A", "first",
                             "B", 11L,
-                            "C", new byte[]{1, 1}))
-            ));
+                            "C", new byte[]{1, 1}))));
 
             // When
             List<Record> records = getRecords(queryAllRecords());
@@ -195,8 +193,7 @@ public class QueryExecutorTest {
                             "key", 1L,
                             "A", "first",
                             "B", 11L,
-                            "C", new byte[]{1, 1}))
-            ));
+                            "C", new byte[]{1, 1}))));
 
             // When
             List<Record> records = getRecords(queryAllRecordsBuilder()
@@ -316,8 +313,7 @@ public class QueryExecutorTest {
             queryExecutor.initIfNeeded(Instant.parse("2023-11-27T09:31:00Z"));
 
             // Then the records that were added are not found
-            assertThat(getRecords(queryExecutor, queryAllRecords())).
-                    isEmpty();
+            assertThat(getRecords(queryExecutor, queryAllRecords())).isEmpty();
         }
     }
 
@@ -400,7 +396,7 @@ public class QueryExecutorTest {
 
     private PartitionTree partitionTree() {
         try {
-            return new PartitionTree(stateStore.getAllPartitions());
+            return PartitionTree.from(stateStore.getAllPartitions());
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
         }

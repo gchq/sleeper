@@ -85,7 +85,7 @@ public class PartitionsFromSplitPoints {
         List<Partition> builtPartitions = allPartitions.stream().map(Partition.Builder::build).collect(Collectors.toList());
         LOGGER.debug("Created the following partitions by layer (root first)");
         int layer = 1;
-        PartitionTree tree = new PartitionTree(builtPartitions);
+        PartitionTree tree = PartitionTree.from(builtPartitions);
         List<Partition> partitionsInLayer = List.of(tree.getRootPartition());
         while (!partitionsInLayer.isEmpty()) {
             LOGGER.debug("Layer {}", layer++);
@@ -293,6 +293,6 @@ public class PartitionsFromSplitPoints {
     }
 
     public static PartitionTree treeFrom(Schema schema, List<Object> splitPoints) {
-        return new PartitionTree(new PartitionsFromSplitPoints(schema, splitPoints).construct());
+        return PartitionTree.from(new PartitionsFromSplitPoints(schema, splitPoints).construct());
     }
 }

@@ -76,7 +76,7 @@ public class QueryCreator {
 
     private PartitionTree getPartitionTree() {
         try {
-            return new PartitionTree(stateStore.getAllPartitions());
+            return PartitionTree.from(stateStore.getAllPartitions());
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
         }

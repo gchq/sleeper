@@ -138,7 +138,7 @@ public class PartitionsBuilder {
     }
 
     public PartitionTree buildTree() {
-        return new PartitionTree(new ArrayList<>(partitionById.values()).stream().map(Partition.Builder::build).collect(Collectors.toList()));
+        return PartitionTree.from(new ArrayList<>(partitionById.values()).stream().map(Partition.Builder::build).collect(Collectors.toList()));
     }
 
     public Schema getSchema() {
@@ -164,8 +164,8 @@ public class PartitionsBuilder {
         }
 
         public void splitToLeftAndRight(Object splitPoint,
-                                        Consumer<Splitter> left,
-                                        Consumer<Splitter> right) {
+                Consumer<Splitter> left,
+                Consumer<Splitter> right) {
             split(splitPoint);
             left.accept(new Splitter(leftId()));
             right.accept(new Splitter(rightId()));

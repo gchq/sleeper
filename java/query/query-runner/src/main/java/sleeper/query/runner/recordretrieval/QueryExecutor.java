@@ -63,20 +63,20 @@ public class QueryExecutor {
     private Instant nextInitialiseTime;
 
     public QueryExecutor(ObjectFactory objectFactory,
-                         TableProperties tableProperties,
-                         StateStore stateStore,
-                         Configuration configuration,
-                         ExecutorService executorService) {
+            TableProperties tableProperties,
+            StateStore stateStore,
+            Configuration configuration,
+            ExecutorService executorService) {
         this(objectFactory, stateStore, tableProperties,
                 new LeafPartitionRecordRetrieverImpl(executorService, configuration),
                 Instant.now());
     }
 
     public QueryExecutor(ObjectFactory objectFactory,
-                         StateStore stateStore,
-                         TableProperties tableProperties,
-                         LeafPartitionRecordRetriever recordRetriever,
-                         Instant timeNow) {
+            StateStore stateStore,
+            TableProperties tableProperties,
+            LeafPartitionRecordRetriever recordRetriever,
+            Instant timeNow) {
         this.objectFactory = objectFactory;
         this.stateStore = stateStore;
         this.tableProperties = tableProperties;
@@ -121,7 +121,7 @@ public class QueryExecutor {
         leafPartitions = partitions.stream()
                 .filter(Partition::isLeafPartition)
                 .collect(Collectors.toList());
-        partitionTree = new PartitionTree(partitions);
+        partitionTree = PartitionTree.from(partitions);
         partitionToFiles = partitionToFileMapping;
         nextInitialiseTime = now.plus(tableProperties.getInt(QUERY_PROCESSOR_CACHE_TIMEOUT), ChronoUnit.MINUTES);
         LOGGER.info("Loaded state for table {}. Found {} partitions. Next initialise time: {}",
@@ -139,8 +139,8 @@ public class QueryExecutor {
      * could be high. Using suppliers ensures that only files for a single
      * leaf partition are opened at a time.
      *
-     * @param query the query
-     * @return An iterator containing the relevant records
+     * @param  query          the query
+     * @return                An iterator containing the relevant records
      * @throws QueryException if it errors.
      */
     public CloseableIterator<Record> execute(Query query) throws QueryException {
@@ -159,8 +159,8 @@ public class QueryExecutor {
      * finds the parent partitions in the tree and adds any files still belonging
      * to the parent to the sub query.
      *
-     * @param query the query to be split up
-     * @return A list of {@link LeafPartitionQuery}s
+     * @param  query the query to be split up
+     * @return       A list of {@link LeafPartitionQuery}s
      */
     public List<LeafPartitionQuery> splitIntoLeafPartitionQueries(Query query) {
         // Get mapping from leaf partitions to ranges from the query that overlap
@@ -223,8 +223,8 @@ public class QueryExecutor {
      * called by the default implementation of {@code getPartitionFiles()} If
      * you overwrite getPartitionFiles() then you may make this method a no-op.
      *
-     * @param query the query
-     * @return the relevant leaf partitions
+     * @param  query the query
+     * @return       the relevant leaf partitions
      */
     private Map<Partition, List<Region>> getRelevantLeafPartitions(Query query) {
         Map<Partition, List<Region>> leafPartitionToOverlappingRegions = new HashMap<>();

@@ -55,7 +55,7 @@ public class WriteParquetFile implements FlatMapFunction<Iterator<Row>, Row>, Ma
         InstanceProperties instanceProperties = new InstanceProperties(loadProperties(instancePropertiesStr));
         TableProperties tableProperties = new TableProperties(instanceProperties, loadProperties(tablePropertiesStr));
 
-        PartitionTree partitionTree = new PartitionTree(broadcastPartitions.getValue());
+        PartitionTree partitionTree = PartitionTree.from(broadcastPartitions.getValue());
 
         return new SingleFileWritingIterator(rowIter, instanceProperties, tableProperties, serializableConf.value(), partitionTree);
     }

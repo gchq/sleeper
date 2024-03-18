@@ -128,7 +128,7 @@ public class PartitionTreeTest {
         partitions.add(l2RightOfL1L);
         partitions.add(l2LeftOfL1R);
         partitions.add(l2RightOfL1R);
-        PartitionTree partitionTree = new PartitionTree(partitions);
+        PartitionTree partitionTree = PartitionTree.from(partitions);
 
         // When
         List<String> children1 = partitionTree.getChildIds(ROOT);
@@ -223,7 +223,7 @@ public class PartitionTreeTest {
         partitions.add(l2RightOfL1L);
         partitions.add(l2LeftOfL1R);
         partitions.add(l2RightOfL1R);
-        PartitionTree partitionTree = new PartitionTree(partitions);
+        PartitionTree partitionTree = PartitionTree.from(partitions);
 
         // When
         List<Partition> ancestorsOfRoot = partitionTree.getAllAncestors(ROOT);
@@ -254,7 +254,7 @@ public class PartitionTreeTest {
                 .childPartitionIds(Arrays.asList(L1_LEFT, L1_RIGHT))
                 .dimension(-1)
                 .build();
-        PartitionTree partitionTree = new PartitionTree(Collections.singletonList(root));
+        PartitionTree partitionTree = PartitionTree.from(Collections.singletonList(root));
 
         // When
         Partition partition = partitionTree.getLeafPartition(schema, Key.create(10L));
@@ -348,7 +348,7 @@ public class PartitionTreeTest {
         partitions.add(l2RightOfL1L);
         partitions.add(l2LeftOfL1R);
         partitions.add(l2RightOfL1R);
-        PartitionTree partitionTree = new PartitionTree(partitions);
+        PartitionTree partitionTree = PartitionTree.from(partitions);
 
         // When 1
         Partition partition = partitionTree.getLeafPartition(schema, Key.create(10L));
@@ -471,7 +471,7 @@ public class PartitionTreeTest {
         partitions.add(l2RightOfL1R);
         partitions.add(l3LeftOfL2LoL1L);
         partitions.add(l3RightOfL2LoL1L);
-        PartitionTree partitionTree = new PartitionTree(partitions);
+        PartitionTree partitionTree = PartitionTree.from(partitions);
 
         // When 1
         Partition partition = partitionTree.getLeafPartition(schema, Key.create(123456789L));

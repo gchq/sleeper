@@ -80,7 +80,7 @@ public class InMemoryPartitionStore implements PartitionStore {
     @Override
     public void atomicallyUpdatePartitionAndCreateNewOnes(
             Partition parent, Partition left, Partition right) throws StateStoreException {
-        PartitionTree oldTree = new PartitionTree(partitions);
+        PartitionTree oldTree = PartitionTree.from(partitions);
         if (!oldTree.getPartition(parent.getId()).isLeafPartition()) {
             throw new StateStoreException("Partition has already been split: " + parent.getId());
         }
@@ -90,9 +90,8 @@ public class InMemoryPartitionStore implements PartitionStore {
         validateChild(parent, left);
         validateChild(parent, right);
         partitions = Stream.concat(
-                        partitions.stream().filter(partition ->
-                                !Objects.equals(partition.getId(), parent.getId())),
-                        Stream.of(parent, left, right))
+                partitions.stream().filter(partition -> !Objects.equals(partition.getId(), parent.getId())),
+                Stream.of(parent, left, right))
                 .collect(Collectors.toUnmodifiableList());
     }
 

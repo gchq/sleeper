@@ -58,8 +58,7 @@ public class DirectQueryDriver implements QueryDriver {
         TableProperties tableProperties = instance.getTablePropertiesByDeployedName(query.getTableName()).orElseThrow();
         StateStore stateStore = instance.getStateStore(tableProperties);
         PartitionTree tree = getPartitionTree(stateStore);
-        try (CloseableIterator<Record> recordIterator =
-                     executor(tableProperties, stateStore, tree).execute(query)) {
+        try (CloseableIterator<Record> recordIterator = executor(tableProperties, stateStore, tree).execute(query)) {
             return stream(recordIterator)
                     .collect(Collectors.toUnmodifiableList());
         } catch (IOException e) {
@@ -71,7 +70,7 @@ public class DirectQueryDriver implements QueryDriver {
 
     private PartitionTree getPartitionTree(StateStore stateStore) {
         try {
-            return new PartitionTree(stateStore.getAllPartitions());
+            return PartitionTree.from(stateStore.getAllPartitions());
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
         }
