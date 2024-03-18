@@ -36,16 +36,15 @@ import java.util.stream.Stream;
 /**
  * A Schema describes the fields found in a particular table in a Sleeper instance.
  */
-public final class Schema {
+public class Schema {
     private final List<Field> rowKeyFields;
     private final List<Field> sortKeyFields;
     private final List<Field> valueFields;
 
-    private Schema(Builder builder) {
-        rowKeyFields = validateRowKeys(builder.rowKeyFields);
-        sortKeyFields = validateSortKeys(builder.sortKeyFields);
-        valueFields = validateValueKeys(builder.valueFields);
-        validateNoDuplicates(streamAllFields(rowKeyFields, sortKeyFields, valueFields));
+    private Schema(List<Field> rowKeyFields, List<Field> sortKeyFields, List<Field> valueFields) {
+        this.rowKeyFields = rowKeyFields;
+        this.sortKeyFields = sortKeyFields;
+        this.valueFields = valueFields;
     }
 
     public static Builder builder() {
@@ -150,9 +149,9 @@ public final class Schema {
     }
 
     public static final class Builder {
-        private List<Field> rowKeyFields;
-        private List<Field> sortKeyFields;
-        private List<Field> valueFields;
+        private List<Field> rowKeyFields = new ArrayList<>();
+        private List<Field> sortKeyFields = new ArrayList<>();
+        private List<Field> valueFields = new ArrayList<>();
 
         private Builder() {
         }
@@ -185,7 +184,12 @@ public final class Schema {
         }
 
         public Schema build() {
-            return new Schema(this);
+            validateNoNullFields(rowKeyFields, sortKeyFields, valueFields);
+            validateNoDuplicates(streamAllFields(rowKeyFields, sortKeyFields, valueFields));
+            return new Schema(
+                    validateRowKeys(rowKeyFields),
+                    validateSortKeys(sortKeyFields),
+                    validateValueKeys(valueFields));
         }
     }
 
@@ -222,7 +226,6 @@ public final class Schema {
 
     private static Stream<Field> streamAllFields(
             List<Field> rowKeyFields, List<Field> sortKeyFields, List<Field> valueFields) {
-
         return Stream.of(rowKeyFields, sortKeyFields, valueFields)
                 .flatMap(List::stream);
     }
@@ -238,6 +241,18 @@ public final class Schema {
         });
         if (!duplicates.isEmpty()) {
             throw new IllegalArgumentException("Found duplicate field names: " + duplicates);
+        }
+    }
+
+    private static void validateNoNullFields(List<Field> rowKeyFields, List<Field> sortKeyFields, List<Field> valueFields) {
+        if (rowKeyFields == null) {
+            throw new IllegalArgumentException("rowKeyFields must not be null");
+        }
+        if (sortKeyFields == null) {
+            throw new IllegalArgumentException("sortKeyFields must not be null");
+        }
+        if (valueFields == null) {
+            throw new IllegalArgumentException("valueFields must not be null");
         }
     }
 }
