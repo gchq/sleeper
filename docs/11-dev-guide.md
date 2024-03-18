@@ -115,6 +115,21 @@ should not contain any links or formatting, to read normally as an item in a lis
 
 Checkstyle checks for most of our criteria.
 
+A notable omission from the Checkstyle checks is capitalisation of descriptions under tags, eg. parameter tags for
+methods. Following the Oracle standards, these should be either a short phrase in all lower case, or a full sentence
+with the first word capitalised and a full stop. For example:
+
+```java
+/**
+ * Processes a foo and a bar.
+ * 
+ * @param foo the foo
+ * @param bar This is the bar. It must not be null or an empty string.
+ */
+public void process(String foo, String bar) {
+}
+```
+
 ### Testing
 
 The Maven project includes unit tests, integration tests and system tests. We use JUnit 5, with AssertJ for assertions.
