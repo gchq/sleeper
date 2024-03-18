@@ -136,7 +136,7 @@ public final class RegionSerDe {
                 }
                 ranges.add(convertJsonObjectToRange(key, (JsonObject) json, stringsBase64Encoded));
             }
-            return new Region(ranges);
+            return Region.from(ranges);
         }
 
         private JsonObject convertRangeToJsonObject(Range range) {

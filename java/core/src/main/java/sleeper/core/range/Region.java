@@ -19,7 +19,6 @@ import sleeper.core.key.Key;
 import sleeper.core.schema.Schema;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,24 +30,25 @@ import java.util.Objects;
  * specified for a dimension then it is implicitly assumed to cover the entire
  * space in that dimension.)
  */
-public final class Region {
+public class Region {
     private final Map<String, Range> rowKeyFieldNameToRange;
 
-    public Region(List<Range> ranges) {
-        this.rowKeyFieldNameToRange = new HashMap<>();
+    public static Region from(Range range) {
+        return new Region(Map.of(range.getFieldName(), range));
+    }
+
+    public static Region from(List<Range> ranges) {
+        Map<String, Range> rowKeyFieldNameToRange = new HashMap<>();
         for (Range range : ranges) {
-            if (this.rowKeyFieldNameToRange.containsKey(range.getFieldName())) {
+            if (rowKeyFieldNameToRange.containsKey(range.getFieldName())) {
                 throw new IllegalArgumentException("Should only provide one range per row key field");
             }
-            this.rowKeyFieldNameToRange.put(range.getFieldName(), range);
+            rowKeyFieldNameToRange.put(range.getFieldName(), range);
         }
+        return new Region(rowKeyFieldNameToRange);
     }
 
-    public Region(Range range) {
-        this(Collections.singletonList(range));
-    }
-
-    private Region(Map<String, Range> rowKeyFieldNameToRange) {
+    public Region(Map<String, Range> rowKeyFieldNameToRange) {
         this.rowKeyFieldNameToRange = rowKeyFieldNameToRange;
     }
 

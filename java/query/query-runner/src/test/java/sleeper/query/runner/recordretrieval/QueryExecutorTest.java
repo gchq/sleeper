@@ -391,7 +391,7 @@ public class QueryExecutorTest {
 
     private Region range(Object min, Object max) {
         Field field = tableProperties.getSchema().getField("key").orElseThrow();
-        return new Region(new Range(field, min, max));
+        return Region.from(new Range(field, min, max));
     }
 
     private PartitionTree partitionTree() {
