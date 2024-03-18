@@ -53,7 +53,7 @@ import static sleeper.ingest.job.status.IngestJobFinishedEvent.ingestJobFinished
 import static sleeper.ingest.job.status.IngestJobStartedEvent.validatedIngestJobStarted;
 
 /**
- * Executes a Spark job that reads in input Parquet files and writes to a Sleeper table. This takes a
+ * Executes a Spark job that reads input Parquet files and writes to a Sleeper table. This takes a
  * {@link BulkImportJobRunner} implementation, which takes rows from the input files and outputs a file for each Sleeper
  * partition. These will then be added to the {@link StateStore}.
  */
