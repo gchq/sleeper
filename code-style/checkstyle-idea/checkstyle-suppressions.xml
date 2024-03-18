@@ -28,8 +28,6 @@
     <suppress files=".*Application.java" id="hideUtilityClassConstructor"/>
     <suppress files="[\\/]athena[\\/].*" id="summaryJavadoc"/>
     <suppress files="[\\/]bulk-import[\\/].*" id="summaryJavadoc"/>
-    <suppress files="[\\/]cdk[\\/].*" id="summaryJavadoc"/>
-    <suppress files="[\\/]system-test[\\/].*" id="summaryJavadoc"/>
     <suppress files="[\\/]core[\\/].*" id="summaryJavadoc"/>
     <suppress files="[\\/]configuration[\\/].*" id="summaryJavadoc"/>
     <suppress files="[\\/]parquet[\\/].*" id="summaryJavadoc"/>
