@@ -149,9 +149,9 @@ public class Schema {
     }
 
     public static final class Builder {
-        private List<Field> rowKeyFields = new ArrayList<>();
-        private List<Field> sortKeyFields = new ArrayList<>();
-        private List<Field> valueFields = new ArrayList<>();
+        private List<Field> rowKeyFields;
+        private List<Field> sortKeyFields;
+        private List<Field> valueFields;
 
         private Builder() {
         }
@@ -240,18 +240,6 @@ public class Schema {
         });
         if (!duplicates.isEmpty()) {
             throw new IllegalArgumentException("Found duplicate field names: " + duplicates);
-        }
-    }
-
-    private static void validateNoNullFields(List<Field> rowKeyFields, List<Field> sortKeyFields, List<Field> valueFields) {
-        if (rowKeyFields == null) {
-            throw new IllegalArgumentException("rowKeyFields must not be null");
-        }
-        if (sortKeyFields == null) {
-            throw new IllegalArgumentException("sortKeyFields must not be null");
-        }
-        if (valueFields == null) {
-            throw new IllegalArgumentException("valueFields must not be null");
         }
     }
 }
