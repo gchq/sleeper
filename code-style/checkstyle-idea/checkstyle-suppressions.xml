@@ -30,6 +30,11 @@
     <suppress files="[\\/]bulk-import[\\/].*" id="summaryJavadoc"/>
     <suppress files="[\\/]cdk[\\/].*" id="summaryJavadoc"/>
     <suppress files="[\\/]system-test[\\/].*" id="summaryJavadoc"/>
+    <suppress files="[\\/]core[\\/].*" id="summaryJavadoc"/>
+    <suppress files="[\\/]configuration[\\/].*" id="summaryJavadoc"/>
+    <suppress files="[\\/]parquet[\\/].*" id="summaryJavadoc"/>
+    <suppress files="[\\/]common-job[\\/].*" id="summaryJavadoc"/>
+    <suppress files="[\\/]common-task[\\/].*" id="summaryJavadoc"/>
     <suppress files="[\\/]clients[\\/].*" id="summaryJavadoc"/>
     <suppress files="[\\/]compaction[\\/].*" id="summaryJavadoc"/>
     <suppress files="[\\/]garbage-collector[\\/].*" id="summaryJavadoc"/>
