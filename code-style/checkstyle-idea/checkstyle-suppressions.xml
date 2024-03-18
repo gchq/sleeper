@@ -36,10 +36,6 @@
     <suppress files="[\\/]common-job[\\/].*" id="summaryJavadoc"/>
     <suppress files="[\\/]common-task[\\/].*" id="summaryJavadoc"/>
     <suppress files="[\\/]clients[\\/].*" id="summaryJavadoc"/>
-    <suppress files="[\\/]compaction[\\/].*" id="summaryJavadoc"/>
-    <suppress files="[\\/]splitter[\\/].*" id="summaryJavadoc"/>
-    <suppress files="[\\/]garbage-collector[\\/].*" id="summaryJavadoc"/>
-    <suppress files="[\\/]statestore[\\/].*" id="summaryJavadoc"/>
     <suppress files="[\\/]ingest[\\/].*" id="summaryJavadoc"/>
     <suppress files="[\\/]query[\\/].*" id="summaryJavadoc"/>
     <suppress files="[\\/]trino[\\/].*" id="summaryJavadoc"/>
