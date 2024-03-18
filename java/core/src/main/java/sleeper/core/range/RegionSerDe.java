@@ -46,7 +46,7 @@ import java.util.Set;
 /**
  * Serialises a {@link Region} to and from a JSON string.
  */
-public final class RegionSerDe {
+public class RegionSerDe {
     public static final String MIN = "min";
     public static final String MAX = "max";
     public static final String MIN_INCLUSIVE = "minInclusive";
@@ -57,15 +57,11 @@ public final class RegionSerDe {
     private final Gson gsonPrettyPrinting;
 
     public RegionSerDe(Schema schema) {
-        try {
-            GsonBuilder builder = new GsonBuilder()
-                    .registerTypeAdapter(Class.forName(Region.class.getName()), new RegionJsonSerDe(schema))
-                    .serializeNulls();
-            this.gson = builder.create();
-            this.gsonPrettyPrinting = builder.setPrettyPrinting().create();
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException("Exception creating Gson", e);
-        }
+        GsonBuilder builder = new GsonBuilder()
+                .registerTypeAdapter(Region.class, new RegionJsonSerDe(schema))
+                .serializeNulls();
+        this.gson = builder.create();
+        this.gsonPrettyPrinting = builder.setPrettyPrinting().create();
     }
 
     public String toJson(Region region) {
