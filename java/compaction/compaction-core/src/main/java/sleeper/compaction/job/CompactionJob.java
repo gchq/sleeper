@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 
 /**
  * Contains the definition of a compaction job. This includes the ID of the job,
- * a list of the input files, the output file or files, and the ID of the partition.
+ * a list of the input files, the output file, and the ID of the partition.
  * <p>
  * This should fully define the job to be performed, so that no further queries of
  * the state store should be required in order to start it.
