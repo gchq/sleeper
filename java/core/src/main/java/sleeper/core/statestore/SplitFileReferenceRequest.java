@@ -23,22 +23,28 @@ import java.util.Objects;
  * A request to split a {@link FileReference} in the state store.
  * The old reference will be deleted and new references will be created in one transaction.
  */
-public final class SplitFileReferenceRequest {
+public class SplitFileReferenceRequest {
     private final FileReference oldReference;
     private final List<FileReference> newReferences;
 
-    public SplitFileReferenceRequest(FileReference oldReference, List<FileReference> newReferences) {
-        this.oldReference = Objects.requireNonNull(oldReference, "oldReference must not be null");
-        this.newReferences = Objects.requireNonNull(newReferences, "newReferences must not be null");
+    public static SplitFileReferenceRequest from(FileReference oldReference, List<FileReference> newReferences) {
         if (newReferences.isEmpty()) {
             throw new IllegalArgumentException("newReferences must not be empty");
         }
+        return new SplitFileReferenceRequest(
+                Objects.requireNonNull(oldReference, "oldReference must not be null"),
+                Objects.requireNonNull(newReferences, "newReferences must not be null"));
     }
 
     public static SplitFileReferenceRequest splitFileToChildPartitions(FileReference file, String leftPartition, String rightPartition) {
         return new SplitFileReferenceRequest(file,
                 List.of(SplitFileReference.referenceForChildPartition(file, leftPartition),
                         SplitFileReference.referenceForChildPartition(file, rightPartition)));
+    }
+
+    private SplitFileReferenceRequest(FileReference oldReference, List<FileReference> newReferences) {
+        this.oldReference = oldReference;
+        this.newReferences = newReferences;
     }
 
     public String getFilename() {

@@ -89,8 +89,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
             assertThat(store.getPartitionToReferencedFilesMap())
                     .containsOnlyKeys("root")
-                    .hasEntrySatisfying("root", files ->
-                            assertThat(files).containsExactlyInAnyOrder("file1", "file2", "file3"));
+                    .hasEntrySatisfying("root", files -> assertThat(files).containsExactlyInAnyOrder("file1", "file2", "file3"));
         }
 
         @Test
@@ -379,9 +378,8 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             FileReference file = factory.rootFile("file", 100L);
 
             // When / Then
-            assertThatThrownBy(() ->
-                    store.splitFileReferences(List.of(
-                            splitFileToChildPartitions(file, "L", "R"))))
+            assertThatThrownBy(() -> store.splitFileReferences(List.of(
+                    splitFileToChildPartitions(file, "L", "R"))))
                     .isInstanceOf(SplitRequestsFailedException.class)
                     .hasCauseInstanceOf(FileNotFoundException.class);
             assertThat(store.getFileReferences()).isEmpty();
@@ -398,9 +396,8 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             store.addFile(existingReference);
 
             // When / Then
-            assertThatThrownBy(() ->
-                    store.splitFileReferences(List.of(
-                            splitFileToChildPartitions(file, "L", "R"))))
+            assertThatThrownBy(() -> store.splitFileReferences(List.of(
+                    splitFileToChildPartitions(file, "L", "R"))))
                     .isInstanceOf(SplitRequestsFailedException.class)
                     .hasCauseInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).containsExactly(existingReference);
@@ -420,7 +417,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
 
             // Ideally this would fail as this produces duplicate references to the same records,
             // but not all state stores may be able to implement that
-            store.splitFileReferences(List.of(new SplitFileReferenceRequest(file, List.of(leftFile, nestedFile))));
+            store.splitFileReferences(List.of(SplitFileReferenceRequest.from(file, List.of(leftFile, nestedFile))));
 
             // When / Then
             assertThatThrownBy(() -> SplitFileReferences.from(store).split())
@@ -607,8 +604,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
                     .containsExactly("oldFile");
             assertThat(store.getPartitionToReferencedFilesMap())
                     .containsOnlyKeys("root")
-                    .hasEntrySatisfying("root", files ->
-                            assertThat(files).containsExactly("newFile"));
+                    .hasEntrySatisfying("root", files -> assertThat(files).containsExactly("newFile"));
         }
 
         @Test
@@ -632,8 +628,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
                     .containsExactly("oldFile");
             assertThat(store.getPartitionToReferencedFilesMap())
                     .containsOnlyKeys("root")
-                    .hasEntrySatisfying("root", files ->
-                            assertThat(files).containsExactly("newFile"));
+                    .hasEntrySatisfying("root", files -> assertThat(files).containsExactly("newFile"));
         }
 
         @Test
