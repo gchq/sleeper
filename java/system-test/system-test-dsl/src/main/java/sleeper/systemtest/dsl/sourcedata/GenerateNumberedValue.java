@@ -65,7 +65,11 @@ public interface GenerateNumberedValue {
     }
 
     static GenerateNumberedValue numberStringAndZeroPadTo(int size) {
-        return num -> StringUtils.leftPad(num + "", size, "0");
+        return num -> numberStringAndZeroPadTo(size, num);
+    }
+
+    static String numberStringAndZeroPadTo(int size, long number) {
+        return StringUtils.leftPad(number + "", size, "0");
     }
 
     static UnaryOperator<Object> addPrefix(String prefix) {
