@@ -28,12 +28,13 @@ public class SplitFileReferenceRequest {
     private final List<FileReference> newReferences;
 
     public static SplitFileReferenceRequest from(FileReference oldReference, List<FileReference> newReferences) {
-        if (newReferences.isEmpty()) {
+        List<FileReference> newRefsNotNull = Objects.requireNonNull(newReferences, "newReferences must not be null");
+        if (newRefsNotNull.isEmpty()) {
             throw new IllegalArgumentException("newReferences must not be empty");
         }
         return new SplitFileReferenceRequest(
                 Objects.requireNonNull(oldReference, "oldReference must not be null"),
-                Objects.requireNonNull(newReferences, "newReferences must not be null"));
+                newRefsNotNull);
     }
 
     public static SplitFileReferenceRequest splitFileToChildPartitions(FileReference file, String leftPartition, String rightPartition) {
