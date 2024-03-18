@@ -40,7 +40,6 @@
     <suppress files="[\\/]splitter[\\/].*" id="summaryJavadoc"/>
     <suppress files="[\\/]garbage-collector[\\/].*" id="summaryJavadoc"/>
     <suppress files="[\\/]statestore[\\/].*" id="summaryJavadoc"/>
-    <suppress files="[\\/]ingest[\\/].*" id="summaryJavadoc"/>
     <suppress files="[\\/]query[\\/].*" id="summaryJavadoc"/>
     <suppress files="[\\/]trino[\\/].*" id="summaryJavadoc"/>
 </suppressions>
