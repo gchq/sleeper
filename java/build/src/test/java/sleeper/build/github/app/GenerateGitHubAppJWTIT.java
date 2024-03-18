@@ -20,19 +20,24 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.impl.FixedClock;
+import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
-import java.net.URL;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.KeyPair;
 import java.sql.Date;
 import java.time.Instant;
 import java.util.Map;
-import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class GenerateGitHubAppJWTTest {
+public class GenerateGitHubAppJWTIT {
+    @TempDir
+    private Path tempDir;
 
     @Test
     void shouldGenerateJWT() {
@@ -61,17 +66,24 @@ public class GenerateGitHubAppJWTTest {
 
     @Test
     void shouldGenerateJWTFromPemFile() throws Exception {
-        // Given / When
+        // Given
+        KeyPair keyPair = Jwts.SIG.RS256.keyPair().build();
+        writePEMFile(keyPair, tempDir.resolve("private.pem"));
+
+        // When
         String jwt = GenerateGitHubAppJWT.withPemFileAndAppId(
-                exampleFile("examples/keys/private.pem"),
+                tempDir.resolve("private.pem"),
                 "test-app-id");
 
         // Then
         assertThat(jwt).isNotBlank();
     }
 
-    private static Path exampleFile(String path) throws Exception {
-        URL url = GenerateGitHubAppJWTTest.class.getClassLoader().getResource(path);
-        return Path.of(Objects.requireNonNull(url).toURI());
+    private static void writePEMFile(KeyPair keyPair, Path path) throws IOException {
+        StringWriter stringWriter = new StringWriter();
+        JcaPEMWriter w = new JcaPEMWriter(stringWriter);
+        w.writeObject(keyPair);
+        w.flush();
+        Files.writeString(path, stringWriter.toString());
     }
 }
