@@ -71,7 +71,7 @@ public class CreateCompactionJobsLambda implements RequestHandler<SQSEvent, Void
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3(s3Client, s3Bucket);
 
-        ObjectFactory objectFactory = new ObjectFactory(instanceProperties, s3Client, "/tmp");
+        ObjectFactory objectFactory = ObjectFactory.fromUserJars(instanceProperties, s3Client, "/tmp");
 
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
         AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
