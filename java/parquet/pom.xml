@@ -94,7 +94,7 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-        <build>
+    <build>
         <plugins>
             <plugin>
                 <groupId>com.github.spotbugs</groupId>
