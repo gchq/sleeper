@@ -25,7 +25,7 @@ import sleeper.core.schema.Schema;
 import java.io.IOException;
 
 /**
- * Uses a {@link RecordReadSupport} to read Parquet files.
+ * Reads Parquet files. Uses {@link RecordReadSupport}.
  */
 public class ParquetRecordReader extends ParquetReader<Record> {
 

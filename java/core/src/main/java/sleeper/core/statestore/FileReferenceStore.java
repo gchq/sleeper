@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Stores information about the files storing data in a Sleeper table. This includes a count of the number of references
+ * Stores information about the data files in a Sleeper table. This includes a count of the number of references
  * to the file, and internal references which assign all the data in the file to non-overlapping partitions.
  */
 public interface FileReferenceStore {
@@ -40,7 +40,7 @@ public interface FileReferenceStore {
     /**
      * Adds a file to the table, with one reference.
      *
-     * @param fileReference The file reference to be added
+     * @param  fileReference              the reference to be added
      * @throws FileAlreadyExistsException if the file already exists
      * @throws StateStoreException        if the update fails for another reason
      */
@@ -49,15 +49,14 @@ public interface FileReferenceStore {
     }
 
     /**
-     * Adds files to the Sleeper table, with any number of references.
-     * <p>
-     * Each reference to be added should be for a file which does not yet exist in the table.
+     * Adds files to the Sleeper table, with any number of references. Each reference to be added should be for a file
+     * which does not yet exist in the table.
      * <p>
      * When adding multiple references for a file, a file must never be referenced in two partitions where one is a
      * descendent of another. This means each record in a file must only be covered by one reference. A partition covers
      * a range of records. A partition which is the child of another covers a sub-range within the parent partition.
      *
-     * @param fileReferences The file references to be added
+     * @param  fileReferences             The file references to be added
      * @throws FileAlreadyExistsException if a file already exists
      * @throws StateStoreException        if the update fails for another reason
      */
@@ -67,15 +66,14 @@ public interface FileReferenceStore {
     }
 
     /**
-     * Adds files to the Sleeper table, with any number of references.
-     * <p>
-     * Each new file should be specified once, with all its references.
+     * Adds files to the Sleeper table, with any number of references. Each new file should be specified once, with all
+     * its references.
      * <p>
      * A file must never be referenced in two partitions where one is a descendent of another. This means each record in
      * a file must only be covered by one reference. A partition covers a range of records. A partition which is the
      * child of another covers a sub-range within the parent partition.
      *
-     * @param files The files to be added
+     * @param  files                      The files to be added
      * @throws FileAlreadyExistsException if a file already exists
      * @throws StateStoreException        if the update fails for another reason
      */
@@ -104,7 +102,7 @@ public interface FileReferenceStore {
      * some may succeed and some may fail. If a single {@link SplitFileReferenceRequest} adds too many references to
      * apply in one transaction, this will also fail.
      *
-     * @param splitRequests A list of {@link SplitFileReferenceRequest}s to apply
+     * @param  splitRequests                A list of {@link SplitFileReferenceRequest}s to apply
      * @throws SplitRequestsFailedException if any of the requests fail, even if some succeeded
      */
     void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws SplitRequestsFailedException;
@@ -118,10 +116,12 @@ public interface FileReferenceStore {
      * This will decrement the number of references for each of the input files. If no other references exist for those
      * files, they will become available for garbage collection.
      *
-     * @param jobId        The ID of the job
-     * @param partitionId  The partition which the job operated on
-     * @param inputFiles   The filenames of the input files, whose references in this partition should be removed
-     * @param newReference The reference to a new file, including metadata in the output partition
+     * @param  jobId                                   The ID of the job
+     * @param  partitionId                             The partition which the job operated on
+     * @param  inputFiles                              The filenames of the input files, whose references in this
+     *                                                 partition should be removed
+     * @param  newReference                            The reference to a new file, including metadata in the output
+     *                                                 partition
      * @throws FileNotFoundException                   if any of the input files do not exist
      * @throws FileReferenceNotFoundException          if any of the input files are not referenced in the partition
      * @throws FileReferenceNotAssignedToJobException  if any of the input files are not assigned to the job
@@ -130,13 +130,14 @@ public interface FileReferenceStore {
      * @throws StateStoreException                     if the update fails for another reason
      */
     void atomicallyReplaceFileReferencesWithNewOne(String jobId, String partitionId, List<String> inputFiles,
-                                                   FileReference newReference) throws StateStoreException;
+            FileReference newReference) throws StateStoreException;
 
     /**
      * Atomically updates the job field of file references, as long as the job field is currently unset. This will be
      * used for compaction job input files.
      *
-     * @param requests A list of {@link AssignJobIdRequest}s which should each be applied atomically
+     * @param  requests                            A list of {@link AssignJobIdRequest}s which should each be applied
+     *                                             atomically
      * @throws FileReferenceNotFoundException      if a reference does not exist
      * @throws FileReferenceAssignedToJobException if a reference is already assigned to a job
      * @throws StateStoreException                 if the update fails for another reason
@@ -154,7 +155,7 @@ public interface FileReferenceStore {
      * was ready for garbage collection. This should fail in that case as well, as we would like this to not be
      * possible.
      *
-     * @param filenames The names of files that were deleted.
+     * @param  filenames                  The names of files that were deleted.
      * @throws FileNotFoundException      if a file does not exist
      * @throws FileHasReferencesException if a file still has references
      * @throws StateStoreException        if the update fails for another reason
@@ -162,14 +163,13 @@ public interface FileReferenceStore {
     void deleteGarbageCollectedFileReferenceCounts(List<String> filenames) throws StateStoreException;
 
     /**
-     * Returns all {@link FileReference}s for files which are referenced in any partition.
-     * <p>
-     * This may return multiple references for a single file if it contains records in more than one partition.
+     * Returns all references for files in any partition. This may return multiple references for a single file if it
+     * contains records in more than one partition.
      * <p>
      * This must never return references for the same file on partitions where one is the ancestor of the other. This
      * means that every record in a file must only be referenced once.
      *
-     * @return a list of all {@link FileReference}s in the Sleeper table
+     * @return                     a list of all {@link FileReference}s in the Sleeper table
      * @throws StateStoreException if query fails
      */
     List<FileReference> getFileReferences() throws StateStoreException;
@@ -178,26 +178,27 @@ public interface FileReferenceStore {
      * Returns a stream of files that are ready for garbage collection, i.e. they have no references and the last update
      * time is before maxUpdateTime.
      *
-     * @param maxUpdateTime The latest time at which a file can have been updated in order to be garbage collected
-     * @return a stream of filenames with the matching status
+     * @param  maxUpdateTime       The latest time at which a file can have been updated in order to be garbage
+     *                             collected
+     * @return                     a stream of filenames with the matching status
      * @throws StateStoreException if query fails
      */
     Stream<String> getReadyForGCFilenamesBefore(Instant maxUpdateTime) throws StateStoreException;
 
     /**
-     * Returns all {@link FileReference}s which are not assigned to any job.
+     * Returns all file references which are not assigned to any job.
      *
-     * @return a list of {@link FileReference}s which are not assigned to any job
+     * @return                     a list of {@link FileReference}s which are not assigned to any job
      * @throws StateStoreException if query fails
      */
     List<FileReference> getFileReferencesWithNoJobId() throws StateStoreException;
 
     /**
-     * Returns a {@link Map} from the partition id to a {@link List} of all files referenced against that partition.
-     * <p>
-     * Each file may be included multiple times in this map, as it may be referenced in more than one partition.
+     * Returns a map from the partition id to a list of file references in that partition. Each file may be included
+     * multiple times in this map, as it may be referenced in more than one partition.
      *
-     * @return a {@link Map} from the partition id to a {@link List} of all files referenced against that partition
+     * @return                     a {@link Map} from the partition id to a {@link List} of all files referenced against
+     *                             that partition
      * @throws StateStoreException if query fails
      */
     default Map<String, List<String>> getPartitionToReferencedFilesMap() throws StateStoreException {
@@ -214,16 +215,16 @@ public interface FileReferenceStore {
     }
 
     /**
-     * Returns a report of files in the system, their reference counts, and their internal references within partitions.
-     * This will include all files whose reference count is tracked against the Sleeper table, whether it is referenced
-     * against partitions or not.
+     * Returns a report of files tracked in the store and their references. This includes reference counts, and internal
+     * references against Sleeper partitions. This will include all files whose reference count is tracked against the
+     * Sleeper table, whether it is referenced against partitions or not.
      * <p>
      * Files with internal references against partitions have records in the Sleeper table. Files with no internal
      * references are either in use by long-running operations, or are waiting to be garbage collected.
      *
-     * @param maxUnreferencedFiles Maximum number of files to return with no active references
-     * @return the report
-     * @throws StateStoreException if query fails
+     * @param  maxUnreferencedFiles Maximum number of files to return with no active references
+     * @return                      the report
+     * @throws StateStoreException  if query fails
      */
     AllReferencesToAllFiles getAllFilesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException;
 
@@ -243,9 +244,7 @@ public interface FileReferenceStore {
     boolean hasNoFiles();
 
     /**
-     * Clears all file data from the file reference store.
-     * <p>
-     * Note that this does not delete any of the actual files.
+     * Clears all file data from the file reference store. Note that this does not delete any of the actual files.
      */
     void clearFileData();
 

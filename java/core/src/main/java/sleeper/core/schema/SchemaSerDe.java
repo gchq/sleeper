@@ -44,7 +44,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 
 /**
- * Serialises a {@link Schema} to and from a JSON {@link String}.
+ * Serialises a Sleeper schema to and from a JSON string.
  */
 public class SchemaSerDe {
     private final Gson gson;

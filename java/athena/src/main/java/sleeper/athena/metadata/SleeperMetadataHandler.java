@@ -83,10 +83,10 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
 /**
- * The {@link SleeperMetadataHandler} deals with requests about the layout for a Sleeper instance. It provides information
- * about the tables and schemas of those tables. When a query is run, Athena will first make a request to this handler
- * to find out what partitions it needs to query. These are split and forwarded to the Record handler used to retrieve
- * the data.
+ * The {@link SleeperMetadataHandler} deals with requests about the layout for a Sleeper instance. It provides
+ * information about the tables and schemas of those tables. When a query is run, Athena will first make a request to
+ * this handler to find out what partitions it needs to query. These are split and forwarded to the Record handler used
+ * to retrieve the data.
  */
 public abstract class SleeperMetadataHandler extends MetadataHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(SleeperMetadataHandler.class);
@@ -133,7 +133,8 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
      *
      * @param  blockAllocator     Tool for creating and managing Apache Arrow Blocks.
      * @param  listSchemasRequest Provides details on who made the request and which Athena catalog they are querying.
-     * @return                    A ListSchemasResponse which primarily contains a Set of schema names and a catalog name
+     * @return                    A ListSchemasResponse which primarily contains a Set of schema names and a catalog
+     *                            name
      *                            corresponding the Athena catalog that was queried.
      */
     @Override
@@ -147,10 +148,14 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
      * so we can just use the schema name in the request.
      *
      * @param    blockAllocator    Tool for creating and managing Apache Arrow Blocks.
-     * @param    listTablesRequest Provides details on who made the request and which Athena catalog and database they are querying.
-     * @return                     A ListTablesResponse which primarily contains a List enumerating the TableNames in this
-     *                             catalog, database tuple. It also contains the catalog name corresponding the Athena catalog that was queried.
-     * @implNote                   A complete (un-paginated) list of tables should be returned if the request's pageSize is set to
+     * @param    listTablesRequest Provides details on who made the request and which Athena catalog and database they
+     *                             are querying.
+     * @return                     A ListTablesResponse which primarily contains a List enumerating the TableNames in
+     *                             this
+     *                             catalog, database tuple. It also contains the catalog name corresponding the Athena
+     *                             catalog that was queried.
+     * @implNote                   A complete (un-paginated) list of tables should be returned if the request's pageSize
+     *                             is set to
      *                             ListTablesRequest.UNLIMITED_PAGE_SIZE_VALUE.
      */
     @Override
@@ -201,7 +206,8 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
      * partitions that we actually want to read.
      *
      * @param  blockAllocator  Tool for creating and managing Apache Arrow Blocks.
-     * @param  getTableRequest Provides details on who made the request and which Athena catalog, database, and table they are querying.
+     * @param  getTableRequest Provides details on who made the request and which Athena catalog, database, and table
+     *                         they are querying.
      * @return                 A GetTableResponse which primarily contains:
      *                         1. An Apache Arrow Schema object describing the table's columns, types, and descriptions.
      *                         2. A Set of partition column names (or empty if the table isn't partitioned).
@@ -250,14 +256,22 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
      * At the end of processing it returns the relevant partitions for this query.
      *
      * @param blockWriter           Used to write rows (partitions) into the Apache Arrow response.
-     * @param getTableLayoutRequest Provides details of the catalog, database, and table being queried as well as any filter predicate.
-     * @param queryStatusChecker    A QueryStatusChecker that you can use to stop doing work for a query that has already terminated
-     * @note                        Partitions are partially opaque to Amazon Athena in that it only understands your partition columns and
-     *                              how to filter out partitions that do not meet the query's constraints. Any additional columns you add to the
-     *                              partition data are ignored by Athena but passed on to calls on GetSplits. Also note that the BlockWriter handlers
-     *                              automatically constraining and filtering out values that don't satisfy the query's predicate. This is how we
-     *                              we accomplish partition pruning. You can optionally retrieve a ConstraintEvaluator from BlockWriter if you have
-     *                              your own need to apply filtering in Lambda. Otherwise you can get the actual predicate from the request object
+     * @param getTableLayoutRequest Provides details of the catalog, database, and table being queried as well as any
+     *                              filter predicate.
+     * @param queryStatusChecker    A QueryStatusChecker that you can use to stop doing work for a query that has
+     *                              already terminated
+     * @note                        Partitions are partially opaque to Amazon Athena in that it only understands your
+     *                              partition columns and
+     *                              how to filter out partitions that do not meet the query's constraints. Any
+     *                              additional columns you add to the
+     *                              partition data are ignored by Athena but passed on to calls on GetSplits. Also note
+     *                              that the BlockWriter handlers
+     *                              automatically constraining and filtering out values that don't satisfy the query's
+     *                              predicate. This is how we
+     *                              we accomplish partition pruning. You can optionally retrieve a ConstraintEvaluator
+     *                              from BlockWriter if you have
+     *                              your own need to apply filtering in Lambda. Otherwise you can get the actual
+     *                              predicate from the request object
      *                              for pushing down into the source you are querying.
      */
     @Override
@@ -384,7 +398,7 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
     }
 
     /**
-     * Returns the TableProperties associated with a table name
+     * Returns the TableProperties associated with a table name.
      *
      * @param  tableName the name of the table
      * @return           the table properties
@@ -394,7 +408,7 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
     }
 
     /**
-     * The StateStore associated with a list of table properties
+     * The StateStore associated with a list of table properties.
      *
      * @param  tableProperties the table properties
      * @return                 a statestore

@@ -32,13 +32,7 @@ import java.util.Optional;
  * amount of work there is to do.
  */
 public class EC2Scaler {
-    /**
-     * AutoScaling client
-     */
     private final AmazonAutoScaling asClient;
-    /**
-     * ECS client
-     */
     private final AmazonECS ecsClient;
     /**
      * The name of the EC2 Auto Scaling group instances belong to.
@@ -92,7 +86,7 @@ public class EC2Scaler {
     }
 
     /**
-     * Find the details of a given EC2 auto scaling group
+     * Find the details of a given EC2 auto scaling group.
      *
      * @param  groupName the name of the auto scaling group
      * @param  client    the client object
@@ -172,7 +166,7 @@ public class EC2Scaler {
     }
 
     /**
-     * Do we know how many containers can fit into an instance?
+     * Whether we know how many containers can fit into an instance.
      *
      * @return true if the value is known
      */

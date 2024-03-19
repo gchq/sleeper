@@ -44,7 +44,7 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * Serialises a {@link Region} to and from a JSON string.
+ * Serialises a region to and from a JSON string.
  */
 public class RegionSerDe {
     public static final String MIN = "min";

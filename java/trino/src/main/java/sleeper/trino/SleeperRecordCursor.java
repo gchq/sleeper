@@ -56,14 +56,13 @@ public class SleeperRecordCursor implements RecordCursor {
     private long totalNoOfRowsReturned = 0L;
 
     /**
-     * This {@link RecordCursor} is supplied with a {@link Stream} of result rows, which will be returned by this cursor
-     * one by one. Each result row is specified as a list of objects: the type of each object is provided as a separate
-     * argument.
+     * Creates a cursor from a stream of result rows. The rows will be returned by this cursor one by one. Each result
+     * row is specified as a list of objects: the type of each object is provided as a separate argument.
      *
-     * @param queryId                 The query ID, which is used to tag debug messages.
-     * @param columnTrinoTypesInOrder The types of the rows that are returned by this cursor, in the same order as the
-     *                                fields that are returned.
-     * @param resultRowStream         The stream of rows for this cursor to return.
+     * @param queryId                 the query ID, which is used to tag debug messages
+     * @param columnTrinoTypesInOrder the types of the rows that are returned by this cursor, in the same order as the
+     *                                fields that are returned
+     * @param resultRowStream         the stream of rows for this cursor to return
      */
     public SleeperRecordCursor(
             String queryId,

@@ -41,7 +41,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.TAGS;
 public class InstanceProperties extends SleeperProperties<InstanceProperty> {
     private static final Logger LOGGER = LoggerFactory.getLogger(InstanceProperties.class);
 
-    public static final String S3_INSTANCE_PROPERTIES_FILE = "config";
+    public static final String S3_INSTANCE_PROPERTIES_FILE = "instance.properties";
 
     protected Map<String, String> tags = new HashMap<>();
 
@@ -76,8 +76,7 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
 
     public void loadTags(Properties tagsProperties) {
         tags.clear();
-        tagsProperties.stringPropertyNames().forEach(tagName ->
-                tags.put(tagName, tagsProperties.getProperty(tagName)));
+        tagsProperties.stringPropertyNames().forEach(tagName -> tags.put(tagName, tagsProperties.getProperty(tagName)));
         if (!tags.isEmpty()) {
             set(TAGS, tagsToString(tags));
         }

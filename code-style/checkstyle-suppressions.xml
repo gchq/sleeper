@@ -13,7 +13,6 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-
 <!DOCTYPE suppressions PUBLIC "-//Puppy Crawl//DTD Suppressions 1.1//EN"
         "http://www.puppycrawl.com/dtds/suppressions_1_1.dtd">
 
@@ -27,4 +26,12 @@
     <suppress files="[\\/]src[\\/]test[\\/].*" id="methodLengthMax"/>
     <suppress files="[\\/]src[\\/]test[\\/].*" id="parameterNumber"/>
     <suppress files=".*Application.java" id="hideUtilityClassConstructor"/>
+    <suppress files="[\\/]athena[\\/].*" id="summaryJavadoc"/>
+    <suppress files="[\\/]cdk[\\/].*" id="summaryJavadoc"/>
+    <suppress files="[\\/]system-test[\\/].*" id="summaryJavadoc"/>
+    <suppress files="[\\/]compaction[\\/].*" id="summaryJavadoc"/>
+    <suppress files="[\\/]splitter[\\/].*" id="summaryJavadoc"/>
+    <suppress files="[\\/]garbage-collector[\\/].*" id="summaryJavadoc"/>
+    <suppress files="[\\/]statestore[\\/].*" id="summaryJavadoc"/>
+    <suppress files="[\\/]query[\\/].*" id="summaryJavadoc"/>
 </suppressions>

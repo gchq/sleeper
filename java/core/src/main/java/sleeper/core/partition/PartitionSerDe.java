@@ -36,7 +36,7 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * Serialises a {@link Partition} to and from a JSON string.
+ * Serialises a partition to and from a JSON string.
  */
 public class PartitionSerDe {
     public static final String PARTITION_ID = "partitionId";

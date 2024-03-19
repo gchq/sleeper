@@ -22,7 +22,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
-import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.SleeperProperty;
 
 import java.io.BufferedOutputStream;
@@ -48,8 +47,11 @@ import static java.util.function.Predicate.not;
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 
 /**
- * Abstract class which backs both {@link InstanceProperties} and
+ * Holds values for Sleeper configuration properties. Abstract class which backs both
+ * {@link sleeper.configuration.properties.instance.InstanceProperties} and
  * {@link sleeper.configuration.properties.table.TableProperties}.
+ *
+ * @param <T> the type of properties held, to ensure only relevant properties are added or retrieved
  */
 public abstract class SleeperProperties<T extends SleeperProperty> implements SleeperPropertyValues<T> {
     private static final Logger LOGGER = LoggerFactory.getLogger(SleeperProperties.class);
@@ -74,8 +76,7 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
     }
 
     public void validate(SleeperPropertiesValidationReporter reporter) {
-        getPropertiesIndex().getUserDefined().forEach(property ->
-                property.validate(get(property), reporter));
+        getPropertiesIndex().getUserDefined().forEach(property -> property.validate(get(property), reporter));
     }
 
     public abstract SleeperPropertyIndex<T> getPropertiesIndex();

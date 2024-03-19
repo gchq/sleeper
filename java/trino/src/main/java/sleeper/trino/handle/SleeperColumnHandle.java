@@ -61,9 +61,9 @@ public class SleeperColumnHandle implements ColumnHandle {
     }
 
     /**
-     * A convenience method to express this {@link ColumnHandle} as a {@link ColumnMetadata} object.
+     * A convenience method to express this column handle as a metdata object.
      *
-     * @return The {@link ColumnMetadata} object.
+     * @return the {@link ColumnMetadata} object
      */
     public ColumnMetadata toColumnMetadata() {
         return ColumnMetadata.builder()

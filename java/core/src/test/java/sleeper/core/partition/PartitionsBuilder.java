@@ -31,10 +31,8 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
- * A convenience class for specifying partitions.
- * <p>
- * Note that a shorthand is used for cases where we have a schema with only one row key field.
- * This will not be useful in the general case.
+ * A convenience class for specifying partitions. This includes methods to define a tree to be readable in a test,
+ * including shorthand which would not be used with {@link PartitionFactory}.
  */
 public class PartitionsBuilder {
 

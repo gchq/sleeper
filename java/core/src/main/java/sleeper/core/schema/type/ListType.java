@@ -18,7 +18,7 @@ package sleeper.core.schema.type;
 import java.util.Objects;
 
 /**
- * A list whose elements are of a given {@link PrimitiveType}.
+ * A list whose elements are of a given type. The element must be a {@link PrimitiveType}.
  */
 public class ListType implements Type {
     private final PrimitiveType elementType;

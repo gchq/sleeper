@@ -26,7 +26,7 @@ import sleeper.core.schema.type.StringType;
 import java.util.Comparator;
 
 /**
- * A {@link Comparator} for a 1-dimensional key.
+ * Compares a 1-dimensional key.
  */
 public class SingleKeyComparator implements Comparator<Object> {
     private final PrimitiveType type;

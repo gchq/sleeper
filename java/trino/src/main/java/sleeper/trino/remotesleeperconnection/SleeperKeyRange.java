@@ -20,9 +20,8 @@ import sleeper.core.key.Key;
 import static java.util.Objects.requireNonNull;
 
 /**
- * A class to hold a pair of Sleeper {@link Key} objects for the min and max of a range.
- * <p>
- * This class does not currently handle inclusive/exclusive or unbounded ranges.
+ * Holds a pair of Sleeper keys for the min and max of a range. This does not currently handle inclusive/exclusive or
+ * unbounded ranges.
  * <p>
  * It may be sensible to discard this class and use a {@link io.trino.spi.predicate.Range} instead, as this holds the
  * bounds for a single column (and this connector does not support rowkeys with multiple columns). It would also avoid

@@ -47,9 +47,6 @@ import java.util.stream.Collectors;
 import static sleeper.configuration.properties.table.TableProperty.QUERY_PROCESSOR_CACHE_TIMEOUT;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
-/**
- *
- */
 public class QueryExecutor {
     private static final Logger LOGGER = LoggerFactory.getLogger(QueryExecutor.class);
 
@@ -62,11 +59,9 @@ public class QueryExecutor {
     private Map<String, List<String>> partitionToFiles;
     private Instant nextInitialiseTime;
 
-    public QueryExecutor(ObjectFactory objectFactory,
-            TableProperties tableProperties,
-            StateStore stateStore,
-            Configuration configuration,
-            ExecutorService executorService) {
+    public QueryExecutor(
+            ObjectFactory objectFactory, TableProperties tableProperties, StateStore stateStore,
+            Configuration configuration, ExecutorService executorService) {
         this(objectFactory, stateStore, tableProperties,
                 new LeafPartitionRecordRetrieverImpl(executorService, configuration),
                 Instant.now());
@@ -154,8 +149,8 @@ public class QueryExecutor {
     }
 
     /**
-     * Splits up a {@link Query} into multiple {@link LeafPartitionQuery}s using the
-     * {@code getRelevantLeafPartitions()} method. For each leaf partition, it
+     * Splits up a query into a sub-query per relevant leaf partition. Uses the
+     * {@link #getRelevantLeafPartitions} method. For each leaf partition, it
      * finds the parent partitions in the tree and adds any files still belonging
      * to the parent to the sub query.
      *

@@ -48,6 +48,8 @@
         <property name="message" value="Line has trailing spaces."/>
     </module>
 
+    <module name="SuppressWarningsFilter"/>
+
     <module name="TreeWalker">
         <module name="SuppressWarningsHolder">
             <property name="id" value="suppressWarnings"/>
@@ -55,19 +57,44 @@
         <module name="AtclauseOrder">
             <property name="id" value="atClauseOrder"/>
         </module>
+        <module name="InvalidJavadocPosition">
+            <property name="id" value="invalidJavadocPosition"/>
+        </module>
+        <module name="JavadocBlockTagLocation">
+            <property name="id" value="javadocBlockTagLocation"/>
+        </module>
+        <module name="JavadocContentLocation">
+            <property name="id" value="javadocContentLocation"/>
+        </module>
         <module name="JavadocMethod">
             <property name="id" value="javadocOnMethod"/>
             <property name="allowMissingParamTags" value="true"/>
         </module>
+        <module name="JavadocMissingLeadingAsterisk">
+            <property name="id" value="javadocMissingLeadingAsterisk"/>
+        </module>
+        <module name="JavadocMissingWhitespaceAfterAsterisk">
+            <property name="id" value="javadocMissingWhitespaceAfterAsterisk"/>
+        </module>
         <module name="JavadocStyle">
             <property name="id" value="javadocStyle"/>
-            <property name="checkFirstSentence" value="false"/>
+            <property name="checkEmptyJavadoc" value="true"/>
+        </module>
+        <module name="JavadocType">
+            <property name="id" value="javadocStyle"/>
+        </module>
+        <module name="NonEmptyAtclauseDescription">
+            <property name="id" value="nonEmptyAtClause"/>
+        </module>
+        <module name="RequireEmptyLineBeforeBlockTagGroup">
+            <property name="id" value="requireEmptyLineBeforeBlockTagGroup"/>
         </module>
         <module name="SingleLineJavadoc">
             <property name="id" value="singleLineJavadoc"/>
         </module>
-        <module name="NonEmptyAtclauseDescription">
-            <property name="id" value="nonEmptyAtClause"/>
+        <module name="SummaryJavadoc">
+            <property name="id" value="summaryJavadoc"/>
+            <property name="forbiddenSummaryFragments" value="^$|\{|@|&lt;"/>
         </module>
         <module name="ConstantName">
             <property name="id" value="constantName"/>
@@ -108,11 +135,15 @@
         </module>
         <module name="ImportOrder">
             <property name="id" value="importOrder"/>
-            <property name="groups" value="*,uk.gov.gchq,/^javax\./,java"/>
+            <property name="groups" value="*,sleeper,/^javax\./,java"/>
             <property name="ordered" value="true"/>
             <property name="separated" value="true"/>
             <property name="option" value="bottom"/>
             <property name="sortStaticImportsAlphabetically" value="true"/>
+        </module>
+        <module name="MethodLength">
+            <property name="id" value="methodLengthMax"/>
+            <property name="max" value="200"/>
         </module>
         <module name="EmptyForIteratorPad">
             <property name="id" value="emptyForIterator"/>
@@ -188,7 +219,9 @@
             <property name="id" value="upperEll"/>
         </module>
         <module name="IllegalImport">
-            <property name="illegalPkgs" value="org.junit.jupiter.api.Assertions"/>
+            <property name="regexp" value="true"/>
+            <property name="illegalClasses"
+                      value="^org\.junit\.jupiter\.api\.Assertions, ^org\.junit\.(?!jupiter|platform).+"/>
         </module>
         <module name="Indentation">
             <property name="id" value="indentation"/>
