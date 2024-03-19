@@ -95,10 +95,10 @@
         <kerby.version>2.0.3</kerby.version>
         <!-- Hadoop declares an old version of XNIO with vulnerabilities. Managed from 3.8.8.Final. -->
         <xnio.version>3.8.13.Final</xnio.version>
-        <!-- Spark declares an old version of OkHttp with vulnerabilities. Managed from 4.10.0. -->
-        <okhttp3.version>4.11.0</okhttp3.version>
         <!-- Spark declares an old version of Zookeeper with vulnerabilities. Managed from 3.6.3. -->
         <zookeeper.version>3.9.2</zookeeper.version>
+        <!-- Spark declares an old version of OkHttp with vulnerabilities. Managed from 4.10.0. -->
+        <okhttp3.version>4.11.0</okhttp3.version>
         <!--
         OkHttp, as a dependency of Spark, declares an old version of Kotlin with vulnerabilities.
         Managed from a conflict between 1.6.20 and 1.5.31.
