@@ -65,10 +65,6 @@ XNIO (org.jboss.xnio:xnio-api:3.8.13.Final):
 
 - Apache License, Version 2.0
 
-Apache Zookeeper (org.apache.zookeeper:zookeeper:3.9.2):
-
-- Apache License, Version 2.0
-
 OkHttp (com.squareup.okhttp3:okhttp:4.11.0):
 
 - Apache License, Version 2.0
