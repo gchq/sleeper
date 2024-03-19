@@ -143,8 +143,7 @@ public class EC2InstanceDetails {
     }
 
     /**
-     * Gets an {@link java.lang.Iterable} object that iterates over the instance details of machines
-     * in a cluster.
+     * Gets an iterable over the instance details of machines in an ECS cluster.
      *
      * @param  ecsClusterName ECS cluster name to inspect
      * @param  ecsClient      Amazon ECS client
@@ -187,7 +186,7 @@ public class EC2InstanceDetails {
              */
             private ListContainerInstancesRequest req;
             /**
-             * Has AWS indicated another page of results is waiting?
+             * Records whether AWS indicated another page of results is waiting.
              */
             private boolean anotherPageWaiting = true;
             /**

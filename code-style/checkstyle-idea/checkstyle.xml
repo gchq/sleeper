@@ -48,6 +48,8 @@
         <property name="message" value="Line has trailing spaces."/>
     </module>
 
+    <module name="SuppressWarningsFilter"/>
+
     <module name="TreeWalker">
         <module name="SuppressWarningsHolder">
             <property name="id" value="suppressWarnings"/>
@@ -89,6 +91,10 @@
         </module>
         <module name="SingleLineJavadoc">
             <property name="id" value="singleLineJavadoc"/>
+        </module>
+        <module name="SummaryJavadoc">
+            <property name="id" value="summaryJavadoc"/>
+            <property name="forbiddenSummaryFragments" value="^$|\{|@|&lt;"/>
         </module>
         <module name="ConstantName">
             <property name="id" value="constantName"/>

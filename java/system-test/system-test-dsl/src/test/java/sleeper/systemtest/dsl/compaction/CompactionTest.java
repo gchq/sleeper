@@ -44,15 +44,15 @@ import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStringAndZeroPadTo;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides.overrideField;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.DEFAULT_SCHEMA;
+import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.MAIN;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.ROW_KEY_FIELD_NAME;
-import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.withDefaultProperties;
 
 @InMemoryDslTest
 public class CompactionTest {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper) throws Exception {
-        sleeper.connectToInstance(withDefaultProperties("main"));
+        sleeper.connectToInstance(MAIN);
     }
 
     @Nested

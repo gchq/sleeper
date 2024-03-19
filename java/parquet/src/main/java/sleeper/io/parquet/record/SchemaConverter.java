@@ -34,7 +34,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Converts a Sleeper {@link Schema} into a Parquet {@link MessageType}.
+ * Converts a Sleeper schema to Parquet format. Produces a Parquet {@link MessageType}.
  */
 public class SchemaConverter {
 

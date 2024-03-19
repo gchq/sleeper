@@ -69,15 +69,13 @@ public class IngestFactory {
         return new Builder();
     }
 
-    public IngestResult ingestFromRecordIteratorAndClose(TableProperties tableProperties, CloseableIterator<Record> recordIterator)
-            throws StateStoreException, IteratorException, IOException {
+    public IngestResult ingestFromRecordIteratorAndClose(TableProperties tableProperties, CloseableIterator<Record> recordIterator) throws StateStoreException, IteratorException, IOException {
         try (recordIterator) {
             return ingestFromRecordIterator(tableProperties, recordIterator);
         }
     }
 
-    public IngestResult ingestFromRecordIterator(TableProperties tableProperties, Iterator<Record> recordIterator)
-            throws StateStoreException, IteratorException, IOException {
+    public IngestResult ingestFromRecordIterator(TableProperties tableProperties, Iterator<Record> recordIterator) throws StateStoreException, IteratorException, IOException {
         try (IngestCoordinator<Record> ingestCoordinator = createIngestCoordinator(tableProperties)) {
             return new IngestRecordsFromIterator(ingestCoordinator, recordIterator).write();
         }
@@ -170,13 +168,13 @@ public class IngestFactory {
         }
 
         /**
-         * The configuration to use for interacting with files through a Hadoop file system,
+         * Configuration for Hadoop integrations. Used for interacting with files through a Hadoop file system,
          * and any other needed operations.
          * <p>
          * This is not required. If it is not set, a default configuration will be created.
          *
-         * @param hadoopConfiguration The configuration to use
-         * @return The builder for chaining calls
+         * @param  hadoopConfiguration The configuration to use
+         * @return                     The builder for chaining calls
          */
         public Builder hadoopConfiguration(Configuration hadoopConfiguration) {
             this.hadoopConfiguration = hadoopConfiguration;
@@ -184,13 +182,12 @@ public class IngestFactory {
         }
 
         /**
-         * The client to use for asynchronous S3 operations.
-         * This may or may not be used depending on the settings for an ingest.
+         * Client for asynchronous S3 operations. This may or may not be used depending on the settings for ingest.
          * <p>
          * This is not required. If it is not set, a default client will be created if it is needed.
          *
-         * @param s3AsyncClient The client to use
-         * @return The builder for chaining calls
+         * @param  s3AsyncClient The client to use
+         * @return               The builder for chaining calls
          */
         public Builder s3AsyncClient(S3AsyncClient s3AsyncClient) {
             this.s3AsyncClient = s3AsyncClient;

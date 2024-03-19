@@ -40,8 +40,8 @@ import java.util.Set;
 import static java.util.Objects.requireNonNull;
 
 /**
- * A Trino connector to a Sleeper instance, which provides the Trino framework with access to many of the core
- * management and provider classes.
+ * A Trino connector to a Sleeper instance. Provides the Trino framework with access to many of the core management and
+ * provider classes.
  */
 public class SleeperConnector implements Connector {
     private final SleeperConnectionAsTrino sleeperConnectionAsTrino;
@@ -52,10 +52,10 @@ public class SleeperConnector implements Connector {
 
     @Inject
     public SleeperConnector(SleeperConnectionAsTrino sleeperConnectionAsTrino,
-                            SleeperMetadata sleeperMetadata,
-                            SleeperSplitManager sleeperSplitManager,
-                            SleeperRecordSetProvider sleeperRecordSetProvider,
-                            SleeperPageSinkProvider sleeperPageSinkProvider) {
+            SleeperMetadata sleeperMetadata,
+            SleeperSplitManager sleeperSplitManager,
+            SleeperRecordSetProvider sleeperRecordSetProvider,
+            SleeperPageSinkProvider sleeperPageSinkProvider) {
         this.sleeperConnectionAsTrino = requireNonNull(sleeperConnectionAsTrino);
         this.sleeperMetadata = requireNonNull(sleeperMetadata);
         this.sleeperSplitManager = requireNonNull(sleeperSplitManager);
@@ -64,15 +64,15 @@ public class SleeperConnector implements Connector {
     }
 
     /**
-     * Called whenever a new transaction is started via START TRANSACTION or when a single query is executed outside of
-     * a surrounding transaction.
+     * Tracks when a transaction begins. Called whenever a new transaction is started via START TRANSACTION or when a
+     * single query is executed outside of a surrounding transaction.
      *
-     * @param isolationLevel The isolation level of the transaction. All Sleeper queries via Trino are read-only and so
-     *                       we assume that they are all SERIALIZABLE. This may not be true if data is being ingested at
-     *                       the same time.
-     * @param readOnly       Single queries always =have reads-only set to false, even if they are SELECT queries, and
-     *                       so we cannot use this parameter to reject a transaction is attempting to write data.
-     * @return The transaction handle.
+     * @param  isolationLevel The isolation level of the transaction. All Sleeper queries via Trino are read-only and so
+     *                        we assume that they are all SERIALIZABLE. This may not be true if data is being ingested
+     *                        at the same time.
+     * @param  readOnly       Single queries always have read-only set to false, even if they are SELECT queries, and
+     *                        so we cannot use this parameter to reject a transaction is attempting to write data.
+     * @return                the transaction handle
      */
     @Override
     public ConnectorTransactionHandle beginTransaction(IsolationLevel isolationLevel, boolean readOnly) {
@@ -80,12 +80,12 @@ public class SleeperConnector implements Connector {
     }
 
     /**
-     * Provide details about the schema and table structures, procedures and so on to the Trino Framework. The {@link
-     * SleeperMetadata} class that is returned also handles the application of a pushed-down filter to the Sleeper
-     * table.
+     * Provide details about the schema and table structures, procedures and so on to the Trino Framework. The
+     * {@link SleeperMetadata} class that is returned also handles the application of a pushed-down filter to the
+     * Sleeper table.
      *
-     * @param transactionHandle The current transaction. The metadata is assumed to be constant across transactions.
-     * @return The {@link SleeperMetadata} object.
+     * @param  transactionHandle The current transaction. The metadata is assumed to be constant across transactions.
+     * @return                   the {@link SleeperMetadata} object
      */
     @Override
     public ConnectorMetadata getMetadata(ConnectorTransactionHandle transactionHandle) {
@@ -96,7 +96,7 @@ public class SleeperConnector implements Connector {
      * Provide details about the splits to the Trino framework. Splits are used to partition parts of a table-scan
      * across different workers.
      *
-     * @return The {@link SleeperSplitManager} object, which is used to generate splits.
+     * @return the {@link SleeperSplitManager} object, which is used to generate splits
      */
     @Override
     public ConnectorSplitManager getSplitManager() {
@@ -104,10 +104,7 @@ public class SleeperConnector implements Connector {
     }
 
     /**
-     * Provides a {@link SleeperRecordSetProvider} which can be used to create {@link SleeperRecordSet} objects, which
-     * in turn can be used to read data from Sleeper.
-     *
-     * @return The {@link SleeperRecordSetProvider} to use to read the records.
+     * Returns a provider to create record sets. These can in turn be used to read data from Sleeper.
      */
     @Override
     public ConnectorRecordSetProvider getRecordSetProvider() {
@@ -115,10 +112,9 @@ public class SleeperConnector implements Connector {
     }
 
     /**
-     * Provides a {@link SleeperPageSinkProvider} which can be used to create {@link SleeperPageSink} objects, to
-     * support INSERT operations.
+     * Returns a page sink provider to support INSERT operations.
      *
-     * @return The {@link SleeperPageSinkProvider} to use to provide the sinks.
+     * @return the {@link SleeperPageSinkProvider} to use to provide the sinks
      */
     @Override
     public ConnectorPageSinkProvider getPageSinkProvider() {
@@ -164,10 +160,10 @@ public class SleeperConnector implements Connector {
     }
 
     /**
-     * Provide a node-partitioning provider, which allows rows of data to be directed to different partitions as
-     * required during a write operation, and splits to be assigned to specific nodes during a read operation.
+     * Return a provider to map to Sleeper partitions. This allows rows of data to be directed to different partitions
+     * as required during a write operation, and splits to be assigned to specific nodes during a read operation.
      *
-     * @return The node-partitioning provider.
+     * @return the node-partitioning provider
      */
     @Override
     public ConnectorNodePartitioningProvider getNodePartitioningProvider() {
