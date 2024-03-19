@@ -142,7 +142,7 @@ public class SleeperRawAwsConnection implements AutoCloseable {
         }
 
         // Member variables related to queries via direct statestore/S3
-        this.objectFactory = ObjectFactory.fromUserJars(this.instanceProperties, this.s3Client, sleeperConfig.getLocalWorkingDirectory());
+        this.objectFactory = ObjectFactory.withUserJars(this.instanceProperties, this.s3Client, sleeperConfig.getLocalWorkingDirectory());
         this.executorService = Executors.newFixedThreadPool(NO_OF_EXECUTOR_THREADS);
 
         // We store a time-limited cache for the table partition structure, to support transactions.

@@ -77,7 +77,7 @@ public class ECSIngestTaskRunner {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3(s3Client, s3Bucket);
 
-        ObjectFactory objectFactory = ObjectFactory.fromUserJars(instanceProperties, s3Client, "/tmp");
+        ObjectFactory objectFactory = ObjectFactory.withUserJars(instanceProperties, s3Client, "/tmp");
         String localDir = "/mnt/scratch";
         String taskId = UUID.randomUUID().toString();
 

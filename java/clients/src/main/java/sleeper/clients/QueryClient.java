@@ -68,7 +68,7 @@ public class QueryClient extends QueryCommandLineClient {
     public QueryClient(AmazonS3 s3Client, InstanceProperties instanceProperties, AmazonDynamoDB dynamoDBClient, Configuration conf,
             ConsoleInput in, ConsoleOutput out) throws ObjectFactoryException {
         this(s3Client, instanceProperties, dynamoDBClient, in, out,
-                ObjectFactory.fromUserJars(instanceProperties, s3Client, "/tmp"),
+                ObjectFactory.withUserJars(instanceProperties, s3Client, "/tmp"),
                 new StateStoreProvider(dynamoDBClient, instanceProperties, conf));
     }
 
