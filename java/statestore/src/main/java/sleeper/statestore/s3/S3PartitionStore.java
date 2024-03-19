@@ -118,9 +118,9 @@ class S3PartitionStore implements PartitionStore {
     }
 
     private static String validateSplitPartitionRequest(Map<String, Partition> partitionIdToPartition,
-                                                        Partition splitPartition,
-                                                        Partition newPartition1,
-                                                        Partition newPartition2) {
+            Partition splitPartition,
+            Partition newPartition1,
+            Partition newPartition2) {
         // Validate that splitPartition is there and is a leaf partition
         if (!partitionIdToPartition.containsKey(splitPartition.getId())) {
             return "splitPartition should be present";
@@ -248,7 +248,7 @@ class S3PartitionStore implements PartitionStore {
         try (ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(path), PARTITION_SCHEMA)
                 .withConf(conf)
                 .build()) {
-            ParquetReaderIterator recordReader = new ParquetReaderIterator(reader);
+            ParquetReaderIterator recordReader = ParquetReaderIterator.from(reader);
             while (recordReader.hasNext()) {
                 partitions.add(getPartitionFromRecord(recordReader.next()));
             }
