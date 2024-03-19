@@ -36,7 +36,7 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * Serialises a {@link Partition} to and from a JSON string.
+ * Serialises a partition to and from a JSON string.
  */
 public class PartitionSerDe {
     public static final String PARTITION_ID = "partitionId";
@@ -51,16 +51,12 @@ public class PartitionSerDe {
     private final Gson gsonPrettyPrinting;
 
     public PartitionSerDe(Schema schema) {
-        try {
-            this.schema = schema;
-            GsonBuilder builder = new GsonBuilder()
-                    .registerTypeAdapter(Class.forName(Partition.class.getName()), new PartitionJsonSerDe(this.schema))
-                    .serializeNulls();
-            this.gson = builder.create();
-            this.gsonPrettyPrinting = builder.setPrettyPrinting().create();
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException("Exception creating Gson", e);
-        }
+        this.schema = schema;
+        GsonBuilder builder = new GsonBuilder()
+                .registerTypeAdapter(Partition.class, new PartitionJsonSerDe(this.schema))
+                .serializeNulls();
+        this.gson = builder.create();
+        this.gsonPrettyPrinting = builder.setPrettyPrinting().create();
     }
 
     public String toJson(Partition partition) {

@@ -99,7 +99,7 @@ public class MultipleQueries {
                 ranges.add(rangeFactory.createExactRange(schema.getRowKeyFields().get(fieldIndex), object));
                 fieldIndex++;
             }
-            Region range = new Region(ranges);
+            Region range = Region.from(ranges);
             Query query = Query.builder()
                     .tableName(tableName)
                     .queryId(UUID.randomUUID().toString())

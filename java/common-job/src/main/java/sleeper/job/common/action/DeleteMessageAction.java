@@ -26,7 +26,7 @@ import java.util.Arrays;
 import java.util.stream.Collectors;
 
 /**
- * An {@link Action} that deletes the message with the provided receipt handle from SQS.
+ * Deletes the message with the provided receipt handle from SQS.
  */
 public class DeleteMessageAction implements Action {
     private static final long[] MILLISECONDS_TO_SLEEP = new long[]{2000L, 8000L, 16000L, 64000L};

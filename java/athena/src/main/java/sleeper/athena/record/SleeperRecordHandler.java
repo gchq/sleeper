@@ -89,9 +89,9 @@ public abstract class SleeperRecordHandler extends RecordHandler {
      * The way that the iterator is created from the request will depend on implementation.
      *
      * @param  spiller            a mechanism to write data
-     * @param  recordsRequest     The request from the user
+     * @param  recordsRequest     the request from the user
      * @param  queryStatusChecker a means of checking the status of the query
-     * @throws Exception          If something goes wrong
+     * @throws Exception          if something goes wrong
      */
     @Override
     protected void readWithConstraint(BlockSpiller spiller, ReadRecordsRequest recordsRequest, QueryStatusChecker queryStatusChecker) throws Exception {
@@ -135,19 +135,19 @@ public abstract class SleeperRecordHandler extends RecordHandler {
      *
      * @param    recordsRequest  the request
      * @param    schema          the table schema to use for reading
-     * @param    tableProperties The table properties to use for reading the table
+     * @param    tableProperties the table properties to use for reading the table
      * @return                   an iterator of records
      * @throws   Exception       when an iterator is not created
-     * @implNote                 Do not use the schema in the table properties as it could differ from the schema
-     *                           provided.
+     * @implNote                 do not use the schema in the table properties as it could differ from the schema
+     *                           provided
      */
     protected abstract CloseableIterator<Record> createRecordIterator(ReadRecordsRequest recordsRequest, Schema schema, TableProperties tableProperties) throws Exception;
 
     /**
      * Configures the writer so that it can write records from Sleeper to Athena.
      *
-     * @param rowWriterBuilder The WriterBuilder
-     * @param schema           The Sleeper Schema for this table
+     * @param rowWriterBuilder the WriterBuilder
+     * @param schema           the Sleeper schema for this table
      */
     private void configureBuilder(GeneratedRowWriter.RowWriterBuilder rowWriterBuilder, Schema schema) {
         // Add Extractors according to the schema

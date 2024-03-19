@@ -41,8 +41,8 @@ public class PartitionTest {
     private Partition createMidPartition(Schema schema, Object splitPoint1, Object splitPoint2) {
         PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema);
         return partitionsBuilder.leavesWithSplits(
-                        Arrays.asList("C1", "C2", "C3"),
-                        Arrays.asList(splitPoint1, splitPoint2))
+                Arrays.asList("C1", "C2", "C3"),
+                Arrays.asList(splitPoint1, splitPoint2))
                 .parentJoining("M", "C1", "C2")
                 .parentJoining("P", "M", "C3")
                 .buildTree().getPartition("M");
@@ -176,7 +176,7 @@ public class PartitionTest {
         List<Range> ranges1 = new ArrayList<>();
         ranges1.add(rangeFactory1.createRange(field11, new byte[]{0, 1}, true, new byte[]{99}, false));
         ranges1.add(rangeFactory1.createRange(field12, new byte[]{100, 99}, true, new byte[]{101, 99, 99}, false));
-        Region region1 = new Region(ranges1);
+        Region region1 = Region.from(ranges1);
         Partition partition1 = Partition.builder()
                 .rowKeyTypes(new ByteArrayType(), new ByteArrayType())
                 .id("id1")
@@ -193,7 +193,7 @@ public class PartitionTest {
         List<Range> ranges2 = new ArrayList<>();
         ranges2.add(rangeFactory2.createRange(field21, new byte[]{0, 1}, true, new byte[]{99}, false));
         ranges2.add(rangeFactory2.createRange(field22, new byte[]{100, 99}, true, new byte[]{101, 99, 99}, false));
-        Region region2 = new Region(ranges2);
+        Region region2 = Region.from(ranges2);
         Partition partition2 = Partition.builder()
                 .rowKeyTypes(new ByteArrayType(), new ByteArrayType())
                 .id("id1")
@@ -210,7 +210,7 @@ public class PartitionTest {
         List<Range> ranges3 = new ArrayList<>();
         ranges3.add(rangeFactory3.createRange(field31, new byte[]{0, 1}, true, new byte[]{99}, false));
         ranges3.add(rangeFactory3.createRange(field32, new byte[]{100, 99}, true, new byte[]{101, 99, 99}, false));
-        Region region3 = new Region(ranges3);
+        Region region3 = Region.from(ranges3);
         Partition partition3 = Partition.builder()
                 .rowKeyTypes(new ByteArrayType(), new ByteArrayType())
                 .id("id1")
@@ -243,7 +243,7 @@ public class PartitionTest {
         Partition.Builder partitionBuilder = Partition.builder()
                 .rowKeyTypes(new IntType())
                 .id("1---10")
-                .region(new Region(rangeFactory.createRange(field, 1, true, 10, true)));
+                .region(Region.from(rangeFactory.createRange(field, 1, true, 10, true)));
 
         // When / Then
         assertThatThrownBy(partitionBuilder::build)
@@ -275,7 +275,7 @@ public class PartitionTest {
         Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         Range range = rangeFactory.createRange(field, 1, true, null, false);
-        Region region = new Region(range);
+        Region region = Region.from(range);
         Partition partition = Partition.builder()
                 .rowKeyTypes(new IntType())
                 .id("1---null")
@@ -299,7 +299,7 @@ public class PartitionTest {
 
         // When 2
         range = rangeFactory.createRange(field, Integer.MIN_VALUE, true, null, false);
-        region = new Region(range);
+        region = Region.from(range);
         partition = partition.toBuilder().region(region).build();
         boolean isIntMinValueInPartition = partition.isRowKeyInPartition(schema, Key.create(Integer.MIN_VALUE));
 
@@ -332,7 +332,7 @@ public class PartitionTest {
         Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         Range range = rangeFactory.createRange(field, 1L, true, null, false);
-        Region region = new Region(range);
+        Region region = Region.from(range);
         Partition partition = Partition.builder()
                 .rowKeyTypes(new LongType())
                 .id("1---10")
@@ -356,7 +356,7 @@ public class PartitionTest {
 
         // When 2
         range = rangeFactory.createRange(field, Long.MIN_VALUE, true, null, false);
-        region = new Region(range);
+        region = Region.from(range);
         partition = partition.toBuilder().region(region).build();
         boolean isLongMinValueInPartition = partition.isRowKeyInPartition(schema, Key.create(Long.MIN_VALUE));
 
@@ -389,7 +389,7 @@ public class PartitionTest {
         Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         Range range = rangeFactory.createRange(field, "", true, null, false);
-        Region region = new Region(range);
+        Region region = Region.from(range);
         Partition partition = Partition.builder()
                 .rowKeyTypes(new StringType())
                 .id("---null")
@@ -417,7 +417,7 @@ public class PartitionTest {
         Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         Range range = rangeFactory.createRange(field, "G", true, null, false);
-        Region region = new Region(range);
+        Region region = Region.from(range);
         Partition partition = Partition.builder()
                 .rowKeyTypes(new StringType())
                 .id("---null")
@@ -447,7 +447,7 @@ public class PartitionTest {
         Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         Range range = rangeFactory.createRange(field, new byte[]{}, true, null, false);
-        Region region = new Region(range);
+        Region region = Region.from(range);
         Partition partition = Partition.builder()
                 .rowKeyTypes(new ByteArrayType())
                 .id("---null")
@@ -473,7 +473,7 @@ public class PartitionTest {
         Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         Range range = rangeFactory.createRange(field, new byte[]{10, 11}, true, null, false);
-        Region region = new Region(range);
+        Region region = Region.from(range);
         Partition partition = Partition.builder()
                 .rowKeyTypes(new ByteArrayType())
                 .id("---null")
@@ -525,7 +525,7 @@ public class PartitionTest {
         RangeFactory rangeFactory = new RangeFactory(schema);
         Range range1 = rangeFactory.createRange(field1, 1, true, 2, false);
         Range range2 = rangeFactory.createRange(field2, 5, true, 10, false);
-        Region region = new Region(Arrays.asList(range1, range2));
+        Region region = Region.from(Arrays.asList(range1, range2));
         Partition partition = Partition.builder()
                 .rowKeyTypes(new IntType(), new IntType())
                 .id("1---10")
@@ -559,7 +559,7 @@ public class PartitionTest {
         RangeFactory rangeFactory = new RangeFactory(schema);
         Range range1 = rangeFactory.createRange(field1, "A", true, "B", false);
         Range range2 = rangeFactory.createRange(field2, "A", true, "B", false);
-        Region region = new Region(Arrays.asList(range1, range2));
+        Region region = Region.from(Arrays.asList(range1, range2));
         Partition partition = Partition.builder()
                 .rowKeyTypes(new StringType(), new StringType())
                 .id("1---10")
@@ -593,7 +593,7 @@ public class PartitionTest {
         RangeFactory rangeFactory = new RangeFactory(schema);
         Range range1 = rangeFactory.createRange(field1, new byte[]{1, 2}, true, new byte[]{5}, false);
         Range range2 = rangeFactory.createRange(field2, new byte[]{10, 11, 12}, true, new byte[]{12, 12, 12}, false);
-        Region region = new Region(Arrays.asList(range1, range2));
+        Region region = Region.from(Arrays.asList(range1, range2));
         Partition partition = Partition.builder()
                 .rowKeyTypes(new ByteArrayType(), new ByteArrayType())
                 .id("1---10")
