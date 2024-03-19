@@ -128,7 +128,7 @@ public class EstimateSplitPointsTest {
         }
 
         // When / Then
-        assertThatThrownBy(() -> new EstimateSplitPoints(schema, records, 1))
+        assertThatThrownBy(() -> new EstimateSplitPoints(schema, records, 1).estimate())
                 .isInstanceOf(IllegalArgumentException.class);
     }
 }
