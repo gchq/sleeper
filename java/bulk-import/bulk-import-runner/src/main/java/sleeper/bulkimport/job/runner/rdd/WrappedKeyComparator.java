@@ -26,11 +26,8 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-
 /**
- * The {@link WrappedKeyComparator} is a {@link Comparator} of Sleeper {@link Key}s
- * that sorts them in the natural way as defined by the Sleeper schema, i.e.
- * it sorts by the row keys and then the sort keys.
+ * A comparator to sort Sleeper keys by row keys then sort keys. This is the order defined by the Sleeper schema.
  */
 public class WrappedKeyComparator implements Comparator<Key>, Serializable {
     private static final long serialVersionUID = 7448396149070034670L;
