@@ -39,6 +39,9 @@ Query:
 
 - Moved the WebSocket API into a new optional stack called `WebSocketQueryStack`.
 
+System tests:
+
+- Added support for running compactions in parallel, in preparation for the next milestone.
 
 ## Version 0.21.0
 
