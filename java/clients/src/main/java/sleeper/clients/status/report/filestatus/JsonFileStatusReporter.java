@@ -30,8 +30,7 @@ import sleeper.core.statestore.FileReference;
 import java.io.PrintStream;
 
 /**
- * An implementation that returns {@link TableFilesStatus} information in JSON format
- * to a user via the console.
+ * Returns file status information in JSON format to the user on the console.
  */
 public class JsonFileStatusReporter implements FileStatusReporter {
 

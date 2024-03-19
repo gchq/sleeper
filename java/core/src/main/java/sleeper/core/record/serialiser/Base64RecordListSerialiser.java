@@ -30,8 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Serialises and deserialises a {@link List} of {@link Record}s to and from
- * a {@link String}.
+ * Serialises and deserialises a list of records to and from a Base64 encoded string.
  */
 public class Base64RecordListSerialiser implements ResultsBatchSerialiser {
     private final RecordSerialiser recordSerialiser;

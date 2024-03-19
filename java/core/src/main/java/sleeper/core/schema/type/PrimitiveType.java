@@ -16,7 +16,7 @@
 package sleeper.core.schema.type;
 
 /**
- * A marker interface used to identify {@link Type}s that are primitives (i.e. can be used for row and sort keys).
+ * A marker interface used to identify types that are primitives. These can be used for row and sort keys.
  */
 public class PrimitiveType implements Type {
 }

@@ -27,7 +27,7 @@ import sleeper.core.schema.Schema;
 import java.util.HashMap;
 
 /**
- * A {@link WriteSupport} for {@link Record}s.
+ * Support for writing Sleeper records to Parquet files.
  */
 public class RecordWriteSupport extends WriteSupport<Record> {
     private final MessageType messageType;

@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.function.Supplier;
 
 /**
- * A {@link ConcatenatingIterator} iterator iterates through a list of iterator suppliers and for each one, reads it fully.
+ * Iterates through a list of iterator suppliers and for each one, reads it fully.
  */
 public class ConcatenatingIterator implements CloseableIterator<Record> {
     private final Iterator<Supplier<CloseableIterator<Record>>> iteratorSuppliers;
