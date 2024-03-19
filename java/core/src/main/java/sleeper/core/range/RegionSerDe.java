@@ -57,15 +57,11 @@ public class RegionSerDe {
     private final Gson gsonPrettyPrinting;
 
     public RegionSerDe(Schema schema) {
-        try {
-            GsonBuilder builder = new GsonBuilder()
-                    .registerTypeAdapter(Class.forName(Region.class.getName()), new RegionJsonSerDe(schema))
-                    .serializeNulls();
-            this.gson = builder.create();
-            this.gsonPrettyPrinting = builder.setPrettyPrinting().create();
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException("Exception creating Gson", e);
-        }
+        GsonBuilder builder = new GsonBuilder()
+                .registerTypeAdapter(Region.class, new RegionJsonSerDe(schema))
+                .serializeNulls();
+        this.gson = builder.create();
+        this.gsonPrettyPrinting = builder.setPrettyPrinting().create();
     }
 
     public String toJson(Region region) {
@@ -136,7 +132,7 @@ public class RegionSerDe {
                 }
                 ranges.add(convertJsonObjectToRange(key, (JsonObject) json, stringsBase64Encoded));
             }
-            return new Region(ranges);
+            return Region.from(ranges);
         }
 
         private JsonObject convertRangeToJsonObject(Range range) {

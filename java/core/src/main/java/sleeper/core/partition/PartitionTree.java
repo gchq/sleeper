@@ -36,15 +36,19 @@ public class PartitionTree {
     private final Map<String, Partition> idToPartition;
     private final Partition rootPartition;
 
-    public PartitionTree(List<Partition> partitions) {
-        this.idToPartition = new HashMap<>();
-        partitions.forEach(p -> this.idToPartition.put(p.getId(), p));
+    public static PartitionTree from(List<Partition> partitions) {
         List<Partition> rootPartitions = partitions.stream().filter(p -> null == p.getParentPartitionId()).collect(Collectors.toList());
         // There should be exactly one root partition.
         if (rootPartitions.size() != 1) {
             throw new IllegalArgumentException("There should be exactly one root partition, found " + rootPartitions.size());
         }
-        this.rootPartition = rootPartitions.get(0);
+        return new PartitionTree(partitions, rootPartitions.get(0));
+    }
+
+    private PartitionTree(List<Partition> partitions, Partition rootPartition) {
+        this.idToPartition = new HashMap<>();
+        partitions.forEach(p -> this.idToPartition.put(p.getId(), p));
+        this.rootPartition = rootPartition;
     }
 
     public List<String> getChildIds(String partitionId) throws IllegalArgumentException {

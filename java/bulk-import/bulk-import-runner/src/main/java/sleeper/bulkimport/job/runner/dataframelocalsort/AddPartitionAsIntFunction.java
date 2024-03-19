@@ -46,7 +46,7 @@ public class AddPartitionAsIntFunction implements MapPartitionsFunction<Row, Row
     public Iterator<Row> call(Iterator<Row> input) {
         Schema schema = new SchemaSerDe().fromJson(schemaAsString);
         List<Partition> partitions = broadcastPartitions.getValue();
-        PartitionTree partitionTree = new PartitionTree(partitions);
+        PartitionTree partitionTree = PartitionTree.from(partitions);
         return new AddPartitionAsIntIterator(input, schema, partitionTree);
     }
 }

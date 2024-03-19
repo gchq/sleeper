@@ -111,10 +111,14 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
         this.stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, new Configuration());
     }
 
-    public SleeperMetadataHandler(
-            AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, String configBucket,
-            EncryptionKeyFactory encryptionKeyFactory, AWSSecretsManager secretsManager, AmazonAthena athena,
-            String spillBucket, String spillPrefix) {
+    public SleeperMetadataHandler(AmazonS3 s3Client,
+            AmazonDynamoDB dynamoDBClient,
+            String configBucket,
+            EncryptionKeyFactory encryptionKeyFactory,
+            AWSSecretsManager secretsManager,
+            AmazonAthena athena,
+            String spillBucket,
+            String spillPrefix) {
         super(encryptionKeyFactory, secretsManager, athena, SOURCE_TYPE, spillBucket, spillPrefix);
         this.instanceProperties = new InstanceProperties();
         this.instanceProperties.loadFromS3(s3Client, configBucket);
@@ -130,7 +134,8 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
      * @param  blockAllocator     Tool for creating and managing Apache Arrow Blocks.
      * @param  listSchemasRequest Provides details on who made the request and which Athena catalog they are querying.
      * @return                    A ListSchemasResponse which primarily contains a Set of schema names and a catalog
-     *                            name corresponding the Athena catalog that was queried.
+     *                            name
+     *                            corresponding the Athena catalog that was queried.
      */
     @Override
     public ListSchemasResponse doListSchemaNames(BlockAllocator blockAllocator, ListSchemasRequest listSchemasRequest) {
@@ -146,10 +151,12 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
      * @param    listTablesRequest Provides details on who made the request and which Athena catalog and database they
      *                             are querying.
      * @return                     A ListTablesResponse which primarily contains a List enumerating the TableNames in
-     *                             this catalog, database tuple. It also contains the catalog name corresponding the
-     *                             Athena catalog that was queried.
+     *                             this
+     *                             catalog, database tuple. It also contains the catalog name corresponding the Athena
+     *                             catalog that was queried.
      * @implNote                   A complete (un-paginated) list of tables should be returned if the request's pageSize
-     *                             is set to ListTablesRequest.UNLIMITED_PAGE_SIZE_VALUE.
+     *                             is set to
+     *                             ListTablesRequest.UNLIMITED_PAGE_SIZE_VALUE.
      */
     @Override
     public ListTablesResponse doListTables(BlockAllocator blockAllocator, ListTablesRequest listTablesRequest) {
@@ -254,14 +261,18 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
      * @param queryStatusChecker    A QueryStatusChecker that you can use to stop doing work for a query that has
      *                              already terminated
      * @note                        Partitions are partially opaque to Amazon Athena in that it only understands your
-     *                              partition columns and how to filter out partitions that do not meet the query's
-     *                              constraints. Any additional columns you add to the partition data are ignored by
-     *                              Athena but passed on to calls on GetSplits. Also note that the BlockWriter handlers
+     *                              partition columns and
+     *                              how to filter out partitions that do not meet the query's constraints. Any
+     *                              additional columns you add to the
+     *                              partition data are ignored by Athena but passed on to calls on GetSplits. Also note
+     *                              that the BlockWriter handlers
      *                              automatically constraining and filtering out values that don't satisfy the query's
-     *                              predicate. This is how we we accomplish partition pruning. You can optionally
-     *                              retrieve a ConstraintEvaluator from BlockWriter if you have your own need to apply
-     *                              filtering in Lambda. Otherwise you can get the actual predicate from the request
-     *                              object for pushing down into the source you are querying.
+     *                              predicate. This is how we
+     *                              we accomplish partition pruning. You can optionally retrieve a ConstraintEvaluator
+     *                              from BlockWriter if you have
+     *                              your own need to apply filtering in Lambda. Otherwise you can get the actual
+     *                              predicate from the request object
+     *                              for pushing down into the source you are querying.
      */
     @Override
     public void getPartitions(BlockWriter blockWriter, GetTableLayoutRequest getTableLayoutRequest, QueryStatusChecker queryStatusChecker) throws Exception {
@@ -272,7 +283,7 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
 
         List<Partition> allPartitions = stateStore.getAllPartitions();
         Map<String, List<String>> partitionToReferencedFiles = stateStore.getPartitionToReferencedFilesMap();
-        PartitionTree partitionTree = new PartitionTree(allPartitions);
+        PartitionTree partitionTree = PartitionTree.from(allPartitions);
         // Filtering existing list to avoid expensive call to statestore
         List<Partition> leafPartitions = allPartitions.stream()
                 .filter(Partition::isLeafPartition)

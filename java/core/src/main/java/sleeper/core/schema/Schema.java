@@ -41,11 +41,10 @@ public class Schema {
     private final List<Field> sortKeyFields;
     private final List<Field> valueFields;
 
-    private Schema(Builder builder) {
-        rowKeyFields = validateRowKeys(builder.rowKeyFields);
-        sortKeyFields = validateSortKeys(builder.sortKeyFields);
-        valueFields = validateValueKeys(builder.valueFields);
-        validateNoDuplicates(streamAllFields(rowKeyFields, sortKeyFields, valueFields));
+    private Schema(List<Field> rowKeyFields, List<Field> sortKeyFields, List<Field> valueFields) {
+        this.rowKeyFields = rowKeyFields;
+        this.sortKeyFields = sortKeyFields;
+        this.valueFields = valueFields;
     }
 
     public static Builder builder() {
@@ -185,7 +184,11 @@ public class Schema {
         }
 
         public Schema build() {
-            return new Schema(this);
+            rowKeyFields = validateRowKeys(rowKeyFields);
+            sortKeyFields = validateSortKeys(sortKeyFields);
+            valueFields = validateValueKeys(valueFields);
+            validateNoDuplicates(streamAllFields(rowKeyFields, sortKeyFields, valueFields));
+            return new Schema(rowKeyFields, sortKeyFields, valueFields);
         }
     }
 
@@ -222,7 +225,6 @@ public class Schema {
 
     private static Stream<Field> streamAllFields(
             List<Field> rowKeyFields, List<Field> sortKeyFields, List<Field> valueFields) {
-
         return Stream.of(rowKeyFields, sortKeyFields, valueFields)
                 .flatMap(List::stream);
     }

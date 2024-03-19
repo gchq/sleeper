@@ -43,20 +43,16 @@ public class JSONResultsBatchSerialiser implements ResultsBatchSerialiser {
     private final Gson gsonPrettyPrinting;
 
     public JSONResultsBatchSerialiser() {
-        try {
-            GsonBuilder gsonBuilder = new GsonBuilder()
-                    .registerTypeAdapter(Class.forName(ResultsBatch.class.getName()), new ResultsBatchSerDe())
-                    .registerTypeAdapter(Class.forName(Type.class.getName()), new SchemaSerDe.AbstractTypeJsonSerializer())
-                    .registerTypeAdapter(Class.forName(Type.class.getName()), new SchemaSerDe.AbstractTypeJsonDeserializer())
-                    .serializeNulls();
-            this.gson = gsonBuilder
-                    .create();
-            this.gsonPrettyPrinting = gsonBuilder
-                    .setPrettyPrinting()
-                    .create();
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException("Exception creating Gson", e);
-        }
+        GsonBuilder gsonBuilder = new GsonBuilder()
+                .registerTypeAdapter(ResultsBatch.class, new ResultsBatchSerDe())
+                .registerTypeAdapter(Type.class, new SchemaSerDe.AbstractTypeJsonSerializer())
+                .registerTypeAdapter(Type.class, new SchemaSerDe.AbstractTypeJsonDeserializer())
+                .serializeNulls();
+        this.gson = gsonBuilder
+                .create();
+        this.gsonPrettyPrinting = gsonBuilder
+                .setPrettyPrinting()
+                .create();
     }
 
     @Override
