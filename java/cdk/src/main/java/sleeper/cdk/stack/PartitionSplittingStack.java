@@ -70,7 +70,8 @@ import static sleeper.configuration.properties.instance.PartitionSplittingProper
 import static sleeper.configuration.properties.instance.PartitionSplittingProperty.SPLIT_PARTITIONS_TIMEOUT_IN_SECONDS;
 
 /**
- * A {@link NestedStack} to look for partitions that need splitting and to split them.
+ * Deploys resources to perform partition splitting. A CloudWatch rule will periodically trigger to check every Sleeper
+ * table for partitions that need splitting, and split them.
  */
 public class PartitionSplittingStack extends NestedStack {
     public static final String PARTITION_SPLITTING_QUEUE_URL = "PartitionSplittingQueueUrl";
