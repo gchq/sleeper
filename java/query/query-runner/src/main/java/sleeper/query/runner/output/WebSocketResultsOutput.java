@@ -33,8 +33,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * An implementation of {@link ResultsOutput} that writes results to a client
- * connected via a WebSocket API Gateway.
+ * A query results output to write results to a client connected via a WebSocket API Gateway.
  */
 public class WebSocketResultsOutput extends WebSocketOutput implements ResultsOutput {
     private static final Logger LOGGER = LoggerFactory.getLogger(WebSocketResultsOutput.class);

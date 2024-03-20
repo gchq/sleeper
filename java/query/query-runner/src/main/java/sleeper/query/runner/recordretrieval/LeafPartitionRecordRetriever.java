@@ -21,16 +21,19 @@ import sleeper.core.schema.Schema;
 import sleeper.query.model.LeafPartitionQuery;
 
 @FunctionalInterface
+@SuppressWarnings("checkstyle:summaryJavadoc") // Checkstyle fails on the method getRecords, seemingly mistaking a param tag for a continuation of the summary fragment.
 public interface LeafPartitionRecordRetriever {
 
     /**
      * Retrieve all records in the regions and files specified by a sub query.
      *
-     * @param leafPartitionQuery The sub query.
-     * @param dataReadSchema     A schema containing all key fields for the table, and all value fields required for the query.
-     * @return An iterator over all records in the specified files that are in the specified partition, and are in one
-     * of the specified regions. Only values specified in the data read schema will be returned. Other processing
-     * specified in the query will be applied by the caller.
+     * @param  leafPartitionQuery       the sub query
+     * @param  dataReadSchema           a schema containing all key fields for the table, and all value fields required
+     *                                  for the query
+     * @return                          An iterator over all records in the specified files that are in the specified
+     *                                  partition, and are in one of the specified regions. Only values specified in the
+     *                                  data read schema will be returned. Other processing specified in the query will
+     *                                  be applied by the caller.
      * @throws RecordRetrievalException Thrown if the first record of any file could not be read.
      */
     CloseableIterator<Record> getRecords(LeafPartitionQuery leafPartitionQuery, Schema dataReadSchema) throws RecordRetrievalException;
