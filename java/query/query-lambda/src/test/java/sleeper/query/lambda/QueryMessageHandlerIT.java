@@ -249,7 +249,7 @@ public class QueryMessageHandlerIT {
         assertThat(query).contains(new QueryOrLeafPartitionQuery(Query.builder()
                 .tableName("table-1")
                 .queryId("my-query")
-                .regions(List.of(new Region(new Range(new Field("key", new LongType()), 123L, 456L))))
+                .regions(List.of(Region.from(new Range(new Field("key", new LongType()), 123L, 456L))))
                 .build()));
         assertThat(queryTracker.getFailedQueries()).isEmpty();
     }

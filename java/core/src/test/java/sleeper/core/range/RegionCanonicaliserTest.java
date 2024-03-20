@@ -38,10 +38,10 @@ public class RegionCanonicaliserTest {
         RangeFactory rangeFactory = new RangeFactory(schema);
         Range range1 = rangeFactory.createRange(field1, 1, 10);
         Range range2 = rangeFactory.createRange(field2, 100L, true, 200L, true);
-        Region region1 = new Region(Arrays.asList(range1, range2));
+        Region region1 = Region.from(Arrays.asList(range1, range2));
         Range range3 = rangeFactory.createRange(field1, 1, 10);
         Range range4 = rangeFactory.createRange(field2, 100L, 1000L);
-        Region region2 = new Region(Arrays.asList(range3, range4));
+        Region region2 = Region.from(Arrays.asList(range3, range4));
 
         // When / Then
         assertThat(RegionCanonicaliser.isRegionInCanonicalForm(region1)).isFalse();
@@ -57,10 +57,10 @@ public class RegionCanonicaliserTest {
         RangeFactory rangeFactory = new RangeFactory(schema);
         Range range1 = rangeFactory.createRange(field1, 1, 10);
         Range range2 = rangeFactory.createRange(field2, 100L, true, 200L, true);
-        Region region1 = new Region(Arrays.asList(range1, range2));
+        Region region1 = Region.from(Arrays.asList(range1, range2));
         Range range3 = rangeFactory.createRange(field1, 1, 10);
         Range range4 = rangeFactory.createRange(field2, 100L, 1000L);
-        Region region2 = new Region(Arrays.asList(range3, range4));
+        Region region2 = Region.from(Arrays.asList(range3, range4));
 
         // When
         Region canonicalisedRegion1 = RegionCanonicaliser.canonicaliseRegion(region1);

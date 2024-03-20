@@ -34,7 +34,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Writes {@link Record}s to a {@link RecordConsumer}.
+ * Writes records to a Parquet file via a record consumer.
  */
 public class RecordWriter {
     private final RecordConsumer recordConsumer;

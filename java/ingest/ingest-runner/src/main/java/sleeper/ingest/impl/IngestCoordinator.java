@@ -53,9 +53,7 @@ import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONF
 import static sleeper.core.metrics.MetricsLogger.METRICS_LOGGER;
 
 /**
- * Writes data to Sleeper partition files.
- * <p>
- * The ingest process works as follows:
+ * Writes data to Sleeper partition files. The ingest process works as follows:
  * <ul>
  * <li>
  * Data is provided to this class through the {@link #write(Object)} method. These data may be supplied as any data
@@ -226,8 +224,8 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
     }
 
     /**
-     * Retrieves the partition tree from the state store if too much time has elapsed since the last refresh.
-     * Queries the Sleeper table {@link StateStore} to retrieve the current partition tree.
+     * Retrieves the partition tree from the state store if the current view is out of date. If too much time has
+     * elapsed since the last refresh, it queries the {@link StateStore} to retrieve the current partition tree.
      *
      * @throws StateStoreException -
      */
@@ -247,7 +245,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
 
         LOGGER.debug("Loading partitions from state store {}", sleeperStateStore);
         List<Partition> allPartitions = sleeperStateStore.getAllPartitions();
-        partitionTree = new PartitionTree(allPartitions);
+        partitionTree = PartitionTree.from(allPartitions);
         lastPartitionsUpdateTime = Instant.now();
         LOGGER.info("There are {} partitions", allPartitions.size());
     }
@@ -359,11 +357,9 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
     }
 
     /**
-     * Write data to this ingester.
-     * <p>
-     * When this method is called, it may initiate significant activity such as sorting the data that is held in memory
-     * and flushing it to local disk, or merging local files and saving them as partition files on a remote file store.
-     * The amount of time taken by a call to this function varies significantly.
+     * Write data to this ingester. When this method is called, it may initiate significant activity such as sorting the
+     * data that is held in memory and flushing it to local disk, or merging local files and saving them as partition
+     * files on a remote file store. The amount of time taken by a call to this function varies significantly.
      *
      * @param  data                The data to ingest
      * @throws StateStoreException -
@@ -396,7 +392,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
         }
 
         /**
-         * The Sleeper {@link ObjectFactory} to use to create Sleeper iterators.
+         * The factory to use to create Sleeper iterators.
          *
          * @param  objectFactory the object factory
          * @return               the builder for call chaining

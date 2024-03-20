@@ -42,7 +42,7 @@ public class FixedPartitionStoreTest {
 
         // When
         PartitionStore store = new FixedPartitionStore(schema);
-        PartitionTree tree = new PartitionTree(store.getAllPartitions());
+        PartitionTree tree = PartitionTree.from(store.getAllPartitions());
         Partition root = tree.getRootPartition();
 
         // Then
@@ -60,7 +60,7 @@ public class FixedPartitionStoreTest {
                 .leavesWithSplits(Arrays.asList("A", "B"), Collections.singletonList("aaa"))
                 .parentJoining("C", "A", "B")
                 .buildList();
-        PartitionTree tree = new PartitionTree(partitions);
+        PartitionTree tree = PartitionTree.from(partitions);
 
         // When
         PartitionStore store = new FixedPartitionStore(partitions);

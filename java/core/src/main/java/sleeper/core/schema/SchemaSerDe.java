@@ -44,26 +44,22 @@ import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 
 /**
- * Serialises a {@link Schema} to and from a JSON {@link String}.
+ * Serialises a Sleeper schema to and from a JSON string.
  */
 public class SchemaSerDe {
     private final Gson gson;
     private final Gson gsonPrettyPrinting;
 
     public SchemaSerDe() {
-        try {
-            this.gson = new GsonBuilder()
-                    .registerTypeAdapter(Class.forName(Type.class.getName()), new AbstractTypeJsonSerializer())
-                    .registerTypeAdapter(Class.forName(Type.class.getName()), new AbstractTypeJsonDeserializer())
-                    .create();
-            this.gsonPrettyPrinting = new GsonBuilder()
-                    .setPrettyPrinting()
-                    .registerTypeAdapter(Class.forName(Type.class.getName()), new AbstractTypeJsonSerializer())
-                    .registerTypeAdapter(Class.forName(Type.class.getName()), new AbstractTypeJsonDeserializer())
-                    .create();
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException("Exception creating Gson", e);
-        }
+        this.gson = new GsonBuilder()
+                .registerTypeAdapter(Type.class, new AbstractTypeJsonSerializer())
+                .registerTypeAdapter(Type.class, new AbstractTypeJsonDeserializer())
+                .create();
+        this.gsonPrettyPrinting = new GsonBuilder()
+                .setPrettyPrinting()
+                .registerTypeAdapter(Type.class, new AbstractTypeJsonSerializer())
+                .registerTypeAdapter(Type.class, new AbstractTypeJsonDeserializer())
+                .create();
     }
 
     public String toJson(Schema schema) {

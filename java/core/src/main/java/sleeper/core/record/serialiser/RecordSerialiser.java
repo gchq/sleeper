@@ -38,7 +38,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Serialises and deserialises a {@link Record} to and from a <code>byte[]</code>.
+ * Serialises and deserialises a record to and from a byte array.
  */
 public class RecordSerialiser {
     private final Schema schema;

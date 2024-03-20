@@ -26,9 +26,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * This is an example implementation of a {@link SortedRecordIterator}. For identical
- * row keys and sort keys, it sums the values in each column, assuming that they
- * are longs.
+ * Combines records with identical row keys and sort keys by summing the values in each column. Assumes that all value
+ * fields are longs. This is an example implementation of {@link SortedRecordIterator}.
  */
 public class AdditionIterator implements SortedRecordIterator {
     private List<String> rowKeyFieldNames;
@@ -64,9 +63,9 @@ public class AdditionIterator implements SortedRecordIterator {
         private Record nextNext;
 
         public AdditionIteratorInternal(CloseableIterator<Record> input,
-                                        List<String> rowKeyFieldNames,
-                                        List<String> sortKeyFieldNames,
-                                        List<String> valueFieldNames) {
+                List<String> rowKeyFieldNames,
+                List<String> sortKeyFieldNames,
+                List<String> valueFieldNames) {
             this.input = input;
             this.rowKeyFieldNames = rowKeyFieldNames;
             this.sortKeyFieldNames = sortKeyFieldNames;
@@ -115,7 +114,7 @@ public class AdditionIterator implements SortedRecordIterator {
     }
 
     private static boolean equalRowAndSort(List<String> rowKeyFieldNames,
-                                           List<String> sortKeyFieldNames, Record record1, Record record2) {
+            List<String> sortKeyFieldNames, Record record1, Record record2) {
         List<Object> keys1 = new ArrayList<>();
         List<Object> keys2 = new ArrayList<>();
         for (String rowKey : rowKeyFieldNames) {

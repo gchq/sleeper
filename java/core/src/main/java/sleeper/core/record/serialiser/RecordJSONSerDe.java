@@ -45,26 +45,22 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Serialises and deserialises a {@link Record} to and from a JSON {@link String}.
+ * Serialises and deserialises a record to and from a JSON string.
  */
 public class RecordJSONSerDe {
     private final Gson gson;
     private final Gson gsonPrettyPrinting;
 
     public RecordJSONSerDe(Schema schema) {
-        try {
-            this.gson = new GsonBuilder()
-                    .registerTypeAdapter(Class.forName(Record.class.getName()), new RecordGsonSerialiser(schema))
-                    .serializeNulls()
-                    .create();
-            this.gsonPrettyPrinting = new GsonBuilder()
-                    .setPrettyPrinting()
-                    .registerTypeAdapter(Class.forName(Record.class.getName()), new RecordGsonSerialiser(schema))
-                    .serializeNulls()
-                    .create();
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException("Exception creating Gson", e);
-        }
+        this.gson = new GsonBuilder()
+                .registerTypeAdapter(Record.class, new RecordGsonSerialiser(schema))
+                .serializeNulls()
+                .create();
+        this.gsonPrettyPrinting = new GsonBuilder()
+                .setPrettyPrinting()
+                .registerTypeAdapter(Record.class, new RecordGsonSerialiser(schema))
+                .serializeNulls()
+                .create();
     }
 
     public String toJson(Record record) {

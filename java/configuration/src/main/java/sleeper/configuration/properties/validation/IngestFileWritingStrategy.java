@@ -19,13 +19,16 @@ package sleeper.configuration.properties.validation;
 import org.apache.commons.lang3.EnumUtils;
 
 /**
- * Determines how the ingest process creates files and references while performing an ingest
- * {@link IngestFileWritingStrategy#ONE_FILE_PER_LEAF} - Write a new file in each relevant leaf partition
- * {@link IngestFileWritingStrategy#ONE_REFERENCE_PER_LEAF} - Writes one file at the root partition, and adds references to that
- * file to all relevant leaf partitions.
+ * Determines how files are created and referenced during standard ingest.
  */
 public enum IngestFileWritingStrategy {
+    /**
+     * Write a new file in each relevant leaf partition.
+     */
     ONE_FILE_PER_LEAF,
+    /**
+     * Write one file, and add references to that file to all relevant leaf partitions.
+     */
     ONE_REFERENCE_PER_LEAF;
 
     public static boolean isValid(String value) {
