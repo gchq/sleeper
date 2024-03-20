@@ -44,14 +44,7 @@ public class ArrayListRecordBatchFactory<INCOMINGDATATYPE> implements RecordBatc
         localWorkingDirectory = Objects.requireNonNull(builder.localWorkingDirectory, "localWorkingDirectory must not be null");
         maxNoOfRecordsInMemory = builder.maxNoOfRecordsInMemory;
         maxNoOfRecordsInLocalStore = builder.maxNoOfRecordsInLocalStore;
-        if (maxNoOfRecordsInMemory < 1) {
-            throw new IllegalArgumentException("maxNoOfRecordsInMemory must be positive");
-        }
-        if (maxNoOfRecordsInLocalStore < 1) {
-            throw new IllegalArgumentException("maxNoOfRecordsInLocalStore must be positive");
-        }
         this.recordMapper = Objects.requireNonNull(builder.recordMapper, "recordMapper must not be null");
-
         LOGGER.info("Max number of records to read into memory is {}", maxNoOfRecordsInMemory);
         LOGGER.info("Max number of records to write to local disk is {}", maxNoOfRecordsInLocalStore);
     }
@@ -116,6 +109,12 @@ public class ArrayListRecordBatchFactory<INCOMINGDATATYPE> implements RecordBatc
         }
 
         public ArrayListRecordBatchFactory<T> build() {
+            if (maxNoOfRecordsInMemory < 1) {
+                throw new IllegalArgumentException("maxNoOfRecordsInMemory must be positive");
+            }
+            if (maxNoOfRecordsInLocalStore < 1) {
+                throw new IllegalArgumentException("maxNoOfRecordsInLocalStore must be positive");
+            }
             return new ArrayListRecordBatchFactory<>(this);
         }
     }
