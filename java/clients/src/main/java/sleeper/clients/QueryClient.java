@@ -56,7 +56,8 @@ import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.io.parquet.utils.HadoopConfigurationProvider.getConfigurationForClient;
 
 /**
- * Allows a user to run a query from the command line.
+ * Allows a user to run a query from the command line. An instance of this class cannot be used concurrently in multiple
+ * threads, due to how query executors and state store objects are cached. This may be changed in a future version.
  */
 public class QueryClient extends QueryCommandLineClient {
 
