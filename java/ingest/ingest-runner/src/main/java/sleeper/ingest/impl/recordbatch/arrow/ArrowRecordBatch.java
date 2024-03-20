@@ -176,10 +176,18 @@ public class ArrowRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGD
             vectorSchemaRoot = VectorSchemaRoot.create(arrowSchema, batchBufferAllocator);
             vectorSchemaRoot.getFieldVectors().forEach(fieldVector -> fieldVector.setInitialCapacity(INITIAL_ARROW_VECTOR_CAPACITY));
             vectorSchemaRoot.allocateNew();
-            return new ArrowRecordBatch<>(
-                    arrowBufferAllocator, sleeperSchema, recordMapper, localWorkingDirectory,
+            ArrowRecordBatch<T> arrowRecordBatch = new ArrowRecordBatch<>(
+                    sleeperSchema, recordMapper, localWorkingDirectory,
                     workingBufferAllocator, batchBufferAllocator, vectorSchemaRoot,
                     maxNoOfBytesToWriteLocally, maxNoOfRecordsToWriteToArrowFileAtOnce);
+            LOGGER.info("Created ArrowRecordBatch with:\n"
+                    + "\tschema of {}\n\tlocalWorkingDirectory of {}\n\tworkingArrowBufferAllocatorBytes of {}\n"
+                    + "\tminBatchArrowBufferAllocatorBytes of {}\n\tmaxBatchArrowBufferAllocatorBytes of {}\n"
+                    + "\tmaxNoOfBytesToWriteLocally of {}\n\tmaxNoOfRecordsToWriteToArrowFileAtOnce of {}",
+                    sleeperSchema, localWorkingDirectory, workingArrowBufferAllocatorBytes,
+                    minBatchArrowBufferAllocatorBytes, maxBatchArrowBufferAllocatorBytes,
+                    maxNoOfBytesToWriteLocally, maxNoOfRecordsToWriteToArrowFileAtOnce);
+            return arrowRecordBatch;
         } catch (Exception e1) {
             try {
                 if (vectorSchemaRoot != null) {
@@ -198,8 +206,7 @@ public class ArrowRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGD
         }
     }
 
-    private ArrowRecordBatch(BufferAllocator arrowBufferAllocator,
-            Schema sleeperSchema,
+    private ArrowRecordBatch(Schema sleeperSchema,
             ArrowRecordWriter<INCOMINGDATATYPE> recordMapper,
             String localWorkingDirectory,
             BufferAllocator workingBufferAllocator,
