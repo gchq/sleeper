@@ -16,16 +16,11 @@
 
 package sleeper.clients;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.clients.testutil.TestConsoleInput;
-import sleeper.clients.testutil.ToStringPrintStream;
 import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
@@ -35,23 +30,13 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.inmemory.StateStoreTestHelper;
-import sleeper.core.table.InMemoryTableIndex;
-import sleeper.core.table.TableIdGenerator;
-import sleeper.core.table.TableIndex;
-import sleeper.core.table.TableStatus;
-import sleeper.core.table.TableStatusTestHelper;
-import sleeper.ingest.IngestFactory;
-import sleeper.ingest.testutils.IngestRecordsTestDataHelper;
 import sleeper.statestore.FixedStateStoreProvider;
 
-import java.nio.file.Path;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
-import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.QueryClientTestConstants.EXACT_QUERY_OPTION;
 import static sleeper.clients.QueryClientTestConstants.EXIT_OPTION;
@@ -64,29 +49,9 @@ import static sleeper.clients.QueryClientTestConstants.PROMPT_MIN_ROW_KEY_LONG_T
 import static sleeper.clients.QueryClientTestConstants.PROMPT_QUERY_TYPE;
 import static sleeper.clients.QueryClientTestConstants.RANGE_QUERY_OPTION;
 import static sleeper.clients.QueryClientTestConstants.YES_OPTION;
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
-public class QueryClientIT {
-    @TempDir
-    private Path tempDir;
-    private InstanceProperties instanceProperties;
-    private final TableIndex tableIndex = new InMemoryTableIndex();
-    private final ToStringPrintStream out = new ToStringPrintStream();
-    private final TestConsoleInput in = new TestConsoleInput(out.consoleOut());
-
-    @BeforeEach
-    void setUp() throws Exception {
-        instanceProperties = createInstanceProperties(tempDir);
-    }
-
+public class QueryClientIT extends QueryClientTestBase {
     @Nested
     @DisplayName("Exact query")
     class ExactQuery {
@@ -316,43 +281,17 @@ public class QueryClientIT {
         }
     }
 
-    private static InstanceProperties createInstanceProperties(Path tempDir) throws Exception {
-        String dataDir = createTempDirectory(tempDir, null).toString();
-        InstanceProperties instanceProperties = createTestInstanceProperties();
-        instanceProperties.set(FILE_SYSTEM, "file://");
-        instanceProperties.set(DATA_BUCKET, dataDir);
-        instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
-        return instanceProperties;
-    }
-
-    private TableProperties createTable(String tableName, Schema schema) {
-        TableStatus tableStatus = TableStatusTestHelper.uniqueIdAndName(
-                TableIdGenerator.fromRandomSeed(0).generateString(), tableName);
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        tableProperties.set(TABLE_ID, tableStatus.getTableUniqueId());
-        tableProperties.set(TABLE_NAME, tableStatus.getTableName());
-        tableIndex.create(tableStatus);
-        return tableProperties;
-    }
-
-    private void runQueryClient(List<TableProperties> tablePropertiesList, Map<String, StateStore> stateStoreByTableName) throws Exception {
+    protected void runQueryClient(List<TableProperties> tablePropertiesList, Map<String, StateStore> stateStoreByTableName) throws Exception {
         new QueryClient(instanceProperties, tableIndex, new FixedTablePropertiesProvider(tablePropertiesList),
                 in.consoleIn(), out.consoleOut(), ObjectFactory.noUserJars(),
                 new FixedStateStoreProvider(stateStoreByTableName))
-                        .run();
+                .run();
     }
 
-    private void runQueryClient(TableProperties tableProperties, StateStore stateStore) throws Exception {
+    protected void runQueryClient(TableProperties tableProperties, StateStore stateStore) throws Exception {
         new QueryClient(instanceProperties, tableIndex, new FixedTablePropertiesProvider(tableProperties),
                 in.consoleIn(), out.consoleOut(), ObjectFactory.noUserJars(),
                 new FixedStateStoreProvider(tableProperties, stateStore))
-                        .run();
-    }
-
-    private void ingestData(TableProperties tableProperties, StateStore stateStore, Iterator<Record> recordIterator) throws Exception {
-        tableProperties.set(COMPRESSION_CODEC, "snappy");
-        IngestFactory factory = IngestRecordsTestDataHelper.createIngestFactory(tempDir.toString(),
-                new FixedStateStoreProvider(tableProperties, stateStore), instanceProperties);
-        factory.ingestFromRecordIterator(tableProperties, recordIterator);
+                .run();
     }
 }
