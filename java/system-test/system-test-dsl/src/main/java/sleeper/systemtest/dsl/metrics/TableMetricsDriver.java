@@ -16,12 +16,11 @@
 
 package sleeper.systemtest.dsl.metrics;
 
-import java.util.List;
-import java.util.Map;
+import sleeper.core.metrics.TableMetrics;
 
 public interface TableMetricsDriver {
 
     void generateTableMetrics();
 
-    Map<String, List<Double>> getTableMetrics();
+    TableMetrics getTableMetrics();
 }

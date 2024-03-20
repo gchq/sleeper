@@ -29,23 +29,26 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * This represents a tree of {@link Partition}s. It can be used to find all
- * ancestors of a partition, i.e. all partitions that are either parents of the
- * partition, or grandparents, or great-grandparents.
+ * Represents a tree of partitions. It can be used to traverse or query the tree, e.g. to find all ancestors of a
+ * partition, partitions that are either parents of the partition, or grandparents, or great-grandparents.
  */
 public class PartitionTree {
     private final Map<String, Partition> idToPartition;
     private final Partition rootPartition;
 
-    public PartitionTree(List<Partition> partitions) {
-        this.idToPartition = new HashMap<>();
-        partitions.forEach(p -> this.idToPartition.put(p.getId(), p));
+    public static PartitionTree from(List<Partition> partitions) {
         List<Partition> rootPartitions = partitions.stream().filter(p -> null == p.getParentPartitionId()).collect(Collectors.toList());
         // There should be exactly one root partition.
         if (rootPartitions.size() != 1) {
             throw new IllegalArgumentException("There should be exactly one root partition, found " + rootPartitions.size());
         }
-        this.rootPartition = rootPartitions.get(0);
+        return new PartitionTree(partitions, rootPartitions.get(0));
+    }
+
+    private PartitionTree(List<Partition> partitions, Partition rootPartition) {
+        this.idToPartition = new HashMap<>();
+        partitions.forEach(p -> this.idToPartition.put(p.getId(), p));
+        this.rootPartition = rootPartition;
     }
 
     public List<String> getChildIds(String partitionId) throws IllegalArgumentException {
@@ -151,7 +154,7 @@ public class PartitionTree {
     }
 
     /**
-     * Traverse the partition tree visiting the leaves first, then proceed in steps where you remove the current leaf
+     * Traverse the partition tree visiting the leaves first. Proceeds in steps where you remove the current leaf
      * partitions and visit the new leaves.
      * <p>
      * The partitions are also ordered by the min and max of their ranges. Each time the tree is split, the partition

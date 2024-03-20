@@ -19,7 +19,9 @@ import java.io.IOException;
 import java.util.Iterator;
 
 /**
- * An interface which adds a <code>close()</code> method to an {@link Iterator}.
+ * An iterator with a close method. Uses {@link AutoCloseable} to allow use with try-with-resource statements.
+ *
+ * @param <T> the type of elements returned by this iterator
  */
 public interface CloseableIterator<T> extends Iterator<T>, AutoCloseable {
     void close() throws IOException;

@@ -107,15 +107,13 @@ public class IngestRecordsTestBase {
         return ingestRecords.close();
     }
 
-    protected IngestResult ingestFromRecordIterator(Schema schema, StateStore stateStore, Iterator<Record> iterator)
-            throws StateStoreException, IteratorException, IOException {
+    protected IngestResult ingestFromRecordIterator(Schema schema, StateStore stateStore, Iterator<Record> iterator) throws StateStoreException, IteratorException, IOException {
         tableProperties.setSchema(schema);
         IngestFactory factory = createIngestFactory(stateStore);
         return factory.ingestFromRecordIterator(tableProperties, iterator);
     }
 
-    protected IngestResult ingestFromRecordIterator(StateStore stateStore, Iterator<Record> iterator)
-            throws StateStoreException, IteratorException, IOException {
+    protected IngestResult ingestFromRecordIterator(StateStore stateStore, Iterator<Record> iterator) throws StateStoreException, IteratorException, IOException {
         IngestFactory factory = createIngestFactory(stateStore);
         return factory.ingestFromRecordIterator(tableProperties, iterator);
     }
@@ -135,12 +133,12 @@ public class IngestRecordsTestBase {
 
     protected List<Record> readRecords(Stream<String> filenames) {
         return filenames.map(filename -> {
-                    try {
-                        return readRecordsFromParquetFile(filename, schema);
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                })
+            try {
+                return readRecordsFromParquetFile(filename, schema);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        })
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
     }

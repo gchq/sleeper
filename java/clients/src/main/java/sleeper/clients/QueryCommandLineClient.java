@@ -63,12 +63,12 @@ public abstract class QueryCommandLineClient {
     }
 
     protected QueryCommandLineClient(AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, InstanceProperties instanceProperties,
-                                     ConsoleInput in, ConsoleOutput out) {
+            ConsoleInput in, ConsoleOutput out) {
         this(instanceProperties, new DynamoDBTableIndex(instanceProperties, dynamoDBClient), new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient), in, out);
     }
 
     protected QueryCommandLineClient(InstanceProperties instanceProperties, TableIndex tableIndex, TablePropertiesProvider tablePropertiesProvider,
-                                     ConsoleInput in, ConsoleOutput out) {
+            ConsoleInput in, ConsoleOutput out) {
         this.instanceProperties = instanceProperties;
         this.tableIndex = tableIndex;
         this.tablePropertiesProvider = tablePropertiesProvider;
@@ -137,7 +137,7 @@ public abstract class QueryCommandLineClient {
             i++;
         }
 
-        Region region = new Region(ranges);
+        Region region = Region.from(ranges);
 
         return Query.builder()
                 .tableName(tableName)
@@ -210,7 +210,7 @@ public abstract class QueryCommandLineClient {
             }
             i++;
         }
-        Region region = new Region(ranges);
+        Region region = Region.from(ranges);
         return Query.builder()
                 .tableName(tableName)
                 .queryId(UUID.randomUUID().toString())

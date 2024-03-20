@@ -32,7 +32,6 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -84,7 +83,18 @@ public class PartitionsFromSplitPoints {
         }
 
         List<Partition> builtPartitions = allPartitions.stream().map(Partition.Builder::build).collect(Collectors.toList());
-
+        LOGGER.debug("Created the following partitions by layer (root first)");
+        int layer = 1;
+        PartitionTree tree = PartitionTree.from(builtPartitions);
+        List<Partition> partitionsInLayer = List.of(tree.getRootPartition());
+        while (!partitionsInLayer.isEmpty()) {
+            LOGGER.debug("Layer {}", layer++);
+            partitionsInLayer.forEach(partition -> LOGGER.debug(partition.toString()));
+            partitionsInLayer = partitionsInLayer.stream()
+                    .map(partition -> partition.getChildPartitionIds())
+                    .flatMap(List::stream)
+                    .map(tree::getPartition).collect(Collectors.toList());
+        }
         return builtPartitions;
     }
 
@@ -107,21 +117,21 @@ public class PartitionsFromSplitPoints {
                         rightPartition.getRegion().getRange(rowKeyFields.get(0).getName()).getMax(),
                         false);
                 ranges.add(rangeForDim0);
-                Region region = new Region(ranges);
+                Region region = Region.from(ranges);
                 String id = UUID.randomUUID().toString();
+                List<String> childPartitionIds = List.of(leftPartition.getId(), rightPartition.getId());
                 Partition.Builder parent = Partition.builder()
                         .id(id)
                         .parentPartitionId(null)
-                        .childPartitionIds(Arrays.asList(leftPartition.getId(), rightPartition.getId()))
+                        .childPartitionIds(childPartitionIds)
                         .leafPartition(false)
                         .dimension(0)
                         .rowKeyTypes(schema.getRowKeyTypes())
                         .region(region);
-
                 leftPartition.parentPartitionId(id);
                 rightPartition.parentPartitionId(id);
-
                 parents.add(parent);
+                LOGGER.debug("Created parent partition {} joining partitions {}", id, childPartitionIds);
             }
         }
         allPartitions.addAll(parents);
@@ -133,7 +143,6 @@ public class PartitionsFromSplitPoints {
         }
 
         LOGGER.info("Created layer of {} partitions from previous layer of {} partitions", parents.size(), partitionsInLayer.size());
-        LOGGER.debug("New partitions are {}", parents);
 
         return parents;
     }
@@ -142,18 +151,19 @@ public class PartitionsFromSplitPoints {
         List<Region> leafRegions = leafRegionsFromSplitPoints(schema, splitPoints);
         List<Partition.Builder> leafPartitions = new ArrayList<>();
         for (Region region : leafRegions) {
+            String id = UUID.randomUUID().toString();
             Partition.Builder partition = Partition.builder()
                     .rowKeyTypes(schema.getRowKeyTypes())
                     .region(region)
-                    .id(UUID.randomUUID().toString())
+                    .id(id)
                     .leafPartition(true)
                     .parentPartitionId(null)
                     .childPartitionIds(new ArrayList<>())
                     .dimension(-1);
             leafPartitions.add(partition);
+            LOGGER.debug("Created leaf partition {} for region {}", id, region);
         }
         LOGGER.info("Created {} leaf partitions from {} split points", leafPartitions.size(), splitPoints.size());
-        LOGGER.debug("Partitions are {}", leafPartitions);
         return leafPartitions;
     }
 
@@ -166,7 +176,7 @@ public class PartitionsFromSplitPoints {
         for (Field field : schema.getRowKeyFields()) {
             ranges.add(getRangeCoveringWholeDimension(rangeFactory, field));
         }
-        Region region = new Region(ranges);
+        Region region = Region.from(ranges);
         return Partition.builder()
                 .rowKeyTypes(schema.getRowKeyTypes())
                 .region(region)
@@ -276,13 +286,13 @@ public class PartitionsFromSplitPoints {
             Range rangeForDim = rangeFactory.createRange(splitField, partitionBoundaries.get(i), true, partitionBoundaries.get(i + 1), false);
             rangesForThisRegion.add(rangeForDim);
             rangesForThisRegion.addAll(ranges);
-            Region region = new Region(rangesForThisRegion);
+            Region region = Region.from(rangesForThisRegion);
             leafRegions.add(region);
         }
         return leafRegions;
     }
 
     public static PartitionTree treeFrom(Schema schema, List<Object> splitPoints) {
-        return new PartitionTree(new PartitionsFromSplitPoints(schema, splitPoints).construct());
+        return PartitionTree.from(new PartitionsFromSplitPoints(schema, splitPoints).construct());
     }
 }

@@ -21,10 +21,8 @@ package sleeper.core.statestore;
  */
 public interface StateStore extends FileReferenceStore, PartitionStore {
     /**
-     * Clears all file data and partition data from the state store.
-     * <p>
-     * Note that this does not delete any of the actual files, and after calling this
-     * method the partition store must be initialised before the Sleeper table can be used again.
+     * Clears all file data and partition data from the state store. Note that this does not delete any of the actual
+     * files, and after calling this method the store must be initialised before the Sleeper table can be used again.
      */
     default void clearSleeperTable() {
         clearFileData();

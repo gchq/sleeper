@@ -33,7 +33,7 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
 
 /**
- * Converts a Sleeper {@link Schema} into a Spark {@link StructType}.
+ * Converts a Sleeper schema into a Spark struct type.
  */
 public class StructTypeFactory {
 

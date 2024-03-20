@@ -48,48 +48,44 @@ public class DrawDependencyGraph {
     LayoutPaintable.BalloonRings balloonLayoutRings;
     LayoutPaintable.RadialRings radialLayoutRings;
 
-    String instructions =
-            "<html>"
-                    + "<h3>Graph Transformation:</h3>"
-                    + "<ul>"
-                    + "<li>Mousewheel scales with a crossover value of 1.0.<p>"
-                    + "     - scales the graph layout when the combined scale is greater than 1<p>"
-                    + "     - scales the graph view when the combined scale is less than 1"
-                    + "<li>Mouse1+drag pans the graph"
-                    + "<li>Mouse1 double click on the background resets all transforms"
-                    + "</ul>"
-                    + "<h3>Vertex/Edge Selection:</h3>"
-                    + "<ul>"
-                    + "<li>Mouse1+MENU on a vertex or edge selects the vertex or edge and deselects any others"
-                    + "<li>Mouse1+MENU+Shift on a vertex toggles selection of the vertex"
-                    + "<li>Mouse1+MENU on a selected edge toggles selection of the edge"
-                    + "<li>Mouse1+MENU+drag elsewhere selects vertices in a region"
-                    + "<li>Mouse1+Shift+drag adds selection of vertices in a new region"
-                    + "</ul>"
-                    + "<h3>Vertex Transformation:</h3>"
-                    + "<ul>"
-                    + "<li>Mouse1+MENU+drag on a selected vertex moves all selected Vertices"
-                    + "</ul>"
-                    + "Note that MENU == Command on a Mac, MENU == CTRL on a PC"
-                    + "</html>";
+    String instructions = "<html>"
+            + "<h3>Graph Transformation:</h3>"
+            + "<ul>"
+            + "<li>Mousewheel scales with a crossover value of 1.0.<p>"
+            + "     - scales the graph layout when the combined scale is greater than 1<p>"
+            + "     - scales the graph view when the combined scale is less than 1"
+            + "<li>Mouse1+drag pans the graph"
+            + "<li>Mouse1 double click on the background resets all transforms"
+            + "</ul>"
+            + "<h3>Vertex/Edge Selection:</h3>"
+            + "<ul>"
+            + "<li>Mouse1+MENU on a vertex or edge selects the vertex or edge and deselects any others"
+            + "<li>Mouse1+MENU+Shift on a vertex toggles selection of the vertex"
+            + "<li>Mouse1+MENU on a selected edge toggles selection of the edge"
+            + "<li>Mouse1+MENU+drag elsewhere selects vertices in a region"
+            + "<li>Mouse1+Shift+drag adds selection of vertices in a new region"
+            + "</ul>"
+            + "<h3>Vertex Transformation:</h3>"
+            + "<ul>"
+            + "<li>Mouse1+MENU+drag on a selected vertex moves all selected Vertices"
+            + "</ul>"
+            + "Note that MENU == Command on a Mac, MENU == CTRL on a PC"
+            + "</html>";
 
     public void drawGraph(GraphModel model) {
-        Graph<GraphNode, GraphEdge> g =
-                GraphTypeBuilder.<GraphNode, GraphEdge>directed().buildGraph();
+        Graph<GraphNode, GraphEdge> g = GraphTypeBuilder.<GraphNode, GraphEdge>directed().buildGraph();
         model.getNodes().forEach(g::addVertex);
         model.getEdges().forEach(edge -> g.addEdge(edge.getFrom(model), edge.getTo(model), edge));
 
-        VisualizationViewer<GraphNode, GraphEdge> vv =
-                VisualizationViewer.<GraphNode, GraphEdge>builder(g)
-                        .build();
+        VisualizationViewer<GraphNode, GraphEdge> vv = VisualizationViewer.<GraphNode, GraphEdge>builder(g)
+                .build();
 
         // use html to break long labels into multi-line and center-align the text
         vv.getRenderContext().setVertexLabelFunction(v -> "<html><b><center>" +
                 v.toString().replaceAll("/", "/<br>"));
 
         PickedNodeState picked = new PickedNodeState(model);
-        vv.getRenderContext().getSelectedVertexState().addItemListener(event ->
-                picked.updatePicked(vv.getRenderContext().getSelectedVertexState().getSelected()));
+        vv.getRenderContext().getSelectedVertexState().addItemListener(event -> picked.updatePicked(vv.getRenderContext().getSelectedVertexState().getSelected()));
         vv.getRenderContext().setEdgeDrawPaintFunction(edge -> picked.calculateEdgeColor(edge, showTransitiveDependencies));
         vv.getRenderContext().setArrowDrawPaintFunction(edge -> picked.calculateArrowColor(edge, showTransitiveDependencies));
         vv.getRenderContext().setArrowFillPaintFunction(edge -> picked.calculateArrowColor(edge, showTransitiveDependencies));
@@ -103,35 +99,30 @@ public class DrawDependencyGraph {
 
         final JComboBox layoutComboBox = new JComboBox(combos);
         layoutComboBox.addActionListener(
-                e ->
-                        SwingUtilities.invokeLater(
-                                () -> {
-                                    LayoutHelperDirectedGraphs.Layouts layoutBuilderType =
-                                            (LayoutHelperDirectedGraphs.Layouts) layoutComboBox.getSelectedItem();
-                                    LayoutAlgorithm.Builder layoutAlgorithmBuilder =
-                                            layoutBuilderType.getLayoutAlgorithmBuilder();
-                                    LayoutAlgorithm<GraphNode> layoutAlgorithm = layoutAlgorithmBuilder.build();
-                                    vv.removePreRenderPaintable(balloonLayoutRings);
-                                    vv.removePreRenderPaintable(radialLayoutRings);
-                                    layoutAlgorithm.setAfter(vv::scaleToLayout);
-                                    if (animateLayoutTransition.isSelected()) {
-                                        LayoutAlgorithmTransition.animate(vv, layoutAlgorithm, vv::scaleToLayout);
-                                    } else {
-                                        LayoutAlgorithmTransition.apply(vv, layoutAlgorithm, vv::scaleToLayout);
-                                    }
-                                    if (layoutAlgorithm instanceof BalloonLayoutAlgorithm) {
-                                        balloonLayoutRings =
-                                                new LayoutPaintable.BalloonRings(
-                                                        vv, (BalloonLayoutAlgorithm) layoutAlgorithm);
-                                        vv.addPreRenderPaintable(balloonLayoutRings);
-                                    }
-                                    if (layoutAlgorithm instanceof RadialTreeLayoutAlgorithm) {
-                                        radialLayoutRings =
-                                                new LayoutPaintable.RadialRings(
-                                                        vv, (RadialTreeLayoutAlgorithm) layoutAlgorithm);
-                                        vv.addPreRenderPaintable(radialLayoutRings);
-                                    }
-                                 }));
+                e -> SwingUtilities.invokeLater(
+                        () -> {
+                            LayoutHelperDirectedGraphs.Layouts layoutBuilderType = (LayoutHelperDirectedGraphs.Layouts) layoutComboBox.getSelectedItem();
+                            LayoutAlgorithm.Builder layoutAlgorithmBuilder = layoutBuilderType.getLayoutAlgorithmBuilder();
+                            LayoutAlgorithm<GraphNode> layoutAlgorithm = layoutAlgorithmBuilder.build();
+                            vv.removePreRenderPaintable(balloonLayoutRings);
+                            vv.removePreRenderPaintable(radialLayoutRings);
+                            layoutAlgorithm.setAfter(vv::scaleToLayout);
+                            if (animateLayoutTransition.isSelected()) {
+                                LayoutAlgorithmTransition.animate(vv, layoutAlgorithm, vv::scaleToLayout);
+                            } else {
+                                LayoutAlgorithmTransition.apply(vv, layoutAlgorithm, vv::scaleToLayout);
+                            }
+                            if (layoutAlgorithm instanceof BalloonLayoutAlgorithm) {
+                                balloonLayoutRings = new LayoutPaintable.BalloonRings(
+                                        vv, (BalloonLayoutAlgorithm) layoutAlgorithm);
+                                vv.addPreRenderPaintable(balloonLayoutRings);
+                            }
+                            if (layoutAlgorithm instanceof RadialTreeLayoutAlgorithm) {
+                                radialLayoutRings = new LayoutPaintable.RadialRings(
+                                        vv, (RadialTreeLayoutAlgorithm) layoutAlgorithm);
+                                vv.addPreRenderPaintable(radialLayoutRings);
+                            }
+                        }));
 
         layoutComboBox.setSelectedItem(LayoutHelperDirectedGraphs.Layouts.SUGIYAMA);
 

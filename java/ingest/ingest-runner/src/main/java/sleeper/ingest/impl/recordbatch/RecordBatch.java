@@ -21,9 +21,9 @@ import sleeper.core.record.Record;
 import java.io.IOException;
 
 /**
- * A {@link RecordBatch} is a single-use batch of data, where the data is supplied in any format and is retrieved in
- * sorted order as Sleeper {@link Record} objects. Data may be supplied in any format and it is the responsibility of
- * implementing classes to handle any type conversion.
+ * A single-use batch of data, where the data is supplied in any format and is retrieved in sorted order. Converts the
+ * source data to an iterator of Sleeper {@link Record} objects. Data may be supplied in any format and it is the
+ * responsibility of implementing classes to handle any type conversion.
  *
  * @param <INCOMINGDATATYPE> The type of data that this record batch accepts
  */
@@ -31,7 +31,7 @@ public interface RecordBatch<INCOMINGDATATYPE> extends AutoCloseable {
     /**
      * Append data to the batch.
      *
-     * @param data The data to append
+     * @param  data        The data to append
      * @throws IOException -
      */
     void append(INCOMINGDATATYPE data) throws IOException;
@@ -44,16 +44,16 @@ public interface RecordBatch<INCOMINGDATATYPE> extends AutoCloseable {
     boolean isFull();
 
     /**
-     * Generate an iterator which returns the {@link Record} objects in sort-order. It is the responsibility of the
+     * Generate an iterator which returns the records in sort-order. It is the responsibility of the
      * caller to close the iterator. This method may only be called once per {@link RecordBatch}.
      *
-     * @return the iterator
+     * @return             the iterator
      * @throws IOException -
      */
     CloseableIterator<Record> createOrderedRecordIterator() throws IOException;
 
     /**
-     * Close the batch, freeing all memory, clearing temporary disk and other resources
+     * Close the batch, freeing all memory, clearing temporary disk and other resources.
      */
     @Override
     void close();

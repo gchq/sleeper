@@ -39,6 +39,7 @@
         <module>sketches</module>
         <module>athena</module>
         <module>common-job</module>
+        <module>common-task</module>
         <module>bulk-import</module>
         <module>cdk-custom-resources</module>
         <module>cdk-environment</module>
@@ -69,7 +70,7 @@
         Hadoop AWS uses an old version of wildfly-openssl.
         Review when Hadoop is upgraded from 3.3.3, as it might upgrade to v2.
         -->
-        <wildfly-openssl.version>1.1.3.Final</wildfly-openssl.version>
+        <wildfly-openssl.version>2.2.5.Final</wildfly-openssl.version>
         <!--
         Hadoop client uses an old version of woodstox-core.
         Review when Hadoop is upgraded from 3.3.3, as it might upgrade to v6.
@@ -105,25 +106,25 @@
         OkHttp, as a dependency of Spark, declares an old version of Okio with vulnerabilities.
         Managed from a conflict between 1.6.0 and 3.0.0 within Spark, and 1.17.2 in Trino.
         -->
-        <okio.version>3.4.0</okio.version>
+        <okio.version>3.9.0</okio.version>
         <!-- Trino testing declares an old version. Managed from 1.2.3. -->
         <!-- jungrapht-visualization-samples also declares an old version, which is a dependency of the build module. -->
         <logback.version>1.4.14</logback.version>
         <aws-java-sdk.version>1.12.498</aws-java-sdk.version>
-        <aws-java-sdk-v2.version>2.20.95</aws-java-sdk-v2.version>
-        <aws-crt.version>0.22.2</aws-crt.version>
+        <aws-java-sdk-v2.version>2.25.11</aws-java-sdk-v2.version>
+        <aws-crt.version>0.29.11</aws-crt.version>
         <aws-lambda-java-events.version>3.11.2</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.2.2</aws-lambda-java-core.version>
-        <aws-lambda-powertools.version>1.16.0</aws-lambda-powertools.version>
+        <aws-lambda-powertools.version>1.18.0</aws-lambda-powertools.version>
         <commons-lang3.version>3.12.0</commons-lang3.version>
-        <commons-codec.version>1.16.0</commons-codec.version>
+        <commons-codec.version>1.16.1</commons-codec.version>
         <commons-io.version>2.13.0</commons-io.version>
         <commons-configuration.version>2.9.0</commons-configuration.version>
         <commons-compress.version>1.26.0</commons-compress.version>
         <commons-text.version>1.10.0</commons-text.version>
-        <janino.version>3.1.9</janino.version>
+        <janino.version>3.1.12</janino.version>
         <commons-net.version>3.9.0</commons-net.version>
-        <jackson.version>2.16.2</jackson.version>
+        <jackson.version>2.17.0</jackson.version>
         <!-- Trino integration uses a different version of JJWT, this is the version used in the build module -->
         <jjwt.build.version>0.12.5</jjwt.build.version>
         <facebook.collections.version>0.1.32</facebook.collections.version>
@@ -135,8 +136,8 @@
         <gson.version>2.10.1</gson.version>
         <datasketches.version>3.3.0</datasketches.version>
         <slf4j.version>2.0.12</slf4j.version>
-        <reload4j.version>1.2.24</reload4j.version>
-        <java-websocket.version>1.5.3</java-websocket.version>
+        <reload4j.version>1.2.25</reload4j.version>
+        <java-websocket.version>1.5.6</java-websocket.version>
         <arrow.version>11.0.0</arrow.version>
         <bouncycastle.version>1.75</bouncycastle.version>
         <athena.version>2023.3.1</athena.version>
@@ -156,13 +157,13 @@
         <!-- Testing -->
         <junit.version>5.10.2</junit.version>
         <junit.platform.version>1.10.1</junit.platform.version>
-        <mockito.version>4.11.0</mockito.version>
-        <testcontainers.version>1.19.0</testcontainers.version>
+        <mockito.version>5.11.0</mockito.version>
+        <testcontainers.version>1.19.7</testcontainers.version>
         <wiremock.version>2.35.0</wiremock.version>
         <assertj.version>3.24.1</assertj.version>
         <approvaltests.version>22.3.3</approvaltests.version>
         <jsonunit.version>2.38.0</jsonunit.version>
-        <checkstyle.version>10.6.0</checkstyle.version>
+        <checkstyle.version>10.14.1</checkstyle.version>
         <sleeper.system.test.short.id/>
         <sleeper.system.test.vpc.id/>
         <sleeper.system.test.subnet.ids/>
@@ -172,7 +173,7 @@
         <sleeper.system.test.instances.force.redeploy>false</sleeper.system.test.instances.force.redeploy>
         <sleeper.system.test.force.statestore.classname/>
         <!-- Maven plugins -->
-        <checkstyle.plugin.version>3.2.0</checkstyle.plugin.version>
+        <checkstyle.plugin.version>3.3.1</checkstyle.plugin.version>
         <release.plugin.version>3.0.0-M7</release.plugin.version>
         <surefire.plugin.version>3.2.5</surefire.plugin.version>
         <failsafe.plugin.version>${surefire.plugin.version}</failsafe.plugin.version>
@@ -181,10 +182,11 @@
         <assembly.plugin.version>3.3.0</assembly.plugin.version>
         <jar.plugin.version>3.3.0</jar.plugin.version>
         <compiler.plugin.version>3.10.1</compiler.plugin.version>
-        <enforcer.plugin.version>3.1.0</enforcer.plugin.version>
+        <enforcer.plugin.version>3.4.1</enforcer.plugin.version>
         <distribution.format>dir</distribution.format>
         <spotbugs.version>4.7.3</spotbugs.version>
         <spotbugs.plugin.version>4.7.3.0</spotbugs.plugin.version>
+        <spotbugs.plugin.latest.version>4.8.3.1</spotbugs.plugin.latest.version>
         <go-offline.plugin.version>1.2.8</go-offline.plugin.version>
         <dependency-check.plugin.version>8.3.1</dependency-check.plugin.version>
         <site.plugin.version>3.12.1</site.plugin.version>

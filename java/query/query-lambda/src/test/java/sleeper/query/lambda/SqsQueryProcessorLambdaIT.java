@@ -184,7 +184,7 @@ public class SqsQueryProcessorLambdaIT {
         Query query = Query.builder()
                 .tableName(timeSeriesTable.get(TABLE_NAME))
                 .queryId("abc")
-                .regions(List.of(new Region(List.of(range1, range2, range3))))
+                .regions(List.of(Region.from(List.of(range1, range2, range3))))
                 .build();
         processQuery(query);
 
@@ -212,7 +212,7 @@ public class SqsQueryProcessorLambdaIT {
         Query query = Query.builder()
                 .tableName(timeSeriesTable.get(TABLE_NAME))
                 .queryId("abc")
-                .regions(List.of(new Region(List.of(range1, range2, range3))))
+                .regions(List.of(Region.from(List.of(range1, range2, range3))))
                 .build();
 
         processQuery(query);
@@ -246,7 +246,7 @@ public class SqsQueryProcessorLambdaIT {
         Query query = Query.builder()
                 .tableName(timeSeriesTable.get(TABLE_NAME))
                 .queryId("abc")
-                .regions(List.of(new Region(List.of(range1, range2, range3))))
+                .regions(List.of(Region.from(List.of(range1, range2, range3))))
                 .build();
 
         processQuery(query);
@@ -283,7 +283,7 @@ public class SqsQueryProcessorLambdaIT {
         Query query = Query.builder()
                 .tableName(timeSeriesTable.get(TABLE_NAME))
                 .queryId("abc")
-                .regions(List.of(new Region(List.of(range1, range2, range3))))
+                .regions(List.of(Region.from(List.of(range1, range2, range3))))
                 .build();
 
         processQuery(query);
@@ -304,7 +304,7 @@ public class SqsQueryProcessorLambdaIT {
         query = Query.builder()
                 .tableName(timeSeriesTable.get(TABLE_NAME))
                 .queryId("abc")
-                .regions(List.of(new Region(List.of(range1, range2, range3))))
+                .regions(List.of(Region.from(List.of(range1, range2, range3))))
                 .build();
 
         processQuery(query);
@@ -335,7 +335,7 @@ public class SqsQueryProcessorLambdaIT {
         Query query = Query.builder()
                 .tableName(timeSeriesTable.get(TABLE_NAME))
                 .queryId("abc")
-                .regions(List.of(new Region(List.of(range1, range2, range3))))
+                .regions(List.of(Region.from(List.of(range1, range2, range3))))
                 .build();
 
         processQuery(query);
@@ -346,11 +346,11 @@ public class SqsQueryProcessorLambdaIT {
         assertThat(queryTracker.getAllQueries())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastUpdateTime", "expiryDate")
                 .containsExactlyInAnyOrder(trackedQuery()
-                                .queryId("abc")
-                                .subQueryId("-")
-                                .lastKnownState(COMPLETED)
-                                .recordCount(10L)
-                                .build(),
+                        .queryId("abc")
+                        .subQueryId("-")
+                        .lastKnownState(COMPLETED)
+                        .recordCount(10L)
+                        .build(),
                         trackedQuery()
                                 .queryId("abc")
                                 .subQueryId(subQueryId.orElseThrow())
@@ -370,11 +370,11 @@ public class SqsQueryProcessorLambdaIT {
         Range range11 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2006, true, 2006, true);
         Range range12 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(1), 1, true, 1, true);
         Range range13 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 7, true, 31, true);
-        Region region1 = new Region(Arrays.asList(range11, range12, range13));
+        Region region1 = Region.from(Arrays.asList(range11, range12, range13));
         Range range21 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2006, true, 2006, true);
         Range range22 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(1), 2, true, 2, true);
         Range range23 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 1, true, 3, true);
-        Region region2 = new Region(Arrays.asList(range21, range22, range23));
+        Region region2 = Region.from(Arrays.asList(range21, range22, range23));
         Query query = Query.builder()
                 .tableName(timeSeriesTable.get(TABLE_NAME))
                 .queryId("abc")
@@ -402,11 +402,11 @@ public class SqsQueryProcessorLambdaIT {
         Range range11 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2006, true, 2006, true);
         Range range12 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(1), 1, true, 1, true);
         Range range13 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 7, true, 31, true);
-        Region region1 = new Region(Arrays.asList(range11, range12, range13));
+        Region region1 = Region.from(Arrays.asList(range11, range12, range13));
         Range range21 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2006, true, 2006, true);
         Range range22 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(1), 2, true, 2, true);
         Range range23 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 1, true, 3, true);
-        Region region2 = new Region(Arrays.asList(range21, range22, range23));
+        Region region2 = Region.from(Arrays.asList(range21, range22, range23));
         Map<String, String> resultsPublishConfig = new HashMap<>();
         resultsPublishConfig.put(ResultsOutputConstants.DESTINATION, S3ResultsOutput.S3);
         resultsPublishConfig.put(S3ResultsOutput.S3_BUCKET, instanceProperties.get(QUERY_RESULTS_BUCKET));
@@ -440,11 +440,11 @@ public class SqsQueryProcessorLambdaIT {
         Range range11 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2006, true, 2006, true);
         Range range12 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(1), 1, true, 1, true);
         Range range13 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 7, true, 31, true);
-        Region region1 = new Region(Arrays.asList(range11, range12, range13));
+        Region region1 = Region.from(Arrays.asList(range11, range12, range13));
         Range range21 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2006, true, 2006, true);
         Range range22 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(1), 2, true, 2, true);
         Range range23 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 1, true, 3, true);
-        Region region2 = new Region(Arrays.asList(range21, range22, range23));
+        Region region2 = Region.from(Arrays.asList(range21, range22, range23));
         Map<String, String> resultsPublishConfig = new HashMap<>();
         resultsPublishConfig.put(ResultsOutputConstants.DESTINATION, SQSResultsOutput.SQS);
         resultsPublishConfig.put(SQSResultsOutput.SQS_RESULTS_URL, instanceProperties.get(QUERY_RESULTS_QUEUE_URL));
@@ -484,11 +484,11 @@ public class SqsQueryProcessorLambdaIT {
         Range range11 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2006, true, 2006, true);
         Range range12 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(1), 1, true, 1, true);
         Range range13 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 7, true, 31, true);
-        Region region1 = new Region(Arrays.asList(range11, range12, range13));
+        Region region1 = Region.from(Arrays.asList(range11, range12, range13));
         Range range21 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2006, true, 2006, true);
         Range range22 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(1), 2, true, 2, true);
         Range range23 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 1, true, 3, true);
-        Region region2 = new Region(Arrays.asList(range21, range22, range23));
+        Region region2 = Region.from(Arrays.asList(range21, range22, range23));
         Map<String, String> resultsPublishConfig = new HashMap<>();
         resultsPublishConfig.put(ResultsOutputConstants.DESTINATION, WebSocketResultsOutput.DESTINATION_NAME);
         resultsPublishConfig.put(WebSocketResultsOutput.ENDPOINT, wireMockServer.baseUrl());
@@ -521,7 +521,6 @@ public class SqsQueryProcessorLambdaIT {
         }
     }
 
-
     @Test
     public void shouldPublishResultsToWebSocketInBatches() throws Exception {
         // Given
@@ -538,11 +537,11 @@ public class SqsQueryProcessorLambdaIT {
         Range range11 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2006, true, 2006, true);
         Range range12 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(1), 1, true, 1, true);
         Range range13 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 7, true, 31, true);
-        Region region1 = new Region(Arrays.asList(range11, range12, range13));
+        Region region1 = Region.from(Arrays.asList(range11, range12, range13));
         Range range21 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2006, true, 2006, true);
         Range range22 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(1), 2, true, 2, true);
         Range range23 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 1, true, 3, true);
-        Region region2 = new Region(Arrays.asList(range21, range22, range23));
+        Region region2 = Region.from(Arrays.asList(range21, range22, range23));
         Map<String, String> resultsPublishConfig = new HashMap<>();
         resultsPublishConfig.put(ResultsOutputConstants.DESTINATION, WebSocketResultsOutput.DESTINATION_NAME);
         resultsPublishConfig.put(WebSocketResultsOutput.ENDPOINT, wireMockServer.baseUrl());
@@ -590,11 +589,11 @@ public class SqsQueryProcessorLambdaIT {
         Range range11 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2006, true, 2006, true);
         Range range12 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(1), 1, true, 1, true);
         Range range13 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 7, true, 31, true);
-        Region region1 = new Region(Arrays.asList(range11, range12, range13));
+        Region region1 = Region.from(Arrays.asList(range11, range12, range13));
         Range range21 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2006, true, 2006, true);
         Range range22 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(1), 2, true, 2, true);
         Range range23 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 1, true, 3, true);
-        Region region2 = new Region(Arrays.asList(range21, range22, range23));
+        Region region2 = Region.from(Arrays.asList(range21, range22, range23));
         Map<String, String> statusReportDestination = new HashMap<>();
         statusReportDestination.put(QueryStatusReportListener.DESTINATION, WebSocketQueryStatusReportDestination.DESTINATION_NAME);
         statusReportDestination.put(WebSocketResultsOutput.ENDPOINT, wireMockServer.baseUrl());
@@ -620,8 +619,7 @@ public class SqsQueryProcessorLambdaIT {
                     matchingJsonPath("$.queryId", equalTo("abc"))));
             wireMockServer.verify(1, postRequestedFor(url).withRequestBody(
                     matchingJsonPath("$.message", equalTo("completed"))
-                            .and(matchingJsonPath("$.recordCount", equalTo("28")))
-            ));
+                            .and(matchingJsonPath("$.recordCount", equalTo("28")))));
         } finally {
             wireMockServer.stop();
         }
@@ -643,11 +641,11 @@ public class SqsQueryProcessorLambdaIT {
         Range range11 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2006, true, 2006, true);
         Range range12 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(1), 1, true, 1, true);
         Range range13 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 7, true, 31, true);
-        Region region1 = new Region(Arrays.asList(range11, range12, range13));
+        Region region1 = Region.from(Arrays.asList(range11, range12, range13));
         Range range21 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2007, true, 2007, true);
         Range range22 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(1), 2, true, 2, true);
         Range range23 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 1, true, 3, true);
-        Region region2 = new Region(Arrays.asList(range21, range22, range23));
+        Region region2 = Region.from(Arrays.asList(range21, range22, range23));
         Map<String, String> statusReportDestination = new HashMap<>();
         statusReportDestination.put(QueryStatusReportListener.DESTINATION, WebSocketQueryStatusReportDestination.DESTINATION_NAME);
         statusReportDestination.put(WebSocketResultsOutput.ENDPOINT, wireMockServer.baseUrl());
@@ -674,16 +672,13 @@ public class SqsQueryProcessorLambdaIT {
             wireMockServer.verify(1, postRequestedFor(url).withRequestBody(
                     matchingJsonPath("$.queryId", equalTo("abc"))
                             .and(matchingJsonPath("$.message", equalTo("subqueries")))
-                            .and(matchingJsonPath("$.queryIds"))
-            ));
+                            .and(matchingJsonPath("$.queryIds"))));
             wireMockServer.verify(1, postRequestedFor(url).withRequestBody(
                     matchingJsonPath("$.message", equalTo("completed"))
-                            .and(matchingJsonPath("$.recordCount", equalTo("3")))
-            ));
+                            .and(matchingJsonPath("$.recordCount", equalTo("3")))));
             wireMockServer.verify(1, postRequestedFor(url).withRequestBody(
                     matchingJsonPath("$.message", equalTo("completed"))
-                            .and(matchingJsonPath("$.recordCount", equalTo("25")))
-            ));
+                            .and(matchingJsonPath("$.recordCount", equalTo("25")))));
         } finally {
             wireMockServer.stop();
         }
@@ -741,10 +736,10 @@ public class SqsQueryProcessorLambdaIT {
         sqsClient.receiveMessage(new ReceiveMessageRequest()
                 .withQueueUrl(instanceProperties.get(LEAF_PARTITION_QUERY_QUEUE_URL))
                 .withMaxNumberOfMessages(maxMessages)).getMessages().forEach(message -> {
-            SQSMessage leafMessage = new SQSMessage();
-            leafMessage.setBody(message.getBody());
-            leafPartitionQueries.add(leafMessage);
-        });
+                    SQSMessage leafMessage = new SQSMessage();
+                    leafMessage.setBody(message.getBody());
+                    leafPartitionQueries.add(leafMessage);
+                });
 
         SQSEvent leafEvent = new SQSEvent();
         leafEvent.setRecords(Lists.newArrayList(leafPartitionQueries));

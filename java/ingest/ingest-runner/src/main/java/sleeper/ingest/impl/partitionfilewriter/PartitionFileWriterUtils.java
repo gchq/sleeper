@@ -23,7 +23,6 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.StateStore;
 
 import java.util.Comparator;
 import java.util.HashMap;
@@ -40,16 +39,16 @@ public class PartitionFileWriterUtils {
     }
 
     /**
-     * Create a {@link FileReference} object to use to add the file to a {@link StateStore}
+     * Create a reference to a new file to add to the state store. This should be passed to
+     * {@link sleeper.core.statestore.StateStore.addFile}.
      *
-     * @param filename        -
-     * @param partitionId     -
-     * @param numberOfRecords -
-     * @return The {@link FileReference} object
+     * @param  filename        the full path to the file, including file system
+     * @param  partitionId     the ID of the partition the reference should be added to
+     * @param  numberOfRecords the number of records in the file
+     * @return                 the {@link FileReference} object
      */
-    public static FileReference createFileReference(String filename,
-                                                    String partitionId,
-                                                    long numberOfRecords) {
+    public static FileReference createFileReference(
+            String filename, String partitionId, long numberOfRecords) {
         return FileReference.builder()
                 .filename(filename)
                 .partitionId(partitionId)
@@ -60,10 +59,11 @@ public class PartitionFileWriterUtils {
     }
 
     /**
-     * Create a Map from field name to an {@link ItemsSketch}, for every field in the supplied schema
+     * Create a map with an empty sketch for all row keys in a schema. This is to be used with
+     * {@link #updateQuantileSketchMap} to create sketches for a file.
      *
-     * @param sleeperSchema -
-     * @return The map
+     * @param  sleeperSchema The schema to create sketches for
+     * @return               A map from each row key field name to an empty sketch
      */
     public static Map<String, ItemsSketch> createQuantileSketchMap(Schema sleeperSchema) {
         Map<String, ItemsSketch> keyFieldToSketch = new HashMap<>();
@@ -75,16 +75,15 @@ public class PartitionFileWriterUtils {
     }
 
     /**
-     * Update every {@link ItemsSketch} in the supplied map with the corresponding fields in the supplied {@link
-     * Record}. The map and sketches are updated in-place.
+     * Updates sketches with a new record, for every row key in a schema. The map and sketches are updated in-place.
+     * This is to be used with {@link #createQuantileSketchMap} to create sketches for a file.
      *
-     * @param sleeperSchema       -
-     * @param keyFieldToSketchMap The map to update
-     * @param record              The record to update with
+     * @param sleeperSchema       The schema to create sketches for
+     * @param keyFieldToSketchMap A map from each row key field name to a sketch
+     * @param record              The record to update each sketch with
      */
-    public static void updateQuantileSketchMap(Schema sleeperSchema,
-                                               Map<String, ItemsSketch> keyFieldToSketchMap,
-                                               Record record) {
+    public static void updateQuantileSketchMap(
+            Schema sleeperSchema, Map<String, ItemsSketch> keyFieldToSketchMap, Record record) {
         for (Field rowKeyField : sleeperSchema.getRowKeyFields()) {
             if (rowKeyField.getType() instanceof ByteArrayType) {
                 byte[] value = (byte[]) record.get(rowKeyField.getName());

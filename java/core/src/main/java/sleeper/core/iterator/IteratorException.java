@@ -16,7 +16,7 @@
 package sleeper.core.iterator;
 
 /**
- * An {@link Exception} for issues using a {@link SortedRecordIterator}.
+ * An exception for failures relating to Sleeper iterators.
  */
 public class IteratorException extends Exception {
 

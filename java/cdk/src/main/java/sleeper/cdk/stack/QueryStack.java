@@ -69,8 +69,8 @@ import static sleeper.configuration.properties.instance.QueryProperty.QUERY_PROC
 import static sleeper.configuration.properties.instance.QueryProperty.QUERY_RESULTS_BUCKET_EXPIRY_IN_DAYS;
 
 /**
- * A {@link NestedStack} to handle queries. This consists of a lambda {@link Function} to
- * process them and a {@link Queue} for the results to be posted to.
+ * Deploys resources to run queries. This consists of lambda {@link Function}s to
+ * process them and {@link Queue}s to take queries and post results.
  */
 @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
 public class QueryStack extends NestedStack {
@@ -114,13 +114,13 @@ public class QueryStack extends NestedStack {
         instanceProperties.set(QUERY_TRACKER_TABLE_NAME, queryTrackingTable.getTableName());
 
         LambdaCode queryJar = jars.lambdaCode(BuiltJar.QUERY, jarsBucket);
-        queryExecutorLambda = setupQueriesQueryLambda(coreStacks, queryQueueStack, instanceProperties, queryJar, jarsBucket, queryTrackingTable);
+        queryExecutorLambda = setupQueryExecutorLambda(coreStacks, queryQueueStack, instanceProperties, queryJar, jarsBucket, queryTrackingTable);
         leafPartitionQueryLambda = setupLeafPartitionQueryQueueAndLambda(coreStacks, instanceProperties, queryJar, jarsBucket, queryTrackingTable);
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
     /***
-     * Creates a Lambda Function
+     * Creates a Lambda Function.
      *
      * @param  id                 of the function to be created
      * @param  queryJar           the jar containing the code for the Lambda
@@ -144,7 +144,7 @@ public class QueryStack extends NestedStack {
     }
 
     /***
-     * Creates the Lambda needed for QueriesQuery
+     * Creates the lambda to run queries against a table.
      *
      * @param  coreStacks         the core stacks this belongs to
      * @param  instanceProperties containing configuration details
@@ -153,7 +153,7 @@ public class QueryStack extends NestedStack {
      * @param  queryTrackingTable used to track a query
      * @return                    the lambda created
      */
-    private IFunction setupQueriesQueryLambda(CoreStacks coreStacks, QueryQueueStack queryQueueStack, InstanceProperties instanceProperties, LambdaCode queryJar,
+    private IFunction setupQueryExecutorLambda(CoreStacks coreStacks, QueryQueueStack queryQueueStack, InstanceProperties instanceProperties, LambdaCode queryJar,
             IBucket jarsBucket, ITable queryTrackingTable) {
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "query-executor"));
@@ -189,7 +189,7 @@ public class QueryStack extends NestedStack {
     }
 
     /***
-     * Creates the queue and Lambda needed for LeafPartitionQuery.
+     * Creates the queue and lambda to run internal sub-queries against a specific leaf partition.
      *
      * @param  coreStacks         the core stacks this belongs to
      * @param  instanceProperties containing configuration details
@@ -242,7 +242,7 @@ public class QueryStack extends NestedStack {
     }
 
     /***
-     * Creates the queue used for leaf partition queries
+     * Creates the queue used for internal sub-queries against a specific leaf partition.
      *
      * @param  instanceProperties containing configuration details
      * @return                    the queue to be used for leaf partition queries
@@ -345,7 +345,7 @@ public class QueryStack extends NestedStack {
     }
 
     /***
-     * Sets the permissions a Lambda needs to execute. These are set for buckets and queues.
+     * Sets the permissions a lambda needs to run queries. These are set for buckets and queues.
      *
      * @param coreStacks         the core stacks this belongs to
      * @param jarsBucket         bucket containing the jars used by Lambda
@@ -363,7 +363,7 @@ public class QueryStack extends NestedStack {
     }
 
     /***
-     * Sets the permissions a Lambda needs to execute along with a place to write results to.
+     * Sets the permissions a lambda needs to run queries and write results.
      * These are set for buckets and queues.
      *
      * @param coreStacks         the core stacks this belongs to

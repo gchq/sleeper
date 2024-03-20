@@ -309,7 +309,7 @@ def _get_resource_names(configbucket: str) -> Tuple[str, str, str, str, str, str
 
     :return: tuple with the names of the queues
     """
-    config_obj = _s3_resource.Object(configbucket, 'config')
+    config_obj = _s3_resource.Object(configbucket, 'instance.properties')
     config_str = config_obj.get()['Body'].read().decode('utf-8')
     config_str = '[asection]\n' + config_str
     config = configparser.ConfigParser(allow_no_value=True)

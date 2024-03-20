@@ -18,7 +18,9 @@ package sleeper.core.iterator;
 import java.util.Iterator;
 
 /**
- * Wraps an {@link Iterator} into a {@link CloseableIterator}.
+ * Wraps an iterator with a close method that does nothing. Turns an iterator into a {@link CloseableIterator}.
+ *
+ * @param <T> the type of elements returned by this iterator
  */
 public class WrappedIterator<T> implements CloseableIterator<T> {
     private final Iterator<T> iterator;
@@ -41,4 +43,3 @@ public class WrappedIterator<T> implements CloseableIterator<T> {
     public void close() {
     }
 }
-

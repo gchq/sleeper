@@ -19,7 +19,6 @@ import sleeper.core.key.Key;
 import sleeper.core.schema.Schema;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,18 +33,19 @@ import java.util.Objects;
 public class Region {
     private final Map<String, Range> rowKeyFieldNameToRange;
 
-    public Region(List<Range> ranges) {
-        this.rowKeyFieldNameToRange = new HashMap<>();
-        for (Range range : ranges) {
-            if (this.rowKeyFieldNameToRange.containsKey(range.getFieldName())) {
-                throw new IllegalArgumentException("Should only provide one range per row key field");
-            }
-            this.rowKeyFieldNameToRange.put(range.getFieldName(), range);
-        }
+    public static Region from(Range range) {
+        return new Region(Map.of(range.getFieldName(), range));
     }
 
-    public Region(Range range) {
-        this(Collections.singletonList(range));
+    public static Region from(List<Range> ranges) {
+        Map<String, Range> rowKeyFieldNameToRange = new HashMap<>();
+        for (Range range : ranges) {
+            if (rowKeyFieldNameToRange.containsKey(range.getFieldName())) {
+                throw new IllegalArgumentException("Should only provide one range per row key field");
+            }
+            rowKeyFieldNameToRange.put(range.getFieldName(), range);
+        }
+        return new Region(rowKeyFieldNameToRange);
     }
 
     private Region(Map<String, Range> rowKeyFieldNameToRange) {

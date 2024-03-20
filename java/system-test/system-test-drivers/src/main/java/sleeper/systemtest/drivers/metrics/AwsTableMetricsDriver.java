@@ -35,6 +35,7 @@ import sleeper.clients.deploy.InvokeLambda;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.metrics.TableMetrics;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.drivers.util.SystemTestClients;
@@ -72,8 +73,8 @@ public class AwsTableMetricsDriver implements TableMetricsDriver {
     private final CloudWatchClient cloudWatch;
 
     public AwsTableMetricsDriver(SystemTestInstanceContext instance,
-                                 ReportingContext reporting,
-                                 SystemTestClients clients) {
+            ReportingContext reporting,
+            SystemTestClients clients) {
         this.instance = instance;
         this.reporting = reporting;
         this.lambda = clients.getLambda();
@@ -86,9 +87,32 @@ public class AwsTableMetricsDriver implements TableMetricsDriver {
     }
 
     @Override
-    public Map<String, List<Double>> getTableMetrics() {
+    public TableMetrics getTableMetrics() {
+        Dimensions dimensions = new Dimensions(instance);
+        Map<String, List<Double>> map = pollTableMetrics(dimensions);
+        return TableMetrics.builder()
+                .instanceId(dimensions.instanceId)
+                .tableName(dimensions.table.getTableName())
+                .fileCount((int) getMetric(map, "activeFiles"))
+                .recordCount((long) getMetric(map, "records"))
+                .partitionCount((int) getMetric(map, "partitions"))
+                .leafPartitionCount((int) getMetric(map, "leafPartitions"))
+                .averageActiveFilesPerPartition(getMetric(map, "filesPerPartition"))
+                .build();
+    }
+
+    private double getMetric(Map<String, List<Double>> map, String id) {
+        String name = METRIC_ID_TO_NAME.get(id);
+        List<Double> values = map.get(name);
+        int size = values.size();
+        if (size != 1) {
+            throw new RuntimeException("Expected 1 value, found " + size + " for metric " + name);
+        }
+        return values.get(0);
+    }
+
+    private Map<String, List<Double>> pollTableMetrics(Dimensions dimensions) {
         Instant startTime = reporting.getRecordingStartTime();
-        Dimensions dimensions = new Dimensions(instance.getInstanceProperties(), instance.getTableProperties());
         try {
             // Metrics can take a few seconds to show up in CloudWatch, so poll if it's not there yet
             return PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(2))
@@ -137,6 +161,10 @@ public class AwsTableMetricsDriver implements TableMetricsDriver {
         private final String namespace;
         private final String instanceId;
         private final TableStatus table;
+
+        private Dimensions(SystemTestInstanceContext instance) {
+            this(instance.getInstanceProperties(), instance.getTableProperties());
+        }
 
         private Dimensions(InstanceProperties instanceProperties, TableProperties tableProperties) {
             instanceId = instanceProperties.get(ID);
