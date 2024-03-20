@@ -37,9 +37,15 @@ class RecordIteratorFromArrowStreamReader implements CloseableIterator<Record> {
     private long totalNoOfRecordsRead = 0L;
     private boolean nextBatchLoaded;
 
-    RecordIteratorFromArrowStreamReader(ArrowStreamReader arrowStreamReader) throws IOException {
+    static RecordIteratorFromArrowStreamReader from(ArrowStreamReader arrowStreamReader) throws IOException {
+        boolean nextBatchLoaded = arrowStreamReader.loadNextBatch();
+        return new RecordIteratorFromArrowStreamReader(arrowStreamReader, nextBatchLoaded);
+    }
+
+    private RecordIteratorFromArrowStreamReader(ArrowStreamReader arrowStreamReader, boolean nextBatchLoaded) {
         this.arrowStreamReader = arrowStreamReader;
-        this.loadNextBatch();
+        this.nextBatchLoaded = nextBatchLoaded;
+        this.currentRecordNoInBatch = 0;
     }
 
     /**

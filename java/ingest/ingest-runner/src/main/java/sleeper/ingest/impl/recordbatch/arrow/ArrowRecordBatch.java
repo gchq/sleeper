@@ -291,7 +291,7 @@ public class ArrowRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGD
             String localArrowFileName) throws IOException {
         FileChannel inputFileChannel = FileChannel.open(Paths.get(localArrowFileName), StandardOpenOption.READ);
         ArrowStreamReader arrowStreamReader = new ArrowStreamReader(inputFileChannel, bufferAllocator);
-        return new RecordIteratorFromArrowStreamReader(arrowStreamReader);
+        return RecordIteratorFromArrowStreamReader.from(arrowStreamReader);
     }
 
     /**
