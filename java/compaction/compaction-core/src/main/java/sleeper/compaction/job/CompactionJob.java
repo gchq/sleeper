@@ -40,12 +40,11 @@ public class CompactionJob {
     private CompactionJob(Builder builder) {
         tableId = Objects.requireNonNull(builder.tableId, "tableId must not be null");
         jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
-        inputFiles = Objects.requireNonNull(builder.inputFiles, "inputFiles must not be null");
+        inputFiles = builder.inputFiles;
         outputFile = Objects.requireNonNull(builder.outputFile, "outputFile must not be null");
         partitionId = Objects.requireNonNull(builder.partitionId, "partitionId must not be null");
         iteratorClassName = builder.iteratorClassName;
         iteratorConfig = builder.iteratorConfig;
-        checkDuplicates(inputFiles);
     }
 
     public static Builder builder() {
@@ -183,6 +182,8 @@ public class CompactionJob {
         }
 
         public CompactionJob build() {
+            inputFiles = Objects.requireNonNull(inputFiles, "inputFiles must not be null");
+            checkDuplicates(inputFiles);
             return new CompactionJob(this);
         }
     }
