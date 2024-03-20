@@ -24,7 +24,6 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -39,9 +38,6 @@ public class EstimateSplitPoints {
     private final int sketchSize;
 
     public EstimateSplitPoints(Schema schema, Iterable<Record> records, int numPartitions, int sketchSize) {
-        if (numPartitions < 2) {
-            throw new IllegalArgumentException("Number of partitions must be >= 2");
-        }
         this.rowKey1 = schema.getRowKeyFields().get(0);
         this.records = records;
         this.numPartitions = numPartitions;
@@ -53,8 +49,8 @@ public class EstimateSplitPoints {
     }
 
     public List<Object> estimate() {
-        if (1 == numPartitions) {
-            return Collections.emptyList();
+        if (numPartitions < 2) {
+            throw new IllegalArgumentException("Number of partitions must be >= 2");
         }
 
         // Add all the values to the sketch
