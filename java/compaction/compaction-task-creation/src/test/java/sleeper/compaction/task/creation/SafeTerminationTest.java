@@ -100,8 +100,9 @@ class SafeTerminationTest {
     }
 
     /**
-     * Custom termination Lambda input test from
-     * <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/lambda-custom-termination-policy.html">AWS documentation</a>.
+     * Custom termination Lambda input test. Copied from
+     * <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/lambda-custom-termination-policy.html">AWS
+     * documentation</a>.
      */
     public static final String IN_TEST = "{\n"
             + "  \"AutoScalingGroupARN\": \"arn:aws:autoscaling:us-east-1:<account-id>:autoScalingGroup:d4738357-2d40-4038-ae7e-b00ae0227003:autoScalingGroupName/my-asg\",\n"
@@ -209,8 +210,9 @@ class SafeTerminationTest {
             + "}";
 
     /**
-     * Custom termination Lambda input test from
-     * <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/lambda-custom-termination-policy.html">AWS documentation</a>.
+     * Custom termination Lambda input test. Copied from
+     * <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/lambda-custom-termination-policy.html">AWS
+     * documentation</a>.
      */
     public static final String IN_TEST_LIMIT = "{\n"
             + "  \"AutoScalingGroupARN\": \"arn:aws:autoscaling:us-east-1:<account-id>:autoScalingGroup:d4738357-2d40-4038-ae7e-b00ae0227003:autoScalingGroupName/my-asg\",\n"

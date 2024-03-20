@@ -43,7 +43,7 @@ import static sleeper.configuration.properties.instance.CompactionProperty.COMPA
 import static sleeper.core.metrics.MetricsLogger.METRICS_LOGGER;
 
 /**
- * Runs a compaction task, updating the {@link CompactionTaskStatusStore} with progress of the task.
+ * Runs a compaction task. Executes jobs from a queue, updating the status stores with progress of the task.
  */
 public class CompactionTask {
     private static final Logger LOGGER = LoggerFactory.getLogger(CompactionTask.class);

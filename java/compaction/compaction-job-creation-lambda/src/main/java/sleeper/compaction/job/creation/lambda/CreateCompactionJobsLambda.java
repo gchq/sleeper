@@ -48,8 +48,8 @@ import java.time.Instant;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
- * Creates compaction jobs for batches of tables sent to an SQS queue, running in AWS Lambda.
- * Runs compaction job creation with {@link CreateCompactionJobs}.
+ * Creates compaction jobs for batches of tables sent to an SQS queue, running in AWS Lambda. Runs compaction job
+ * creation with {@link CreateCompactionJobs}.
  */
 @SuppressWarnings("unused")
 public class CreateCompactionJobsLambda implements RequestHandler<SQSEvent, Void> {

@@ -47,7 +47,7 @@ import static sleeper.configuration.properties.instance.CompactionProperty.COMPA
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 /**
- * Executes a {@link CompactionTask}, delegating the running of compaction jobs to {@link CompactSortedFiles},
+ * Runs a compaction task in ECS. Delegates the running of compaction jobs to {@link CompactSortedFiles},
  * and the processing of SQS messages to {@link SqsCompactionQueueHandler}.
  */
 public class ECSCompactionTaskRunner {
