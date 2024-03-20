@@ -33,12 +33,12 @@ public class Query {
 
     private Query(Builder builder) {
         processingConfig = Objects.requireNonNull(builder.processingConfig, "processingConfig must not be null");
-        queryId = requireNonNull(builder.queryId, builder, "queryId field must be provided");
-        tableName = requireNonNull(builder.tableName, builder, "tableName field must be provided");
-        regions = requireNonNull(builder.regions, builder, "regions field must be provided");
+        queryId = builder.queryId;
+        tableName = builder.tableName;
+        regions = builder.regions;
     }
 
-    private static <T> T requireNonNull(T obj, Builder builder, String message) {
+    private static <T> T validateNonNull(T obj, Builder builder, String message) {
         if (obj == null) {
             throw new QueryValidationException(builder.queryId, builder.processingConfig.getStatusReportDestinations(), message);
         }
@@ -169,6 +169,9 @@ public class Query {
         }
 
         public Query build() {
+            queryId = validateNonNull(queryId, this, "queryId field must be provided");
+            tableName = validateNonNull(tableName, this, "tableName field must be provided");
+            regions = validateNonNull(regions, this, "regions field must be provided");
             return new Query(this);
         }
     }
