@@ -31,7 +31,7 @@ import java.util.function.Supplier;
 import static sleeper.splitter.SplitMultiDimensionalPartitionImpl.loadFromFile;
 
 /**
- * Splits a partition by calling {@link SplitMultiDimensionalPartitionImpl}.
+ * Splits a partition. Delegates to {@link SplitMultiDimensionalPartitionImpl}.
  */
 public class SplitPartition {
     private final StateStore stateStore;

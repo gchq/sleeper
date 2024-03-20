@@ -15,6 +15,7 @@
  */
 package sleeper.statestore.s3;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
@@ -93,6 +94,8 @@ class S3FileReferenceStore implements FileReferenceStore {
     private final S3StateStoreDataFile<List<AllReferencesToAFile>> s3StateStoreFile;
     private Clock clock = Clock.systemUTC();
 
+    // Suppressing because false positives are found on method references/functional interfaces
+    @SuppressFBWarnings("CT_CONSTRUCTOR_THROW")
     private S3FileReferenceStore(Builder builder) {
         this.stateStorePath = Objects.requireNonNull(builder.stateStorePath, "stateStorePath must not be null");
         this.conf = Objects.requireNonNull(builder.conf, "hadoopConfiguration must not be null");
@@ -124,10 +127,9 @@ class S3FileReferenceStore implements FileReferenceStore {
                     }
                     return null;
                 }).filter(Objects::nonNull).findFirst();
-        Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> update = list ->
-                Stream.concat(list.stream(), files.stream()
-                                .map(file -> file.withCreatedUpdateTime(updateTime)))
-                        .collect(toUnmodifiableList());
+        Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> update = list -> Stream.concat(list.stream(), files.stream()
+                .map(file -> file.withCreatedUpdateTime(updateTime)))
+                .collect(toUnmodifiableList());
         updateS3Files(update, condition);
     }
 
@@ -236,14 +238,14 @@ class S3FileReferenceStore implements FileReferenceStore {
         };
 
         Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> update = existingFiles -> Stream.concat(
-                        existingFiles.stream().map(existingFile -> {
-                            if (inputFilesSet.contains(existingFile.getFilename())) {
-                                return existingFile.removeReferenceForPartition(partitionId, updateTime);
-                            } else {
-                                return existingFile;
-                            }
-                        }),
-                        Stream.of(fileWithOneReference(newReference, updateTime)))
+                existingFiles.stream().map(existingFile -> {
+                    if (inputFilesSet.contains(existingFile.getFilename())) {
+                        return existingFile.removeReferenceForPartition(partitionId, updateTime);
+                    } else {
+                        return existingFile;
+                    }
+                }),
+                Stream.of(fileWithOneReference(newReference, updateTime)))
                 .collect(Collectors.toUnmodifiableList());
         updateS3Files(update, condition);
     }
@@ -363,15 +365,15 @@ class S3FileReferenceStore implements FileReferenceStore {
                 .filter(file -> file.getTotalReferenceCount() < 1)
                 .collect(toUnmodifiableList());
         List<AllReferencesToAFile> resultFiles = Stream.concat(
-                        allFiles.stream()
-                                .filter(file -> file.getTotalReferenceCount() > 0),
-                        filesWithNoReferences.stream().limit(maxUnreferencedFiles))
+                allFiles.stream()
+                        .filter(file -> file.getTotalReferenceCount() > 0),
+                filesWithNoReferences.stream().limit(maxUnreferencedFiles))
                 .collect(toUnmodifiableList());
         return new AllReferencesToAllFiles(resultFiles, filesWithNoReferences.size() > maxUnreferencedFiles);
     }
 
     private void updateS3Files(Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> update,
-                               FileReferencesConditionCheck condition) throws StateStoreException {
+            FileReferencesConditionCheck condition) throws StateStoreException {
         s3StateStoreFile.updateWithAttempts(10, update, condition);
     }
 
@@ -455,7 +457,7 @@ class S3FileReferenceStore implements FileReferenceStore {
         LOGGER.debug("Loading file records from {}", path);
         List<AllReferencesToAFile> files = new ArrayList<>();
         try (ParquetReader<Record> reader = fileReader(path)) {
-            ParquetReaderIterator recordReader = new ParquetReaderIterator(reader);
+            ParquetReaderIterator recordReader = ParquetReaderIterator.from(reader);
             while (recordReader.hasNext()) {
                 files.add(getFileFromRecord(recordReader.next()));
             }

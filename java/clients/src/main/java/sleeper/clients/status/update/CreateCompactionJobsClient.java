@@ -91,7 +91,7 @@ public class CreateCompactionJobsClient {
             StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, conf);
             CompactionJobStatusStore jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
             CreateCompactionJobs jobCreator = new CreateCompactionJobs(
-                    new ObjectFactory(instanceProperties, s3Client, "/tmp"),
+                    ObjectFactory.fromS3(instanceProperties, s3Client, "/tmp"),
                     instanceProperties, tablePropertiesProvider, stateStoreProvider,
                     new SendCompactionJobToSqs(instanceProperties, sqsClient)::send, jobStatusStore, mode);
             InvokeForTableRequest.forTables(tables.stream(), tables.size(), jobCreator::createJobs);

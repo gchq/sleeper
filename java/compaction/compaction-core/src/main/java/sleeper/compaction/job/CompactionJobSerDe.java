@@ -26,7 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Serialised a {@link CompactionJob} to and from a JSON {@link String}.
+ * Serialises and deserialises a compaction job to and from a JSON string.
  */
 public class CompactionJobSerDe {
 

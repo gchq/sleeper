@@ -42,7 +42,7 @@ import static sleeper.configuration.properties.instance.GarbageCollectionPropert
 import static sleeper.configuration.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECT_OFFLINE_TABLES;
 
 /**
- * A lambda to invoke {@link GarbageCollectorLambda} with batches of tables.
+ * A lambda to invoke garbage collection with batches of tables. Sends batches to an SQS queue.
  */
 @SuppressWarnings("unused")
 public class GarbageCollectorTriggerLambda implements RequestHandler<ScheduledEvent, Void> {

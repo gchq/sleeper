@@ -22,8 +22,7 @@ import sleeper.configuration.properties.instance.InstanceProperty;
 import java.util.Properties;
 
 /**
- * A class that extends {@link InstanceProperties} adding properties needed to
- * run the system tests that add random data to Sleeper.
+ * Holds properties for a Sleeper instance as well as properties needed to run system test data generation tasks.
  */
 public class SystemTestProperties extends InstanceProperties {
 

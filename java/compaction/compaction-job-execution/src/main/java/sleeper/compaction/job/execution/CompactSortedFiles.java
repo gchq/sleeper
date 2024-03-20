@@ -60,8 +60,7 @@ import java.util.Objects;
 import static sleeper.sketches.s3.SketchesSerDeToS3.sketchesPathForDataFile;
 
 /**
- * Executes a {@link CompactionJob}, i.e. compacts N input files into a single
- * output file.
+ * Executes a compaction job. Compacts N input files into a single output file.
  */
 public class CompactSortedFiles implements CompactionTask.CompactionRunner {
     private final InstanceProperties instanceProperties;
@@ -151,7 +150,7 @@ public class CompactSortedFiles implements CompactionTask.CompactionRunner {
                     .withConf(conf)
                     .withFilter(partitionFilter)
                     .build();
-            ParquetReaderIterator recordIterator = new ParquetReaderIterator(reader);
+            ParquetReaderIterator recordIterator = ParquetReaderIterator.from(reader);
             inputIterators.add(recordIterator);
             LOGGER.debug("Compaction job {}: Created reader for file {}", compactionJob.getId(), file);
             LOGGER.debug("Compaction job {}: File is being filtered on ranges {}", compactionJob.getId(),

@@ -72,9 +72,9 @@ import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLAS
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
 
 /**
- * Handles requests for data. Searches within a single partition for data which matches the constraints of the query.
- * To protect against queries which span multiple partitions, only data in parent partitions which also fall into the
- * constraints of the leaf partition are returned.
+ * Retrieves data using Parquet's predicate pushdown, applying compaction time iterators. Searches within a single
+ * partition for data which matches the constraints of the query. To protect against queries which span multiple
+ * partitions, only data in parent partitions which also fall into the constraints of the leaf partition are returned.
  * <p>
  * Compaction time iterators are also applied to the results before they are returned.
  */
@@ -101,7 +101,7 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
 
     private ObjectFactory createObjectFactory(AmazonS3 s3Client) {
         try {
-            return new ObjectFactory(getInstanceProperties(), s3Client, "/tmp");
+            return ObjectFactory.fromS3(getInstanceProperties(), s3Client, "/tmp");
         } catch (ObjectFactoryException e) {
             throw new RuntimeException("Failed to initialise Object Factory");
         }
@@ -112,9 +112,9 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
      * information (to be added in a separate issue, there's no way of slimming down the schema). Once this is
      * done, we can limit the value fields. (The merging iterator still requires the values to be sorted).
      *
-     * @param schema         the original schema
-     * @param recordsRequest the request
-     * @return the original schema for now
+     * @param  schema         the original schema
+     * @param  recordsRequest the request
+     * @return                the original schema for now
      */
     @Override
     protected Schema createSchemaForDataRead(Schema schema, ReadRecordsRequest recordsRequest) {
@@ -122,7 +122,8 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
     }
 
     @Override
-    protected CloseableIterator<Record> createRecordIterator(ReadRecordsRequest recordsRequest, Schema schema, TableProperties tableProperties) throws RecordRetrievalException, ObjectFactoryException {
+    protected CloseableIterator<Record> createRecordIterator(ReadRecordsRequest recordsRequest, Schema schema,
+            TableProperties tableProperties) throws RecordRetrievalException, ObjectFactoryException {
         Split split = recordsRequest.getSplit();
         Set<String> relevantFiles = new HashSet<>(new Gson().fromJson(split.getProperty(RELEVANT_FILES_FIELD), List.class));
         List<Field> rowKeyFields = schema.getRowKeyFields();
@@ -174,22 +175,19 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
      * Creates an iterator which will read all the Parquet files relevant to the leaf partition, pushing down any
      * predicates derived from the query. It also applies any Table specific iterators that may have been configured.
      *
-     * @param relevantFiles   list of relevant partitions (the first should be the leaf partition)
-     * @param minRowKeys      the Min row keys for this leaf partition
-     * @param maxRowKeys      the max row keys for this leaf partition
-     * @param schema          the schema to use for reading the data
-     * @param tableProperties the table properties for this table
-     * @param valueSets       a Summary of the predicates associated with this query.
-     * @return A single iterator of records
-     * @throws ObjectFactoryException   If something goes wrong creating the iterators.
-     * @throws RecordRetrievalException If something goes wrong retrieving records.
+     * @param  relevantFiles            list of relevant partitions (the first should be the leaf partition)
+     * @param  minRowKeys               the min row keys for this leaf partition
+     * @param  maxRowKeys               the max row keys for this leaf partition
+     * @param  schema                   the schema to use for reading the data
+     * @param  tableProperties          the table properties for this table
+     * @param  valueSets                a summary of the predicates associated with this query
+     * @return                          a single iterator of records
+     * @throws ObjectFactoryException   if something goes wrong creating the iterators
+     * @throws RecordRetrievalException if something goes wrong retrieving records
      */
-    private CloseableIterator<Record> createIterator(Set<String> relevantFiles,
-                                                     List<Object> minRowKeys,
-                                                     List<Object> maxRowKeys,
-                                                     Schema schema,
-                                                     TableProperties tableProperties,
-                                                     Map<String, ValueSet> valueSets) throws ObjectFactoryException, RecordRetrievalException {
+    private CloseableIterator<Record> createIterator(
+            Set<String> relevantFiles, List<Object> minRowKeys, List<Object> maxRowKeys,
+            Schema schema, TableProperties tableProperties, Map<String, ValueSet> valueSets) throws ObjectFactoryException, RecordRetrievalException {
         FilterTranslator filterTranslator = new FilterTranslator(schema);
         FilterPredicate filterPredicate = FilterTranslator.and(filterTranslator.toPredicate(valueSets), createFilter(schema, minRowKeys, maxRowKeys));
         Configuration conf = getConfigurationForTable(tableProperties);
@@ -207,10 +205,10 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
      * Creates a filter to ensure records returned from the data files fall within the scope of the leaf partition
      * that was queried.
      *
-     * @param schema     The Sleeper Schema
-     * @param minRowKeys The Min row keys of the leaf partition
-     * @param maxRowKeys The max row keys of the leaf partition.
-     * @return A filter that ensures a record falls within the leaf partition queried.
+     * @param  schema     the Sleeper schema
+     * @param  minRowKeys the min row keys of the leaf partition
+     * @param  maxRowKeys the max row keys of the leaf partition
+     * @return            a filter that ensures a record falls within the leaf partition queried
      */
     private FilterPredicate createFilter(Schema schema, List<Object> minRowKeys, List<Object> maxRowKeys) {
         List<Field> rowKeyFields = schema.getRowKeyFields();
@@ -236,9 +234,8 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
 
             Object max = maxRowKeys.get(i);
 
-            SortedRangeSet predicate = max == null ?
-                    SortedRangeSet.of(Range.greaterThanOrEqual(new BlockAllocatorImpl(), arrowType, minRowKeys.get(i))) :
-                    SortedRangeSet.of(Range.range(new BlockAllocatorImpl(), arrowType, minRowKeys.get(i), true, max, false));
+            SortedRangeSet predicate = max == null ? SortedRangeSet.of(Range.greaterThanOrEqual(new BlockAllocatorImpl(), arrowType, minRowKeys.get(i)))
+                    : SortedRangeSet.of(Range.range(new BlockAllocatorImpl(), arrowType, minRowKeys.get(i), true, max, false));
 
             rangeSummary.put(name, predicate);
         }
@@ -249,10 +246,10 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
     /**
      * Applies an iterator configured for this table. This iterator will run before it passes to Athena.
      *
-     * @param mergingIterator an iterator encompassing all the Parquet iterators
-     * @param schema          The schema to use for reading the data
-     * @param tableProperties The table properties for the table being queried
-     * @return A combined iterator
+     * @param  mergingIterator        an iterator encompassing all the Parquet iterators
+     * @param  schema                 the schema to use for reading the data
+     * @param  tableProperties        the table properties for the table being queried
+     * @return                        a combined iterator
      * @throws ObjectFactoryException if the iterator can't be instantiated
      */
     private CloseableIterator<Record> applyCompactionIterators(CloseableIterator<Record> mergingIterator, Schema schema, TableProperties tableProperties) throws ObjectFactoryException {

@@ -18,11 +18,8 @@ package sleeper.compaction.strategy.impl;
 import sleeper.compaction.strategy.DelegatingCompactionStrategy;
 
 /**
- * A simple compaction strategy to compact all files over the batch size.
- * <p>
- * Uses {@link sleeper.compaction.strategy.impl.BasicLeafStrategy}.
- *
- * @see sleeper.compaction.strategy.CompactionStrategy
+ * A simple compaction strategy to compact all files over the batch size. Uses
+ * {@link sleeper.compaction.strategy.impl.BasicLeafStrategy}.
  */
 public class BasicCompactionStrategy extends DelegatingCompactionStrategy {
 
