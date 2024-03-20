@@ -48,21 +48,29 @@ class RecordIteratorWithSleeperIteratorApplied implements CloseableIterator<Reco
      * @param  sleeperIteratorClassName the Sleeper iterator to apply
      * @param  sleeperIteratorConfig    the configuration for the Sleeper iterator
      * @param  sourceIterator           the {@link CloseableIterator} to provide the source {@link Record} objects
+     * @return                          the instance that was created
      * @throws IteratorException        thrown when there is an error in the Sleeper iterator
      */
-    RecordIteratorWithSleeperIteratorApplied(
+    public static RecordIteratorWithSleeperIteratorApplied from(
             ObjectFactory objectFactory,
             Schema sleeperSchema,
             String sleeperIteratorClassName,
             String sleeperIteratorConfig,
             CloseableIterator<Record> sourceIterator) throws IteratorException {
-        this.inputIterator = requireNonNull(sourceIterator);
-        this.outputIterator = applyIterator(
+        CloseableIterator<Record> inputIterator = requireNonNull(sourceIterator);
+        CloseableIterator<Record> outputIterator = applyIterator(
                 objectFactory,
                 sleeperSchema,
                 sleeperIteratorClassName,
                 sleeperIteratorConfig,
-                this.inputIterator);
+                inputIterator);
+        return new RecordIteratorWithSleeperIteratorApplied(inputIterator, outputIterator);
+    }
+
+    RecordIteratorWithSleeperIteratorApplied(
+            CloseableIterator<Record> inputIterator, CloseableIterator<Record> outputIterator) {
+        this.inputIterator = inputIterator;
+        this.outputIterator = outputIterator;
     }
 
     /**
