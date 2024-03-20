@@ -56,8 +56,8 @@ import static sleeper.configuration.properties.instance.GarbageCollectionPropert
 import static sleeper.configuration.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_PERIOD_IN_MINUTES;
 
 /**
- * A {@link NestedStack} to garbage collect files which have been marked as being ready
- * for garbage collection after a compaction job.
+ * Deploys resources to perform garbage collection. This will find and delete files which have been marked as being
+ * ready for garbage collection after a compaction job.
  */
 public class GarbageCollectorStack extends NestedStack {
 

@@ -251,7 +251,7 @@ class S3PartitionStore implements PartitionStore {
         try (ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(path), PARTITION_SCHEMA)
                 .withConf(conf)
                 .build()) {
-            ParquetReaderIterator recordReader = new ParquetReaderIterator(reader);
+            ParquetReaderIterator recordReader = ParquetReaderIterator.from(reader);
             while (recordReader.hasNext()) {
                 partitions.add(getPartitionFromRecord(recordReader.next()));
             }
