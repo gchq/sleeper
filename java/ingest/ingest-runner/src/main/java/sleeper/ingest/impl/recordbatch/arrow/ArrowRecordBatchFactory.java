@@ -48,16 +48,15 @@ public class ArrowRecordBatchFactory<INCOMINGDATATYPE> implements RecordBatchFac
     private final BufferAllocator bufferAllocator;
     private final boolean closeBufferAllocator;
 
-    private ArrowRecordBatchFactory(
-            Builder<INCOMINGDATATYPE> builder) {
-        this.schema = Objects.requireNonNull(builder.schema, "schema must not be null");
-        localWorkingDirectory = Objects.requireNonNull(builder.localWorkingDirectory, "localWorkingDirectory must not be null");
+    private ArrowRecordBatchFactory(Builder<INCOMINGDATATYPE> builder) {
+        this.schema = builder.schema;
+        this.localWorkingDirectory = builder.localWorkingDirectory;
         this.workingBufferAllocatorBytes = builder.workingBufferAllocatorBytes;
         this.minBatchBufferAllocatorBytes = builder.minBatchBufferAllocatorBytes;
         this.maxBatchBufferAllocatorBytes = builder.maxBatchBufferAllocatorBytes;
         this.maxNoOfBytesToWriteLocally = builder.maxNoOfBytesToWriteLocally;
         this.maxNoOfRecordsToWriteToArrowFileAtOnce = builder.maxNoOfRecordsToWriteToArrowFileAtOnce;
-        this.recordWriter = Objects.requireNonNull(builder.recordWriter, "recordWriter must not be null");
+        this.recordWriter = builder.recordWriter;
         if (builder.bufferAllocator == null) {
             this.closeBufferAllocator = true;
             this.bufferAllocator = new RootAllocator(workingBufferAllocatorBytes + maxBatchBufferAllocatorBytes);
@@ -184,6 +183,9 @@ public class ArrowRecordBatchFactory<INCOMINGDATATYPE> implements RecordBatchFac
         }
 
         public ArrowRecordBatchFactory<T> build() {
+            Objects.requireNonNull(schema, "schema must not be null");
+            Objects.requireNonNull(localWorkingDirectory, "localWorkingDirectory must not be null");
+            Objects.requireNonNull(recordWriter, "recordWriter must not be null");
             if (workingBufferAllocatorBytes < 1) {
                 throw new IllegalArgumentException("workingBufferAllocatorBytes must be positive");
             }
