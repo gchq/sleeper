@@ -33,6 +33,8 @@ import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 
 import sleeper.clients.util.ClientUtils;
+import sleeper.clients.util.console.ConsoleInput;
+import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -55,8 +57,10 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
     private final String apiUrl;
     private final QuerySerDe querySerDe;
 
-    protected QueryWebSocketClient(AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, InstanceProperties instanceProperties) {
-        super(s3Client, dynamoDBClient, instanceProperties);
+    protected QueryWebSocketClient(
+            AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, InstanceProperties instanceProperties,
+            ConsoleInput in, ConsoleOutput out) {
+        super(s3Client, dynamoDBClient, instanceProperties, in, out);
 
         this.apiUrl = instanceProperties.get(CdkDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL);
         if (this.apiUrl == null) {
@@ -74,13 +78,13 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
         Client client = null;
         try {
             Instant startTime = Instant.now();
-            client = new Client(URI.create(apiUrl), query, querySerDe);
+            client = new Client(URI.create(apiUrl), query, querySerDe, in, out);
             while (!client.isQueryComplete()) {
                 Thread.sleep(500);
             }
             LoggedDuration duration = LoggedDuration.withFullOutput(startTime, Instant.now());
             long recordsReturned = client.totalRecordsReturned;
-            System.out.println("Query took " + duration + " to return " + recordsReturned + " records");
+            out.println("Query took " + duration + " to return " + recordsReturned + " records");
         } catch (InterruptedException e) {
         } finally {
             if (client != null) {
@@ -98,14 +102,18 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
         private final Map<String, JsonArray> records = new HashMap<>();
         private final QuerySerDe querySerDe;
         private final Query query;
+        private final ConsoleInput in;
+        private final ConsoleOutput out;
         private boolean queryComplete = false;
         private long totalRecordsReturned = 0L;
 
-        private Client(URI serverUri, Query query, QuerySerDe querySerDe) throws InterruptedException {
+        private Client(URI serverUri, Query query, QuerySerDe querySerDe,
+                ConsoleInput in, ConsoleOutput out) throws InterruptedException {
             super(serverUri);
             this.query = query;
             this.querySerDe = querySerDe;
-
+            this.in = in;
+            this.out = out;
             initialiseConnection(serverUri);
         }
 
@@ -118,12 +126,12 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
             } catch (URISyntaxException e) {
                 System.err.println(e);
             }
-            System.out.println("Connecting to WebSocket API at " + serverUri);
+            out.println("Connecting to WebSocket API at " + serverUri);
             connectBlocking();
         }
 
         private Map<String, String> getAwsIamAuthHeaders(URI serverUri) throws URISyntaxException {
-            System.out.println("Obtaining AWS IAM creds...");
+            out.println("Obtaining AWS IAM creds...");
             AWSCredentials creds = DefaultAWSCredentialsProviderChain.getInstance().getCredentials();
 
             DefaultRequest<Object> request = new DefaultRequest<>("execute-api");
@@ -148,10 +156,10 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
 
         @Override
         public void onOpen(ServerHandshake handshake) {
-            System.out.println("Connected to WebSocket API");
+            out.println("Connected to WebSocket API");
 
             String queryJson = this.querySerDe.toJson(this.query);
-            System.out.println("Submitting Query: " + queryJson);
+            out.println("Submitting Query: " + queryJson);
             this.send(queryJson);
             this.outstandingQueries.add(this.query.getQueryId());
         }
@@ -168,10 +176,10 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
 
             } else if (messageType.equals("subqueries")) {
                 JsonArray subQueryIdList = message.getAsJsonArray("queryIds");
-                System.out.println("Query " + queryId + " split into the following subQueries:");
+                out.println("Query " + queryId + " split into the following subQueries:");
                 for (JsonElement subQueryIdElement : subQueryIdList) {
                     String subQueryId = subQueryIdElement.getAsString();
-                    System.out.println("  " + subQueryId);
+                    out.println("  " + subQueryId);
                     outstandingQueries.add(subQueryId);
                 }
                 outstandingQueries.remove(queryId);
@@ -193,10 +201,11 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
                     }
                 }
                 if (recordsReturnedToClient && recordCount > 0 && (!records.containsKey(queryId) || records.get(queryId).size() != recordCount)) {
-                    System.err.println("ERROR: API said it had returned " + recordCount + " records for query " + queryId + ", but only received " + (records.containsKey(queryId) ? records.get(queryId).size() : 0));
+                    System.err.println("ERROR: API said it had returned " + recordCount + " records for query " + queryId + ", but only received "
+                            + (records.containsKey(queryId) ? records.get(queryId).size() : 0));
                 }
                 outstandingQueries.remove(queryId);
-                System.out.println(recordCount + " records returned by query: " + queryId + " Remaining pending queries: " + outstandingQueries.size());
+                out.println(recordCount + " records returned by query: " + queryId + " Remaining pending queries: " + outstandingQueries.size());
                 totalRecordsReturned += recordCount;
             } else {
                 System.err.println("Received unrecognised message type: " + json);
@@ -206,10 +215,10 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
             if (outstandingQueries.isEmpty()) {
                 queryComplete = true;
                 if (!records.isEmpty()) {
-                    System.out.println("Query results:");
+                    out.println("Query results:");
                     for (Entry<String, JsonArray> subQueryRecords : records.entrySet()) {
                         for (JsonElement record : subQueryRecords.getValue()) {
-                            System.out.println(record);
+                            out.println(record.toString());
                         }
                     }
                 }
@@ -219,7 +228,7 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
         @Override
         public void onClose(int code, String reason, boolean remote) {
             queryComplete = true;
-            System.out.println("Disconnected from WebSocket API: " + reason);
+            out.println("Disconnected from WebSocket API: " + reason);
         }
 
         @Override
@@ -238,7 +247,8 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
         InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, args[0]);
 
-        QueryWebSocketClient client = new QueryWebSocketClient(amazonS3, dynamoDBClient, instanceProperties);
+        QueryWebSocketClient client = new QueryWebSocketClient(amazonS3, dynamoDBClient, instanceProperties,
+                new ConsoleInput(System.console()), new ConsoleOutput(System.out));
         client.run();
     }
 }
