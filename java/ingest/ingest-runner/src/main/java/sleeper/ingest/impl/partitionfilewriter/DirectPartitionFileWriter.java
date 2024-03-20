@@ -53,17 +53,6 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
     private final Map<String, ItemsSketch> keyFieldToSketchMap;
     private long recordsWrittenToCurrentPartition;
 
-    public static DirectPartitionFileWriter from(
-            Partition partition,
-            ParquetConfiguration parquetConfiguration,
-            String filePathPrefix,
-            String fileName) throws IOException {
-        String partitionParquetFileName = TableUtils.constructPartitionParquetFilePath(filePathPrefix, partition, fileName);
-        ParquetWriter<Record> parquetWriter = parquetConfiguration.createParquetWriter(partitionParquetFileName);
-        LOGGER.info("Created Parquet writer for partition {} to file {}", partition.getId(), partitionParquetFileName);
-        return new DirectPartitionFileWriter(partition, parquetConfiguration, filePathPrefix, fileName, parquetWriter);
-    }
-
     /**
      * Create an instance. The final file store is specified as the prefix to the filePathPrefix argument.
      * <p>
@@ -80,9 +69,19 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
      *                              specified in the filePathPrefix.
      * @param  filePathPrefix       the prefix to apply to the partition files, such as 's3a://mybucket' or
      *                              'file://mydirectory'
-     * @param  parquetWriter        the ParquetWriter for the file
      * @throws IOException          -
      */
+    public static DirectPartitionFileWriter from(
+            Partition partition,
+            ParquetConfiguration parquetConfiguration,
+            String filePathPrefix,
+            String fileName) throws IOException {
+        String partitionParquetFileName = TableUtils.constructPartitionParquetFilePath(filePathPrefix, partition, fileName);
+        ParquetWriter<Record> parquetWriter = parquetConfiguration.createParquetWriter(partitionParquetFileName);
+        LOGGER.info("Created Parquet writer for partition {} to file {}", partition.getId(), partitionParquetFileName);
+        return new DirectPartitionFileWriter(partition, parquetConfiguration, filePathPrefix, fileName, parquetWriter);
+    }
+
     private DirectPartitionFileWriter(
             Partition partition,
             ParquetConfiguration parquetConfiguration,

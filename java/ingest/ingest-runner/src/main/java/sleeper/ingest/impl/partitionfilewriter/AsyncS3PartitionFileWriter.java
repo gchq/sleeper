@@ -79,6 +79,24 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
     private final Map<String, ItemsSketch> keyFieldToSketchMap;
     private long recordsWrittenToCurrentPartition;
 
+    /**
+     * Creates an instance. Warning: this constructor allows a bespoke Hadoop configuration to be specified, but it will
+     * not always be used due to a cache in the underlying {@link org.apache.hadoop.fs.FileSystem} object. This
+     * {@link org.apache.hadoop.fs.FileSystem} object maintains a cache of file systems and the first time that it
+     * creates a {@link org.apache.hadoop.fs.s3a.S3AFileSystem} object, the provided Hadoop configuration will be used.
+     * Thereafter, the Hadoop configuration will be ignored until {@link org.apache.hadoop.fs.FileSystem#closeAll()} is
+     * called. This is strange behaviour and can cause errors which are difficult to diagnose.
+     *
+     * @param  partition             the partition to write to
+     * @param  parquetConfiguration  Hadoop, schema and Parquet configuration for writing the local Parquet partition
+     *                               file
+     * @param  s3TransferManager     the manager to use to perform the asynchronous upload
+     * @param  localWorkingDirectory the local directory to use to create temporary files
+     * @param  s3BucketName          the S3 bucket name and prefix to write to
+     * @param  filePathPrefix        the prefix for S3 objects to write
+     * @return                       an instance of this class
+     * @throws IOException           -
+     */
     public static AsyncS3PartitionFileWriter from(
             Partition partition,
             ParquetConfiguration parquetConfiguration,
@@ -95,23 +113,6 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
                 s3TransferManager, localWorkingDirectory, fileName, parquetWriter);
     }
 
-    /**
-     * Creates an instance. Warning: this constructor allows a bespoke Hadoop configuration to be specified, but it will
-     * not always be used due to a cache in the underlying {@link org.apache.hadoop.fs.FileSystem} object. This
-     * {@link org.apache.hadoop.fs.FileSystem} object maintains a cache of file systems and the first time that it
-     * creates a {@link org.apache.hadoop.fs.s3a.S3AFileSystem} object, the provided Hadoop configuration will be used.
-     * Thereafter, the Hadoop configuration will be ignored until {@link org.apache.hadoop.fs.FileSystem#closeAll()} is
-     * called. This is strange behaviour and can cause errors which are difficult to diagnose.
-     *
-     * @param partition             the partition to write to
-     * @param parquetConfiguration  Hadoop, schema and Parquet configuration for writing the local Parquet partition
-     *                              file
-     * @param s3TransferManager     the manager to use to perform the asynchronous upload
-     * @param localWorkingDirectory the local directory to use to create temporary files
-     * @param s3BucketName          the S3 bucket name and prefix to write to
-     * @param filePathPrefix        the prefix for S3 objects to write
-     * @param parquetWriter         the ParquetWriter for the local parquet file
-     */
     private AsyncS3PartitionFileWriter(
             Partition partition,
             ParquetConfiguration parquetConfiguration,
