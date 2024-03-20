@@ -29,7 +29,6 @@ import java.util.stream.Collectors;
 
 public class ArrowToRecordConversionUtils {
     private ArrowToRecordConversionUtils() {
-        throw new AssertionError();
     }
 
     /**
