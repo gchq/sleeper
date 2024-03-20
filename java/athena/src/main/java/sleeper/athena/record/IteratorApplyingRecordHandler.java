@@ -176,21 +176,18 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
      * predicates derived from the query. It also applies any Table specific iterators that may have been configured.
      *
      * @param  relevantFiles            list of relevant partitions (the first should be the leaf partition)
-     * @param  minRowKeys               the Min row keys for this leaf partition
+     * @param  minRowKeys               the min row keys for this leaf partition
      * @param  maxRowKeys               the max row keys for this leaf partition
      * @param  schema                   the schema to use for reading the data
      * @param  tableProperties          the table properties for this table
-     * @param  valueSets                a Summary of the predicates associated with this query.
-     * @return                          A single iterator of records
-     * @throws ObjectFactoryException   If something goes wrong creating the iterators.
-     * @throws RecordRetrievalException If something goes wrong retrieving records.
+     * @param  valueSets                a summary of the predicates associated with this query
+     * @return                          a single iterator of records
+     * @throws ObjectFactoryException   if something goes wrong creating the iterators
+     * @throws RecordRetrievalException if something goes wrong retrieving records
      */
-    private CloseableIterator<Record> createIterator(Set<String> relevantFiles,
-            List<Object> minRowKeys,
-            List<Object> maxRowKeys,
-            Schema schema,
-            TableProperties tableProperties,
-            Map<String, ValueSet> valueSets) throws ObjectFactoryException, RecordRetrievalException {
+    private CloseableIterator<Record> createIterator(
+            Set<String> relevantFiles, List<Object> minRowKeys, List<Object> maxRowKeys,
+            Schema schema, TableProperties tableProperties, Map<String, ValueSet> valueSets) throws ObjectFactoryException, RecordRetrievalException {
         FilterTranslator filterTranslator = new FilterTranslator(schema);
         FilterPredicate filterPredicate = FilterTranslator.and(filterTranslator.toPredicate(valueSets), createFilter(schema, minRowKeys, maxRowKeys));
         Configuration conf = getConfigurationForTable(tableProperties);
@@ -208,10 +205,10 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
      * Creates a filter to ensure records returned from the data files fall within the scope of the leaf partition
      * that was queried.
      *
-     * @param  schema     The Sleeper Schema
-     * @param  minRowKeys The Min row keys of the leaf partition
-     * @param  maxRowKeys The max row keys of the leaf partition.
-     * @return            A filter that ensures a record falls within the leaf partition queried.
+     * @param  schema     the Sleeper schema
+     * @param  minRowKeys the min row keys of the leaf partition
+     * @param  maxRowKeys the max row keys of the leaf partition
+     * @return            a filter that ensures a record falls within the leaf partition queried
      */
     private FilterPredicate createFilter(Schema schema, List<Object> minRowKeys, List<Object> maxRowKeys) {
         List<Field> rowKeyFields = schema.getRowKeyFields();
@@ -250,9 +247,9 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
      * Applies an iterator configured for this table. This iterator will run before it passes to Athena.
      *
      * @param  mergingIterator        an iterator encompassing all the Parquet iterators
-     * @param  schema                 The schema to use for reading the data
-     * @param  tableProperties        The table properties for the table being queried
-     * @return                        A combined iterator
+     * @param  schema                 the schema to use for reading the data
+     * @param  tableProperties        the table properties for the table being queried
+     * @return                        a combined iterator
      * @throws ObjectFactoryException if the iterator can't be instantiated
      */
     private CloseableIterator<Record> applyCompactionIterators(CloseableIterator<Record> mergingIterator, Schema schema, TableProperties tableProperties) throws ObjectFactoryException {
