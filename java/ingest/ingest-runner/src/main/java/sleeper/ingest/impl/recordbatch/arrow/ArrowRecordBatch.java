@@ -116,28 +116,30 @@ public class ArrowRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGD
     /**
      * Construct an instance. Should be called by an {@link ArrowRecordBatchFactory}.
      *
-     * @param arrowBufferAllocator                   the {@link BufferAllocator} to use to allocate memory for this
-     *                                               buffer
-     * @param sleeperSchema                          The Sleeper {@link Schema} of the records to be stored
-     * @param localWorkingDirectory                  The local directory to use to store the spilled Arrow files
-     * @param workingArrowBufferAllocatorBytes       The size of the working buffer, which is used for sorting and small
-     *                                               batches during the writing process
-     * @param minBatchArrowBufferAllocatorBytes      The minimum size of the buffer to hold the main batch of data. If
-     *                                               this amount of data is unavailable then the object cannot be
-     *                                               constructed
-     * @param maxBatchArrowBufferAllocatorBytes      The maximum size of the buffer to hold the main batch of data. This
-     *                                               may be shared with other processes and so the data may be flushed
-     *                                               to local disk before this object has entirely filled it
-     * @param maxNoOfBytesToWriteLocally             The maximum number of bytes to write to a local disk before this
-     *                                               batch is considered full (approximate only)
-     * @param maxNoOfRecordsToWriteToArrowFileAtOnce The Arrow file writing process writes multiple small batches of
-     *                                               data of this size into a single file, to reduced the memory
-     *                                               footprint
+     * @param  arrowBufferAllocator                   the {@link BufferAllocator} to use to allocate memory for this
+     *                                                buffer
+     * @param  sleeperSchema                          The Sleeper {@link Schema} of the records to be stored
+     * @param  localWorkingDirectory                  The local directory to use to store the spilled Arrow files
+     * @param  workingArrowBufferAllocatorBytes       The size of the working buffer, which is used for sorting and
+     *                                                small
+     *                                                batches during the writing process
+     * @param  minBatchArrowBufferAllocatorBytes      The minimum size of the buffer to hold the main batch of data. If
+     *                                                this amount of data is unavailable then the object cannot be
+     *                                                constructed
+     * @param  maxBatchArrowBufferAllocatorBytes      The maximum size of the buffer to hold the main batch of data.
+     *                                                This
+     *                                                may be shared with other processes and so the data may be flushed
+     *                                                to local disk before this object has entirely filled it
+     * @param  maxNoOfBytesToWriteLocally             The maximum number of bytes to write to a local disk before this
+     *                                                batch is considered full (approximate only)
+     * @param  maxNoOfRecordsToWriteToArrowFileAtOnce The Arrow file writing process writes multiple small batches of
+     *                                                data of this size into a single file, to reduced the memory
+     *                                                footprint
+     * @return                                        an instance of this class
      */
-    @SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR")
-    public ArrowRecordBatch(BufferAllocator arrowBufferAllocator,
+    public static <T> ArrowRecordBatch<T> from(BufferAllocator arrowBufferAllocator,
             Schema sleeperSchema,
-            ArrowRecordWriter<INCOMINGDATATYPE> recordMapper,
+            ArrowRecordWriter<T> recordMapper,
             String localWorkingDirectory,
             long workingArrowBufferAllocatorBytes,
             long minBatchArrowBufferAllocatorBytes,
@@ -145,6 +147,66 @@ public class ArrowRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGD
             long maxNoOfBytesToWriteLocally,
             int maxNoOfRecordsToWriteToArrowFileAtOnce) {
         requireNonNull(arrowBufferAllocator);
+        requireNonNull(sleeperSchema);
+        BufferAllocator workingBufferAllocator = null;
+        BufferAllocator batchBufferAllocator = null;
+        VectorSchemaRoot vectorSchemaRoot = null;
+        try {
+            // Create two Arrow buffer allocators, as children of the supplied parent allocator
+            //  - The working buffer has a fixed size and it is preallocated here.
+            //  - The batch buffer has a minimum size, which is preallocated here. It also has a maximum size, but the
+            //    parent allocator may not have enough memory available to provide this and an Arrow OutOfMemoryException
+            //    will be thrown when it tries to expand beyond the available capacity. (Note that this is
+            //    different from the standard Java OutOfMemoryError).
+            workingBufferAllocator = arrowBufferAllocator.newChildAllocator(
+                    "Working buffer",
+                    workingArrowBufferAllocatorBytes,
+                    workingArrowBufferAllocatorBytes);
+            batchBufferAllocator = arrowBufferAllocator.newChildAllocator(
+                    "Batch buffer",
+                    minBatchArrowBufferAllocatorBytes,
+                    maxBatchArrowBufferAllocatorBytes);
+            // Create an Arrow VectorSchemaRoot object to hold the in-memory batch of records.
+            // Allocating memory for these vectors is slightly fiddly as there is no
+            // VectorSchemaRoot.allocateNew(capacity) method. Note that an initial allocation does not prevent
+            // additional allocations later on, as records with a variable width may take up more space than expected.
+            // Follow the Arrow pattern of create > allocate > mutate > set value count > access > clear
+            // Here we do the create > allocate
+            org.apache.arrow.vector.types.pojo.Schema arrowSchema = convertSleeperSchemaToArrowSchema(sleeperSchema);
+            vectorSchemaRoot = VectorSchemaRoot.create(arrowSchema, batchBufferAllocator);
+            vectorSchemaRoot.getFieldVectors().forEach(fieldVector -> fieldVector.setInitialCapacity(INITIAL_ARROW_VECTOR_CAPACITY));
+            vectorSchemaRoot.allocateNew();
+            return new ArrowRecordBatch<>(
+                    arrowBufferAllocator, sleeperSchema, recordMapper, localWorkingDirectory,
+                    workingBufferAllocator, batchBufferAllocator, vectorSchemaRoot,
+                    maxNoOfBytesToWriteLocally, maxNoOfRecordsToWriteToArrowFileAtOnce);
+        } catch (Exception e1) {
+            try {
+                if (vectorSchemaRoot != null) {
+                    vectorSchemaRoot.close();
+                }
+                if (batchBufferAllocator != null) {
+                    batchBufferAllocator.close();
+                }
+                if (workingBufferAllocator != null) {
+                    workingBufferAllocator.close();
+                }
+            } catch (Exception e2) {
+                e1.addSuppressed(e2);
+            }
+            throw e1;
+        }
+    }
+
+    private ArrowRecordBatch(BufferAllocator arrowBufferAllocator,
+            Schema sleeperSchema,
+            ArrowRecordWriter<INCOMINGDATATYPE> recordMapper,
+            String localWorkingDirectory,
+            BufferAllocator workingBufferAllocator,
+            BufferAllocator batchBufferAllocator,
+            VectorSchemaRoot vectorSchemaRoot,
+            long maxNoOfBytesToWriteLocally,
+            int maxNoOfRecordsToWriteToArrowFileAtOnce) {
         this.sleeperSchema = requireNonNull(sleeperSchema);
         this.recordMapper = requireNonNull(recordMapper);
         this.allFields = sleeperSchema.getAllFields(); // This is an efficiency as getAllFields() is quite expensive
@@ -158,47 +220,9 @@ public class ArrowRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGD
         this.uniqueIdentifier = UUID.randomUUID().toString();
         this.internalSortedRecordIterator = null;
         this.isWriteable = true;
-
-        try {
-            // Create two Arrow buffer allocators, as children of the supplied parent allocator
-            //  - The working buffer has a fixed size and it is preallocated here.
-            //  - The batch buffer has a minimum size, which is preallocated here. It also has a maximum size, but the
-            //    parent allocator may not have enough memory available to provide this and an Arrow OutOfMemoryException
-            //    will be thrown when it tries to expand beyond the available capacity. (Note that this is
-            //    different from the standard Java OutOfMemoryError).
-            this.workingBufferAllocator = arrowBufferAllocator.newChildAllocator(
-                    "Working buffer",
-                    workingArrowBufferAllocatorBytes,
-                    workingArrowBufferAllocatorBytes);
-            this.batchBufferAllocator = arrowBufferAllocator.newChildAllocator(
-                    "Batch buffer",
-                    minBatchArrowBufferAllocatorBytes,
-                    maxBatchArrowBufferAllocatorBytes);
-            // Create an Arrow VectorSchemaRoot object to hold the in-memory batch of records.
-            // Allocating memory for these vectors is slightly fiddly as there is no
-            // VectorSchemaRoot.allocateNew(capacity) method. Note that an initial allocation does not prevent
-            // additional allocations later on, as records with a variable width may take up more space than expected.
-            // Follow the Arrow pattern of create > allocate > mutate > set value count > access > clear
-            // Here we do the create > allocate
-            org.apache.arrow.vector.types.pojo.Schema arrowSchema = convertSleeperSchemaToArrowSchema(sleeperSchema);
-            this.vectorSchemaRoot = VectorSchemaRoot.create(arrowSchema, this.batchBufferAllocator);
-            this.vectorSchemaRoot.getFieldVectors().forEach(fieldVector -> fieldVector.setInitialCapacity(INITIAL_ARROW_VECTOR_CAPACITY));
-            this.vectorSchemaRoot.allocateNew();
-        } catch (Exception e1) {
-            try {
-                this.close();
-            } catch (Exception e2) {
-                e1.addSuppressed(e2);
-            }
-            throw e1;
-        }
-        LOGGER.info("Created ArrowRecordBatchBase with:\n"
-                + "\tschema of {}\n\tlocalWorkingDirectory of {}\n\tworkingArrowBufferAllocatorBytes of {}\n"
-                + "\tminBatchArrowBufferAllocatorBytes of {}\n\tmaxBatchArrowBufferAllocatorBytes of {}\n"
-                + "\tmaxNoOfBytesToWriteLocally of {}\n\tmaxNoOfRecordsToWriteToArrowFileAtOnce of {}",
-                this.sleeperSchema, this.localWorkingDirectory, workingArrowBufferAllocatorBytes,
-                minBatchArrowBufferAllocatorBytes, maxBatchArrowBufferAllocatorBytes,
-                this.maxNoOfBytesToWriteLocally, this.maxNoOfRecordsToWriteToArrowFileAtOnce);
+        this.workingBufferAllocator = workingBufferAllocator;
+        this.batchBufferAllocator = batchBufferAllocator;
+        this.vectorSchemaRoot = vectorSchemaRoot;
     }
 
     /**
