@@ -67,7 +67,7 @@ class RecordIteratorWithSleeperIteratorApplied implements CloseableIterator<Reco
         return new RecordIteratorWithSleeperIteratorApplied(inputIterator, outputIterator);
     }
 
-    RecordIteratorWithSleeperIteratorApplied(
+    private RecordIteratorWithSleeperIteratorApplied(
             CloseableIterator<Record> inputIterator, CloseableIterator<Record> outputIterator) {
         this.inputIterator = inputIterator;
         this.outputIterator = outputIterator;
