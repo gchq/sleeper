@@ -22,8 +22,7 @@ import sleeper.job.common.action.Action;
 import sleeper.job.common.action.ActionException;
 
 /**
- * A {@link Runnable} that calls an {@link Action} every N seconds, sleeping
- * in between calls.
+ * Calls an action every N seconds, sleeping in between calls. Used for keep-alive calls to SQS.
  */
 public class PeriodicActionRunnable implements Runnable {
     private static final Logger LOGGER = LoggerFactory.getLogger(PeriodicActionRunnable.class);

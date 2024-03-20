@@ -71,7 +71,7 @@ public class SystemTestPartitioning {
     }
 
     private PartitionTree tree(StateStore stateStore) {
-        return new PartitionTree(allPartitions(stateStore));
+        return PartitionTree.from(allPartitions(stateStore));
     }
 
     private List<Partition> allPartitions(StateStore stateStore) {

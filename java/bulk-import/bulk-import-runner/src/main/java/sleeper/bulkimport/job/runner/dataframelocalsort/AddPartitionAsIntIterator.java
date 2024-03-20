@@ -32,11 +32,12 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 /**
- * An {@link Iterator} of {@link Row}s that takes an existing {@link Iterator}
- * of {@link Row}s and adds an integer id of the partition the key from each {@link Row}.
- * The integer id is determined by taking the leaf partitions, sorting them by their id,
+ * Adds an integer ID to each row iterated over, identifying which Sleeper partition it belongs to. Each Sleeper
+ * partitition ID is mapped to a different integer.
+ * <p>
+ * The integer ID is determined by taking the leaf partitions, sorting them by their ID,
  * and then assigning integers 0,1,...,numLeafPartitions -1 to them. This guarantees
- * that two {@link Row}s from the same leaf partition processed in different tasks/executors
+ * that two rows from the same leaf partition processed in different tasks/executors
  * will be get the same integer id.
  */
 public class AddPartitionAsIntIterator implements Iterator<Row> {

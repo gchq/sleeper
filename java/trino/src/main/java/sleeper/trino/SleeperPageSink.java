@@ -31,11 +31,11 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * This class provides a way to write rows into Sleeper, such as when an INSERT statement is run.
+ * Provides a way to write rows into Sleeper. Used when an INSERT statement is run.
  * <p>
  * This class currently references the Sleeper-internal {@link IngestCoordinator} class. It may be a good idea to reduce
- * the spread of internal classes like this so that the Sleeper-specific code all lives within {@link
- * SleeperConnectionAsTrino}.
+ * the spread of internal classes like this so that the Sleeper-specific code all lives within
+ * {@link SleeperConnectionAsTrino}.
  * <p>
  * The error handling is limited within this class.
  */
@@ -50,14 +50,14 @@ public class SleeperPageSink implements ConnectorPageSink {
     /**
      * Construct the page sink.
      *
-     * @param sleeperConnectionAsTrino    The connection to Sleeper.
-     * @param schemaTableName             The table to append rows to.
-     * @param sleeperColumnHandlesInOrder The columns which are to be appended. These must currently be all of the
-     *                                    columns in the table.
+     * @param sleeperConnectionAsTrino    the connection to Sleeper
+     * @param schemaTableName             the table to append rows to
+     * @param sleeperColumnHandlesInOrder the columns which are to be appended (must currently be all of the columns in
+     *                                    the table)
      */
     public SleeperPageSink(SleeperConnectionAsTrino sleeperConnectionAsTrino,
-                           SchemaTableName schemaTableName,
-                           List<SleeperColumnHandle> sleeperColumnHandlesInOrder) {
+            SchemaTableName schemaTableName,
+            List<SleeperColumnHandle> sleeperColumnHandlesInOrder) {
         LOGGER.debug("Creating a SleeperPageSink for %s", schemaTableName.getTableName());
         this.ingestRecordsPageAsync = sleeperConnectionAsTrino.createIngestCoordinator(schemaTableName);
         this.sleeperColumnHandlesInOrder = sleeperColumnHandlesInOrder;
@@ -70,8 +70,8 @@ public class SleeperPageSink implements ConnectorPageSink {
      * The current implementation appears to operate synchronously, but it relies on the underlying {@link
      * IngestCoordinator} class which performs the actual upload to S3 in an asynchronous manner.
      *
-     * @param page The page of data to write.
-     * @return NOT_BLOCKED
+     * @param  page The page of data to write.
+     * @return      NOT_BLOCKED
      */
     @Override
     @SuppressFBWarnings("REC_CATCH_EXCEPTION") // Suppress for now, catch can probably be removed
@@ -87,13 +87,11 @@ public class SleeperPageSink implements ConnectorPageSink {
     }
 
     /**
-     * Closes the {@link IngestCoordinator} class to ensure that all rows are written to S3.
-     * <p>
-     * The current implementation uses the future that is return from {@link IngestCoordinator}, which will complete
-     * once all of the data has been uploaded to S3.
+     * Closes the ingest coordinator to ensure that all rows are written to S3. Propagates the CompletableFuture
+     * returned from {@link IngestCoordinator}, which will complete once all of the data has been uploaded to S3.
      *
      * @return A {@link CompletableFuture} which completes once all the data has been written to S3. The future returns
-     * an empty list, which the Trino framework will eventually pass to {@link SleeperMetadata#finishInsert}.
+     *         an empty list, which the Trino framework will eventually pass to {@link SleeperMetadata#finishInsert}.
      */
     @Override
     public CompletableFuture<Collection<Slice>> finish() {

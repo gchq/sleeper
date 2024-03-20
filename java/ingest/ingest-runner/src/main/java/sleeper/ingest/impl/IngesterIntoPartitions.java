@@ -43,8 +43,8 @@ import java.util.stream.Collectors;
 import static java.util.Objects.requireNonNull;
 
 /**
- * This class writes {@link Record} objects, which must have been sorted before they are passed to this class, into
- * Sleeper partition files. The actual write is performed by {@link PartitionFileWriter} classes and a factory function
+ * Writes records for a partition into Sleeper data files. The records must have been sorted before they are passed to
+ * this class. The actual write is performed by {@link PartitionFileWriter} classes and a factory function
  * to generate these is provided when this class is constructed.
  */
 class IngesterIntoPartitions {
@@ -55,12 +55,13 @@ class IngesterIntoPartitions {
     private final IngestFileWritingStrategy ingestFileWritingStrategy;
 
     /**
-     * Construct this {@link IngesterIntoPartitions} class.
+     * Create an instance.
      *
-     * @param sleeperSchema                The Sleeper schema
-     * @param partitionFileWriterFactoryFn A function which takes a {@link Partition} and returns the {@link
-     *                                     PartitionFileWriter} which will write {@link Record} objects to that
-     *                                     partition.
+     * @param sleeperSchema                the Sleeper schema
+     * @param partitionFileWriterFactoryFn a function which takes a {@link Partition} and returns the
+     *                                     {@link PartitionFileWriter} which will write {@link Record} objects to that
+     *                                     partition
+     * @param ingestFileWritingStrategy    how files and references should be created during ingest
      */
     IngesterIntoPartitions(
             Schema sleeperSchema,
@@ -72,13 +73,13 @@ class IngesterIntoPartitions {
     }
 
     /**
-     * Close several {@link PartitionFileWriter} objects at once, rethrowing any errors as unchecked exceptions.
+     * Close several file writers at once, rethrowing any errors as unchecked exceptions.
      *
-     * @param partitionFileWriters The {@link PartitionFileWriter} objects to close
-     * @return The {@link CompletableFuture} objects corresponding to the closed {@link PartitionFileWriter} objects, in
-     * the same order
-     * @throws IOException Thrown when an IO error has occurred. May contain multiple suppressed exceptions, one for
-     *                     each {@link PartitionFileWriter} that fails as it is closed.
+     * @param  partitionFileWriters the {@link PartitionFileWriter} objects to close
+     * @return                      the {@link CompletableFuture} objects corresponding to the closed
+     *                              {@link PartitionFileWriter} objects, in the same order
+     * @throws IOException          may contain multiple suppressed exceptions, as each {@link PartitionFileWriter}
+     *                              may fail as it is closed
      */
     private static List<CompletableFuture<FileReference>> closeMultiplePartitionFileWriters(
             Collection<PartitionFileWriter> partitionFileWriters) throws IOException {
@@ -102,16 +103,16 @@ class IngesterIntoPartitions {
     }
 
     /**
-     * Initiate the ingest of the {@link Record} objects passed as a {@link CloseableIterator}. The records must be
-     * supplied in sort-order. When this method returns, all of the records will have been read from the iterator and
-     * the iterator may be discarded by the caller.
+     * Initiate the ingest of records passed as an iterator. The records must be supplied in sort-order. When this
+     * method returns, all of the records will have been read from the iterator and the iterator may be discarded by the
+     * caller.
      *
-     * @param orderedRecordIterator The {@link Record} objects to write, passed in sort order
-     * @param partitionTree         The {@link PartitionTree} to used to determine which partition to place each record
-     *                              in
-     * @return A {@link CompletableFuture} which completes to return a list of {@link FileReference} objects, one for each
-     * partition file that has been created
-     * @throws IOException -
+     * @param  orderedRecordIterator the {@link Record} objects to write, passed in sort order
+     * @param  partitionTree         the {@link PartitionTree} to used to determine which partition to place each record
+     *                               in
+     * @return                       a {@link CompletableFuture} which completes to return a list of
+     *                               {@link FileReference} objects, one for each partition file that has been created
+     * @throws IOException           -
      */
     public CompletableFuture<List<FileReference>> initiateIngest(
             CloseableIterator<Record> orderedRecordIterator, PartitionTree partitionTree) throws IOException {
@@ -205,15 +206,14 @@ class IngesterIntoPartitions {
             throw e;
         }
         boolean hasOnePartition = partitionIdToRecordCount.keySet().size() == 1;
-        return rootFileWriter.close().thenApply(rootFile ->
-                partitionIdToRecordCount.entrySet().stream()
-                        .map((entry) -> FileReference.builder()
-                                .partitionId(entry.getKey())
-                                .filename(rootFile.getFilename())
-                                .numberOfRecords(entry.getValue())
-                                .countApproximate(false)
-                                .onlyContainsDataForThisPartition(hasOnePartition)
-                                .build())
-                        .collect(Collectors.toList()));
+        return rootFileWriter.close().thenApply(rootFile -> partitionIdToRecordCount.entrySet().stream()
+                .map((entry) -> FileReference.builder()
+                        .partitionId(entry.getKey())
+                        .filename(rootFile.getFilename())
+                        .numberOfRecords(entry.getValue())
+                        .countApproximate(false)
+                        .onlyContainsDataForThisPartition(hasOnePartition)
+                        .build())
+                .collect(Collectors.toList()));
     }
 }

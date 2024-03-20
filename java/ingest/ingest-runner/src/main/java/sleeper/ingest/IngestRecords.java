@@ -23,9 +23,7 @@ import sleeper.ingest.impl.IngestCoordinator;
 import java.io.IOException;
 
 /**
- * Writes a {@link Record} objects to the storage system, partitioned and sorted.
- * <p>
- * This class is an adaptor to {@link IngestCoordinator}.
+ * Writes records to the storage system, partitioned and sorted. This class is an adapter to {@link IngestCoordinator}.
  */
 public class IngestRecords {
 

@@ -74,10 +74,10 @@ public class SleeperConnectionAsTrino implements AutoCloseable {
 
     @Inject
     public SleeperConnectionAsTrino(SleeperConfig sleeperConfig,
-                                    AmazonS3 s3Client,
-                                    S3AsyncClient s3AsyncClient,
-                                    AmazonDynamoDB dynamoDbClient,
-                                    HadoopConfigurationProvider hadoopConfigurationProvider) throws ObjectFactoryException {
+            AmazonS3 s3Client,
+            S3AsyncClient s3AsyncClient,
+            AmazonDynamoDB dynamoDbClient,
+            HadoopConfigurationProvider hadoopConfigurationProvider) throws ObjectFactoryException {
         requireNonNull(sleeperConfig);
         this.sleeperRawAwsConnection = new SleeperRawAwsConnection(sleeperConfig, s3Client, s3AsyncClient, dynamoDbClient, hadoopConfigurationProvider);
         this.tableHandleMap = this.sleeperRawAwsConnection.getAllSleeperTableNames().stream()
@@ -102,9 +102,8 @@ public class SleeperConnectionAsTrino implements AutoCloseable {
     }
 
     /**
-     * Generate the {@link ColumnMetadata} objects for the system table of partition status. This method is strongly
-     * tied to the sleeper.partitions table and so it should probably be moved out of this class and put somewhere
-     * else.
+     * Generate column metadata for the system table of partition status. This method is strongly tied to the
+     * sleeper.partitions table and so it should probably be moved out of this class and put somewhere else.
      *
      * @return A list of the {@link ColumnMetadata} objects.
      */
@@ -153,7 +152,7 @@ public class SleeperConnectionAsTrino implements AutoCloseable {
     /**
      * Retrieve the name of the default schema.
      *
-     * @return The name of the default schema.
+     * @return the name of the default schema
      */
     public String getDefaultTrinoSchemaName() {
         return DEFAULT_TRINO_SCHEMA_NAME;
@@ -162,8 +161,8 @@ public class SleeperConnectionAsTrino implements AutoCloseable {
     /**
      * Retrieve the names of all of the tables in a given Trino schema.
      *
-     * @param trinoSchema The name of the Trino schema to examine
-     * @return A set of {@link SchemaTableName} objects, one for each table in the schema.
+     * @param  trinoSchema the name of the Trino schema to examine
+     * @return             a set of {@link SchemaTableName} objects, one for each table in the schema
      */
     public Set<SchemaTableName> getAllSchemaTableNamesInTrinoSchema(String trinoSchema) {
         assert trinoSchema.equals(DEFAULT_TRINO_SCHEMA_NAME);
@@ -175,8 +174,8 @@ public class SleeperConnectionAsTrino implements AutoCloseable {
     /**
      * Retrieve a table handle for a given table.
      *
-     * @param schemaTableName The schema and table name to use to create the handle.
-     * @return The {@link SleeperTableHandle} object.
+     * @param  schemaTableName the schema and table name to use to create the handle
+     * @return                 the {@link SleeperTableHandle} object
      */
     public SleeperTableHandle getSleeperTableHandle(SchemaTableName schemaTableName) {
         assert schemaTableName.getSchemaName().equals(DEFAULT_TRINO_SCHEMA_NAME);
@@ -191,8 +190,8 @@ public class SleeperConnectionAsTrino implements AutoCloseable {
      * generic Sleeper-as-Trino access class. However, that would mean exposing the Sleeper-specific Partition class
      * outside of this package, and that does not seem like a good idea either.
      *
-     * @param schemaTableName The schema and table names to use to retrieve the partition information.
-     * @return A stream of rows, each containing the partition information as a list of objects.
+     * @param  schemaTableName The schema and table names to use to retrieve the partition information.
+     * @return                 A stream of rows, each containing the partition information as a list of objects.
      */
     public Stream<List<Object>> streamPartitionStatusRows(SchemaTableName schemaTableName) {
         assert schemaTableName.getSchemaName().equals(DEFAULT_TRINO_SCHEMA_NAME);
@@ -221,8 +220,8 @@ public class SleeperConnectionAsTrino implements AutoCloseable {
     /**
      * This exposes too much of the internals of Sleeper - try to find a way around this.
      *
-     * @param schemaTableName The table to stream the partition information from.
-     * @return The stream of partitions.
+     * @param  schemaTableName the table to stream the partition information from
+     * @return                 the stream of partitions
      */
     public Stream<Partition> streamPartitions(SchemaTableName schemaTableName) {
         assert schemaTableName.getSchemaName().equals(DEFAULT_TRINO_SCHEMA_NAME);
@@ -236,18 +235,19 @@ public class SleeperConnectionAsTrino implements AutoCloseable {
     }
 
     /**
-     * Stream all of the results from a single {@link SleeperSplit} object. The split contains the details of the
-     * partition, files and all of the rowkey ranges that are to be scanned.
+     * Stream all of the results from a single split object. The split contains the details of the partition, files and
+     * all of the row key ranges that are to be scanned.
      *
-     * @param sleeperTransactionHandle          The transaction that these splits will be generated under
-     * @param sleeperSplit                      The split to scan
-     * @param outputSleeperColumnHandlesInOrder The columns to return
-     * @return A stream of result rows, each expressed as a List of Objects, in the same order as the output columns
-     * specified in the outputSleeperColumnHandlesInOrder argument.
+     * @param  sleeperTransactionHandle          The transaction that these splits will be generated under
+     * @param  sleeperSplit                      The split to scan
+     * @param  outputSleeperColumnHandlesInOrder The columns to return
+     * @return                                   A stream of result rows, each expressed as a List of Objects, in the
+     *                                           same order as the output columns
+     *                                           specified in the outputSleeperColumnHandlesInOrder argument.
      */
     public Stream<List<Object>> streamEntireSplitResultRows(SleeperTransactionHandle sleeperTransactionHandle,
-                                                            SleeperSplit sleeperSplit,
-                                                            List<SleeperColumnHandle> outputSleeperColumnHandlesInOrder) {
+            SleeperSplit sleeperSplit,
+            List<SleeperColumnHandle> outputSleeperColumnHandlesInOrder) {
         // Retrieve the LeafPartitionQuery from the split and then restrict it so that it only returns the
         // requested rows
         List<String> columnNamesInOrder = outputSleeperColumnHandlesInOrder.stream()
@@ -263,34 +263,32 @@ public class SleeperConnectionAsTrino implements AutoCloseable {
                     leafPartitionQuery);
 
             return resultRecordStream
-                    .map(record ->
-                            outputSleeperColumnHandlesInOrder.stream()
-                                    .map(sleeperColumnHandle -> record.get(sleeperColumnHandle.getColumnName()))
-                                    .collect(ImmutableList.toImmutableList()));
+                    .map(record -> outputSleeperColumnHandlesInOrder.stream()
+                            .map(sleeperColumnHandle -> record.get(sleeperColumnHandle.getColumnName()))
+                            .collect(ImmutableList.toImmutableList()));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
     /**
-     * Take a list of {@link Range} objects and return a list of {@link SleeperSplit} objects that can be fully-scanned
-     * to return the relevant rows. The split contains all of the range information that is needed to complete the
-     * scans, and so this method is the point in the execution process where the tupledomain derived from the user's
-     * query is converted into something which directly describes how that data will be read from Sleeper.
+     * Produces split objects for a list of ranges. The {@link SleeperSplit} objects can be fully scanned to return the
+     * relevant rows. The split contains all of the range information that is needed to complete the scans, and so this
+     * method is the point in the execution process where the tupledomain derived from the user's query is converted
+     * into something which directly describes how that data will be read from Sleeper.
      * <p>
      * In this implementation, the method {@link SleeperRawAwsConnection#splitIntoLeafPartitionQueries} is used to
      * generate the splits.
      *
-     * @param sleeperTransactionHandle The transaction that these splits will be generated under
-     * @param sleeperTableHandle       The table to generate the splits for
-     * @param trinoRangeList           A list of the ranges to generate the splits for
-     * @return A list of {@link SleeperSplit} objects generated from the supplied ranges
+     * @param  sleeperTransactionHandle The transaction that these splits will be generated under
+     * @param  sleeperTableHandle       The table to generate the splits for
+     * @param  trinoRangeList           A list of the ranges to generate the splits for
+     * @return                          A list of {@link SleeperSplit} objects generated from the supplied ranges
      */
-    public List<SleeperSplit> generateSleeperSplits(SleeperTransactionHandle sleeperTransactionHandle,
-                                                    SleeperTableHandle sleeperTableHandle,
-                                                    List<Range> trinoRangeList) {
-        List<SleeperColumnHandle> rowKeySleeperColumnHandlesInOrder =
-                sleeperTableHandle.getColumnHandlesInCategoryInOrder(SleeperColumnHandle.SleeperColumnCategory.ROWKEY);
+    public List<SleeperSplit> generateSleeperSplits(
+            SleeperTransactionHandle sleeperTransactionHandle, SleeperTableHandle sleeperTableHandle,
+            List<Range> trinoRangeList) {
+        List<SleeperColumnHandle> rowKeySleeperColumnHandlesInOrder = sleeperTableHandle.getColumnHandlesInCategoryInOrder(SleeperColumnHandle.SleeperColumnCategory.ROWKEY);
 
         if (rowKeySleeperColumnHandlesInOrder.size() > 1) {
             throw new UnsupportedOperationException("Single-valued rowkeys only");
@@ -301,15 +299,15 @@ public class SleeperConnectionAsTrino implements AutoCloseable {
         Schema sleeperSchema = sleeperRawAwsConnection.getSleeperSchema(sleeperTableHandle.getSchemaTableName().getTableName());
         sleeper.core.range.Range.RangeFactory rangeFactory = new sleeper.core.range.Range.RangeFactory(sleeperSchema);
         List<Region> sleeperRegionList = trinoRangeList.stream().map(
-                        trinoRange -> rangeFactory.createRange(
-                                rowKeySleeperColumnHandle.getColumnName(),
-                                SleeperTypeConversionUtils.convertTrinoObjectToSleeperRowKeyObject(
-                                        rowKeySleeperColumnHandle.getColumnTrinoType(), trinoRange.getLowBoundedValue()),
-                                trinoRange.isLowInclusive(),
-                                SleeperTypeConversionUtils.convertTrinoObjectToSleeperRowKeyObject(
-                                        rowKeySleeperColumnHandle.getColumnTrinoType(), trinoRange.getHighBoundedValue()),
-                                trinoRange.isHighInclusive()))
-                .map(sleeperRange -> new Region(ImmutableList.of(sleeperRange)))
+                trinoRange -> rangeFactory.createRange(
+                        rowKeySleeperColumnHandle.getColumnName(),
+                        SleeperTypeConversionUtils.convertTrinoObjectToSleeperRowKeyObject(
+                                rowKeySleeperColumnHandle.getColumnTrinoType(), trinoRange.getLowBoundedValue()),
+                        trinoRange.isLowInclusive(),
+                        SleeperTypeConversionUtils.convertTrinoObjectToSleeperRowKeyObject(
+                                rowKeySleeperColumnHandle.getColumnTrinoType(), trinoRange.getHighBoundedValue()),
+                        trinoRange.isHighInclusive()))
+                .map(sleeperRange -> Region.from(ImmutableList.of(sleeperRange)))
                 .collect(ImmutableList.toImmutableList());
 
         // Construct a Sleeper query with a unique, random query ID
@@ -333,14 +331,13 @@ public class SleeperConnectionAsTrino implements AutoCloseable {
     }
 
     /**
-     * This pass-through method exposes the internals pf the AWS connection and requires revision.
-     * <p>
-     * Create a new {@link IngestCoordinator} object to add rows to a table.
+     * Creates a new ingest coordinator to add rows to a table. This pass-through method exposes the internals of the
+     * AWS connection and requires revision.
      * <p>
      * Make sure to initialise the returned object and close it after use.
      *
-     * @param schemaTableName The schema and table to add the rows to. The schema must be the Sleeper default schema.
-     * @return The new {@link IngestCoordinator} object.
+     * @param  schemaTableName The schema and table to add the rows to. The schema must be the Sleeper default schema.
+     * @return                 The new {@link IngestCoordinator} object.
      */
     public IngestCoordinator<Page> createIngestCoordinator(SchemaTableName schemaTableName) {
         assert schemaTableName.getSchemaName().equals(DEFAULT_TRINO_SCHEMA_NAME);
@@ -372,7 +369,8 @@ public class SleeperConnectionAsTrino implements AutoCloseable {
                                 field.getName(),
                                 rowKeyColumnNameSet,
                                 sortKeyColumnNameSet,
-                                valueColumnNameSet))).collect(ImmutableList.toImmutableList());
+                                valueColumnNameSet)))
+                .collect(ImmutableList.toImmutableList());
         return new SleeperTableHandle(
                 new SchemaTableName(DEFAULT_TRINO_SCHEMA_NAME, tableName),
                 sleeperColumnHandleList);

@@ -20,8 +20,7 @@ import sleeper.core.schema.type.Type;
 import java.util.Objects;
 
 /**
- * Describes a field in the {@link Schema}. It contains a {@link String} name
- * and a {@link Type}.
+ * Describes a field in a Sleeper schema. It contains a name and a {@link Type}.
  */
 public class Field {
     private final String name;

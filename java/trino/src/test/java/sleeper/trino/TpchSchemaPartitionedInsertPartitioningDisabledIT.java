@@ -39,31 +39,30 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * This class is a copy of {@link TpchSchemaPartitionedInsertPartitioningEnabledIT} with minor changes and it would be a
- * good idea to parameterise it if possible.
+ * Tests for inserts. This is a copy of {@link TpchSchemaPartitionedInsertPartitioningEnabledIT} with minor changes and
+ * it would be a good idea to parameterise it if possible.
  */
 public class TpchSchemaPartitionedInsertPartitioningDisabledIT {
     private static final String TPCH_TABLE_SIZE = "sf1";
     private static final int NO_OF_NATION_KEYS = 25;
 
-    private static final List<PopulatedSleeperExternalResource.TableDefinition> TABLE_DEFINITIONS =
-            ImmutableList.of(
-                    new PopulatedSleeperExternalResource.TableDefinition(
-                            "customer_unpartitioned",
-                            generateCustomerSchemaForPartitioning(),
-                            List.of(),
-                            Stream.empty()),
-                    new PopulatedSleeperExternalResource.TableDefinition(
-                            "customer_partitioned",
-                            generateCustomerSchemaForPartitioning(),
-                            generateCustomerPartitionBoundaries(),
-                            Stream.empty()));
+    private static final List<PopulatedSleeperExternalResource.TableDefinition> TABLE_DEFINITIONS = ImmutableList.of(
+            new PopulatedSleeperExternalResource.TableDefinition(
+                    "customer_unpartitioned",
+                    generateCustomerSchemaForPartitioning(),
+                    List.of(),
+                    Stream.empty()),
+            new PopulatedSleeperExternalResource.TableDefinition(
+                    "customer_partitioned",
+                    generateCustomerSchemaForPartitioning(),
+                    generateCustomerPartitionBoundaries(),
+                    Stream.empty()));
 
     private static final Map<String, String> EXTRA_PROPERTIES_FOR_QUERY_RUNNER = ImmutableMap.of("task.writer-count", "4");
     private static final SleeperConfig SLEEPER_CONFIG = (new SleeperConfig()).setEnableTrinoPartitioning(false);
     @RegisterExtension
-    public static final PopulatedSleeperExternalResource POPULATED_SLEEPER_EXTERNAL_RESOURCE =
-            new PopulatedSleeperExternalResource(EXTRA_PROPERTIES_FOR_QUERY_RUNNER, TABLE_DEFINITIONS, SLEEPER_CONFIG);
+    public static final PopulatedSleeperExternalResource POPULATED_SLEEPER_EXTERNAL_RESOURCE = new PopulatedSleeperExternalResource(EXTRA_PROPERTIES_FOR_QUERY_RUNNER, TABLE_DEFINITIONS,
+            SLEEPER_CONFIG);
 
     private static QueryAssertions assertions;
 

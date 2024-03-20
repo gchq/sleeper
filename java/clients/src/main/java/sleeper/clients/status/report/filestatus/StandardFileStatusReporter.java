@@ -23,8 +23,7 @@ import java.io.PrintStream;
 import static sleeper.clients.util.ClientUtils.abbreviatedRecordCount;
 
 /**
- * The standard implementation of {@link FileStatusReporter} that returns file
- * status information to the user on the console.
+ * Returns file status information to the user on the console.
  */
 public class StandardFileStatusReporter implements FileStatusReporter {
 
