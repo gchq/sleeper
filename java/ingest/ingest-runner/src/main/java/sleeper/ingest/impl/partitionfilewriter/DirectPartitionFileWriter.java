@@ -83,7 +83,7 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
      * @param  parquetWriter        the ParquetWriter for the file
      * @throws IOException          -
      */
-    public DirectPartitionFileWriter(
+    private DirectPartitionFileWriter(
             Partition partition,
             ParquetConfiguration parquetConfiguration,
             String filePathPrefix,
