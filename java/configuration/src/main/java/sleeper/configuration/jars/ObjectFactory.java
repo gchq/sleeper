@@ -32,7 +32,7 @@ public class ObjectFactory {
         this.classLoader = classLoader;
     }
 
-    public static ObjectFactory withUserJars(InstanceProperties instanceProperties, AmazonS3 s3Client, String localDir) throws ObjectFactoryException {
+    public static ObjectFactory fromS3(InstanceProperties instanceProperties, AmazonS3 s3Client, String localDir) throws ObjectFactoryException {
         return new ObjectFactory(new S3UserJarsLoader(instanceProperties, s3Client, localDir).getClassLoader());
     }
 

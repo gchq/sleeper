@@ -101,7 +101,7 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
 
     private ObjectFactory createObjectFactory(AmazonS3 s3Client) {
         try {
-            return ObjectFactory.withUserJars(getInstanceProperties(), s3Client, "/tmp");
+            return ObjectFactory.fromS3(getInstanceProperties(), s3Client, "/tmp");
         } catch (ObjectFactoryException e) {
             throw new RuntimeException("Failed to initialise Object Factory");
         }

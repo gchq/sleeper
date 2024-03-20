@@ -360,7 +360,7 @@ class IngestJobRunnerIT {
 
         // When
         new IngestJobRunner(
-                ObjectFactory.withUserJars(instanceProperties, null, createTempDirectory(temporaryFolder, null).toString()),
+                ObjectFactory.fromS3(instanceProperties, null, createTempDirectory(temporaryFolder, null).toString()),
                 instanceProperties,
                 new FixedTablePropertiesProvider(tableProperties),
                 PropertiesReloader.neverReload(),
@@ -399,7 +399,7 @@ class IngestJobRunnerIT {
         TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(createTable(recordListAndSchema.sleeperSchema, fileSystemPrefix, recordBatchType, partitionFileWriterType));
         StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tablePropertiesProvider.getByName(tableName), stateStore);
         new IngestJobRunner(
-                ObjectFactory.withUserJars(instanceProperties, null, createTempDirectory(temporaryFolder, null).toString()),
+                ObjectFactory.fromS3(instanceProperties, null, createTempDirectory(temporaryFolder, null).toString()),
                 instanceProperties,
                 tablePropertiesProvider,
                 PropertiesReloader.neverReload(),

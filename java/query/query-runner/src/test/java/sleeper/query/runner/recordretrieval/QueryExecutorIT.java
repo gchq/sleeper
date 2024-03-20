@@ -101,7 +101,7 @@ public class QueryExecutorIT {
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
         StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema).rootFirst("root").buildList());
-        QueryExecutor queryExecutor = new QueryExecutor(ObjectFactory.withUserJars(instanceProperties, null, ""),
+        QueryExecutor queryExecutor = new QueryExecutor(ObjectFactory.fromS3(instanceProperties, null, ""),
                 tableProperties, stateStore, new Configuration(), executorService);
         queryExecutor.init();
         RangeFactory rangeFactory = new RangeFactory(schema);
@@ -144,7 +144,7 @@ public class QueryExecutorIT {
         List<String> files = stateStore.getFileReferences().stream()
                 .map(FileReference::getFilename)
                 .collect(Collectors.toList());
-        QueryExecutor queryExecutor = new QueryExecutor(ObjectFactory.withUserJars(instanceProperties, null, ""),
+        QueryExecutor queryExecutor = new QueryExecutor(ObjectFactory.fromS3(instanceProperties, null, ""),
                 tableProperties, stateStore, new Configuration(), executorService);
         queryExecutor.init();
         RangeFactory rangeFactory = new RangeFactory(schema);
@@ -214,7 +214,7 @@ public class QueryExecutorIT {
         List<String> files = stateStore.getFileReferences().stream()
                 .map(FileReference::getFilename)
                 .collect(Collectors.toList());
-        QueryExecutor queryExecutor = new QueryExecutor(ObjectFactory.withUserJars(instanceProperties, null, ""),
+        QueryExecutor queryExecutor = new QueryExecutor(ObjectFactory.fromS3(instanceProperties, null, ""),
                 tableProperties, stateStore, new Configuration(), executorService);
         queryExecutor.init();
         RangeFactory rangeFactory = new RangeFactory(schema);
@@ -279,7 +279,7 @@ public class QueryExecutorIT {
         List<String> files = stateStore.getFileReferences().stream()
                 .map(FileReference::getFilename)
                 .collect(Collectors.toList());
-        QueryExecutor queryExecutor = new QueryExecutor(ObjectFactory.withUserJars(instanceProperties, null, ""),
+        QueryExecutor queryExecutor = new QueryExecutor(ObjectFactory.fromS3(instanceProperties, null, ""),
                 tableProperties, stateStore, new Configuration(), executorService);
         queryExecutor.init();
         RangeFactory rangeFactory = new RangeFactory(schema);
@@ -344,7 +344,7 @@ public class QueryExecutorIT {
         List<String> files = stateStore.getFileReferences().stream()
                 .map(FileReference::getFilename)
                 .collect(Collectors.toList());
-        QueryExecutor queryExecutor = new QueryExecutor(ObjectFactory.withUserJars(instanceProperties, null, ""),
+        QueryExecutor queryExecutor = new QueryExecutor(ObjectFactory.fromS3(instanceProperties, null, ""),
                 tableProperties, stateStore, new Configuration(), executorService);
         queryExecutor.init();
         RangeFactory rangeFactory = new RangeFactory(schema);
@@ -483,7 +483,7 @@ public class QueryExecutorIT {
                 .filter(f -> f.getPartitionId().equals(rightPartition.getId()))
                 .map(FileReference::getFilename)
                 .collect(Collectors.toList());
-        QueryExecutor queryExecutor = new QueryExecutor(ObjectFactory.withUserJars(instanceProperties, null, ""),
+        QueryExecutor queryExecutor = new QueryExecutor(ObjectFactory.fromS3(instanceProperties, null, ""),
                 tableProperties, stateStore, new Configuration(), executorService);
         queryExecutor.init();
         RangeFactory rangeFactory = new RangeFactory(schema);
@@ -598,7 +598,7 @@ public class QueryExecutorIT {
                 .filter(f -> f.getPartitionId().equals(rightPartition.getId()))
                 .map(FileReference::getFilename)
                 .collect(Collectors.toList());
-        QueryExecutor queryExecutor = new QueryExecutor(ObjectFactory.withUserJars(instanceProperties, null, ""),
+        QueryExecutor queryExecutor = new QueryExecutor(ObjectFactory.fromS3(instanceProperties, null, ""),
                 tableProperties, stateStore, new Configuration(), executorService);
         queryExecutor.init();
         RangeFactory rangeFactory = new RangeFactory(schema);
@@ -769,7 +769,7 @@ public class QueryExecutorIT {
                 .map(FileReference::getFilename)
                 .collect(Collectors.toList());
 
-        QueryExecutor queryExecutor = new QueryExecutor(ObjectFactory.withUserJars(instanceProperties, null, ""),
+        QueryExecutor queryExecutor = new QueryExecutor(ObjectFactory.fromS3(instanceProperties, null, ""),
                 tableProperties, stateStore, new Configuration(), executorService);
         queryExecutor.init();
         RangeFactory rangeFactory = new RangeFactory(schema);
@@ -1010,7 +1010,7 @@ public class QueryExecutorIT {
                         .splitToNewChildren("root", "left", "right", 5L)
                         .buildList());
         ingestData(instanceProperties, stateStore, tableProperties, getMultipleRecordsForTestingSorting().iterator());
-        QueryExecutor queryExecutor = new QueryExecutor(ObjectFactory.withUserJars(instanceProperties, null, ""),
+        QueryExecutor queryExecutor = new QueryExecutor(ObjectFactory.fromS3(instanceProperties, null, ""),
                 tableProperties, stateStore, new Configuration(), executorService);
         queryExecutor.init();
         RangeFactory rangeFactory = new RangeFactory(schema);
@@ -1065,7 +1065,7 @@ public class QueryExecutorIT {
         StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema).rootFirst("root").buildList());
         List<Record> records = getRecordsForAgeOffIteratorTest();
         ingestData(instanceProperties, stateStore, tableProperties, records.iterator());
-        QueryExecutor queryExecutor = new QueryExecutor(ObjectFactory.withUserJars(instanceProperties, null, ""),
+        QueryExecutor queryExecutor = new QueryExecutor(ObjectFactory.fromS3(instanceProperties, null, ""),
                 tableProperties, stateStore, new Configuration(), executorService);
         queryExecutor.init();
         RangeFactory rangeFactory = new RangeFactory(schema);
@@ -1127,7 +1127,7 @@ public class QueryExecutorIT {
             ingestData(instanceProperties, stateStore, tableProperties,
                     getRecordsForQueryTimeIteratorTest(i % 2 == 0 ? "notsecret" : "secret").iterator());
         }
-        QueryExecutor queryExecutor = new QueryExecutor(ObjectFactory.withUserJars(instanceProperties, null, ""),
+        QueryExecutor queryExecutor = new QueryExecutor(ObjectFactory.fromS3(instanceProperties, null, ""),
                 tableProperties, stateStore, new Configuration(), executorService);
         queryExecutor.init();
         RangeFactory rangeFactory = new RangeFactory(schema);
@@ -1161,7 +1161,7 @@ public class QueryExecutorIT {
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         ingestData(instanceProperties, stateStore, tableProperties, getRecords().iterator());
-        QueryExecutor queryExecutor = new QueryExecutor(ObjectFactory.withUserJars(instanceProperties, null, "/tmp"), tableProperties, stateStore,
+        QueryExecutor queryExecutor = new QueryExecutor(ObjectFactory.fromS3(instanceProperties, null, "/tmp"), tableProperties, stateStore,
                 new Configuration(), Executors.newFixedThreadPool(1));
         queryExecutor.init();
         RangeFactory rangeFactory = new RangeFactory(schema);
@@ -1193,7 +1193,7 @@ public class QueryExecutorIT {
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         ingestData(instanceProperties, stateStore, tableProperties, getRecordsForQueryTimeIteratorTest("secret").iterator());
-        QueryExecutor queryExecutor = new QueryExecutor(ObjectFactory.withUserJars(instanceProperties, null, "/tmp"), tableProperties, stateStore,
+        QueryExecutor queryExecutor = new QueryExecutor(ObjectFactory.fromS3(instanceProperties, null, "/tmp"), tableProperties, stateStore,
                 new Configuration(), Executors.newFixedThreadPool(1));
         queryExecutor.init();
         RangeFactory rangeFactory = new RangeFactory(schema);
