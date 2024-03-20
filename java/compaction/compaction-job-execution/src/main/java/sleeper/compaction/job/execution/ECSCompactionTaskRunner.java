@@ -47,7 +47,7 @@ import static sleeper.configuration.properties.instance.CompactionProperty.COMPA
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 /**
- * Executes a {@link CompactionTask}, delegating the running of compaction jobs to {@link CompactSortedFiles},
+ * Runs a compaction task in ECS. Delegates the running of compaction jobs to {@link CompactSortedFiles},
  * and the processing of SQS messages to {@link SqsCompactionQueueHandler}.
  */
 public class ECSCompactionTaskRunner {
@@ -84,7 +84,7 @@ public class ECSCompactionTaskRunner {
                 instanceProperties);
         String taskId = UUID.randomUUID().toString();
 
-        ObjectFactory objectFactory = ObjectFactory.withUserJars(instanceProperties, s3Client, "/tmp");
+        ObjectFactory objectFactory = ObjectFactory.fromS3(instanceProperties, s3Client, "/tmp");
         CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties,
                 tablePropertiesProvider, stateStoreProvider, objectFactory);
         CompactionTask task = new CompactionTask(instanceProperties, propertiesReloader,

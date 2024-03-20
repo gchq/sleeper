@@ -71,7 +71,7 @@ public class SqsLeafPartitionQueryProcessor {
         instanceProperties = builder.instanceProperties;
         tablePropertiesProvider = builder.tablePropertiesProvider;
         executorService = Executors.newFixedThreadPool(instanceProperties.getInt(EXECUTOR_POOL_THREADS));
-        objectFactory = ObjectFactory.withUserJars(instanceProperties, builder.s3Client, "/tmp");
+        objectFactory = ObjectFactory.fromS3(instanceProperties, builder.s3Client, "/tmp");
         queryTracker = new DynamoDBQueryTracker(instanceProperties, builder.dynamoClient);
     }
 

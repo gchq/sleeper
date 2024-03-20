@@ -60,8 +60,7 @@ import java.util.Objects;
 import static sleeper.sketches.s3.SketchesSerDeToS3.sketchesPathForDataFile;
 
 /**
- * Executes a {@link CompactionJob}, i.e. compacts N input files into a single
- * output file.
+ * Executes a compaction job. Compacts N input files into a single output file.
  */
 public class CompactSortedFiles implements CompactionTask.CompactionRunner {
     private final InstanceProperties instanceProperties;
