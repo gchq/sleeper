@@ -51,7 +51,7 @@ public class Partition {
         id = builder.id;
         leafPartition = builder.leafPartition;
         parentPartitionId = builder.parentPartitionId;
-        childPartitionIds = Optional.ofNullable(builder.childPartitionIds).orElse(Collections.emptyList());
+        childPartitionIds = builder.childPartitionIds;
         dimension = builder.dimension;
     }
 
@@ -145,6 +145,17 @@ public class Partition {
         private Builder() {
         }
 
+        public Partition build() {
+            Objects.requireNonNull(rowKeyTypes, "rowKeyTypes must not be null");
+            Objects.requireNonNull(region, "region must not be null");
+            Objects.requireNonNull(id, "id must not be null");
+            if (!RegionCanonicaliser.isRegionInCanonicalForm(region)) {
+                throw new IllegalArgumentException("Region must be in canonical form");
+            }
+            childPartitionIds = Optional.ofNullable(childPartitionIds).orElse(Collections.emptyList());
+            return new Partition(this);
+        }
+
         public Builder rowKeyTypes(List<PrimitiveType> rowKeyTypes) {
             this.rowKeyTypes = rowKeyTypes;
             return this;
@@ -186,13 +197,6 @@ public class Partition {
         public Builder dimension(int dimension) {
             this.dimension = dimension;
             return this;
-        }
-
-        public Partition build() {
-            if (region != null && !RegionCanonicaliser.isRegionInCanonicalForm(region)) {
-                throw new IllegalArgumentException("Region must be in canonical form");
-            }
-            return new Partition(this);
         }
 
         public String getId() {
