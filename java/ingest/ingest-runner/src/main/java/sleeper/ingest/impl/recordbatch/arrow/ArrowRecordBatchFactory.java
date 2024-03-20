@@ -52,18 +52,6 @@ public class ArrowRecordBatchFactory<INCOMINGDATATYPE> implements RecordBatchFac
             Builder<INCOMINGDATATYPE> builder) {
         this.schema = Objects.requireNonNull(builder.schema, "schema must not be null");
         localWorkingDirectory = Objects.requireNonNull(builder.localWorkingDirectory, "localWorkingDirectory must not be null");
-        if (builder.workingBufferAllocatorBytes < 1) {
-            throw new IllegalArgumentException("workingBufferAllocatorBytes must be positive");
-        }
-        if (builder.maxBatchBufferAllocatorBytes < 1) {
-            throw new IllegalArgumentException("maxBatchBufferAllocatorBytes must be positive");
-        }
-        if (builder.maxNoOfBytesToWriteLocally < 1) {
-            throw new IllegalArgumentException("maxNoOfBytesToWriteLocally must be positive");
-        }
-        if (builder.maxNoOfRecordsToWriteToArrowFileAtOnce < 1) {
-            throw new IllegalArgumentException("maxNoOfRecordsToWriteToArrowFileAtOnce must be positive");
-        }
         this.workingBufferAllocatorBytes = builder.workingBufferAllocatorBytes;
         this.minBatchBufferAllocatorBytes = builder.minBatchBufferAllocatorBytes;
         this.maxBatchBufferAllocatorBytes = builder.maxBatchBufferAllocatorBytes;
@@ -196,6 +184,18 @@ public class ArrowRecordBatchFactory<INCOMINGDATATYPE> implements RecordBatchFac
         }
 
         public ArrowRecordBatchFactory<T> build() {
+            if (workingBufferAllocatorBytes < 1) {
+                throw new IllegalArgumentException("workingBufferAllocatorBytes must be positive");
+            }
+            if (maxBatchBufferAllocatorBytes < 1) {
+                throw new IllegalArgumentException("maxBatchBufferAllocatorBytes must be positive");
+            }
+            if (maxNoOfBytesToWriteLocally < 1) {
+                throw new IllegalArgumentException("maxNoOfBytesToWriteLocally must be positive");
+            }
+            if (maxNoOfRecordsToWriteToArrowFileAtOnce < 1) {
+                throw new IllegalArgumentException("maxNoOfRecordsToWriteToArrowFileAtOnce must be positive");
+            }
             return new ArrowRecordBatchFactory<>(this);
         }
     }
