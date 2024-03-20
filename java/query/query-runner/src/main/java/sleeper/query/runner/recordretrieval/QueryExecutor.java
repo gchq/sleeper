@@ -67,11 +67,9 @@ public class QueryExecutor {
                 Instant.now());
     }
 
-    public QueryExecutor(ObjectFactory objectFactory,
-            StateStore stateStore,
-            TableProperties tableProperties,
-            LeafPartitionRecordRetriever recordRetriever,
-            Instant timeNow) {
+    public QueryExecutor(
+            ObjectFactory objectFactory, StateStore stateStore, TableProperties tableProperties,
+            LeafPartitionRecordRetriever recordRetriever, Instant timeNow) {
         this.objectFactory = objectFactory;
         this.stateStore = stateStore;
         this.tableProperties = tableProperties;
