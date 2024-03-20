@@ -35,7 +35,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
  * A lambda function to execute {@link RunIngestTasks}.
  */
 @SuppressWarnings("unused")
-public class RunIngestTasksLambda {
+public final class RunIngestTasksLambda {
     private final RunIngestTasks runTasks;
 
     public RunIngestTasksLambda() {
