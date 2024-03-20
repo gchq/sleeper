@@ -79,6 +79,21 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
     private final Map<String, ItemsSketch> keyFieldToSketchMap;
     private long recordsWrittenToCurrentPartition;
 
+    public static AsyncS3PartitionFileWriter from(
+            Partition partition,
+            ParquetConfiguration parquetConfiguration,
+            String s3BucketName,
+            String filePathPrefix,
+            S3TransferManager s3TransferManager,
+            String localWorkingDirectory,
+            String fileName) throws IOException {
+        String partitionParquetLocalFileName = String.format("%s/partition_%s_%s.parquet", localWorkingDirectory, partition.getId(), fileName);
+        ParquetWriter<Record> parquetWriter = parquetConfiguration.createParquetWriter(partitionParquetLocalFileName);
+        return new AsyncS3PartitionFileWriter(
+                partition, parquetConfiguration, s3BucketName, filePathPrefix,
+                s3TransferManager, localWorkingDirectory, fileName, parquetWriter);
+    }
+
     /**
      * Creates an instance. Warning: this constructor allows a bespoke Hadoop configuration to be specified, but it will
      * not always be used due to a cache in the underlying {@link org.apache.hadoop.fs.FileSystem} object. This
@@ -94,6 +109,7 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
      * @param  localWorkingDirectory the local directory to use to create temporary files
      * @param  s3BucketName          the S3 bucket name and prefix to write to
      * @param  filePathPrefix        the prefix for S3 objects to write
+     * @param  parquetWriter         the ParquetWriter for the parquet file
      * @throws IOException           -
      */
     public AsyncS3PartitionFileWriter(
@@ -103,7 +119,8 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
             String filePathPrefix,
             S3TransferManager s3TransferManager,
             String localWorkingDirectory,
-            String fileName) throws IOException {
+            String fileName,
+            ParquetWriter<Record> parquetWriter) throws IOException {
         this.s3TransferManager = requireNonNull(s3TransferManager);
         this.sleeperSchema = parquetConfiguration.getTableProperties().getSchema();
         this.partition = requireNonNull(partition);
@@ -113,7 +130,7 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
         this.quantileSketchesLocalFileName = String.format("%s/partition_%s_%s.sketches", localWorkingDirectory, partition.getId(), fileName);
         this.partitionParquetS3Key = TableUtils.constructPartitionParquetFilePath(filePathPrefix, partition, fileName);
         this.quantileSketchesS3Key = TableUtils.constructQuantileSketchesFilePath(filePathPrefix, partition, fileName);
-        this.parquetWriter = parquetConfiguration.createParquetWriter(partitionParquetLocalFileName);
+        this.parquetWriter = parquetWriter;
         LOGGER.info("Created Parquet writer for partition {}", partition.getId());
         this.keyFieldToSketchMap = createQuantileSketchMap(sleeperSchema);
         this.recordsWrittenToCurrentPartition = 0L;

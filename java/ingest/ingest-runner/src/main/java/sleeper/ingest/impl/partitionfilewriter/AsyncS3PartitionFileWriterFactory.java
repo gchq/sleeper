@@ -128,14 +128,13 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
     @Override
     public PartitionFileWriter createPartitionFileWriter(Partition partition) {
         try {
-            return new AsyncS3PartitionFileWriter(
+            return AsyncS3PartitionFileWriter.from(
                     partition,
                     parquetConfiguration,
                     s3BucketName, filePathPrefix,
                     s3TransferManager,
                     localWorkingDirectory,
-                    fileNameGenerator.get()
-            );
+                    fileNameGenerator.get());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
