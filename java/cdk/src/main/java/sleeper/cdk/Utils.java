@@ -111,8 +111,9 @@ public class Utils {
     }
 
     /**
-     * Valid values are taken from
-     * <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-logs-loggroup.html">here</a>
+     * Configures a log group with the specified number of days. Valid values are taken from
+     * <a href=
+     * "https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-logs-loggroup.html">here</a>.
      * A value of -1 represents an infinite number of days.
      *
      * @param  numberOfDays number of days you want to retain the logs
@@ -262,9 +263,9 @@ public class Utils {
     }
 
     /**
-     * Normalises EC2 instance size strings so they can be looked up in the
-     * {@link software.amazon.awscdk.services.ec2.InstanceSize} enum.
-     * Java identifiers can't start with a number, so "2xlarge" becomes "xlarge2".
+     * Normalises EC2 instance size strings to match enum identifiers. They can then be looked up in the
+     * {@link software.amazon.awscdk.services.ec2.InstanceSize} enum. Java identifiers can't start with a number, so
+     * "2xlarge" becomes "xlarge2".
      *
      * @param  size the human readable size
      * @return      the internal enum name

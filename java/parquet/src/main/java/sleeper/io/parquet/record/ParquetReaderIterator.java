@@ -31,13 +31,19 @@ public class ParquetReaderIterator implements CloseableIterator<Record> {
     private Record record;
     private long recordsRead;
 
-    public ParquetReaderIterator(ParquetReader<Record> reader) throws IOException {
-        this.reader = reader;
-        this.record = reader.read();
-        this.recordsRead = 0L;
-        if (null != this.record) {
-            this.recordsRead++;
+    public static ParquetReaderIterator from(ParquetReader<Record> reader) throws IOException {
+        Record record = reader.read();
+        long recordsRead = 0L;
+        if (null != record) {
+            recordsRead++;
         }
+        return new ParquetReaderIterator(reader, record, recordsRead);
+    }
+
+    private ParquetReaderIterator(ParquetReader<Record> reader, Record record, long recordsRead) throws IOException {
+        this.reader = reader;
+        this.record = record;
+        this.recordsRead = recordsRead;
     }
 
     @Override

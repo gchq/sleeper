@@ -285,8 +285,8 @@ public class SleeperConnectionAsTrino implements AutoCloseable {
      * @param  trinoRangeList           A list of the ranges to generate the splits for
      * @return                          A list of {@link SleeperSplit} objects generated from the supplied ranges
      */
-    public List<SleeperSplit> generateSleeperSplits(SleeperTransactionHandle sleeperTransactionHandle,
-            SleeperTableHandle sleeperTableHandle,
+    public List<SleeperSplit> generateSleeperSplits(
+            SleeperTransactionHandle sleeperTransactionHandle, SleeperTableHandle sleeperTableHandle,
             List<Range> trinoRangeList) {
         List<SleeperColumnHandle> rowKeySleeperColumnHandlesInOrder = sleeperTableHandle.getColumnHandlesInCategoryInOrder(SleeperColumnHandle.SleeperColumnCategory.ROWKEY);
 

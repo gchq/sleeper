@@ -15,6 +15,7 @@
  */
 package sleeper.statestore.s3;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
@@ -67,6 +68,8 @@ class S3PartitionStore implements PartitionStore {
     private final String stateStorePath;
     private final S3StateStoreDataFile<Map<String, Partition>> s3StateStoreFile;
 
+    // Suppressing because false positives are found on method references/functional interfaces
+    @SuppressFBWarnings("CT_CONSTRUCTOR_THROW")
     private S3PartitionStore(Builder builder) {
         conf = Objects.requireNonNull(builder.conf, "hadoopConfiguration must not be null");
         tableSchema = Objects.requireNonNull(builder.tableSchema, "tableSchema must not be null");
@@ -118,9 +121,9 @@ class S3PartitionStore implements PartitionStore {
     }
 
     private static String validateSplitPartitionRequest(Map<String, Partition> partitionIdToPartition,
-                                                        Partition splitPartition,
-                                                        Partition newPartition1,
-                                                        Partition newPartition2) {
+            Partition splitPartition,
+            Partition newPartition1,
+            Partition newPartition2) {
         // Validate that splitPartition is there and is a leaf partition
         if (!partitionIdToPartition.containsKey(splitPartition.getId())) {
             return "splitPartition should be present";
@@ -248,7 +251,7 @@ class S3PartitionStore implements PartitionStore {
         try (ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(path), PARTITION_SCHEMA)
                 .withConf(conf)
                 .build()) {
-            ParquetReaderIterator recordReader = new ParquetReaderIterator(reader);
+            ParquetReaderIterator recordReader = ParquetReaderIterator.from(reader);
             while (recordReader.hasNext()) {
                 partitions.add(getPartitionFromRecord(recordReader.next()));
             }

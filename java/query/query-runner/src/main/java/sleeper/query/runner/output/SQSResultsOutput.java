@@ -40,7 +40,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.QueryProperty.QUERY_PROCESSING_LAMBDA_RESULTS_BATCH_SIZE;
 
 /**
- * An implementation of {@link ResultsOutput} that writes results to an SQS queue.
+ * A query results output that writes results to an SQS queue.
  */
 public class SQSResultsOutput implements ResultsOutput {
     private static final Logger LOGGER = LoggerFactory.getLogger(SQSResultsOutput.class);

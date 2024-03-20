@@ -18,7 +18,7 @@ package sleeper.compaction.strategy.impl;
 import sleeper.compaction.strategy.DelegatingCompactionStrategy;
 
 /**
- * A {@link sleeper.compaction.strategy.CompactionStrategy} that is similar to the strategy used in Accumulo.
+ * A compaction strategy that is similar to the strategy used in Accumulo.
  * Given files sorted into increasing size order, it tests whether the sum of the
  * sizes of the files excluding the largest is greater than or equal to a ratio
  * (3 by default) times the size of the largest. If this test is met then a

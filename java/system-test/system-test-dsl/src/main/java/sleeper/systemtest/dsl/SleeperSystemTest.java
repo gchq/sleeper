@@ -45,10 +45,10 @@ import java.util.Map;
 import java.util.stream.LongStream;
 
 /**
- * This class is the entry point that all system tests use to interact with the system.
- * It's the starting point for all steps of the Domain Specific Language (DSL) for system tests.
- * The purpose of this is to make it as easy as possible to read and write system tests.
- * It should make it easy to find and reuse steps to interact with the systems you care about for your tests.
+ * The entry point that all system tests use to interact with the system. This is the starting point for all steps of
+ * the Domain Specific Language (DSL) for system tests. The purpose of this is to make it as easy as possible to read
+ * and write system tests. It should make it easy to find and reuse steps to interact with the systems you care about
+ * for your tests.
  * <p>
  * It does this by delegating to drivers to actually interact with the system. The DSL only defines
  * the steps and language to be used by tests, and not any of the implemented behaviour of the steps.
