@@ -34,8 +34,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Serialises a {@link SplitPartitionJobDefinition} to and from byte arrays and
- * strings.
+ * Serialises a partition splitting job to and from byte arrays and strings.
  */
 public class SplitPartitionJobDefinitionSerDe {
     public static final String TABLE_ID = "tableId";

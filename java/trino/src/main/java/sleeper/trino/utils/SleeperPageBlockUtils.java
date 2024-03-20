@@ -42,12 +42,12 @@ public class SleeperPageBlockUtils {
     /**
      * Read a single object from the specified channel and position in the given page.
      *
-     * @param  sleeperColumnHandlesInChannelOrder The handles for each column stored in the page, in the order of the
-     *                                            channels in the page.
-     * @param  page                               The page to read from.
-     * @param  channelNo                          The channel to read.
-     * @param  positionNo                         The position to read.
-     * @return                                    The read object.
+     * @param  sleeperColumnHandlesInChannelOrder the handles for each column stored in the page, in the order of the
+     *                                            channels in the page
+     * @param  page                               the page to read from
+     * @param  channelNo                          the channel to read
+     * @param  positionNo                         the position to read
+     * @return                                    the read object
      */
     public static Object readObjectFromPage(
             List<SleeperColumnHandle> sleeperColumnHandlesInChannelOrder,
@@ -69,12 +69,12 @@ public class SleeperPageBlockUtils {
     }
 
     /**
-     * Write an element into a {@link BlockBuilder}. This method is used when columns of type {@link ArrayType} are
+     * Write an element into a block builder. This method is used when columns of type {@link ArrayType} are
      * being processed, which is experimental at present.
      *
-     * @param blockBuilder The block to write the elements into.
-     * @param fieldType    The type of the field being written to.
-     * @param element      The element itself.
+     * @param blockBuilder the block to write the elements into
+     * @param fieldType    the type of the field being written to
+     * @param element      the element itself
      */
     public static void writeElementToBuilder(BlockBuilder blockBuilder, ArrayType fieldType, Object element) {
         if (element == null) {

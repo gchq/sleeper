@@ -22,9 +22,9 @@ import java.util.List;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
- * Gathers failures that happened during compaction job creation, to be thrown after processing a batch.
- * When compaction job creation fails, {@link CreateCompactionJobs} will move on to the next table in the batch, and
- * throw the exception after processing the whole batch of tables.
+ * Gathers failures that happened during compaction job creation. When compaction job creation fails,
+ * {@link CreateCompactionJobs} will move on to the next table in the batch, and throw the exception after processing
+ * the whole batch of tables.
  */
 public class FailedCreateCompactionJobsException extends RuntimeException {
 

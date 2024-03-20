@@ -26,7 +26,7 @@ import sleeper.core.schema.Schema;
 import java.util.NoSuchElementException;
 
 /**
- * This class is a {@link CloseableIterator} of {@link Record}s, where these records are generated from an Apache Arrow
+ * An iterator of Sleeper records generated from Apache Arrow vectors. These records are generated from an Apache Arrow
  * {@link VectorSchemaRoot}. The rows are sorted before they are returned, according to the row keys and sort keys
  * specified in the supplied Sleeper {@link Schema}.
  */
@@ -38,10 +38,10 @@ class RecordIteratorOrderedFromVectorSchemaRoot implements CloseableIterator<Rec
     /**
      * Construct a SortedRecordIteratorFromVectorSchemaRoot.
      *
-     * @param temporaryBufferAllocator The {@link BufferAllocator} to use as a working buffer
-     * @param vectorSchemaRoot         The Arrow data to sort and iterate through
-     * @param sleeperSchema            The Sleeper {@link Schema} corresponding to the columns of the {@link
-     *                                 VectorSchemaRoot}
+     * @param temporaryBufferAllocator the {@link BufferAllocator} to use as a working buffer
+     * @param vectorSchemaRoot         the Arrow data to sort and iterate through
+     * @param sleeperSchema            the Sleeper {@link Schema} corresponding to the columns of the
+     *                                 {@link VectorSchemaRoot}
      */
     RecordIteratorOrderedFromVectorSchemaRoot(
             BufferAllocator temporaryBufferAllocator,
@@ -80,4 +80,3 @@ class RecordIteratorOrderedFromVectorSchemaRoot implements CloseableIterator<Rec
         return currentRecordNo;
     }
 }
-

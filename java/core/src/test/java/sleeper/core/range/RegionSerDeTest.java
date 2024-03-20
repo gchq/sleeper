@@ -43,7 +43,7 @@ public class RegionSerDeTest {
         for (boolean minInclusive : new HashSet<>(Arrays.asList(true, false))) {
             for (boolean maxInclusive : new HashSet<>(Arrays.asList(true, false))) {
                 Range range = rangeFactory.createRange(field, 1, minInclusive, 10, maxInclusive);
-                Region region = new Region(range);
+                Region region = Region.from(range);
 
                 // When
                 String serialisedRegion = regionSerDe.toJson(region);
@@ -66,7 +66,7 @@ public class RegionSerDeTest {
         for (boolean minInclusive : new HashSet<>(Arrays.asList(true, false))) {
             for (boolean maxInclusive : new HashSet<>(Arrays.asList(true, false))) {
                 Range range = rangeFactory.createRange(field, 1, minInclusive, null, maxInclusive);
-                Region region = new Region(range);
+                Region region = Region.from(range);
 
                 // When
                 String serialisedRegion = regionSerDe.toJson(region);
@@ -89,7 +89,7 @@ public class RegionSerDeTest {
         for (boolean minInclusive : new HashSet<>(Arrays.asList(true, false))) {
             for (boolean maxInclusive : new HashSet<>(Arrays.asList(true, false))) {
                 Range range = rangeFactory.createRange(field, 1L, minInclusive, 10L, maxInclusive);
-                Region region = new Region(range);
+                Region region = Region.from(range);
 
                 // When
                 String serialisedRegion = regionSerDe.toJson(region);
@@ -112,7 +112,7 @@ public class RegionSerDeTest {
         for (boolean minInclusive : new HashSet<>(Arrays.asList(true, false))) {
             for (boolean maxInclusive : new HashSet<>(Arrays.asList(true, false))) {
                 Range range = rangeFactory.createRange(field, 1L, minInclusive, null, maxInclusive);
-                Region region = new Region(range);
+                Region region = Region.from(range);
 
                 // When
                 String serialisedRegion = regionSerDe.toJson(region);
@@ -135,7 +135,7 @@ public class RegionSerDeTest {
         for (boolean minInclusive : new HashSet<>(Arrays.asList(true, false))) {
             for (boolean maxInclusive : new HashSet<>(Arrays.asList(true, false))) {
                 Range range = rangeFactory.createRange(field, "B", minInclusive, "I", maxInclusive);
-                Region region = new Region(range);
+                Region region = Region.from(range);
 
                 // When
                 String serialisedRegion = regionSerDe.toJson(region);
@@ -161,7 +161,7 @@ public class RegionSerDeTest {
 
         // Then
         Range expectedRange = rangeFactory.createRange(field, "A", false, "B", false);
-        Region expectedRegion = new Region(expectedRange);
+        Region expectedRegion = Region.from(expectedRange);
         assertThat(region).isEqualTo(expectedRegion);
     }
 
@@ -176,7 +176,7 @@ public class RegionSerDeTest {
         for (boolean minInclusive : new HashSet<>(Arrays.asList(true, false))) {
             for (boolean maxInclusive : new HashSet<>(Arrays.asList(true, false))) {
                 Range range = rangeFactory.createRange(field, "B", minInclusive, null, maxInclusive);
-                Region region = new Region(range);
+                Region region = Region.from(range);
 
                 // When
                 String serialisedRegion = regionSerDe.toJson(region);
@@ -199,7 +199,7 @@ public class RegionSerDeTest {
         for (boolean minInclusive : new HashSet<>(Arrays.asList(true, false))) {
             for (boolean maxInclusive : new HashSet<>(Arrays.asList(true, false))) {
                 Range range = rangeFactory.createRange(field, new byte[]{10, 11, 12}, minInclusive, new byte[]{15}, maxInclusive);
-                Region region = new Region(range);
+                Region region = Region.from(range);
 
                 // When
                 String serialisedRegion = regionSerDe.toJson(region);
@@ -222,7 +222,7 @@ public class RegionSerDeTest {
         for (boolean minInclusive : new HashSet<>(Arrays.asList(true, false))) {
             for (boolean maxInclusive : new HashSet<>(Arrays.asList(true, false))) {
                 Range range = rangeFactory.createRange(field, new byte[]{10, 11, 12}, minInclusive, null, maxInclusive);
-                Region region = new Region(range);
+                Region region = Region.from(range);
 
                 // When
                 String serialisedRegion = regionSerDe.toJson(region);
@@ -247,7 +247,7 @@ public class RegionSerDeTest {
         Range range2 = rangeFactory.createRange(field2, 100L, true, 1000L, false);
         Range range3 = rangeFactory.createRange(field3, "B", false, "G", true);
         Range range4 = rangeFactory.createRange(field4, new byte[]{10, 11, 12}, false, new byte[]{15}, false);
-        Region region = new Region(Arrays.asList(range1, range2, range3, range4));
+        Region region = Region.from(Arrays.asList(range1, range2, range3, range4));
         RegionSerDe regionSerDe = new RegionSerDe(schema);
 
         // When

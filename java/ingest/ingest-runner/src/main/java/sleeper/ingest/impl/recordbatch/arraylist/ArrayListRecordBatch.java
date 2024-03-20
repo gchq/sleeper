@@ -77,7 +77,7 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
     private int batchNo;
 
     /**
-     * Construct the ArrayList-based batch of records.
+     * Create an instance. Should be called by an {@link ArrayListRecordBatchFactory}.
      *
      * @param parquetConfiguration       Hadoop, schema and Parquet configuration for writing files.
      *                                   The Hadoop configuration is used during read and write of the Parquet files.
@@ -186,9 +186,8 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
     }
 
     /**
-     * Use a merge-sort to merge together all of the sorted files on the local disk and the (sorted) in-memory batch.
-     * <p>
-     * Note that this method may only be called once.
+     * Merge-sort the sorted files on the local disk and records in memory into one iterator. Note that this method may
+     * only be called once.
      *
      * @return             An iterator of the sorted records.
      * @throws IOException -

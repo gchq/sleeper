@@ -33,8 +33,7 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 /**
- * A {@link SleeperPartitioner} is a custom {@link Partitioner} which uses the
- * Sleeper partitions to split the data into different partitions.
+ * A custom Spark partitioner to split the data into different Sleeper partitions.
  */
 public class SleeperPartitioner extends Partitioner {
     private static final long serialVersionUID = -4686777638868174263L;
@@ -56,7 +55,7 @@ public class SleeperPartitioner extends Partitioner {
         schema = new SchemaSerDe().fromJson(schemaAsString);
         numRowKeyFields = schema.getRowKeyFields().size();
         List<Partition> partitions = broadcastPartitions.getValue();
-        partitionTree = new PartitionTree(partitions);
+        partitionTree = PartitionTree.from(partitions);
         numLeafPartitions = (int) partitions.stream().filter(Partition::isLeafPartition).count();
         partitionIdToInt = new HashMap<>();
         List<String> leafPartitions = partitions.stream()

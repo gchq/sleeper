@@ -33,8 +33,8 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 import static java.util.Objects.requireNonNull;
 
 /**
- * This table handle holds details of the table name, the column handles and any {@link TupleDomain} that is to be used
- * to filter the results from the table when it is scanned.
+ * Holds details to filter the results from the table when it is scanned. This includes the table name, the column
+ * handles and any tuple domain.
  */
 public class SleeperTableHandle implements ConnectorTableHandle {
     private final SchemaTableName schemaTableName;
@@ -43,15 +43,15 @@ public class SleeperTableHandle implements ConnectorTableHandle {
 
     @JsonCreator
     public SleeperTableHandle(@JsonProperty("schemaTableName") SchemaTableName schemaTableName,
-                              @JsonProperty("sleeperColumnHandleListInOrder") List<SleeperColumnHandle> sleeperColumnHandleListInOrder,
-                              @JsonProperty("tupleDomain") TupleDomain<ColumnHandle> tupleDomain) {
+            @JsonProperty("sleeperColumnHandleListInOrder") List<SleeperColumnHandle> sleeperColumnHandleListInOrder,
+            @JsonProperty("tupleDomain") TupleDomain<ColumnHandle> tupleDomain) {
         this.schemaTableName = requireNonNull(schemaTableName);
         this.sleeperColumnHandleListInOrder = requireNonNull(sleeperColumnHandleListInOrder);
         this.tupleDomain = requireNonNull(tupleDomain);
     }
 
     public SleeperTableHandle(SchemaTableName schemaTableName,
-                              List<SleeperColumnHandle> sleeperColumnHandleListInOrder) {
+            List<SleeperColumnHandle> sleeperColumnHandleListInOrder) {
         this(schemaTableName, sleeperColumnHandleListInOrder, TupleDomain.all());
     }
 
@@ -71,9 +71,9 @@ public class SleeperTableHandle implements ConnectorTableHandle {
     }
 
     /**
-     * A convenience method to return this handle as a {@link ConnectorTableMetadata} object.
+     * A convenience method to return this handle as a table metadata object.
      *
-     * @return The {@link ConnectorTableMetadata} object.
+     * @return the {@link ConnectorTableMetadata} object
      */
     public ConnectorTableMetadata toConnectorTableMetadata() {
         List<ColumnMetadata> columnMetadataList = this.sleeperColumnHandleListInOrder.stream()
@@ -83,20 +83,19 @@ public class SleeperTableHandle implements ConnectorTableHandle {
     }
 
     /**
-     * A convenience method to return this handle as a {@link TableColumnsMetadata} object.
+     * A convenience method to return this handle as a columns metadata object.
      *
-     * @return The {@link TableColumnsMetadata} object.
+     * @return the {@link TableColumnsMetadata} object
      */
     public TableColumnsMetadata toTableColumnsMetadata() {
         return TableColumnsMetadata.forTable(schemaTableName, toConnectorTableMetadata().getColumns());
     }
 
     /**
-     * Replace the {@link TupleDomain} in this handle with a new tupledomain and return a copy with all other fields
-     * intact.
+     * Copy this handle, replacing the tuple domain but keeping other fields intact.
      *
-     * @param newTupleDomain The {@link TupleDomain} to use in the new copy.
-     * @return The copied {@link SleeperTableHandle}.
+     * @param  newTupleDomain the {@link TupleDomain} to use in the new copy
+     * @return                the copied {@link SleeperTableHandle}
      */
     public SleeperTableHandle withTupleDomain(TupleDomain<ColumnHandle> newTupleDomain) {
         return new SleeperTableHandle(schemaTableName, sleeperColumnHandleListInOrder, newTupleDomain);
@@ -105,8 +104,7 @@ public class SleeperTableHandle implements ConnectorTableHandle {
     public List<SleeperColumnHandle> getColumnHandlesInCategoryInOrder(SleeperColumnHandle.SleeperColumnCategory category) {
         return this.getSleeperColumnHandleListInOrder()
                 .stream()
-                .filter(sleeperColumnHandle ->
-                        sleeperColumnHandle.getColumnCategory() == category)
+                .filter(sleeperColumnHandle -> sleeperColumnHandle.getColumnCategory() == category)
                 .collect(ImmutableList.toImmutableList());
     }
 

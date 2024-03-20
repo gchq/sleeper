@@ -52,7 +52,7 @@ import static sleeper.configuration.properties.instance.IngestProperty.S3A_INPUT
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 /**
- * Executes an {@link IngestTask}, delegating the running of ingest jobs to {@link IngestJobRunner},
+ * Runs an ingest task in ECS. Delegates the running of ingest jobs to {@link IngestJobRunner},
  * and the processing of SQS messages to {@link IngestJobQueueConsumer}.
  */
 public class ECSIngestTaskRunner {

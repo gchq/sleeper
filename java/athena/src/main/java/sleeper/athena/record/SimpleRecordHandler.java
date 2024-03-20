@@ -41,10 +41,8 @@ import java.util.stream.Collectors;
 import static sleeper.athena.metadata.SleeperMetadataHandler.RELEVANT_FILES_FIELD;
 
 /**
- * The {@link SimpleRecordHandler} is an implementation of the {@link SleeperRecordHandler} which takes a single Parquet
- * file provided by the {@link sleeper.athena.metadata.SimpleMetadataHandler} and reads the relevant values using
- * Parquet's predicate pushdown. Unlike the {@link IteratorApplyingRecordHandler} this handler does not apply iterators
- * to the results, however results will likely be returned faster as a consequence.
+ * Retrieves data using Parquet's predicate pushdown. Unlike the {@link IteratorApplyingRecordHandler} this handler does
+ * not apply iterators to the results, however results will likely be returned faster as a consequence.
  */
 public class SimpleRecordHandler extends SleeperRecordHandler {
     public SimpleRecordHandler() {
@@ -59,9 +57,9 @@ public class SimpleRecordHandler extends SleeperRecordHandler {
      * Trims down the schema to one derived from the original schema but only containing the fields that require
      * projection (either for filtering, transform or being returned).
      *
-     * @param originalSchema the original table schema
-     * @param recordsRequest the data request
-     * @return an adapted schema only containing fields requested or filtered upon
+     * @param  originalSchema the original table schema
+     * @param  recordsRequest the data request
+     * @return                an adapted schema only containing fields requested or filtered upon
      */
     @Override
     protected Schema createSchemaForDataRead(Schema originalSchema, ReadRecordsRequest recordsRequest) {
@@ -84,13 +82,14 @@ public class SimpleRecordHandler extends SleeperRecordHandler {
     }
 
     /**
-     * Creates a single parquet iterator from the schema and split, using the constraints to add parquet filters for efficiency.
+     * Creates a single parquet iterator from the schema and split, using the constraints to add parquet filters for
+     * efficiency.
      *
-     * @param recordsRequest  the request
-     * @param schema          the schema for reading the data
-     * @param tableProperties the table properties for this table
-     * @return a Parquet iterator for this split
-     * @throws Exception if something goes wrong with the read
+     * @param  recordsRequest  the request
+     * @param  schema          the schema for reading the data
+     * @param  tableProperties the table properties for this table
+     * @return                 a Parquet iterator for this split
+     * @throws Exception       if something goes wrong with the read
      */
     @Override
     protected CloseableIterator<Record> createRecordIterator(ReadRecordsRequest recordsRequest, Schema schema, TableProperties tableProperties) throws Exception {

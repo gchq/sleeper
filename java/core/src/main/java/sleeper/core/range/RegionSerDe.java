@@ -44,7 +44,7 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * Serialises a {@link Region} to and from a JSON string.
+ * Serialises a region to and from a JSON string.
  */
 public class RegionSerDe {
     public static final String MIN = "min";
@@ -57,15 +57,11 @@ public class RegionSerDe {
     private final Gson gsonPrettyPrinting;
 
     public RegionSerDe(Schema schema) {
-        try {
-            GsonBuilder builder = new GsonBuilder()
-                    .registerTypeAdapter(Class.forName(Region.class.getName()), new RegionJsonSerDe(schema))
-                    .serializeNulls();
-            this.gson = builder.create();
-            this.gsonPrettyPrinting = builder.setPrettyPrinting().create();
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException("Exception creating Gson", e);
-        }
+        GsonBuilder builder = new GsonBuilder()
+                .registerTypeAdapter(Region.class, new RegionJsonSerDe(schema))
+                .serializeNulls();
+        this.gson = builder.create();
+        this.gsonPrettyPrinting = builder.setPrettyPrinting().create();
     }
 
     public String toJson(Region region) {
@@ -136,7 +132,7 @@ public class RegionSerDe {
                 }
                 ranges.add(convertJsonObjectToRange(key, (JsonObject) json, stringsBase64Encoded));
             }
-            return new Region(ranges);
+            return Region.from(ranges);
         }
 
         private JsonObject convertRangeToJsonObject(Range range) {
@@ -192,11 +188,9 @@ public class RegionSerDe {
 
         private Range convertJsonObjectToRange(String fieldName, JsonObject json, boolean stringsBase64Encoded) {
             Object min = getObject(MIN, fieldName, json, stringsBase64Encoded);
-            boolean minInclusive = json.has(MIN_INCLUSIVE) ?
-                    json.get(MIN_INCLUSIVE).getAsBoolean() : true;
+            boolean minInclusive = json.has(MIN_INCLUSIVE) ? json.get(MIN_INCLUSIVE).getAsBoolean() : true;
             Object max = getObject(MAX, fieldName, json, stringsBase64Encoded);
-            boolean maxInclusive = json.has(MAX_INCLUSIVE) ?
-                    json.get(MAX_INCLUSIVE).getAsBoolean() : false;
+            boolean maxInclusive = json.has(MAX_INCLUSIVE) ? json.get(MAX_INCLUSIVE).getAsBoolean() : false;
             return rangeFactory.createRange(schema.getField(fieldName).get(), min, minInclusive, max, maxInclusive);
         }
 

@@ -34,7 +34,7 @@ import static sleeper.ingest.job.status.IngestJobFinishedEvent.ingestJobFinished
 import static sleeper.ingest.job.status.IngestJobStartedEvent.ingestJobStarted;
 
 /**
- * Runs an ingest task, updating the {@link IngestTaskStatusStore} with progress of the task.
+ * Runs an ingest task. Executes jobs from a queue, updating the status stores with progress of the task.
  */
 public class IngestTask {
     public static final Logger LOGGER = LoggerFactory.getLogger(IngestTask.class);

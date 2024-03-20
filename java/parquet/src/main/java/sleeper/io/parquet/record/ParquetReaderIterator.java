@@ -24,7 +24,7 @@ import java.io.IOException;
 import java.util.NoSuchElementException;
 
 /**
- * A {@link CloseableIterator} of {@link Record}s generated from a {@link ParquetReader}.
+ * Iterates through records read from a Parquet file. Wraps a {@link ParquetReader}.
  */
 public class ParquetReaderIterator implements CloseableIterator<Record> {
     private final ParquetReader<Record> reader;

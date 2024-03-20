@@ -33,10 +33,10 @@ import java.util.stream.Stream;
 import static java.util.Objects.requireNonNull;
 
 /**
- * A record set that will generate a {@link RecordCursor} to scan through rows of data retrieved from Sleeper. Each
- * instance if this class is constructed from a {@link SleeperSplit}. The split contains the details of the Sleeper
- * partition, files and all of the key ranges within that partition to be scanned. The key ranges may be very narrow and
- * so this record set can perform highly-selective scans as well as broader scans.
+ * Generates a cursor to scan through rows of data retrieved from Sleeper. Each instance of this class is constructed
+ * from a {@link SleeperSplit}. The split contains the details of the Sleeper partition, files and all of the key ranges
+ * within that partition to be scanned. The key ranges may be very narrow and so this record set can perform highly
+ * selective scans as well as broader scans.
  */
 public class SleeperRecordSet implements RecordSet {
     private static final Logger LOGGER = Logger.get(SleeperRecordSet.class);
@@ -46,7 +46,7 @@ public class SleeperRecordSet implements RecordSet {
     private final Stream<List<Object>> resultRowStream;
 
     /**
-     * Construct a record set which scans an entire {@link SleeperSplit}. The split contains partition and range
+     * Construct a record set which scans an entire split. The {@link SleeperSplit} contains partition and range
      * information, so this scan may be small or large, depending on the parameters in the split.
      * <p>
      * Note that the {@link io.trino.spi.predicate.TupleDomain} returned by {@link SleeperTableHandle#getTupleDomain()}
@@ -58,9 +58,9 @@ public class SleeperRecordSet implements RecordSet {
      * @param outputSleeperColumnHandlesInOrder The columns that are to be returned
      */
     public SleeperRecordSet(SleeperConnectionAsTrino sleeperConnectionAsTrino,
-                            SleeperTransactionHandle sleeperTransactionHandle,
-                            SleeperSplit sleeperSplit,
-                            List<SleeperColumnHandle> outputSleeperColumnHandlesInOrder) {
+            SleeperTransactionHandle sleeperTransactionHandle,
+            SleeperSplit sleeperSplit,
+            List<SleeperColumnHandle> outputSleeperColumnHandlesInOrder) {
         requireNonNull(sleeperConnectionAsTrino);
         requireNonNull(sleeperTransactionHandle);
         requireNonNull(sleeperSplit);
@@ -73,10 +73,9 @@ public class SleeperRecordSet implements RecordSet {
     }
 
     /**
-     * Retrieve the Trino types of all the columns returned by the {@link SleeperRecordCursor}, in the order that they
-     * will be returned.
+     * Retrieve the Trino types of all the columns returned by the cursor.
      *
-     * @return The types of the columns, in order.
+     * @return the types of the columns, in the order they will be returned
      */
     @Override
     public List<Type> getColumnTypes() {
@@ -86,9 +85,9 @@ public class SleeperRecordSet implements RecordSet {
     }
 
     /**
-     * Retrieve a {@link SleeperRecordCursor} which allows the Trino framework to step through the resulting rows.
+     * Retrieve a cursor which allows Trino to step through the resulting rows.
      *
-     * @return The {@link SleeperRecordCursor}.
+     * @return the {@link SleeperRecordCursor}
      */
     @Override
     public RecordCursor cursor() {
