@@ -45,10 +45,8 @@ import sleeper.systemtest.dsl.util.PurgeQueueDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
 /**
- * This is the interface that {@link SleeperSystemTest} will use to communicate with instances of Sleeper and the
- * deployed environment.
- * <p>
- * Where {@link SleeperSystemTest} defines the language for interacting with Sleeper, the implementation is defined
+ * The interface for the system test DSL to interact with Sleeper and the deployed environment. Where
+ * {@link SleeperSystemTest} defines the language for interacting with Sleeper, the implementation is defined
  * by drivers that can be accessed through an implementation of this interface.
  */
 public interface SystemTestDrivers {

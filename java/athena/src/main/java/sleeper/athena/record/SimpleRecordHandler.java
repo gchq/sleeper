@@ -41,10 +41,8 @@ import java.util.stream.Collectors;
 import static sleeper.athena.metadata.SleeperMetadataHandler.RELEVANT_FILES_FIELD;
 
 /**
- * The {@link SimpleRecordHandler} is an implementation of the {@link SleeperRecordHandler} which takes a single Parquet
- * file provided by the {@link sleeper.athena.metadata.SimpleMetadataHandler} and reads the relevant values using
- * Parquet's predicate pushdown. Unlike the {@link IteratorApplyingRecordHandler} this handler does not apply iterators
- * to the results, however results will likely be returned faster as a consequence.
+ * Retrieves data using Parquet's predicate pushdown. Unlike the {@link IteratorApplyingRecordHandler} this handler does
+ * not apply iterators to the results, however results will likely be returned faster as a consequence.
  */
 public class SimpleRecordHandler extends SleeperRecordHandler {
     public SimpleRecordHandler() {

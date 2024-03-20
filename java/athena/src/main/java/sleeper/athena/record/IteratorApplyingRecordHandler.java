@@ -72,9 +72,9 @@ import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLAS
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
 
 /**
- * Handles requests for data. Searches within a single partition for data which matches the constraints of the query.
- * To protect against queries which span multiple partitions, only data in parent partitions which also fall into the
- * constraints of the leaf partition are returned.
+ * Retrieves data using Parquet's predicate pushdown, applying compaction time iterators. Searches within a single
+ * partition for data which matches the constraints of the query. To protect against queries which span multiple
+ * partitions, only data in parent partitions which also fall into the constraints of the leaf partition are returned.
  * <p>
  * Compaction time iterators are also applied to the results before they are returned.
  */

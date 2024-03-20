@@ -64,7 +64,6 @@ import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.iam.Role;
-import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.Permission;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
@@ -136,16 +135,14 @@ import static sleeper.configuration.properties.instance.CompactionProperty.ECR_C
 import static software.amazon.awscdk.services.lambda.Runtime.JAVA_11;
 
 /**
- * A {@link NestedStack} to deploy the {@link Queue}s, ECS {@link Cluster}s, a {@link FargateTaskDefinition} or
- * an {@link Ec2TaskDefinition}, {@link Function}s, CloudWatch {@link Rule}s needed to perform compaction
- * jobs. Specifically, there is:
+ * Deploys the resources needed to perform compaction jobs. Specifically, there is:
  * <p>
- * - a lambda, that is periodically triggered by a CloudWatch rule, to query the state store for
+ * - A lambda, that is periodically triggered by a CloudWatch rule, to query the state store for
  * information about active files with no job id, to create compaction job definitions as
- * appropriate and post them to a queue;
- * - an ECS {@link Cluster} and either a {@link FargateTaskDefinition} or a {@link Ec2TaskDefinition}
- * for tasks that will perform compaction jobs;
- * - a lambda, that is periodically triggered by a CloudWatch rule, to look at the
+ * appropriate and post them to a queue.
+ * - An ECS {@link Cluster} and either a {@link FargateTaskDefinition} or a {@link Ec2TaskDefinition}
+ * for tasks that will perform compaction jobs.
+ * - A lambda, that is periodically triggered by a CloudWatch rule, to look at the
  * size of the queue and the number of running tasks and create more tasks if necessary.
  */
 public class CompactionStack extends NestedStack {

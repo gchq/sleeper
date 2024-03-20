@@ -97,22 +97,16 @@ import static sleeper.configuration.properties.instance.EKSProperty.BULK_IMPORT_
 import static sleeper.configuration.properties.instance.EKSProperty.EKS_CLUSTER_ADMIN_ROLES;
 
 /**
- * An {@link EksBulkImportStack} creates an EKS cluster and associated Kubernetes
- * resources needed to run Spark on Kubernetes. In addition to this, it creates
- * a statemachine which can run jobs on the cluster.
+ * Deploys an EKS cluster and associated Kubernetes resources needed to run Spark on Kubernetes. In addition to this,
+ * it creates a state machine which can run bulk import jobs on the cluster.
  */
 public final class EksBulkImportStack extends NestedStack {
     private final Queue bulkImportJobQueue;
 
     public EksBulkImportStack(
-            Construct scope,
-            String id,
-            InstanceProperties instanceProperties,
-            BuiltJars jars,
-            BulkImportBucketStack importBucketStack,
-            CoreStacks coreStacks,
-            TopicStack errorsTopicStack,
-            IngestStatusStoreStack statusStoreStack) {
+            Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars,
+            BulkImportBucketStack importBucketStack, CoreStacks coreStacks,
+            TopicStack errorsTopicStack, IngestStatusStoreStack statusStoreStack) {
         super(scope, id);
 
         String instanceId = instanceProperties.get(ID);
@@ -128,9 +122,9 @@ public final class EksBulkImportStack extends NestedStack {
                 .build();
 
         queueForDLs.metricApproximateNumberOfMessagesVisible().with(MetricOptions.builder()
-                        .period(Duration.seconds(60))
-                        .statistic("Sum")
-                        .build())
+                .period(Duration.seconds(60))
+                .statistic("Sum")
+                .build())
                 .createAlarm(this, "BulkImportEKSUndeliveredJobsAlarm", CreateAlarmOptions.builder()
                         .alarmDescription("Alarms if there are any messages that have failed validation or failed to be passed to the statemachine")
                         .evaluationPeriods(1)
@@ -251,7 +245,7 @@ public final class EksBulkImportStack extends NestedStack {
     }
 
     private StateMachine createStateMachine(Cluster cluster, InstanceProperties instanceProperties,
-                                            ITopic errorsTopic) {
+            ITopic errorsTopic) {
         String imageName = instanceProperties.get(ACCOUNT) +
                 ".dkr.ecr." +
                 instanceProperties.get(REGION) +
@@ -295,8 +289,8 @@ public final class EksBulkImportStack extends NestedStack {
                                                         .next(CustomState.Builder.create(this, "DeleteJob")
                                                                 .stateJson(deleteJobState).build()))
                                         .otherwise(createErrorMessage.next(publishError).next(Fail.Builder
-                                                .create(this, "FailedJobState").cause("Spark job failed").build()))))
-                ).build();
+                                                .create(this, "FailedJobState").cause("Spark job failed").build())))))
+                .build();
     }
 
     private KubernetesManifest createNamespace(Cluster bulkImportCluster, String bulkImportNamespace) {
@@ -315,17 +309,17 @@ public final class EksBulkImportStack extends NestedStack {
     }
 
     private void createManifests(Cluster cluster, KubernetesManifest namespace, String namespaceName,
-                                 IRole stateMachineRole) {
+            IRole stateMachineRole) {
         Lists.newArrayList(
-                        createManifestFromResource(cluster, "SparkSubmitRole", namespaceName, "/k8s/spark-submit-role.json"),
-                        createManifestFromResource(cluster, "SparkSubmitRoleBinding", namespaceName,
-                                "/k8s/spark-submit-role-binding.json"),
-                        createManifestFromResource(cluster, "SparkRole", namespaceName, "/k8s/spark-role.json"),
-                        createManifestFromResource(cluster, "SparkRoleBinding", namespaceName, "/k8s/spark-role-binding.json"),
-                        createManifestFromResource(cluster, "StepFunctionRole", namespaceName, "/k8s/step-function-role.json"),
-                        createManifestFromResource(cluster, "StepFunctionRoleBinding", namespaceName,
-                                "/k8s/step-function-role-binding.json",
-                                replacements(Map.of("user-placeholder", stateMachineRole.getRoleArn()))))
+                createManifestFromResource(cluster, "SparkSubmitRole", namespaceName, "/k8s/spark-submit-role.json"),
+                createManifestFromResource(cluster, "SparkSubmitRoleBinding", namespaceName,
+                        "/k8s/spark-submit-role-binding.json"),
+                createManifestFromResource(cluster, "SparkRole", namespaceName, "/k8s/spark-role.json"),
+                createManifestFromResource(cluster, "SparkRoleBinding", namespaceName, "/k8s/spark-role-binding.json"),
+                createManifestFromResource(cluster, "StepFunctionRole", namespaceName, "/k8s/step-function-role.json"),
+                createManifestFromResource(cluster, "StepFunctionRoleBinding", namespaceName,
+                        "/k8s/step-function-role-binding.json",
+                        replacements(Map.of("user-placeholder", stateMachineRole.getRoleArn()))))
                 .forEach(manifest -> manifest.getNode().addDependency(namespace));
     }
 
@@ -334,7 +328,7 @@ public final class EksBulkImportStack extends NestedStack {
     }
 
     private static KubernetesManifest createManifestFromResource(Cluster cluster, String id, String namespace, String resource,
-                                                                 Function<String, String> replacements) {
+            Function<String, String> replacements) {
         return cluster.addManifest(id, parseJsonWithNamespace(resource, namespace, replacements));
     }
 
