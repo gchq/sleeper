@@ -48,8 +48,8 @@ import java.time.Instant;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
- * Creates compaction jobs for batches of tables sent to an SQS queue, running in AWS Lambda.
- * Runs compaction job creation with {@link CreateCompactionJobs}.
+ * Creates compaction jobs for batches of tables sent to an SQS queue, running in AWS Lambda. Runs compaction job
+ * creation with {@link CreateCompactionJobs}.
  */
 @SuppressWarnings("unused")
 public class CreateCompactionJobsLambda implements RequestHandler<SQSEvent, Void> {
@@ -71,7 +71,7 @@ public class CreateCompactionJobsLambda implements RequestHandler<SQSEvent, Void
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3(s3Client, s3Bucket);
 
-        ObjectFactory objectFactory = new ObjectFactory(instanceProperties, s3Client, "/tmp");
+        ObjectFactory objectFactory = ObjectFactory.fromS3(instanceProperties, s3Client, "/tmp");
 
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
         AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();

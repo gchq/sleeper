@@ -45,7 +45,6 @@ public class CompactionJob {
         partitionId = Objects.requireNonNull(builder.partitionId, "partitionId must not be null");
         iteratorClassName = builder.iteratorClassName;
         iteratorConfig = builder.iteratorConfig;
-        checkDuplicates(inputFiles);
     }
 
     public static Builder builder() {
@@ -183,6 +182,7 @@ public class CompactionJob {
         }
 
         public CompactionJob build() {
+            checkDuplicates(inputFiles);
             return new CompactionJob(this);
         }
     }

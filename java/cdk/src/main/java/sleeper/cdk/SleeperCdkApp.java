@@ -69,7 +69,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 
 /**
- * The {@link App} that deploys all the Sleeper stacks.
+ * Deploys an instance of Sleeper, including any configured optional stacks.
  */
 public class SleeperCdkApp extends Stack {
     private final InstanceProperties instanceProperties;

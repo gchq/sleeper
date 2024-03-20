@@ -27,7 +27,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
- * Serialises a {@link Query} to and from JSON.
+ * Serialises a query to and from JSON.
  */
 public class QuerySerDe {
     private final Gson gson;

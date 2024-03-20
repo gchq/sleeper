@@ -193,8 +193,8 @@ public class FilterTranslatorIT {
         // When
         Map<String, ValueSet> summary = new HashMap<>();
         summary.put("int", SortedRangeSet.of(Range
-                        .range(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
-                                1, true, 3, false),
+                .range(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
+                        1, true, 3, false),
                 Range.range(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
                         5, true, 8, false)));
 
@@ -380,7 +380,7 @@ public class FilterTranslatorIT {
         // When
         Map<String, ValueSet> summary = new HashMap<>();
         summary.put("int", EquatableValueSet.newBuilder(new BlockAllocatorImpl(),
-                        Types.MinorType.INT.getType(), true, false)
+                Types.MinorType.INT.getType(), true, false)
                 .add(1).add(3).add(5).build());
 
         FilterPredicate filterPredicate = filterTranslator.toPredicate(summary);
@@ -403,7 +403,7 @@ public class FilterTranslatorIT {
         // When
         Map<String, ValueSet> summary = new HashMap<>();
         summary.put("int", EquatableValueSet.newBuilder(new BlockAllocatorImpl(),
-                        Types.MinorType.INT.getType(), false, false)
+                Types.MinorType.INT.getType(), false, false)
                 .add(0).add(1).add(2).add(3).build());
 
         FilterPredicate filterPredicate = filterTranslator.toPredicate(summary);
@@ -426,7 +426,7 @@ public class FilterTranslatorIT {
         // When
         Map<String, ValueSet> summary = new HashMap<>();
         summary.put("long", EquatableValueSet.newBuilder(new BlockAllocatorImpl(),
-                        Types.MinorType.BIGINT.getType(), true, false)
+                Types.MinorType.BIGINT.getType(), true, false)
                 .add(1_000_000_000L).add(3_000_000_000L).add(5_000_000_000L).build());
 
         FilterPredicate filterPredicate = filterTranslator.toPredicate(summary);
@@ -449,7 +449,7 @@ public class FilterTranslatorIT {
         // When
         Map<String, ValueSet> summary = new HashMap<>();
         summary.put("long", EquatableValueSet.newBuilder(new BlockAllocatorImpl(),
-                        Types.MinorType.BIGINT.getType(), false, false)
+                Types.MinorType.BIGINT.getType(), false, false)
                 .add(0L).add(1_000_000_000L).add(2_000_000_000L).add(3_000_000_000L).build());
 
         FilterPredicate filterPredicate = filterTranslator.toPredicate(summary);
@@ -472,7 +472,7 @@ public class FilterTranslatorIT {
         // When
         Map<String, ValueSet> summary = new HashMap<>();
         summary.put("string", EquatableValueSet.newBuilder(new BlockAllocatorImpl(),
-                        Types.MinorType.VARCHAR.getType(), true, false)
+                Types.MinorType.VARCHAR.getType(), true, false)
                 .add("1").add("3").add("5").build());
 
         FilterPredicate filterPredicate = filterTranslator.toPredicate(summary);
@@ -495,7 +495,7 @@ public class FilterTranslatorIT {
         // When
         Map<String, ValueSet> summary = new HashMap<>();
         summary.put("string", EquatableValueSet.newBuilder(new BlockAllocatorImpl(),
-                        Types.MinorType.VARCHAR.getType(), false, false)
+                Types.MinorType.VARCHAR.getType(), false, false)
                 .add("0").add("1").add("2").add("3").build());
 
         FilterPredicate filterPredicate = filterTranslator.toPredicate(summary);
@@ -518,7 +518,7 @@ public class FilterTranslatorIT {
         // When
         Map<String, ValueSet> summary = new HashMap<>();
         summary.put("bytes", EquatableValueSet.newBuilder(new BlockAllocatorImpl(),
-                        Types.MinorType.VARBINARY.getType(), true, false)
+                Types.MinorType.VARBINARY.getType(), true, false)
                 .add("1".getBytes(UTF_8)).add("3".getBytes(UTF_8)).add("5".getBytes(UTF_8)).build());
 
         FilterPredicate filterPredicate = filterTranslator.toPredicate(summary);
@@ -541,7 +541,7 @@ public class FilterTranslatorIT {
         // When
         Map<String, ValueSet> summary = new HashMap<>();
         summary.put("bytes", EquatableValueSet.newBuilder(new BlockAllocatorImpl(),
-                        Types.MinorType.VARBINARY.getType(), false, false)
+                Types.MinorType.VARBINARY.getType(), false, false)
                 .add("0".getBytes(UTF_8)).add("1".getBytes(UTF_8)).add("2".getBytes(UTF_8)).add("3".getBytes(UTF_8)).build());
 
         FilterPredicate filterPredicate = filterTranslator.toPredicate(summary);
@@ -568,7 +568,7 @@ public class FilterTranslatorIT {
                         4, false, 8, false)));
 
         summary.put("string", EquatableValueSet.newBuilder(new BlockAllocatorImpl(),
-                        Types.MinorType.VARCHAR.getType(), false, false)
+                Types.MinorType.VARCHAR.getType(), false, false)
                 .add("5").add("7").build());
 
         FilterPredicate filterPredicate = filterTranslator.toPredicate(summary);
@@ -595,7 +595,7 @@ public class FilterTranslatorIT {
                         4, false, 8, false)));
 
         summary.put("string", EquatableValueSet.newBuilder(new BlockAllocatorImpl(),
-                        Types.MinorType.VARCHAR.getType(), true, false)
+                Types.MinorType.VARCHAR.getType(), true, false)
                 .add("9").add("10").build());
 
         FilterPredicate filterPredicate = filterTranslator.toPredicate(summary);
@@ -650,7 +650,7 @@ public class FilterTranslatorIT {
                 .build();
 
         List<Record> records = new ArrayList<>();
-        ParquetReaderIterator parquetReaderIterator = new ParquetReaderIterator(reader);
+        ParquetReaderIterator parquetReaderIterator = ParquetReaderIterator.from(reader);
 
         while (parquetReaderIterator.hasNext()) {
             records.add(parquetReaderIterator.next());

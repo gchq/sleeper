@@ -60,8 +60,7 @@ import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildA
 public class ObjectFactoryIT {
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE)).withServices(
-            LocalStackContainer.Service.SQS, LocalStackContainer.Service.DYNAMODB, LocalStackContainer.Service.S3
-    );
+            LocalStackContainer.Service.SQS, LocalStackContainer.Service.DYNAMODB, LocalStackContainer.Service.S3);
 
     @TempDir
     public Path folder;
@@ -127,7 +126,7 @@ public class ObjectFactoryIT {
         // Delete local class file
         Files.delete(new File("MyIterator.class").toPath());
         // Create ObjectFactory and use to create iterator
-        ObjectFactory objectFactory = new ObjectFactory(instanceProperties, s3Client, createTempDirectory(folder, null).toString());
+        ObjectFactory objectFactory = ObjectFactory.fromS3(instanceProperties, s3Client, createTempDirectory(folder, null).toString());
         SortedRecordIterator sri = objectFactory.getObject("MyIterator", SortedRecordIterator.class);
 
         assertThat(sri).hasToString("MyIterator");

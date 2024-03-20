@@ -73,7 +73,7 @@ public class SqsQueryProcessor {
         instanceProperties = builder.instanceProperties;
         tablePropertiesProvider = builder.tablePropertiesProvider;
         executorService = Executors.newFixedThreadPool(instanceProperties.getInt(EXECUTOR_POOL_THREADS));
-        objectFactory = new ObjectFactory(instanceProperties, builder.s3Client, "/tmp");
+        objectFactory = ObjectFactory.fromS3(instanceProperties, builder.s3Client, "/tmp");
         queryTracker = new DynamoDBQueryTracker(instanceProperties, builder.dynamoClient);
         // The following Configuration is only used in StateStoreProvider for reading from S3 if the S3StateStore is used,
         // so use the standard Configuration rather than the one for query lambdas which is specific to the table.

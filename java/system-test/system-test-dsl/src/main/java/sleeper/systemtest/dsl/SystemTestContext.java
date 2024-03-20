@@ -18,16 +18,18 @@ package sleeper.systemtest.dsl;
 
 import sleeper.systemtest.dsl.instance.DeployedSleeperInstances;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
+import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import sleeper.systemtest.dsl.reporting.ReportingContext;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 
 /**
- * This class tracks the context of a single running system test that will use the {@link SleeperSystemTest} DSL. This
- * is anything that needs to be remembered from one step to the next, but not in between tests.
+ * Tracks the context of a single running system test that will use the DSL. This is anything that needs to be
+ * remembered from one step to the next, but not in between tests.
  * <p>
- * Note that deployed resources and Sleeper instances are managed separately, outside of any test.
+ * The {@link SleeperSystemTest} DSL uses this for the context of a test. Deployed resources and Sleeper instances are
+ * managed separately in {@link SystemTestDeploymentContext}, outside of any test.
  */
 public class SystemTestContext {
     private final SystemTestParameters parameters;
@@ -37,7 +39,7 @@ public class SystemTestContext {
     private final ReportingContext reporting;
 
     public SystemTestContext(SystemTestParameters parameters, SystemTestDrivers drivers,
-                             DeployedSystemTestResources systemTestResources, DeployedSleeperInstances deployedInstances) {
+            DeployedSystemTestResources systemTestResources, DeployedSleeperInstances deployedInstances) {
         this.parameters = parameters;
         this.systemTestResources = systemTestResources;
         instance = new SystemTestInstanceContext(parameters, deployedInstances,

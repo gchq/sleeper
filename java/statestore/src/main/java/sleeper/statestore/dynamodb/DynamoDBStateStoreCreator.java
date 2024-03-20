@@ -36,9 +36,8 @@ import static sleeper.statestore.dynamodb.DynamoDBStateStore.PARTITION_ID_AND_FI
 import static sleeper.statestore.dynamodb.DynamoDBStateStore.TABLE_ID;
 
 /**
- * Creates the tables necessary for a {@link DynamoDBStateStore}. Mainly used
- * for testing purposes as the creation of the tables in real deployments is
- * normally done using CDK.
+ * Creates the tables necessary for a DynamoDB state store. Mainly used for testing purposes as the creation of the
+ * tables in real deployments is normally done using CDK.
  */
 public class DynamoDBStateStoreCreator {
     private final InstanceProperties instanceProperties;

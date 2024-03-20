@@ -33,7 +33,7 @@ import java.util.Objects;
 import static sleeper.query.runner.tracker.DynamoDBQueryTracker.NON_NESTED_QUERY_PLACEHOLDER;
 
 /**
- * A model for entries in the query tracker DynamoDB table, to be mapped to {@link TrackedQuery} objects.
+ * A model for entries in the query tracker DynamoDB table. Will be mapped to {@link TrackedQuery} objects.
  */
 class DynamoDBQueryTrackerEntry {
 

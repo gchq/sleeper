@@ -58,8 +58,8 @@ public class ResultVerifier {
     }
 
     public static Map<Field, ItemsSketch> readFieldToItemSketchMap(Schema sleeperSchema,
-                                                                   List<FileReference> partitionFileReferenceList,
-                                                                   Configuration hadoopConfiguration) {
+            List<FileReference> partitionFileReferenceList,
+            Configuration hadoopConfiguration) {
         List<Sketches> readSketchesList = partitionFileReferenceList.stream()
                 .map(fileReference -> {
                     try {
@@ -103,8 +103,8 @@ public class ResultVerifier {
     }
 
     public static List<Record> readMergedRecordsFromPartitionDataFiles(Schema sleeperSchema,
-                                                                       List<FileReference> fileReferenceList,
-                                                                       Configuration hadoopConfiguration) {
+            List<FileReference> fileReferenceList,
+            Configuration hadoopConfiguration) {
         List<Record> recordsRead = new ArrayList<>();
         Set<String> filenames = new HashSet<>();
         for (FileReference fileReference : fileReferenceList) {
@@ -123,8 +123,8 @@ public class ResultVerifier {
     }
 
     public static List<Record> readRecordsFromPartitionDataFile(Schema sleeperSchema,
-                                                                FileReference fileReference,
-                                                                Configuration hadoopConfiguration) {
+            FileReference fileReference,
+            Configuration hadoopConfiguration) {
 
         try (CloseableIterator<Record> iterator = createParquetReaderIterator(
                 sleeperSchema, new Path(fileReference.getFilename()), hadoopConfiguration)) {
@@ -137,20 +137,20 @@ public class ResultVerifier {
     }
 
     private static ParquetReaderIterator createParquetReaderIterator(Schema sleeperSchema,
-                                                                     Path filePath,
-                                                                     Configuration hadoopConfiguration) {
+            Path filePath,
+            Configuration hadoopConfiguration) {
         try {
             ParquetReader<Record> recordParquetReader = new ParquetRecordReader.Builder(filePath, sleeperSchema)
                     .withConf(hadoopConfiguration)
                     .build();
-            return new ParquetReaderIterator(recordParquetReader);
+            return ParquetReaderIterator.from(recordParquetReader);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
     public static void assertOnSketch(Field field, RecordGenerator.RecordListAndSchema recordListAndSchema,
-                                      List<FileReference> actualFiles, Configuration hadoopConfiguration) {
+            List<FileReference> actualFiles, Configuration hadoopConfiguration) {
         ItemsSketch expectedSketch = createItemSketch(field, recordListAndSchema.recordList);
         ItemsSketch savedSketch = readFieldToItemSketchMap(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration).get(field);
         assertOnSketch(field, expectedSketch, savedSketch);

@@ -55,9 +55,8 @@ import static sleeper.athena.metadata.SleeperMetadataHandler.SOURCE_TYPE;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
- * An abstraction layer for the {@link RecordHandler} so that users can choose how to create a record iterator. The
- * {@link SleeperRecordHandler} handles the writing of the records to Athena and delegates the iterator creation to
- * the implementation.
+ * An abstraction layer so that users can choose how to create a record iterator. Handles the writing of the records to
+ * Athena and delegates the iterator creation to the implementation.
  */
 public abstract class SleeperRecordHandler extends RecordHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(SleeperRecordHandler.class);

@@ -27,8 +27,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.EMAIL_ADD
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
 /**
- * The {@link NestedStack} that creates an SNS {@link Topic} that emails alerts if
- * messages arrive on a dead-letter queue.
+ * Creates an SNS topic for alerts. This will email alerts if messages arrive on a dead-letter queue.
  */
 public class TopicStack extends NestedStack {
     private final Topic topic;

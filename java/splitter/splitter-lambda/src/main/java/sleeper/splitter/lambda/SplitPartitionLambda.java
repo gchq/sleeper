@@ -43,8 +43,7 @@ import java.io.IOException;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
- * Triggered by an SQS event containing a {@link SplitPartitionJobDefinition}
- * job to do.
+ * Triggered by an SQS event containing a partition splitting job to do.
  */
 @SuppressWarnings("unused")
 public class SplitPartitionLambda implements RequestHandler<SQSEvent, Void> {
