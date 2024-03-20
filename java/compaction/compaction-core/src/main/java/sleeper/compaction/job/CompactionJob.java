@@ -38,11 +38,11 @@ public class CompactionJob {
     private final String iteratorConfig;
 
     private CompactionJob(Builder builder) {
-        tableId = Objects.requireNonNull(builder.tableId, "tableId must not be null");
-        jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
+        tableId = builder.tableId;
+        jobId = builder.jobId;
         inputFiles = builder.inputFiles;
-        outputFile = Objects.requireNonNull(builder.outputFile, "outputFile must not be null");
-        partitionId = Objects.requireNonNull(builder.partitionId, "partitionId must not be null");
+        outputFile = builder.outputFile;
+        partitionId = builder.partitionId;
         iteratorClassName = builder.iteratorClassName;
         iteratorConfig = builder.iteratorConfig;
     }
@@ -140,6 +140,16 @@ public class CompactionJob {
         private Builder() {
         }
 
+        public CompactionJob build() {
+            Objects.requireNonNull(tableId, "tableId must not be null");
+            Objects.requireNonNull(jobId, "jobId must not be null");
+            Objects.requireNonNull(inputFiles, "inputFiles must not be null");
+            Objects.requireNonNull(outputFile, "outputFile must not be null");
+            Objects.requireNonNull(partitionId, "partitionId must not be null");
+            checkDuplicates(inputFiles);
+            return new CompactionJob(this);
+        }
+
         public Builder tableId(String tableId) {
             this.tableId = tableId;
             return this;
@@ -179,12 +189,6 @@ public class CompactionJob {
         public Builder iteratorConfig(String iteratorConfig) {
             this.iteratorConfig = iteratorConfig;
             return this;
-        }
-
-        public CompactionJob build() {
-            inputFiles = Objects.requireNonNull(inputFiles, "inputFiles must not be null");
-            checkDuplicates(inputFiles);
-            return new CompactionJob(this);
         }
     }
 }
