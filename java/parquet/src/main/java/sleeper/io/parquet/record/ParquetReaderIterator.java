@@ -40,7 +40,7 @@ public class ParquetReaderIterator implements CloseableIterator<Record> {
         return new ParquetReaderIterator(reader, record, recordsRead);
     }
 
-    private ParquetReaderIterator(ParquetReader<Record> reader, Record record, long recordsRead) throws IOException {
+    private ParquetReaderIterator(ParquetReader<Record> reader, Record record, long recordsRead) {
         this.reader = reader;
         this.record = record;
         this.recordsRead = recordsRead;
