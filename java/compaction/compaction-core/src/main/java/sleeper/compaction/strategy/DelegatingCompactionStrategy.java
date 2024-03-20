@@ -35,7 +35,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * A {@link CompactionStrategy} that delegates to {@link LeafPartitionCompactionStrategy} and {@link ShouldCreateJobsStrategy}.
+ * A wrapper containing behaviour common to compaction strategies. Delegates to {@link LeafPartitionCompactionStrategy}
+ * and {@link ShouldCreateJobsStrategy}.
  */
 public class DelegatingCompactionStrategy implements CompactionStrategy {
     private static final Logger LOGGER = LoggerFactory.getLogger(DelegatingCompactionStrategy.class);

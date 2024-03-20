@@ -53,14 +53,11 @@ import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToF
 import static sleeper.core.util.SplitIntoBatches.splitListIntoBatchesOf;
 
 /**
- * Creates compaction job definitions and posts them to an SQS queue.
- * <p>
- * This is done as follows:
- * - Queries the {@link StateStore} for active files which do not have a job id.
- * - Groups these by partition.
- * - For each partition, uses the configurable {@link CompactionStrategy} to
- * decide what compaction jobs to create.
- * - These compaction jobs are then sent to SQS.
+ * Creates compaction job definitions and posts them to an SQS queue. This is done as follows:
+ * <p>- Queries the {@link StateStore} for active files which do not have a job id.
+ * <p>- Groups these by partition.
+ * <p>- For each partition, uses the configurable {@link CompactionStrategy} to decide what compaction jobs to create.
+ * <p>- These compaction jobs are then sent to SQS.
  */
 public class CreateCompactionJobs {
     private static final Logger LOGGER = LoggerFactory.getLogger(CreateCompactionJobs.class);

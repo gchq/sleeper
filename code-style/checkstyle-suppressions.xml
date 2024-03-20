@@ -26,9 +26,5 @@
     <suppress files="[\\/]src[\\/]test[\\/].*" id="methodLengthMax"/>
     <suppress files="[\\/]src[\\/]test[\\/].*" id="parameterNumber"/>
     <suppress files=".*Application.java" id="hideUtilityClassConstructor"/>
-    <suppress files="[\\/]compaction[\\/].*" id="summaryJavadoc"/>
-    <suppress files="[\\/]splitter[\\/].*" id="summaryJavadoc"/>
-    <suppress files="[\\/]garbage-collector[\\/].*" id="summaryJavadoc"/>
-    <suppress files="[\\/]statestore[\\/].*" id="summaryJavadoc"/>
     <suppress files="[\\/]query[\\/].*" id="summaryJavadoc"/>
 </suppressions>

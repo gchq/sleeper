@@ -41,7 +41,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.PartitionSplittingProperty.PARTITION_SPLITTING_TABLE_BATCH_SIZE;
 
 /**
- * A lambda to invoke {@link FindPartitionsToSplitLambda} with batches of tables.
+ * A lambda to invoke partition splitting with batches of tables.
  */
 public class FindPartitionsToSplitTriggerLambda implements RequestHandler<ScheduledEvent, Void> {
     private static final Logger LOGGER = LoggerFactory.getLogger(FindPartitionsToSplitTriggerLambda.class);
