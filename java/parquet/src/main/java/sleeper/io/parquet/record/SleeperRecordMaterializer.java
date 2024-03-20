@@ -24,7 +24,7 @@ public class SleeperRecordMaterializer extends org.apache.parquet.io.api.RecordM
     private final RecordConverter recordConverter;
 
     public SleeperRecordMaterializer(Schema schema) {
-        this.recordConverter = new RecordConverter(schema);
+        this.recordConverter = RecordConverter.from(schema);
     }
 
     @Override

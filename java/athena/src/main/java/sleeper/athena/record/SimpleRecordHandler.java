@@ -105,6 +105,6 @@ public class SimpleRecordHandler extends SleeperRecordHandler {
             recordReaderBuilder.withFilter(FilterCompat.get(filterPredicate));
         }
 
-        return new ParquetReaderIterator(recordReaderBuilder.build());
+        return ParquetReaderIterator.from(recordReaderBuilder.build());
     }
 }
