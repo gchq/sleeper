@@ -104,7 +104,7 @@ public class CompactionJobTestDataHelper {
 
     private void setPartitions(List<Partition> partitions) {
         this.partitions = partitions;
-        partitionTree = new PartitionTree(partitions);
+        partitionTree = PartitionTree.from(partitions);
         fileFactory = FileReferenceFactory.from(partitionTree);
     }
 

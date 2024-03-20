@@ -45,17 +45,22 @@ import static sleeper.ingest.impl.partitionfilewriter.PartitionFileWriterUtils.c
 import static sleeper.ingest.impl.partitionfilewriter.PartitionFileWriterUtils.updateQuantileSketchMap;
 
 /**
- * This class writes partition files to S3 in an asynchronous manner.
+ * Writes partition files to S3 in an asynchronous manner. Here's a summary of this process:
  * <ul>
- *     <li>Data is provided to this class, in sort order, through the {@link #append} method. </li>
- *     <li>As the records arrive, local Parquet files are created for each partition. As the records are in sorted order, there will be first be records for one partition, then records for another partition, and so on. (See note below)</li>
- *     <li>As each Parquet partition file is completed, an asynchronous upload to S3 is initiated, which will delete the local copy of the Parquet partition file once the upload has completed</li>
- *     <li>This whole process repeats until {@link #close()} is called, at which point the remaining partition file is uploaded</li>
- *     <li>The {@link #close()} method returns a future which will complete once all of the Parquet partition files have been uploaded</li>
+ * <li>Data is provided to this class, in sort order, through the {@link #append} method.</li>
+ * <li>As the records arrive, local Parquet files are created for each partition. As the records are in sorted order,
+ * there will be first be records for one partition, then records for another partition, and so on. (See note
+ * below)</li>
+ * <li>As each Parquet partition file is completed, an asynchronous upload to S3 is initiated, which will delete the
+ * local copy of the Parquet partition file once the upload has completed</li>
+ * <li>This whole process repeats until {@link #close()} is called, at which point the remaining partition file is
+ * uploaded</li>
+ * <li>The {@link #close()} method returns a future which will complete once all of the Parquet partition files have
+ * been uploaded</li>
  * </ul>
  * <p>
- * Note that the sort-order and the partition-order may not be the same when the Sleeper Schema has more than one row key.
- * This is the responsibility of the calling classes to handle and this class can assume that all of the records
+ * Note that the sort-order and the partition-order may not be the same when the Sleeper Schema has more than one row
+ * key. This is the responsibility of the calling classes to handle and this class can assume that all of the records
  * that it receives belong to the same partition.
  */
 public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
@@ -75,20 +80,21 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
     private long recordsWrittenToCurrentPartition;
 
     /**
-     * Warning: this constructor allows a bespoke Hadoop configuration to be specified, but it will not always be used
-     * due an underlying cache in the underlying {@link org.apache.hadoop.fs.FileSystem} object. This {@link org.apache.hadoop.fs.FileSystem} object maintains a
-     * cache of file systems and the first time that it creates a {@link org.apache.hadoop.fs.s3a.S3AFileSystem} object,
-     * the provided Hadoop configuration will be used. Thereafter, the Hadoop configuration will be ignored until {@link
-     * org.apache.hadoop.fs.FileSystem#closeAll()} is called. This is strange behaviour and can cause errors which are difficult to
-     * diagnose.
+     * Creates an instance. Warning: this constructor allows a bespoke Hadoop configuration to be specified, but it will
+     * not always be used due to a cache in the underlying {@link org.apache.hadoop.fs.FileSystem} object. This
+     * {@link org.apache.hadoop.fs.FileSystem} object maintains a cache of file systems and the first time that it
+     * creates a {@link org.apache.hadoop.fs.s3a.S3AFileSystem} object, the provided Hadoop configuration will be used.
+     * Thereafter, the Hadoop configuration will be ignored until {@link org.apache.hadoop.fs.FileSystem#closeAll()} is
+     * called. This is strange behaviour and can cause errors which are difficult to diagnose.
      *
-     * @param partition             The partition to write to
-     * @param parquetConfiguration  Hadoop, schema and Parquet configuration for writing the local Parquet partition file
-     * @param s3TransferManager     The manager to use to perform the asynchronous upload
-     * @param localWorkingDirectory The local directory to use to create temporary files
-     * @param s3BucketName          The S3 bucket name and prefix to write to
-     * @param filePathPrefix        The prefix for S3 objects to write
-     * @throws IOException -
+     * @param  partition             the partition to write to
+     * @param  parquetConfiguration  Hadoop, schema and Parquet configuration for writing the local Parquet partition
+     *                               file
+     * @param  s3TransferManager     the manager to use to perform the asynchronous upload
+     * @param  localWorkingDirectory the local directory to use to create temporary files
+     * @param  s3BucketName          the S3 bucket name and prefix to write to
+     * @param  filePathPrefix        the prefix for S3 objects to write
+     * @throws IOException           -
      */
     public AsyncS3PartitionFileWriter(
             Partition partition,
@@ -114,16 +120,15 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
     }
 
     /**
-     * Create a {@link CompletableFuture} which uploads the named file, asynchronously, to S3 and then deletes the local
-     * copy of that file. The future completes once the file has been deleted, and it contains the response which was
-     * returned from the file upload.
+     * Upload the named file, asynchronously, to S3. Deletes the local copy of that file. The future completes once the
+     * file has been deleted, and it contains the response which was returned from the file upload.
      *
-     * @param s3TransferManager   The manager to use to perform the asynchronous upload
-     * @param localFileName       The file to upload
-     * @param s3BucketName        The S3 bucket to put the file into
-     * @param s3Key               The S3 key of the uploaded file
-     * @param hadoopConfiguration The Hadoop configuration to use when deleting the local file
-     * @return The {@link CompletableFuture} which was returned by the upload.
+     * @param  s3TransferManager   the manager to use to perform the asynchronous upload
+     * @param  localFileName       the file to upload
+     * @param  s3BucketName        the S3 bucket to put the file into
+     * @param  s3Key               the S3 key of the uploaded file
+     * @param  hadoopConfiguration the Hadoop configuration to use when deleting the local file
+     * @return                     the {@link CompletableFuture} which was returned by the upload
      */
     private static CompletableFuture<CompletedFileUpload> asyncUploadLocalFileToS3ThenDeleteLocalCopy(
             S3TransferManager s3TransferManager,
@@ -155,7 +160,7 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
     /**
      * Append a record to the partition. This writes the record to a local Parquet file and does not upload it to S3.
      *
-     * @param record The record to append
+     * @param  record      The record to append
      * @throws IOException -
      */
     @Override
@@ -173,7 +178,7 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
      * for both the Parquet file and for the associated quantiles sketch file. The local copies are deleted and then the
      * {@link CompletableFuture} completes. The details of new partition file are returned in the completed future.
      *
-     * @return Details about the new partition file
+     * @return             Details about the new partition file
      * @throws IOException -
      */
     @Override

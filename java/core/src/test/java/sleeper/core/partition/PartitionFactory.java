@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * A convenience class for specifying partitions.
+ * A convenience class for specifying partitions. Used to build {@link Partition} objects.
  * <p>
  * Note that a shorthand is used for cases where we have a schema with only one row key field.
  * This will not be useful in the general case.
@@ -45,7 +45,7 @@ public class PartitionFactory {
     }
 
     public Partition.Builder partition(String id, Object min, Object max) {
-        return partition(id, new Region(rangeFactory.createRange(singleRowKeyField(), min, max)));
+        return partition(id, Region.from(rangeFactory.createRange(singleRowKeyField(), min, max)));
     }
 
     public Partition.Builder partition(String id, Region region) {
@@ -101,7 +101,7 @@ public class PartitionFactory {
     }
 
     private Region parentRegion(Region left, Region right) {
-        return new Region(schema.getRowKeyFields().stream()
+        return Region.from(schema.getRowKeyFields().stream()
                 .map(field -> rangeFactory.createRange(field,
                         left.getRange(field.getName()).getMin(),
                         right.getRange(field.getName()).getMax()))

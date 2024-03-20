@@ -29,7 +29,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 
 /**
- * Initialises a {@link StateStore} with a single root partition.
+ * Initialises a state store with a single root partition.
  */
 public class InitialiseStateStore {
 

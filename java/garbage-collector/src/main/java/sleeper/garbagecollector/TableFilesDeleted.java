@@ -25,9 +25,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Tracks which files have been deleted from a table by the garbage collector.
- * <p>
- * Used by {@link GarbageCollector}.
+ * Tracks which files have been deleted from a table by the garbage collector. Used by {@link GarbageCollector}.
  */
 class TableFilesDeleted {
 

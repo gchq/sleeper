@@ -31,8 +31,8 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * This class holds a description of a single Trino split. In this implementation, each split holds one or more
- * range-scans over a single Sleeper leaf partition, as described in the {@link LeafPartitionQuery} class.
+ * Holds a description of a single Trino split. In this implementation, each split holds one or more range-scans over a
+ * single Sleeper leaf partition, as described in the {@link LeafPartitionQuery} class.
  * <p>
  * Trino requires that class is serialisable into JSON, and this causes issues when fields such as the row keys are
  * defined as generic Objects. When these generic Objects are deserialised, the class information is not retained.
@@ -46,9 +46,9 @@ public class SleeperSplit implements ConnectorSplit {
     private final LeafPartitionQuery leafPartitionQuery;
 
     /**
-     * Constructor to create a {@link SleeperSplit} directly from a {@link LeafPartitionQuery}.
+     * Constructor to create a split directly from a subquery.
      *
-     * @param leafPartitionQuery The {@link LeafPartitionQuery} to use to construct this split.
+     * @param leafPartitionQuery the {@link LeafPartitionQuery} to use to construct this split
      */
     public SleeperSplit(Schema sleeperSchema, LeafPartitionQuery leafPartitionQuery) {
         this.sleeperSchema = sleeperSchema;
@@ -56,17 +56,17 @@ public class SleeperSplit implements ConnectorSplit {
     }
 
     /**
-     * Constructor using string-based data.
+     * Constructor using string-based data. This method supports deserialisation from JSON.
      * <p>
-     * This method supports deserialisation from JSON. During the serialisation/deserialisation process, those getter
-     * methods which are annotated with 'JsonProperty' are called and their values are placed into the serialised JSON.
-     * During deserialisation, those values are passed from that JSON into this constructor, where the JsonProperty
-     * matches the name of the getter that originally supplied the values.
+     * During the serialisation/deserialisation process, those getter methods which are annotated with 'JsonProperty'
+     * are called and their values are placed into the serialised JSON. During deserialisation, those values are passed
+     * from that JSON into this constructor, where the JsonProperty matches the name of the getter that originally
+     * supplied the values.
      */
     @SuppressFBWarnings("BC_UNCONFIRMED_CAST_OF_RETURN_VALUE")
     @JsonCreator
     public SleeperSplit(@JsonProperty("sleeperSchemaAsString") String sleeperSchemaAsString,
-                        @JsonProperty("leafPartitionQueryAsString") String leafPartitionQueryAsString) {
+            @JsonProperty("leafPartitionQueryAsString") String leafPartitionQueryAsString) {
         SchemaSerDe schemaSerDe = new SchemaSerDe();
         this.sleeperSchema = schemaSerDe.fromJson(sleeperSchemaAsString);
         QuerySerDe querySerDe = new QuerySerDe(sleeperSchema);

@@ -27,16 +27,18 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.task.common.QueueMessageCount;
 import sleeper.task.common.RunCompactionTasks;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
- * A lambda function to execute {@link RunCompactionTasks}.
+ * A lambda function to start compaction tasks based on the number of queued compaction jobs.
  */
 @SuppressWarnings("unused")
 public class RunCompactionTasksLambda {
     private final RunCompactionTasks runTasks;
+    private final QueueMessageCount.Client queueMessageCount;
 
     public RunCompactionTasksLambda() {
         String s3Bucket = validateParameter(CONFIG_BUCKET.toEnvironmentVariable());
@@ -46,11 +48,12 @@ public class RunCompactionTasksLambda {
         AmazonAutoScaling asClient = AmazonAutoScalingClientBuilder.defaultClient();
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3(s3Client, s3Bucket);
-        this.runTasks = new RunCompactionTasks(sqsClient, ecsClient, s3Client, asClient, instanceProperties);
+        this.runTasks = new RunCompactionTasks(instanceProperties, ecsClient, asClient);
+        this.queueMessageCount = QueueMessageCount.withSqsClient(sqsClient);
     }
 
     public void eventHandler(ScheduledEvent event, Context context) {
-        runTasks.run();
+        runTasks.run(queueMessageCount);
     }
 
     private static String validateParameter(String parameterName) {

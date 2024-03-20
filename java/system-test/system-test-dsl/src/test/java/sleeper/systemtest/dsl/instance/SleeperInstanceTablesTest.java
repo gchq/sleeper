@@ -48,6 +48,7 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration.usingSystemTestDefaults;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.DEFAULT_SCHEMA;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.createDslInstanceProperties;
+import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.createDslTableProperties;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.withDefaultProperties;
 
 @InMemoryDslTest
@@ -99,8 +100,7 @@ public class SleeperInstanceTablesTest {
                     .buildTree();
 
             // When
-            sleeper.tables().forEach(() ->
-                    sleeper.partitioning().setPartitions(partitions));
+            sleeper.tables().forEach(() -> sleeper.partitioning().setPartitions(partitions));
 
             // Then
             assertThat(sleeper.partitioning().treeByTable())
@@ -199,7 +199,7 @@ public class SleeperInstanceTablesTest {
             // When
             sleeper.connectToInstance(usingSystemTestDefaults("predeftable", () -> {
                 InstanceProperties instanceProperties = createDslInstanceProperties();
-                TableProperties tableProperties = createTestTableProperties(instanceProperties, DEFAULT_SCHEMA);
+                TableProperties tableProperties = createDslTableProperties(instanceProperties);
                 tableProperties.set(TABLE_NAME, "predefined-test-table");
                 return new DeployInstanceConfiguration(instanceProperties, tableProperties);
             }));
@@ -215,7 +215,7 @@ public class SleeperInstanceTablesTest {
             // Given
             SystemTestInstanceConfiguration configuration = usingSystemTestDefaults("nonametable", () -> {
                 InstanceProperties instanceProperties = createDslInstanceProperties();
-                TableProperties tableProperties = createTestTableProperties(instanceProperties, DEFAULT_SCHEMA);
+                TableProperties tableProperties = createDslTableProperties(instanceProperties);
                 tableProperties.unset(TABLE_NAME);
                 return new DeployInstanceConfiguration(instanceProperties, tableProperties);
             });

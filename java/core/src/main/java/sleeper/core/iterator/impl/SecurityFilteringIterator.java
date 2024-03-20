@@ -28,12 +28,10 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * This is an example implementation of a {@link SortedRecordIterator}. It is
- * intended to run at query time to filter out records that a user is not
- * allowed to see. A list of authorisations is provided. If the visibility field
- * equals one of these authorisations then the user is allowed to see the record.
- * If the visibility field is the empty or null string then the user is also
- * allowed to see the record.
+ * Filters out records that a user is not allowed to see. This is intended to be used in a query, adding the user's
+ * authorisations to the query in the iterator configuration. If the visibility field equals one of these authorisations
+ * then the user is allowed to see the record. If the visibility field is the empty or null string then the user is also
+ * allowed to see the record. This is an example implementation of {@link SortedRecordIterator}.
  */
 public class SecurityFilteringIterator implements SortedRecordIterator {
     private String fieldName;
@@ -70,8 +68,8 @@ public class SecurityFilteringIterator implements SortedRecordIterator {
         private Record next;
 
         public SecurityFilteringIteratorInternal(CloseableIterator<Record> iterator,
-                                                 String fieldName,
-                                                 Set<String> auths) {
+                String fieldName,
+                Set<String> auths) {
             this.iterator = iterator;
             this.fieldName = fieldName;
             this.auths = auths;

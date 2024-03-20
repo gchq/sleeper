@@ -27,7 +27,7 @@ import sleeper.environment.cdk.networking.NetworkingStack;
 import static sleeper.environment.cdk.config.AppParameters.INSTANCE_ID;
 
 /**
- * The {@link App} that sets up an environment for deploying Sleeper.
+ * Deploys an environment suitable for Sleeper, including a VPC and an EC2 instance to run the deployment from.
  */
 public class SleeperEnvironmentCdkApp {
 

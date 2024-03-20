@@ -20,7 +20,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 /**
- * Serialisation of {@link InvokeForTableRequest} to send and receive SQS messages.
+ * Serialisation and deserialisation of SQS messages to invoke some operation for a batch of tables.
  */
 public class InvokeForTableRequestSerDe {
 

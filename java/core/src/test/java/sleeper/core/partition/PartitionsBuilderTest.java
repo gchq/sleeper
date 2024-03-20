@@ -53,7 +53,7 @@ class PartitionsBuilderTest {
         List<Partition> expectedPartitions = Arrays.asList(
                 Partition.builder()
                         .rowKeyTypes(rowKeyTypes)
-                        .region(new Region(rangeFactory.createRange(field, "", "aaa")))
+                        .region(Region.from(rangeFactory.createRange(field, "", "aaa")))
                         .id("A")
                         .leafPartition(true)
                         .parentPartitionId("D")
@@ -62,7 +62,7 @@ class PartitionsBuilderTest {
                         .build(),
                 Partition.builder()
                         .rowKeyTypes(rowKeyTypes)
-                        .region(new Region(rangeFactory.createRange(field, "aaa", "bbb")))
+                        .region(Region.from(rangeFactory.createRange(field, "aaa", "bbb")))
                         .id("B")
                         .leafPartition(true)
                         .parentPartitionId("D")
@@ -71,7 +71,7 @@ class PartitionsBuilderTest {
                         .build(),
                 Partition.builder()
                         .rowKeyTypes(rowKeyTypes)
-                        .region(new Region(rangeFactory.createRange(field, "bbb", null)))
+                        .region(Region.from(rangeFactory.createRange(field, "bbb", null)))
                         .id("C")
                         .leafPartition(true)
                         .parentPartitionId("E")
@@ -80,7 +80,7 @@ class PartitionsBuilderTest {
                         .build(),
                 Partition.builder()
                         .rowKeyTypes(rowKeyTypes)
-                        .region(new Region(rangeFactory.createRange(field, "", "bbb")))
+                        .region(Region.from(rangeFactory.createRange(field, "", "bbb")))
                         .id("D")
                         .leafPartition(false)
                         .parentPartitionId("E")
@@ -89,7 +89,7 @@ class PartitionsBuilderTest {
                         .build(),
                 Partition.builder()
                         .rowKeyTypes(rowKeyTypes)
-                        .region(new Region(rangeFactory.createRange(field, "", null)))
+                        .region(Region.from(rangeFactory.createRange(field, "", null)))
                         .id("E")
                         .leafPartition(false)
                         .parentPartitionId(null)
@@ -97,7 +97,7 @@ class PartitionsBuilderTest {
                         .dimension(0)
                         .build());
         assertThat(builder.buildList()).isEqualTo(expectedPartitions);
-        assertThat(builder.buildTree()).isEqualTo(new PartitionTree(expectedPartitions));
+        assertThat(builder.buildTree()).isEqualTo(PartitionTree.from(expectedPartitions));
     }
 
     @Test
@@ -152,10 +152,10 @@ class PartitionsBuilderTest {
 
         // Then
         RangeFactory rangeFactory = new RangeFactory(schema);
-        assertThat(tree.getPartition("A").getRegion()).isEqualTo(new Region(Arrays.asList(
+        assertThat(tree.getPartition("A").getRegion()).isEqualTo(Region.from(Arrays.asList(
                 rangeFactory.createRange(field1, "", null),
                 rangeFactory.createRange(field2, "", "aaa"))));
-        assertThat(tree.getPartition("B").getRegion()).isEqualTo(new Region(Arrays.asList(
+        assertThat(tree.getPartition("B").getRegion()).isEqualTo(Region.from(Arrays.asList(
                 rangeFactory.createRange(field1, "", null),
                 rangeFactory.createRange(field2, "aaa", null))));
     }
@@ -176,19 +176,19 @@ class PartitionsBuilderTest {
 
         // Then
         RangeFactory rangeFactory = new RangeFactory(schema);
-        assertThat(tree.getPartition("parent").getRegion()).isEqualTo(new Region(List.of(
+        assertThat(tree.getPartition("parent").getRegion()).isEqualTo(Region.from(List.of(
                 rangeFactory.createRange(field1, "", null),
                 rangeFactory.createRange(field2, "", null))));
-        assertThat(tree.getPartition("A").getRegion()).isEqualTo(new Region(List.of(
+        assertThat(tree.getPartition("A").getRegion()).isEqualTo(Region.from(List.of(
                 rangeFactory.createRange(field1, "", "aaa"),
                 rangeFactory.createRange(field2, "", null))));
-        assertThat(tree.getPartition("B").getRegion()).isEqualTo(new Region(List.of(
+        assertThat(tree.getPartition("B").getRegion()).isEqualTo(Region.from(List.of(
                 rangeFactory.createRange(field1, "aaa", null),
                 rangeFactory.createRange(field2, "", null))));
-        assertThat(tree.getPartition("C").getRegion()).isEqualTo(new Region(List.of(
+        assertThat(tree.getPartition("C").getRegion()).isEqualTo(Region.from(List.of(
                 rangeFactory.createRange(field1, "aaa", null),
                 rangeFactory.createRange(field2, "", "bbb"))));
-        assertThat(tree.getPartition("D").getRegion()).isEqualTo(new Region(List.of(
+        assertThat(tree.getPartition("D").getRegion()).isEqualTo(Region.from(List.of(
                 rangeFactory.createRange(field1, "aaa", null),
                 rangeFactory.createRange(field2, "bbb", null))));
     }
