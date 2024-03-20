@@ -65,12 +65,11 @@ public class DirectPartitionFileWriterFactory implements PartitionFileWriterFact
     @Override
     public PartitionFileWriter createPartitionFileWriter(Partition partition) {
         try {
-            return new DirectPartitionFileWriter(
+            return DirectPartitionFileWriter.from(
                     partition,
                     parquetConfiguration,
                     filePathPrefix,
-                    fileNameGenerator.get()
-            );
+                    fileNameGenerator.get());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
