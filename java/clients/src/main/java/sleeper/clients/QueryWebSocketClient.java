@@ -284,7 +284,7 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
                     out.println("Query results:");
                     for (Entry<String, JsonArray> subQueryRecords : records.entrySet()) {
                         for (JsonElement record : subQueryRecords.getValue()) {
-                            out.println(record.toString());
+                            out.println(record.getAsString());
                         }
                     }
                 }

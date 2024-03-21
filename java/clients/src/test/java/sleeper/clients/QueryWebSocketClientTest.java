@@ -28,6 +28,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.range.Range;
 import sleeper.core.range.Region;
+import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
@@ -39,7 +40,10 @@ import sleeper.query.model.QuerySerDe;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.QueryClientTestConstants.EXACT_QUERY_OPTION;
@@ -77,14 +81,16 @@ public class QueryWebSocketClientTest {
     }
 
     @Test
-    void shouldReturnNoRecordsWhenExactRecordNotFound() throws Exception {
+    void shouldReturnOneRecordWhenExactRecordFound() throws Exception {
         // Given
         TableProperties tableProperties = createTable("test-table");
         StateStore stateStore = StateStoreTestHelper.inMemoryStateStoreWithSinglePartition(schema);
         Query expectedQuery = exactQuery("test-query-id", tableProperties, 123);
+        Record expectedRecord = new Record(Map.of("key", 123L));
         setupWebSocketClient(tableProperties, expectedQuery)
                 .withResponses(
-                        message(completedQuery("test-query-id", 0L)),
+                        message(queryResult("test-query-id", expectedRecord)),
+                        message(completedQuery("test-query-id", 1L)),
                         closeWithReason("finished"));
 
         // When
@@ -98,9 +104,11 @@ public class QueryWebSocketClientTest {
                         PROMPT_EXACT_KEY_LONG_TYPE +
                         "Connected to WebSocket API\n" +
                         "Submitting Query: " + querySerDe.toJson(expectedQuery) + "\n" +
-                        "0 records returned by query: test-query-id Remaining pending queries: 0\n" +
+                        "1 records returned by query: test-query-id Remaining pending queries: 0\n" +
+                        "Query results:\n" +
+                        expectedRecord + "\n" +
                         "Disconnected from WebSocket API: finished")
-                .containsSubsequence("Query took", "seconds to return 0 records");
+                .containsSubsequence("Query took", "seconds to return 1 records");
         assertThat(client.connected).isFalse();
         assertThat(client.closed).isTrue();
         assertThat(client.sentMessages)
@@ -115,14 +123,24 @@ public class QueryWebSocketClientTest {
                 .build();
     }
 
+    private static String queryResult(String queryId, Record... records) {
+        String test = "{" +
+                "\"queryId\":\"" + queryId + "\", " +
+                "\"message\":\"records\"," +
+                "\"records\":[" + Stream.of(records).map(record -> "\"" + record + "\"").collect(Collectors.joining(","))
+                + "]" +
+                "}";
+        System.out.println(test);
+        return test;
+    }
+
     private static String completedQuery(String queryId, long recordCount) {
         return "{" +
-                "\"queryId\":\"test-query-id\", " +
+                "\"queryId\":\"" + queryId + "\", " +
                 "\"message\":\"completed\"," +
                 "\"recordCount\":\"" + recordCount + "\"," +
                 "\"locations\":[]" +
                 "}";
-
     }
 
     protected void runQueryClient(TableProperties tableProperties, StateStore stateStore, Supplier<String> queryIdSupplier) throws Exception {
