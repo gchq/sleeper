@@ -88,7 +88,7 @@ public class QueryWebSocketClientTest {
                         closeWithReason("finished"));
 
         // When
-        in.enterNextPrompts("test-table", EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+        in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
         runQueryClient(tableProperties, stateStore, List.of("test-query-id").iterator()::next);
 
         // Then
@@ -96,7 +96,10 @@ public class QueryWebSocketClientTest {
                 .startsWith("Querying table test-table")
                 .contains(PROMPT_QUERY_TYPE +
                         PROMPT_EXACT_KEY_LONG_TYPE +
-                        "Connected to WebSocket API")
+                        "Connected to WebSocket API\n" +
+                        "Submitting Query: " + querySerDe.toJson(expectedQuery) + "\n" +
+                        "0 records returned by query: test-query-id Remaining pending queries: 0\n" +
+                        "Disconnected from WebSocket API: finished")
                 .containsSubsequence("Query took", "seconds to return 0 records");
         assertThat(client.connected).isFalse();
         assertThat(client.closed).isTrue();
