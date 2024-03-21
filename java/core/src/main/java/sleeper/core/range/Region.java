@@ -33,14 +33,6 @@ import java.util.Objects;
 public class Region {
     private final Map<String, Range> rowKeyFieldNameToRange;
 
-    public static Region from(Range range) {
-        return new Region(range);
-    }
-
-    public static Region from(List<Range> ranges) {
-        return new Region(ranges);
-    }
-
     public Region(List<Range> ranges) {
         rowKeyFieldNameToRange = new HashMap<>();
         for (Range range : ranges) {

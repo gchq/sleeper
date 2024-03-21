@@ -117,7 +117,7 @@ public class PartitionsFromSplitPoints {
                         rightPartition.getRegion().getRange(rowKeyFields.get(0).getName()).getMax(),
                         false);
                 ranges.add(rangeForDim0);
-                Region region = Region.from(ranges);
+                Region region = new Region(ranges);
                 String id = UUID.randomUUID().toString();
                 List<String> childPartitionIds = List.of(leftPartition.getId(), rightPartition.getId());
                 Partition.Builder parent = Partition.builder()
@@ -176,7 +176,7 @@ public class PartitionsFromSplitPoints {
         for (Field field : schema.getRowKeyFields()) {
             ranges.add(getRangeCoveringWholeDimension(rangeFactory, field));
         }
-        Region region = Region.from(ranges);
+        Region region = new Region(ranges);
         return Partition.builder()
                 .rowKeyTypes(schema.getRowKeyTypes())
                 .region(region)
@@ -286,7 +286,7 @@ public class PartitionsFromSplitPoints {
             Range rangeForDim = rangeFactory.createRange(splitField, partitionBoundaries.get(i), true, partitionBoundaries.get(i + 1), false);
             rangesForThisRegion.add(rangeForDim);
             rangesForThisRegion.addAll(ranges);
-            Region region = Region.from(rangesForThisRegion);
+            Region region = new Region(rangesForThisRegion);
             leafRegions.add(region);
         }
         return leafRegions;

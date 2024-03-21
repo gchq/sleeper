@@ -94,9 +94,9 @@ public class RangeQueryUtilsTest {
         Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         Range range = rangeFactory.createExactRange(field, 1);
-        Region region = Region.from(range);
+        Region region = new Region(range);
         Range partitionRange = rangeFactory.createRange(field, 0, 100);
-        Region partitionRegion = Region.from(partitionRange);
+        Region partitionRegion = new Region(partitionRange);
 
         // When
         FilterPredicate predicate = RangeQueryUtils.getFilterPredicateMultidimensionalKey(Arrays.asList(region), partitionRegion);
@@ -131,9 +131,9 @@ public class RangeQueryUtilsTest {
         Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         Range range = rangeFactory.createExactRange(field, 1L);
-        Region region = Region.from(range);
+        Region region = new Region(range);
         Range partitionRange = rangeFactory.createRange(field, 0L, 100L);
-        Region partitionRegion = Region.from(partitionRange);
+        Region partitionRegion = new Region(partitionRange);
 
         // When
         FilterPredicate predicate = RangeQueryUtils.getFilterPredicateMultidimensionalKey(Arrays.asList(region), partitionRegion);
@@ -168,9 +168,9 @@ public class RangeQueryUtilsTest {
         Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         Range range = rangeFactory.createExactRange(field, "B");
-        Region region = Region.from(range);
+        Region region = new Region(range);
         Range partitionRange = rangeFactory.createRange(field, "A", "Z");
-        Region partitionRegion = Region.from(partitionRange);
+        Region partitionRegion = new Region(partitionRange);
 
         // When
         FilterPredicate predicate = RangeQueryUtils.getFilterPredicateMultidimensionalKey(Arrays.asList(region), partitionRegion);
@@ -205,9 +205,9 @@ public class RangeQueryUtilsTest {
         Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         Range range = rangeFactory.createExactRange(field, new byte[]{10, 20});
-        Region region = Region.from(range);
+        Region region = new Region(range);
         Range partitionRange = rangeFactory.createRange(field, new byte[]{1}, new byte[]{50, 61});
-        Region partitionRegion = Region.from(partitionRange);
+        Region partitionRegion = new Region(partitionRange);
 
         // When
         FilterPredicate predicate = RangeQueryUtils.getFilterPredicateMultidimensionalKey(Arrays.asList(region), partitionRegion);
@@ -243,10 +243,10 @@ public class RangeQueryUtilsTest {
         RangeFactory rangeFactory = new RangeFactory(schema);
         Range range1 = rangeFactory.createExactRange(field, 1);
         Range range2 = rangeFactory.createRange(field, 5, 7);
-        Region region1 = Region.from(range1);
-        Region region2 = Region.from(range2);
+        Region region1 = new Region(range1);
+        Region region2 = new Region(range2);
         Range partitionRange = rangeFactory.createRange(field, 0, 100);
-        Region partitionRegion = Region.from(partitionRange);
+        Region partitionRegion = new Region(partitionRange);
 
         // When
         FilterPredicate predicate = RangeQueryUtils.getFilterPredicateMultidimensionalKey(Arrays.asList(region1, region2), partitionRegion);
@@ -292,10 +292,10 @@ public class RangeQueryUtilsTest {
         RangeFactory rangeFactory = new RangeFactory(schema);
         Range range1 = rangeFactory.createRange(field1, new byte[]{10}, new byte[]{20});
         Range range2 = rangeFactory.createRange(field2, 100, 200);
-        Region region = Region.from(Arrays.asList(range1, range2));
+        Region region = new Region(Arrays.asList(range1, range2));
         Range partitionRange1 = rangeFactory.createRange(field1, new byte[]{10}, new byte[]{40});
         Range partitionRange2 = rangeFactory.createRange(field2, 50, 250);
-        Region partitionRegion = Region.from(Arrays.asList(partitionRange1, partitionRange2));
+        Region partitionRegion = new Region(Arrays.asList(partitionRange1, partitionRange2));
 
         // When
         FilterPredicate predicate = RangeQueryUtils.getFilterPredicateMultidimensionalKey(Arrays.asList(region), partitionRegion);

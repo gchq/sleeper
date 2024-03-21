@@ -61,8 +61,8 @@ public class QueryCreator {
 
     public Query byRowKey(String key, List<QueryRange> ranges) {
         return byRegions(ranges.stream()
-                .map(range -> Region.from(new Range.RangeFactory(schema)
-                        .createRange(key, range.getMin(), range.getMax())))
+                .map(range -> new Region(new Range.RangeFactory(schema)
+                .createRange(key, range.getMin(), range.getMax())))
                 .collect(Collectors.toList()));
     }
 
