@@ -54,13 +54,15 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL;
 
 public class QueryWebSocketClient extends QueryCommandLineClient {
     private final String apiUrl;
-    private final Client webSocketConnector;
+    private final Client client;
 
     protected QueryWebSocketClient(
             InstanceProperties instanceProperties, TableIndex tableIndex, TablePropertiesProvider tablePropertiesProvider,
@@ -70,14 +72,20 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
 
     protected QueryWebSocketClient(
             InstanceProperties instanceProperties, TableIndex tableIndex, TablePropertiesProvider tablePropertiesProvider,
-            ConsoleInput in, ConsoleOutput out, Client webSocketConnector) {
-        super(instanceProperties, tableIndex, tablePropertiesProvider, in, out);
+            ConsoleInput in, ConsoleOutput out, Client client) {
+        this(instanceProperties, tableIndex, tablePropertiesProvider, in, out, client, () -> UUID.randomUUID().toString());
+    }
+
+    protected QueryWebSocketClient(
+            InstanceProperties instanceProperties, TableIndex tableIndex, TablePropertiesProvider tablePropertiesProvider,
+            ConsoleInput in, ConsoleOutput out, Client client, Supplier<String> queryIdSupplier) {
+        super(instanceProperties, tableIndex, tablePropertiesProvider, in, out, queryIdSupplier);
 
         this.apiUrl = instanceProperties.get(CdkDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL);
         if (this.apiUrl == null) {
             throw new IllegalArgumentException("Use of this query client requires the WebSocket API to have been deployed as part of your Sleeper instance!");
         }
-        this.webSocketConnector = webSocketConnector;
+        this.client = client;
     }
 
     @Override
@@ -88,17 +96,17 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
     protected void submitQuery(TableProperties tableProperties, Query query) {
         try {
             Instant startTime = Instant.now();
-            webSocketConnector.startQuery(query);
-            while (!webSocketConnector.isQueryComplete()) {
+            client.startQuery(query);
+            while (!client.isQueryComplete()) {
                 Thread.sleep(500);
             }
             LoggedDuration duration = LoggedDuration.withFullOutput(startTime, Instant.now());
-            long recordsReturned = webSocketConnector.getTotalRecordsReturned();
+            long recordsReturned = client.getTotalRecordsReturned();
             out.println("Query took " + duration + " to return " + recordsReturned + " records");
         } catch (InterruptedException e) {
         } finally {
             try {
-                webSocketConnector.closeBlocking();
+                client.closeBlocking();
             } catch (InterruptedException e) {
             }
         }
