@@ -98,15 +98,14 @@ public class QueryWebSocketClientTest {
             // Given
             Query expectedQuery = exactQuery("test-query-id", tableProperties, 123);
             Record expectedRecord = new Record(Map.of("key", 123L));
-            setupWebSocketClient(tableProperties)
-                    .withResponses(
-                            message(queryResult("test-query-id", expectedRecord)),
-                            message(completedQuery("test-query-id", 1L)),
-                            closeWithReason("finished"));
 
             // When
             in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
-            runQueryClient(tableProperties, "test-query-id");
+            runQueryClient("test-query-id", tableProperties, setupWebSocketClient(tableProperties)
+                    .withResponses(
+                            message(queryResult("test-query-id", expectedRecord)),
+                            message(completedQuery("test-query-id", 1L)),
+                            closeWithReason("finished")));
 
             // Then
             assertThat(out.toString())
@@ -131,16 +130,15 @@ public class QueryWebSocketClientTest {
             // Given
             Query expectedQuery = exactQuery("test-query-id", tableProperties, 123);
             Record expectedRecord = new Record(Map.of("key", 123L));
-            setupWebSocketClient(tableProperties)
+
+            // When
+            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            runQueryClient("test-query-id", tableProperties, setupWebSocketClient(tableProperties)
                     .withResponses(
                             message(createdSubQueries("test-query-id", "test-subquery")),
                             message(queryResult("test-subquery", expectedRecord)),
                             message(completedQuery("test-subquery", 1L)),
-                            closeWithReason("finished"));
-
-            // When
-            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
-            runQueryClient(tableProperties, "test-query-id");
+                            closeWithReason("finished")));
 
             // Then
             assertThat(out.toString())
@@ -169,7 +167,10 @@ public class QueryWebSocketClientTest {
             Record expectedRecord1 = new Record(Map.of("key", 123L));
             Record expectedRecord2 = new Record(Map.of("key", 456L));
             Record expectedRecord3 = new Record(Map.of("key", 789L));
-            setupWebSocketClient(tableProperties)
+
+            // When
+            in.enterNextPrompts(RANGE_QUERY_OPTION, YES_OPTION, NO_OPTION, "0", "1000", EXIT_OPTION);
+            runQueryClient("test-query-id", tableProperties, setupWebSocketClient(tableProperties)
                     .withResponses(
                             message(createdSubQueries("test-query-id", "subquery-1", "subquery-2", "subquery-3")),
                             message(queryResult("subquery-1", expectedRecord1)),
@@ -178,11 +179,7 @@ public class QueryWebSocketClientTest {
                             message(completedQuery("subquery-2", 1L)),
                             message(queryResult("subquery-3", expectedRecord3)),
                             message(completedQuery("subquery-3", 1L)),
-                            closeWithReason("finished"));
-
-            // When
-            in.enterNextPrompts(RANGE_QUERY_OPTION, YES_OPTION, NO_OPTION, "0", "1000", EXIT_OPTION);
-            runQueryClient(tableProperties, "test-query-id");
+                            closeWithReason("finished")));
 
             // Then
             assertThat(out.toString())
@@ -252,9 +249,9 @@ public class QueryWebSocketClientTest {
                 "}";
     }
 
-    protected void runQueryClient(TableProperties tableProperties, String queryId) throws Exception {
+    protected void runQueryClient(String queryId, TableProperties tableProperties, Client webSocketClient) throws Exception {
         new QueryWebSocketClient(instanceProperties, tableIndex, new FixedTablePropertiesProvider(tableProperties),
-                in.consoleIn(), out.consoleOut(), client, () -> queryId)
+                in.consoleIn(), out.consoleOut(), webSocketClient, () -> queryId)
                 .run();
     }
 
@@ -286,15 +283,16 @@ public class QueryWebSocketClientTest {
             closed = true;
         }
 
-        public void withResponses(WebSocketResponse... responses) {
+        public FakeWebSocketClient withResponses(WebSocketResponse... responses) {
             this.responses = List.of(responses);
+            return this;
         }
 
         @Override
         public void startQuery(Query query) throws InterruptedException {
             connectBlocking();
             basicClient.onOpen(query, sentMessages::add);
-            responses.forEach(action -> action.run(basicClient));
+            responses.forEach(response -> response.sendTo(basicClient));
         }
 
         @Override
@@ -309,7 +307,7 @@ public class QueryWebSocketClientTest {
     }
 
     private interface WebSocketResponse {
-        void run(BasicClient client);
+        void sendTo(BasicClient client);
     }
 
     public WebSocketResponse open(Query query) {
