@@ -119,7 +119,7 @@ public class QueryWebSocketClientTest {
         return Query.builder()
                 .tableName(tableProperties.get(TABLE_NAME))
                 .queryId(queryId)
-                .regions(List.of(Region.from(new Range(rowKey, value, true, value, true))))
+                .regions(List.of(new Region(new Range(rowKey, value, true, value, true))))
                 .build();
     }
 
