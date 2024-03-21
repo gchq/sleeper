@@ -27,10 +27,6 @@ public class SplitFileReferenceRequest {
     private final FileReference oldReference;
     private final List<FileReference> newReferences;
 
-    public static SplitFileReferenceRequest from(FileReference oldReference, List<FileReference> newReferences) {
-        return new SplitFileReferenceRequest(oldReference, newReferences);
-    }
-
     public SplitFileReferenceRequest(FileReference oldReference, List<FileReference> newReferences) {
         this.oldReference = Objects.requireNonNull(oldReference, "oldReference must not be null");
         this.newReferences = Objects.requireNonNull(newReferences, "newReferences must not be null");

@@ -188,9 +188,9 @@ public class DynamoDBFileReferenceStoreDynamoSpecificIT extends DynamoDBStateSto
             FileReference file = factory.rootFile("file", 100L);
 
             // When / Then
-            SplitFileReferenceRequest request = SplitFileReferenceRequest.from(file, IntStream.range(0, 100)
-                    .mapToObj(i -> SplitFileReference.referenceForChildPartition(file, "" + i, 1))
-                    .collect(toUnmodifiableList()));
+            SplitFileReferenceRequest request = new SplitFileReferenceRequest(file, IntStream.range(0, 100)
+            .mapToObj(i -> SplitFileReference.referenceForChildPartition(file, "" + i, 1))
+            .collect(toUnmodifiableList()));
             assertThatThrownBy(() -> store.splitFileReferences(List.of(request)))
                     .isInstanceOfSatisfying(SplitRequestsFailedException.class, exception -> assertThat(exception)
                             .extracting(SplitRequestsFailedException::getSuccessfulRequests,
