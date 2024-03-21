@@ -32,12 +32,10 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 class TransactionLogPartitionStore implements PartitionStore {
 
     private final Schema schema;
-    private final TransactionLogStore logStore;
     private final StateStoreState state;
 
-    TransactionLogPartitionStore(Schema schema, TransactionLogStore logStore, StateStoreState state) {
+    TransactionLogPartitionStore(Schema schema, StateStoreState state) {
         this.schema = schema;
-        this.logStore = logStore;
         this.state = state;
     }
 
@@ -66,11 +64,11 @@ class TransactionLogPartitionStore implements PartitionStore {
 
     @Override
     public void initialise(List<Partition> partitions) throws StateStoreException {
-        logStore.addTransaction(new InitialisePartitionsTransaction(partitions));
+        state.addTransaction(new InitialisePartitionsTransaction(partitions));
     }
 
     private Stream<Partition> partitions() {
-        state.update(logStore);
+        state.update();
         return state.partitions().stream();
     }
 

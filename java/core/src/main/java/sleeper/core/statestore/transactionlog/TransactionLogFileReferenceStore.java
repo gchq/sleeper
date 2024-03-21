@@ -38,19 +38,17 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 
 class TransactionLogFileReferenceStore implements FileReferenceStore {
 
-    private final TransactionLogStore logStore;
     private final StateStoreState state;
     private Clock clock = Clock.systemUTC();
 
-    TransactionLogFileReferenceStore(TransactionLogStore logStore, StateStoreState state) {
-        this.logStore = logStore;
+    TransactionLogFileReferenceStore(StateStoreState state) {
         this.state = state;
     }
 
     @Override
     public void addFilesWithReferences(List<AllReferencesToAFile> files) throws StateStoreException {
         Instant updateTime = clock.instant();
-        logStore.addTransaction(new AddFilesTransaction(files.stream()
+        state.addTransaction(new AddFilesTransaction(files.stream()
                 .map(file -> file.withCreatedUpdateTime(updateTime))
                 .collect(toUnmodifiableList())));
     }
@@ -126,7 +124,7 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
     }
 
     private StateStoreFiles files() {
-        state.update(logStore);
+        state.update();
         return state.files();
     }
 

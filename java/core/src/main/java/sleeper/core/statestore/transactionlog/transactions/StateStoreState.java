@@ -24,11 +24,20 @@ import java.util.Map;
 
 public class StateStoreState {
 
+    private final TransactionLogStore logStore;
     private final Map<String, Partition> partitionById = new HashMap<>();
     private final StateStoreFiles files = new StateStoreFiles();
     private long lastTransactionNumber = 0;
 
-    public void update(TransactionLogStore logStore) {
+    public StateStoreState(TransactionLogStore logStore) {
+        this.logStore = logStore;
+    }
+
+    public void addTransaction(Object transaction) {
+        logStore.addTransaction(transaction);
+    }
+
+    public void update() {
         logStore.readTransactionsAfter(lastTransactionNumber).forEach(transaction -> {
             apply(transaction);
             lastTransactionNumber++;

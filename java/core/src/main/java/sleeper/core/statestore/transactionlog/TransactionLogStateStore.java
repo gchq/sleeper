@@ -22,12 +22,12 @@ import sleeper.core.statestore.transactionlog.transactions.StateStoreState;
 public class TransactionLogStateStore extends DelegatingStateStore {
 
     public TransactionLogStateStore(Schema schema, TransactionLogStore logStore) {
-        this(schema, logStore, new StateStoreState());
+        this(schema, new StateStoreState(logStore));
     }
 
-    public TransactionLogStateStore(Schema schema, TransactionLogStore logStore, StateStoreState state) {
-        super(new TransactionLogFileReferenceStore(logStore, state),
-                new TransactionLogPartitionStore(schema, logStore, state));
+    public TransactionLogStateStore(Schema schema, StateStoreState state) {
+        super(new TransactionLogFileReferenceStore(state),
+                new TransactionLogPartitionStore(schema, state));
     }
 
 }
