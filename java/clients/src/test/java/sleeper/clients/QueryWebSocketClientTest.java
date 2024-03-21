@@ -157,7 +157,7 @@ public class QueryWebSocketClientTest {
         void shouldReturnResultsForQueryWithMultipleSubqueries() throws Exception {
             // Given
             TableProperties tableProperties = createTable("test-table");
-            Query expectedQuery = exactQuery("test-query-id", tableProperties, 123);
+            Query expectedQuery = rangeQuery("test-query-id", tableProperties, 0L, 1000L);
             Record expectedRecord1 = new Record(Map.of("key", 123L));
             Record expectedRecord2 = new Record(Map.of("key", 456L));
             Record expectedRecord3 = new Record(Map.of("key", 789L));
