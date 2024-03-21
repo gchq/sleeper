@@ -16,11 +16,11 @@
 package sleeper.core.statestore.transactionlog.transactions;
 
 import sleeper.core.statestore.AllReferencesToAFile;
+import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.exception.FileAlreadyExistsException;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -28,16 +28,10 @@ import java.util.stream.Stream;
 
 public class StateStoreFiles {
     private final Map<String, AllReferencesToAFile> filesByFilename = new TreeMap<>();
-    private final Map<String, List<FileReference>> referencesByPartition = new TreeMap<>();
 
     void add(List<AllReferencesToAFile> files) {
         for (AllReferencesToAFile file : files) {
             filesByFilename.put(file.getFilename(), file);
-            for (FileReference reference : file.getInternalReferences()) {
-                referencesByPartition
-                        .computeIfAbsent(reference.getPartitionId(), id -> new ArrayList<>())
-                        .add(reference);
-            }
         }
     }
 
@@ -65,6 +59,17 @@ public class StateStoreFiles {
         for (AllReferencesToAFile file : files) {
             if (filesByFilename.containsKey(file.getFilename())) {
                 throw new FileAlreadyExistsException(file.getFilename());
+            }
+        }
+    }
+
+    public void assignJobIds(List<AssignJobIdRequest> requests, Instant updateTime) {
+        for (AssignJobIdRequest request : requests) {
+            for (String filename : request.getFilenames()) {
+                AllReferencesToAFile file = filesByFilename.get(filename);
+                AllReferencesToAFile updated = file.withJobIdForPartition(
+                        request.getJobId(), request.getPartitionId(), updateTime);
+                filesByFilename.put(filename, updated);
             }
         }
     }
