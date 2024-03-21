@@ -85,12 +85,5 @@
                 </excludes>
             </resource>
         </resources>
-        <plugins>
-            <plugin>
-                <groupId>com.github.spotbugs</groupId>
-                <artifactId>spotbugs-maven-plugin</artifactId>
-                <version>${spotbugs.plugin.latest.version}</version>
-            </plugin>
-        </plugins>
     </build>
 </project>
