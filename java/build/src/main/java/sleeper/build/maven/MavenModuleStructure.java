@@ -38,6 +38,7 @@ public class MavenModuleStructure {
     private final String packaging;
     private final String moduleRef;
     private final boolean hasSrcTestFolder;
+    private final boolean hasNonResourcesMainFolder;
     private final List<MavenModuleStructure> modules;
     private final List<DependencyReference> dependencies;
 
@@ -47,6 +48,7 @@ public class MavenModuleStructure {
         packaging = builder.packaging;
         moduleRef = builder.moduleRef;
         hasSrcTestFolder = builder.hasSrcTestFolder;
+        hasNonResourcesMainFolder = builder.hasNonResourcesMainFolder;
         modules = Objects.requireNonNull(builder.modules, "modules must not be null");
         dependencies = Objects.requireNonNull(builder.dependencies, "dependencies must not be null");
     }
@@ -109,6 +111,7 @@ public class MavenModuleStructure {
         return builder()
                 .artifactId(pom.getArtifactId()).groupId(pom.getGroupId()).packaging(pom.getPackaging())
                 .hasSrcTestFolder(Files.isDirectory(path.resolve("src/test")))
+                .hasNonResourcesMainFolder(Files.isDirectory(path.resolve("src/main/java")))
                 .dependencies(pom.getDependencies())
                 .modules(readChildModules(mapper, path, pom));
     }
@@ -136,6 +139,7 @@ public class MavenModuleStructure {
         }
         MavenModuleStructure that = (MavenModuleStructure) o;
         return hasSrcTestFolder == that.hasSrcTestFolder
+                && hasNonResourcesMainFolder == that.hasNonResourcesMainFolder
                 && artifactId.equals(that.artifactId)
                 && groupId.equals(that.groupId)
                 && Objects.equals(packaging, that.packaging)
@@ -157,6 +161,7 @@ public class MavenModuleStructure {
                 ", packaging='" + packaging + '\'' +
                 ", moduleRef='" + moduleRef + '\'' +
                 ", hasSrcTestFolder=" + hasSrcTestFolder +
+                ", hasNonResourcesMainFolder=" + hasNonResourcesMainFolder +
                 ", modules=" + modules +
                 ", dependencies=" + dependencies +
                 '}';
@@ -168,6 +173,7 @@ public class MavenModuleStructure {
         private String packaging;
         private String moduleRef;
         private boolean hasSrcTestFolder;
+        private boolean hasNonResourcesMainFolder;
         private List<MavenModuleStructure> modules = Collections.emptyList();
         private List<DependencyReference> dependencies = Collections.emptyList();
 
@@ -196,6 +202,11 @@ public class MavenModuleStructure {
 
         public Builder hasSrcTestFolder(boolean hasSrcTestFolder) {
             this.hasSrcTestFolder = hasSrcTestFolder;
+            return this;
+        }
+
+        public Builder hasNonResourcesMainFolder(boolean hasNonResourcesMainFolder) {
+            this.hasNonResourcesMainFolder = hasNonResourcesMainFolder;
             return this;
         }
 

@@ -24,7 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.build.maven.TestMavenModuleStructure.dependency;
 import static sleeper.build.maven.TestMavenModuleStructure.moduleRef;
 import static sleeper.build.maven.TestMavenModuleStructure.rootBuilder;
-import static sleeper.build.maven.TestMavenModuleStructure.testedModuleBuilder;
+import static sleeper.build.maven.TestMavenModuleStructure.sourceModuleBuilder;
 
 public class GraphModelTest {
 
@@ -62,9 +62,9 @@ public class GraphModelTest {
     @Test
     void shouldCreateEdgesForTwoChainedInternalDependencies() {
         GraphModel model = GraphModel.from(rootBuilder().modulesArray(
-                testedModuleBuilder("core").build(),
-                testedModuleBuilder("configuration").dependenciesArray(dependency("sleeper:core")).build(),
-                testedModuleBuilder("ingest").dependenciesArray(dependency("sleeper:configuration")).build()
+                sourceModuleBuilder("core").build(),
+                sourceModuleBuilder("configuration").dependenciesArray(dependency("sleeper:core")).build(),
+                sourceModuleBuilder("ingest").dependenciesArray(dependency("sleeper:configuration")).build()
         ).build());
 
         assertThat(model.getEdges())
@@ -77,9 +77,9 @@ public class GraphModelTest {
     @Test
     void shouldNotCreateEdgeForInternalDependencyWhichIsAlsoTransitive() {
         GraphModel model = GraphModel.from(rootBuilder().modulesArray(
-                testedModuleBuilder("core").build(),
-                testedModuleBuilder("configuration").dependenciesArray(dependency("sleeper:core")).build(),
-                testedModuleBuilder("ingest").dependenciesArray(
+                sourceModuleBuilder("core").build(),
+                sourceModuleBuilder("configuration").dependenciesArray(dependency("sleeper:core")).build(),
+                sourceModuleBuilder("ingest").dependenciesArray(
                         dependency("sleeper:configuration"),
                         dependency("sleeper:core")).build()
         ).build());
@@ -94,10 +94,10 @@ public class GraphModelTest {
     @Test
     void shouldNotCreateEdgeForInternalDependencyWhichIsAlsoIndirectlyTransitive() {
         GraphModel model = GraphModel.from(rootBuilder().modulesArray(
-                testedModuleBuilder("core").build(),
-                testedModuleBuilder("configuration").dependenciesArray(dependency("sleeper:core")).build(),
-                testedModuleBuilder("ingest").dependenciesArray(dependency("sleeper:configuration")).build(),
-                testedModuleBuilder("bulk-import").dependenciesArray(
+                sourceModuleBuilder("core").build(),
+                sourceModuleBuilder("configuration").dependenciesArray(dependency("sleeper:core")).build(),
+                sourceModuleBuilder("ingest").dependenciesArray(dependency("sleeper:configuration")).build(),
+                sourceModuleBuilder("bulk-import").dependenciesArray(
                         dependency("sleeper:ingest"),
                         dependency("sleeper:core")).build()
         ).build());
@@ -113,8 +113,8 @@ public class GraphModelTest {
     @Test
     void shouldNotCreateEdgeForInternalDependencyWhichDoesNotExist() {
         GraphModel model = GraphModel.from(rootBuilder().modulesArray(
-                testedModuleBuilder("core").build(),
-                testedModuleBuilder("configuration").dependenciesArray(
+                sourceModuleBuilder("core").build(),
+                sourceModuleBuilder("configuration").dependenciesArray(
                         dependency("sleeper:core"),
                         dependency("sleeper:not-a-module")).build()
         ).build());
@@ -128,9 +128,9 @@ public class GraphModelTest {
     @Test
     void shouldFindEdgeByFromTo() {
         GraphModel model = GraphModel.from(rootBuilder().modulesArray(
-                testedModuleBuilder("core").build(),
-                testedModuleBuilder("configuration").dependenciesArray(dependency("sleeper:core")).build(),
-                testedModuleBuilder("ingest").dependenciesArray(dependency("sleeper:configuration")).build()
+                sourceModuleBuilder("core").build(),
+                sourceModuleBuilder("configuration").dependenciesArray(dependency("sleeper:core")).build(),
+                sourceModuleBuilder("ingest").dependenciesArray(dependency("sleeper:configuration")).build()
         ).build());
 
         assertThat(model.edgeByFromTo(moduleRef("configuration"), moduleRef("core")))
