@@ -96,7 +96,7 @@
         <!-- Hadoop declares an old version of XNIO with vulnerabilities. Managed from 3.8.8.Final. -->
         <xnio.version>3.8.13.Final</xnio.version>
         <!-- Spark declares an old version of OkHttp with vulnerabilities. Managed from 4.10.0. -->
-        <okhttp3.version>4.11.0</okhttp3.version>
+        <okhttp3.version>4.12.0</okhttp3.version>
         <!--
         OkHttp, as a dependency of Spark, declares an old version of Kotlin with vulnerabilities.
         Managed from a conflict between 1.6.20 and 1.5.31.
@@ -111,16 +111,16 @@
         <!-- jungrapht-visualization-samples also declares an old version, which is a dependency of the build module. -->
         <logback.version>1.4.14</logback.version>
         <aws-java-sdk.version>1.12.498</aws-java-sdk.version>
-        <aws-java-sdk-v2.version>2.25.11</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.25.14</aws-java-sdk-v2.version>
         <aws-crt.version>0.29.11</aws-crt.version>
-        <aws-lambda-java-events.version>3.11.2</aws-lambda-java-events.version>
+        <aws-lambda-java-events.version>3.11.4</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.2.2</aws-lambda-java-core.version>
         <aws-lambda-powertools.version>1.18.0</aws-lambda-powertools.version>
         <commons-lang3.version>3.12.0</commons-lang3.version>
         <commons-codec.version>1.16.1</commons-codec.version>
         <commons-io.version>2.13.0</commons-io.version>
         <commons-configuration.version>2.9.0</commons-configuration.version>
-        <commons-compress.version>1.26.0</commons-compress.version>
+        <commons-compress.version>1.26.1</commons-compress.version>
         <commons-text.version>1.10.0</commons-text.version>
         <janino.version>3.1.12</janino.version>
         <commons-net.version>3.9.0</commons-net.version>
@@ -184,9 +184,8 @@
         <compiler.plugin.version>3.10.1</compiler.plugin.version>
         <enforcer.plugin.version>3.4.1</enforcer.plugin.version>
         <distribution.format>dir</distribution.format>
-        <spotbugs.version>4.7.3</spotbugs.version>
-        <spotbugs.plugin.version>4.7.3.0</spotbugs.plugin.version>
-        <spotbugs.plugin.latest.version>4.8.3.1</spotbugs.plugin.latest.version>
+        <spotbugs.version>4.8.3</spotbugs.version>
+        <spotbugs.plugin.version>4.8.3.1</spotbugs.plugin.version>
         <go-offline.plugin.version>1.2.8</go-offline.plugin.version>
         <dependency-check.plugin.version>9.0.10</dependency-check.plugin.version>
         <site.plugin.version>3.12.1</site.plugin.version>
@@ -1208,6 +1207,16 @@
                             <executions>
                                 <execution>
                                     <id>fat-jar</id>
+                                    <phase>none</phase>
+                                </execution>
+                            </executions>
+                        </plugin>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-assembly-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>distro-assembly</id>
                                     <phase>none</phase>
                                 </execution>
                             </executions>

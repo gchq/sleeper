@@ -41,7 +41,7 @@ public class RetrieveTask implements Callable<Pair<Record, CloseableIterator<Rec
     public Pair<Record, CloseableIterator<Record>> call() {
         CloseableIterator<Record> iterator;
         try {
-            iterator = ParquetReaderIterator.from(reader);
+            iterator = new ParquetReaderIterator(reader);
         } catch (IOException e) {
             throw new RuntimeException("IOException creating ParquetReaderIterator", e);
         }

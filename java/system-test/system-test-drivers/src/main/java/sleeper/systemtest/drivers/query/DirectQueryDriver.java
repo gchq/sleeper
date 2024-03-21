@@ -70,7 +70,7 @@ public class DirectQueryDriver implements QueryDriver {
 
     private PartitionTree getPartitionTree(StateStore stateStore) {
         try {
-            return PartitionTree.from(stateStore.getAllPartitions());
+            return new PartitionTree(stateStore.getAllPartitions());
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
         }

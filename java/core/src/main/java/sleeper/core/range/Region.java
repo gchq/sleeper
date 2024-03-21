@@ -33,19 +33,18 @@ import java.util.Objects;
 public class Region {
     private final Map<String, Range> rowKeyFieldNameToRange;
 
-    public static Region from(Range range) {
-        return new Region(Map.of(range.getFieldName(), range));
-    }
-
-    public static Region from(List<Range> ranges) {
-        Map<String, Range> rowKeyFieldNameToRange = new HashMap<>();
+    public Region(List<Range> ranges) {
+        rowKeyFieldNameToRange = new HashMap<>();
         for (Range range : ranges) {
             if (rowKeyFieldNameToRange.containsKey(range.getFieldName())) {
                 throw new IllegalArgumentException("Should only provide one range per row key field");
             }
             rowKeyFieldNameToRange.put(range.getFieldName(), range);
         }
-        return new Region(rowKeyFieldNameToRange);
+    }
+
+    public Region(Range range) {
+        this(Map.of(range.getFieldName(), range));
     }
 
     private Region(Map<String, Range> rowKeyFieldNameToRange) {

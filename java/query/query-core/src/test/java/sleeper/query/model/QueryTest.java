@@ -41,9 +41,9 @@ public class QueryTest {
         Range range1 = rangeFactory.createRange(field, 1L, true, 10L, true);
         Range range2 = rangeFactory.createRange(field, 1L, true, 10L, true);
         Range range3 = rangeFactory.createRange(field, 1L, true, 100L, true);
-        Region region1 = Region.from(range1);
-        Region region2 = Region.from(range2);
-        Region region3 = Region.from(range3);
+        Region region1 = new Region(range1);
+        Region region2 = new Region(range2);
+        Region region3 = new Region(range3);
         String tableName = UUID.randomUUID().toString();
         Query query1 = Query.builder()
                 .tableName(tableName)
@@ -107,7 +107,7 @@ public class QueryTest {
         Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         Range range = rangeFactory.createRange(field, 1L, true, 10L, true);
-        Region region = Region.from(range);
+        Region region = new Region(range);
         String tableName = UUID.randomUUID().toString();
         Query query1 = Query.builder()
                 .tableName(tableName)
@@ -147,8 +147,8 @@ public class QueryTest {
         RangeFactory rangeFactory = new RangeFactory(schema);
         Range range1 = rangeFactory.createRange(field, 1L, true, 10L, true);
         Range range2 = rangeFactory.createRange(field, 100L, true, 200L, true);
-        Region region1 = Region.from(range1);
-        Region region2 = Region.from(range2);
+        Region region1 = new Region(range1);
+        Region region2 = new Region(range2);
         String tableName = UUID.randomUUID().toString();
         Query query1 = Query.builder()
                 .tableName(tableName)
@@ -188,8 +188,8 @@ public class QueryTest {
         RangeFactory rangeFactory = new RangeFactory(schema);
         Range range1 = rangeFactory.createRange(field, new byte[]{10}, true, new byte[]{20}, true);
         Range range2 = rangeFactory.createRange(field, new byte[]{11}, true, new byte[]{20}, true);
-        Region region1 = Region.from(range1);
-        Region region2 = Region.from(range2);
+        Region region1 = new Region(range1);
+        Region region2 = new Region(range2);
         String tableName = UUID.randomUUID().toString();
         Query query1 = Query.builder()
                 .tableName(tableName)

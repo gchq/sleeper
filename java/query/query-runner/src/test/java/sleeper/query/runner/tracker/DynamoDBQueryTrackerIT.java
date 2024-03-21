@@ -350,7 +350,7 @@ public class DynamoDBQueryTrackerIT {
         Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         Range range = rangeFactory.createExactRange(field, 1);
-        Region region = Region.from(range);
+        Region region = new Region(range);
         return Query.builder()
                 .tableName("myTable")
                 .queryId(id)
@@ -363,9 +363,9 @@ public class DynamoDBQueryTrackerIT {
         Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         Range range = rangeFactory.createExactRange(field, 1);
-        Region region = Region.from(range);
+        Region region = new Region(range);
         Range partitionRange = rangeFactory.createRange(field, 0, 1000);
-        Region partitionRegion = Region.from(partitionRange);
+        Region partitionRegion = new Region(partitionRange);
         Query query = Query.builder()
                 .tableName("myTable")
                 .queryId(parentId)

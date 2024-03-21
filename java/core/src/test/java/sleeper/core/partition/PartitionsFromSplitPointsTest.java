@@ -156,7 +156,7 @@ public class PartitionsFromSplitPointsTest {
 
             Range expectedRootRange = rangeFactory.createRange(schema.getRowKeyFields().get(0),
                     Long.MIN_VALUE, true, null, false);
-            Region expectedRootRegion = Region.from(expectedRootRange);
+            Region expectedRootRegion = new Region(expectedRootRange);
             Partition expectedRootPartition = Partition.builder()
                     .id(rootPartition.getId())
                     .parentPartitionId(null)
