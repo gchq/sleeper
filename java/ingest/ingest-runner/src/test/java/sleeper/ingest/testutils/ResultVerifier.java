@@ -143,7 +143,7 @@ public class ResultVerifier {
             ParquetReader<Record> recordParquetReader = new ParquetRecordReader.Builder(filePath, sleeperSchema)
                     .withConf(hadoopConfiguration)
                     .build();
-            return ParquetReaderIterator.from(recordParquetReader);
+            return new ParquetReaderIterator(recordParquetReader);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

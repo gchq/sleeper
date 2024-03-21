@@ -277,7 +277,7 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
                 1_000_000L));
 
         // Then
-        ParquetReaderIterator parquetReaderIterator = ParquetReaderIterator.from(new ParquetRecordReader(new Path(file), SCHEMA));
+        ParquetReaderIterator parquetReaderIterator = new ParquetReaderIterator(new ParquetRecordReader(new Path(file), SCHEMA));
         while (parquetReaderIterator.hasNext()) {
             parquetReaderIterator.next();
         }

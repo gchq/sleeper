@@ -650,7 +650,7 @@ public class FilterTranslatorIT {
                 .build();
 
         List<Record> records = new ArrayList<>();
-        ParquetReaderIterator parquetReaderIterator = ParquetReaderIterator.from(reader);
+        ParquetReaderIterator parquetReaderIterator = new ParquetReaderIterator(reader);
 
         while (parquetReaderIterator.hasNext()) {
             records.add(parquetReaderIterator.next());

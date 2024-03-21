@@ -43,40 +43,34 @@ public class RecordConverter extends GroupConverter {
     private final Record currentRecord;
     private final Converter[] converters;
 
-    public static RecordConverter from(Schema schema) {
-        Record currentRecord = new Record();
+    public RecordConverter(Schema schema) {
+        currentRecord = new Record();
         List<Field> fields = schema.getAllFields();
-        Converter[] converters = new Converter[fields.size()];
+        this.converters = new Converter[fields.size()];
         int count = 0;
         for (Field field : fields) {
             if (field.getType() instanceof IntType) {
-                converters[count] = new IntConverter(field.getName(), currentRecord);
+                this.converters[count] = new IntConverter(field.getName(), currentRecord);
             } else if (field.getType() instanceof LongType) {
-                converters[count] = new LongConverter(field.getName(), currentRecord);
+                this.converters[count] = new LongConverter(field.getName(), currentRecord);
             } else if (field.getType() instanceof StringType) {
-                converters[count] = new StringConverter(field.getName(), currentRecord);
+                this.converters[count] = new StringConverter(field.getName(), currentRecord);
             } else if (field.getType() instanceof ByteArrayType) {
-                converters[count] = new ByteArrayConverter(field.getName(), currentRecord);
+                this.converters[count] = new ByteArrayConverter(field.getName(), currentRecord);
             } else if (field.getType() instanceof MapType) {
                 MapType mapType = (MapType) field.getType();
                 PrimitiveType keyType = mapType.getKeyType();
                 PrimitiveType valueType = mapType.getValueType();
-                converters[count] = new MapConverter<>(field.getName(), keyType, valueType, currentRecord);
+                this.converters[count] = new MapConverter<>(field.getName(), keyType, valueType, currentRecord);
             } else if (field.getType() instanceof ListType) {
                 ListType listType = (ListType) field.getType();
                 PrimitiveType elementType = listType.getElementType();
-                converters[count] = new ListConverter<>(field.getName(), elementType, currentRecord);
+                this.converters[count] = new ListConverter<>(field.getName(), elementType, currentRecord);
             } else {
                 throw new IllegalArgumentException("Schema has a field with an unknown type (" + field + ")");
             }
             count++;
         }
-        return new RecordConverter(currentRecord, converters);
-    }
-
-    private RecordConverter(Record currentRecord, Converter[] converters) {
-        this.currentRecord = currentRecord;
-        this.converters = converters;
     }
 
     @Override

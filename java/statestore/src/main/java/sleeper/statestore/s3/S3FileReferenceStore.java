@@ -454,7 +454,7 @@ class S3FileReferenceStore implements FileReferenceStore {
         LOGGER.debug("Loading file records from {}", path);
         List<AllReferencesToAFile> files = new ArrayList<>();
         try (ParquetReader<Record> reader = fileReader(path)) {
-            ParquetReaderIterator recordReader = ParquetReaderIterator.from(reader);
+            ParquetReaderIterator recordReader = new ParquetReaderIterator(reader);
             while (recordReader.hasNext()) {
                 files.add(getFileFromRecord(recordReader.next()));
             }
