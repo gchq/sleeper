@@ -46,13 +46,16 @@ public class Partition {
     private final int dimension;
 
     private Partition(Partition.Builder builder) {
-        region = builder.region;
-        rowKeyTypes = builder.rowKeyTypes;
-        id = builder.id;
+        region = Objects.requireNonNull(builder.region, "region must not be null");
+        rowKeyTypes = Objects.requireNonNull(builder.rowKeyTypes, "rowKeyTypes must not be null");
+        id = Objects.requireNonNull(builder.id, "id must not be null");
         leafPartition = builder.leafPartition;
         parentPartitionId = builder.parentPartitionId;
         childPartitionIds = Optional.ofNullable(builder.childPartitionIds).orElse(Collections.emptyList());
         dimension = builder.dimension;
+        if (!RegionCanonicaliser.isRegionInCanonicalForm(region)) {
+            throw new IllegalArgumentException("Region must be in canonical form");
+        }
     }
 
     public static Builder builder() {
@@ -189,9 +192,6 @@ public class Partition {
         }
 
         public Partition build() {
-            if (region != null && !RegionCanonicaliser.isRegionInCanonicalForm(region)) {
-                throw new IllegalArgumentException("Region must be in canonical form");
-            }
             return new Partition(this);
         }
 

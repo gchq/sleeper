@@ -32,7 +32,7 @@ import sleeper.task.common.RunIngestTasks;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
- * A lambda function to execute {@link RunIngestTasks}.
+ * A lambda function to run ingest tasks.
  */
 @SuppressWarnings("unused")
 public class RunIngestTasksLambda {

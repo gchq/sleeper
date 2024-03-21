@@ -76,7 +76,7 @@ public class DockerInstanceTestBase {
             InstanceProperties instanceProperties, TableProperties tableProperties) throws Exception {
         StateStore stateStore = new StateStoreProvider(dynamoDB, instanceProperties, getHadoopConfiguration())
                 .getStateStore(tableProperties);
-        PartitionTree tree = PartitionTree.from(stateStore.getAllPartitions());
+        PartitionTree tree = new PartitionTree(stateStore.getAllPartitions());
         QueryExecutor executor = new QueryExecutor(ObjectFactory.noUserJars(), tableProperties,
                 stateStore, getHadoopConfiguration(), Executors.newSingleThreadExecutor());
         executor.init(tree.getAllPartitions(), stateStore.getPartitionToReferencedFilesMap());

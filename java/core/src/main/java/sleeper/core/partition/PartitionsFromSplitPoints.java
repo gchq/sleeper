@@ -85,7 +85,7 @@ public class PartitionsFromSplitPoints {
         List<Partition> builtPartitions = allPartitions.stream().map(Partition.Builder::build).collect(Collectors.toList());
         LOGGER.debug("Created the following partitions by layer (root first)");
         int layer = 1;
-        PartitionTree tree = PartitionTree.from(builtPartitions);
+        PartitionTree tree = new PartitionTree(builtPartitions);
         List<Partition> partitionsInLayer = List.of(tree.getRootPartition());
         while (!partitionsInLayer.isEmpty()) {
             LOGGER.debug("Layer {}", layer++);
@@ -117,7 +117,7 @@ public class PartitionsFromSplitPoints {
                         rightPartition.getRegion().getRange(rowKeyFields.get(0).getName()).getMax(),
                         false);
                 ranges.add(rangeForDim0);
-                Region region = Region.from(ranges);
+                Region region = new Region(ranges);
                 String id = UUID.randomUUID().toString();
                 List<String> childPartitionIds = List.of(leftPartition.getId(), rightPartition.getId());
                 Partition.Builder parent = Partition.builder()
@@ -176,7 +176,7 @@ public class PartitionsFromSplitPoints {
         for (Field field : schema.getRowKeyFields()) {
             ranges.add(getRangeCoveringWholeDimension(rangeFactory, field));
         }
-        Region region = Region.from(ranges);
+        Region region = new Region(ranges);
         return Partition.builder()
                 .rowKeyTypes(schema.getRowKeyTypes())
                 .region(region)
@@ -286,13 +286,13 @@ public class PartitionsFromSplitPoints {
             Range rangeForDim = rangeFactory.createRange(splitField, partitionBoundaries.get(i), true, partitionBoundaries.get(i + 1), false);
             rangesForThisRegion.add(rangeForDim);
             rangesForThisRegion.addAll(ranges);
-            Region region = Region.from(rangesForThisRegion);
+            Region region = new Region(rangesForThisRegion);
             leafRegions.add(region);
         }
         return leafRegions;
     }
 
     public static PartitionTree treeFrom(Schema schema, List<Object> splitPoints) {
-        return PartitionTree.from(new PartitionsFromSplitPoints(schema, splitPoints).construct());
+        return new PartitionTree(new PartitionsFromSplitPoints(schema, splitPoints).construct());
     }
 }
