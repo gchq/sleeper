@@ -238,7 +238,18 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
         public void onMessage(String json) {
             try {
                 JsonObject message = serde.fromJson(json, JsonObject.class);
-
+                if (!message.has("queryId")) {
+                    out.println("Received message without queryId from API:");
+                    out.println("  " + json);
+                    queryFailed = true;
+                    return;
+                }
+                if (!message.has("message")) {
+                    out.println("Received message without message type from API:");
+                    out.println("  " + json);
+                    queryFailed = true;
+                    return;
+                }
                 String messageType = message.get("message").getAsString();
                 String queryId = message.get("queryId").getAsString();
 

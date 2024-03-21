@@ -346,6 +346,60 @@ public class QueryWebSocketClientTest {
             assertThat(client.sentMessages)
                     .containsExactly(querySerDe.toJson(expectedQuery));
         }
+
+        @Test
+        void shouldHandleMissingQueryIdInMessageFromApi() throws Exception {
+            // Given
+            Query expectedQuery = exactQuery("test-query-id", 123L);
+
+            // When
+            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            runQueryClient("test-query-id",
+                    withResponses(
+                            message("{\"message\":\"error\"}")));
+
+            // Then
+            assertThat(out.toString())
+                    .startsWith("Querying table test-table")
+                    .contains(PROMPT_QUERY_TYPE +
+                            PROMPT_EXACT_KEY_LONG_TYPE +
+                            "Connected to WebSocket API\n" +
+                            "Submitting Query: " + querySerDe.toJson(expectedQuery) + "\n" +
+                            "Received message without queryId from API:\n" +
+                            "  {\"message\":\"error\"}")
+                    .containsSubsequence("Query took", "seconds to return 0 records");
+            assertThat(client.connected).isFalse();
+            assertThat(client.closed).isTrue();
+            assertThat(client.sentMessages)
+                    .containsExactly(querySerDe.toJson(expectedQuery));
+        }
+
+        @Test
+        void shouldHandleMissingMessageTypeInMessageFromApi() throws Exception {
+            // Given
+            Query expectedQuery = exactQuery("test-query-id", 123L);
+
+            // When
+            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            runQueryClient("test-query-id",
+                    withResponses(
+                            message("{\"queryId\":\"test-query-id\"}")));
+
+            // Then
+            assertThat(out.toString())
+                    .startsWith("Querying table test-table")
+                    .contains(PROMPT_QUERY_TYPE +
+                            PROMPT_EXACT_KEY_LONG_TYPE +
+                            "Connected to WebSocket API\n" +
+                            "Submitting Query: " + querySerDe.toJson(expectedQuery) + "\n" +
+                            "Received message without message type from API:\n" +
+                            "  {\"queryId\":\"test-query-id\"}")
+                    .containsSubsequence("Query took", "seconds to return 0 records");
+            assertThat(client.connected).isFalse();
+            assertThat(client.closed).isTrue();
+            assertThat(client.sentMessages)
+                    .containsExactly(querySerDe.toJson(expectedQuery));
+        }
     }
 
     private Query exactQuery(String queryId, long value) {
