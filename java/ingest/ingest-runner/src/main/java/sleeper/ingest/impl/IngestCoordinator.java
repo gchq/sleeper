@@ -245,7 +245,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
 
         LOGGER.debug("Loading partitions from state store {}", sleeperStateStore);
         List<Partition> allPartitions = sleeperStateStore.getAllPartitions();
-        partitionTree = PartitionTree.from(allPartitions);
+        partitionTree = new PartitionTree(allPartitions);
         lastPartitionsUpdateTime = Instant.now();
         LOGGER.info("There are {} partitions", allPartitions.size());
     }

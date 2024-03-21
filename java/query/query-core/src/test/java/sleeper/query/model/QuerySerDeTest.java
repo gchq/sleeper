@@ -99,7 +99,7 @@ public class QuerySerDeTest {
         assertThat(query.getQueryId()).isEqualTo("my-query");
         assertThat(query.getTableName()).isEqualTo("my-table");
         assertThat(query.getResultsPublisherConfig()).isEqualTo(new HashMap<>());
-        Region expectedRegion = Region.from(rangeFactory.createRange(field, 1, true, 2, false));
+        Region expectedRegion = new Region(rangeFactory.createRange(field, 1, true, 2, false));
         assertThat(query.getRegions()).containsExactly(expectedRegion);
         assertThat(query.getRequestedValueFields()).isEqualTo(Collections.singletonList("value1"));
     }
@@ -135,7 +135,7 @@ public class QuerySerDeTest {
         assertThat(query.getQueryId()).isEqualTo("my-query");
         assertThat(query.getTableName()).isEqualTo("my-table");
         assertThat(query.getResultsPublisherConfig()).isEqualTo(new HashMap<>());
-        Region expectedRegion = Region.from(rangeFactory.createRange(field, 1, true, 2, true));
+        Region expectedRegion = new Region(rangeFactory.createRange(field, 1, true, 2, true));
         assertThat(query.getRegions()).containsExactly(expectedRegion);
         assertThat(query.getRequestedValueFields()).isNull();
     }
@@ -171,7 +171,7 @@ public class QuerySerDeTest {
         assertThat(query.getQueryId()).isEqualTo("my-query");
         assertThat(query.getTableName()).isEqualTo("my-table");
         assertThat(query.getResultsPublisherConfig()).isEqualTo(new HashMap<>());
-        Region expectedRegion = Region.from(rangeFactory.createRange(field, 1, false, 2, true));
+        Region expectedRegion = new Region(rangeFactory.createRange(field, 1, false, 2, true));
         assertThat(query.getRegions()).containsExactly(expectedRegion);
         assertThat(query.getRequestedValueFields()).isNull();
     }
@@ -207,7 +207,7 @@ public class QuerySerDeTest {
         assertThat(query.getQueryId()).isEqualTo("my-query");
         assertThat(query.getTableName()).isEqualTo("my-table");
         assertThat(query.getResultsPublisherConfig()).isEqualTo(new HashMap<>());
-        Region expectedRegion = Region.from(rangeFactory.createRange(field, 1, false, 2, false));
+        Region expectedRegion = new Region(rangeFactory.createRange(field, 1, false, 2, false));
         assertThat(query.getRegions()).containsExactly(expectedRegion);
         assertThat(query.getRequestedValueFields()).isNull();
     }
@@ -244,7 +244,7 @@ public class QuerySerDeTest {
         assertThat(query.getQueryId()).isEqualTo("my-query");
         assertThat(query.getTableName()).isEqualTo("my-table");
         assertThat(query.getResultsPublisherConfig()).isEqualTo(new HashMap<>());
-        Region expectedRegion = Region.from(rangeFactory.createRange(field, 1, false, null, false));
+        Region expectedRegion = new Region(rangeFactory.createRange(field, 1, false, null, false));
         assertThat(query.getRegions()).containsExactly(expectedRegion);
         assertThat(query.getRequestedValueFields()).isNull();
     }
@@ -257,7 +257,7 @@ public class QuerySerDeTest {
         Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         String tableName = UUID.randomUUID().toString();
-        Region region = Region.from(rangeFactory.createExactRange(field, 1));
+        Region region = new Region(rangeFactory.createExactRange(field, 1));
         Query query = Query.builder()
                 .tableName(tableName)
                 .queryId("id")
@@ -281,7 +281,7 @@ public class QuerySerDeTest {
         Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         String tableName = UUID.randomUUID().toString();
-        Region region = Region.from(rangeFactory.createExactRange(field, 1L));
+        Region region = new Region(rangeFactory.createExactRange(field, 1L));
         Query query = Query.builder()
                 .tableName(tableName)
                 .queryId("id")
@@ -305,7 +305,7 @@ public class QuerySerDeTest {
         Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         String tableName = UUID.randomUUID().toString();
-        Region region = Region.from(rangeFactory.createExactRange(field, "1"));
+        Region region = new Region(rangeFactory.createExactRange(field, "1"));
         Query query = Query.builder()
                 .tableName(tableName)
                 .queryId("id")
@@ -329,7 +329,7 @@ public class QuerySerDeTest {
         Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         String tableName = UUID.randomUUID().toString();
-        Region region = Region.from(rangeFactory.createExactRange(field, new byte[]{0, 1, 2}));
+        Region region = new Region(rangeFactory.createExactRange(field, new byte[]{0, 1, 2}));
         Query query = Query.builder()
                 .tableName(tableName)
                 .queryId("id")
@@ -353,8 +353,8 @@ public class QuerySerDeTest {
         Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         String tableName = UUID.randomUUID().toString();
-        Region region1 = Region.from(rangeFactory.createExactRange(field, new byte[]{0, 1, 2}));
-        Region region2 = Region.from(rangeFactory.createExactRange(field, new byte[]{3, 4}));
+        Region region1 = new Region(rangeFactory.createExactRange(field, new byte[]{0, 1, 2}));
+        Region region2 = new Region(rangeFactory.createExactRange(field, new byte[]{3, 4}));
         Query query = Query.builder()
                 .tableName(tableName)
                 .queryId("id")
@@ -378,8 +378,8 @@ public class QuerySerDeTest {
         Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         String tableName = UUID.randomUUID().toString();
-        Region region1 = Region.from(rangeFactory.createExactRange(field, new byte[]{0, 1, 2}));
-        Region region2 = Region.from(rangeFactory.createExactRange(field, new byte[]{3, 4}));
+        Region region1 = new Region(rangeFactory.createExactRange(field, new byte[]{0, 1, 2}));
+        Region region2 = new Region(rangeFactory.createExactRange(field, new byte[]{3, 4}));
         Map<String, String> publisherConfig = new HashMap<>();
         publisherConfig.put(ResultsOutputConstants.DESTINATION, "s3");
         publisherConfig.put("other-config", "test-value");
@@ -409,10 +409,10 @@ public class QuerySerDeTest {
         Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         String tableName = UUID.randomUUID().toString();
-        Region region1 = Region.from(rangeFactory.createRange(field, 1, true, 2, true));
-        Region region2 = Region.from(rangeFactory.createRange(field, 3, true, 4, false));
-        Region region3 = Region.from(rangeFactory.createRange(field, 5, false, 6, true));
-        Region region4 = Region.from(rangeFactory.createRange(field, 7, false, 8, false));
+        Region region1 = new Region(rangeFactory.createRange(field, 1, true, 2, true));
+        Region region2 = new Region(rangeFactory.createRange(field, 3, true, 4, false));
+        Region region3 = new Region(rangeFactory.createRange(field, 5, false, 6, true));
+        Region region4 = new Region(rangeFactory.createRange(field, 7, false, 8, false));
         Query query = Query.builder()
                 .tableName(tableName)
                 .queryId("id")
@@ -436,10 +436,10 @@ public class QuerySerDeTest {
         Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         String tableName = UUID.randomUUID().toString();
-        Region region1 = Region.from(rangeFactory.createRange(field, 1L, true, 2L, true));
-        Region region2 = Region.from(rangeFactory.createRange(field, 3L, true, 4L, false));
-        Region region3 = Region.from(rangeFactory.createRange(field, 5L, false, 6L, true));
-        Region region4 = Region.from(rangeFactory.createRange(field, 7L, false, 8L, false));
+        Region region1 = new Region(rangeFactory.createRange(field, 1L, true, 2L, true));
+        Region region2 = new Region(rangeFactory.createRange(field, 3L, true, 4L, false));
+        Region region3 = new Region(rangeFactory.createRange(field, 5L, false, 6L, true));
+        Region region4 = new Region(rangeFactory.createRange(field, 7L, false, 8L, false));
         Query query = Query.builder()
                 .tableName(tableName)
                 .queryId("id")
@@ -463,10 +463,10 @@ public class QuerySerDeTest {
         Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         String tableName = UUID.randomUUID().toString();
-        Region region1 = Region.from(rangeFactory.createRange(field, "1", true, "2", true));
-        Region region2 = Region.from(rangeFactory.createRange(field, "3", true, "4", false));
-        Region region3 = Region.from(rangeFactory.createRange(field, "5", false, "6", true));
-        Region region4 = Region.from(rangeFactory.createRange(field, "7", false, "8", false));
+        Region region1 = new Region(rangeFactory.createRange(field, "1", true, "2", true));
+        Region region2 = new Region(rangeFactory.createRange(field, "3", true, "4", false));
+        Region region3 = new Region(rangeFactory.createRange(field, "5", false, "6", true));
+        Region region4 = new Region(rangeFactory.createRange(field, "7", false, "8", false));
         Query query = Query.builder()
                 .tableName(tableName)
                 .queryId("id")
@@ -490,7 +490,7 @@ public class QuerySerDeTest {
         Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         String tableName = UUID.randomUUID().toString();
-        Region region = Region.from(rangeFactory.createRange(field, "A", true, null, false));
+        Region region = new Region(rangeFactory.createRange(field, "A", true, null, false));
         Query query = Query.builder()
                 .tableName(tableName)
                 .queryId("id")
@@ -514,10 +514,10 @@ public class QuerySerDeTest {
         Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         String tableName = UUID.randomUUID().toString();
-        Region region1 = Region.from(rangeFactory.createRange(field, new byte[]{0, 1, 2}, true, new byte[]{4}, true));
-        Region region2 = Region.from(rangeFactory.createRange(field, new byte[]{0, 1, 2}, true, new byte[]{4}, false));
-        Region region3 = Region.from(rangeFactory.createRange(field, new byte[]{0, 1, 2}, false, new byte[]{4}, true));
-        Region region4 = Region.from(rangeFactory.createRange(field, new byte[]{0, 1, 2}, false, new byte[]{4}, false));
+        Region region1 = new Region(rangeFactory.createRange(field, new byte[]{0, 1, 2}, true, new byte[]{4}, true));
+        Region region2 = new Region(rangeFactory.createRange(field, new byte[]{0, 1, 2}, true, new byte[]{4}, false));
+        Region region3 = new Region(rangeFactory.createRange(field, new byte[]{0, 1, 2}, false, new byte[]{4}, true));
+        Region region4 = new Region(rangeFactory.createRange(field, new byte[]{0, 1, 2}, false, new byte[]{4}, false));
         Query query = Query.builder()
                 .tableName(tableName)
                 .queryId("id")
@@ -541,7 +541,7 @@ public class QuerySerDeTest {
         Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         String tableName = UUID.randomUUID().toString();
-        Region region = Region.from(rangeFactory.createRange(field, new byte[]{1, 2}, true, null, false));
+        Region region = new Region(rangeFactory.createRange(field, new byte[]{1, 2}, true, null, false));
         Query query = Query.builder()
                 .tableName(tableName)
                 .queryId("id")
@@ -569,8 +569,8 @@ public class QuerySerDeTest {
         files.add("file1");
         files.add("file2");
         files.add("file3");
-        Region region = Region.from(rangeFactory.createRange(field, new byte[]{0, 1, 2}, new byte[]{4}));
-        Region partitionRegion = Region.from(rangeFactory.createRange(field, new byte[]{0}, new byte[]{100}));
+        Region region = new Region(rangeFactory.createRange(field, new byte[]{0, 1, 2}, new byte[]{4}));
+        Region partitionRegion = new Region(rangeFactory.createRange(field, new byte[]{0}, new byte[]{100}));
         Query parentQuery = Query.builder()
                 .tableName(tableName)
                 .queryId("id")
@@ -604,9 +604,9 @@ public class QuerySerDeTest {
         files.add("file1");
         files.add("file2");
         files.add("file3");
-        Region region1 = Region.from(rangeFactory.createRange(field, new byte[]{0, 1, 2}, true, new byte[]{4}, true));
-        Region region2 = Region.from(rangeFactory.createRange(field, new byte[]{10}, true, new byte[]{20}, true));
-        Region partitionRegion = Region.from(rangeFactory.createRange(field, new byte[]{0}, new byte[]{100}));
+        Region region1 = new Region(rangeFactory.createRange(field, new byte[]{0, 1, 2}, true, new byte[]{4}, true));
+        Region region2 = new Region(rangeFactory.createRange(field, new byte[]{10}, true, new byte[]{20}, true));
+        Region partitionRegion = new Region(rangeFactory.createRange(field, new byte[]{0}, new byte[]{100}));
         Query parentQuery = Query.builder()
                 .tableName(tableName)
                 .queryId("id")
@@ -637,9 +637,9 @@ public class QuerySerDeTest {
         files.add("file1");
         files.add("file2");
         files.add("file3");
-        Region region1 = Region.from(rangeFactory.createRange(field, -100L, true, -10L, true));
-        Region region2 = Region.from(rangeFactory.createRange(field, 10L, true, 100L, true));
-        Region partitionRegion = Region.from(rangeFactory.createRange(field, 0L, 1000L));
+        Region region1 = new Region(rangeFactory.createRange(field, -100L, true, -10L, true));
+        Region region2 = new Region(rangeFactory.createRange(field, 10L, true, 100L, true));
+        Region partitionRegion = new Region(rangeFactory.createRange(field, 0L, 1000L));
         Query parentQuery = Query.builder()
                 .tableName(tableName)
                 .queryId("id")
@@ -667,7 +667,7 @@ public class QuerySerDeTest {
         Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         String tableName = UUID.randomUUID().toString();
-        Region region = Region.from(rangeFactory.createRange(field, 1, true, 5, true));
+        Region region = new Region(rangeFactory.createRange(field, 1, true, 5, true));
         Query query = Query.builder()
                 .tableName(tableName)
                 .queryId("id")
@@ -695,7 +695,7 @@ public class QuerySerDeTest {
         Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         String tableName = UUID.randomUUID().toString();
-        Region region = Region.from(rangeFactory.createExactRange(field, new byte[]{0, 1, 2}));
+        Region region = new Region(rangeFactory.createExactRange(field, new byte[]{0, 1, 2}));
         QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
 
         // When / Then

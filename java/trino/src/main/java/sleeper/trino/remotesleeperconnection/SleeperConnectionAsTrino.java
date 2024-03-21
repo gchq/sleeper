@@ -307,7 +307,7 @@ public class SleeperConnectionAsTrino implements AutoCloseable {
                         SleeperTypeConversionUtils.convertTrinoObjectToSleeperRowKeyObject(
                                 rowKeySleeperColumnHandle.getColumnTrinoType(), trinoRange.getHighBoundedValue()),
                         trinoRange.isHighInclusive()))
-                .map(sleeperRange -> Region.from(ImmutableList.of(sleeperRange)))
+                .map(sleeperRange -> new Region(ImmutableList.of(sleeperRange)))
                 .collect(ImmutableList.toImmutableList());
 
         // Construct a Sleeper query with a unique, random query ID

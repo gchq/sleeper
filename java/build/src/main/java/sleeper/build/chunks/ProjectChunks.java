@@ -23,11 +23,13 @@ import sleeper.build.maven.MavenModuleStructure;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.toUnmodifiableList;
 
 public class ProjectChunks {
 
@@ -49,14 +51,24 @@ public class ProjectChunks {
     }
 
     public void validateAllConfigured(ProjectStructure project, MavenModuleStructure maven, PrintStream out) {
-        Set<String> configuredModuleRefs = stream()
+        List<String> configuredModuleRefs = stream()
                 .flatMap(chunk -> chunk.getModules().stream())
-                .collect(Collectors.toSet());
-        List<String> unconfiguredModuleRefs = maven.allTestedModules().map(MavenModuleAndPath::getPath)
-                .filter(moduleRef -> !configuredModuleRefs.contains(moduleRef))
-                .collect(Collectors.toList());
+                .collect(toUnmodifiableList());
+        List<String> javaModuleRefs = maven.allJavaModules().map(MavenModuleAndPath::getPath).collect(toUnmodifiableList());
+        Set<String> unconfiguredModuleRefs = new LinkedHashSet<>(javaModuleRefs);
+        unconfiguredModuleRefs.removeAll(configuredModuleRefs);
+        Set<String> unrecognisedModuleRefs = new LinkedHashSet<>(configuredModuleRefs);
+        unrecognisedModuleRefs.removeAll(javaModuleRefs);
+        boolean failed = false;
         if (!unconfiguredModuleRefs.isEmpty()) {
             out.println("Maven modules not configured in any chunk: " + String.join(", ", unconfiguredModuleRefs));
+            failed = true;
+        }
+        if (!unrecognisedModuleRefs.isEmpty()) {
+            out.println("Maven modules with no source code found in a chunk: " + String.join(", ", unrecognisedModuleRefs));
+            failed = true;
+        }
+        if (failed) {
             out.println("Please ensure chunks are configured correctly at " + project.getChunksYamlRelative());
             throw new IllegalStateException("Failed validating chunk Maven modules");
         }

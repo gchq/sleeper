@@ -49,7 +49,7 @@ public class PartitionTreeTest {
         // Given
         Schema schema = Schema.builder().rowKeyFields(new Field("id", new LongType())).build();
         Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
-        Region rootRegion = Region.from(rangeFactory.createRange("id", Long.MIN_VALUE, true, null, false));
+        Region rootRegion = new Region(rangeFactory.createRange("id", Long.MIN_VALUE, true, null, false));
         Partition root = Partition.builder()
                 .rowKeyTypes(LONG_TYPE)
                 .region(rootRegion)
@@ -59,7 +59,7 @@ public class PartitionTreeTest {
                 .childPartitionIds(Arrays.asList(L1_LEFT, L1_RIGHT))
                 .dimension(-1)
                 .build();
-        Region l1LeftRegion = Region.from(rangeFactory.createRange("id", Long.MIN_VALUE, true, 0L, false));
+        Region l1LeftRegion = new Region(rangeFactory.createRange("id", Long.MIN_VALUE, true, 0L, false));
         Partition l1Left = Partition.builder()
                 .rowKeyTypes(LONG_TYPE)
                 .region(l1LeftRegion)
@@ -69,7 +69,7 @@ public class PartitionTreeTest {
                 .childPartitionIds(Arrays.asList(L2_LEFT_OF_L1L, L2_RIGHT_OF_L1L))
                 .dimension(-1)
                 .build();
-        Region l1RightRegion = Region.from(rangeFactory.createRange("id", 0L, true, null, false));
+        Region l1RightRegion = new Region(rangeFactory.createRange("id", 0L, true, null, false));
         Partition l1Right = Partition.builder()
                 .rowKeyTypes(LONG_TYPE)
                 .region(l1RightRegion)
@@ -79,7 +79,7 @@ public class PartitionTreeTest {
                 .childPartitionIds(Arrays.asList(L2_LEFT_OF_L1R, L2_RIGHT_OF_L1R))
                 .dimension(-1)
                 .build();
-        Region l2LeftOfL1LRegion = Region.from(rangeFactory.createRange("id", Long.MIN_VALUE, true, -1000000L, false));
+        Region l2LeftOfL1LRegion = new Region(rangeFactory.createRange("id", Long.MIN_VALUE, true, -1000000L, false));
         Partition l2LeftOfL1L = Partition.builder()
                 .rowKeyTypes(LONG_TYPE)
                 .region(l2LeftOfL1LRegion)
@@ -89,7 +89,7 @@ public class PartitionTreeTest {
                 .childPartitionIds(Collections.emptyList())
                 .dimension(-1)
                 .build();
-        Region l2RightOfL1LRegion = Region.from(rangeFactory.createRange("id", -1000000L, true, 0L, false));
+        Region l2RightOfL1LRegion = new Region(rangeFactory.createRange("id", -1000000L, true, 0L, false));
         Partition l2RightOfL1L = Partition.builder()
                 .rowKeyTypes(LONG_TYPE)
                 .region(l2RightOfL1LRegion)
@@ -99,7 +99,7 @@ public class PartitionTreeTest {
                 .childPartitionIds(Collections.emptyList())
                 .dimension(-1)
                 .build();
-        Region l2LeftOfL1RRegion = Region.from(rangeFactory.createRange("id", 0L, true, 123456789L, false));
+        Region l2LeftOfL1RRegion = new Region(rangeFactory.createRange("id", 0L, true, 123456789L, false));
         Partition l2LeftOfL1R = Partition.builder()
                 .rowKeyTypes(LONG_TYPE)
                 .region(l2LeftOfL1RRegion)
@@ -109,7 +109,7 @@ public class PartitionTreeTest {
                 .childPartitionIds(Collections.emptyList())
                 .dimension(-1)
                 .build();
-        Region l2RightOfL1RRegion = Region.from(rangeFactory.createRange("id", 123456789L, true, null, false));
+        Region l2RightOfL1RRegion = new Region(rangeFactory.createRange("id", 123456789L, true, null, false));
         Partition l2RightOfL1R = Partition.builder()
                 .rowKeyTypes(LONG_TYPE)
                 .region(l2RightOfL1RRegion)
@@ -128,7 +128,7 @@ public class PartitionTreeTest {
         partitions.add(l2RightOfL1L);
         partitions.add(l2LeftOfL1R);
         partitions.add(l2RightOfL1R);
-        PartitionTree partitionTree = PartitionTree.from(partitions);
+        PartitionTree partitionTree = new PartitionTree(partitions);
 
         // When
         List<String> children1 = partitionTree.getChildIds(ROOT);
@@ -144,7 +144,7 @@ public class PartitionTreeTest {
         // Given
         Schema schema = Schema.builder().rowKeyFields(new Field("id", new LongType())).build();
         Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
-        Region rootRegion = Region.from(rangeFactory.createRange("id", Long.MIN_VALUE, true, null, false));
+        Region rootRegion = new Region(rangeFactory.createRange("id", Long.MIN_VALUE, true, null, false));
         Partition root = Partition.builder()
                 .rowKeyTypes(LONG_TYPE)
                 .region(rootRegion)
@@ -154,7 +154,7 @@ public class PartitionTreeTest {
                 .childPartitionIds(Arrays.asList(L1_LEFT, L1_RIGHT))
                 .dimension(-1)
                 .build();
-        Region l1LeftRegion = Region.from(rangeFactory.createRange("id", Long.MIN_VALUE, true, 0L, false));
+        Region l1LeftRegion = new Region(rangeFactory.createRange("id", Long.MIN_VALUE, true, 0L, false));
         Partition l1Left = Partition.builder()
                 .rowKeyTypes(LONG_TYPE)
                 .region(l1LeftRegion)
@@ -164,7 +164,7 @@ public class PartitionTreeTest {
                 .childPartitionIds(Arrays.asList(L2_LEFT_OF_L1L, L2_RIGHT_OF_L1L))
                 .dimension(-1)
                 .build();
-        Region l1RightRegion = Region.from(rangeFactory.createRange("id", 0L, true, null, false));
+        Region l1RightRegion = new Region(rangeFactory.createRange("id", 0L, true, null, false));
         Partition l1Right = Partition.builder()
                 .rowKeyTypes(LONG_TYPE)
                 .region(l1RightRegion)
@@ -174,7 +174,7 @@ public class PartitionTreeTest {
                 .childPartitionIds(Arrays.asList(L2_LEFT_OF_L1R, L2_RIGHT_OF_L1R))
                 .dimension(-1)
                 .build();
-        Region l2LeftOfL1LRegion = Region.from(rangeFactory.createRange("id", Long.MIN_VALUE, true, -1000000L, false));
+        Region l2LeftOfL1LRegion = new Region(rangeFactory.createRange("id", Long.MIN_VALUE, true, -1000000L, false));
         Partition l2LeftOfL1L = Partition.builder()
                 .rowKeyTypes(LONG_TYPE)
                 .region(l2LeftOfL1LRegion)
@@ -184,7 +184,7 @@ public class PartitionTreeTest {
                 .childPartitionIds(Collections.emptyList())
                 .dimension(-1)
                 .build();
-        Region l2RightOfL1LRegion = Region.from(rangeFactory.createRange("id", -1000000L, true, 0L, false));
+        Region l2RightOfL1LRegion = new Region(rangeFactory.createRange("id", -1000000L, true, 0L, false));
         Partition l2RightOfL1L = Partition.builder()
                 .rowKeyTypes(LONG_TYPE)
                 .region(l2RightOfL1LRegion)
@@ -194,7 +194,7 @@ public class PartitionTreeTest {
                 .childPartitionIds(Collections.emptyList())
                 .dimension(-1)
                 .build();
-        Region l2LeftOfL1RRegion = Region.from(rangeFactory.createRange("id", 0L, true, 123456789L, false));
+        Region l2LeftOfL1RRegion = new Region(rangeFactory.createRange("id", 0L, true, 123456789L, false));
         Partition l2LeftOfL1R = Partition.builder()
                 .rowKeyTypes(LONG_TYPE)
                 .region(l2LeftOfL1RRegion)
@@ -204,7 +204,7 @@ public class PartitionTreeTest {
                 .childPartitionIds(Collections.emptyList())
                 .dimension(-1)
                 .build();
-        Region l2RightOfL1RRegion = Region.from(rangeFactory.createRange("id", 123456789L, true, null, false));
+        Region l2RightOfL1RRegion = new Region(rangeFactory.createRange("id", 123456789L, true, null, false));
         Partition l2RightOfL1R = Partition.builder()
                 .rowKeyTypes(LONG_TYPE)
                 .region(l2RightOfL1RRegion)
@@ -223,7 +223,7 @@ public class PartitionTreeTest {
         partitions.add(l2RightOfL1L);
         partitions.add(l2LeftOfL1R);
         partitions.add(l2RightOfL1R);
-        PartitionTree partitionTree = PartitionTree.from(partitions);
+        PartitionTree partitionTree = new PartitionTree(partitions);
 
         // When
         List<Partition> ancestorsOfRoot = partitionTree.getAllAncestors(ROOT);
@@ -244,7 +244,7 @@ public class PartitionTreeTest {
         Schema schema = Schema.builder().rowKeyFields(new Field("id", new LongType())).build();
         Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
 
-        Region region = Region.from(rangeFactory.createRange("id", Long.MIN_VALUE, true, null, false));
+        Region region = new Region(rangeFactory.createRange("id", Long.MIN_VALUE, true, null, false));
         Partition root = Partition.builder()
                 .rowKeyTypes(LONG_TYPE)
                 .region(region)
@@ -254,7 +254,7 @@ public class PartitionTreeTest {
                 .childPartitionIds(Arrays.asList(L1_LEFT, L1_RIGHT))
                 .dimension(-1)
                 .build();
-        PartitionTree partitionTree = PartitionTree.from(Collections.singletonList(root));
+        PartitionTree partitionTree = new PartitionTree(Collections.singletonList(root));
 
         // When
         Partition partition = partitionTree.getLeafPartition(schema, Key.create(10L));
@@ -269,7 +269,7 @@ public class PartitionTreeTest {
         // Given
         Schema schema = Schema.builder().rowKeyFields(new Field("id", new LongType())).build();
         Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
-        Region rootRegion = Region.from(rangeFactory.createRange("id", Long.MIN_VALUE, true, null, false));
+        Region rootRegion = new Region(rangeFactory.createRange("id", Long.MIN_VALUE, true, null, false));
         Partition root = Partition.builder()
                 .rowKeyTypes(LONG_TYPE)
                 .region(rootRegion)
@@ -279,7 +279,7 @@ public class PartitionTreeTest {
                 .childPartitionIds(Arrays.asList(L1_LEFT, L1_RIGHT))
                 .dimension(-1)
                 .build();
-        Region l1LeftRegion = Region.from(rangeFactory.createRange("id", Long.MIN_VALUE, true, 0L, false));
+        Region l1LeftRegion = new Region(rangeFactory.createRange("id", Long.MIN_VALUE, true, 0L, false));
         Partition l1Left = Partition.builder()
                 .rowKeyTypes(LONG_TYPE)
                 .region(l1LeftRegion)
@@ -289,7 +289,7 @@ public class PartitionTreeTest {
                 .childPartitionIds(Arrays.asList(L2_LEFT_OF_L1L, L2_RIGHT_OF_L1L))
                 .dimension(-1)
                 .build();
-        Region l1RightRegion = Region.from(rangeFactory.createRange("id", 0L, true, null, false));
+        Region l1RightRegion = new Region(rangeFactory.createRange("id", 0L, true, null, false));
         Partition l1Right = Partition.builder()
                 .rowKeyTypes(LONG_TYPE)
                 .region(l1RightRegion)
@@ -299,7 +299,7 @@ public class PartitionTreeTest {
                 .childPartitionIds(Arrays.asList(L2_LEFT_OF_L1R, L2_RIGHT_OF_L1R))
                 .dimension(-1)
                 .build();
-        Region l2LeftOfL1LRegion = Region.from(rangeFactory.createRange("id", Long.MIN_VALUE, true, -1000000L, false));
+        Region l2LeftOfL1LRegion = new Region(rangeFactory.createRange("id", Long.MIN_VALUE, true, -1000000L, false));
         Partition l2LeftOfL1L = Partition.builder()
                 .rowKeyTypes(LONG_TYPE)
                 .region(l2LeftOfL1LRegion)
@@ -309,7 +309,7 @@ public class PartitionTreeTest {
                 .childPartitionIds(Collections.emptyList())
                 .dimension(-1)
                 .build();
-        Region l2RightOfL1LRegion = Region.from(rangeFactory.createRange("id", -1000000L, true, 0L, false));
+        Region l2RightOfL1LRegion = new Region(rangeFactory.createRange("id", -1000000L, true, 0L, false));
         Partition l2RightOfL1L = Partition.builder()
                 .rowKeyTypes(LONG_TYPE)
                 .region(l2RightOfL1LRegion)
@@ -319,7 +319,7 @@ public class PartitionTreeTest {
                 .childPartitionIds(Collections.emptyList())
                 .dimension(-1)
                 .build();
-        Region l2LeftOfL1RRegion = Region.from(rangeFactory.createRange("id", 0L, true, 123456789L, false));
+        Region l2LeftOfL1RRegion = new Region(rangeFactory.createRange("id", 0L, true, 123456789L, false));
         Partition l2LeftOfL1R = Partition.builder()
                 .rowKeyTypes(LONG_TYPE)
                 .region(l2LeftOfL1RRegion)
@@ -329,7 +329,7 @@ public class PartitionTreeTest {
                 .childPartitionIds(Collections.emptyList())
                 .dimension(-1)
                 .build();
-        Region l2RightOfL1RRegion = Region.from(rangeFactory.createRange("id", 123456789L, true, null, false));
+        Region l2RightOfL1RRegion = new Region(rangeFactory.createRange("id", 123456789L, true, null, false));
         Partition l2RightOfL1R = Partition.builder()
                 .rowKeyTypes(LONG_TYPE)
                 .region(l2RightOfL1RRegion)
@@ -348,7 +348,7 @@ public class PartitionTreeTest {
         partitions.add(l2RightOfL1L);
         partitions.add(l2LeftOfL1R);
         partitions.add(l2RightOfL1R);
-        PartitionTree partitionTree = PartitionTree.from(partitions);
+        PartitionTree partitionTree = new PartitionTree(partitions);
 
         // When 1
         Partition partition = partitionTree.getLeafPartition(schema, Key.create(10L));
@@ -370,7 +370,7 @@ public class PartitionTreeTest {
         // Given
         Schema schema = Schema.builder().rowKeyFields(new Field("id", new LongType())).build();
         Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
-        Region rootRegion = Region.from(rangeFactory.createRange("id", Long.MIN_VALUE, true, null, false));
+        Region rootRegion = new Region(rangeFactory.createRange("id", Long.MIN_VALUE, true, null, false));
         Partition root = Partition.builder()
                 .rowKeyTypes(LONG_TYPE)
                 .region(rootRegion)
@@ -380,7 +380,7 @@ public class PartitionTreeTest {
                 .childPartitionIds(Arrays.asList(L1_LEFT, L1_RIGHT))
                 .dimension(-1)
                 .build();
-        Region l1LeftRegion = Region.from(rangeFactory.createRange("id", Long.MIN_VALUE, true, 0L, false));
+        Region l1LeftRegion = new Region(rangeFactory.createRange("id", Long.MIN_VALUE, true, 0L, false));
         Partition l1Left = Partition.builder()
                 .rowKeyTypes(LONG_TYPE)
                 .region(l1LeftRegion)
@@ -390,7 +390,7 @@ public class PartitionTreeTest {
                 .childPartitionIds(Arrays.asList(L2_LEFT_OF_L1L, L2_RIGHT_OF_L1L))
                 .dimension(-1)
                 .build();
-        Region l1RightRegion = Region.from(rangeFactory.createRange("id", 0L, true, null, false));
+        Region l1RightRegion = new Region(rangeFactory.createRange("id", 0L, true, null, false));
         Partition l1Right = Partition.builder()
                 .rowKeyTypes(LONG_TYPE)
                 .region(l1RightRegion)
@@ -400,7 +400,7 @@ public class PartitionTreeTest {
                 .childPartitionIds(Arrays.asList(L2_LEFT_OF_L1R, L2_RIGHT_OF_L1R))
                 .dimension(-1)
                 .build();
-        Region l2LeftOfL1LRegion = Region.from(rangeFactory.createRange("id", Long.MIN_VALUE, true, -1000000L, false));
+        Region l2LeftOfL1LRegion = new Region(rangeFactory.createRange("id", Long.MIN_VALUE, true, -1000000L, false));
         Partition l2LeftOfL1L = Partition.builder()
                 .rowKeyTypes(LONG_TYPE)
                 .region(l2LeftOfL1LRegion)
@@ -410,7 +410,7 @@ public class PartitionTreeTest {
                 .childPartitionIds(Arrays.asList(L3_LEFT_OF_L2_LEFT_OF_L1_LEFT, L3_RIGHT_OF_L2_LEFT_OF_L1_LEFT))
                 .dimension(-1)
                 .build();
-        Region l2RightOfL1LRegion = Region.from(rangeFactory.createRange("id", -1000000L, true, 0L, false));
+        Region l2RightOfL1LRegion = new Region(rangeFactory.createRange("id", -1000000L, true, 0L, false));
         Partition l2RightOfL1L = Partition.builder()
                 .rowKeyTypes(LONG_TYPE)
                 .region(l2RightOfL1LRegion)
@@ -420,7 +420,7 @@ public class PartitionTreeTest {
                 .childPartitionIds(Collections.emptyList())
                 .dimension(-1)
                 .build();
-        Region l2LeftOfL1RRegion = Region.from(rangeFactory.createRange("id", 0L, true, 123456789L, false));
+        Region l2LeftOfL1RRegion = new Region(rangeFactory.createRange("id", 0L, true, 123456789L, false));
         Partition l2LeftOfL1R = Partition.builder()
                 .rowKeyTypes(LONG_TYPE)
                 .region(l2LeftOfL1RRegion)
@@ -430,7 +430,7 @@ public class PartitionTreeTest {
                 .childPartitionIds(Collections.emptyList())
                 .dimension(-1)
                 .build();
-        Region l2RightOfL1RRegion = Region.from(rangeFactory.createRange("id", 123456789L, true, null, false));
+        Region l2RightOfL1RRegion = new Region(rangeFactory.createRange("id", 123456789L, true, null, false));
         Partition l2RightOfL1R = Partition.builder()
                 .rowKeyTypes(LONG_TYPE)
                 .region(l2RightOfL1RRegion)
@@ -440,7 +440,7 @@ public class PartitionTreeTest {
                 .childPartitionIds(Collections.emptyList())
                 .dimension(-1)
                 .build();
-        Region l3LeftOfL2LoL1LRegion = Region.from(rangeFactory.createRange("id", Long.MIN_VALUE, true, -9000000L, false));
+        Region l3LeftOfL2LoL1LRegion = new Region(rangeFactory.createRange("id", Long.MIN_VALUE, true, -9000000L, false));
         Partition l3LeftOfL2LoL1L = Partition.builder()
                 .rowKeyTypes(LONG_TYPE)
                 .region(l3LeftOfL2LoL1LRegion)
@@ -450,7 +450,7 @@ public class PartitionTreeTest {
                 .childPartitionIds(Collections.emptyList())
                 .dimension(-1)
                 .build();
-        Region l3RightOfL2LoL1LRegion = Region.from(rangeFactory.createRange("id", -9000000L, true, -1000000L, false));
+        Region l3RightOfL2LoL1LRegion = new Region(rangeFactory.createRange("id", -9000000L, true, -1000000L, false));
         Partition l3RightOfL2LoL1L = Partition.builder()
                 .rowKeyTypes(LONG_TYPE)
                 .region(l3RightOfL2LoL1LRegion)
@@ -471,7 +471,7 @@ public class PartitionTreeTest {
         partitions.add(l2RightOfL1R);
         partitions.add(l3LeftOfL2LoL1L);
         partitions.add(l3RightOfL2LoL1L);
-        PartitionTree partitionTree = PartitionTree.from(partitions);
+        PartitionTree partitionTree = new PartitionTree(partitions);
 
         // When 1
         Partition partition = partitionTree.getLeafPartition(schema, Key.create(123456789L));

@@ -260,7 +260,7 @@ public class SplitMultiDimensionalPartitionImpl {
         List<Range> leftChildRanges = removeRange(partition.getRegion().getRanges(), fieldToSplitOn.getName());
         Range rangeForSplitDimensionLeftChild = rangeFactory.createRange(fieldToSplitOn, partition.getRegion().getRange(fieldToSplitOn.getName()).getMin(), splitPoint);
         leftChildRanges.add(rangeForSplitDimensionLeftChild);
-        Region leftChildRegion = Region.from(leftChildRanges);
+        Region leftChildRegion = new Region(leftChildRanges);
         Partition leftChild = Partition.builder()
                 .rowKeyTypes(schema.getRowKeyTypes())
                 .region(leftChildRegion)
@@ -274,7 +274,7 @@ public class SplitMultiDimensionalPartitionImpl {
         List<Range> rightChildRanges = removeRange(partition.getRegion().getRanges(), fieldToSplitOn.getName());
         Range rangeForSplitDimensionRightChild = rangeFactory.createRange(fieldToSplitOn, splitPoint, partition.getRegion().getRange(fieldToSplitOn.getName()).getMax());
         rightChildRanges.add(rangeForSplitDimensionRightChild);
-        Region rightChildRegion = Region.from(rightChildRanges);
+        Region rightChildRegion = new Region(rightChildRanges);
         Partition rightChild = Partition.builder()
                 .rowKeyTypes(schema.getRowKeyTypes())
                 .region(rightChildRegion)

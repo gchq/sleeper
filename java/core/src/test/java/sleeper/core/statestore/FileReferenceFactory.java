@@ -40,7 +40,7 @@ public class FileReferenceFactory {
     }
 
     public static FileReferenceFactory from(List<Partition> partitions) {
-        return from(PartitionTree.from(partitions));
+        return from(new PartitionTree(partitions));
     }
 
     public static FileReferenceFactory from(StateStore stateStore) {
@@ -56,7 +56,7 @@ public class FileReferenceFactory {
     }
 
     public static FileReferenceFactory fromUpdatedAt(List<Partition> partitions, Instant lastStateStoreUpdate) {
-        return fromUpdatedAt(PartitionTree.from(partitions), lastStateStoreUpdate);
+        return fromUpdatedAt(new PartitionTree(partitions), lastStateStoreUpdate);
     }
 
     public static FileReferenceFactory fromUpdatedAt(StateStore stateStore, Instant lastStateStoreUpdate) {

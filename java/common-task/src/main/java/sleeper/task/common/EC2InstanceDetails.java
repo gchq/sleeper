@@ -78,7 +78,6 @@ public class EC2InstanceDetails {
 
     /**
      * The number of ECS container instances to retrieve in one API call.
-     * Must be > 0.
      */
     public static final int INSTANCE_PAGE_SIZE = 75;
 
@@ -196,6 +195,9 @@ public class EC2InstanceDetails {
             private Queue<EC2InstanceDetails> instanceQueue = new ArrayDeque<>();
 
             InstanceDetailsIterator(int pageSize) {
+                if (pageSize < 1) {
+                    throw new IllegalArgumentException("pageSize must be > 0");
+                }
                 this.pageSize = pageSize;
                 this.req = new ListContainerInstancesRequest()
                         .withCluster(ecsClusterName)

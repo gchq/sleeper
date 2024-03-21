@@ -37,7 +37,7 @@ public class RegionCanonicaliser {
             canonicalisedRanges.add(RangeCanonicaliser.canonicaliseRange(range));
         }
 
-        return Region.from(canonicalisedRanges);
+        return new Region(canonicalisedRanges);
     }
 
     public static boolean isRegionInCanonicalForm(Region region) {

@@ -61,7 +61,7 @@ public class QueryCreator {
 
     public Query byRowKey(String key, List<QueryRange> ranges) {
         return byRegions(ranges.stream()
-                .map(range -> Region.from(new Range.RangeFactory(schema)
+                .map(range -> new Region(new Range.RangeFactory(schema)
                         .createRange(key, range.getMin(), range.getMax())))
                 .collect(Collectors.toList()));
     }
@@ -76,7 +76,7 @@ public class QueryCreator {
 
     private PartitionTree getPartitionTree() {
         try {
-            return PartitionTree.from(stateStore.getAllPartitions());
+            return new PartitionTree(stateStore.getAllPartitions());
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
         }

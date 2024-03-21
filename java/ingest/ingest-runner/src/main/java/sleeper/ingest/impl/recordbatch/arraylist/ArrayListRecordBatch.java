@@ -205,7 +205,7 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
         try {
             for (String localFileName : localFileNames) {
                 ParquetReader<Record> readerForBatch = createParquetReader(localFileName);
-                ParquetReaderIterator recordIterator = ParquetReaderIterator.from(readerForBatch);
+                ParquetReaderIterator recordIterator = new ParquetReaderIterator(readerForBatch);
                 inputIterators.add(recordIterator);
                 LOGGER.info("Created reader for file {}", localFileName);
             }

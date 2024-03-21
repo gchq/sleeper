@@ -417,7 +417,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
 
             // Ideally this would fail as this produces duplicate references to the same records,
             // but not all state stores may be able to implement that
-            store.splitFileReferences(List.of(SplitFileReferenceRequest.from(file, List.of(leftFile, nestedFile))));
+            store.splitFileReferences(List.of(new SplitFileReferenceRequest(file, List.of(leftFile, nestedFile))));
 
             // When / Then
             assertThatThrownBy(() -> SplitFileReferences.from(store).split())

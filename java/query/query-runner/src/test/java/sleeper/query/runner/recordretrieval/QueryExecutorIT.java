@@ -101,13 +101,13 @@ public class QueryExecutorIT {
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
         StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema).rootFirst("root").buildList());
-        QueryExecutor queryExecutor = new QueryExecutor(ObjectFactory.fromS3(instanceProperties, null, ""),
+        QueryExecutor queryExecutor = new QueryExecutor(new ObjectFactory(instanceProperties, null, ""),
                 tableProperties, stateStore, new Configuration(), executorService);
         queryExecutor.init();
         RangeFactory rangeFactory = new RangeFactory(schema);
 
         // When 1
-        Region region = Region.from(rangeFactory.createExactRange(field, 1L));
+        Region region = new Region(rangeFactory.createExactRange(field, 1L));
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 1
@@ -115,7 +115,7 @@ public class QueryExecutorIT {
         }
 
         // When 2
-        region = Region.from(rangeFactory.createRange(field, 1L, true, 10L, false));
+        region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 2
@@ -123,7 +123,7 @@ public class QueryExecutorIT {
         }
 
         // When 3
-        region = Region.from(rangeFactory.createRange(field, 1L, true, 10L, false));
+        region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
         List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(queryWithRegion(region));
 
         // Then 3
@@ -144,13 +144,13 @@ public class QueryExecutorIT {
         List<String> files = stateStore.getFileReferences().stream()
                 .map(FileReference::getFilename)
                 .collect(Collectors.toList());
-        QueryExecutor queryExecutor = new QueryExecutor(ObjectFactory.fromS3(instanceProperties, null, ""),
+        QueryExecutor queryExecutor = new QueryExecutor(new ObjectFactory(instanceProperties, null, ""),
                 tableProperties, stateStore, new Configuration(), executorService);
         queryExecutor.init();
         RangeFactory rangeFactory = new RangeFactory(schema);
 
         // When 1
-        Region region = Region.from(rangeFactory.createExactRange(field, 1L));
+        Region region = new Region(rangeFactory.createExactRange(field, 1L));
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 1
@@ -159,7 +159,7 @@ public class QueryExecutorIT {
         }
 
         // When 2
-        region = Region.from(rangeFactory.createExactRange(field, 0L));
+        region = new Region(rangeFactory.createExactRange(field, 0L));
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 2
@@ -167,7 +167,7 @@ public class QueryExecutorIT {
         }
 
         // When 3
-        region = Region.from(rangeFactory.createRange(field, -10L, true, 1L, true));
+        region = new Region(rangeFactory.createRange(field, -10L, true, 1L, true));
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 3
@@ -176,14 +176,14 @@ public class QueryExecutorIT {
         }
 
         // When 4
-        region = Region.from(rangeFactory.createRange(field, 10L, true, 100L, true));
+        region = new Region(rangeFactory.createRange(field, 10L, true, 100L, true));
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
             // Then 4
             assertThat(results).isExhausted();
         }
 
         // When 5
-        region = Region.from(rangeFactory.createRange(field, 1L, true, 10L, false));
+        region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
         Query query = queryWithRegion(region);
         List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
 
@@ -214,13 +214,13 @@ public class QueryExecutorIT {
         List<String> files = stateStore.getFileReferences().stream()
                 .map(FileReference::getFilename)
                 .collect(Collectors.toList());
-        QueryExecutor queryExecutor = new QueryExecutor(ObjectFactory.fromS3(instanceProperties, null, ""),
+        QueryExecutor queryExecutor = new QueryExecutor(new ObjectFactory(instanceProperties, null, ""),
                 tableProperties, stateStore, new Configuration(), executorService);
         queryExecutor.init();
         RangeFactory rangeFactory = new RangeFactory(schema);
 
         // When 1
-        Region region = Region.from(rangeFactory.createExactRange(field, 1L));
+        Region region = new Region(rangeFactory.createExactRange(field, 1L));
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 1
@@ -229,7 +229,7 @@ public class QueryExecutorIT {
         }
 
         // When 2
-        region = Region.from(rangeFactory.createExactRange(field, 0L));
+        region = new Region(rangeFactory.createExactRange(field, 0L));
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 2
@@ -237,7 +237,7 @@ public class QueryExecutorIT {
         }
 
         // When 3
-        region = Region.from(rangeFactory.createRange(field, 1L, true, 10L, true));
+        region = new Region(rangeFactory.createRange(field, 1L, true, 10L, true));
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 3
@@ -246,7 +246,7 @@ public class QueryExecutorIT {
         }
 
         // When 4
-        region = Region.from(rangeFactory.createRange(field, 1L, true, 10L, false));
+        region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
         Query query = queryWithRegion(region);
         List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
 
@@ -279,13 +279,13 @@ public class QueryExecutorIT {
         List<String> files = stateStore.getFileReferences().stream()
                 .map(FileReference::getFilename)
                 .collect(Collectors.toList());
-        QueryExecutor queryExecutor = new QueryExecutor(ObjectFactory.fromS3(instanceProperties, null, ""),
+        QueryExecutor queryExecutor = new QueryExecutor(new ObjectFactory(instanceProperties, null, ""),
                 tableProperties, stateStore, new Configuration(), executorService);
         queryExecutor.init();
         RangeFactory rangeFactory = new RangeFactory(schema);
 
         // When 1
-        Region region = Region.from(rangeFactory.createExactRange(field, 1L));
+        Region region = new Region(rangeFactory.createExactRange(field, 1L));
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 1
@@ -294,7 +294,7 @@ public class QueryExecutorIT {
         }
 
         // When 2
-        region = Region.from(rangeFactory.createExactRange(field, 0L));
+        region = new Region(rangeFactory.createExactRange(field, 0L));
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 2
@@ -302,7 +302,7 @@ public class QueryExecutorIT {
         }
 
         // When 3
-        region = Region.from(rangeFactory.createRange(field, 1L, true, 10L, true));
+        region = new Region(rangeFactory.createRange(field, 1L, true, 10L, true));
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 3
@@ -311,7 +311,7 @@ public class QueryExecutorIT {
         }
 
         // When 4
-        region = Region.from(rangeFactory.createRange(field, 1L, true, 10L, false));
+        region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
         Query query = queryWithRegion(region);
         List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
 
@@ -344,13 +344,13 @@ public class QueryExecutorIT {
         List<String> files = stateStore.getFileReferences().stream()
                 .map(FileReference::getFilename)
                 .collect(Collectors.toList());
-        QueryExecutor queryExecutor = new QueryExecutor(ObjectFactory.fromS3(instanceProperties, null, ""),
+        QueryExecutor queryExecutor = new QueryExecutor(new ObjectFactory(instanceProperties, null, ""),
                 tableProperties, stateStore, new Configuration(), executorService);
         queryExecutor.init();
         RangeFactory rangeFactory = new RangeFactory(schema);
 
         // When 1
-        Region region = Region.from(rangeFactory.createExactRange(field, 1L));
+        Region region = new Region(rangeFactory.createExactRange(field, 1L));
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 1
@@ -359,7 +359,7 @@ public class QueryExecutorIT {
         }
 
         // When 2
-        region = Region.from(rangeFactory.createExactRange(field, 5L));
+        region = new Region(rangeFactory.createExactRange(field, 5L));
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 2
@@ -368,7 +368,7 @@ public class QueryExecutorIT {
         }
 
         // When 3
-        region = Region.from(rangeFactory.createExactRange(field, 0L));
+        region = new Region(rangeFactory.createExactRange(field, 0L));
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 3
@@ -376,7 +376,7 @@ public class QueryExecutorIT {
         }
 
         // When 4
-        region = Region.from(rangeFactory.createRange(field, 1L, true, 10L, true));
+        region = new Region(rangeFactory.createRange(field, 1L, true, 10L, true));
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 4
@@ -385,7 +385,7 @@ public class QueryExecutorIT {
         }
 
         // When 5
-        region = Region.from(rangeFactory.createRange(field, 1L, true, 10L, false));
+        region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 5
@@ -396,7 +396,7 @@ public class QueryExecutorIT {
         }
 
         // When 6
-        region = Region.from(rangeFactory.createRange(field, 1L, false, 10L, false));
+        region = new Region(rangeFactory.createRange(field, 1L, false, 10L, false));
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 6
@@ -407,7 +407,7 @@ public class QueryExecutorIT {
         }
 
         // When 7
-        region = Region.from(rangeFactory.createRange(field, 1L, false, 10L, true));
+        region = new Region(rangeFactory.createRange(field, 1L, false, 10L, true));
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 7
@@ -418,7 +418,7 @@ public class QueryExecutorIT {
         }
 
         // When 8
-        region = Region.from(rangeFactory.createRange(field, -100000L, true, 123456789L, true));
+        region = new Region(rangeFactory.createRange(field, -100000L, true, 123456789L, true));
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 8
@@ -427,7 +427,7 @@ public class QueryExecutorIT {
         }
 
         // When 9
-        region = Region.from(rangeFactory.createRange(field, 5L, true, 123456789L, true));
+        region = new Region(rangeFactory.createRange(field, 5L, true, 123456789L, true));
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 9
@@ -438,7 +438,7 @@ public class QueryExecutorIT {
         }
 
         // When 10
-        region = Region.from(rangeFactory.createRange(field, 1L, true, 10L, false));
+        region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
         Query query = queryWithRegion(region);
         List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
 
@@ -483,13 +483,13 @@ public class QueryExecutorIT {
                 .filter(f -> f.getPartitionId().equals(rightPartition.getId()))
                 .map(FileReference::getFilename)
                 .collect(Collectors.toList());
-        QueryExecutor queryExecutor = new QueryExecutor(ObjectFactory.fromS3(instanceProperties, null, ""),
+        QueryExecutor queryExecutor = new QueryExecutor(new ObjectFactory(instanceProperties, null, ""),
                 tableProperties, stateStore, new Configuration(), executorService);
         queryExecutor.init();
         RangeFactory rangeFactory = new RangeFactory(schema);
 
         // When 1
-        Region region = Region.from(rangeFactory.createExactRange(field, 1L));
+        Region region = new Region(rangeFactory.createExactRange(field, 1L));
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 1
@@ -498,7 +498,7 @@ public class QueryExecutorIT {
         }
 
         // When 2
-        region = Region.from(rangeFactory.createExactRange(field, 5L));
+        region = new Region(rangeFactory.createExactRange(field, 5L));
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 2
@@ -507,7 +507,7 @@ public class QueryExecutorIT {
         }
 
         // When 3
-        region = Region.from(rangeFactory.createExactRange(field, 0L));
+        region = new Region(rangeFactory.createExactRange(field, 0L));
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 3
@@ -515,7 +515,7 @@ public class QueryExecutorIT {
         }
 
         // When 4
-        region = Region.from(rangeFactory.createRange(field, -100000L, true, 123456789L, true));
+        region = new Region(rangeFactory.createRange(field, -100000L, true, 123456789L, true));
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 4
@@ -524,7 +524,7 @@ public class QueryExecutorIT {
         }
 
         // When 5
-        region = Region.from(rangeFactory.createRange(field, 5L, true, 123456789L, true));
+        region = new Region(rangeFactory.createRange(field, 5L, true, 123456789L, true));
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 5
@@ -535,7 +535,7 @@ public class QueryExecutorIT {
         }
 
         // When 6
-        region = Region.from(rangeFactory.createRange(field, 1L, true, 10L, false));
+        region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
         Query query = queryWithRegion(region);
         List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
 
@@ -598,7 +598,7 @@ public class QueryExecutorIT {
                 .filter(f -> f.getPartitionId().equals(rightPartition.getId()))
                 .map(FileReference::getFilename)
                 .collect(Collectors.toList());
-        QueryExecutor queryExecutor = new QueryExecutor(ObjectFactory.fromS3(instanceProperties, null, ""),
+        QueryExecutor queryExecutor = new QueryExecutor(new ObjectFactory(instanceProperties, null, ""),
                 tableProperties, stateStore, new Configuration(), executorService);
         queryExecutor.init();
         RangeFactory rangeFactory = new RangeFactory(schema);
@@ -606,7 +606,7 @@ public class QueryExecutorIT {
         // When 1
         Range range1 = rangeFactory.createExactRange(field1, 1L);
         Range range2 = rangeFactory.createExactRange(field2, "1");
-        Region region = Region.from(Arrays.asList(range1, range2));
+        Region region = new Region(Arrays.asList(range1, range2));
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 1
@@ -617,7 +617,7 @@ public class QueryExecutorIT {
         // When 2
         range1 = rangeFactory.createExactRange(field1, 5L);
         range2 = rangeFactory.createExactRange(field2, "5");
-        region = Region.from(Arrays.asList(range1, range2));
+        region = new Region(Arrays.asList(range1, range2));
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 2
@@ -628,7 +628,7 @@ public class QueryExecutorIT {
         // When 3
         range1 = rangeFactory.createExactRange(field1, 8L);
         range2 = rangeFactory.createExactRange(field2, "notthere");
-        region = Region.from(Arrays.asList(range1, range2));
+        region = new Region(Arrays.asList(range1, range2));
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 3
@@ -638,7 +638,7 @@ public class QueryExecutorIT {
         // When 4
         range1 = rangeFactory.createRange(field1, -100000L, true, 123456789L, true);
         range2 = rangeFactory.createRange(field2, "0", true, "99999999999", true);
-        region = Region.from(Arrays.asList(range1, range2));
+        region = new Region(Arrays.asList(range1, range2));
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 4
@@ -649,7 +649,7 @@ public class QueryExecutorIT {
         // When 5
         range1 = rangeFactory.createRange(field1, 2L, true, 5L, true);
         range2 = rangeFactory.createRange(field2, "3", true, "6", true);
-        region = Region.from(Arrays.asList(range1, range2));
+        region = new Region(Arrays.asList(range1, range2));
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 5
@@ -663,7 +663,7 @@ public class QueryExecutorIT {
         // When 6
         range1 = rangeFactory.createRange(field1, 2L, true, 500L, true);
         range2 = rangeFactory.createRange(field2, "3", true, "6", true);
-        region = Region.from(Arrays.asList(range1, range2));
+        region = new Region(Arrays.asList(range1, range2));
         Query query = queryWithRegion(region);
         List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
 
@@ -769,7 +769,7 @@ public class QueryExecutorIT {
                 .map(FileReference::getFilename)
                 .collect(Collectors.toList());
 
-        QueryExecutor queryExecutor = new QueryExecutor(ObjectFactory.fromS3(instanceProperties, null, ""),
+        QueryExecutor queryExecutor = new QueryExecutor(new ObjectFactory(instanceProperties, null, ""),
                 tableProperties, stateStore, new Configuration(), executorService);
         queryExecutor.init();
         RangeFactory rangeFactory = new RangeFactory(schema);
@@ -777,7 +777,7 @@ public class QueryExecutorIT {
         // When 1 - query for entire space
         Range range1 = rangeFactory.createRange(field1, "", true, null, false);
         Range range2 = rangeFactory.createRange(field2, "", true, null, false);
-        Region region = Region.from(Arrays.asList(range1, range2));
+        Region region = new Region(Arrays.asList(range1, range2));
 
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
@@ -789,7 +789,7 @@ public class QueryExecutorIT {
         // When 2 - query for range within partition 1
         range1 = rangeFactory.createRange(field1, "", true, "H", true);
         range2 = rangeFactory.createRange(field2, "", true, "S", true);
-        region = Region.from(Arrays.asList(range1, range2));
+        region = new Region(Arrays.asList(range1, range2));
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 2
@@ -800,7 +800,7 @@ public class QueryExecutorIT {
         // When 3 - query for range within partition 1
         range1 = rangeFactory.createRange(field1, "", true, "H", false);
         range2 = rangeFactory.createRange(field2, "", true, "S", false);
-        region = Region.from(Arrays.asList(range1, range2));
+        region = new Region(Arrays.asList(range1, range2));
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 3
@@ -811,7 +811,7 @@ public class QueryExecutorIT {
         // When 4 - query for range within partition 1
         range1 = rangeFactory.createRange(field1, "", false, "H", true);
         range2 = rangeFactory.createRange(field2, "", false, "S", true);
-        region = Region.from(Arrays.asList(range1, range2));
+        region = new Region(Arrays.asList(range1, range2));
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 4
@@ -822,7 +822,7 @@ public class QueryExecutorIT {
         // When 5 - query for range within partition 1
         range1 = rangeFactory.createRange(field1, "", false, "H", false);
         range2 = rangeFactory.createRange(field2, "", false, "S", false);
-        region = Region.from(Arrays.asList(range1, range2));
+        region = new Region(Arrays.asList(range1, range2));
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 5
@@ -833,7 +833,7 @@ public class QueryExecutorIT {
         // When 6 - query for range within partitions 1 and 2
         range1 = rangeFactory.createRange(field1, "", true, "Z", true);
         range2 = rangeFactory.createRange(field2, "", true, "S", true);
-        region = Region.from(Arrays.asList(range1, range2));
+        region = new Region(Arrays.asList(range1, range2));
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 6
@@ -844,7 +844,7 @@ public class QueryExecutorIT {
         // When 7 - query for range to the right of the data in partitions 2 and 4
         range1 = rangeFactory.createRange(field1, "T", true, "Z", true);
         range2 = rangeFactory.createRange(field2, "", true, "Z", true);
-        region = Region.from(Arrays.asList(range1, range2));
+        region = new Region(Arrays.asList(range1, range2));
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 7
@@ -853,7 +853,7 @@ public class QueryExecutorIT {
 
         // When 8 - query for a 1-dimensional range
         range1 = rangeFactory.createRange(field1, "J", true, "Z", true);
-        region = Region.from(range1);
+        region = new Region(range1);
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 8
@@ -864,7 +864,7 @@ public class QueryExecutorIT {
         // When 9 - query for a range where the first dimension is constant
         range1 = rangeFactory.createExactRange(field1, "C");
         range2 = rangeFactory.createRange(field2, "", true, null, true);
-        region = Region.from(Arrays.asList(range1, range2));
+        region = new Region(Arrays.asList(range1, range2));
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 9
@@ -875,7 +875,7 @@ public class QueryExecutorIT {
         // When 10 - query for a range where the max equals record1 and max is not inclusive
         range1 = rangeFactory.createRange(field1, "", true, "D", false);
         range2 = rangeFactory.createRange(field2, "", true, "T", true);
-        region = Region.from(Arrays.asList(range1, range2));
+        region = new Region(Arrays.asList(range1, range2));
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 10
@@ -885,7 +885,7 @@ public class QueryExecutorIT {
         // When 11 - query for a range where the max equals record1 and max is inclusive
         range1 = rangeFactory.createRange(field1, "", true, "D", true);
         range2 = rangeFactory.createRange(field2, "", true, "T", true);
-        region = Region.from(Arrays.asList(range1, range2));
+        region = new Region(Arrays.asList(range1, range2));
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 11
@@ -897,7 +897,7 @@ public class QueryExecutorIT {
         // Record i is in range? 1 - yes; 2 - yes; 3 - yes; 4 - no
         range1 = rangeFactory.createRange(field1, "C", true, "P", false);
         range2 = rangeFactory.createRange(field2, "H", true, "Z", false);
-        region = Region.from(Arrays.asList(range1, range2));
+        region = new Region(Arrays.asList(range1, range2));
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 12
@@ -909,7 +909,7 @@ public class QueryExecutorIT {
         // Record i is in range? 1 - yes; 2 - yes; 3 - yes; 4 - yes
         range1 = rangeFactory.createRange(field1, "C", true, "P", true);
         range2 = rangeFactory.createRange(field2, "H", true, "Z", true);
-        region = Region.from(Arrays.asList(range1, range2));
+        region = new Region(Arrays.asList(range1, range2));
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 13
@@ -921,7 +921,7 @@ public class QueryExecutorIT {
         // Record i is in range? 1 - yes; 2 - no; 3 - no; 4 - no
         range1 = rangeFactory.createRange(field1, "C", false, "P", false);
         range2 = rangeFactory.createRange(field2, "H", false, "Z", false);
-        region = Region.from(Arrays.asList(range1, range2));
+        region = new Region(Arrays.asList(range1, range2));
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 14
@@ -933,7 +933,7 @@ public class QueryExecutorIT {
         // Record i is in range? 1 - yes; 2 - no; 3 - no; 4 - yes
         range1 = rangeFactory.createRange(field1, "C", false, "P", true);
         range2 = rangeFactory.createRange(field2, "H", false, "Z", true);
-        region = Region.from(Arrays.asList(range1, range2));
+        region = new Region(Arrays.asList(range1, range2));
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 15
@@ -944,7 +944,7 @@ public class QueryExecutorIT {
         // When 16
         range1 = rangeFactory.createRange(field1, "C", false, "P", true);
         range2 = rangeFactory.createRange(field2, "H", false, "Z", true);
-        region = Region.from(Arrays.asList(range1, range2));
+        region = new Region(Arrays.asList(range1, range2));
         Query query = queryWithRegion(region);
         List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
 
@@ -1010,13 +1010,13 @@ public class QueryExecutorIT {
                         .splitToNewChildren("root", "left", "right", 5L)
                         .buildList());
         ingestData(instanceProperties, stateStore, tableProperties, getMultipleRecordsForTestingSorting().iterator());
-        QueryExecutor queryExecutor = new QueryExecutor(ObjectFactory.fromS3(instanceProperties, null, ""),
+        QueryExecutor queryExecutor = new QueryExecutor(new ObjectFactory(instanceProperties, null, ""),
                 tableProperties, stateStore, new Configuration(), executorService);
         queryExecutor.init();
         RangeFactory rangeFactory = new RangeFactory(schema);
 
         // When 1
-        Region region = Region.from(rangeFactory.createExactRange(field, 1L));
+        Region region = new Region(rangeFactory.createExactRange(field, 1L));
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 1
@@ -1029,7 +1029,7 @@ public class QueryExecutorIT {
         }
 
         // When 2
-        region = Region.from(rangeFactory.createExactRange(field, 5L));
+        region = new Region(rangeFactory.createExactRange(field, 5L));
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 2
@@ -1042,7 +1042,7 @@ public class QueryExecutorIT {
         }
 
         // When 3
-        region = Region.from(rangeFactory.createExactRange(field, 0L));
+        region = new Region(rangeFactory.createExactRange(field, 0L));
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 3
@@ -1065,13 +1065,13 @@ public class QueryExecutorIT {
         StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema).rootFirst("root").buildList());
         List<Record> records = getRecordsForAgeOffIteratorTest();
         ingestData(instanceProperties, stateStore, tableProperties, records.iterator());
-        QueryExecutor queryExecutor = new QueryExecutor(ObjectFactory.fromS3(instanceProperties, null, ""),
+        QueryExecutor queryExecutor = new QueryExecutor(new ObjectFactory(instanceProperties, null, ""),
                 tableProperties, stateStore, new Configuration(), executorService);
         queryExecutor.init();
         RangeFactory rangeFactory = new RangeFactory(schema);
 
         // When 1
-        Region region = Region.from(rangeFactory.createExactRange(field, "1"));
+        Region region = new Region(rangeFactory.createExactRange(field, "1"));
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 1
@@ -1079,7 +1079,7 @@ public class QueryExecutorIT {
         }
 
         // When 2
-        region = Region.from(rangeFactory.createExactRange(field, "0"));
+        region = new Region(rangeFactory.createExactRange(field, "0"));
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 2
@@ -1087,7 +1087,7 @@ public class QueryExecutorIT {
         }
 
         // When 3
-        region = Region.from(rangeFactory.createExactRange(field, "2"));
+        region = new Region(rangeFactory.createExactRange(field, "2"));
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 3
@@ -1095,7 +1095,7 @@ public class QueryExecutorIT {
         }
 
         // When 4
-        region = Region.from(rangeFactory.createExactRange(field, "3"));
+        region = new Region(rangeFactory.createExactRange(field, "3"));
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 4
@@ -1103,7 +1103,7 @@ public class QueryExecutorIT {
         }
 
         // When 5
-        region = Region.from(rangeFactory.createExactRange(field, "4"));
+        region = new Region(rangeFactory.createExactRange(field, "4"));
         try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 5
@@ -1127,13 +1127,13 @@ public class QueryExecutorIT {
             ingestData(instanceProperties, stateStore, tableProperties,
                     getRecordsForQueryTimeIteratorTest(i % 2 == 0 ? "notsecret" : "secret").iterator());
         }
-        QueryExecutor queryExecutor = new QueryExecutor(ObjectFactory.fromS3(instanceProperties, null, ""),
+        QueryExecutor queryExecutor = new QueryExecutor(new ObjectFactory(instanceProperties, null, ""),
                 tableProperties, stateStore, new Configuration(), executorService);
         queryExecutor.init();
         RangeFactory rangeFactory = new RangeFactory(schema);
 
         // When
-        Region region = Region.from(rangeFactory.createExactRange(field, 1L));
+        Region region = new Region(rangeFactory.createExactRange(field, 1L));
         Query query = Query.builder()
                 .tableName("myTable")
                 .queryId("id")
@@ -1161,13 +1161,13 @@ public class QueryExecutorIT {
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         ingestData(instanceProperties, stateStore, tableProperties, getRecords().iterator());
-        QueryExecutor queryExecutor = new QueryExecutor(ObjectFactory.fromS3(instanceProperties, null, "/tmp"), tableProperties, stateStore,
+        QueryExecutor queryExecutor = new QueryExecutor(new ObjectFactory(instanceProperties, null, "/tmp"), tableProperties, stateStore,
                 new Configuration(), Executors.newFixedThreadPool(1));
         queryExecutor.init();
         RangeFactory rangeFactory = new RangeFactory(schema);
 
         // When
-        Region region = Region.from(rangeFactory.createExactRange(field, 1L));
+        Region region = new Region(rangeFactory.createExactRange(field, 1L));
         Query query = Query.builder()
                 .tableName("unused")
                 .queryId("abc")
@@ -1193,13 +1193,13 @@ public class QueryExecutorIT {
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         ingestData(instanceProperties, stateStore, tableProperties, getRecordsForQueryTimeIteratorTest("secret").iterator());
-        QueryExecutor queryExecutor = new QueryExecutor(ObjectFactory.fromS3(instanceProperties, null, "/tmp"), tableProperties, stateStore,
+        QueryExecutor queryExecutor = new QueryExecutor(new ObjectFactory(instanceProperties, null, "/tmp"), tableProperties, stateStore,
                 new Configuration(), Executors.newFixedThreadPool(1));
         queryExecutor.init();
         RangeFactory rangeFactory = new RangeFactory(schema);
 
         // When
-        Region region = Region.from(rangeFactory.createExactRange(field, 1L));
+        Region region = new Region(rangeFactory.createExactRange(field, 1L));
         Query query = Query.builder()
                 .tableName("unused")
                 .queryId("abc")

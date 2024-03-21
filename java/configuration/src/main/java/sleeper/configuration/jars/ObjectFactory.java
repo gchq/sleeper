@@ -28,16 +28,16 @@ public class ObjectFactory {
 
     private final ClassLoader classLoader;
 
-    private ObjectFactory(ClassLoader classLoader) {
-        this.classLoader = classLoader;
+    public ObjectFactory(InstanceProperties instanceProperties, AmazonS3 s3Client, String localDir) throws ObjectFactoryException {
+        this.classLoader = new S3UserJarsLoader(instanceProperties, s3Client, localDir).getClassLoader();
     }
 
-    public static ObjectFactory fromS3(InstanceProperties instanceProperties, AmazonS3 s3Client, String localDir) throws ObjectFactoryException {
-        return new ObjectFactory(new S3UserJarsLoader(instanceProperties, s3Client, localDir).getClassLoader());
+    private ObjectFactory() {
+        classLoader = ObjectFactory.class.getClassLoader();
     }
 
     public static ObjectFactory noUserJars() {
-        return new ObjectFactory(ObjectFactory.class.getClassLoader());
+        return new ObjectFactory();
     }
 
     public <T> T getObject(String className, Class<T> parentClass) throws ObjectFactoryException {

@@ -46,7 +46,7 @@ class PartitionFactoryTest {
         assertThat(parent).isEqualTo(
                 Partition.builder()
                         .rowKeyTypes(rowKeyTypes)
-                        .region(Region.from(rangeFactory.createRange(key, "", null)))
+                        .region(new Region(rangeFactory.createRange(key, "", null)))
                         .id("parent")
                         .leafPartition(false)
                         .parentPartitionId(null)
@@ -56,7 +56,7 @@ class PartitionFactoryTest {
         assertThat(children).containsExactly(
                 Partition.builder()
                         .rowKeyTypes(rowKeyTypes)
-                        .region(Region.from(rangeFactory.createRange(key, "", "aaa")))
+                        .region(new Region(rangeFactory.createRange(key, "", "aaa")))
                         .id("left")
                         .leafPartition(true)
                         .parentPartitionId("parent")
@@ -65,7 +65,7 @@ class PartitionFactoryTest {
                         .build(),
                 Partition.builder()
                         .rowKeyTypes(rowKeyTypes)
-                        .region(Region.from(rangeFactory.createRange(key, "aaa", null)))
+                        .region(new Region(rangeFactory.createRange(key, "aaa", null)))
                         .id("right")
                         .leafPartition(true)
                         .parentPartitionId("parent")
@@ -93,7 +93,7 @@ class PartitionFactoryTest {
         assertThat(parent).isEqualTo(
                 Partition.builder()
                         .rowKeyTypes(rowKeyTypes)
-                        .region(Region.from(List.of(
+                        .region(new Region(List.of(
                                 rangeFactory.createRange(key1, "", null),
                                 rangeFactory.createRange(key2, "", null))))
                         .id("parent")
@@ -105,7 +105,7 @@ class PartitionFactoryTest {
         assertThat(children).containsExactly(
                 Partition.builder()
                         .rowKeyTypes(rowKeyTypes)
-                        .region(Region.from(List.of(
+                        .region(new Region(List.of(
                                 rangeFactory.createRange(key1, "", "aaa"),
                                 rangeFactory.createRange(key2, "", null))))
                         .id("left")
@@ -116,7 +116,7 @@ class PartitionFactoryTest {
                         .build(),
                 Partition.builder()
                         .rowKeyTypes(rowKeyTypes)
-                        .region(Region.from(List.of(
+                        .region(new Region(List.of(
                                 rangeFactory.createRange(key1, "aaa", null),
                                 rangeFactory.createRange(key2, "", null))))
                         .id("right")
@@ -128,7 +128,7 @@ class PartitionFactoryTest {
         assertThat(nestedChildren).containsExactly(
                 Partition.builder()
                         .rowKeyTypes(rowKeyTypes)
-                        .region(Region.from(List.of(
+                        .region(new Region(List.of(
                                 rangeFactory.createRange(key1, "aaa", null),
                                 rangeFactory.createRange(key2, "", "bbb"))))
                         .id("nestedLeft")
@@ -139,7 +139,7 @@ class PartitionFactoryTest {
                         .build(),
                 Partition.builder()
                         .rowKeyTypes(rowKeyTypes)
-                        .region(Region.from(List.of(
+                        .region(new Region(List.of(
                                 rangeFactory.createRange(key1, "aaa", null),
                                 rangeFactory.createRange(key2, "bbb", null))))
                         .id("nestedRight")
@@ -164,7 +164,7 @@ class PartitionFactoryTest {
         assertThat(a.build()).isEqualTo(
                 Partition.builder()
                         .rowKeyTypes(rowKeyTypes)
-                        .region(Region.from(rangeFactory.createRange(key, "", "aaa")))
+                        .region(new Region(rangeFactory.createRange(key, "", "aaa")))
                         .id("A")
                         .leafPartition(true)
                         .parentPartitionId("parent")
@@ -174,7 +174,7 @@ class PartitionFactoryTest {
         assertThat(b.build()).isEqualTo(
                 Partition.builder()
                         .rowKeyTypes(rowKeyTypes)
-                        .region(Region.from(rangeFactory.createRange(key, "aaa", null)))
+                        .region(new Region(rangeFactory.createRange(key, "aaa", null)))
                         .id("B")
                         .leafPartition(true)
                         .parentPartitionId("parent")
@@ -184,7 +184,7 @@ class PartitionFactoryTest {
         assertThat(parent).isEqualTo(
                 Partition.builder()
                         .rowKeyTypes(rowKeyTypes)
-                        .region(Region.from(rangeFactory.createRange(key, "", null)))
+                        .region(new Region(rangeFactory.createRange(key, "", null)))
                         .id("parent")
                         .leafPartition(false)
                         .parentPartitionId(null)
