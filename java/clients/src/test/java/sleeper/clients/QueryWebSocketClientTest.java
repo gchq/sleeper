@@ -15,6 +15,7 @@
  */
 package sleeper.clients;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -65,7 +66,6 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 public class QueryWebSocketClientTest {
     private static final String PROMPT_RANGE_QUERY = PROMPT_MIN_INCLUSIVE + PROMPT_MAX_INCLUSIVE +
             PROMPT_MIN_ROW_KEY_LONG_TYPE + PROMPT_MAX_ROW_KEY_LONG_TYPE;
-    private static final String ENDPOINT_URL = "websocket-endpoint";
     private final InstanceProperties instanceProperties = createInstance();
     private final Schema schema = schemaWithKey("key");
     private final Field rowKey = schema.getField("key").orElseThrow();
@@ -73,11 +73,12 @@ public class QueryWebSocketClientTest {
     private final ToStringPrintStream out = new ToStringPrintStream();
     private final TestConsoleInput in = new TestConsoleInput(out.consoleOut());
     private final QuerySerDe querySerDe = new QuerySerDe(schema);
+    private TableProperties tableProperties;
     private FakeWebSocketClient client;
 
     private static InstanceProperties createInstance() {
         InstanceProperties instanceProperties = createTestInstanceProperties();
-        instanceProperties.set(QUERY_WEBSOCKET_API_URL, ENDPOINT_URL);
+        instanceProperties.set(QUERY_WEBSOCKET_API_URL, "websocket-endpoint");
         return instanceProperties;
     }
 
@@ -88,21 +89,25 @@ public class QueryWebSocketClientTest {
         return tableProperties;
     }
 
+    @BeforeEach
+    void setup() {
+        tableProperties = createTable("test-table");
+    }
+
     @Nested
     @DisplayName("Run queries")
     class RunQuery {
-        TableProperties tableProperties = createTable("test-table");
 
         @Test
         void shouldReturnResultsForQuery() throws Exception {
             // Given
-            Query expectedQuery = exactQuery("test-query-id", tableProperties, 123);
+            Query expectedQuery = exactQuery("test-query-id", 123);
             Record expectedRecord = new Record(Map.of("key", 123L));
 
             // When
             in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
-            runQueryClient("test-query-id", tableProperties, setupWebSocketClient(tableProperties)
-                    .withResponses(
+            runQueryClient("test-query-id",
+                    withResponses(
                             message(queryResult("test-query-id", expectedRecord)),
                             message(completedQuery("test-query-id", 1L)),
                             closeWithReason("finished")));
@@ -128,13 +133,13 @@ public class QueryWebSocketClientTest {
         @Test
         void shouldReturnResultsForQueryWithOneSubquery() throws Exception {
             // Given
-            Query expectedQuery = exactQuery("test-query-id", tableProperties, 123);
+            Query expectedQuery = exactQuery("test-query-id", 123);
             Record expectedRecord = new Record(Map.of("key", 123L));
 
             // When
             in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
-            runQueryClient("test-query-id", tableProperties, setupWebSocketClient(tableProperties)
-                    .withResponses(
+            runQueryClient("test-query-id",
+                    withResponses(
                             message(createdSubQueries("test-query-id", "test-subquery")),
                             message(queryResult("test-subquery", expectedRecord)),
                             message(completedQuery("test-subquery", 1L)),
@@ -163,15 +168,15 @@ public class QueryWebSocketClientTest {
         @Test
         void shouldReturnResultsForQueryWithMultipleSubqueries() throws Exception {
             // Given
-            Query expectedQuery = rangeQuery("test-query-id", tableProperties, 0L, 1000L);
+            Query expectedQuery = rangeQuery("test-query-id", 0L, 1000L);
             Record expectedRecord1 = new Record(Map.of("key", 123L));
             Record expectedRecord2 = new Record(Map.of("key", 456L));
             Record expectedRecord3 = new Record(Map.of("key", 789L));
 
             // When
             in.enterNextPrompts(RANGE_QUERY_OPTION, YES_OPTION, NO_OPTION, "0", "1000", EXIT_OPTION);
-            runQueryClient("test-query-id", tableProperties, setupWebSocketClient(tableProperties)
-                    .withResponses(
+            runQueryClient("test-query-id",
+                    withResponses(
                             message(createdSubQueries("test-query-id", "subquery-1", "subquery-2", "subquery-3")),
                             message(queryResult("subquery-1", expectedRecord1)),
                             message(completedQuery("subquery-1", 1L)),
@@ -208,7 +213,7 @@ public class QueryWebSocketClientTest {
         }
     }
 
-    private Query exactQuery(String queryId, TableProperties tableProperties, long value) {
+    private Query exactQuery(String queryId, long value) {
         return Query.builder()
                 .tableName(tableProperties.get(TABLE_NAME))
                 .queryId(queryId)
@@ -216,7 +221,7 @@ public class QueryWebSocketClientTest {
                 .build();
     }
 
-    private Query rangeQuery(String queryId, TableProperties tableProperties, long min, long max) {
+    private Query rangeQuery(String queryId, long min, long max) {
         return Query.builder()
                 .tableName(tableProperties.get(TABLE_NAME))
                 .queryId(queryId)
@@ -249,14 +254,20 @@ public class QueryWebSocketClientTest {
                 "}";
     }
 
-    protected void runQueryClient(String queryId, TableProperties tableProperties, Client webSocketClient) throws Exception {
+    protected void runQueryClient(String queryId, Client webSocketClient) throws Exception {
         new QueryWebSocketClient(instanceProperties, tableIndex, new FixedTablePropertiesProvider(tableProperties),
                 in.consoleIn(), out.consoleOut(), webSocketClient, () -> queryId)
                 .run();
     }
 
-    private FakeWebSocketClient setupWebSocketClient(TableProperties tableProperties) throws Exception {
+    private FakeWebSocketClient setupWebSocketClient() throws Exception {
         client = new FakeWebSocketClient(new FixedTablePropertiesProvider(tableProperties), out.consoleOut());
+        return client;
+    }
+
+    private FakeWebSocketClient withResponses(WebSocketResponse... responses) {
+        client = new FakeWebSocketClient(new FixedTablePropertiesProvider(tableProperties), out.consoleOut());
+        client.withResponses(responses);
         return client;
     }
 
