@@ -65,7 +65,7 @@ class ParquetReaderIteratorIT {
         ParquetReader<Record> reader = new ParquetRecordReader.Builder(path, schema).build();
 
         // When
-        ParquetReaderIterator iterator = ParquetReaderIterator.from(reader);
+        ParquetReaderIterator iterator = new ParquetReaderIterator(reader);
 
         // Then
         assertThat(iterator).toIterable().containsExactly(record1, record2);
@@ -83,7 +83,7 @@ class ParquetReaderIteratorIT {
         ParquetReader<Record> reader = new ParquetRecordReader.Builder(path, schema).build();
 
         // When
-        ParquetReaderIterator iterator = ParquetReaderIterator.from(reader);
+        ParquetReaderIterator iterator = new ParquetReaderIterator(reader);
 
         // Then
         assertThat(iterator).isExhausted();

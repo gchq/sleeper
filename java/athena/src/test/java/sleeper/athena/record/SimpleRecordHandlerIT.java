@@ -79,10 +79,12 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
         Map<String, ValueSet> predicates = new HashMap<>();
         predicates.put("month", EquatableValueSet
                 .newBuilder(new BlockAllocatorImpl(), Types.MinorType.INT.getType(), true, false)
-                .add(2).build());
+                .add(2).build()
+        );
         predicates.put("day", EquatableValueSet
                 .newBuilder(new BlockAllocatorImpl(), Types.MinorType.INT.getType(), true, false)
-                .add(30).build());
+                .add(30).build()
+        );
 
         RecordResponse response = sleeperRecordHandler.doReadRecords(new BlockAllocatorImpl(), new ReadRecordsRequest(
                 TestUtils.createIdentity(),
@@ -95,7 +97,8 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
                         .build(),
                 new Constraints(predicates),
                 1_000_000L,
-                1_000L));
+                1_000L
+        ));
 
         // Then
         assertThat(response).isInstanceOf(ReadRecordsResponse.class);
@@ -123,7 +126,8 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
 
         Map<String, ValueSet> predicates = new HashMap<>();
         predicates.put("year", SortedRangeSet.of(Range.range(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
-                2022, true, 2024, false)));
+                2022, true, 2024, false))
+        );
 
         RecordResponse response = sleeperRecordHandler.doReadRecords(new BlockAllocatorImpl(), new ReadRecordsRequest(
                 TestUtils.createIdentity(),
@@ -136,7 +140,8 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
                         .build(),
                 new Constraints(predicates),
                 1_000_000L,
-                1_000L));
+                1_000L
+        ));
 
         // Then
         assertThat(response).isInstanceOf(ReadRecordsResponse.class);
@@ -171,9 +176,12 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
 
         Map<String, ValueSet> predicates = new HashMap<>();
         predicates.put("year", SortedRangeSet.of(Range.range(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
-                2018, true, 2020, false)));
+                2018, true, 2020, false))
+        );
         predicates.put("month", SortedRangeSet.of(Range.range(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
-                6, true, 8, false)));
+                6, true, 8, false))
+        );
+
 
         RecordResponse response = sleeperRecordHandler.doReadRecords(new BlockAllocatorImpl(), new ReadRecordsRequest(
                 TestUtils.createIdentity(),
@@ -186,7 +194,8 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
                         .build(),
                 new Constraints(predicates),
                 1_000_000L,
-                1_000_000L));
+                1_000_000L
+        ));
 
         // Then
         assertThat(response).isInstanceOf(ReadRecordsResponse.class);
@@ -221,7 +230,8 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
 
         Map<String, ValueSet> predicates = new HashMap<>();
         predicates.put("str", SortedRangeSet.of(Range.range(new BlockAllocatorImpl(), Types.MinorType.VARCHAR.getType(),
-                "2018-01-05", true, "2018-01-10", true)));
+                "2018-01-05", true, "2018-01-10", true))
+        );
 
         RecordResponse response = sleeperRecordHandler.doReadRecords(new BlockAllocatorImpl(), new ReadRecordsRequest(
                 TestUtils.createIdentity(),
@@ -234,7 +244,8 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
                         .build(),
                 new Constraints(predicates),
                 1_000_000L,
-                1_000L));
+                1_000L
+        ));
 
         // Then
         assertThat(response).isInstanceOf(ReadRecordsResponse.class);
@@ -274,10 +285,11 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
                         .build(),
                 new Constraints(new HashMap<>()),
                 1_000_000L,
-                1_000_000L));
+                1_000_000L
+        ));
 
         // Then
-        ParquetReaderIterator parquetReaderIterator = ParquetReaderIterator.from(new ParquetRecordReader(new Path(file), SCHEMA));
+        ParquetReaderIterator parquetReaderIterator = new ParquetReaderIterator(new ParquetRecordReader(new Path(file), SCHEMA));
         while (parquetReaderIterator.hasNext()) {
             parquetReaderIterator.next();
         }
@@ -319,13 +331,16 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
         Map<String, ValueSet> predicates = new HashMap<>();
         predicates.put("month", EquatableValueSet
                 .newBuilder(new BlockAllocatorImpl(), Types.MinorType.INT.getType(), true, false)
-                .add(2).build());
+                .add(2).build()
+        );
+
 
         org.apache.arrow.vector.types.pojo.Schema schemaWithoutDay = new org.apache.arrow.vector.types.pojo.Schema(
                 createArrowSchema().getFields()
                         .stream()
                         .filter(field -> !field.getName().equals("day"))
                         .collect(Collectors.toList()));
+
 
         RecordResponse response = sleeperRecordHandler.doReadRecords(new BlockAllocatorImpl(), new ReadRecordsRequest(
                 TestUtils.createIdentity(),
@@ -338,7 +353,8 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
                         .build(),
                 new Constraints(predicates),
                 1_000_000L,
-                1_000_000L));
+                1_000_000L
+        ));
 
         // Then
         assertThat(response).isInstanceOf(ReadRecordsResponse.class);

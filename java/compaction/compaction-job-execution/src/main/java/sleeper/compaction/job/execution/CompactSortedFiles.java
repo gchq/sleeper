@@ -150,7 +150,7 @@ public class CompactSortedFiles implements CompactionTask.CompactionRunner {
                     .withConf(conf)
                     .withFilter(partitionFilter)
                     .build();
-            ParquetReaderIterator recordIterator = ParquetReaderIterator.from(reader);
+            ParquetReaderIterator recordIterator = new ParquetReaderIterator(reader);
             inputIterators.add(recordIterator);
             LOGGER.debug("Compaction job {}: Created reader for file {}", compactionJob.getId(), file);
             LOGGER.debug("Compaction job {}: File is being filtered on ranges {}", compactionJob.getId(),

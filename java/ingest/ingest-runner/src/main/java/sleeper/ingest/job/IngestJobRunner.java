@@ -60,13 +60,13 @@ public class IngestJobRunner implements IngestJobHandler {
     private final PropertiesReloader propertiesReloader;
 
     public IngestJobRunner(ObjectFactory objectFactory,
-            InstanceProperties instanceProperties,
-            TablePropertiesProvider tablePropertiesProvider,
-            PropertiesReloader propertiesReloader,
-            StateStoreProvider stateStoreProvider,
-            String localDir,
-            S3AsyncClient s3AsyncClient,
-            Configuration hadoopConfiguration) {
+                           InstanceProperties instanceProperties,
+                           TablePropertiesProvider tablePropertiesProvider,
+                           PropertiesReloader propertiesReloader,
+                           StateStoreProvider stateStoreProvider,
+                           String localDir,
+                           S3AsyncClient s3AsyncClient,
+                           Configuration hadoopConfiguration) {
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.propertiesReloader = propertiesReloader;
         this.fs = instanceProperties.get(FILE_SYSTEM);
@@ -101,7 +101,7 @@ public class IngestJobRunner implements IngestJobHandler {
                 inputIterators.add(() -> {
                     try {
                         ParquetReader<Record> reader = new ParquetRecordReader.Builder(path, schema).withConf(hadoopConfiguration).build();
-                        return ParquetReaderIterator.from(reader);
+                        return new ParquetReaderIterator(reader);
                     } catch (IOException e) {
                         throw new RuntimeException("Ingest job: " + job.getId() + " IOException creating reader for file "
                                 + path + ": " + e.getMessage());
