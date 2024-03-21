@@ -63,14 +63,10 @@ public class RandomRecordSupplierConfig {
                 generator);
     }
 
-    public RandomRecordSupplierConfig(int minRandomInt,
-            int maxRandomInt,
-            long minRandomLong,
-            long maxRandomLong,
-            int randomStringLength,
-            int randomByteArrayLength,
-            int maxEntriesInRandomMap,
-            int maxEntriesInRandomList,
+    public RandomRecordSupplierConfig(
+            int minRandomInt, int maxRandomInt, long minRandomLong, long maxRandomLong,
+            int randomStringLength, int randomByteArrayLength,
+            int maxEntriesInRandomMap, int maxEntriesInRandomList,
             RandomGenerator generator) {
         this.minRandomInt = minRandomInt;
         this.maxRandomInt = maxRandomInt;
