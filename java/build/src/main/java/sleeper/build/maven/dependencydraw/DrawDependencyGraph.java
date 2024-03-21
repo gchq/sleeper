@@ -43,12 +43,12 @@ import java.awt.Color;
 import java.awt.event.ItemEvent;
 
 public class DrawDependencyGraph {
-    public boolean showTransitiveDependencies = false;
+    private boolean showTransitiveDependencies = false;
 
-    LayoutPaintable.BalloonRings balloonLayoutRings;
-    LayoutPaintable.RadialRings radialLayoutRings;
+    private LayoutPaintable.BalloonRings balloonLayoutRings;
+    private LayoutPaintable.RadialRings radialLayoutRings;
 
-    String instructions = "<html>"
+    private static final String INSTRUCTIONS = "<html>"
             + "<h3>Graph Transformation:</h3>"
             + "<ul>"
             + "<li>Mousewheel scales with a crossover value of 1.0.<p>"
@@ -132,7 +132,7 @@ public class DrawDependencyGraph {
         JButton help = new JButton("?");
         help.addActionListener(e -> {
             // make a non-modal dialog with instructions
-            JOptionPane pane = new JOptionPane(instructions);
+            JOptionPane pane = new JOptionPane(INSTRUCTIONS);
             JDialog dialog = pane.createDialog(frame, "Help");
             dialog.setModal(false);
             dialog.show();
