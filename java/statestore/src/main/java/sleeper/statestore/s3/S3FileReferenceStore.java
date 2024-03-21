@@ -15,7 +15,6 @@
  */
 package sleeper.statestore.s3;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
@@ -94,8 +93,6 @@ class S3FileReferenceStore implements FileReferenceStore {
     private final S3StateStoreDataFile<List<AllReferencesToAFile>> s3StateStoreFile;
     private Clock clock = Clock.systemUTC();
 
-    // Suppressing because false positives are found on method references/functional interfaces
-    @SuppressFBWarnings("CT_CONSTRUCTOR_THROW")
     private S3FileReferenceStore(Builder builder) {
         this.stateStorePath = Objects.requireNonNull(builder.stateStorePath, "stateStorePath must not be null");
         this.conf = Objects.requireNonNull(builder.conf, "hadoopConfiguration must not be null");
