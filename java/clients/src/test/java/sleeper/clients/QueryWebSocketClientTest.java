@@ -15,6 +15,8 @@
  */
 package sleeper.clients;
 
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.QueryWebSocketClient.BasicClient;
@@ -40,7 +42,6 @@ import sleeper.query.model.QuerySerDe;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -79,75 +80,128 @@ public class QueryWebSocketClientTest {
         return tableProperties;
     }
 
-    @Test
-    void shouldReturnResultsForQuery() throws Exception {
-        // Given
-        TableProperties tableProperties = createTable("test-table");
-        Query expectedQuery = exactQuery("test-query-id", tableProperties, 123);
-        Record expectedRecord = new Record(Map.of("key", 123L));
-        setupWebSocketClient(tableProperties)
-                .withResponses(
-                        message(queryResult("test-query-id", expectedRecord)),
-                        message(completedQuery("test-query-id", 1L)),
-                        closeWithReason("finished"));
+    @Nested
+    @DisplayName("Run queries")
+    class RunQuery {
+        @Test
+        void shouldReturnResultsForQuery() throws Exception {
+            // Given
+            TableProperties tableProperties = createTable("test-table");
+            Query expectedQuery = exactQuery("test-query-id", tableProperties, 123);
+            Record expectedRecord = new Record(Map.of("key", 123L));
+            setupWebSocketClient(tableProperties)
+                    .withResponses(
+                            message(queryResult("test-query-id", expectedRecord)),
+                            message(completedQuery("test-query-id", 1L)),
+                            closeWithReason("finished"));
 
-        // When
-        in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
-        runQueryClient(tableProperties, List.of("test-query-id").iterator()::next);
+            // When
+            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            runQueryClient(tableProperties, "test-query-id");
 
-        // Then
-        assertThat(out.toString())
-                .startsWith("Querying table test-table")
-                .contains(PROMPT_QUERY_TYPE +
-                        PROMPT_EXACT_KEY_LONG_TYPE +
-                        "Connected to WebSocket API\n" +
-                        "Submitting Query: " + querySerDe.toJson(expectedQuery) + "\n" +
-                        "1 records returned by query: test-query-id Remaining pending queries: 0\n" +
-                        "Query results:\n" +
-                        expectedRecord + "\n" +
-                        "Disconnected from WebSocket API: finished")
-                .containsSubsequence("Query took", "seconds to return 1 records");
-        assertThat(client.connected).isFalse();
-        assertThat(client.closed).isTrue();
-        assertThat(client.sentMessages)
-                .containsExactly(querySerDe.toJson(expectedQuery));
-    }
+            // Then
+            assertThat(out.toString())
+                    .startsWith("Querying table test-table")
+                    .contains(PROMPT_QUERY_TYPE +
+                            PROMPT_EXACT_KEY_LONG_TYPE +
+                            "Connected to WebSocket API\n" +
+                            "Submitting Query: " + querySerDe.toJson(expectedQuery) + "\n" +
+                            "1 records returned by query: test-query-id Remaining pending queries: 0\n" +
+                            "Query results:\n" +
+                            expectedRecord + "\n" +
+                            "Disconnected from WebSocket API: finished")
+                    .containsSubsequence("Query took", "seconds to return 1 records");
+            assertThat(client.connected).isFalse();
+            assertThat(client.closed).isTrue();
+            assertThat(client.sentMessages)
+                    .containsExactly(querySerDe.toJson(expectedQuery));
+        }
 
-    @Test
-    void shouldReturnResultsForQueryWithSubquery() throws Exception {
-        // Given
-        TableProperties tableProperties = createTable("test-table");
-        Query expectedQuery = exactQuery("test-query-id", tableProperties, 123);
-        Record expectedRecord = new Record(Map.of("key", 123L));
-        setupWebSocketClient(tableProperties)
-                .withResponses(
-                        message(createdSubQueries("test-query-id", "test-subquery")),
-                        message(queryResult("test-subquery", expectedRecord)),
-                        message(completedQuery("test-subquery", 1L)),
-                        closeWithReason("finished"));
+        @Test
+        void shouldReturnResultsForQueryWithOneSubquery() throws Exception {
+            // Given
+            TableProperties tableProperties = createTable("test-table");
+            Query expectedQuery = exactQuery("test-query-id", tableProperties, 123);
+            Record expectedRecord = new Record(Map.of("key", 123L));
+            setupWebSocketClient(tableProperties)
+                    .withResponses(
+                            message(createdSubQueries("test-query-id", "test-subquery")),
+                            message(queryResult("test-subquery", expectedRecord)),
+                            message(completedQuery("test-subquery", 1L)),
+                            closeWithReason("finished"));
 
-        // When
-        in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
-        runQueryClient(tableProperties, List.of("test-query-id").iterator()::next);
+            // When
+            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            runQueryClient(tableProperties, "test-query-id");
 
-        // Then
-        assertThat(out.toString())
-                .startsWith("Querying table test-table")
-                .contains(PROMPT_QUERY_TYPE +
-                        PROMPT_EXACT_KEY_LONG_TYPE +
-                        "Connected to WebSocket API\n" +
-                        "Submitting Query: " + querySerDe.toJson(expectedQuery) + "\n" +
-                        "Query test-query-id split into the following subQueries:\n" +
-                        "  test-subquery\n" +
-                        "1 records returned by query: test-subquery Remaining pending queries: 0\n" +
-                        "Query results:\n" +
-                        expectedRecord + "\n" +
-                        "Disconnected from WebSocket API: finished")
-                .containsSubsequence("Query took", "seconds to return 1 records");
-        assertThat(client.connected).isFalse();
-        assertThat(client.closed).isTrue();
-        assertThat(client.sentMessages)
-                .containsExactly(querySerDe.toJson(expectedQuery));
+            // Then
+            assertThat(out.toString())
+                    .startsWith("Querying table test-table")
+                    .contains(PROMPT_QUERY_TYPE +
+                            PROMPT_EXACT_KEY_LONG_TYPE +
+                            "Connected to WebSocket API\n" +
+                            "Submitting Query: " + querySerDe.toJson(expectedQuery) + "\n" +
+                            "Query test-query-id split into the following subQueries:\n" +
+                            "  test-subquery\n" +
+                            "1 records returned by query: test-subquery Remaining pending queries: 0\n" +
+                            "Query results:\n" +
+                            expectedRecord + "\n" +
+                            "Disconnected from WebSocket API: finished")
+                    .containsSubsequence("Query took", "seconds to return 1 records");
+            assertThat(client.connected).isFalse();
+            assertThat(client.closed).isTrue();
+            assertThat(client.sentMessages)
+                    .containsExactly(querySerDe.toJson(expectedQuery));
+        }
+
+        @Test
+        void shouldReturnResultsForQueryWithMultipleSubqueries() throws Exception {
+            // Given
+            TableProperties tableProperties = createTable("test-table");
+            Query expectedQuery = exactQuery("test-query-id", tableProperties, 123);
+            Record expectedRecord1 = new Record(Map.of("key", 123L));
+            Record expectedRecord2 = new Record(Map.of("key", 456L));
+            Record expectedRecord3 = new Record(Map.of("key", 789L));
+            setupWebSocketClient(tableProperties)
+                    .withResponses(
+                            message(createdSubQueries("test-query-id", "subquery-1", "subquery-2", "subquery-3")),
+                            message(queryResult("subquery-1", expectedRecord1)),
+                            message(completedQuery("subquery-1", 1L)),
+                            message(queryResult("subquery-2", expectedRecord2)),
+                            message(completedQuery("subquery-2", 1L)),
+                            message(queryResult("subquery-3", expectedRecord3)),
+                            message(completedQuery("subquery-3", 1L)),
+                            closeWithReason("finished"));
+
+            // When
+            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            runQueryClient(tableProperties, "test-query-id");
+
+            // Then
+            assertThat(out.toString())
+                    .startsWith("Querying table test-table")
+                    .contains(PROMPT_QUERY_TYPE +
+                            PROMPT_EXACT_KEY_LONG_TYPE +
+                            "Connected to WebSocket API\n" +
+                            "Submitting Query: " + querySerDe.toJson(expectedQuery) + "\n" +
+                            "Query test-query-id split into the following subQueries:\n" +
+                            "  subquery-1\n" +
+                            "  subquery-2\n" +
+                            "  subquery-3\n" +
+                            "1 records returned by query: subquery-1 Remaining pending queries: 2\n" +
+                            "1 records returned by query: subquery-2 Remaining pending queries: 1\n" +
+                            "1 records returned by query: subquery-3 Remaining pending queries: 0\n" +
+                            "Query results:\n" +
+                            expectedRecord1 + "\n" +
+                            expectedRecord2 + "\n" +
+                            expectedRecord3 + "\n" +
+                            "Disconnected from WebSocket API: finished")
+                    .containsSubsequence("Query took", "seconds to return 3 records");
+            assertThat(client.connected).isFalse();
+            assertThat(client.closed).isTrue();
+            assertThat(client.sentMessages)
+                    .containsExactly(querySerDe.toJson(expectedQuery));
+        }
     }
 
     private Query exactQuery(String queryId, TableProperties tableProperties, long value) {
@@ -155,6 +209,14 @@ public class QueryWebSocketClientTest {
                 .tableName(tableProperties.get(TABLE_NAME))
                 .queryId(queryId)
                 .regions(List.of(new Region(new Range(rowKey, value, true, value, true))))
+                .build();
+    }
+
+    private Query rangeQuery(String queryId, TableProperties tableProperties, long min, long max) {
+        return Query.builder()
+                .tableName(tableProperties.get(TABLE_NAME))
+                .queryId(queryId)
+                .regions(List.of(new Region(new Range(rowKey, min, true, max, false))))
                 .build();
     }
 
@@ -184,9 +246,9 @@ public class QueryWebSocketClientTest {
                 "}";
     }
 
-    protected void runQueryClient(TableProperties tableProperties, Supplier<String> queryIdSupplier) throws Exception {
+    protected void runQueryClient(TableProperties tableProperties, String queryId) throws Exception {
         new QueryWebSocketClient(instanceProperties, tableIndex, new FixedTablePropertiesProvider(tableProperties),
-                in.consoleIn(), out.consoleOut(), client, queryIdSupplier)
+                in.consoleIn(), out.consoleOut(), client, () -> queryId)
                 .run();
     }
 

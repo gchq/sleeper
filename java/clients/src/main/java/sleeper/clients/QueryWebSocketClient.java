@@ -49,14 +49,16 @@ import sleeper.query.model.QuerySerDe;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Instant;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL;
 
@@ -208,7 +210,7 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
     public static class BasicClient {
         private final Gson serde = new GsonBuilder().create();
         private final Set<String> outstandingQueries = new HashSet<>();
-        private final Map<String, JsonArray> records = new HashMap<>();
+        private final Map<String, List<String>> records = new TreeMap<>();
         private final QuerySerDe querySerDe;
         private final ConsoleOutput out;
         private boolean queryComplete = false;
@@ -252,10 +254,11 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
 
             } else if (messageType.equals("records")) {
                 JsonArray recordBatch = message.getAsJsonArray("records");
+                List<String> recordList = recordBatch.asList().stream().map(JsonElement::getAsString).collect(Collectors.toList());
                 if (!records.containsKey(queryId)) {
-                    records.put(queryId, recordBatch);
+                    records.put(queryId, recordList);
                 } else {
-                    records.get(queryId).addAll(recordBatch);
+                    records.get(queryId).addAll(recordList);
                 }
 
             } else if (messageType.equals("completed")) {
@@ -282,11 +285,9 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
                 queryComplete = true;
                 if (!records.isEmpty()) {
                     out.println("Query results:");
-                    for (Entry<String, JsonArray> subQueryRecords : records.entrySet()) {
-                        for (JsonElement record : subQueryRecords.getValue()) {
-                            out.println(record.getAsString());
-                        }
-                    }
+                    records.values().stream()
+                            .flatMap(List::stream)
+                            .forEach(record -> out.println(record));
                 }
             }
         }
