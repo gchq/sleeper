@@ -91,10 +91,11 @@ public class QueryWebSocketClientTest {
     @Nested
     @DisplayName("Run queries")
     class RunQuery {
+        TableProperties tableProperties = createTable("test-table");
+
         @Test
         void shouldReturnResultsForQuery() throws Exception {
             // Given
-            TableProperties tableProperties = createTable("test-table");
             Query expectedQuery = exactQuery("test-query-id", tableProperties, 123);
             Record expectedRecord = new Record(Map.of("key", 123L));
             setupWebSocketClient(tableProperties)
@@ -128,7 +129,6 @@ public class QueryWebSocketClientTest {
         @Test
         void shouldReturnResultsForQueryWithOneSubquery() throws Exception {
             // Given
-            TableProperties tableProperties = createTable("test-table");
             Query expectedQuery = exactQuery("test-query-id", tableProperties, 123);
             Record expectedRecord = new Record(Map.of("key", 123L));
             setupWebSocketClient(tableProperties)
@@ -165,7 +165,6 @@ public class QueryWebSocketClientTest {
         @Test
         void shouldReturnResultsForQueryWithMultipleSubqueries() throws Exception {
             // Given
-            TableProperties tableProperties = createTable("test-table");
             Query expectedQuery = rangeQuery("test-query-id", tableProperties, 0L, 1000L);
             Record expectedRecord1 = new Record(Map.of("key", 123L));
             Record expectedRecord2 = new Record(Map.of("key", 456L));
@@ -293,6 +292,7 @@ public class QueryWebSocketClientTest {
 
         @Override
         public void startQuery(Query query) throws InterruptedException {
+            connectBlocking();
             basicClient.onOpen(query, sentMessages::add);
             responses.forEach(action -> action.run(basicClient));
         }
