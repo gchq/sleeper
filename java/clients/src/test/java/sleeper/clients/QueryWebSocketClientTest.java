@@ -60,7 +60,21 @@ public class QueryWebSocketClientTest {
     private final TableIndex tableIndex = new InMemoryTableIndex();
     private final ToStringPrintStream out = new ToStringPrintStream();
     private final TestConsoleInput in = new TestConsoleInput(out.consoleOut());
+    private final QuerySerDe querySerDe = new QuerySerDe(schema);
     private FakeWebSocketClient client;
+
+    private static InstanceProperties createInstance() {
+        InstanceProperties instanceProperties = createTestInstanceProperties();
+        instanceProperties.set(QUERY_WEBSOCKET_API_URL, ENDPOINT_URL);
+        return instanceProperties;
+    }
+
+    private TableProperties createTable(String tableName) {
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableProperties.set(TABLE_NAME, tableName);
+        tableIndex.create(tableProperties.getStatus());
+        return tableProperties;
+    }
 
     @Test
     void shouldReturnNoRecordsWhenExactRecordNotFound() throws Exception {
@@ -84,27 +98,17 @@ public class QueryWebSocketClientTest {
                         PROMPT_EXACT_KEY_LONG_TYPE +
                         "Connected to WebSocket API")
                 .containsSubsequence("Query took", "seconds to return 0 records");
-
-    }
-
-    private static InstanceProperties createInstance() {
-        InstanceProperties instanceProperties = createTestInstanceProperties();
-        instanceProperties.set(QUERY_WEBSOCKET_API_URL, ENDPOINT_URL);
-        return instanceProperties;
-    }
-
-    private TableProperties createTable(String tableName) {
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        tableProperties.set(TABLE_NAME, tableName);
-        tableIndex.create(tableProperties.getStatus());
-        return tableProperties;
+        assertThat(client.connected).isFalse();
+        assertThat(client.closed).isTrue();
+        assertThat(client.sentMessages)
+                .containsExactly(querySerDe.toJson(expectedQuery));
     }
 
     private Query exactQuery(String queryId, TableProperties tableProperties, long value) {
         return Query.builder()
                 .tableName(tableProperties.get(TABLE_NAME))
                 .queryId(queryId)
-                .regions(List.of(Region.from(new Range(rowKey, value, value))))
+                .regions(List.of(Region.from(new Range(rowKey, value, true, value, true))))
                 .build();
     }
 
