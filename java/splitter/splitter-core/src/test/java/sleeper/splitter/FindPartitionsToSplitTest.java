@@ -160,7 +160,7 @@ public class FindPartitionsToSplitTest {
             // Then
             assertThat(jobs).containsExactly(
                     new SplitPartitionJobDefinition(onlineTable.getStatus().getTableUniqueId(),
-                            PartitionTree.from(onlineStore.getAllPartitions()).getRootPartition(),
+                            new PartitionTree(onlineStore.getAllPartitions()).getRootPartition(),
                             List.of("file.parquet")));
         }
     }
@@ -236,7 +236,7 @@ public class FindPartitionsToSplitTest {
     }
 
     private PartitionTree partitionTree() throws Exception {
-        return PartitionTree.from(stateStore.getAllPartitions());
+        return new PartitionTree(stateStore.getAllPartitions());
     }
 
     private FileReferenceFactory fileReferenceFactory() {

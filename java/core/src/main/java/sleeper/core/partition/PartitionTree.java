@@ -36,10 +36,6 @@ public class PartitionTree {
     private final Map<String, Partition> idToPartition;
     private final Partition rootPartition;
 
-    public static PartitionTree from(List<Partition> partitions) {
-        return new PartitionTree(partitions);
-    }
-
     public PartitionTree(List<Partition> partitions) {
         this.idToPartition = new HashMap<>();
         partitions.forEach(p -> this.idToPartition.put(p.getId(), p));

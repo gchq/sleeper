@@ -97,7 +97,7 @@ class PartitionsBuilderTest {
                         .dimension(0)
                         .build());
         assertThat(builder.buildList()).isEqualTo(expectedPartitions);
-        assertThat(builder.buildTree()).isEqualTo(PartitionTree.from(expectedPartitions));
+        assertThat(builder.buildTree()).isEqualTo(new PartitionTree(expectedPartitions));
     }
 
     @Test

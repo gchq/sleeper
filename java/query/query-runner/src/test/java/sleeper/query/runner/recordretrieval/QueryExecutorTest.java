@@ -396,7 +396,7 @@ public class QueryExecutorTest {
 
     private PartitionTree partitionTree() {
         try {
-            return PartitionTree.from(stateStore.getAllPartitions());
+            return new PartitionTree(stateStore.getAllPartitions());
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
         }
