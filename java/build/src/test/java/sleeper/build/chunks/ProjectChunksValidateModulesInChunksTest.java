@@ -84,6 +84,25 @@ public class ProjectChunksValidateModulesInChunksTest {
                 "Maven modules not configured in any chunk: configuration, bulk-import/bulk-import-runner");
     }
 
+    @Test
+    public void shouldFailValidationWhenOneModuleInAChunkIsNotAJavaModule() {
+        // Given
+        ProjectChunks chunks = chunks(
+                chunk("common", "core", "configuration"),
+                chunk("ingest", "ingest"),
+                chunk("bulk-import",
+                        "bulk-import",
+                        "bulk-import/bulk-import-common",
+                        "bulk-import/bulk-import-runner",
+                        "bulk-import/bulk-import-starter"));
+
+        // When / Then
+        assertThatThrownBy(() -> validateAllConfigured(chunks))
+                .isInstanceOf(IllegalStateException.class);
+        assertThat(outputStream.toString()).contains(
+                "Maven modules with no source code found in a chunk: bulk-import");
+    }
+
     private void validateAllConfigured(ProjectChunks chunks) {
         chunks.validateAllConfigured(project, maven, printStream(outputStream));
     }
