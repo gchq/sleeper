@@ -98,7 +98,6 @@ public class SqsLeafPartitionQueryProcessor {
         }
     }
 
-
     private Configuration getConfiguration(TableProperties tableProperties) {
         String tableName = tableProperties.get(TABLE_NAME);
         if (!configurationCache.containsKey(tableName)) {
