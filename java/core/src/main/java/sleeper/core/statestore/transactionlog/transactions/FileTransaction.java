@@ -13,16 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.statestore.transactionlog;
+package sleeper.core.statestore.transactionlog.transactions;
 
-import sleeper.core.schema.Schema;
-import sleeper.core.statestore.DelegatingStateStore;
+public interface FileTransaction {
 
-public class TransactionLogStateStore extends DelegatingStateStore {
-
-    public TransactionLogStateStore(Schema schema, TransactionLogStore logStore) {
-        super(new TransactionLogFileReferenceStore(logStore),
-                new TransactionLogPartitionStore(schema, logStore));
-    }
+    void apply(StateStoreFiles files);
 
 }

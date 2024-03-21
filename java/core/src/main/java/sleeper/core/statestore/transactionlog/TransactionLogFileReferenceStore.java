@@ -23,15 +23,34 @@ import sleeper.core.statestore.FileReferenceStore;
 import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.SplitRequestsFailedException;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
+import sleeper.core.statestore.transactionlog.transactions.FileTransaction;
+import sleeper.core.statestore.transactionlog.transactions.StateStoreFiles;
 
+import java.time.Clock;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
+import static java.util.stream.Collectors.toUnmodifiableList;
+
 class TransactionLogFileReferenceStore implements FileReferenceStore {
+
+    private final TransactionLogStore logStore;
+    private Clock clock = Clock.systemUTC();
+
+    TransactionLogFileReferenceStore(TransactionLogStore logStore) {
+        this.logStore = logStore;
+    }
 
     @Override
     public void addFilesWithReferences(List<AllReferencesToAFile> files) throws StateStoreException {
+        Instant updateTime = clock.instant();
+        logStore.addTransaction(new AddFilesTransaction(files.stream()
+                .map(file -> file.withCreatedUpdateTime(updateTime))
+                .collect(toUnmodifiableList())));
     }
 
     @Override
@@ -52,31 +71,48 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
 
     @Override
     public void fixTime(Instant time) {
+        clock = Clock.fixed(time, ZoneId.of("UTC"));
     }
 
     @Override
     public AllReferencesToAllFiles getAllFilesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException {
-        return null;
+        List<AllReferencesToAFile> files = new ArrayList<>();
+        int foundUnreferenced = 0;
+        boolean moreThanMax = false;
+        for (AllReferencesToAFile file : (Iterable<AllReferencesToAFile>) () -> files().referencedAndUnreferenced().iterator()) {
+            if (file.getTotalReferenceCount() < 1) {
+                if (foundUnreferenced >= maxUnreferencedFiles) {
+                    moreThanMax = true;
+                    continue;
+                } else {
+                    foundUnreferenced++;
+                }
+            }
+            files.add(file);
+        }
+        return new AllReferencesToAllFiles(files, moreThanMax);
     }
 
     @Override
     public List<FileReference> getFileReferences() throws StateStoreException {
-        return null;
+        return files().references().collect(toUnmodifiableList());
     }
 
     @Override
     public List<FileReference> getFileReferencesWithNoJobId() throws StateStoreException {
-        return null;
+        return files().references()
+                .filter(file -> file.getJobId() == null)
+                .collect(toUnmodifiableList());
     }
 
     @Override
     public Stream<String> getReadyForGCFilenamesBefore(Instant maxUpdateTime) throws StateStoreException {
-        return null;
+        return files().unreferencedBefore(maxUpdateTime);
     }
 
     @Override
     public boolean hasNoFiles() {
-        return true;
+        return files().isEmpty();
     }
 
     @Override
@@ -85,6 +121,13 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
 
     @Override
     public void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws SplitRequestsFailedException {
+    }
+
+    private StateStoreFiles files() {
+        StateStoreFiles files = new StateStoreFiles();
+        logStore.readAllTransactions(FileTransaction.class)
+                .forEach(transaction -> transaction.apply(files));
+        return files;
     }
 
 }
