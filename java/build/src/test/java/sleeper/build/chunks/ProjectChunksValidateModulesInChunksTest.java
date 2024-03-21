@@ -38,7 +38,7 @@ public class ProjectChunksValidateModulesInChunksTest {
     private final MavenModuleStructure maven = TestMavenModuleStructure.example();
 
     @Test
-    public void shouldValidateWhenAllCompiledModulesAreInChunks() {
+    public void shouldValidateWhenAllJavaModulesAreInChunks() {
         // Given
         ProjectChunks chunks = TestChunks.example();
 
@@ -50,7 +50,7 @@ public class ProjectChunksValidateModulesInChunksTest {
     }
 
     @Test
-    public void shouldFailValidationWhenOneCompiledModuleNotInAChunk() {
+    public void shouldFailValidationWhenOneJavaModuleNotInAChunk() {
         // Given
         ProjectChunks chunks = chunks(
                 chunk("common", "core"),
@@ -68,7 +68,7 @@ public class ProjectChunksValidateModulesInChunksTest {
     }
 
     @Test
-    public void shouldFailValidationWhenSeveralCompiledModulesNotInAChunk() {
+    public void shouldFailValidationWhenSeveralJavaModulesNotInAChunk() {
         // Given
         ProjectChunks chunks = chunks(
                 chunk("common", "core"),
