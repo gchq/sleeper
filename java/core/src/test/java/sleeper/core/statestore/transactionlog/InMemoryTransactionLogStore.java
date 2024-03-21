@@ -13,24 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.statestore.transactionlog.transactions;
+package sleeper.core.statestore.transactionlog;
 
-import sleeper.core.partition.Partition;
-
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Stream;
 
-public class InitialisePartitionsTransaction implements PartitionTransaction {
+public class InMemoryTransactionLogStore implements TransactionLogStore {
 
-    private final List<Partition> partitions;
+    private List<Object> transactions = new ArrayList<>();
 
-    public InitialisePartitionsTransaction(List<Partition> partitions) {
-        this.partitions = partitions;
+    @Override
+    public void addTransaction(Object transaction) {
+        transactions.add(transaction);
     }
 
     @Override
-    public void apply(Map<String, Partition> partitionById) {
-        partitions.forEach(partition -> partitionById.put(partition.getId(), partition));
+    public <T> Stream<T> readAllTransactions(Class<T> type) {
+        return transactions.stream()
+                .filter(type::isInstance)
+                .map(type::cast);
     }
 
 }

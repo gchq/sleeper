@@ -41,11 +41,11 @@ public class TransactionLogStateStoreCreator {
     public void create() {
         String tableName = instanceProperties.get(TRANSACTION_LOG_TABLENAME);
         List<AttributeDefinition> attributeDefinitions = List.of(
-                new AttributeDefinition(TransactionLogStateStore.TABLE_ID, ScalarAttributeType.S),
-                new AttributeDefinition(TransactionLogStateStore.TRANSACTION_NUMBER, ScalarAttributeType.N));
+                new AttributeDefinition(DynamoDBTransactionLogStateStore.TABLE_ID, ScalarAttributeType.S),
+                new AttributeDefinition(DynamoDBTransactionLogStateStore.TRANSACTION_NUMBER, ScalarAttributeType.N));
         List<KeySchemaElement> keySchemaElements = List.of(
-                new KeySchemaElement(TransactionLogStateStore.TABLE_ID, KeyType.HASH),
-                new KeySchemaElement(TransactionLogStateStore.TRANSACTION_NUMBER, KeyType.RANGE));
+                new KeySchemaElement(DynamoDBTransactionLogStateStore.TABLE_ID, KeyType.HASH),
+                new KeySchemaElement(DynamoDBTransactionLogStateStore.TRANSACTION_NUMBER, KeyType.RANGE));
         CreateTableRequest request = new CreateTableRequest()
                 .withTableName(tableName)
                 .withAttributeDefinitions(attributeDefinitions)

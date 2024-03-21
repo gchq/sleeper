@@ -13,46 +13,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.statestore.transactionlog;
+package sleeper.core.statestore.transactionlog;
 
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
 
-public class TransactionLogStateStoreOneTableTestBase extends TransactionLogStateStoreTestBase {
+public class InMemoryTransactionLogStateStoreTestBase {
 
-    protected final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
     private PartitionsBuilder partitions;
     protected FileReferenceFactory factory;
     protected StateStore store;
 
     protected void initialiseWithSchema(Schema schema) throws Exception {
-        createStore(schema);
-        setPartitions(new PartitionsBuilder(schema).singlePartition("root"));
+        createStore(new PartitionsBuilder(schema).singlePartition("root"));
         store.initialise();
     }
 
     protected void initialiseWithPartitions(PartitionsBuilder partitions) throws Exception {
-        createStore(partitions.getSchema());
-        setPartitions(partitions);
+        createStore(partitions);
         store.initialise(partitions.buildList());
     }
 
-    private void createStore(Schema schema) {
-        tableProperties.setSchema(schema);
-        store = new DynamoDBTransactionLogStateStore(instanceProperties, tableProperties, dynamoDBClient);
-        store.fixTime(DEFAULT_UPDATE_TIME);
-    }
-
-    private void setPartitions(PartitionsBuilder partitions) {
+    private void createStore(PartitionsBuilder partitions) {
         this.partitions = partitions;
         factory = FileReferenceFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
+        store = new TransactionLogStateStore(partitions.getSchema(), new InMemoryTransactionLogStore());
+        store.fixTime(DEFAULT_UPDATE_TIME);
     }
 
     protected void splitPartition(String parentId, String leftId, String rightId, long splitPoint) throws StateStoreException {
@@ -60,5 +51,4 @@ public class TransactionLogStateStoreOneTableTestBase extends TransactionLogStat
                 .applySplit(store, parentId);
         factory = FileReferenceFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
     }
-
 }

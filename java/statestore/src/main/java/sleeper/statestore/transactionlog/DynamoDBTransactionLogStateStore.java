@@ -20,20 +20,15 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.statestore.DelegatingStateStore;
+import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 
-public class TransactionLogStateStore extends DelegatingStateStore {
+public class DynamoDBTransactionLogStateStore extends TransactionLogStateStore {
     public static final String TABLE_ID = "TABLE_ID";
     public static final String TRANSACTION_NUMBER = "TRANSACTION_NUMBER";
 
-    public TransactionLogStateStore(
+    public DynamoDBTransactionLogStateStore(
             InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamoDB) {
-        this(tableProperties, new TransactionLogStore(instanceProperties, tableProperties, dynamoDB));
-    }
-
-    public TransactionLogStateStore(TableProperties tableProperties, TransactionLogStore logStore) {
-        super(new TransactionLogFileReferenceStore(),
-                new TransactionLogPartitionStore(tableProperties, logStore));
+        super(tableProperties.getSchema(), new DynamoDBTransactionLogStore(instanceProperties, tableProperties, dynamoDB));
     }
 
 }

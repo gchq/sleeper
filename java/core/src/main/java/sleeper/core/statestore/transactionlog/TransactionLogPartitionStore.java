@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.statestore.transactionlog;
+package sleeper.core.statestore.transactionlog;
 
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsFromSplitPoints;
+import sleeper.core.schema.Schema;
 import sleeper.core.statestore.PartitionStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.statestore.transactionlog.transactions.InitialisePartitionsTransaction;
-import sleeper.statestore.transactionlog.transactions.PartitionTransaction;
+import sleeper.core.statestore.transactionlog.transactions.InitialisePartitionsTransaction;
+import sleeper.core.statestore.transactionlog.transactions.PartitionTransaction;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -33,11 +33,11 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 
 class TransactionLogPartitionStore implements PartitionStore {
 
-    private final TableProperties tableProperties;
+    private final Schema schema;
     private final TransactionLogStore logStore;
 
-    TransactionLogPartitionStore(TableProperties tableProperties, TransactionLogStore logStore) {
-        this.tableProperties = tableProperties;
+    TransactionLogPartitionStore(Schema schema, TransactionLogStore logStore) {
+        this.schema = schema;
         this.logStore = logStore;
     }
 
@@ -68,7 +68,7 @@ class TransactionLogPartitionStore implements PartitionStore {
 
     @Override
     public void initialise() throws StateStoreException {
-        initialise(new PartitionsFromSplitPoints(tableProperties.getSchema(), Collections.emptyList()).construct());
+        initialise(new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct());
     }
 
     @Override

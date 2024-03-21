@@ -25,8 +25,9 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
+import sleeper.core.statestore.transactionlog.TransactionLogStore;
+import sleeper.core.statestore.transactionlog.transactions.TransactionSerDe;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
-import sleeper.statestore.transactionlog.transactions.TransactionSerDe;
 
 import java.util.Map;
 import java.util.Optional;
@@ -35,11 +36,11 @@ import java.util.stream.Stream;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_TABLENAME;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
 
-class TransactionLogStore {
-    public static final Logger LOGGER = LoggerFactory.getLogger(TransactionLogStore.class);
+class DynamoDBTransactionLogStore implements TransactionLogStore {
+    public static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBTransactionLogStore.class);
 
-    private static final String TABLE_ID = TransactionLogStateStore.TABLE_ID;
-    private static final String TRANSACTION_NUMBER = TransactionLogStateStore.TRANSACTION_NUMBER;
+    private static final String TABLE_ID = DynamoDBTransactionLogStateStore.TABLE_ID;
+    private static final String TRANSACTION_NUMBER = DynamoDBTransactionLogStateStore.TRANSACTION_NUMBER;
     private static final String TYPE = "TYPE";
     private static final String BODY = "BODY";
 
@@ -48,7 +49,7 @@ class TransactionLogStore {
     private final AmazonDynamoDB dynamo;
     private final TransactionSerDe serDe;
 
-    TransactionLogStore(
+    DynamoDBTransactionLogStore(
             InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamo) {
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
