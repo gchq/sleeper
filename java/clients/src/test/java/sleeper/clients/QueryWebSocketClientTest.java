@@ -47,8 +47,15 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.QueryClientTestConstants.EXACT_QUERY_OPTION;
 import static sleeper.clients.QueryClientTestConstants.EXIT_OPTION;
+import static sleeper.clients.QueryClientTestConstants.NO_OPTION;
 import static sleeper.clients.QueryClientTestConstants.PROMPT_EXACT_KEY_LONG_TYPE;
+import static sleeper.clients.QueryClientTestConstants.PROMPT_MAX_INCLUSIVE;
+import static sleeper.clients.QueryClientTestConstants.PROMPT_MAX_ROW_KEY_LONG_TYPE;
+import static sleeper.clients.QueryClientTestConstants.PROMPT_MIN_INCLUSIVE;
+import static sleeper.clients.QueryClientTestConstants.PROMPT_MIN_ROW_KEY_LONG_TYPE;
 import static sleeper.clients.QueryClientTestConstants.PROMPT_QUERY_TYPE;
+import static sleeper.clients.QueryClientTestConstants.RANGE_QUERY_OPTION;
+import static sleeper.clients.QueryClientTestConstants.YES_OPTION;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
@@ -56,6 +63,8 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class QueryWebSocketClientTest {
+    private static final String PROMPT_RANGE_QUERY = PROMPT_MIN_INCLUSIVE + PROMPT_MAX_INCLUSIVE +
+            PROMPT_MIN_ROW_KEY_LONG_TYPE + PROMPT_MAX_ROW_KEY_LONG_TYPE;
     private static final String ENDPOINT_URL = "websocket-endpoint";
     private final InstanceProperties instanceProperties = createInstance();
     private final Schema schema = schemaWithKey("key");
@@ -173,14 +182,14 @@ public class QueryWebSocketClientTest {
                             closeWithReason("finished"));
 
             // When
-            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            in.enterNextPrompts(RANGE_QUERY_OPTION, YES_OPTION, NO_OPTION, "0", "1000", EXIT_OPTION);
             runQueryClient(tableProperties, "test-query-id");
 
             // Then
             assertThat(out.toString())
                     .startsWith("Querying table test-table")
                     .contains(PROMPT_QUERY_TYPE +
-                            PROMPT_EXACT_KEY_LONG_TYPE +
+                            PROMPT_RANGE_QUERY +
                             "Connected to WebSocket API\n" +
                             "Submitting Query: " + querySerDe.toJson(expectedQuery) + "\n" +
                             "Query test-query-id split into the following subQueries:\n" +
@@ -223,8 +232,7 @@ public class QueryWebSocketClientTest {
         return "{" +
                 "\"queryId\":\"" + queryId + "\", " +
                 "\"message\":\"records\"," +
-                "\"records\":[" + Stream.of(records).map(record -> "\"" + record + "\"").collect(Collectors.joining(","))
-                + "]" +
+                "\"records\":[" + Stream.of(records).map(record -> "\"" + record + "\"").collect(Collectors.joining(",")) + "]" +
                 "}";
     }
 
@@ -261,7 +269,7 @@ public class QueryWebSocketClientTest {
         private boolean closed = false;
         private BasicClient basicClient;
         private List<String> sentMessages = new ArrayList<>();
-        private List<WebSocketAction> actions;
+        private List<WebSocketResponse> responses;
 
         FakeWebSocketClient(TablePropertiesProvider tablePropertiesProvider, ConsoleOutput out) {
             this.basicClient = new BasicClient(new QuerySerDe(tablePropertiesProvider), out);
@@ -275,17 +283,18 @@ public class QueryWebSocketClientTest {
 
         @Override
         public void closeBlocking() throws InterruptedException {
+            connected = false;
             closed = true;
         }
 
-        public void withResponses(WebSocketAction... actions) {
-            this.actions = List.of(actions);
+        public void withResponses(WebSocketResponse... responses) {
+            this.responses = List.of(responses);
         }
 
         @Override
         public void startQuery(Query query) throws InterruptedException {
             basicClient.onOpen(query, sentMessages::add);
-            actions.forEach(action -> action.run(basicClient));
+            responses.forEach(action -> action.run(basicClient));
         }
 
         @Override
@@ -299,23 +308,23 @@ public class QueryWebSocketClientTest {
         }
     }
 
-    private interface WebSocketAction {
+    private interface WebSocketResponse {
         void run(BasicClient client);
     }
 
-    public WebSocketAction open(Query query) {
+    public WebSocketResponse open(Query query) {
         return basicClient -> basicClient.onOpen(query, client.sentMessages::add);
     }
 
-    private WebSocketAction message(String message) {
+    private WebSocketResponse message(String message) {
         return basicClient -> basicClient.onMessage(message);
     }
 
-    public WebSocketAction closeWithReason(String reason) {
+    public WebSocketResponse closeWithReason(String reason) {
         return basicClient -> basicClient.onClose(reason);
     }
 
-    public WebSocketAction error(Exception error) {
+    public WebSocketResponse error(Exception error) {
         return basicClient -> basicClient.onError(error);
     }
 
