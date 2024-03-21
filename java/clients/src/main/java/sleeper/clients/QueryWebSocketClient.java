@@ -157,7 +157,7 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
 
         @Override
         public void onOpen(ServerHandshake handshake) {
-            basicClient.onOpen(handshake);
+            basicClient.onOpen();
         }
 
         @Override
@@ -167,7 +167,7 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
 
         @Override
         public void onClose(int code, String reason, boolean remote) {
-            basicClient.onClose(code, reason, remote);
+            basicClient.onClose(reason);
         }
 
         @Override
@@ -194,7 +194,7 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
             this.messageSender = messageSender;
         }
 
-        public void onOpen(ServerHandshake handshake) {
+        public void onOpen() {
             out.println("Connected to WebSocket API");
             sendQuery();
         }
@@ -266,7 +266,7 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
             }
         }
 
-        public void onClose(int code, String reason, boolean remote) {
+        public void onClose(String reason) {
             queryComplete = true;
             out.println("Disconnected from WebSocket API: " + reason);
         }
