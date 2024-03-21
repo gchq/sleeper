@@ -57,6 +57,7 @@ class DynamoDBTransactionLogStore implements TransactionLogStore {
         this.serDe = new TransactionSerDe(tableProperties.getSchema());
     }
 
+    @Override
     public void addTransaction(Object transaction) {
         dynamo.putItem(instanceProperties.get(TRANSACTION_LOG_TABLENAME),
                 new DynamoDBRecordBuilder()
@@ -67,28 +68,26 @@ class DynamoDBTransactionLogStore implements TransactionLogStore {
                         .build());
     }
 
-    public <T> Stream<T> readAllTransactions(Class<T> type) {
+    @Override
+    public Stream<Object> readTransactionsAfter(long lastTransactionNumber) {
         return streamPagedItems(dynamo, new QueryRequest()
                 .withTableName(instanceProperties.get(TRANSACTION_LOG_TABLENAME))
                 .withConsistentRead(true)
-                .withKeyConditionExpression("#TableId = :table_id")
-                .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID))
+                .withKeyConditionExpression("#TableId = :table_id AND #Number > :number")
+                .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID, "#Number", TRANSACTION_NUMBER))
                 .withExpressionAttributeValues(new DynamoDBRecordBuilder()
                         .string(":table_id", tableProperties.get(TableProperty.TABLE_ID))
+                        .number(":number", lastTransactionNumber)
                         .build())
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL))
-                .flatMap(item -> readTransaction(type, item).stream());
+                .flatMap(item -> readTransaction(item).stream());
     }
 
-    private <T> Optional<T> readTransaction(Class<T> type, Map<String, AttributeValue> item) {
+    private Optional<Object> readTransaction(Map<String, AttributeValue> item) {
         String className = item.get(TYPE).getS();
         try {
-            Class<?> actualType = Class.forName(className);
-            if (type.isAssignableFrom(actualType)) {
-                return Optional.of(type.cast(serDe.toTransaction(actualType, item.get(BODY).getS())));
-            } else {
-                return Optional.empty();
-            }
+            Class<?> type = Class.forName(className);
+            return Optional.of(serDe.toTransaction(type, item.get(BODY).getS()));
         } catch (ClassNotFoundException e) {
             LOGGER.warn("Found unrecognised transaction type for table {} transaction {}: {}",
                     item.get(TABLE_ID).getS(), item.get(TRANSACTION_NUMBER).getS(), className);

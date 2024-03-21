@@ -21,6 +21,6 @@ public interface TransactionLogStore {
 
     void addTransaction(Object transaction);
 
-    <T> Stream<T> readAllTransactions(Class<T> type);
+    Stream<Object> readTransactionsAfter(long startTransactionNumber);
 
 }

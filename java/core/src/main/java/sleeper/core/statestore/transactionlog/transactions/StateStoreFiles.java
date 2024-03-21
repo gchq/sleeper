@@ -29,7 +29,7 @@ public class StateStoreFiles {
     private final Map<String, AllReferencesToAFile> filesByFilename = new TreeMap<>();
     private final Map<String, List<FileReference>> referencesByPartition = new TreeMap<>();
 
-    public void add(List<AllReferencesToAFile> files) {
+    void add(List<AllReferencesToAFile> files) {
         for (AllReferencesToAFile file : files) {
             filesByFilename.put(file.getFilename(), file);
             for (FileReference reference : file.getInternalReferences()) {

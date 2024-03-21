@@ -29,10 +29,9 @@ public class InMemoryTransactionLogStore implements TransactionLogStore {
     }
 
     @Override
-    public <T> Stream<T> readAllTransactions(Class<T> type) {
+    public Stream<Object> readTransactionsAfter(long lastTransactionNumber) {
         return transactions.stream()
-                .filter(type::isInstance)
-                .map(type::cast);
+                .skip(lastTransactionNumber);
     }
 
 }

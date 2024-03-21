@@ -17,12 +17,17 @@ package sleeper.core.statestore.transactionlog;
 
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.DelegatingStateStore;
+import sleeper.core.statestore.transactionlog.transactions.StateStoreState;
 
 public class TransactionLogStateStore extends DelegatingStateStore {
 
     public TransactionLogStateStore(Schema schema, TransactionLogStore logStore) {
-        super(new TransactionLogFileReferenceStore(logStore),
-                new TransactionLogPartitionStore(schema, logStore));
+        this(schema, logStore, new StateStoreState());
+    }
+
+    public TransactionLogStateStore(Schema schema, TransactionLogStore logStore, StateStoreState state) {
+        super(new TransactionLogFileReferenceStore(logStore, state),
+                new TransactionLogPartitionStore(schema, logStore, state));
     }
 
 }

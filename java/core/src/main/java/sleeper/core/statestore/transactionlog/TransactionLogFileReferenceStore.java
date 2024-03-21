@@ -24,8 +24,8 @@ import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.SplitRequestsFailedException;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
-import sleeper.core.statestore.transactionlog.transactions.FileTransaction;
 import sleeper.core.statestore.transactionlog.transactions.StateStoreFiles;
+import sleeper.core.statestore.transactionlog.transactions.StateStoreState;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -39,10 +39,12 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 class TransactionLogFileReferenceStore implements FileReferenceStore {
 
     private final TransactionLogStore logStore;
+    private final StateStoreState state;
     private Clock clock = Clock.systemUTC();
 
-    TransactionLogFileReferenceStore(TransactionLogStore logStore) {
+    TransactionLogFileReferenceStore(TransactionLogStore logStore, StateStoreState state) {
         this.logStore = logStore;
+        this.state = state;
     }
 
     @Override
@@ -124,10 +126,8 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
     }
 
     private StateStoreFiles files() {
-        StateStoreFiles files = new StateStoreFiles();
-        logStore.readAllTransactions(FileTransaction.class)
-                .forEach(transaction -> transaction.apply(files));
-        return files;
+        state.update(logStore);
+        return state.files();
     }
 
 }

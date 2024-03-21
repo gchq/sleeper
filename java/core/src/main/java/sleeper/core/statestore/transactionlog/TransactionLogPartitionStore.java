@@ -21,12 +21,10 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.PartitionStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.transactions.InitialisePartitionsTransaction;
-import sleeper.core.statestore.transactionlog.transactions.PartitionTransaction;
+import sleeper.core.statestore.transactionlog.transactions.StateStoreState;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
@@ -35,10 +33,12 @@ class TransactionLogPartitionStore implements PartitionStore {
 
     private final Schema schema;
     private final TransactionLogStore logStore;
+    private final StateStoreState state;
 
-    TransactionLogPartitionStore(Schema schema, TransactionLogStore logStore) {
+    TransactionLogPartitionStore(Schema schema, TransactionLogStore logStore, StateStoreState state) {
         this.schema = schema;
         this.logStore = logStore;
+        this.state = state;
     }
 
     @Override
@@ -59,13 +59,6 @@ class TransactionLogPartitionStore implements PartitionStore {
         return partitions().filter(Partition::isLeafPartition).collect(toUnmodifiableList());
     }
 
-    private Stream<Partition> partitions() {
-        Map<String, Partition> partitionById = new HashMap<>();
-        logStore.readAllTransactions(PartitionTransaction.class)
-                .forEach(transaction -> transaction.apply(partitionById));
-        return partitionById.values().stream();
-    }
-
     @Override
     public void initialise() throws StateStoreException {
         initialise(new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct());
@@ -74,6 +67,11 @@ class TransactionLogPartitionStore implements PartitionStore {
     @Override
     public void initialise(List<Partition> partitions) throws StateStoreException {
         logStore.addTransaction(new InitialisePartitionsTransaction(partitions));
+    }
+
+    private Stream<Partition> partitions() {
+        state.update(logStore);
+        return state.partitions().stream();
     }
 
 }
