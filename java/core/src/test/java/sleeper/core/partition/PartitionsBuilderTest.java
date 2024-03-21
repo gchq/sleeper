@@ -153,11 +153,11 @@ class PartitionsBuilderTest {
         // Then
         RangeFactory rangeFactory = new RangeFactory(schema);
         assertThat(tree.getPartition("A").getRegion()).isEqualTo(new Region(Arrays.asList(
-        rangeFactory.createRange(field1, "", null),
-        rangeFactory.createRange(field2, "", "aaa"))));
+                rangeFactory.createRange(field1, "", null),
+                rangeFactory.createRange(field2, "", "aaa"))));
         assertThat(tree.getPartition("B").getRegion()).isEqualTo(new Region(Arrays.asList(
-        rangeFactory.createRange(field1, "", null),
-        rangeFactory.createRange(field2, "aaa", null))));
+                rangeFactory.createRange(field1, "", null),
+                rangeFactory.createRange(field2, "aaa", null))));
     }
 
     @Test
@@ -177,20 +177,20 @@ class PartitionsBuilderTest {
         // Then
         RangeFactory rangeFactory = new RangeFactory(schema);
         assertThat(tree.getPartition("parent").getRegion()).isEqualTo(new Region(List.of(
-        rangeFactory.createRange(field1, "", null),
-        rangeFactory.createRange(field2, "", null))));
+                rangeFactory.createRange(field1, "", null),
+                rangeFactory.createRange(field2, "", null))));
         assertThat(tree.getPartition("A").getRegion()).isEqualTo(new Region(List.of(
-        rangeFactory.createRange(field1, "", "aaa"),
-        rangeFactory.createRange(field2, "", null))));
+                rangeFactory.createRange(field1, "", "aaa"),
+                rangeFactory.createRange(field2, "", null))));
         assertThat(tree.getPartition("B").getRegion()).isEqualTo(new Region(List.of(
-        rangeFactory.createRange(field1, "aaa", null),
-        rangeFactory.createRange(field2, "", null))));
+                rangeFactory.createRange(field1, "aaa", null),
+                rangeFactory.createRange(field2, "", null))));
         assertThat(tree.getPartition("C").getRegion()).isEqualTo(new Region(List.of(
-        rangeFactory.createRange(field1, "aaa", null),
-        rangeFactory.createRange(field2, "", "bbb"))));
+                rangeFactory.createRange(field1, "aaa", null),
+                rangeFactory.createRange(field2, "", "bbb"))));
         assertThat(tree.getPartition("D").getRegion()).isEqualTo(new Region(List.of(
-        rangeFactory.createRange(field1, "aaa", null),
-        rangeFactory.createRange(field2, "bbb", null))));
+                rangeFactory.createRange(field1, "aaa", null),
+                rangeFactory.createRange(field2, "bbb", null))));
     }
 
     @Test
