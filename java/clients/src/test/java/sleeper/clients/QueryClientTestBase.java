@@ -49,7 +49,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class QueryClientTestBase {
     @TempDir
-    private Path tempDir;
+    protected Path tempDir;
     protected InstanceProperties instanceProperties;
     protected final TableIndex tableIndex = new InMemoryTableIndex();
     protected final ToStringPrintStream out = new ToStringPrintStream();

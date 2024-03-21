@@ -206,7 +206,7 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
         private boolean queryComplete = false;
         private long totalRecordsReturned = 0L;
 
-        private BasicClient(QuerySerDe querySerDe, ConsoleOutput out) {
+        public BasicClient(QuerySerDe querySerDe, ConsoleOutput out) {
             this.querySerDe = querySerDe;
             this.out = out;
         }
@@ -291,6 +291,14 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
         public void onError(Exception error) {
             System.err.println(error);
             queryComplete = true;
+        }
+
+        public boolean isQueryComplete() {
+            return queryComplete;
+        }
+
+        public long getTotalRecordsReturned() {
+            return totalRecordsReturned;
         }
     }
 
