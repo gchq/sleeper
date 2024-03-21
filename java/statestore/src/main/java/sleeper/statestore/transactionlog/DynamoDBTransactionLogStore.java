@@ -17,6 +17,7 @@ package sleeper.statestore.transactionlog;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
 import org.slf4j.Logger;
@@ -58,14 +59,17 @@ class DynamoDBTransactionLogStore implements TransactionLogStore {
     }
 
     @Override
-    public void addTransaction(Object transaction) {
-        dynamo.putItem(instanceProperties.get(TRANSACTION_LOG_TABLENAME),
-                new DynamoDBRecordBuilder()
+    public void addTransaction(Object transaction, long transactionNumber) {
+        dynamo.putItem(new PutItemRequest()
+                .withTableName(instanceProperties.get(TRANSACTION_LOG_TABLENAME))
+                .withItem(new DynamoDBRecordBuilder()
                         .string(TABLE_ID, tableProperties.get(TableProperty.TABLE_ID))
-                        .number(TRANSACTION_NUMBER, 1)
+                        .number(TRANSACTION_NUMBER, transactionNumber)
                         .string(TYPE, transaction.getClass().getName())
                         .string(BODY, serDe.toJson(transaction))
-                        .build());
+                        .build())
+                .withConditionExpression("attribute_not_exists(#Number)")
+                .withExpressionAttributeNames(Map.of("#Number", TRANSACTION_NUMBER)));
     }
 
     @Override

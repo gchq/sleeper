@@ -24,7 +24,10 @@ public class InMemoryTransactionLogStore implements TransactionLogStore {
     private List<Object> transactions = new ArrayList<>();
 
     @Override
-    public void addTransaction(Object transaction) {
+    public void addTransaction(Object transaction, long transactionNumber) {
+        if (transactions.size() + 1 != transactionNumber) {
+            throw new IllegalStateException("Next transaction number should be " + transactions.size() + ", found " + transactionNumber);
+        }
         transactions.add(transaction);
     }
 

@@ -25,7 +25,7 @@ public class TransactionLogStateStore extends DelegatingStateStore {
         this(schema, new StateStoreState(logStore));
     }
 
-    public TransactionLogStateStore(Schema schema, StateStoreState state) {
+    private TransactionLogStateStore(Schema schema, StateStoreState state) {
         super(new TransactionLogFileReferenceStore(state),
                 new TransactionLogPartitionStore(schema, state));
     }

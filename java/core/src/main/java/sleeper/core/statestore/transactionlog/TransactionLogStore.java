@@ -19,7 +19,7 @@ import java.util.stream.Stream;
 
 public interface TransactionLogStore {
 
-    void addTransaction(Object transaction);
+    void addTransaction(Object transaction, long transactionNumber);
 
     Stream<Object> readTransactionsAfter(long startTransactionNumber);
 

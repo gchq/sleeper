@@ -34,7 +34,10 @@ public class StateStoreState {
     }
 
     public void addTransaction(Object transaction) {
-        logStore.addTransaction(transaction);
+        long transactionNumber = lastTransactionNumber + 1;
+        logStore.addTransaction(transaction, transactionNumber);
+        apply(transaction);
+        lastTransactionNumber = transactionNumber;
     }
 
     public void update() {
