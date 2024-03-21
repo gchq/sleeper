@@ -262,22 +262,26 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
                 }
 
             } else if (messageType.equals("completed")) {
-                long recordCount = message.get("recordCount").getAsLong();
+                long recordCountFromApi = message.get("recordCount").getAsLong();
                 boolean recordsReturnedToClient = false;
                 for (JsonElement location : message.getAsJsonArray("locations")) {
                     if (location.getAsJsonObject().get("type").getAsString().equals("websocket-endpoint")) {
                         recordsReturnedToClient = true;
                     }
                 }
-                if (recordsReturnedToClient && recordCount > 0 && (!records.containsKey(queryId) || records.get(queryId).size() != recordCount)) {
-                    System.err.println("ERROR: API said it had returned " + recordCount + " records for query " + queryId + ", but only received "
-                            + (records.containsKey(queryId) ? records.get(queryId).size() : 0));
+                long returnedRecordCount = records.getOrDefault(queryId, List.of()).size();
+                if (recordsReturnedToClient && recordCountFromApi > 0) {
+                    if (returnedRecordCount != recordCountFromApi) {
+                        out.println("ERROR: API said it had returned " + recordCountFromApi + " records for query " + queryId + ", but only received " + returnedRecordCount);
+                    }
                 }
                 outstandingQueries.remove(queryId);
-                out.println(recordCount + " records returned by query: " + queryId + " Remaining pending queries: " + outstandingQueries.size());
-                totalRecordsReturned += recordCount;
-            } else {
-                System.err.println("Received unrecognised message type: " + json);
+                out.println(recordCountFromApi + " records returned by query: " + queryId + ". Remaining pending queries: " + outstandingQueries.size());
+                totalRecordsReturned += returnedRecordCount;
+            } else
+
+            {
+                out.println("Received unrecognised message type: " + json);
                 queryComplete = true;
             }
 
@@ -309,6 +313,7 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
         public long getTotalRecordsReturned() {
             return totalRecordsReturned;
         }
+
     }
 
     public static void main(String[] args) throws StateStoreException {

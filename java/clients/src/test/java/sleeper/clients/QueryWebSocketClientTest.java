@@ -119,7 +119,7 @@ public class QueryWebSocketClientTest {
                             PROMPT_EXACT_KEY_LONG_TYPE +
                             "Connected to WebSocket API\n" +
                             "Submitting Query: " + querySerDe.toJson(expectedQuery) + "\n" +
-                            "1 records returned by query: test-query-id Remaining pending queries: 0\n" +
+                            "1 records returned by query: test-query-id. Remaining pending queries: 0\n" +
                             "Query results:\n" +
                             expectedRecord + "\n" +
                             "Disconnected from WebSocket API: finished")
@@ -154,7 +154,7 @@ public class QueryWebSocketClientTest {
                             "Submitting Query: " + querySerDe.toJson(expectedQuery) + "\n" +
                             "Query test-query-id split into the following subQueries:\n" +
                             "  test-subquery\n" +
-                            "1 records returned by query: test-subquery Remaining pending queries: 0\n" +
+                            "1 records returned by query: test-subquery. Remaining pending queries: 0\n" +
                             "Query results:\n" +
                             expectedRecord + "\n" +
                             "Disconnected from WebSocket API: finished")
@@ -197,15 +197,48 @@ public class QueryWebSocketClientTest {
                             "  subquery-1\n" +
                             "  subquery-2\n" +
                             "  subquery-3\n" +
-                            "1 records returned by query: subquery-1 Remaining pending queries: 2\n" +
-                            "1 records returned by query: subquery-2 Remaining pending queries: 1\n" +
-                            "1 records returned by query: subquery-3 Remaining pending queries: 0\n" +
+                            "1 records returned by query: subquery-1. Remaining pending queries: 2\n" +
+                            "1 records returned by query: subquery-2. Remaining pending queries: 1\n" +
+                            "1 records returned by query: subquery-3. Remaining pending queries: 0\n" +
                             "Query results:\n" +
                             expectedRecord1 + "\n" +
                             expectedRecord2 + "\n" +
                             expectedRecord3 + "\n" +
                             "Disconnected from WebSocket API: finished")
                     .containsSubsequence("Query took", "seconds to return 3 records");
+            assertThat(client.connected).isFalse();
+            assertThat(client.closed).isTrue();
+            assertThat(client.sentMessages)
+                    .containsExactly(querySerDe.toJson(expectedQuery));
+        }
+
+        @Test
+        void shouldReturnResultsWhenRecordCountDoesNotMatchRecordsReceived() throws Exception {
+            // Given
+            Query expectedQuery = exactQuery("test-query-id", 123);
+            Record expectedRecord = new Record(Map.of("key", 123L));
+
+            // When
+            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            runQueryClient("test-query-id",
+                    withResponses(
+                            message(queryResult("test-query-id", expectedRecord)),
+                            message(completedQuery("test-query-id", 2L)),
+                            closeWithReason("finished")));
+
+            // Then
+            assertThat(out.toString())
+                    .startsWith("Querying table test-table")
+                    .contains(PROMPT_QUERY_TYPE +
+                            PROMPT_EXACT_KEY_LONG_TYPE +
+                            "Connected to WebSocket API\n" +
+                            "Submitting Query: " + querySerDe.toJson(expectedQuery) + "\n" +
+                            "ERROR: API said it had returned 2 records for query test-query-id, but only received 1\n" +
+                            "2 records returned by query: test-query-id. Remaining pending queries: 0\n" +
+                            "Query results:\n" +
+                            expectedRecord + "\n" +
+                            "Disconnected from WebSocket API: finished")
+                    .containsSubsequence("Query took", "seconds to return 1 records");
             assertThat(client.connected).isFalse();
             assertThat(client.closed).isTrue();
             assertThat(client.sentMessages)
@@ -303,7 +336,7 @@ public class QueryWebSocketClientTest {
                 "\"queryId\":\"" + queryId + "\", " +
                 "\"message\":\"completed\"," +
                 "\"recordCount\":\"" + recordCount + "\"," +
-                "\"locations\":[]" +
+                "\"locations\":[{\"type\":\"websocket-endpoint\"}]" +
                 "}";
     }
 
