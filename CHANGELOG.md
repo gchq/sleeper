@@ -41,7 +41,7 @@ Query:
 
 System tests:
 
-- Added support for running compactions in parallel, in preparation for the next milestone.
+- Added tests for running compactions in parallel, in preparation for the next milestone.
 
 ## Version 0.21.0
 
