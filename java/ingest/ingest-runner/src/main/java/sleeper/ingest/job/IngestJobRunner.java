@@ -60,13 +60,13 @@ public class IngestJobRunner implements IngestJobHandler {
     private final PropertiesReloader propertiesReloader;
 
     public IngestJobRunner(ObjectFactory objectFactory,
-                           InstanceProperties instanceProperties,
-                           TablePropertiesProvider tablePropertiesProvider,
-                           PropertiesReloader propertiesReloader,
-                           StateStoreProvider stateStoreProvider,
-                           String localDir,
-                           S3AsyncClient s3AsyncClient,
-                           Configuration hadoopConfiguration) {
+            InstanceProperties instanceProperties,
+            TablePropertiesProvider tablePropertiesProvider,
+            PropertiesReloader propertiesReloader,
+            StateStoreProvider stateStoreProvider,
+            String localDir,
+            S3AsyncClient s3AsyncClient,
+            Configuration hadoopConfiguration) {
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.propertiesReloader = propertiesReloader;
         this.fs = instanceProperties.get(FILE_SYSTEM);
