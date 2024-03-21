@@ -102,10 +102,10 @@ public class PartitionFactory {
 
     private Region parentRegion(Region left, Region right) {
         return new Region(schema.getRowKeyFields().stream()
-        .map(field -> rangeFactory.createRange(field,
-                left.getRange(field.getName()).getMin(),
-                right.getRange(field.getName()).getMax()))
-        .collect(Collectors.toList()));
+                .map(field -> rangeFactory.createRange(field,
+                        left.getRange(field.getName()).getMin(),
+                        right.getRange(field.getName()).getMax()))
+                .collect(Collectors.toList()));
     }
 
     private Field singleRowKeyField() {

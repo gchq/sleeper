@@ -94,8 +94,8 @@ class PartitionFactoryTest {
                 Partition.builder()
                         .rowKeyTypes(rowKeyTypes)
                         .region(new Region(List.of(
-                        rangeFactory.createRange(key1, "", null),
-                        rangeFactory.createRange(key2, "", null))))
+                                rangeFactory.createRange(key1, "", null),
+                                rangeFactory.createRange(key2, "", null))))
                         .id("parent")
                         .leafPartition(false)
                         .parentPartitionId(null)
@@ -106,8 +106,8 @@ class PartitionFactoryTest {
                 Partition.builder()
                         .rowKeyTypes(rowKeyTypes)
                         .region(new Region(List.of(
-                        rangeFactory.createRange(key1, "", "aaa"),
-                        rangeFactory.createRange(key2, "", null))))
+                                rangeFactory.createRange(key1, "", "aaa"),
+                                rangeFactory.createRange(key2, "", null))))
                         .id("left")
                         .leafPartition(true)
                         .parentPartitionId("parent")
@@ -117,8 +117,8 @@ class PartitionFactoryTest {
                 Partition.builder()
                         .rowKeyTypes(rowKeyTypes)
                         .region(new Region(List.of(
-                        rangeFactory.createRange(key1, "aaa", null),
-                        rangeFactory.createRange(key2, "", null))))
+                                rangeFactory.createRange(key1, "aaa", null),
+                                rangeFactory.createRange(key2, "", null))))
                         .id("right")
                         .leafPartition(false)
                         .parentPartitionId("parent")
@@ -129,8 +129,8 @@ class PartitionFactoryTest {
                 Partition.builder()
                         .rowKeyTypes(rowKeyTypes)
                         .region(new Region(List.of(
-                        rangeFactory.createRange(key1, "aaa", null),
-                        rangeFactory.createRange(key2, "", "bbb"))))
+                                rangeFactory.createRange(key1, "aaa", null),
+                                rangeFactory.createRange(key2, "", "bbb"))))
                         .id("nestedLeft")
                         .leafPartition(true)
                         .parentPartitionId("right")
@@ -140,8 +140,8 @@ class PartitionFactoryTest {
                 Partition.builder()
                         .rowKeyTypes(rowKeyTypes)
                         .region(new Region(List.of(
-                        rangeFactory.createRange(key1, "aaa", null),
-                        rangeFactory.createRange(key2, "bbb", null))))
+                                rangeFactory.createRange(key1, "aaa", null),
+                                rangeFactory.createRange(key2, "bbb", null))))
                         .id("nestedRight")
                         .leafPartition(true)
                         .parentPartitionId("right")
