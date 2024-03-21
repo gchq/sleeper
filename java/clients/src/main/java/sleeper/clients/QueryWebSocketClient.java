@@ -39,7 +39,9 @@ import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.table.TableIndex;
 import sleeper.core.util.LoggedDuration;
 import sleeper.query.model.Query;
 import sleeper.query.model.QuerySerDe;
@@ -52,6 +54,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.function.Consumer;
 
 public class QueryWebSocketClient extends QueryCommandLineClient {
     private final String apiUrl;
@@ -60,13 +63,21 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
     protected QueryWebSocketClient(
             AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, InstanceProperties instanceProperties,
             ConsoleInput in, ConsoleOutput out) {
-        super(s3Client, dynamoDBClient, instanceProperties, in, out);
+        this(instanceProperties,
+                new DynamoDBTableIndex(instanceProperties, dynamoDBClient),
+                new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient), in, out);
+    }
+
+    protected QueryWebSocketClient(
+            InstanceProperties instanceProperties, TableIndex tableIndex, TablePropertiesProvider tablePropertiesProvider,
+            ConsoleInput in, ConsoleOutput out) {
+        super(instanceProperties, tableIndex, tablePropertiesProvider, in, out);
 
         this.apiUrl = instanceProperties.get(CdkDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL);
         if (this.apiUrl == null) {
             throw new IllegalArgumentException("Use of this query client requires the WebSocket API to have been deployed as part of your Sleeper instance!");
         }
-        this.querySerDe = new QuerySerDe(new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient));
+        this.querySerDe = new QuerySerDe(tablePropertiesProvider);
     }
 
     @Override
@@ -78,12 +89,12 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
         Client client = null;
         try {
             Instant startTime = Instant.now();
-            client = new Client(URI.create(apiUrl), query, querySerDe, in, out);
+            client = new Client(URI.create(apiUrl), query, querySerDe, out);
             while (!client.isQueryComplete()) {
                 Thread.sleep(500);
             }
             LoggedDuration duration = LoggedDuration.withFullOutput(startTime, Instant.now());
-            long recordsReturned = client.totalRecordsReturned;
+            long recordsReturned = client.getTotalRecordsReturned();
             out.println("Query took " + duration + " to return " + recordsReturned + " records");
         } catch (InterruptedException e) {
         } finally {
@@ -97,23 +108,13 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
     }
 
     private static class Client extends WebSocketClient {
-        private final Gson serde = new GsonBuilder().create();
-        private final Set<String> outstandingQueries = new HashSet<>();
-        private final Map<String, JsonArray> records = new HashMap<>();
-        private final QuerySerDe querySerDe;
-        private final Query query;
-        private final ConsoleInput in;
         private final ConsoleOutput out;
-        private boolean queryComplete = false;
-        private long totalRecordsReturned = 0L;
+        private final BasicClient basicClient;
 
-        private Client(URI serverUri, Query query, QuerySerDe querySerDe,
-                ConsoleInput in, ConsoleOutput out) throws InterruptedException {
+        private Client(URI serverUri, Query query, QuerySerDe querySerDe, ConsoleOutput out) throws InterruptedException {
             super(serverUri);
-            this.query = query;
-            this.querySerDe = querySerDe;
-            this.in = in;
             this.out = out;
+            this.basicClient = new BasicClient(serverUri, query, querySerDe, out, this::send);
             initialiseConnection(serverUri);
         }
 
@@ -147,24 +148,64 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
         }
 
         public boolean isQueryComplete() {
-            return queryComplete;
+            return basicClient.queryComplete;
         }
 
         public long getTotalRecordsReturned() {
-            return totalRecordsReturned;
+            return basicClient.totalRecordsReturned;
         }
 
         @Override
         public void onOpen(ServerHandshake handshake) {
-            out.println("Connected to WebSocket API");
-
-            String queryJson = this.querySerDe.toJson(this.query);
-            out.println("Submitting Query: " + queryJson);
-            this.send(queryJson);
-            this.outstandingQueries.add(this.query.getQueryId());
+            basicClient.onOpen(handshake);
         }
 
         @Override
+        public void onMessage(String json) {
+            basicClient.onMessage(json);
+        }
+
+        @Override
+        public void onClose(int code, String reason, boolean remote) {
+            basicClient.onClose(code, reason, remote);
+        }
+
+        @Override
+        public void onError(Exception error) {
+            basicClient.onError(error);
+        }
+    }
+
+    private static class BasicClient {
+        private final Gson serde = new GsonBuilder().create();
+        private final Set<String> outstandingQueries = new HashSet<>();
+        private final Map<String, JsonArray> records = new HashMap<>();
+        private final QuerySerDe querySerDe;
+        private final Query query;
+        private final ConsoleOutput out;
+        private final Consumer<String> messageSender;
+        private boolean queryComplete = false;
+        private long totalRecordsReturned = 0L;
+
+        private BasicClient(URI serverUri, Query query, QuerySerDe querySerDe, ConsoleOutput out, Consumer<String> messageSender) throws InterruptedException {
+            this.query = query;
+            this.querySerDe = querySerDe;
+            this.out = out;
+            this.messageSender = messageSender;
+        }
+
+        public void onOpen(ServerHandshake handshake) {
+            out.println("Connected to WebSocket API");
+            sendQuery();
+        }
+
+        private void sendQuery() {
+            String queryJson = querySerDe.toJson(this.query);
+            out.println("Submitting Query: " + queryJson);
+            messageSender.accept(queryJson);
+            outstandingQueries.add(query.getQueryId());
+        }
+
         public void onMessage(String json) {
             JsonObject message = serde.fromJson(json, JsonObject.class);
             String messageType = message.get("message").getAsString();
@@ -225,13 +266,11 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
             }
         }
 
-        @Override
         public void onClose(int code, String reason, boolean remote) {
             queryComplete = true;
             out.println("Disconnected from WebSocket API: " + reason);
         }
 
-        @Override
         public void onError(Exception error) {
             System.err.println(error);
             queryComplete = true;
