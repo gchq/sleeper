@@ -186,7 +186,6 @@
         <distribution.format>dir</distribution.format>
         <spotbugs.version>4.7.3</spotbugs.version>
         <spotbugs.plugin.version>4.7.3.0</spotbugs.plugin.version>
-        <spotbugs.plugin.latest.version>4.8.3.1</spotbugs.plugin.latest.version>
         <go-offline.plugin.version>1.2.8</go-offline.plugin.version>
         <dependency-check.plugin.version>9.0.10</dependency-check.plugin.version>
         <site.plugin.version>3.12.1</site.plugin.version>
