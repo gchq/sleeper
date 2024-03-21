@@ -17,6 +17,7 @@ package sleeper.core.statestore.transactionlog.transactions;
 
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.exception.FileAlreadyExistsException;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -58,6 +59,14 @@ public class StateStoreFiles {
 
     public boolean isEmpty() {
         return filesByFilename.isEmpty();
+    }
+
+    public void validateNewFiles(List<AllReferencesToAFile> files) throws FileAlreadyExistsException {
+        for (AllReferencesToAFile file : files) {
+            if (filesByFilename.containsKey(file.getFilename())) {
+                throw new FileAlreadyExistsException(file.getFilename());
+            }
+        }
     }
 
 }

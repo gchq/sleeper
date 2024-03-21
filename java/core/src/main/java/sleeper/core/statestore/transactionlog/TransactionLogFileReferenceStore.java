@@ -48,9 +48,11 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
     @Override
     public void addFilesWithReferences(List<AllReferencesToAFile> files) throws StateStoreException {
         Instant updateTime = clock.instant();
-        state.addTransaction(new AddFilesTransaction(files.stream()
+        List<AllReferencesToAFile> updateFiles = files.stream()
                 .map(file -> file.withCreatedUpdateTime(updateTime))
-                .collect(toUnmodifiableList())));
+                .collect(toUnmodifiableList());
+        files().validateNewFiles(updateFiles);
+        state.addTransaction(new AddFilesTransaction(updateFiles));
     }
 
     @Override

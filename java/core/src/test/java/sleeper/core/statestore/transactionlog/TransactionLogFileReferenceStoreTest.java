@@ -174,7 +174,6 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        @Disabled("TODO")
         void shouldFailToAddSameFileTwice() throws Exception {
             // Given
             Instant updateTime = Instant.parse("2023-12-01T10:45:00Z");
@@ -192,7 +191,6 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        @Disabled("TODO")
         void shouldFailToAddAnotherReferenceForSameFile() throws Exception {
             // Given
             splitPartition("root", "L", "R", 5);
