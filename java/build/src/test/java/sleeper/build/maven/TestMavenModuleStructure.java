@@ -61,11 +61,11 @@ public class TestMavenModuleStructure {
     }
 
     public static MavenModuleStructure.Builder sourceModuleBuilder(String artifactId) {
-        return artifactIdAndRefBuilder(artifactId).hasSrcTestFolder(true).hasNonResourcesMainFolder(true);
+        return artifactIdAndRefBuilder(artifactId).hasSrcTestFolder(true).hasSrcMainJavaFolder(true);
     }
 
     public static MavenModuleStructure.Builder resourcesModuleBuilder(String artifactId) {
-        return artifactIdAndRefBuilder(artifactId).hasSrcTestFolder(false).hasNonResourcesMainFolder(false);
+        return artifactIdAndRefBuilder(artifactId).hasSrcTestFolder(false).hasSrcMainJavaFolder(false);
     }
 
     public static MavenModuleStructure.Builder artifactIdAndRefBuilder(String artifactId) {
