@@ -33,17 +33,16 @@ import sleeper.systemtest.configuration.SystemTestPropertyValues;
 import java.io.IOException;
 
 /**
- * Runs {@link sleeper.ingest.IngestRecordsFromIterator} to write random data.
+ * Runs a direct ingest to write random data.
  */
 public class WriteRandomDataDirect {
 
     private WriteRandomDataDirect() {
     }
 
-    public static void writeWithIngestFactory(InstanceProperties instanceProperties,
-                                              TableProperties tableProperties,
-                                              SystemTestPropertyValues systemTestProperties,
-                                              StateStoreProvider stateStoreProvider) throws IOException {
+    public static void writeWithIngestFactory(
+            InstanceProperties instanceProperties, TableProperties tableProperties,
+            SystemTestPropertyValues systemTestProperties, StateStoreProvider stateStoreProvider) throws IOException {
         writeWithIngestFactory(
                 IngestFactory.builder()
                         .objectFactory(ObjectFactory.noUserJars())
@@ -54,9 +53,8 @@ public class WriteRandomDataDirect {
                 systemTestProperties, tableProperties);
     }
 
-    public static void writeWithIngestFactory(IngestFactory ingestFactory,
-                                              SystemTestPropertyValues properties,
-                                              TableProperties tableProperties) throws IOException {
+    public static void writeWithIngestFactory(
+            IngestFactory ingestFactory, SystemTestPropertyValues properties, TableProperties tableProperties) throws IOException {
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
 
         CloseableIterator<Record> recordIterator = new WrappedIterator<>(
