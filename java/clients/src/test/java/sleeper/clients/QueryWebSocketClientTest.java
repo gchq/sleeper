@@ -22,7 +22,6 @@ import org.junit.jupiter.api.Test;
 import sleeper.clients.QueryWebSocketClient.BasicClient;
 import sleeper.clients.QueryWebSocketClient.Client;
 import sleeper.clients.testutil.TestConsoleInput;
-// Wh// When
 import sleeper.clients.testutil.ToStringPrintStream;
 import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.configuration.properties.instance.InstanceProperties;
