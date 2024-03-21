@@ -29,6 +29,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 
@@ -99,7 +100,7 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
         try {
             Instant startTime = Instant.now();
             client.startQuery(query);
-            while (!client.isQueryComplete()) {
+            while (!client.hasQueryFinished()) {
                 Thread.sleep(500);
             }
             LoggedDuration duration = LoggedDuration.withFullOutput(startTime, Instant.now());
@@ -121,7 +122,7 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
 
         void startQuery(Query query) throws InterruptedException;
 
-        boolean isQueryComplete();
+        boolean hasQueryFinished();
 
         long getTotalRecordsReturned();
     }
@@ -178,12 +179,12 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
             return request.getHeaders();
         }
 
-        public boolean isQueryComplete() {
-            return basicClient.queryComplete;
+        public boolean hasQueryFinished() {
+            return basicClient.hasQueryFinished();
         }
 
         public long getTotalRecordsReturned() {
-            return basicClient.totalRecordsReturned;
+            return basicClient.getTotalRecordsReturned();
         }
 
         @Override
@@ -214,6 +215,7 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
         private final QuerySerDe querySerDe;
         private final ConsoleOutput out;
         private boolean queryComplete = false;
+        private boolean queryFailed = false;
         private long totalRecordsReturned = 0L;
 
         public BasicClient(QuerySerDe querySerDe, ConsoleOutput out) {
@@ -234,80 +236,85 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
         }
 
         public void onMessage(String json) {
-            JsonObject message = serde.fromJson(json, JsonObject.class);
-            String messageType = message.get("message").getAsString();
-            String queryId = message.get("queryId").getAsString();
+            try {
+                JsonObject message = serde.fromJson(json, JsonObject.class);
 
-            if (messageType.equals("error")) {
-                out.println("Encountered an error while running query " + queryId + ": " + message.get("error").getAsString());
-                outstandingQueries.remove(queryId);
+                String messageType = message.get("message").getAsString();
+                String queryId = message.get("queryId").getAsString();
 
-            } else if (messageType.equals("subqueries")) {
-                JsonArray subQueryIdList = message.getAsJsonArray("queryIds");
-                out.println("Query " + queryId + " split into the following subQueries:");
-                for (JsonElement subQueryIdElement : subQueryIdList) {
-                    String subQueryId = subQueryIdElement.getAsString();
-                    out.println("  " + subQueryId);
-                    outstandingQueries.add(subQueryId);
-                }
-                outstandingQueries.remove(queryId);
+                if (messageType.equals("error")) {
+                    out.println("Encountered an error while running query " + queryId + ": " + message.get("error").getAsString());
+                    outstandingQueries.remove(queryId);
+                    queryFailed = true;
+                } else if (messageType.equals("subqueries")) {
+                    JsonArray subQueryIdList = message.getAsJsonArray("queryIds");
+                    out.println("Query " + queryId + " split into the following subQueries:");
+                    for (JsonElement subQueryIdElement : subQueryIdList) {
+                        String subQueryId = subQueryIdElement.getAsString();
+                        out.println("  " + subQueryId);
+                        outstandingQueries.add(subQueryId);
+                    }
+                    outstandingQueries.remove(queryId);
 
-            } else if (messageType.equals("records")) {
-                JsonArray recordBatch = message.getAsJsonArray("records");
-                List<String> recordList = recordBatch.asList().stream().map(JsonElement::getAsString).collect(Collectors.toList());
-                if (!records.containsKey(queryId)) {
-                    records.put(queryId, recordList);
+                } else if (messageType.equals("records")) {
+                    JsonArray recordBatch = message.getAsJsonArray("records");
+                    List<String> recordList = recordBatch.asList().stream().map(JsonElement::getAsString).collect(Collectors.toList());
+                    if (!records.containsKey(queryId)) {
+                        records.put(queryId, recordList);
+                    } else {
+                        records.get(queryId).addAll(recordList);
+                    }
+
+                } else if (messageType.equals("completed")) {
+                    long recordCountFromApi = message.get("recordCount").getAsLong();
+                    boolean recordsReturnedToClient = false;
+                    for (JsonElement location : message.getAsJsonArray("locations")) {
+                        if (location.getAsJsonObject().get("type").getAsString().equals("websocket-endpoint")) {
+                            recordsReturnedToClient = true;
+                        }
+                    }
+                    long returnedRecordCount = records.getOrDefault(queryId, List.of()).size();
+                    if (recordsReturnedToClient && recordCountFromApi > 0) {
+                        if (returnedRecordCount != recordCountFromApi) {
+                            out.println("ERROR: API said it had returned " + recordCountFromApi + " records for query " + queryId + ", but only received " + returnedRecordCount);
+                        }
+                    }
+                    outstandingQueries.remove(queryId);
+                    out.println(recordCountFromApi + " records returned by query: " + queryId + ". Remaining pending queries: " + outstandingQueries.size());
+                    totalRecordsReturned += returnedRecordCount;
                 } else {
-                    records.get(queryId).addAll(recordList);
+                    out.println("Received unrecognised message type: " + messageType);
+                    queryFailed = true;
                 }
 
-            } else if (messageType.equals("completed")) {
-                long recordCountFromApi = message.get("recordCount").getAsLong();
-                boolean recordsReturnedToClient = false;
-                for (JsonElement location : message.getAsJsonArray("locations")) {
-                    if (location.getAsJsonObject().get("type").getAsString().equals("websocket-endpoint")) {
-                        recordsReturnedToClient = true;
+                if (outstandingQueries.isEmpty()) {
+                    if (!records.isEmpty()) {
+                        out.println("Query results:");
+                        records.values().stream()
+                                .flatMap(List::stream)
+                                .forEach(record -> out.println(record));
                     }
+                    queryComplete = true;
                 }
-                long returnedRecordCount = records.getOrDefault(queryId, List.of()).size();
-                if (recordsReturnedToClient && recordCountFromApi > 0) {
-                    if (returnedRecordCount != recordCountFromApi) {
-                        out.println("ERROR: API said it had returned " + recordCountFromApi + " records for query " + queryId + ", but only received " + returnedRecordCount);
-                    }
-                }
-                outstandingQueries.remove(queryId);
-                out.println(recordCountFromApi + " records returned by query: " + queryId + ". Remaining pending queries: " + outstandingQueries.size());
-                totalRecordsReturned += returnedRecordCount;
-            } else
-
-            {
-                out.println("Received unrecognised message type: " + json);
-                queryComplete = true;
-            }
-
-            if (outstandingQueries.isEmpty()) {
-                queryComplete = true;
-                if (!records.isEmpty()) {
-                    out.println("Query results:");
-                    records.values().stream()
-                            .flatMap(List::stream)
-                            .forEach(record -> out.println(record));
-                }
+            } catch (JsonSyntaxException e) {
+                out.println("Received malformed JSON message from API:");
+                out.println("  " + json);
+                queryFailed = true;
             }
         }
 
         public void onClose(String reason) {
-            queryComplete = true;
             out.println("Disconnected from WebSocket API: " + reason);
+            queryComplete = true;
         }
 
         public void onError(Exception error) {
             out.println("Encountered an error: " + error.getMessage());
-            queryComplete = true;
+            queryFailed = true;
         }
 
-        public boolean isQueryComplete() {
-            return queryComplete;
+        public boolean hasQueryFinished() {
+            return queryComplete || queryFailed;
         }
 
         public long getTotalRecordsReturned() {
