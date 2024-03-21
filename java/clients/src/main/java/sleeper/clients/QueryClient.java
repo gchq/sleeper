@@ -66,21 +66,21 @@ public class QueryClient extends QueryCommandLineClient {
     private final Map<String, QueryExecutor> cachedQueryExecutors = new HashMap<>();
 
     public QueryClient(AmazonS3 s3Client, InstanceProperties instanceProperties, AmazonDynamoDB dynamoDBClient, Configuration conf,
-            ConsoleInput in, ConsoleOutput out) throws ObjectFactoryException {
+                       ConsoleInput in, ConsoleOutput out) throws ObjectFactoryException {
         this(s3Client, instanceProperties, dynamoDBClient, in, out,
-                ObjectFactory.fromS3(instanceProperties, s3Client, "/tmp"),
+                new ObjectFactory(instanceProperties, s3Client, "/tmp"),
                 new StateStoreProvider(dynamoDBClient, instanceProperties, conf));
     }
 
     public QueryClient(AmazonS3 s3Client, InstanceProperties instanceProperties, AmazonDynamoDB dynamoDBClient,
-            ConsoleInput in, ConsoleOutput out, ObjectFactory objectFactory, StateStoreProvider stateStoreProvider) {
+                       ConsoleInput in, ConsoleOutput out, ObjectFactory objectFactory, StateStoreProvider stateStoreProvider) {
         this(instanceProperties, new DynamoDBTableIndex(instanceProperties, dynamoDBClient),
                 new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient),
                 in, out, objectFactory, stateStoreProvider);
     }
 
     public QueryClient(InstanceProperties instanceProperties, TableIndex tableIndex, TablePropertiesProvider tablePropertiesProvider,
-            ConsoleInput in, ConsoleOutput out, ObjectFactory objectFactory, StateStoreProvider stateStoreProvider) {
+                       ConsoleInput in, ConsoleOutput out, ObjectFactory objectFactory, StateStoreProvider stateStoreProvider) {
         super(instanceProperties, tableIndex, tablePropertiesProvider, in, out);
         this.objectFactory = objectFactory;
         this.stateStoreProvider = stateStoreProvider;
