@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.clients.QueryWebSocketClient.BasicClient;
 import sleeper.clients.QueryWebSocketClient.Client;
 import sleeper.clients.testutil.TestConsoleInput;
+// Wh// When
 import sleeper.clients.testutil.ToStringPrintStream;
 import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -31,8 +32,6 @@ import sleeper.core.range.Region;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.inmemory.StateStoreTestHelper;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
 import sleeper.query.model.Query;
@@ -81,13 +80,12 @@ public class QueryWebSocketClientTest {
     }
 
     @Test
-    void shouldReturnOneRecordWhenExactRecordFound() throws Exception {
+    void shouldReturnResultsForQuery() throws Exception {
         // Given
         TableProperties tableProperties = createTable("test-table");
-        StateStore stateStore = StateStoreTestHelper.inMemoryStateStoreWithSinglePartition(schema);
         Query expectedQuery = exactQuery("test-query-id", tableProperties, 123);
         Record expectedRecord = new Record(Map.of("key", 123L));
-        setupWebSocketClient(tableProperties, expectedQuery)
+        setupWebSocketClient(tableProperties)
                 .withResponses(
                         message(queryResult("test-query-id", expectedRecord)),
                         message(completedQuery("test-query-id", 1L)),
@@ -95,7 +93,7 @@ public class QueryWebSocketClientTest {
 
         // When
         in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
-        runQueryClient(tableProperties, stateStore, List.of("test-query-id").iterator()::next);
+        runQueryClient(tableProperties, List.of("test-query-id").iterator()::next);
 
         // Then
         assertThat(out.toString())
@@ -115,6 +113,43 @@ public class QueryWebSocketClientTest {
                 .containsExactly(querySerDe.toJson(expectedQuery));
     }
 
+    @Test
+    void shouldReturnResultsForQueryWithSubquery() throws Exception {
+        // Given
+        TableProperties tableProperties = createTable("test-table");
+        Query expectedQuery = exactQuery("test-query-id", tableProperties, 123);
+        Record expectedRecord = new Record(Map.of("key", 123L));
+        setupWebSocketClient(tableProperties)
+                .withResponses(
+                        message(createdSubQueries("test-query-id", "test-subquery")),
+                        message(queryResult("test-subquery", expectedRecord)),
+                        message(completedQuery("test-subquery", 1L)),
+                        closeWithReason("finished"));
+
+        // When
+        in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+        runQueryClient(tableProperties, List.of("test-query-id").iterator()::next);
+
+        // Then
+        assertThat(out.toString())
+                .startsWith("Querying table test-table")
+                .contains(PROMPT_QUERY_TYPE +
+                        PROMPT_EXACT_KEY_LONG_TYPE +
+                        "Connected to WebSocket API\n" +
+                        "Submitting Query: " + querySerDe.toJson(expectedQuery) + "\n" +
+                        "Query test-query-id split into the following subQueries:\n" +
+                        "  test-subquery\n" +
+                        "1 records returned by query: test-subquery Remaining pending queries: 0\n" +
+                        "Query results:\n" +
+                        expectedRecord + "\n" +
+                        "Disconnected from WebSocket API: finished")
+                .containsSubsequence("Query took", "seconds to return 1 records");
+        assertThat(client.connected).isFalse();
+        assertThat(client.closed).isTrue();
+        assertThat(client.sentMessages)
+                .containsExactly(querySerDe.toJson(expectedQuery));
+    }
+
     private Query exactQuery(String queryId, TableProperties tableProperties, long value) {
         return Query.builder()
                 .tableName(tableProperties.get(TABLE_NAME))
@@ -124,14 +159,12 @@ public class QueryWebSocketClientTest {
     }
 
     private static String queryResult(String queryId, Record... records) {
-        String test = "{" +
+        return "{" +
                 "\"queryId\":\"" + queryId + "\", " +
                 "\"message\":\"records\"," +
                 "\"records\":[" + Stream.of(records).map(record -> "\"" + record + "\"").collect(Collectors.joining(","))
                 + "]" +
                 "}";
-        System.out.println(test);
-        return test;
     }
 
     private static String completedQuery(String queryId, long recordCount) {
@@ -143,13 +176,21 @@ public class QueryWebSocketClientTest {
                 "}";
     }
 
-    protected void runQueryClient(TableProperties tableProperties, StateStore stateStore, Supplier<String> queryIdSupplier) throws Exception {
+    private static String createdSubQueries(String queryId, String... subQueryIds) {
+        return "{" +
+                "\"queryId\":\"" + queryId + "\", " +
+                "\"message\":\"subqueries\"," +
+                "\"queryIds\":[" + Stream.of(subQueryIds).map(id -> "\"" + id + "\"").collect(Collectors.joining(",")) + "]" +
+                "}";
+    }
+
+    protected void runQueryClient(TableProperties tableProperties, Supplier<String> queryIdSupplier) throws Exception {
         new QueryWebSocketClient(instanceProperties, tableIndex, new FixedTablePropertiesProvider(tableProperties),
                 in.consoleIn(), out.consoleOut(), client, queryIdSupplier)
                 .run();
     }
 
-    private FakeWebSocketClient setupWebSocketClient(TableProperties tableProperties, Query query) throws Exception {
+    private FakeWebSocketClient setupWebSocketClient(TableProperties tableProperties) throws Exception {
         client = new FakeWebSocketClient(new FixedTablePropertiesProvider(tableProperties), out.consoleOut());
         return client;
     }
