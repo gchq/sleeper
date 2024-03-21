@@ -239,7 +239,7 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
             String queryId = message.get("queryId").getAsString();
 
             if (messageType.equals("error")) {
-                System.err.println("ERROR: " + message.get("error").getAsString());
+                out.println("Encountered an error while running query " + queryId + ": " + message.get("error").getAsString());
                 outstandingQueries.remove(queryId);
 
             } else if (messageType.equals("subqueries")) {
@@ -298,7 +298,7 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
         }
 
         public void onError(Exception error) {
-            System.err.println(error);
+            out.println("Encountered an error: " + error.getMessage());
             queryComplete = true;
         }
 

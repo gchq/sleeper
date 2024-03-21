@@ -213,6 +213,67 @@ public class QueryWebSocketClientTest {
         }
     }
 
+    @Nested
+    @DisplayName("Handle errors")
+    class HandleErrors {
+
+        @Test
+        void shouldHandleErrorIfExceptionEncountered() throws Exception {
+            // Given
+            Query expectedQuery = exactQuery("test-query-id", 123L);
+
+            // When
+            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            runQueryClient("test-query-id",
+                    withResponses(
+                            error(new Exception("Connection failed")),
+                            closeWithReason("finished")));
+
+            // Then
+            assertThat(out.toString())
+                    .startsWith("Querying table test-table")
+                    .contains(PROMPT_QUERY_TYPE +
+                            PROMPT_EXACT_KEY_LONG_TYPE +
+                            "Connected to WebSocket API\n" +
+                            "Submitting Query: " + querySerDe.toJson(expectedQuery) + "\n" +
+                            "Encountered an error: Connection failed\n" +
+                            "Disconnected from WebSocket API: finished")
+                    .containsSubsequence("Query took", "seconds to return 0 records");
+            assertThat(client.connected).isFalse();
+            assertThat(client.closed).isTrue();
+            assertThat(client.sentMessages)
+                    .containsExactly(querySerDe.toJson(expectedQuery));
+        }
+
+        @Test
+        void shouldHandleErrorIfMessageWithErrorIsReceived() throws Exception {
+            // Given
+            Query expectedQuery = exactQuery("test-query-id", 123L);
+
+            // When
+            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            runQueryClient("test-query-id",
+                    withResponses(
+                            message(errorMessage("test-query-id", "Query failed")),
+                            closeWithReason("finished")));
+
+            // Then
+            assertThat(out.toString())
+                    .startsWith("Querying table test-table")
+                    .contains(PROMPT_QUERY_TYPE +
+                            PROMPT_EXACT_KEY_LONG_TYPE +
+                            "Connected to WebSocket API\n" +
+                            "Submitting Query: " + querySerDe.toJson(expectedQuery) + "\n" +
+                            "Encountered an error while running query test-query-id: Query failed\n" +
+                            "Disconnected from WebSocket API: finished")
+                    .containsSubsequence("Query took", "seconds to return 0 records");
+            assertThat(client.connected).isFalse();
+            assertThat(client.closed).isTrue();
+            assertThat(client.sentMessages)
+                    .containsExactly(querySerDe.toJson(expectedQuery));
+        }
+    }
+
     private Query exactQuery(String queryId, long value) {
         return Query.builder()
                 .tableName(tableProperties.get(TABLE_NAME))
@@ -251,6 +312,14 @@ public class QueryWebSocketClientTest {
                 "\"queryId\":\"" + queryId + "\", " +
                 "\"message\":\"subqueries\"," +
                 "\"queryIds\":[" + Stream.of(subQueryIds).map(id -> "\"" + id + "\"").collect(Collectors.joining(",")) + "]" +
+                "}";
+    }
+
+    private static String errorMessage(String queryId, String message) {
+        return "{" +
+                "\"queryId\":\"" + queryId + "\", " +
+                "\"message\":\"error\"," +
+                "\"error\":\"" + message + "\"" +
                 "}";
     }
 
