@@ -493,10 +493,6 @@ public class QueryWebSocketClientTest {
         return client;
     }
 
-    public WebSocketResponse open(Query query) {
-        return messageHandler -> messageHandler.onOpen(query, client::send);
-    }
-
     private WebSocketResponse message(String message) {
         return messageHandler -> messageHandler.onMessage(message);
     }
