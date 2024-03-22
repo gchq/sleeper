@@ -129,20 +129,20 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
 
     private static class WebSocketQueryClient extends WebSocketClient implements Client {
         private final ConsoleOutput out;
-        private final BasicClient basicClient;
+        private final WebSocketMessageHandler messageHandler;
         private final URI serverUri;
         private Query query;
 
         private WebSocketQueryClient(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, ConsoleOutput out) {
             this(URI.create(instanceProperties.get(QUERY_WEBSOCKET_API_URL)),
-                    out, new BasicClient(new QuerySerDe(tablePropertiesProvider), out));
+                    out, new WebSocketMessageHandler(new QuerySerDe(tablePropertiesProvider), out));
         }
 
-        private WebSocketQueryClient(URI serverUri, ConsoleOutput out, BasicClient basicClient) {
+        private WebSocketQueryClient(URI serverUri, ConsoleOutput out, WebSocketMessageHandler messageHandler) {
             super(serverUri);
             this.serverUri = serverUri;
             this.out = out;
-            this.basicClient = basicClient;
+            this.messageHandler = messageHandler;
         }
 
         public void startQuery(Query query) throws InterruptedException {
@@ -180,35 +180,35 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
         }
 
         public boolean hasQueryFinished() {
-            return basicClient.hasQueryFinished();
+            return messageHandler.hasQueryFinished();
         }
 
         public long getTotalRecordsReturned() {
-            return basicClient.getTotalRecordsReturned();
+            return messageHandler.getTotalRecordsReturned();
         }
 
         @Override
         public void onOpen(ServerHandshake handshake) {
-            basicClient.onOpen(query, this::send);
+            messageHandler.onOpen(query, this::send);
         }
 
         @Override
         public void onMessage(String json) {
-            basicClient.onMessage(json);
+            messageHandler.onMessage(json);
         }
 
         @Override
         public void onClose(int code, String reason, boolean remote) {
-            basicClient.onClose(reason);
+            messageHandler.onClose(reason);
         }
 
         @Override
         public void onError(Exception error) {
-            basicClient.onError(error);
+            messageHandler.onError(error);
         }
     }
 
-    public static class BasicClient {
+    public static class WebSocketMessageHandler {
         private final Gson serde = new GsonBuilder().create();
         private final Set<String> outstandingQueries = new HashSet<>();
         private final Map<String, List<String>> records = new TreeMap<>();
@@ -218,7 +218,7 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
         private boolean queryFailed = false;
         private long totalRecordsReturned = 0L;
 
-        public BasicClient(QuerySerDe querySerDe, ConsoleOutput out) {
+        public WebSocketMessageHandler(QuerySerDe querySerDe, ConsoleOutput out) {
             this.querySerDe = querySerDe;
             this.out = out;
         }

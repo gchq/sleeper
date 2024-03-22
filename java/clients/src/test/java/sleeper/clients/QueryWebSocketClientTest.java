@@ -20,8 +20,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.clients.QueryWebSocketClient.BasicClient;
 import sleeper.clients.QueryWebSocketClient.Client;
+import sleeper.clients.QueryWebSocketClient.WebSocketMessageHandler;
 import sleeper.clients.testutil.TestConsoleInput;
 import sleeper.clients.testutil.ToStringPrintStream;
 import sleeper.clients.util.console.ConsoleOutput;
@@ -499,12 +499,12 @@ public class QueryWebSocketClientTest {
     private static class FakeWebSocketClient implements Client {
         private boolean connected = false;
         private boolean closed = false;
-        private BasicClient basicClient;
+        private WebSocketMessageHandler messageHandler;
         private List<String> sentMessages = new ArrayList<>();
         private List<WebSocketResponse> responses;
 
         FakeWebSocketClient(TablePropertiesProvider tablePropertiesProvider, ConsoleOutput out) {
-            this.basicClient = new BasicClient(new QuerySerDe(tablePropertiesProvider), out);
+            this.messageHandler = new WebSocketMessageHandler(new QuerySerDe(tablePropertiesProvider), out);
         }
 
         @Override
@@ -527,39 +527,39 @@ public class QueryWebSocketClientTest {
         @Override
         public void startQuery(Query query) throws InterruptedException {
             connectBlocking();
-            basicClient.onOpen(query, sentMessages::add);
-            responses.forEach(response -> response.sendTo(basicClient));
+            messageHandler.onOpen(query, sentMessages::add);
+            responses.forEach(response -> response.sendTo(messageHandler));
         }
 
         @Override
         public boolean hasQueryFinished() {
-            return basicClient.hasQueryFinished();
+            return messageHandler.hasQueryFinished();
         }
 
         @Override
         public long getTotalRecordsReturned() {
-            return basicClient.getTotalRecordsReturned();
+            return messageHandler.getTotalRecordsReturned();
         }
     }
 
     private interface WebSocketResponse {
-        void sendTo(BasicClient client);
+        void sendTo(WebSocketMessageHandler client);
     }
 
     public WebSocketResponse open(Query query) {
-        return basicClient -> basicClient.onOpen(query, client.sentMessages::add);
+        return messageHandler -> messageHandler.onOpen(query, client.sentMessages::add);
     }
 
     private WebSocketResponse message(String message) {
-        return basicClient -> basicClient.onMessage(message);
+        return messageHandler -> messageHandler.onMessage(message);
     }
 
     public WebSocketResponse closeWithReason(String reason) {
-        return basicClient -> basicClient.onClose(reason);
+        return messageHandler -> messageHandler.onClose(reason);
     }
 
     public WebSocketResponse error(Exception error) {
-        return basicClient -> basicClient.onError(error);
+        return messageHandler -> messageHandler.onError(error);
     }
 
 }
