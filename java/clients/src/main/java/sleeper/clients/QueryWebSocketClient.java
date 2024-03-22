@@ -54,6 +54,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
@@ -236,82 +237,107 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
         }
 
         public void onMessage(String json) {
+            Optional<JsonObject> messageOpt = deserialiseMessage(json);
+            if (!messageOpt.isPresent()) {
+                return;
+            }
+            JsonObject message = messageOpt.get();
+            String messageType = message.get("message").getAsString();
+            String queryId = message.get("queryId").getAsString();
+
+            if (messageType.equals("error")) {
+                handleError(message, queryId);
+            } else if (messageType.equals("subqueries")) {
+                handleSubqueries(message, queryId);
+            } else if (messageType.equals("records")) {
+                handleRecords(message, queryId);
+            } else if (messageType.equals("completed")) {
+                handleCompleted(message, queryId);
+            } else {
+                out.println("Received unrecognised message type: " + messageType);
+                queryFailed = true;
+            }
+
+            if (outstandingQueries.isEmpty()) {
+                if (!records.isEmpty()) {
+                    out.println("Query results:");
+                    records.values().stream()
+                            .flatMap(List::stream)
+                            .forEach(record -> out.println(record));
+                }
+                queryComplete = true;
+            }
+        }
+
+        private Optional<JsonObject> deserialiseMessage(String json) {
             try {
                 JsonObject message = serde.fromJson(json, JsonObject.class);
                 if (!message.has("queryId")) {
                     out.println("Received message without queryId from API:");
                     out.println("  " + json);
                     queryFailed = true;
-                    return;
+                    return Optional.empty();
                 }
                 if (!message.has("message")) {
                     out.println("Received message without message type from API:");
                     out.println("  " + json);
                     queryFailed = true;
-                    return;
+                    return Optional.empty();
                 }
-                String messageType = message.get("message").getAsString();
-                String queryId = message.get("queryId").getAsString();
-
-                if (messageType.equals("error")) {
-                    out.println("Encountered an error while running query " + queryId + ": " + message.get("error").getAsString());
-                    outstandingQueries.remove(queryId);
-                    queryFailed = true;
-                } else if (messageType.equals("subqueries")) {
-                    JsonArray subQueryIdList = message.getAsJsonArray("queryIds");
-                    out.println("Query " + queryId + " split into the following subQueries:");
-                    for (JsonElement subQueryIdElement : subQueryIdList) {
-                        String subQueryId = subQueryIdElement.getAsString();
-                        out.println("  " + subQueryId);
-                        outstandingQueries.add(subQueryId);
-                    }
-                    outstandingQueries.remove(queryId);
-
-                } else if (messageType.equals("records")) {
-                    JsonArray recordBatch = message.getAsJsonArray("records");
-                    List<String> recordList = recordBatch.asList().stream().map(JsonElement::getAsString).collect(Collectors.toList());
-                    if (!records.containsKey(queryId)) {
-                        records.put(queryId, recordList);
-                    } else {
-                        records.get(queryId).addAll(recordList);
-                    }
-
-                } else if (messageType.equals("completed")) {
-                    long recordCountFromApi = message.get("recordCount").getAsLong();
-                    boolean recordsReturnedToClient = false;
-                    for (JsonElement location : message.getAsJsonArray("locations")) {
-                        if (location.getAsJsonObject().get("type").getAsString().equals("websocket-endpoint")) {
-                            recordsReturnedToClient = true;
-                        }
-                    }
-                    long returnedRecordCount = records.getOrDefault(queryId, List.of()).size();
-                    if (recordsReturnedToClient && recordCountFromApi > 0) {
-                        if (returnedRecordCount != recordCountFromApi) {
-                            out.println("ERROR: API said it had returned " + recordCountFromApi + " records for query " + queryId + ", but only received " + returnedRecordCount);
-                        }
-                    }
-                    outstandingQueries.remove(queryId);
-                    out.println(recordCountFromApi + " records returned by query: " + queryId + ". Remaining pending queries: " + outstandingQueries.size());
-                    totalRecordsReturned += returnedRecordCount;
-                } else {
-                    out.println("Received unrecognised message type: " + messageType);
-                    queryFailed = true;
-                }
-
-                if (outstandingQueries.isEmpty()) {
-                    if (!records.isEmpty()) {
-                        out.println("Query results:");
-                        records.values().stream()
-                                .flatMap(List::stream)
-                                .forEach(record -> out.println(record));
-                    }
-                    queryComplete = true;
-                }
+                return Optional.of(message);
             } catch (JsonSyntaxException e) {
                 out.println("Received malformed JSON message from API:");
                 out.println("  " + json);
                 queryFailed = true;
+                return Optional.empty();
             }
+        }
+
+        private void handleError(JsonObject message, String queryId) {
+            out.println("Encountered an error while running query " + queryId + ": " + message.get("error").getAsString());
+            outstandingQueries.remove(queryId);
+            queryFailed = true;
+        }
+
+        private void handleSubqueries(JsonObject message, String queryId) {
+            JsonArray subQueryIdList = message.getAsJsonArray("queryIds");
+            out.println("Query " + queryId + " split into the following subQueries:");
+            for (JsonElement subQueryIdElement : subQueryIdList) {
+                String subQueryId = subQueryIdElement.getAsString();
+                out.println("  " + subQueryId);
+                outstandingQueries.add(subQueryId);
+            }
+            outstandingQueries.remove(queryId);
+
+        }
+
+        private void handleRecords(JsonObject message, String queryId) {
+            JsonArray recordBatch = message.getAsJsonArray("records");
+            List<String> recordList = recordBatch.asList().stream().map(JsonElement::getAsString).collect(Collectors.toList());
+            if (!records.containsKey(queryId)) {
+                records.put(queryId, recordList);
+            } else {
+                records.get(queryId).addAll(recordList);
+            }
+        }
+
+        private void handleCompleted(JsonObject message, String queryId) {
+            long recordCountFromApi = message.get("recordCount").getAsLong();
+            boolean recordsReturnedToClient = false;
+            for (JsonElement location : message.getAsJsonArray("locations")) {
+                if (location.getAsJsonObject().get("type").getAsString().equals("websocket-endpoint")) {
+                    recordsReturnedToClient = true;
+                }
+            }
+            long returnedRecordCount = records.getOrDefault(queryId, List.of()).size();
+            if (recordsReturnedToClient && recordCountFromApi > 0) {
+                if (returnedRecordCount != recordCountFromApi) {
+                    out.println("ERROR: API said it had returned " + recordCountFromApi + " records for query " + queryId + ", but only received " + returnedRecordCount);
+                }
+            }
+            outstandingQueries.remove(queryId);
+            out.println(recordCountFromApi + " records returned by query: " + queryId + ". Remaining pending queries: " + outstandingQueries.size());
+            totalRecordsReturned += returnedRecordCount;
         }
 
         public void onClose(String reason) {
