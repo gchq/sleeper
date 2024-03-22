@@ -38,7 +38,7 @@ public class NoResultsOutput implements ResultsOutput {
 
     @Override
     public ResultsOutputInfo publish(QueryOrLeafPartitionQuery query,
-            CloseableIterator<Record> results) {
-            return new ResultsOutputInfo(0, outputLocations);
+        CloseableIterator<Record> results) {
+        return new ResultsOutputInfo(0, outputLocations);
     }
 }

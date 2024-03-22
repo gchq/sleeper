@@ -57,7 +57,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.query.runner.output.NoResultsOutput.NO_RESULTS_OUTPUT;
 
-/**
+/*
  * A Lambda that is triggered when an {@link ScheduledEvent} is received. A processor executes, creates a new
  * {@link Query} for every table in the system and publishes a {@link SendMessageRequest} to the SQS query queue.
  * The results from the queries are discarded as they are not required since this Lambda ensures that the query Lambdas
@@ -137,7 +137,7 @@ public class WarmQueryExecutorLambda implements RequestHandler<ScheduledEvent, V
                     SendMessageRequest message = new SendMessageRequest(instanceProperties.get(QUERY_QUEUE_URL), querySerDe.toJson(query));
                     LOGGER.debug("Message: {}", message);
                     sqsClient.sendMessage(message);
-        });
+                });
         return null;
     }
 
