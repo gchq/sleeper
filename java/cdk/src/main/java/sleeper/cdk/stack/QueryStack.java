@@ -18,37 +18,23 @@ package sleeper.cdk.stack;
 import com.amazonaws.auth.policy.actions.S3Actions;
 import com.amazonaws.auth.policy.actions.SQSActions;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import software.amazon.awscdk.ArnComponents;
 import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.CfnOutputProps;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.RemovalPolicy;
-import software.amazon.awscdk.Stack;
-import software.amazon.awscdk.services.apigateway.IntegrationType;
-import software.amazon.awscdk.services.apigatewayv2.CfnApi;
-import software.amazon.awscdk.services.apigatewayv2.CfnIntegration;
-import software.amazon.awscdk.services.apigatewayv2.CfnRoute;
-import software.amazon.awscdk.services.apigatewayv2.WebSocketApi;
-import software.amazon.awscdk.services.apigatewayv2.WebSocketApiAttributes;
-import software.amazon.awscdk.services.apigatewayv2.WebSocketStage;
 import software.amazon.awscdk.services.dynamodb.Attribute;
 import software.amazon.awscdk.services.dynamodb.AttributeType;
 import software.amazon.awscdk.services.dynamodb.BillingMode;
 import software.amazon.awscdk.services.dynamodb.ITable;
 import software.amazon.awscdk.services.dynamodb.Table;
 import software.amazon.awscdk.services.iam.Effect;
-import software.amazon.awscdk.services.iam.Grant;
-import software.amazon.awscdk.services.iam.GrantOnPrincipalOptions;
-import software.amazon.awscdk.services.iam.IGrantable;
 import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.Policy;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.iam.PolicyStatementProps;
-import software.amazon.awscdk.services.iam.ServicePrincipal;
 import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.lambda.IFunction;
-import software.amazon.awscdk.services.lambda.Permission;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSourceProps;
 import software.amazon.awscdk.services.s3.BlockPublicAccess;
@@ -71,7 +57,6 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Objects;
 
 import static sleeper.cdk.Utils.createLambdaLogGroup;
@@ -84,15 +69,11 @@ import static sleeper.configuration.properties.instance.QueryProperty.QUERY_PROC
 import static sleeper.configuration.properties.instance.QueryProperty.QUERY_RESULTS_BUCKET_EXPIRY_IN_DAYS;
 
 /**
- * A {@link NestedStack} to handle queries. This consists of a {@link Queue} that
- * queries are put on, a lambda {@link Function} to process them and another
- * {@link Queue} for the results to be posted to.
+ * Deploys resources to run queries. This consists of lambda {@link Function}s to
+ * process them and {@link Queue}s to take queries and post results.
  */
 @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
 public class QueryStack extends NestedStack {
-    public static final String QUERY_QUEUE_NAME = "QueryQueueName";
-    public static final String QUERY_QUEUE_URL = "QueryQueueUrl";
-    public static final String QUERY_DL_QUEUE_URL = "QueryDLQueueUrl";
     public static final String LEAF_PARTITION_QUERY_QUEUE_NAME = "LeafPartitionQueryQueueName";
     public static final String LEAF_PARTITION_QUERY_QUEUE_URL = "LeafPartitionQueryQueueUrl";
     public static final String LEAF_PARTITION_QUERY_DL_QUEUE_URL = "LeafPartitionQueryDLQueueUrl";
@@ -100,13 +81,15 @@ public class QueryStack extends NestedStack {
     public static final String QUERY_RESULTS_QUEUE_URL = "QueryResultsQueueUrl";
     public static final String QUERY_LAMBDA_ROLE_ARN = "QueryLambdaRoleArn";
 
-    private CfnApi webSocketApi;
+    private IFunction queryExecutorLambda;
+    private IFunction leafPartitionQueryLambda;
 
     public QueryStack(Construct scope,
-                      String id,
-                      InstanceProperties instanceProperties,
-                      BuiltJars jars,
-                      CoreStacks coreStacks) {
+            String id,
+            InstanceProperties instanceProperties,
+            BuiltJars jars,
+            CoreStacks coreStacks,
+            QueryQueueStack queryQueueStack) {
         super(scope, id);
 
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
@@ -131,27 +114,25 @@ public class QueryStack extends NestedStack {
         instanceProperties.set(QUERY_TRACKER_TABLE_NAME, queryTrackingTable.getTableName());
 
         LambdaCode queryJar = jars.lambdaCode(BuiltJar.QUERY, jarsBucket);
-        Queue queryQueriesQueue = setupQueriesQueryQueue(instanceProperties);
 
-        IFunction queryExecutorLambda = setupQueriesQueryLambda(coreStacks, instanceProperties, queryJar, queryQueriesQueue, jarsBucket, queryTrackingTable);
-        IFunction leafPartitionQueryLambda = setupLeafPartitionQueryQueueAndLambda(coreStacks, instanceProperties, queryJar, jarsBucket, queryTrackingTable);
-        setupWebSocketApi(queryJar, instanceProperties, queryQueriesQueue, queryExecutorLambda, leafPartitionQueryLambda, coreStacks);
-
+        queryExecutorLambda = setupQueryExecutorLambda(coreStacks, queryQueueStack, instanceProperties, queryJar, jarsBucket, queryTrackingTable);
+        leafPartitionQueryLambda = setupLeafPartitionQueryQueueAndLambda(coreStacks, instanceProperties, queryJar, jarsBucket, queryTrackingTable);
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
     /***
-     * Creates a Lambda Function
-     * @param id of the function to be created
-     * @param queryJar the jar containing the code for the Lambda
-     * @param instanceProperties containing configuration details
-     * @param functionName the name of the function
-     * @param handler the path for the method be be used as the entry point for the Lambda
-     * @param description a description for the function
-     * @return an IFunction
+     * Creates a Lambda Function.
+     *
+     * @param  id                 of the function to be created
+     * @param  queryJar           the jar containing the code for the Lambda
+     * @param  instanceProperties containing configuration details
+     * @param  functionName       the name of the function
+     * @param  handler            the path for the method be be used as the entry point for the Lambda
+     * @param  description        a description for the function
+     * @return                    an IFunction
      */
     private IFunction createFunction(String id, LambdaCode queryJar, InstanceProperties instanceProperties,
-                                     String functionName, String handler, String description) {
+            String functionName, String handler, String description) {
         return queryJar.buildFunction(this, id, builder -> builder
                 .functionName(functionName)
                 .description(description)
@@ -164,16 +145,17 @@ public class QueryStack extends NestedStack {
     }
 
     /***
-     * Creates the Lambda needed for QueriesQuery
-     * @param coreStacks the core stacks this belongs to
-     * @param instanceProperties containing configuration details
-     * @param queryJar the jar containing the code for the Lambda
-     * @param jarsBucket bucket containing the jars used by Lambda
-     * @param queryTrackingTable used to track a query
-     * @return the lambda created
+     * Creates the lambda to run queries against a table.
+     *
+     * @param  coreStacks         the core stacks this belongs to
+     * @param  instanceProperties containing configuration details
+     * @param  queryJar           the jar containing the code for the Lambda
+     * @param  jarsBucket         bucket containing the jars used by Lambda
+     * @param  queryTrackingTable used to track a query
+     * @return                    the lambda created
      */
-    private IFunction setupQueriesQueryLambda(CoreStacks coreStacks, InstanceProperties instanceProperties, LambdaCode queryJar,
-                                              IQueue queryQueriesQueue, IBucket jarsBucket, ITable queryTrackingTable) {
+    private IFunction setupQueryExecutorLambda(CoreStacks coreStacks, QueryQueueStack queryQueueStack, InstanceProperties instanceProperties, LambdaCode queryJar,
+            IBucket jarsBucket, ITable queryTrackingTable) {
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "query-executor"));
         IFunction lambda = createFunction("QueryExecutorLambda", queryJar, instanceProperties, functionName,
@@ -187,12 +169,14 @@ public class QueryStack extends NestedStack {
                 .batchSize(1)
                 .build();
 
-        lambda.addEventSource(new SqsEventSource(queryQueriesQueue, eventSourceProps));
+        lambda.addEventSource(new SqsEventSource(queryQueueStack.getQueue(), eventSourceProps));
 
-        setPermissionsForLambda(coreStacks, jarsBucket, lambda, queryTrackingTable, queryQueriesQueue);
+        setPermissionsForLambda(coreStacks, jarsBucket, lambda, queryTrackingTable, queryQueueStack.getQueue());
 
-        /* Output the role of the lambda as a property so that clients that want the results of queries written
-           to their own SQS queue can give the role permission to write to their queue */
+        /*
+         * Output the role of the lambda as a property so that clients that want the results of queries written
+         * to their own SQS queue can give the role permission to write to their queue
+         */
         CfnOutputProps queryLambdaRoleOutputProps = new CfnOutputProps.Builder()
                 .value(Objects.requireNonNull(lambda.getRole()).getRoleArn())
                 .exportName(instanceProperties.get(ID) + "-" + QUERY_LAMBDA_ROLE_ARN)
@@ -206,16 +190,17 @@ public class QueryStack extends NestedStack {
     }
 
     /***
-     * Creates the queue and Lambda needed for LeafPartitionQuery.
-     * @param coreStacks the core stacks this belongs to
-     * @param instanceProperties containing configuration details
-     * @param queryJar the jar containing the code for the Lambda
-     * @param jarsBucket bucket containing the jars used by Lambda
-     * @param queryTrackingTable used to track a query
-     * @return the lambda created
+     * Creates the queue and lambda to run internal sub-queries against a specific leaf partition.
+     *
+     * @param  coreStacks         the core stacks this belongs to
+     * @param  instanceProperties containing configuration details
+     * @param  queryJar           the jar containing the code for the Lambda
+     * @param  jarsBucket         bucket containing the jars used by Lambda
+     * @param  queryTrackingTable used to track a query
+     * @return                    the lambda created
      */
     private IFunction setupLeafPartitionQueryQueueAndLambda(CoreStacks coreStacks, InstanceProperties instanceProperties, LambdaCode queryJar,
-                                                            IBucket jarsBucket, ITable queryTrackingTable) {
+            IBucket jarsBucket, ITable queryTrackingTable) {
         Queue leafPartitionQueriesQueue = setupLeafPartitionQueryQueue(instanceProperties);
         Queue queryResultsQueue = setupResultsQueue(instanceProperties);
         IBucket queryResultsBucket = setupResultsBucket(instanceProperties);
@@ -241,6 +226,7 @@ public class QueryStack extends NestedStack {
      * Attach a policy to allow the lambda to put results in any S3 bucket or on any SQS queue.
      * These policies look too open, but it's the only way to allow clients to be able to write
      * to their buckets and queues.
+     *
      * @param lambda to apply the policy to
      */
     private void attachPolicy(IFunction lambda, String id) {
@@ -257,57 +243,10 @@ public class QueryStack extends NestedStack {
     }
 
     /***
-     * Creates the queue used for queries.
-     * @param instanceProperties containing configuration details
-     * @return the queue to be used for queries
-     */
-    private Queue setupQueriesQueryQueue(InstanceProperties instanceProperties) {
-        String dlQueueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-QueryDLQ");
-        Queue queryQueueForDLs = Queue.Builder
-                .create(this, "QueriesDeadLetterQueue")
-                .queueName(dlQueueName)
-                .build();
-        DeadLetterQueue queryDeadLetterQueue = DeadLetterQueue.builder()
-                .maxReceiveCount(1)
-                .queue(queryQueueForDLs)
-                .build();
-        String queryQueueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-QueriesQueue");
-        Queue queryQueue = Queue.Builder
-                .create(this, "QueriesQueue")
-                .queueName(queryQueueName)
-                .deadLetterQueue(queryDeadLetterQueue)
-                .visibilityTimeout(Duration.seconds(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS)))
-                .build();
-        instanceProperties.set(CdkDefinedInstanceProperty.QUERY_QUEUE_URL, queryQueue.getQueueUrl());
-        instanceProperties.set(CdkDefinedInstanceProperty.QUERY_QUEUE_ARN, queryQueue.getQueueArn());
-        instanceProperties.set(CdkDefinedInstanceProperty.QUERY_DLQ_URL, queryQueueForDLs.getQueueUrl());
-        instanceProperties.set(CdkDefinedInstanceProperty.QUERY_DLQ_ARN, queryQueueForDLs.getQueueArn());
-
-        CfnOutputProps queriesQueueOutputNameProps = new CfnOutputProps.Builder()
-                .value(queryQueue.getQueueName())
-                .exportName(instanceProperties.get(ID) + "-" + QUERY_QUEUE_NAME)
-                .build();
-        new CfnOutput(this, QUERY_QUEUE_NAME, queriesQueueOutputNameProps);
-
-        CfnOutputProps queriesQueueOutputProps = new CfnOutputProps.Builder()
-                .value(queryQueue.getQueueUrl())
-                .exportName(instanceProperties.get(ID) + "-" + QUERY_QUEUE_URL)
-                .build();
-        new CfnOutput(this, QUERY_QUEUE_URL, queriesQueueOutputProps);
-
-        CfnOutputProps queriesDLQueueOutputProps = new CfnOutputProps.Builder()
-                .value(queryQueueForDLs.getQueueUrl())
-                .exportName(instanceProperties.get(ID) + "-" + QUERY_DL_QUEUE_URL)
-                .build();
-        new CfnOutput(this, QUERY_DL_QUEUE_URL, queriesDLQueueOutputProps);
-
-        return queryQueue;
-    }
-
-    /***
-     * Creates the queue used for leaf partition queries
-     * @param instanceProperties containing configuration details
-     * @return the queue to be used for leaf partition queries
+     * Creates the queue used for internal sub-queries against a specific leaf partition.
+     *
+     * @param  instanceProperties containing configuration details
+     * @return                    the queue to be used for leaf partition queries
      */
     private Queue setupLeafPartitionQueryQueue(InstanceProperties instanceProperties) {
         String dlLeafPartitionQueueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-LeafPartitionQueryDLQ");
@@ -354,8 +293,9 @@ public class QueryStack extends NestedStack {
 
     /***
      * Creates the queue used to publish results to.
-     * @param instanceProperties containing configuration details
-     * @return the queue created
+     *
+     * @param  instanceProperties containing configuration details
+     * @return                    the queue created
      */
     private Queue setupResultsQueue(InstanceProperties instanceProperties) {
         String queueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-QueryResultsQ");
@@ -366,7 +306,6 @@ public class QueryStack extends NestedStack {
                 .build();
         instanceProperties.set(CdkDefinedInstanceProperty.QUERY_RESULTS_QUEUE_URL, resultsQueue.getQueueUrl());
         instanceProperties.set(CdkDefinedInstanceProperty.QUERY_RESULTS_QUEUE_ARN, resultsQueue.getQueueArn());
-
 
         CfnOutputProps resultsQueueOutputNameProps = new CfnOutputProps.Builder()
                 .value(resultsQueue.getQueueName())
@@ -385,8 +324,9 @@ public class QueryStack extends NestedStack {
 
     /***
      * Creates the bucket used to store results.
-     * @param instanceProperties containing configuration details
-     * @return the bucket created
+     *
+     * @param  instanceProperties containing configuration details
+     * @return                    the bucket created
      */
     private IBucket setupResultsBucket(InstanceProperties instanceProperties) {
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
@@ -406,15 +346,16 @@ public class QueryStack extends NestedStack {
     }
 
     /***
-     * Sets the permissions a Lambda needs to execute. These are set for buckets and queues.
-     * @param coreStacks the core stacks this belongs to
-     * @param jarsBucket bucket containing the jars used by Lambda
-     * @param lambda to apply the permissions to
+     * Sets the permissions a lambda needs to run queries. These are set for buckets and queues.
+     *
+     * @param coreStacks         the core stacks this belongs to
+     * @param jarsBucket         bucket containing the jars used by Lambda
+     * @param lambda             to apply the permissions to
      * @param queryTrackingTable used to track a query
-     * @param queue the queue to allow the Lambda to send messages to
+     * @param queue              the queue to allow the Lambda to send messages to
      */
     private void setPermissionsForLambda(CoreStacks coreStacks, IBucket jarsBucket, IFunction lambda,
-                                         ITable queryTrackingTable, IQueue queue) {
+            ITable queryTrackingTable, IQueue queue) {
         coreStacks.grantReadTablesAndData(lambda);
         jarsBucket.grantRead(lambda);
         queue.grantSendMessages(lambda);
@@ -423,130 +364,29 @@ public class QueryStack extends NestedStack {
     }
 
     /***
-     * Sets the permissions a Lambda needs to execute along with a place to write results to.
+     * Sets the permissions a lambda needs to run queries and write results.
      * These are set for buckets and queues.
-     * @param coreStacks the core stacks this belongs to
-     * @param jarsBucket bucket containing the jars used by Lambda
-     * @param lambda to apply the permissions to
+     *
+     * @param coreStacks         the core stacks this belongs to
+     * @param jarsBucket         bucket containing the jars used by Lambda
+     * @param lambda             to apply the permissions to
      * @param queryTrackingTable used to track a query
-     * @param queue the queue to allow the Lambda to send messages to
-     * @param resultsQueue the results queue to allow the Lambda to send result messages to
-     * @param resultsBucket the bucket that will contain the results
+     * @param queue              the queue to allow the Lambda to send messages to
+     * @param resultsQueue       the results queue to allow the Lambda to send result messages to
+     * @param resultsBucket      the bucket that will contain the results
      */
     private void setPermissionsForLambda(CoreStacks coreStacks, IBucket jarsBucket, IFunction lambda,
-                                         ITable queryTrackingTable, IQueue queue, IQueue resultsQueue, IBucket resultsBucket) {
+            ITable queryTrackingTable, IQueue queue, IQueue resultsQueue, IBucket resultsBucket) {
         setPermissionsForLambda(coreStacks, jarsBucket, lambda, queryTrackingTable, queue);
         resultsBucket.grantReadWrite(lambda);
         resultsQueue.grantSendMessages(lambda);
     }
 
-    /***
-     * Creates the web socket API.
-     * @param queryJar the jar containing the code for the Lambda
-     * @param instanceProperties containing configuration details
-     * @param queriesQueue the queue that the queries are sent to
-     * @param queryExecutorLambda the Lambda that will execute the query
-     * @param leafPartitionQueryLambda the Lambda that will execute the leaf partition query
-     * @param coreStacks the core stacks this belongs to
-     */
-    protected void setupWebSocketApi(LambdaCode queryJar, InstanceProperties instanceProperties, Queue queriesQueue, IFunction queryExecutorLambda,
-                                     IFunction leafPartitionQueryLambda, CoreStacks coreStacks) {
-        Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
-        String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "websocket-api-handler"));
-        IFunction handler = queryJar.buildFunction(this, "WebSocketApiHandler", builder -> builder
-                .functionName(functionName)
-                .description("Prepares queries received via the WebSocket API and queues them for processing")
-                .handler("sleeper.query.lambda.WebSocketQueryProcessorLambda::handleRequest")
-                .environment(env)
-                .memorySize(256)
-                .logGroup(createLambdaLogGroup(this, "WebSocketApiHandlerLogGroup", functionName, instanceProperties))
-                .timeout(Duration.seconds(29))
-                .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11));
-
-        queriesQueue.grantSendMessages(handler);
-        coreStacks.grantReadTablesConfig(handler);
-
-        CfnApi api = CfnApi.Builder.create(this, "api")
-                .name("sleeper-" + instanceProperties.get(ID) + "-query-api")
-                .description("Sleeper Query API")
-                .protocolType("WEBSOCKET")
-                .routeSelectionExpression("$request.body.action")
-                .build();
-        this.webSocketApi = api;
-
-        String integrationUri = Stack.of(this).formatArn(ArnComponents.builder()
-                .service("apigateway")
-                .account("lambda")
-                .resource("path/2015-03-31/functions")
-                .resourceName(handler.getFunctionArn() + "/invocations")
-                .build());
-
-        CfnIntegration integration = CfnIntegration.Builder.create(this, "integration")
-                .apiId(api.getRef())
-                .integrationType(IntegrationType.AWS_PROXY.name())
-                .integrationUri(integrationUri)
-                .build();
-
-        // Note that we are deliberately using CFN L1 constructs to deploy the connect
-        // route so that we are able to switch on AWS_IAM authentication. This is
-        // currently not possible using the API Gateway L2 constructs
-        CfnRoute.Builder.create(this, "connect-route")
-                .apiId(api.getRef())
-                .apiKeyRequired(false)
-                .authorizationType("AWS_IAM")
-                .routeKey("$connect")
-                .target("integrations/" + integration.getRef())
-                .build();
-
-        CfnRoute.Builder.create(this, "default-route")
-                .apiId(api.getRef())
-                .apiKeyRequired(false)
-                .routeKey("$default")
-                .target("integrations/" + integration.getRef())
-                .build();
-
-        handler.addPermission("apigateway-access-to-lambda", Permission.builder()
-                .principal(new ServicePrincipal("apigateway.amazonaws.com"))
-                .sourceArn(Stack.of(this).formatArn(ArnComponents.builder()
-                        .service("execute-api")
-                        .resource(api.getRef())
-                        .resourceName("*/*")
-                        .build()))
-                .build());
-
-        WebSocketStage stage = WebSocketStage.Builder.create(this, "stage")
-                .webSocketApi(WebSocketApi.fromWebSocketApiAttributes(this, "imported-api", WebSocketApiAttributes.builder()
-                        .webSocketId(api.getRef())
-                        .build()))
-                .stageName("live")
-                .autoDeploy(true)
-                .build();
-        stage.grantManagementApiAccess(handler);
-        stage.grantManagementApiAccess(queryExecutorLambda);
-        stage.grantManagementApiAccess(leafPartitionQueryLambda);
-
-        new CfnOutput(this, "WebSocketApiUrl", CfnOutputProps.builder()
-                .value(stage.getUrl())
-                .build());
-        instanceProperties.set(CdkDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL, stage.getUrl());
+    public IFunction getQueryExecutorLambda() {
+        return queryExecutorLambda;
     }
 
-    /***
-     * Grant access to the web socket query api.
-     * @param identity item to grant access to
-     * @return a grant principal
-     */
-    public Grant grantAccessToWebSocketQueryApi(IGrantable identity) {
-        return Grant.addToPrincipal(GrantOnPrincipalOptions.builder()
-                .grantee(identity)
-                .actions(Collections.singletonList("execute-api:Invoke"))
-                .resourceArns(Collections.singletonList(Stack.of(this).formatArn(ArnComponents.builder()
-                        .service("execute-api")
-                        .resource(this.webSocketApi.getRef())
-                        .build())
-                        + "/live/*"
-                ))
-                .build());
+    public IFunction getLeafPartitionQueryLambda() {
+        return leafPartitionQueryLambda;
     }
 }

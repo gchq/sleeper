@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,8 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * An {@link ExtractKeyFunction} is a function which extracts the first n
- * columns to create a Sleeper {@link Key}.
+ * Extracts the first n columns to create a Sleeper key.
  */
 public class ExtractKeyFunction implements PairFunction<Row, Key, Row> {
     private static final long serialVersionUID = 4328608066452390263L;

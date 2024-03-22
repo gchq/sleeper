@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,9 +37,8 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
 
 /**
- * An {@link EmrBulkImportStack} creates an SQS queue that bulk import jobs can
- * be sent to. A message arriving on this queue triggers a lambda. That lambda
- * creates an EMR cluster that executes the bulk import job and then terminates.
+ * Deploys resources to perform bulk import jobs on EMR, with a cluster created per job. A message arriving on a queue
+ * triggers a lambda. That lambda creates an EMR cluster that executes the bulk import job and then terminates.
  */
 public class EmrBulkImportStack extends NestedStack {
     private final Queue bulkImportJobQueue;

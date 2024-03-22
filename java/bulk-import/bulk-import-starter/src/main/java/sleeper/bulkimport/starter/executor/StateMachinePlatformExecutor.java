@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,9 +40,8 @@ import static sleeper.configuration.properties.instance.EKSProperty.BULK_IMPORT_
 import static sleeper.configuration.properties.instance.EKSProperty.EKS_IS_NATIVE_LIBS_IMAGE;
 
 /**
- * A {@link StateMachinePlatformExecutor} Generates the arguments and configuration to
- * run a job using spark on an EKS cluster. It creates a list of arguments and
- * submits them to a state machine in AWS Step Functions.
+ * Starts a bulk import job on Spark in an EKS cluster via AWS Step Functions. It creates a list of arguments and
+ * submits them to a pre-deployed state machine linked to EKS.
  */
 public class StateMachinePlatformExecutor implements PlatformExecutor {
     private static final String SPARK_IMAGE_JAR_LOCATION = "local:///opt/spark/workdir/bulk-import-runner.jar";
@@ -75,7 +74,7 @@ public class StateMachinePlatformExecutor implements PlatformExecutor {
     }
 
     public StateMachinePlatformExecutor(AWSStepFunctions stepFunctions,
-                                        InstanceProperties instanceProperties) {
+            InstanceProperties instanceProperties) {
         this.stepFunctions = stepFunctions;
         this.instanceProperties = instanceProperties;
     }
@@ -93,7 +92,7 @@ public class StateMachinePlatformExecutor implements PlatformExecutor {
         stepFunctions.startExecution(
                 new StartExecutionRequest()
                         .withStateMachineArn(stateMachineArn)
-                        .withName(String.join("-", bulkImportJob.getTableName(), bulkImportJob.getId()))
+                        .withName(jobExecutionName(bulkImportJob))
                         .withInput(new Gson().toJson(input)));
     }
 
@@ -135,9 +134,12 @@ public class StateMachinePlatformExecutor implements PlatformExecutor {
     }
 
     private static String jobPodPrefix(BulkImportJob job) {
-        /* Spark adds extra IDs to the end of this - up to 17 characters, and performs some extra validation:
-         * - whether the pod name prefix is <= 47 characters (https://spark.apache.org/docs/3.3.1/running-on-kubernetes.html)
-         * - whether the pod name prefix starts with a letter (https://kubernetes.io/docs/concepts/overview/working-with-objects/names/)
+        /*
+         * Spark adds extra IDs to the end of this - up to 17 characters, and performs some extra validation:
+         * - whether the pod name prefix is <= 47 characters
+         * (https://spark.apache.org/docs/3.3.1/running-on-kubernetes.html)
+         * - whether the pod name prefix starts with a letter
+         * (https://kubernetes.io/docs/concepts/overview/working-with-objects/names/)
          * After adding a "job-" prefix, maximum id length = 47-(17+4) = 26 characters
          */
         if (job.getId().length() > 26) {
@@ -145,5 +147,17 @@ public class StateMachinePlatformExecutor implements PlatformExecutor {
         } else {
             return "job-" + job.getId();
         }
+    }
+
+    private static String jobExecutionName(BulkImportJob job) {
+        String tableName = job.getTableName();
+        String jobId = job.getId();
+        // See maximum length restriction in AWS documentation:
+        // https://docs.aws.amazon.com/step-functions/latest/apireference/API_StartExecution.html#API_StartExecution_RequestParameters
+        int spaceForTableName = 80 - jobId.length() - 1;
+        if (tableName.length() > spaceForTableName) {
+            tableName = tableName.substring(0, spaceForTableName);
+        }
+        return String.join("-", tableName, jobId);
     }
 }

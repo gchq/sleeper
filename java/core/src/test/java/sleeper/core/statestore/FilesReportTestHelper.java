@@ -26,8 +26,18 @@ public class FilesReportTestHelper {
     private FilesReportTestHelper() {
     }
 
+    public static final Instant DEFAULT_UPDATE_TIME = Instant.parse("2024-02-21T11:42:00Z");
+
+    public static AllReferencesToAllFiles noFiles() {
+        return noFilesReport();
+    }
+
     public static AllReferencesToAllFiles noFilesReport() {
         return new AllReferencesToAllFiles(List.of(), false);
+    }
+
+    public static AllReferencesToAllFiles activeFiles(FileReference... files) {
+        return activeFilesReport(DEFAULT_UPDATE_TIME, List.of(files));
     }
 
     public static AllReferencesToAllFiles activeFilesReport(Instant updateTime, FileReference... files) {
@@ -40,9 +50,17 @@ public class FilesReportTestHelper {
                 .collect(Collectors.toUnmodifiableList()), false);
     }
 
+    public static AllReferencesToAllFiles activeAndReadyForGCFiles(List<FileReference> activeFiles, List<String> readyForGCFiles) {
+        return activeAndReadyForGCFilesReport(DEFAULT_UPDATE_TIME, activeFiles, readyForGCFiles);
+    }
+
     public static AllReferencesToAllFiles activeAndReadyForGCFilesReport(
             Instant updateTime, List<FileReference> activeFiles, List<String> readyForGCFiles) {
         return new AllReferencesToAllFiles(activeAndReadyForGCFiles(updateTime, activeFiles, readyForGCFiles), false);
+    }
+
+    public static AllReferencesToAllFiles readyForGCFiles(String... filenames) {
+        return readyForGCFilesReport(DEFAULT_UPDATE_TIME, filenames);
     }
 
     public static AllReferencesToAllFiles readyForGCFilesReport(Instant updateTime, String... filenames) {
@@ -57,8 +75,6 @@ public class FilesReportTestHelper {
             Instant updateTime, List<FileReference> activeFiles, List<String> readyForGCFiles) {
         return Stream.concat(
                 AllReferencesToAFile.newFilesWithReferences(activeFiles.stream(), updateTime),
-                readyForGCFiles.stream().map(filename ->
-                        AllReferencesToAFileTestHelper.fileWithNoReferences(filename, updateTime))
-        ).collect(Collectors.toUnmodifiableList());
+                readyForGCFiles.stream().map(filename -> AllReferencesToAFileTestHelper.fileWithNoReferences(filename, updateTime))).collect(Collectors.toUnmodifiableList());
     }
 }

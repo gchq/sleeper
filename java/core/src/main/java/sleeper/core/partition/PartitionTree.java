@@ -29,9 +29,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * This represents a tree of {@link Partition}s. It can be used to find all
- * ancestors of a partition, i.e. all partitions that are either parents of the
- * partition, or grandparents, or great-grandparents.
+ * Represents a tree of partitions. It can be used to traverse or query the tree, e.g. to find all ancestors of a
+ * partition, partitions that are either parents of the partition, or grandparents, or great-grandparents.
  */
 public class PartitionTree {
     private final Map<String, Partition> idToPartition;
@@ -151,7 +150,7 @@ public class PartitionTree {
     }
 
     /**
-     * Traverse the partition tree visiting the leaves first, then proceed in steps where you remove the current leaf
+     * Traverse the partition tree visiting the leaves first. Proceeds in steps where you remove the current leaf
      * partitions and visit the new leaves.
      * <p>
      * The partitions are also ordered by the min and max of their ranges. Each time the tree is split, the partition

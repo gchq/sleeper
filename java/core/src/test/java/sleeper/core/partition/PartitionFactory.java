@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * A convenience class for specifying partitions.
+ * A convenience class for specifying partitions. Used to build {@link Partition} objects.
  * <p>
  * Note that a shorthand is used for cases where we have a schema with only one row key field.
  * This will not be useful in the general case.

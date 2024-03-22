@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static sleeper.systemtest.drivers.instance.SystemTestParameters.buildSystemTestECRRepoName;
+import static sleeper.systemtest.dsl.instance.SystemTestParameters.buildSystemTestECRRepoName;
 
 /**
  * This class can be used to clean up after deleted Sleeper instances when the CloudFormation stacks for those instances

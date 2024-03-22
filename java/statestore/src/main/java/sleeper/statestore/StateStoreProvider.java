@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,13 +29,16 @@ import java.util.function.Function;
 
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
+/**
+ * Caches Sleeper table state store objects. An instance of this class cannot be used concurrently in multiple threads,
+ * as the cache is not thread-safe.
+ */
 public class StateStoreProvider {
     private final Function<TableProperties, StateStore> stateStoreFactory;
     private final Map<String, StateStore> tableNameToStateStoreCache;
 
-    public StateStoreProvider(AmazonDynamoDB dynamoDBClient,
-                              InstanceProperties instanceProperties,
-                              Configuration configuration) {
+    public StateStoreProvider(
+            AmazonDynamoDB dynamoDBClient, InstanceProperties instanceProperties, Configuration configuration) {
         this(new StateStoreFactory(dynamoDBClient, instanceProperties, configuration)::getStateStore);
     }
 

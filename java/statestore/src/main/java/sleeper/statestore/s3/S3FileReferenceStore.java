@@ -30,6 +30,7 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.AllReferencesToAllFiles;
+import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceSerDe;
 import sleeper.core.statestore.FileReferenceStore;
@@ -66,7 +67,10 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.util.Map.entry;
 import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.core.statestore.AllReferencesToAFile.fileWithOneReference;
 import static sleeper.statestore.s3.S3StateStore.CURRENT_FILES_REVISION_ID_KEY;
@@ -120,10 +124,9 @@ class S3FileReferenceStore implements FileReferenceStore {
                     }
                     return null;
                 }).filter(Objects::nonNull).findFirst();
-        Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> update = list ->
-                Stream.concat(list.stream(), files.stream()
-                                .map(file -> file.withCreatedUpdateTime(updateTime)))
-                        .collect(toUnmodifiableList());
+        Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> update = list -> Stream.concat(list.stream(), files.stream()
+                .map(file -> file.withCreatedUpdateTime(updateTime)))
+                .collect(toUnmodifiableList());
         updateS3Files(update, condition);
     }
 
@@ -182,7 +185,7 @@ class S3FileReferenceStore implements FileReferenceStore {
 
     private static Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> buildSplitFileReferencesUpdate(List<SplitFileReferenceRequest> splitRequests, Instant updateTime) {
         Map<String, List<SplitFileReferenceRequest>> requestsByFilename = splitRequests.stream()
-                .collect(Collectors.groupingBy(request -> request.getOldReference().getFilename()));
+                .collect(groupingBy(request -> request.getOldReference().getFilename()));
         return list -> list.stream()
                 .map(file -> {
                     List<SplitFileReferenceRequest> requests = requestsByFilename.get(file.getFilename());
@@ -232,39 +235,43 @@ class S3FileReferenceStore implements FileReferenceStore {
         };
 
         Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> update = existingFiles -> Stream.concat(
-                        existingFiles.stream().map(existingFile -> {
-                            if (inputFilesSet.contains(existingFile.getFilename())) {
-                                return existingFile.removeReferenceForPartition(partitionId, updateTime);
-                            } else {
-                                return existingFile;
-                            }
-                        }),
-                        Stream.of(fileWithOneReference(newReference, updateTime)))
+                existingFiles.stream().map(existingFile -> {
+                    if (inputFilesSet.contains(existingFile.getFilename())) {
+                        return existingFile.removeReferenceForPartition(partitionId, updateTime);
+                    } else {
+                        return existingFile;
+                    }
+                }),
+                Stream.of(fileWithOneReference(newReference, updateTime)))
                 .collect(Collectors.toUnmodifiableList());
         updateS3Files(update, condition);
     }
 
     @Override
-    public void atomicallyAssignJobIdToFileReferences(String jobId, List<FileReference> fileReferences) throws StateStoreException {
+    public void assignJobIds(List<AssignJobIdRequest> requests) throws StateStoreException {
         Instant updateTime = clock.instant();
-        Map<String, Set<String>> partitionUpdatesByName = fileReferences.stream()
-                .collect(Collectors.groupingBy(FileReference::getFilename,
-                        Collectors.mapping(FileReference::getPartitionId, Collectors.toUnmodifiableSet())));
+        Map<String, List<AssignJobIdRequest>> requestsByFilename = requests.stream()
+                .flatMap(request -> request.getFilenames().stream()
+                        .map(filename -> entry(filename, request)))
+                .collect(groupingBy(Map.Entry::getKey,
+                        mapping(Map.Entry::getValue, toUnmodifiableList())));
 
         FileReferencesConditionCheck condition = list -> {
             Map<String, AllReferencesToAFile> existingFileByName = list.stream()
                     .collect(Collectors.toMap(AllReferencesToAFile::getFilename, identity()));
-            for (FileReference reference : fileReferences) {
-                AllReferencesToAFile existingFile = existingFileByName.get(reference.getFilename());
-                if (existingFile == null) {
-                    return Optional.of(new FileReferenceNotFoundException(reference));
-                }
-                FileReference existingReference = existingFile.getReferenceForPartitionId(reference.getPartitionId()).orElse(null);
-                if (existingReference == null) {
-                    return Optional.of(new FileReferenceNotFoundException(reference));
-                }
-                if (existingReference.getJobId() != null) {
-                    return Optional.of(new FileReferenceAssignedToJobException(existingReference));
+            for (AssignJobIdRequest request : requests) {
+                for (String filename : request.getFilenames()) {
+                    AllReferencesToAFile existingFile = existingFileByName.get(filename);
+                    if (existingFile == null) {
+                        return Optional.of(new FileReferenceNotFoundException(filename, request.getPartitionId()));
+                    }
+                    FileReference existingReference = existingFile.getReferenceForPartitionId(request.getPartitionId()).orElse(null);
+                    if (existingReference == null) {
+                        return Optional.of(new FileReferenceNotFoundException(filename, request.getPartitionId()));
+                    }
+                    if (existingReference.getJobId() != null) {
+                        return Optional.of(new FileReferenceAssignedToJobException(existingReference));
+                    }
                 }
             }
             return Optional.empty();
@@ -272,11 +279,15 @@ class S3FileReferenceStore implements FileReferenceStore {
         Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> update = list -> {
             List<AllReferencesToAFile> filteredFiles = new ArrayList<>();
             for (AllReferencesToAFile existing : list) {
-                Set<String> partitionUpdates = partitionUpdatesByName.get(existing.getFilename());
-                if (partitionUpdates == null) {
+                List<AssignJobIdRequest> fileRequests = requestsByFilename.get(existing.getFilename());
+                if (fileRequests == null) {
                     filteredFiles.add(existing);
                 } else {
-                    filteredFiles.add(existing.withJobIdForPartitions(jobId, partitionUpdates, updateTime));
+                    AllReferencesToAFile file = existing;
+                    for (AssignJobIdRequest fileRequest : fileRequests) {
+                        file = file.withJobIdForPartition(fileRequest.getJobId(), fileRequest.getPartitionId(), updateTime);
+                    }
+                    filteredFiles.add(file);
                 }
             }
             return filteredFiles;
@@ -284,7 +295,6 @@ class S3FileReferenceStore implements FileReferenceStore {
 
         updateS3Files(update, condition);
     }
-
 
     @Override
     public void deleteGarbageCollectedFileReferenceCounts(List<String> filenames) throws StateStoreException {
@@ -346,21 +356,21 @@ class S3FileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public AllReferencesToAllFiles getAllFileReferencesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException {
+    public AllReferencesToAllFiles getAllFilesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException {
         List<AllReferencesToAFile> allFiles = readFilesFromParquet(getFilesPath(getCurrentFilesRevisionId()));
         List<AllReferencesToAFile> filesWithNoReferences = allFiles.stream()
                 .filter(file -> file.getTotalReferenceCount() < 1)
                 .collect(toUnmodifiableList());
         List<AllReferencesToAFile> resultFiles = Stream.concat(
-                        allFiles.stream()
-                                .filter(file -> file.getTotalReferenceCount() > 0),
-                        filesWithNoReferences.stream().limit(maxUnreferencedFiles))
+                allFiles.stream()
+                        .filter(file -> file.getTotalReferenceCount() > 0),
+                filesWithNoReferences.stream().limit(maxUnreferencedFiles))
                 .collect(toUnmodifiableList());
         return new AllReferencesToAllFiles(resultFiles, filesWithNoReferences.size() > maxUnreferencedFiles);
     }
 
     private void updateS3Files(Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> update,
-                               FileReferencesConditionCheck condition) throws StateStoreException {
+            FileReferencesConditionCheck condition) throws StateStoreException {
         s3StateStoreFile.updateWithAttempts(10, update, condition);
     }
 

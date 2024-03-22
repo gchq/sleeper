@@ -20,9 +20,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.suite.dsl.SleeperSystemTest;
-import sleeper.systemtest.suite.dsl.reports.SystemTestReports;
-import sleeper.systemtest.suite.testutil.AfterTestReports;
+import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.extension.AfterTestReports;
+import sleeper.systemtest.dsl.reporting.SystemTestReports;
 import sleeper.systemtest.suite.testutil.Expensive;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
@@ -50,9 +50,10 @@ public class IngestPerformanceIT {
     }
 
     @Test
-    void shouldMeetIngestPerformanceStandardsAcrossManyPartitions(SleeperSystemTest sleeper) throws InterruptedException {
+    void shouldMeetIngestPerformanceStandardsAcrossManyPartitions(SleeperSystemTest sleeper) {
         sleeper.partitioning().setPartitions(create128StringPartitions(sleeper));
-        sleeper.systemTestCluster().updateProperties(properties -> {
+        sleeper.systemTestCluster()
+                .updateProperties(properties -> {
                     properties.setEnum(INGEST_MODE, QUEUE);
                     properties.setEnum(INGEST_QUEUE, STANDARD_INGEST);
                     properties.setNumber(NUMBER_OF_WRITERS, 11);
@@ -69,7 +70,7 @@ public class IngestPerformanceIT {
                         "contain 440 million records");
         assertThat(sleeper.reporting().ingestJobs().finishedStatistics())
                 .matches(stats -> stats.isAllFinishedOneRunEach(11)
-                                && stats.isMinAverageRunRecordsPerSecond(130_000),
+                        && stats.isMinAverageRunRecordsPerSecond(130_000),
                         "meets minimum performance");
     }
 }

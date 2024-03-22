@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,7 +71,7 @@ class WaitForStackToDeleteIT {
 
         // When/Then
         assertThatThrownBy(() -> waitForStacksToDelete(runtimeInfo, "test-stack"))
-                .isInstanceOf(PollWithRetries.TimedOutException.class);
+                .isInstanceOf(PollWithRetries.CheckFailedException.class);
     }
 
     @Test
@@ -88,8 +88,8 @@ class WaitForStackToDeleteIT {
 
     private static void waitForStacksToDelete(WireMockRuntimeInfo runtimeInfo, String stackName) throws InterruptedException {
         WaitForStackToDelete.from(
-                        PollWithRetries.noRetries(),
-                        wiremockCloudFormationClient(runtimeInfo), stackName)
+                PollWithRetries.noRetries(),
+                wiremockCloudFormationClient(runtimeInfo), stackName)
                 .pollUntilFinished();
     }
 

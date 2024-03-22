@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,10 @@ package sleeper.clients.status.report.ingest.batcher;
 import sleeper.clients.status.report.StatusReporterTestHelper;
 import sleeper.clients.testutil.ToStringPrintStream;
 import sleeper.core.table.TableIdGenerator;
-import sleeper.core.table.TableIdentity;
-import sleeper.core.table.TableIdentityProvider;
 import sleeper.core.table.TableIndex;
+import sleeper.core.table.TableStatus;
+import sleeper.core.table.TableStatusProvider;
+import sleeper.core.table.TableStatusTestHelper;
 import sleeper.ingest.batcher.FileIngestRequest;
 import sleeper.ingest.job.status.IngestJobStatus;
 
@@ -33,7 +34,7 @@ public class IngestBatcherReporterTestHelper {
     private IngestBatcherReporterTestHelper() {
     }
 
-    public static final TableIdentity TEST_TABLE = TableIdentity.uniqueIdAndName("test-table-id", "test-table");
+    public static final TableStatus TEST_TABLE = TableStatusTestHelper.uniqueIdAndName("test-table-id", "test-table");
 
     public static List<FileIngestRequest> onePendingAndTwoBatchedFiles() {
         return List.of(
@@ -50,8 +51,7 @@ public class IngestBatcherReporterTestHelper {
                         .fileSizeBytes(789L)
                         .tableId(TableIdGenerator.fromRandomSeed(0).generateString())
                         .receivedTime(Instant.parse("2023-09-12T13:25:00Z"))
-                        .jobId("test-job-1").build()
-        );
+                        .jobId("test-job-1").build());
     }
 
     public static List<FileIngestRequest> multiplePendingFiles() {
@@ -69,8 +69,7 @@ public class IngestBatcherReporterTestHelper {
                         .fileSizeBytes(789L)
                         .tableId(TableIdGenerator.fromRandomSeed(0).generateString())
                         .receivedTime(Instant.parse("2023-09-12T13:28:00Z"))
-                        .build()
-        );
+                        .build());
     }
 
     public static List<FileIngestRequest> filesWithLargeAndDecimalSizes() {
@@ -88,8 +87,7 @@ public class IngestBatcherReporterTestHelper {
                         .fileSizeBytes(123_400_000_000L)
                         .tableId("test-table-id")
                         .receivedTime(Instant.parse("2023-09-12T13:23:00Z"))
-                        .jobId("test-job-1").build()
-        );
+                        .jobId("test-job-1").build());
     }
 
     public static String replaceBracketedJobIds(List<IngestJobStatus> job, String example) {
@@ -101,14 +99,14 @@ public class IngestBatcherReporterTestHelper {
     public static String getStandardReport(TableIndex tableIndex, BatcherQuery.Type queryType, List<FileIngestRequest> fileRequestList) {
         ToStringPrintStream output = new ToStringPrintStream();
         new StandardIngestBatcherReporter(output.getPrintStream())
-                .report(fileRequestList, queryType, new TableIdentityProvider(tableIndex));
+                .report(fileRequestList, queryType, new TableStatusProvider(tableIndex));
         return output.toString();
     }
 
     public static String getJsonReport(TableIndex tableIndex, BatcherQuery.Type queryType, List<FileIngestRequest> fileRequestList) {
         ToStringPrintStream output = new ToStringPrintStream();
         new JsonIngestBatcherReporter(output.getPrintStream())
-                .report(fileRequestList, queryType, new TableIdentityProvider(tableIndex));
+                .report(fileRequestList, queryType, new TableStatusProvider(tableIndex));
         return output.toString();
     }
 }

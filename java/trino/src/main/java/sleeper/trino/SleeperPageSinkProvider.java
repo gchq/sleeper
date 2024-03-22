@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,8 +28,7 @@ import sleeper.trino.remotesleeperconnection.SleeperConnectionAsTrino;
 import javax.inject.Inject;
 
 /**
- * This class provides {@link SleeperPageSink} classes to support INSERT operations. Note that CREATE TABLE...AS
- * operations are not supported.
+ * Provides page sinks to support INSERT operations. Note that CREATE TABLE...AS operations are not supported.
  */
 public class SleeperPageSinkProvider implements ConnectorPageSinkProvider {
     private final SleeperConnectionAsTrino sleeperConnectionAsTrino;

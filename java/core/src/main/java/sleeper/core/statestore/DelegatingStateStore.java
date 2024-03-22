@@ -57,8 +57,8 @@ public class DelegatingStateStore implements StateStore {
     }
 
     @Override
-    public void atomicallyAssignJobIdToFileReferences(String jobId, List<FileReference> fileReferences) throws StateStoreException {
-        fileReferenceStore.atomicallyAssignJobIdToFileReferences(jobId, fileReferences);
+    public void assignJobIds(List<AssignJobIdRequest> requests) throws StateStoreException {
+        fileReferenceStore.assignJobIds(requests);
     }
 
     @Override
@@ -87,8 +87,8 @@ public class DelegatingStateStore implements StateStore {
     }
 
     @Override
-    public AllReferencesToAllFiles getAllFileReferencesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException {
-        return fileReferenceStore.getAllFileReferencesWithMaxUnreferenced(maxUnreferencedFiles);
+    public AllReferencesToAllFiles getAllFilesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException {
+        return fileReferenceStore.getAllFilesWithMaxUnreferenced(maxUnreferencedFiles);
     }
 
     @Override

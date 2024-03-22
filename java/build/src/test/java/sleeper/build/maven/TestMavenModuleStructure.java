@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,38 +24,32 @@ public class TestMavenModuleStructure {
 
     public static MavenModuleStructure example() {
         return rootBuilder().modulesArray(
-                testedModuleBuilder("core").build(),
-                testedModuleBuilder("configuration").dependenciesArray(
+                sourceModuleBuilder("core").build(),
+                sourceModuleBuilder("configuration").dependenciesArray(
                         dependency("org.apache.datasketches:datasketches-java"),
                         dependency("sleeper:core"),
                         dependencyBuilder("org.junit.jupiter:junit-jupiter-api").scope("test").exported(false).build(),
-                        dependencyBuilder("sleeper:core").type("test-jar").scope("test").exported(false).build()
-                ).build(),
-                testedModuleBuilder("ingest").dependenciesArray(
+                        dependencyBuilder("sleeper:core").type("test-jar").scope("test").exported(false).build()).build(),
+                sourceModuleBuilder("ingest").dependenciesArray(
                         dependency("org.apache.commons:commons-lang3"),
                         dependency("sleeper:configuration"),
                         dependencyBuilder("org.testcontainers:testcontainers").scope("test").exported(false).build(),
                         dependencyBuilder("sleeper:core").type("test-jar").scope("test").exported(false).build(),
-                        dependencyBuilder("sleeper:configuration").type("test-jar").scope("test").exported(false).build()
-                ).build(),
+                        dependencyBuilder("sleeper:configuration").type("test-jar").scope("test").exported(false).build()).build(),
                 midParentBuilder("bulk-import").modulesArray(
-                        testedModuleBuilder("bulk-import-common").dependenciesArray(
+                        sourceModuleBuilder("bulk-import-common").dependenciesArray(
                                 dependency("sleeper:configuration"),
-                                dependencyBuilder("net.javacrumbs.json-unit:json-unit-assertj").scope("test").exported(false).build()
-                        ).build(),
-                        testedModuleBuilder("bulk-import-runner").dependenciesArray(
+                                dependencyBuilder("net.javacrumbs.json-unit:json-unit-assertj").scope("test").exported(false).build()).build(),
+                        sourceModuleBuilder("bulk-import-runner").dependenciesArray(
                                 dependency("sleeper:bulk-import-common"),
                                 dependency("sleeper:ingest"),
                                 dependency("sleeper:configuration"),
-                                dependencyBuilder("sleeper:core").type("test-jar").scope("test").exported(false).build()
-                        ).build(),
-                        testedModuleBuilder("bulk-import-starter").dependenciesArray(
+                                dependencyBuilder("sleeper:core").type("test-jar").scope("test").exported(false).build()).build(),
+                        sourceModuleBuilder("bulk-import-starter").dependenciesArray(
                                 dependency("sleeper:bulk-import-common"),
-                                dependencyBuilder("sleeper:core").type("test-jar").scope("test").exported(false).build()
-                        ).build()
-                ).build(),
-                untestedModuleBuilder("distribution").build()
-        ).build();
+                                dependencyBuilder("sleeper:core").type("test-jar").scope("test").exported(false).build()).build())
+                        .build(),
+                resourcesModuleBuilder("distribution").build()).build();
     }
 
     public static MavenModuleStructure.Builder rootBuilder() {
@@ -66,12 +60,12 @@ public class TestMavenModuleStructure {
         return artifactIdAndRefBuilder(artifactId).packaging("pom");
     }
 
-    public static MavenModuleStructure.Builder testedModuleBuilder(String artifactId) {
-        return artifactIdAndRefBuilder(artifactId).hasSrcTestFolder(true);
+    public static MavenModuleStructure.Builder sourceModuleBuilder(String artifactId) {
+        return artifactIdAndRefBuilder(artifactId).hasSrcMainJavaFolder(true);
     }
 
-    public static MavenModuleStructure.Builder untestedModuleBuilder(String artifactId) {
-        return artifactIdAndRefBuilder(artifactId).hasSrcTestFolder(false);
+    public static MavenModuleStructure.Builder resourcesModuleBuilder(String artifactId) {
+        return artifactIdAndRefBuilder(artifactId).hasSrcMainJavaFolder(false);
     }
 
     public static MavenModuleStructure.Builder artifactIdAndRefBuilder(String artifactId) {

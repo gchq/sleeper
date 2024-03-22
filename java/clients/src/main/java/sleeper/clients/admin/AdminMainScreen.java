@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ public class AdminMainScreen {
                 new MenuOption("View configuration by group", () ->
                         client.instanceConfigurationScreen().viewAndEditPropertyGroup(instanceId)),
                 new MenuOption("Print Sleeper table names", () ->
-                        client.tableNamesReport().print(instanceId)),
+                        client.tableNamesReport().print()),
                 new MenuOption("Run partition status report", () ->
                         client.partitionsStatusReportScreen().chooseTableAndPrint(instanceId)),
                 new MenuOption("Run files status report", () ->

@@ -21,8 +21,8 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.record.Record;
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.suite.dsl.SleeperSystemTest;
-import sleeper.systemtest.suite.testutil.AfterTestPurgeQueues;
+import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.extension.AfterTestPurgeQueues;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.time.Duration;
@@ -43,7 +43,7 @@ public class EmrBulkImportIT {
     }
 
     @Test
-    void shouldBulkImportOneRecordWithEmrByQueue(SleeperSystemTest sleeper) throws InterruptedException {
+    void shouldBulkImportOneRecordWithEmrByQueue(SleeperSystemTest sleeper) {
         // Given
         sleeper.updateTableProperties(Map.of(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1"));
         Record record = new Record(Map.of(

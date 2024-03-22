@@ -25,38 +25,40 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.query.QueryException;
-import sleeper.query.executor.QueryExecutor;
 import sleeper.query.model.Query;
-import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
+import sleeper.query.model.QueryException;
+import sleeper.query.runner.recordretrieval.QueryExecutor;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
+import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
+import sleeper.systemtest.dsl.query.QueryAllTablesInParallelDriver;
+import sleeper.systemtest.dsl.query.QueryDriver;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Spliterators;
 import java.util.concurrent.Executors;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import static java.util.Map.entry;
-
 public class DirectQueryDriver implements QueryDriver {
-    private final SleeperInstanceContext instance;
+    private final SystemTestInstanceContext instance;
 
-    public DirectQueryDriver(SleeperInstanceContext instance) {
+    public DirectQueryDriver(SystemTestInstanceContext instance) {
         this.instance = instance;
     }
 
+    public static QueryAllTablesDriver allTablesDriver(SystemTestInstanceContext instance) {
+        return new QueryAllTablesInParallelDriver(instance, new DirectQueryDriver(instance));
+    }
+
     public List<Record> run(Query query) {
-        TableProperties tableProperties = instance.getTablePropertiesByName(query.getTableName()).orElseThrow();
+        TableProperties tableProperties = instance.getTablePropertiesByDeployedName(query.getTableName()).orElseThrow();
         StateStore stateStore = instance.getStateStore(tableProperties);
         PartitionTree tree = getPartitionTree(stateStore);
-        try (CloseableIterator<Record> recordIterator =
-                     executor(tableProperties, stateStore, tree).execute(query)) {
+        try (CloseableIterator<Record> recordIterator = executor(tableProperties, stateStore, tree).execute(query)) {
             return stream(recordIterator)
                     .collect(Collectors.toUnmodifiableList());
         } catch (IOException e) {
@@ -64,14 +66,6 @@ public class DirectQueryDriver implements QueryDriver {
         } catch (QueryException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    @Override
-    public Map<String, List<Record>> runForAllTables(Function<QueryCreator, Query> queryFactory) {
-        List<Query> queries = QueryCreator.forAllTables(instance, queryFactory);
-        return queries.stream().parallel()
-                .map(query -> entry(query.getTableName(), run(query)))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
     private PartitionTree getPartitionTree(StateStore stateStore) {

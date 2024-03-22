@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,12 @@
  */
 package sleeper.configuration.properties.table;
 
-import com.amazonaws.services.s3.model.AmazonS3Exception;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.table.TableAlreadyExistsException;
-import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableNotFoundException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -42,7 +41,7 @@ class S3TablePropertiesStoreIT extends TablePropertiesITBase {
 
             // Then
             assertThat(store.loadByName(tableName))
-                    .contains(tableProperties);
+                    .isEqualTo(tableProperties);
         }
 
         @Test
@@ -62,7 +61,7 @@ class S3TablePropertiesStoreIT extends TablePropertiesITBase {
 
             // Then
             assertThat(store.loadByName(tableName))
-                    .contains(tableProperties);
+                    .isEqualTo(tableProperties);
         }
 
         @Test
@@ -74,9 +73,9 @@ class S3TablePropertiesStoreIT extends TablePropertiesITBase {
             store.save(tableProperties);
 
             // When / Then
-            assertThat(store.loadByName(tableName)
-                    .map(properties -> properties.getInt(PAGE_SIZE)))
-                    .contains(456);
+            assertThat(store.loadByName(tableName))
+                    .extracting(properties -> properties.getInt(PAGE_SIZE))
+                    .isEqualTo(456);
         }
 
         @Test
@@ -87,9 +86,27 @@ class S3TablePropertiesStoreIT extends TablePropertiesITBase {
             store.save(tableProperties);
 
             // When / Then
-            assertThat(store.loadByName("renamed-table")
-                    .map(properties -> properties.get(TABLE_NAME)))
-                    .contains("renamed-table");
+            assertThat(store.loadByName("renamed-table"))
+                    .extracting(properties -> properties.get(TABLE_NAME))
+                    .isEqualTo("renamed-table");
+        }
+
+        @Test
+        void shouldNotUpdateTableNameIfNewNameIsTheSameAsExistingTable() {
+            // Given
+            tableProperties.set(TABLE_NAME, "old-name");
+            store.save(tableProperties);
+            TableProperties table2 = createValidTableProperties();
+            table2.set(TABLE_NAME, "new-name");
+            store.save(table2);
+
+            // When / Then
+            tableProperties.set(TABLE_NAME, "new-name");
+            assertThatThrownBy(() -> store.save(tableProperties))
+                    .isInstanceOf(TableAlreadyExistsException.class);
+            assertThat(store.loadById(tableId))
+                    .extracting(table -> table.get(TABLE_NAME))
+                    .isEqualTo("old-name");
         }
     }
 
@@ -105,9 +122,10 @@ class S3TablePropertiesStoreIT extends TablePropertiesITBase {
             store.deleteByName(tableName);
 
             // Then
-            assertThat(store.loadByName(tableName)).isEmpty();
-            assertThatThrownBy(() -> store.loadProperties(tableProperties.getId()))
-                    .isInstanceOf(AmazonS3Exception.class);
+            assertThatThrownBy(() -> store.loadByName(tableName))
+                    .isInstanceOf(TableNotFoundException.class);
+            assertThatThrownBy(() -> store.loadById(tableId))
+                    .isInstanceOf(TableNotFoundException.class);
         }
     }
 
@@ -121,7 +139,7 @@ class S3TablePropertiesStoreIT extends TablePropertiesITBase {
             store.save(tableProperties);
 
             // Then
-            assertThat(store.loadProperties(tableProperties.getId()))
+            assertThat(store.loadById(tableId))
                     .isEqualTo(tableProperties);
         }
 
@@ -132,7 +150,7 @@ class S3TablePropertiesStoreIT extends TablePropertiesITBase {
             store.save(tableProperties);
 
             // Then
-            assertThatThrownBy(() -> store.loadProperties(tableProperties.getId()))
+            assertThatThrownBy(() -> store.loadById(tableId))
                     .isInstanceOf(IllegalArgumentException.class);
         }
 
@@ -155,26 +173,26 @@ class S3TablePropertiesStoreIT extends TablePropertiesITBase {
 
             // Then
             assertThat(store.loadByNameNoValidation(tableProperties.get(TABLE_NAME)))
-                    .map(properties -> properties.get(COMPRESSION_CODEC))
-                    .contains("abc");
+                    .extracting(properties -> properties.get(COMPRESSION_CODEC))
+                    .isEqualTo("abc");
         }
 
         @Test
         void shouldFindNoTableByName() {
-            assertThat(store.loadByName("not-a-table"))
-                    .isEmpty();
+            assertThatThrownBy(() -> store.loadByName("not-a-table"))
+                    .isInstanceOf(TableNotFoundException.class);
         }
 
         @Test
         void shouldFindNoTableByNameNoValidation() {
-            assertThat(store.loadByNameNoValidation("not-a-table"))
-                    .isEmpty();
+            assertThatThrownBy(() -> store.loadByNameNoValidation("not-a-table"))
+                    .isInstanceOf(TableNotFoundException.class);
         }
 
         @Test
         void shouldFindNoTableById() {
-            assertThatThrownBy(() -> store.loadProperties(TableIdentity.uniqueIdAndName("not-an-id", "not-a-name")))
-                    .isInstanceOf(AmazonS3Exception.class);
+            assertThatThrownBy(() -> store.loadById("not-a-table"))
+                    .isInstanceOf(TableNotFoundException.class);
         }
     }
 }

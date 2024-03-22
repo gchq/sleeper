@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,9 +22,8 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
 
 /**
- * Given a {@link Range}, this class can determine if it is in canonical form,
- * i.e. the minimum is inclusive and the maximum is exclusive, and if not it
- * can convert it into canonical form.
+ * Given a range, determine if it is in canonical form, and convert it if not. A range is in canonincal form when the
+ * minimum is inclusive and the maximum is exclusive.
  */
 public class RangeCanonicaliser {
 

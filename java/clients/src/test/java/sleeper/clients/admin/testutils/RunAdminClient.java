@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,13 +28,13 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.ingest.batcher.IngestBatcherStore;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.task.IngestTaskStatusStore;
-import sleeper.job.common.QueueMessageCount;
+import sleeper.task.common.QueueMessageCount;
 
 import static org.mockito.Mockito.when;
 import static sleeper.clients.admin.properties.UpdatePropertiesRequestTestHelper.noChanges;
 import static sleeper.clients.admin.properties.UpdatePropertiesRequestTestHelper.withChanges;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
-import static sleeper.job.common.QueueMessageCountsInMemory.noQueues;
+import static sleeper.task.common.InMemoryQueueMessageCounts.noQueues;
 
 public class RunAdminClient {
     private final ToStringPrintStream out;
@@ -45,8 +45,8 @@ public class RunAdminClient {
     private QueueMessageCount.Client queueClient = noQueues();
 
     RunAdminClient(ToStringPrintStream out, TestConsoleInput in,
-                   AdminConfigStoreTestHarness harness,
-                   UpdatePropertiesWithTextEditor editor) {
+            AdminConfigStoreTestHarness harness,
+            UpdatePropertiesWithTextEditor editor) {
         this.out = out;
         this.in = in;
         this.harness = harness;
@@ -84,7 +84,7 @@ public class RunAdminClient {
     }
 
     public RunAdminClient editFromStore(InstanceProperties properties,
-                                        TableProperties before, TableProperties after) throws Exception {
+            TableProperties before, TableProperties after) throws Exception {
         harness.setInstanceProperties(properties, before);
         when(editor.openPropertiesFile(before))
                 .thenReturn(withChanges(before, after));
@@ -92,8 +92,7 @@ public class RunAdminClient {
     }
 
     public RunAdminClient editFromStore(InstanceProperties properties,
-                                        TableProperties before, TableProperties after, PropertyGroup group)
-            throws Exception {
+            TableProperties before, TableProperties after, PropertyGroup group) throws Exception {
         harness.setInstanceProperties(properties, before);
         when(editor.openPropertiesFile(before, group))
                 .thenReturn(withChanges(before, after));

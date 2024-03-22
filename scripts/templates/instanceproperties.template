@@ -125,6 +125,13 @@ sleeper.task.runner.timeout.seconds=900
 # The namespaces for the metrics used in the metrics stack.
 sleeper.metrics.namespace=Sleeper
 
+# The number of tables to calculate metrics for in a single invocation. A separate invocation of the
+# lambda will be made for each batch when there are more tables than the batch size.
+sleeper.metrics.batch.size=5
+
+# Whether to calculate table metrics for offline tables.
+sleeper.metrics.offline.enabled=false
+
 # If true, properties will be reloaded every time a long running job is started or a lambda is run.
 # This will mainly be used in test scenarios to ensure properties are up to date.
 sleeper.properties.force.reload=false
@@ -147,13 +154,21 @@ sleeper.metadata.s3.dynamo.pointintimerecovery=false
 # the DynamoDB tables.
 sleeper.tables.index.dynamo.pointintimerecovery=false
 
-# The timeout in minutes for when the table properties provider cache should be cleared, forcing table
-# properties to be reloaded from S3.
-sleeper.table.properties.provider.timeout.minutes=60
-
 # This specifies whether queries and scans against the table index DynamoDB tables are strongly
 # consistent.
 sleeper.tables.index.dynamo.consistent.reads=true
+
+# The timeout in minutes for when the table properties provider cache should be cleared, forcing table
+# properties to be reloaded from S3.
+sleeper.cache.table.properties.provider.timeout.minutes=60
+
+# The amount of memory for lambdas that create batches of tables to run some operation against, eg.
+# create compaction jobs, run garbage collection, perform partition splitting.
+sleeper.batch.table.lambdas.memory=1024
+
+# The timeout in seconds for lambdas that create batches of tables to run some operation against, eg.
+# create compaction jobs, run garbage collection, perform partition splitting.
+sleeper.batch.table.lambdas.timeout.seconds=60
 
 
 ## The following properties relate to standard ingest.
@@ -202,19 +217,6 @@ sleeper.ingest.partition.refresh.period=120
 
 # A comma-separated list of role names which should be able to ingest data into Sleeper.
 # sleeper.ingest.source.role=
-
-# The way in which records are held in memory before they are written to a local store.
-# Valid values are 'arraylist' and 'arrow'.
-# The arraylist method is simpler, but it is slower and requires careful tuning of the number of
-# records in each batch.
-sleeper.ingest.record.batch.type=arrow
-
-# The way in which partition files are written to the main Sleeper store.
-# Valid values are 'direct' (which writes using the s3a Hadoop file system) and 'async' (which writes
-# locally and then copies the completed Parquet file asynchronously into S3).
-# The direct method is simpler but the async method should provide better performance when the number
-# of partitions is large.
-sleeper.ingest.partition.file.writer.type=async
 
 # Flag to enable/disable storage of tracking information for ingest jobs and tasks.
 sleeper.ingest.status.store.enabled=true
@@ -710,13 +712,18 @@ sleeper.bulk.import.eks.is.native.libs.image=false
 
 ## The following properties relate to the splitting of partitions.
 
-# The frequency in minutes with which the lambda that finds partitions that need splitting runs.
+# The frequency in minutes with which the lambda runs to find partitions that need splitting and send
+# jobs to the splitting lambda.
 sleeper.partition.splitting.period.minutes=30
 
 # When a partition needs splitting, a partition splitting job is created. This reads in the sketch
 # files associated to the files in the partition in order to identify the median. This parameter
 # controls the maximum number of files that are read in.
 sleeper.partition.splitting.files.maximum=50
+
+# The number of tables to find partitions to split for in a single invocation. A separate invocation
+# of the lambda will be made for each batch when there are more tables than the batch size.
+sleeper.partition.splitting.table.batch.size=5
 
 # The amount of memory in MB for the lambda function used to identify partitions that need to be
 # split.
@@ -744,6 +751,13 @@ sleeper.gc.period.minutes=15
 # The memory in MB for the lambda function used to perform garbage collection.
 sleeper.gc.memory=1024
 
+# The number of tables to perform garbage collection for in a single invocation. A separate invocation
+# of the lambda will be made for each batch when there are more tables than the batch size.
+sleeper.gc.table.batch.size=5
+
+# Whether to perform garbage collection for offline tables.
+sleeper.gc.offline.enabled=false
+
 # The size of the batch of files ready for garbage collection requested from the State Store.
 sleeper.gc.batch.size=2000
 
@@ -755,6 +769,10 @@ sleeper.default.gc.delay.minutes=15
 
 
 ## The following properties relate to compactions.
+
+# The number of tables to perform compaction job creation for in a single invocation. A separate
+# invocation of the lambda will be made for each batch when there are more tables than the batch size.
+sleeper.compaction.job.creation.batch.size=5
 
 # The visibility timeout for the queue of compaction jobs.
 sleeper.compaction.queue.visibility.timeout.seconds=900
@@ -768,6 +786,32 @@ sleeper.compaction.keepalive.period.seconds=300
 # The delay in seconds until a failed compaction job becomes visible on the compaction job queue and
 # can be processed again.
 sleeper.compaction.job.failed.visibility.timeout.seconds=0
+
+# The time in seconds for a compaction task to wait for a compaction job to appear on the SQS queue
+# (must be <= 20).
+# When a compaction task waits for compaction jobs to appear on the SQS queue, if the task receives no
+# messages in the time defined by this property, it will try to wait for a message again.
+sleeper.compaction.task.wait.time.seconds=20
+
+# The time in seconds for a compaction task to wait after receiving no compaction jobs before
+# attempting to receive a message again.
+# When a compaction task waits for compaction jobs to appear on the SQS queue, if the task receives no
+# messages in the time defined by the property "sleeper.compaction.task.wait.time.seconds", it will
+# wait for a number of seconds defined by this property, then try to receive a message again.
+sleeper.compaction.task.delay.before.retry.seconds=10
+
+# The total time in seconds that a compaction task can be idle before it is terminated.
+# When there are no compaction jobs available on the SQS queue, and SQS returns no jobs, the task will
+# check whether this idle time has elapsed since the last time it finished a job. If so, the task will
+# terminate.
+sleeper.compaction.task.max.idle.time.seconds=60
+
+# The maximum number of times that a compaction task can fail to process consecutive compaction jobs
+# before it terminates.
+# When the task starts or completes any job successfully, the count of consecutive failures is set to
+# zero. Any time it fails to process a job, this count is incremented. If this maximum is reached, the
+# task will terminate.
+sleeper.compaction.task.max.consecutive.failures=3
 
 # The rate at which the compaction job creation lambda runs (in minutes, must be >=1).
 sleeper.compaction.job.creation.period.minutes=1
@@ -860,6 +904,14 @@ sleeper.default.compaction.strategy.class=sleeper.compaction.strategy.impl.SizeR
 # the output file.
 # This is a default value and will be used if not specified in the table properties.
 sleeper.default.compaction.files.batch.size=12
+
+# The number of compaction jobs to send in a single batch.
+# When compaction jobs are created, there is no limit on how many jobs can be created at once. A batch
+# is a group of compaction jobs that will have their creation updates applied at the same time. For
+# each batch, we send all compaction jobs to the SQS queue, then update the state store to assign job
+# IDs to the input files.
+# This can be overridden on a per-table basis.
+sleeper.default.table.compaction.job.send.batch.size=10
 
 # Used by the SizeRatioCompactionStrategy to decide if a group of files should be compacted.
 # If the file sizes are s_1, ..., s_n then the files are compacted if s_1 + ... + s_{n-1} >= ratio *
@@ -991,6 +1043,12 @@ sleeper.default.parquet.columnindex.truncate.length=128
 # The length in bytes to truncate the min/max binary values in row groups.
 sleeper.default.parquet.statistics.truncate.length=2147483647
 
+# Used to set parquet.writer.version, see documentation here:
+# https://github.com/apache/parquet-mr/blob/master/parquet-hadoop/README.md
+# Can be either v1 or v2. The v2 pages store levels uncompressed while v1 pages compress levels with
+# the data.
+sleeper.default.parquet.writer.version=v2
+
 # This specifies whether queries and scans against DynamoDB tables used in the state stores are
 # strongly consistent. This default can be overridden by a table property.
 sleeper.default.table.dynamo.strongly.consistent.reads=false
@@ -1037,3 +1095,20 @@ sleeper.default.ingest.batcher.ingest.queue=bulk_import_emr_serverless
 # data.
 # Defaults to 1 week.
 sleeper.default.ingest.batcher.file.tracking.ttl.minutes=10080
+
+# Specifies the strategy that ingest uses to create files and references in partitions.
+# Valid values are: [one_file_per_leaf, one_reference_per_leaf]
+sleeper.default.ingest.file.writing.strategy=one_reference_per_leaf
+
+# The way in which records are held in memory before they are written to a local store.
+# Valid values are 'arraylist' and 'arrow'.
+# The arraylist method is simpler, but it is slower and requires careful tuning of the number of
+# records in each batch.
+sleeper.default.ingest.record.batch.type=arrow
+
+# The way in which partition files are written to the main Sleeper store.
+# Valid values are 'direct' (which writes using the s3a Hadoop file system) and 'async' (which writes
+# locally and then copies the completed Parquet file asynchronously into S3).
+# The direct method is simpler but the async method should provide better performance when the number
+# of partitions is large.
+sleeper.default.ingest.partition.file.writer.type=async

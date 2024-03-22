@@ -19,12 +19,15 @@ package sleeper.systemtest.suite;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import sleeper.compaction.strategy.impl.BasicCompactionStrategy;
 import sleeper.core.partition.PartitionTree;
+import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.systemtest.suite.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.extension.AfterTestPurgeQueues;
 import sleeper.systemtest.suite.fixtures.SystemTestSchema;
-import sleeper.systemtest.suite.testutil.AfterTestPurgeQueues;
+import sleeper.systemtest.suite.testutil.Slow;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.util.List;
@@ -34,65 +37,105 @@ import java.util.stream.LongStream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
+import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
+import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFiles;
+import static sleeper.core.statestore.FilesReportTestHelper.activeFiles;
 import static sleeper.core.testutils.printers.FileReferencePrinter.printExpectedFilesForAllTables;
 import static sleeper.core.testutils.printers.FileReferencePrinter.printTableFilesExpectingIdentical;
 import static sleeper.core.testutils.printers.PartitionsPrinter.printExpectedPartitionsForAllTables;
 import static sleeper.core.testutils.printers.PartitionsPrinter.printTablePartitionsExpectingIdentical;
-import static sleeper.systemtest.datageneration.GenerateNumberedValue.addPrefix;
-import static sleeper.systemtest.datageneration.GenerateNumberedValue.numberStringAndZeroPadTo;
-import static sleeper.systemtest.datageneration.GenerateNumberedValueOverrides.overrideField;
+import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
+import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStringAndZeroPadTo;
+import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides.overrideField;
+import static sleeper.systemtest.dsl.testutil.SystemTestTableMetricsHelper.tableMetrics;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
-import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.partitionsBuilder;
 
 @SystemTest
+@Slow // Slow because compactions run for 200 tables in one task
 public class MultipleTablesIT {
     private final Schema schema = SystemTestSchema.DEFAULT_SCHEMA;
+    private static final int NUMBER_OF_TABLES = 200;
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, AfterTestPurgeQueues purgeQueues) {
         sleeper.connectToInstanceNoTables(MAIN);
-        purgeQueues.purgeIfTestFailed(INGEST_JOB_QUEUE_URL, PARTITION_SPLITTING_QUEUE_URL, COMPACTION_JOB_QUEUE_URL);
+        purgeQueues.purgeIfTestFailed(INGEST_JOB_QUEUE_URL, PARTITION_SPLITTING_JOB_QUEUE_URL, COMPACTION_JOB_QUEUE_URL);
     }
 
     @Test
-    void shouldCreate20Tables(SleeperSystemTest sleeper) {
-        sleeper.tables().createMany(5, schema);
+    void shouldCreateMultipleTables(SleeperSystemTest sleeper) {
+        sleeper.tables().createMany(NUMBER_OF_TABLES, schema);
 
-        assertThat(sleeper.tables().loadIdentities())
-                .hasSize(5);
+        assertThat(sleeper.tables().list())
+                .hasSize(NUMBER_OF_TABLES);
     }
 
     @Test
-    void shouldIngestOneFileTo5Tables(SleeperSystemTest sleeper) throws Exception {
-        // Given we have 5 tables
+    void shouldIngestOneFileToMultipleTables(SleeperSystemTest sleeper) {
+        // Given we have several tables
         // And we have one source file to be ingested
-        sleeper.tables().createMany(5, schema);
+        sleeper.tables().createMany(NUMBER_OF_TABLES, schema);
         sleeper.sourceFiles().createWithNumberedRecords(schema, "file.parquet", LongStream.range(0, 100));
 
-        // When we send an ingest job with the source file to all 20 tables
+        // When we send an ingest job with the source file to all tables
         sleeper.ingest().byQueue().sendSourceFilesToAllTables("file.parquet")
                 .invokeTask().waitForJobs();
 
         // Then all tables should contain the source file records
         // And all tables should have one active file
         assertThat(sleeper.query().byQueue().allRecordsByTable())
-                .hasSize(5)
-                .allSatisfy(((table, records) ->
-                        assertThat(records).containsExactlyElementsOf(
-                                sleeper.generateNumberedRecords(schema, LongStream.range(0, 100)))));
+                .hasSize(NUMBER_OF_TABLES)
+                .allSatisfy(((table, records) -> assertThat(records).containsExactlyElementsOf(
+                        sleeper.generateNumberedRecords(schema, LongStream.range(0, 100)))));
         assertThat(sleeper.tableFiles().referencesByTable())
-                .hasSize(5)
-                .allSatisfy((table, files) ->
-                        assertThat(files).hasSize(1));
+                .hasSize(NUMBER_OF_TABLES)
+                .allSatisfy((table, files) -> assertThat(files).hasSize(1));
     }
 
     @Test
-    void shouldSplitPartitionsOf5TablesWith100RecordsAndThresholdOf20(SleeperSystemTest sleeper) throws InterruptedException {
-        // Given we have 5 tables with a split threshold of 20
+    void shouldCompactAndGCMultipleTables(SleeperSystemTest sleeper) {
+        // Given we have several tables
+        // And we ingest two source files as separate jobs
+        sleeper.tables().createManyWithProperties(NUMBER_OF_TABLES, schema, Map.of(
+                COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
+                COMPACTION_FILES_BATCH_SIZE, "2",
+                GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "0"));
+        sleeper.sourceFiles()
+                .createWithNumberedRecords(schema, "file1.parquet", LongStream.range(0, 50))
+                .createWithNumberedRecords(schema, "file2.parquet", LongStream.range(50, 100));
+        sleeper.ingest().byQueue()
+                .sendSourceFilesToAllTables("file1.parquet")
+                .sendSourceFilesToAllTables("file2.parquet")
+                .invokeTask().waitForJobs();
+
+        // When we run compaction and GC
+        sleeper.compaction().createJobs(NUMBER_OF_TABLES).invokeTasks(1).waitForJobs();
+        sleeper.garbageCollection().invoke().waitFor();
+
+        // Then all tables should have one active file with the expected records, and none ready for GC
+        assertThat(sleeper.query().byQueue().allRecordsByTable())
+                .hasSize(NUMBER_OF_TABLES)
+                .allSatisfy(((table, records) -> assertThat(records).containsExactlyElementsOf(
+                        sleeper.generateNumberedRecords(schema, LongStream.range(0, 100)))));
+        var tables = sleeper.tables().list();
+        var partitionsByTable = sleeper.partitioning().treeByTable();
+        var filesByTable = sleeper.tableFiles().filesByTable();
+        PartitionTree expectedPartitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(expectedPartitions);
+        assertThat(printTableFilesExpectingIdentical(partitionsByTable, filesByTable))
+                .isEqualTo(printExpectedFilesForAllTables(tables, expectedPartitions,
+                        activeFiles(fileReferenceFactory.rootFile("merged.parquet", 100))));
+    }
+
+    @Test
+    void shouldSplitPartitionsOfMultipleTables(SleeperSystemTest sleeper) {
+        // Given we have several tables with a split threshold of 20
         // And we ingest a file of 100 records to each table
-        sleeper.tables().createManyWithProperties(5, schema,
+        sleeper.tables().createManyWithProperties(NUMBER_OF_TABLES, schema,
                 Map.of(PARTITION_SPLIT_THRESHOLD, "20"));
         sleeper.setGeneratorOverrides(
                 overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
@@ -103,22 +146,22 @@ public class MultipleTablesIT {
 
         // When we run 3 partition splits with compactions
         sleeper.partitioning().split();
-        sleeper.compaction().splitAndCompactFiles();
+        sleeper.compaction().splitFilesAndRunJobs(NUMBER_OF_TABLES * 2);
         sleeper.partitioning().split();
-        sleeper.compaction().splitAndCompactFiles();
+        sleeper.compaction().splitFilesAndRunJobs(NUMBER_OF_TABLES * 4);
         sleeper.partitioning().split();
-        sleeper.compaction().splitAndCompactFiles();
+        sleeper.compaction().splitFilesAndRunJobs(NUMBER_OF_TABLES * 8);
 
         // Then all tables have their records split over 8 leaf partitions
         assertThat(sleeper.directQuery().byQueue().allRecordsByTable())
-                .hasSize(5)
+                .hasSize(NUMBER_OF_TABLES)
                 .allSatisfy((table, records) -> assertThat(records)
                         .containsExactlyInAnyOrderElementsOf(
                                 sleeper.generateNumberedRecords(schema, LongStream.range(0, 100))));
-        var tables = sleeper.tables().loadIdentities();
+        var tables = sleeper.tables().list();
         var partitionsByTable = sleeper.partitioning().treeByTable();
-        var filesByTable = sleeper.tableFiles().referencesByTable();
-        PartitionTree expectedPartitions = partitionsBuilder(schema)
+        var filesByTable = sleeper.tableFiles().filesByTable();
+        PartitionTree expectedPartitions = new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", "row-50")
                 .splitToNewChildren("L", "LL", "LR", "row-25")
@@ -132,15 +175,45 @@ public class MultipleTablesIT {
                 .isEqualTo(printExpectedPartitionsForAllTables(schema, tables, expectedPartitions));
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(expectedPartitions);
         assertThat(printTableFilesExpectingIdentical(partitionsByTable, filesByTable))
-                .isEqualTo(printExpectedFilesForAllTables(tables, expectedPartitions, List.of(
-                        fileReferenceFactory.partitionFile("LLL", 12),
-                        fileReferenceFactory.partitionFile("LLR", 13),
-                        fileReferenceFactory.partitionFile("LRL", 12),
-                        fileReferenceFactory.partitionFile("LRR", 13),
-                        fileReferenceFactory.partitionFile("RLL", 12),
-                        fileReferenceFactory.partitionFile("RLR", 13),
-                        fileReferenceFactory.partitionFile("RRL", 12),
-                        fileReferenceFactory.partitionFile("RRR", 13)
-                )));
+                .isEqualTo(printExpectedFilesForAllTables(tables, expectedPartitions, activeAndReadyForGCFiles(
+                        List.of(
+                                fileReferenceFactory.partitionFile("LLL", 12),
+                                fileReferenceFactory.partitionFile("LLR", 13),
+                                fileReferenceFactory.partitionFile("LRL", 12),
+                                fileReferenceFactory.partitionFile("LRR", 13),
+                                fileReferenceFactory.partitionFile("RLL", 12),
+                                fileReferenceFactory.partitionFile("RLR", 13),
+                                fileReferenceFactory.partitionFile("RRL", 12),
+                                fileReferenceFactory.partitionFile("RRR", 13)),
+                        List.of("root", "L", "R", "LL", "LR", "RL", "RR"))));
+    }
+
+    @Test
+    void shouldGenerateMetricsForMultipleTables(SleeperSystemTest sleeper) {
+        // Given we have several tables
+        // And we ingest two source files as separate jobs
+        sleeper.tables().createManyWithProperties(NUMBER_OF_TABLES, schema, Map.of(
+                COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
+                COMPACTION_FILES_BATCH_SIZE, "2",
+                GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "0"));
+        sleeper.sourceFiles()
+                .createWithNumberedRecords(schema, "file1.parquet", LongStream.range(0, 50))
+                .createWithNumberedRecords(schema, "file2.parquet", LongStream.range(50, 100));
+        sleeper.ingest().byQueue()
+                .sendSourceFilesToAllTables("file1.parquet")
+                .sendSourceFilesToAllTables("file2.parquet")
+                .invokeTask().waitForJobs();
+
+        // When we compute table metrics
+        sleeper.tableMetrics().generate();
+
+        // Then each table has the expected metrics
+        sleeper.tables().forEach(() -> {
+            assertThat(sleeper.tableMetrics().get()).isEqualTo(tableMetrics(sleeper)
+                    .partitionCount(1).leafPartitionCount(1)
+                    .fileCount(2).recordCount(100)
+                    .averageActiveFilesPerPartition(2)
+                    .build());
+        });
     }
 }

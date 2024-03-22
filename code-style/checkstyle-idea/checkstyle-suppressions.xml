@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright 2022-2023 Crown Copyright
+  ~ Copyright 2022-2024 Crown Copyright
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -25,6 +25,51 @@
     <suppress files="[\\/]src[\\/]test[\\/].*" id="missingSwitchDefault"/>
     <suppress files="[\\/]src[\\/]test[\\/].*" id="methodLengthMax"/>
     <suppress files="[\\/]src[\\/]test[\\/].*" id="parameterNumber"/>
+    <suppress files="[\\/]src[\\/]test[\\/].*Test$" id="missingJavadocMethod"/>
+    <suppress files="[\\/]src[\\/]test[\\/].*IT$" id="missingJavadocMethod"/>
+    <suppress files="[\\/]src[\\/]test[\\/].*Test$" id="missingJavadocType"/>
+    <suppress files="[\\/]src[\\/]test[\\/].*IT$" id="missingJavadocType"/>
     <suppress files=".*Application.java" id="hideUtilityClassConstructor"/>
-    <suppress files="[\\/]src[\\/].*" id="importOrder"/>
+    <suppress files="[\\/]athena[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]athena[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]bulk-import[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]bulk-import[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]cdk[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]cdk[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]system-test[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]system-test[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]core[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]core[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]configuration[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]configuration[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]parquet[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]parquet[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]sketches[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]sketches[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]dynamodb-tools[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]dynamodb-tools[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]common-job[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]common-job[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]common-task[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]common-task[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]clients[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]clients[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]compaction[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]compaction[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]splitter[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]splitter[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]garbage-collector[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]garbage-collector[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]statestore[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]statestore[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]ingest[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]ingest[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]query[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]query[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]trino[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]trino[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]metrics[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]metrics[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]build[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]build[\\/].*" id="missingJavadocType"/>
 </suppressions>

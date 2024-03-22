@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ import java.util.List;
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 
 /**
- * A {@link WriteParquetFile} writes sorted Rows to a Parquet file.
+ * Writes sorted rows to a Parquet file.
  */
 public class WriteParquetFile implements FlatMapFunction<Iterator<Row>, Row>, MapPartitionsFunction<Row, Row> {
     private static final long serialVersionUID = 1873341639622053831L;

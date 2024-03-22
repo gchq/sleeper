@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,10 +28,10 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface PartitionFileWriter {
     /**
-     * Append a {@link Record} to the partition file. This method must always be called with records increasing in sort
+     * Append a record to the partition file. This method must always be called with records increasing in sort
      * order.
      *
-     * @param record The record to append
+     * @param  record      The record to append
      * @throws IOException -
      */
     void append(Record record) throws IOException;
@@ -40,7 +40,7 @@ public interface PartitionFileWriter {
      * Close the file, possibly asynchronously. When the returned future completes, the partition file should be in its
      * final storage and any intermediate data should be cleared.
      *
-     * @return Details about the new partition file
+     * @return             Details about the new partition file
      * @throws IOException -
      */
     CompletableFuture<FileReference> close() throws IOException;

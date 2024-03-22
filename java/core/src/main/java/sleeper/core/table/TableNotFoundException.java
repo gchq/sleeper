@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,31 @@
 package sleeper.core.table;
 
 public class TableNotFoundException extends RuntimeException {
-    private TableNotFoundException(String message) {
-        super(message);
+    private TableNotFoundException(String message, Exception cause) {
+        super(message, cause);
     }
 
     public static TableNotFoundException withTableId(String tableId) {
-        return new TableNotFoundException("Table not found with ID \"" + tableId + "\"");
+        return withTableId(tableId, null);
+    }
+
+    public static TableNotFoundException withTableId(String tableId, Exception cause) {
+        return new TableNotFoundException("Table not found with ID \"" + tableId + "\"", cause);
     }
 
     public static TableNotFoundException withTableName(String tableName) {
-        return new TableNotFoundException("Table not found with name \"" + tableName + "\"");
+        return withTableName(tableName, null);
+    }
+
+    public static TableNotFoundException withTableName(String tableName, Exception cause) {
+        return new TableNotFoundException("Table not found with name \"" + tableName + "\"", cause);
+    }
+
+    public static TableNotFoundException withTable(TableStatus table) {
+        return withTable(table, null);
+    }
+
+    public static TableNotFoundException withTable(TableStatus table, Exception cause) {
+        return new TableNotFoundException("Table not found: " + table, cause);
     }
 }

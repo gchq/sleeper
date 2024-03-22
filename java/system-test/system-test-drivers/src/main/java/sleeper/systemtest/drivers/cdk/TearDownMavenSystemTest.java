@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,8 +33,8 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 
-import static sleeper.systemtest.drivers.instance.SystemTestParameters.buildJarsBucketName;
-import static sleeper.systemtest.drivers.instance.SystemTestParameters.buildSystemTestECRRepoName;
+import static sleeper.systemtest.dsl.instance.SystemTestParameters.buildJarsBucketName;
+import static sleeper.systemtest.dsl.instance.SystemTestParameters.buildSystemTestECRRepoName;
 
 public class TearDownMavenSystemTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(TearDownMavenSystemTest.class);

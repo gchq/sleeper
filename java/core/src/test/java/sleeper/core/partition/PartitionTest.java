@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,8 +41,8 @@ public class PartitionTest {
     private Partition createMidPartition(Schema schema, Object splitPoint1, Object splitPoint2) {
         PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema);
         return partitionsBuilder.leavesWithSplits(
-                        Arrays.asList("C1", "C2", "C3"),
-                        Arrays.asList(splitPoint1, splitPoint2))
+                Arrays.asList("C1", "C2", "C3"),
+                Arrays.asList(splitPoint1, splitPoint2))
                 .parentJoining("M", "C1", "C2")
                 .parentJoining("P", "M", "C3")
                 .buildTree().getPartition("M");

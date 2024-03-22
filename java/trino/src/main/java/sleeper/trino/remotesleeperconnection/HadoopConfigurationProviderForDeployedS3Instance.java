@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import static sleeper.io.parquet.utils.HadoopConfigurationProvider.getConfigurat
 
 public class HadoopConfigurationProviderForDeployedS3Instance implements HadoopConfigurationProvider {
     /**
-     * Set up the Hadoop configuration which will be used by the ParquetReader to read from S3.
+     * Set up the Hadoop configuration to read Parquet files from S3. This will be used by the ParquetReader.
      * <p>
      * Hadoop uses the Thread context classloader by default. This classloader is different from the classloader that
      * Trino provides to individual plugins and so some of the classes that we would expect to be available to Hadoop

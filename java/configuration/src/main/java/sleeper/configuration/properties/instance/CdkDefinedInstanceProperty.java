@@ -55,6 +55,10 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .description("The name of the DynamoDB table indexing tables by their ID.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
+    CdkDefinedInstanceProperty TABLE_ONLINE_INDEX_DYNAMO_TABLENAME = Index.propertyBuilder("sleeper.tables.online.index.dynamo.table")
+            .description("The name of the DynamoDB table indexing tables by whether they are online or not, sorted by table name.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
 
     // DynamoDBStateStore
     CdkDefinedInstanceProperty ACTIVE_FILES_TABLELENAME = Index.propertyBuilder("sleeper.metadata.dynamo.active.table")
@@ -78,8 +82,28 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .build();
 
     // Table metrics
-    CdkDefinedInstanceProperty TABLE_METRICS_RULES = Index.propertyBuilder("sleeper.table.metrics.rulenames")
-            .description("The names of the CloudWatch rules that trigger generation of metrics for tables.")
+    CdkDefinedInstanceProperty TABLE_METRICS_LAMBDA_FUNCTION = Index.propertyBuilder("sleeper.table.metrics.lambda.function")
+            .description("The name of the Lambda function that triggers generation of metrics for tables.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+    CdkDefinedInstanceProperty TABLE_METRICS_QUEUE_URL = Index.propertyBuilder("sleeper.table.metrics.queue.url")
+            .description("The URL of the queue for sending batches of table metrics calculation requests.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+    CdkDefinedInstanceProperty TABLE_METRICS_QUEUE_ARN = Index.propertyBuilder("sleeper.table.metrics.queue.arn")
+            .description("The ARN of the queue for sending batches of table metrics calculation requests.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+    CdkDefinedInstanceProperty TABLE_METRICS_DLQ_URL = Index.propertyBuilder("sleeper.table.metrics.dlq.url")
+            .description("The URL of the dead letter queue for sending batches of table metrics calculation requests.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+    CdkDefinedInstanceProperty TABLE_METRICS_DLQ_ARN = Index.propertyBuilder("sleeper.table.metrics.dlq.arn")
+            .description("The ARN of the dead letter queue for sending batches of table metrics calculation requests.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+    CdkDefinedInstanceProperty TABLE_METRICS_RULE = Index.propertyBuilder("sleeper.table.metrics.rule")
+            .description("The name of the CloudWatch rule that triggers generation of metrics for tables.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
 
@@ -153,12 +177,28 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .description("The name of the family of Fargate task definitions used for compactions.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
-    CdkDefinedInstanceProperty COMPACTION_JOB_CREATION_LAMBDA_FUNCTION = Index.propertyBuilder("sleeper.compaction.job.creation.lambda.function")
-            .description("The function name of the compaction job creation lambda.")
+    CdkDefinedInstanceProperty COMPACTION_JOB_CREATION_TRIGGER_LAMBDA_FUNCTION = Index.propertyBuilder("sleeper.compaction.job.creation.trigger.lambda.function")
+            .description("The function name of the lambda to trigger compaction job creation for all tables.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
     CdkDefinedInstanceProperty COMPACTION_JOB_CREATION_CLOUDWATCH_RULE = Index.propertyBuilder("sleeper.compaction.job.creation.rule")
             .description("The name of the CloudWatch rule that periodically triggers the compaction job creation lambda.")
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .build();
+    CdkDefinedInstanceProperty COMPACTION_JOB_CREATION_BATCH_QUEUE_URL = Index.propertyBuilder("sleeper.compaction.job.creation.batch.queue.url")
+            .description("The URL of the queue for sending batches of tables to create compaction jobs for.")
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .build();
+    CdkDefinedInstanceProperty COMPACTION_JOB_CREATION_BATCH_QUEUE_ARN = Index.propertyBuilder("sleeper.compaction.job.creation.batch.queue.arn")
+            .description("The ARN of the queue for sending batches of tables to create compaction jobs for.")
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .build();
+    CdkDefinedInstanceProperty COMPACTION_JOB_CREATION_BATCH_DLQ_URL = Index.propertyBuilder("sleeper.compaction.job.creation.batch.dlq.url")
+            .description("The URL of the dead letter queue for sending batches of tables to create compaction jobs for.")
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .build();
+    CdkDefinedInstanceProperty COMPACTION_JOB_CREATION_BATCH_DLQ_ARN = Index.propertyBuilder("sleeper.compaction.job.creation.batch.dlq.arn")
+            .description("The ARN of the dead letter queue for sending batches of tables to create compaction jobs for.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
     CdkDefinedInstanceProperty COMPACTION_JOB_QUEUE_URL = Index.propertyBuilder("sleeper.compaction.job.queue.url")
@@ -191,24 +231,44 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .build();
 
     // Partition splitting
-    CdkDefinedInstanceProperty PARTITION_SPLITTING_QUEUE_URL = Index.propertyBuilder("sleeper.partition.splitting.queue.url")
-            .description("The URL of the queue for partition splitting.")
+    CdkDefinedInstanceProperty PARTITION_SPLITTING_TABLE_BATCH_QUEUE_URL = Index.propertyBuilder("sleeper.partition.splitting.table.batch.queue.url")
+            .description("The URL of the queue for sending batches of tables to invoke the " +
+                    "find partitions to split lambda for those tables.")
             .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
             .build();
-    CdkDefinedInstanceProperty PARTITION_SPLITTING_QUEUE_ARN = Index.propertyBuilder("sleeper.partition.splitting.queue.arn")
-            .description("The ARN of the queue for partition splitting.")
+    CdkDefinedInstanceProperty PARTITION_SPLITTING_TABLE_BATCH_QUEUE_ARN = Index.propertyBuilder("sleeper.partition.splitting.table.batch.queue.arn")
+            .description("The ARN of the queue for sending batches of tables to invoke the " +
+                    "find partitions to split lambda for those tables.")
             .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
             .build();
-    CdkDefinedInstanceProperty PARTITION_SPLITTING_DLQ_URL = Index.propertyBuilder("sleeper.partition.splitting.dlq.url")
-            .description("The URL of the dead letter queue for partition splitting.")
+    CdkDefinedInstanceProperty PARTITION_SPLITTING_TABLE_BATCH_DLQ_URL = Index.propertyBuilder("sleeper.partition.splitting.table.batch.dlq.url")
+            .description("The URL of the dead letter queue for sending batches of tables to invoke the " +
+                    "find partitions to split lambda for those tables.")
             .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
             .build();
-    CdkDefinedInstanceProperty PARTITION_SPLITTING_DLQ_ARN = Index.propertyBuilder("sleeper.partition.splitting.dlq.arn")
-            .description("The ARN of the dead letter queue for partition splitting.")
+    CdkDefinedInstanceProperty PARTITION_SPLITTING_TABLE_BATCH_DLQ_ARN = Index.propertyBuilder("sleeper.partition.splitting.table.batch.dlq.arn")
+            .description("The ARN of the dead letter queue for sending batches of tables to invoke the " +
+                    "find partitions to split lambda for those tables.")
             .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
             .build();
-    CdkDefinedInstanceProperty PARTITION_SPLITTING_LAMBDA_FUNCTION = Index.propertyBuilder("sleeper.partition.splitting.lambda.function")
-            .description("The function name of the partition splitting lambda.")
+    CdkDefinedInstanceProperty PARTITION_SPLITTING_JOB_QUEUE_URL = Index.propertyBuilder("sleeper.partition.splitting.job.queue.url")
+            .description("The URL of the queue for partition splitting jobs.")
+            .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
+            .build();
+    CdkDefinedInstanceProperty PARTITION_SPLITTING_JOB_QUEUE_ARN = Index.propertyBuilder("sleeper.partition.splitting.job.queue.arn")
+            .description("The ARN of the queue for partition splitting jobs.")
+            .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
+            .build();
+    CdkDefinedInstanceProperty PARTITION_SPLITTING_JOB_DLQ_URL = Index.propertyBuilder("sleeper.partition.splitting.job.dlq.url")
+            .description("The URL of the dead letter queue for partition splitting jobs.")
+            .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
+            .build();
+    CdkDefinedInstanceProperty PARTITION_SPLITTING_JOB_DLQ_ARN = Index.propertyBuilder("sleeper.partition.splitting.job.dlq.arn")
+            .description("The ARN of the dead letter queue for partition splitting jobs.")
+            .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
+            .build();
+    CdkDefinedInstanceProperty PARTITION_SPLITTING_TRIGGER_LAMBDA_FUNCTION = Index.propertyBuilder("sleeper.partition.splitting.trigger.lambda.function")
+            .description("The function name of the lambda that finds partitions to split and sends jobs to the split partition lambda.")
             .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
             .build();
     CdkDefinedInstanceProperty PARTITION_SPLITTING_CLOUDWATCH_RULE = Index.propertyBuilder("sleeper.partition.splitting.rule")
@@ -219,6 +279,26 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
     // Garbage collection
     CdkDefinedInstanceProperty GARBAGE_COLLECTOR_CLOUDWATCH_RULE = Index.propertyBuilder("sleeper.gc.rule")
             .description("The name of the CloudWatch rule that periodically triggers the garbage collector lambda.")
+            .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR)
+            .build();
+    CdkDefinedInstanceProperty GARBAGE_COLLECTOR_LAMBDA_FUNCTION = Index.propertyBuilder("sleeper.gc.lambda.function")
+            .description("The function name of the garbage collector lambda.")
+            .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR)
+            .build();
+    CdkDefinedInstanceProperty GARBAGE_COLLECTOR_QUEUE_URL = Index.propertyBuilder("sleeper.gc.queue.url")
+            .description("The URL of the queue for sending batches of garbage collection requests.")
+            .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR)
+            .build();
+    CdkDefinedInstanceProperty GARBAGE_COLLECTOR_QUEUE_ARN = Index.propertyBuilder("sleeper.gc.queue.arn")
+            .description("The ARN of the queue for sending batches of garbage collection requests.")
+            .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR)
+            .build();
+    CdkDefinedInstanceProperty GARBAGE_COLLECTOR_DLQ_URL = Index.propertyBuilder("sleeper.gc.dlq.url")
+            .description("The URL of the dead letter queue for sending batches of garbage collection requests.")
+            .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR)
+            .build();
+    CdkDefinedInstanceProperty GARBAGE_COLLECTOR_DLQ_ARN = Index.propertyBuilder("sleeper.gc.dlq.arn")
+            .description("The ARN of the dead letter queue for sending batches of garbage collection requests.")
             .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR)
             .build();
 

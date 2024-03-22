@@ -23,6 +23,8 @@ import java.math.RoundingMode;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.function.BooleanSupplier;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 public class PollWithRetries {
     private static final Logger LOGGER = LoggerFactory.getLogger(PollWithRetries.class);
@@ -59,17 +61,52 @@ public class PollWithRetries {
         while (!checkFinished.getAsBoolean()) {
             polls++;
             if (polls >= maxPolls) {
-                String message = "Timed out after " + polls + " tries waiting for " +
-                        LoggedDuration.withShortOutput(Duration.ofMillis(pollIntervalMillis * polls)) +
-                        " until " + description;
-                LOGGER.error(message);
-                throw new TimedOutException(message);
+                if (polls > 1) {
+                    String message = "Timed out after " + polls + " tries waiting for " +
+                            LoggedDuration.withShortOutput(Duration.ofMillis(pollIntervalMillis * polls)) +
+                            " until " + description;
+                    LOGGER.error(message);
+                    throw new TimedOutException(message);
+                } else {
+                    String message = "Failed, expected to find " + description;
+                    LOGGER.error(message);
+                    throw new CheckFailedException(message);
+                }
             }
             Thread.sleep(pollIntervalMillis);
         }
     }
 
-    public static class TimedOutException extends RuntimeException {
+    public <T> T queryUntil(String description, Supplier<T> query, Predicate<T> condition) throws InterruptedException {
+        QueryTracker<T> tracker = new QueryTracker<>(query, condition);
+        pollUntil(description, tracker::checkFinished);
+        return tracker.lastResult;
+    }
+
+    private static class QueryTracker<T> {
+        private final Supplier<T> query;
+        private final Predicate<T> condition;
+
+        private T lastResult = null;
+
+        QueryTracker(Supplier<T> query, Predicate<T> condition) {
+            this.query = query;
+            this.condition = condition;
+        }
+
+        public boolean checkFinished() {
+            lastResult = query.get();
+            return condition.test(lastResult);
+        }
+    }
+
+    public static class CheckFailedException extends RuntimeException {
+        private CheckFailedException(String message) {
+            super(message);
+        }
+    }
+
+    public static class TimedOutException extends CheckFailedException {
         private TimedOutException(String message) {
             super(message);
         }

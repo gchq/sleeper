@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,10 +32,10 @@ public class SleeperTypeConversionUtils {
     }
 
     /**
-     * Convert a Sleeper {@link sleeper.core.schema.type.Type} class into a {@link io.trino.spi.type.Type} class.
+     * Convert a Sleeper type into a Trino type.
      *
-     * @param sleeperType The Sleeper type.
-     * @return The Trino type.
+     * @param  sleeperType the Sleeper type
+     * @return             the Trino type
      */
     public static io.trino.spi.type.Type convertSleeperTypeToTrinoType(sleeper.core.schema.type.Type sleeperType) {
         if (sleeperType instanceof IntType) {
@@ -60,10 +60,10 @@ public class SleeperTypeConversionUtils {
     }
 
     /**
-     * Convert a Trino {@link io.trino.spi.type.Type} class into a Sleeper {@link sleeper.core.schema.type.Type} class.
+     * Convert a Trino type into a Sleeper type.
      *
-     * @param trinoType The Trino type.
-     * @return The Sleeper type.
+     * @param  trinoType the Trino type
+     * @return           the Sleeper type
      */
     public static sleeper.core.schema.type.Type convertTrinoTypeToSleeperType(io.trino.spi.type.Type trinoType) {
         if (trinoType.equals(IntegerType.INTEGER)) {
@@ -86,9 +86,9 @@ public class SleeperTypeConversionUtils {
     /**
      * Convert an object of a specified Trino type into an object which can be used as a row key in Sleeper.
      *
-     * @param trinoType   The type of the object.
-     * @param trinoObject The object to convert.
-     * @return The converted object.
+     * @param  trinoType   the type of the object
+     * @param  trinoObject the object to convert
+     * @return             the converted object
      */
     public static Object convertTrinoObjectToSleeperRowKeyObject(io.trino.spi.type.Type trinoType, Object trinoObject) {
         if (trinoType.equals(IntegerType.INTEGER)) {

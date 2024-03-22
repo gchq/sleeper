@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,14 +46,14 @@ public class Partition {
     private final int dimension;
 
     private Partition(Partition.Builder builder) {
-        region = builder.region;
-        rowKeyTypes = builder.rowKeyTypes;
-        id = builder.id;
+        region = Objects.requireNonNull(builder.region, "region must not be null");
+        rowKeyTypes = Objects.requireNonNull(builder.rowKeyTypes, "rowKeyTypes must not be null");
+        id = Objects.requireNonNull(builder.id, "id must not be null");
         leafPartition = builder.leafPartition;
         parentPartitionId = builder.parentPartitionId;
         childPartitionIds = Optional.ofNullable(builder.childPartitionIds).orElse(Collections.emptyList());
         dimension = builder.dimension;
-        if (region != null && !RegionCanonicaliser.isRegionInCanonicalForm(region)) {
+        if (!RegionCanonicaliser.isRegionInCanonicalForm(region)) {
             throw new IllegalArgumentException("Region must be in canonical form");
         }
     }
@@ -89,7 +89,6 @@ public class Partition {
     public int getDimension() {
         return dimension;
     }
-
 
     public boolean isRowKeyInPartition(Schema schema, Key rowKey) {
         return region.isKeyInRegion(schema, rowKey);
@@ -173,12 +172,10 @@ public class Partition {
             return this;
         }
 
-
         public Builder parentPartitionId(String parentPartitionId) {
             this.parentPartitionId = parentPartitionId;
             return this;
         }
-
 
         public Builder childPartitionIds(List<String> childPartitionIds) {
             this.childPartitionIds = childPartitionIds;

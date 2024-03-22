@@ -90,9 +90,8 @@ public class InMemoryPartitionStore implements PartitionStore {
         validateChild(parent, left);
         validateChild(parent, right);
         partitions = Stream.concat(
-                        partitions.stream().filter(partition ->
-                                !Objects.equals(partition.getId(), parent.getId())),
-                        Stream.of(parent, left, right))
+                partitions.stream().filter(partition -> !Objects.equals(partition.getId(), parent.getId())),
+                Stream.of(parent, left, right))
                 .collect(Collectors.toUnmodifiableList());
     }
 

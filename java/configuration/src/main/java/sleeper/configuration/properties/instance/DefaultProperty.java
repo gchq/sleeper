@@ -16,10 +16,10 @@
 
 package sleeper.configuration.properties.instance;
 
-
 import sleeper.configuration.Utils;
 import sleeper.configuration.properties.SleeperPropertyIndex;
 import sleeper.configuration.properties.table.CompressionCodec;
+import sleeper.configuration.properties.validation.IngestFileWritingStrategy;
 import sleeper.configuration.properties.validation.IngestQueue;
 
 import java.util.List;
@@ -76,6 +76,13 @@ public interface DefaultProperty {
                     "The length in bytes to truncate the min/max binary values in row groups.")
             .defaultValue("2147483647")
             .validationPredicate(Utils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.DEFAULT).build();
+    UserDefinedInstanceProperty DEFAULT_PARQUET_WRITER_VERSION = Index.propertyBuilder("sleeper.default.parquet.writer.version")
+            .description("Used to set parquet.writer.version, see documentation here:\n" +
+                    "https://github.com/apache/parquet-mr/blob/master/parquet-hadoop/README.md\n" +
+                    "Can be either v1 or v2. The v2 pages store levels uncompressed while v1 pages compress levels with the data.")
+            .defaultValue("v2")
+            .validationPredicate(List.of("v1", "v2")::contains)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS = Index.propertyBuilder("sleeper.default.table.dynamo.strongly.consistent.reads")
             .description("This specifies whether queries and scans against DynamoDB tables used in the state stores " +
@@ -144,6 +151,26 @@ public interface DefaultProperty {
                     "Defaults to 1 week.")
             .defaultValue("" + 60 * 24 * 7)
             .validationPredicate(Utils::isNonNegativeInteger)
+            .propertyGroup(InstancePropertyGroup.DEFAULT).build();
+    UserDefinedInstanceProperty DEFAULT_INGEST_FILE_WRITING_STRATEGY = Index.propertyBuilder("sleeper.default.ingest.file.writing.strategy")
+            .description("Specifies the strategy that ingest uses to create files and references in partitions.\n" +
+                    "Valid values are: " + describeEnumValuesInLowerCase(IngestFileWritingStrategy.class))
+            .defaultValue(IngestFileWritingStrategy.ONE_REFERENCE_PER_LEAF.name().toLowerCase(Locale.ROOT))
+            .validationPredicate(IngestFileWritingStrategy::isValid)
+            .propertyGroup(InstancePropertyGroup.DEFAULT).build();
+    UserDefinedInstanceProperty DEFAULT_INGEST_RECORD_BATCH_TYPE = Index.propertyBuilder("sleeper.default.ingest.record.batch.type")
+            .description("The way in which records are held in memory before they are written to a local store.\n" +
+                    "Valid values are 'arraylist' and 'arrow'.\n" +
+                    "The arraylist method is simpler, but it is slower and requires careful tuning of the number of records in each batch.")
+            .defaultValue("arrow")
+            .propertyGroup(InstancePropertyGroup.DEFAULT).build();
+    UserDefinedInstanceProperty DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE = Index.propertyBuilder("sleeper.default.ingest.partition.file.writer.type")
+            .description("The way in which partition files are written to the main Sleeper store.\n" +
+                    "Valid values are 'direct' (which writes using the s3a Hadoop file system) and 'async' (which writes locally and then " +
+                    "copies the completed Parquet file asynchronously into S3).\n" +
+                    "The direct method is simpler but the async method should provide better performance when the number of partitions " +
+                    "is large.")
+            .defaultValue("async")
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
 
     static List<UserDefinedInstanceProperty> getAll() {

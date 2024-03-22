@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,11 +33,11 @@ public class ArrowToRecordConversionUtils {
     }
 
     /**
-     * Construct a {@link Record} object from a single row within a {@link VectorSchemaRoot}.
+     * Construct a Sleeper record from a single Arrow row.
      *
-     * @param vectorSchemaRoot The container for all of the vectors which hold the values to use
-     * @param rowNo            The index to read from each vector
-     * @return A new Record object holding those values
+     * @param  vectorSchemaRoot the container for all of the vectors which hold the values to use
+     * @param  rowNo            the index to read from each vector
+     * @return                  a new Record object holding those values
      */
     public static Record convertVectorSchemaRootToRecord(VectorSchemaRoot vectorSchemaRoot, int rowNo) {
         int noOfFields = vectorSchemaRoot.getSchema().getFields().size();
@@ -51,12 +51,11 @@ public class ArrowToRecordConversionUtils {
             }
             if (fieldVector.getMinorType() == Types.MinorType.LIST) {
                 // Arrow list fields may store genuine lists, or instead store a map as a list of structs
-                boolean isActuallyMap =
-                        fieldVector.getChildrenFromFields().size() == 1 &&
-                                fieldVector.getChildrenFromFields().get(0).getMinorType() == Types.MinorType.STRUCT &&
-                                fieldVector.getChildrenFromFields().get(0).getChildrenFromFields().size() == 2 &&
-                                fieldVector.getChildrenFromFields().get(0).getChildrenFromFields().get(0).getField().getName().equals(ArrowRecordBatch.MAP_KEY_FIELD_NAME) &&
-                                fieldVector.getChildrenFromFields().get(0).getChildrenFromFields().get(1).getField().getName().equals(ArrowRecordBatch.MAP_VALUE_FIELD_NAME);
+                boolean isActuallyMap = fieldVector.getChildrenFromFields().size() == 1 &&
+                        fieldVector.getChildrenFromFields().get(0).getMinorType() == Types.MinorType.STRUCT &&
+                        fieldVector.getChildrenFromFields().get(0).getChildrenFromFields().size() == 2 &&
+                        fieldVector.getChildrenFromFields().get(0).getChildrenFromFields().get(0).getField().getName().equals(ArrowRecordBatch.MAP_KEY_FIELD_NAME) &&
+                        fieldVector.getChildrenFromFields().get(0).getChildrenFromFields().get(1).getField().getName().equals(ArrowRecordBatch.MAP_VALUE_FIELD_NAME);
                 if (isActuallyMap) {
                     // Convert the list of structs into a map
                     value = ((List<?>) value).stream()

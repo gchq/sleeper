@@ -21,8 +21,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonSerializer;
 
 import sleeper.clients.util.ClientsGsonConfig;
-import sleeper.core.table.TableIdentity;
-import sleeper.core.table.TableIdentityProvider;
+import sleeper.core.table.TableStatus;
+import sleeper.core.table.TableStatusProvider;
 import sleeper.ingest.batcher.FileIngestRequest;
 
 import java.io.PrintStream;
@@ -41,27 +41,27 @@ public class JsonIngestBatcherReporter implements IngestBatcherReporter {
     }
 
     @Override
-    public void report(List<FileIngestRequest> fileList, BatcherQuery.Type queryType, TableIdentityProvider tableIdentityProvider) {
-        Gson gson = createGson(tableIdentityProvider);
+    public void report(List<FileIngestRequest> fileList, BatcherQuery.Type queryType, TableStatusProvider tableProvider) {
+        Gson gson = createGson(tableProvider);
         JsonObject jsonObject = new JsonObject();
         jsonObject.add("fileList", gson.toJsonTree(fileList));
         out.println(gson.toJson(jsonObject));
     }
 
-    private static Gson createGson(TableIdentityProvider tableIdentityProvider) {
+    private static Gson createGson(TableStatusProvider tableProvider) {
         return ClientsGsonConfig.standardBuilder()
-                .registerTypeAdapter(FileIngestRequest.class, fileSerializer(tableIdentityProvider))
+                .registerTypeAdapter(FileIngestRequest.class, fileSerializer(tableProvider))
                 .create();
     }
 
-    private static JsonSerializer<FileIngestRequest> fileSerializer(TableIdentityProvider tableIdentityProvider) {
+    private static JsonSerializer<FileIngestRequest> fileSerializer(TableStatusProvider tableProvider) {
         return (request, type, context) -> {
             JsonObject jsonObject = new JsonObject();
             jsonObject.addProperty("file", request.getFile());
             jsonObject.addProperty("fileSizeBytes", request.getFileSizeBytes());
-            Optional<TableIdentity> tableIdentity = tableIdentityProvider.getById(request.getTableId());
-            if (tableIdentity.isPresent()) {
-                jsonObject.addProperty("tableName", tableIdentity.get().getTableName());
+            Optional<TableStatus> table = tableProvider.getById(request.getTableId());
+            if (table.isPresent()) {
+                jsonObject.addProperty("tableName", table.get().getTableName());
             } else {
                 jsonObject.addProperty("tableId", request.getTableId());
                 jsonObject.addProperty("tableExists", false);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -88,7 +88,6 @@ class PartitionFactoryTest {
         PartitionSplitResult nestedSplitResult = partitionFactory.split(children.get(1), "nestedLeft", "nestedRight", 1, "bbb");
         List<Partition> nestedChildren = nestedSplitResult.buildChildren();
         children.set(1, nestedSplitResult.buildParent());
-
 
         List<PrimitiveType> rowKeyTypes = schema.getRowKeyTypes();
         assertThat(parent).isEqualTo(

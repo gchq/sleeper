@@ -15,7 +15,6 @@
  */
 package sleeper.core.util;
 
-
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
@@ -79,5 +78,32 @@ class PollWithRetriesTest {
     void shouldComputeMaxPollsFromTimeoutWhichIsNotAnExactMultipleOfPollInterval() {
         assertThat(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMillis(1500)))
                 .isEqualTo(PollWithRetries.intervalAndMaxPolls(1000, 2));
+    }
+
+    @Test
+    void shouldRepeatQuery() throws Exception {
+        // Given
+        PollWithRetries poll = PollWithRetries.immediateRetries(1);
+        Iterator<String> iterator = List.of("a", "b").iterator();
+
+        // When
+        String result = poll.queryUntil("result is b", iterator::next, "b"::equals);
+
+        // Then
+        assertThat(iterator).isExhausted();
+        assertThat(result).isEqualTo("b");
+    }
+
+    @Test
+    void shouldFailSingleCheck() {
+        // Given
+        PollWithRetries poll = PollWithRetries.noRetries();
+        Iterator<Boolean> iterator = List.of(false).iterator();
+
+        // When / Then
+        assertThatThrownBy(() -> poll.pollUntil("iterator returns true", iterator::next))
+                .isInstanceOf(PollWithRetries.CheckFailedException.class)
+                .hasMessage("Failed, expected to find iterator returns true");
+        assertThat(iterator).isExhausted();
     }
 }

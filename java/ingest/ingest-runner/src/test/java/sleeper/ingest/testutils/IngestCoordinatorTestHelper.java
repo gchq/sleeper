@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,11 +22,14 @@ import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.ingest.impl.ParquetConfiguration;
 import sleeper.ingest.impl.partitionfilewriter.PartitionFileWriterFactory;
 import sleeper.ingest.impl.recordbatch.RecordBatchFactory;
+
+import java.time.Instant;
 
 import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
 
@@ -59,7 +62,8 @@ public class IngestCoordinatorTestHelper {
             RecordBatchFactory<T> recordBatchFactory, PartitionFileWriterFactory partitionFileWriterFactory) {
         return standardIngestCoordinatorBuilder(parameters.getStateStore(), parameters.getSchema(),
                 recordBatchFactory, partitionFileWriterFactory)
-                .iteratorClassName(parameters.getIteratorClassName());
+                .iteratorClassName(parameters.getIteratorClassName())
+                .ingestFileWritingStrategy(parameters.getIngestFileWritingStrategy());
     }
 
     public static <T> IngestCoordinator.Builder<T> standardIngestCoordinatorBuilder(
@@ -73,4 +77,27 @@ public class IngestCoordinatorTestHelper {
                 .recordBatchFactory(recordBatchFactory)
                 .partitionFileWriterFactory(partitionFileWriterFactory);
     }
+
+    public static FileReference.Builder accurateFileReferenceBuilder(
+            String filename, String partitionId, long numberOfRecords, Instant updateTime) {
+        return FileReference.builder()
+                .partitionId(partitionId)
+                .filename(filename)
+                .numberOfRecords(numberOfRecords)
+                .countApproximate(false)
+                .lastStateStoreUpdateTime(updateTime);
+    }
+
+    public static FileReference accurateSplitFileReference(
+            FileReference fileReference, String partitionId, long numberOfRecords, Instant updateTime) {
+        return accurateSplitFileReference(fileReference.getFilename(), partitionId, numberOfRecords, updateTime);
+    }
+
+    public static FileReference accurateSplitFileReference(
+            String filename, String partitionId, long numberOfRecords, Instant updateTime) {
+        return accurateFileReferenceBuilder(filename, partitionId, numberOfRecords, updateTime)
+                .onlyContainsDataForThisPartition(false)
+                .build();
+    }
+
 }

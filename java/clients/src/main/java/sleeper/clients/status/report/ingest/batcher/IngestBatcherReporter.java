@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,12 @@
 
 package sleeper.clients.status.report.ingest.batcher;
 
-import sleeper.core.table.TableIdentityProvider;
+import sleeper.core.table.TableStatusProvider;
 import sleeper.ingest.batcher.FileIngestRequest;
 
 import java.util.List;
 
 public interface IngestBatcherReporter {
 
-    void report(List<FileIngestRequest> statusList, BatcherQuery.Type queryType, TableIdentityProvider tableIdentityProvider);
+    void report(List<FileIngestRequest> statusList, BatcherQuery.Type queryType, TableStatusProvider tableProvider);
 }

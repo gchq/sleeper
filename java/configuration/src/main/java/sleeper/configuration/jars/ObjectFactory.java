@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,8 +49,7 @@ public class ObjectFactory {
                     .getDeclaredConstructor()
                     .newInstance();
             LOGGER.info("Created object of class {} as subclass of {}", className, parentClass.getName());
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException |
-                 InvocationTargetException e) {
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
             throw new ObjectFactoryException("Exception instantiating object of class " + className
                     + " as subclass of " + parentClass.getName(), e);
         }

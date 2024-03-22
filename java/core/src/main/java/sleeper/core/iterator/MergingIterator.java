@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,14 +28,11 @@ import java.util.List;
 import java.util.PriorityQueue;
 
 /**
- * Given a {@link List} of sorted {@link CloseableIterator} of {@link Record}s,
- * merges them together into one sorted {@link CloseableIterator} of
- * {@link Record}s. This is done by using a {@link PriorityQueue} where the
- * smallest record is returned first.
+ * Merges a list of sorted iterators into one fully sorted iterator. This is done by using a {@link PriorityQueue} where
+ * the smallest record is returned first.
  * <p>
- * Note: for performance reasons this does not check that the given iterators
- * are sorted. As this closed is only used internally it should never be called
- * with non-sorted iterators.
+ * Note: for performance reasons this does not check that the given iterators are sorted. As this class is only used
+ * internally it should never be called with non-sorted iterators.
  */
 public class MergingIterator implements CloseableIterator<Record> {
     private static final Logger LOGGER = LoggerFactory.getLogger(MergingIterator.class);

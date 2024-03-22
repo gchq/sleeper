@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,10 +24,11 @@ import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.BulkImportJobSerDe;
 import sleeper.bulkimport.starter.executor.BulkImportArguments;
 import sleeper.bulkimport.starter.executor.EmrServerlessPlatformExecutor;
-import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
-import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
+import sleeper.systemtest.drivers.util.SystemTestClients;
+import sleeper.systemtest.dsl.ingest.DirectBulkImportDriver;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -35,40 +36,39 @@ import java.util.UUID;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobAccepted;
 
-public class DirectEmrServerlessDriver {
-    private final InstanceProperties properties;
-    private final IngestJobStatusStore jobStatusStore;
-    private final EmrServerlessPlatformExecutor executor;
+public class DirectEmrServerlessDriver implements DirectBulkImportDriver {
+    private final SystemTestInstanceContext instance;
     private final AmazonS3 s3Client;
+    private final AmazonDynamoDB dynamoDBClient;
+    private final EmrServerlessClient emrClient;
 
-    public DirectEmrServerlessDriver(SleeperInstanceContext instance,
-                                     AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, EmrServerlessClient emrClient) {
-        this(instance.getInstanceProperties(),
-                IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, instance.getInstanceProperties()),
-                new EmrServerlessPlatformExecutor(emrClient, instance.getInstanceProperties()), s3Client);
-    }
-
-    public DirectEmrServerlessDriver(InstanceProperties properties,
-                                     IngestJobStatusStore jobStatusStore,
-                                     EmrServerlessPlatformExecutor executor,
-                                     AmazonS3 s3Client) {
-        this.properties = properties;
-        this.jobStatusStore = jobStatusStore;
-        this.executor = executor;
-        this.s3Client = s3Client;
+    public DirectEmrServerlessDriver(SystemTestInstanceContext instance,
+                                     SystemTestClients clients) {
+        this.instance = instance;
+        this.s3Client = clients.getS3();
+        this.dynamoDBClient = clients.getDynamoDB();
+        this.emrClient = clients.getEmrServerless();
     }
 
     public void sendJob(BulkImportJob job) {
         String jobRunId = UUID.randomUUID().toString();
-        jobStatusStore.jobValidated(ingestJobAccepted(job.toIngestJob(), Instant.now())
+        jobStatusStore().jobValidated(ingestJobAccepted(job.toIngestJob(), Instant.now())
                 .jobRunId(jobRunId).build());
-        s3Client.putObject(properties.get(BULK_IMPORT_BUCKET),
+        s3Client.putObject(instance.getInstanceProperties().get(BULK_IMPORT_BUCKET),
                 "bulk_import/" + job.getId() + "-" + jobRunId + ".json",
                 new BulkImportJobSerDe().toJson(job));
-        executor.runJobOnPlatform(BulkImportArguments.builder()
+        executor().runJobOnPlatform(BulkImportArguments.builder()
                 .bulkImportJob(job)
                 .jobRunId(jobRunId)
-                .instanceProperties(properties)
+                .instanceProperties(instance.getInstanceProperties())
                 .build());
+    }
+
+    private IngestJobStatusStore jobStatusStore() {
+        return IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, instance.getInstanceProperties());
+    }
+
+    private EmrServerlessPlatformExecutor executor() {
+        return new EmrServerlessPlatformExecutor(emrClient, instance.getInstanceProperties());
     }
 }

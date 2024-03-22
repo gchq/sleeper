@@ -59,7 +59,7 @@ import static sleeper.configuration.properties.instance.LoggingLevelsProperty.PA
 import static sleeper.configuration.properties.instance.LoggingLevelsProperty.ROOT_LOGGING_LEVEL;
 
 /**
- * Collection of utility methods related to the CDK deployment
+ * Collection of utility methods related to the CDK deployment.
  */
 public class Utils {
 
@@ -111,11 +111,13 @@ public class Utils {
     }
 
     /**
-     * Valid values are taken from <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-logs-loggroup.html">here</a>
+     * Configures a log group with the specified number of days. Valid values are taken from
+     * <a href=
+     * "https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-logs-loggroup.html">here</a>.
      * A value of -1 represents an infinite number of days.
      *
-     * @param numberOfDays number of days you want to retain the logs
-     * @return The RetentionDays equivalent
+     * @param  numberOfDays number of days you want to retain the logs
+     * @return              The RetentionDays equivalent
      */
     public static LogGroup createLogGroupWithRetentionDays(Construct scope, String id, int numberOfDays) {
         return LogGroup.Builder.create(scope, id)
@@ -221,7 +223,7 @@ public class Utils {
                 && deployedVersion != null
                 && !localVersion.equals(deployedVersion)) {
             throw new MismatchedVersionException(format("Local version %s does not match deployed version %s. " +
-                            "Please upgrade/downgrade to make these match",
+                    "Please upgrade/downgrade to make these match",
                     localVersion, deployedVersion));
         }
         properties.set(VERSION, localVersion);
@@ -261,12 +263,12 @@ public class Utils {
     }
 
     /**
-     * Normalises EC2 instance size strings so they can be looked up in the
-     * {@link software.amazon.awscdk.services.ec2.InstanceSize} enum.
-     * Java identifiers can't start with a number, so "2xlarge" becomes "xlarge2".
+     * Normalises EC2 instance size strings to match enum identifiers. They can then be looked up in the
+     * {@link software.amazon.awscdk.services.ec2.InstanceSize} enum. Java identifiers can't start with a number, so
+     * "2xlarge" becomes "xlarge2".
      *
-     * @param size the human readable size
-     * @return the internal enum name
+     * @param  size the human readable size
+     * @return      the internal enum name
      */
     public static String normaliseSize(String size) {
         if (size == null) {

@@ -27,9 +27,8 @@ import java.util.stream.Collectors;
 import static java.util.function.Function.identity;
 
 /**
- * A utility class that collects information about the status of files within Sleeper
- * and produces a {@link TableFilesStatus} data structure. This is currently used by
- * FileStatusReport implementations that present this data to the user.
+ * Collects information about files within Sleeper for reporting. Produces a {@link TableFilesStatus} data structure.
+ * This is currently used by {@link FileStatusReporter} implementations that present this data to the user.
  */
 public class FileStatusCollector {
     private final StateStore stateStore;
@@ -39,7 +38,7 @@ public class FileStatusCollector {
     }
 
     public TableFilesStatus run(int maxNumberOFilesWithNoReferencesToCount) throws StateStoreException {
-        AllReferencesToAllFiles files = stateStore.getAllFileReferencesWithMaxUnreferenced(maxNumberOFilesWithNoReferencesToCount);
+        AllReferencesToAllFiles files = stateStore.getAllFilesWithMaxUnreferenced(maxNumberOFilesWithNoReferencesToCount);
         List<Partition> partitions = stateStore.getAllPartitions();
 
         int leafPartitionCount = partitions.stream()

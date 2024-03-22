@@ -20,9 +20,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.suite.dsl.SleeperSystemTest;
-import sleeper.systemtest.suite.dsl.reports.SystemTestReports;
-import sleeper.systemtest.suite.testutil.AfterTestReports;
+import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.extension.AfterTestReports;
+import sleeper.systemtest.dsl.reporting.SystemTestReports;
 import sleeper.systemtest.suite.testutil.Expensive;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
@@ -47,14 +47,14 @@ public class CompactionPerformanceIT {
     }
 
     @Test
-    void shouldMeetCompactionPerformanceStandards(SleeperSystemTest sleeper) throws InterruptedException {
+    void shouldMeetCompactionPerformanceStandards(SleeperSystemTest sleeper) {
         sleeper.systemTestCluster().updateProperties(properties -> {
             properties.setEnum(INGEST_MODE, DIRECT);
             properties.setNumber(NUMBER_OF_WRITERS, 110);
             properties.setNumber(NUMBER_OF_RECORDS_PER_WRITER, 40_000_000);
         }).generateData(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(20)));
 
-        sleeper.compaction().createJobs().invokeTasks(10)
+        sleeper.compaction().createJobs(10).invokeTasks(10)
                 .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(40)));
 
         assertThat(sleeper.tableFiles().references())
@@ -63,7 +63,7 @@ public class CompactionPerformanceIT {
                         "contain 4.4 billion records");
         assertThat(sleeper.reporting().compactionJobs().finishedStatistics())
                 .matches(stats -> stats.isAllFinishedOneRunEach(10)
-                                && stats.isMinAverageRunRecordsPerSecond(300000),
+                        && stats.isMinAverageRunRecordsPerSecond(300000),
                         "meets minimum performance");
     }
 }

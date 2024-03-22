@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,9 +31,9 @@ public class MavenModuleStructureTest {
     }
 
     @Test
-    public void shouldProduceListOfTestedModulesForMavenProjectListArguments() {
+    public void shouldProduceListOfJavaModulesForMavenProjectListArguments() {
         // When / Then
-        assertThat(TestMavenModuleStructure.example().allTestedModules())
+        assertThat(TestMavenModuleStructure.example().allJavaModules())
                 .extracting(MavenModuleAndPath::getPath).containsExactly(
                         "core", "configuration", "ingest",
                         "bulk-import/bulk-import-common",

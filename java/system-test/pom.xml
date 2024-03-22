@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2022-2023 Crown Copyright
+  ~ Copyright 2022-2024 Crown Copyright
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -22,9 +22,9 @@
     <parent>
         <groupId>sleeper</groupId>
         <artifactId>aws</artifactId>
-        <version>0.21.0</version>
+        <version>0.22.0</version>
     </parent>
-    
+
     <packaging>pom</packaging>
     <artifactId>system-test</artifactId>
 
@@ -32,6 +32,7 @@
         <module>system-test-cdk</module>
         <module>system-test-configuration</module>
         <module>system-test-data-generation</module>
+        <module>system-test-dsl</module>
         <module>system-test-drivers</module>
         <module>system-test-suite</module>
     </modules>

@@ -50,7 +50,7 @@ public class CompactionJobFactory {
         iteratorConfig = tableProperties.get(ITERATOR_CONFIG);
         this.jobIdSupplier = jobIdSupplier;
         LOGGER.info("Initialised CompactionFactory with table {}, filename prefix {}",
-                tableProperties.getId(), fileNameFactory.getOutputFilePrefix());
+                tableProperties.getStatus(), fileNameFactory.getOutputFilePrefix());
     }
 
     public CompactionJob createCompactionJob(

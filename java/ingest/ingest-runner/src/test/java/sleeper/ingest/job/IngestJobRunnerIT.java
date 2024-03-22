@@ -71,8 +71,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_RECORD_BATCH_TYPE;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_RECORD_BATCH_TYPE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
@@ -107,8 +107,7 @@ class IngestJobRunnerIT {
                 Arguments.of("arrow", "direct", "file://"),
                 Arguments.of("arraylist", "async", "s3a://"),
                 Arguments.of("arraylist", "direct", "s3a://"),
-                Arguments.of("arraylist", "direct", "file://")
-        );
+                Arguments.of("arraylist", "direct", "file://"));
     }
 
     @BeforeEach
@@ -120,20 +119,20 @@ class IngestJobRunnerIT {
     }
 
     private InstanceProperties getInstanceProperties(String fileSystemPrefix,
-                                                     String recordBatchType,
-                                                     String partitionFileWriterType) {
+            String recordBatchType,
+            String partitionFileWriterType) {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(ID, instanceId);
         instanceProperties.set(FILE_SYSTEM, fileSystemPrefix);
         instanceProperties.set(DATA_BUCKET, getTableDataBucket(fileSystemPrefix));
-        instanceProperties.set(INGEST_RECORD_BATCH_TYPE, recordBatchType);
-        instanceProperties.set(INGEST_PARTITION_FILE_WRITER_TYPE, partitionFileWriterType);
+        instanceProperties.set(DEFAULT_INGEST_RECORD_BATCH_TYPE, recordBatchType);
+        instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, partitionFileWriterType);
         return instanceProperties;
     }
 
     private TableProperties createTable(Schema schema, String fileSystemPrefix,
-                                        String recordBatchType,
-                                        String partitionFileWriterType) {
+            String recordBatchType,
+            String partitionFileWriterType) {
         InstanceProperties instanceProperties = getInstanceProperties(fileSystemPrefix, recordBatchType, partitionFileWriterType);
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, tableName);
@@ -164,9 +163,9 @@ class IngestJobRunnerIT {
     }
 
     private List<String> writeParquetFilesForIngest(String fileSystemPrefix,
-                                                    RecordGenerator.RecordListAndSchema recordListAndSchema,
-                                                    String subDirectory,
-                                                    int numberOfFiles) throws IOException {
+            RecordGenerator.RecordListAndSchema recordListAndSchema,
+            String subDirectory,
+            int numberOfFiles) throws IOException {
         List<String> files = new ArrayList<>();
 
         for (int fileNo = 0; fileNo < numberOfFiles; fileNo++) {
@@ -193,8 +192,8 @@ class IngestJobRunnerIT {
     @ParameterizedTest(name = "backedBy: {0}, writeMode: {1}, fileSystem: {2}")
     @MethodSource("parametersForTests")
     void shouldIngestParquetFiles(String recordBatchType,
-                                  String partitionFileWriterType,
-                                  String fileSystemPrefix) throws Exception {
+            String partitionFileWriterType,
+            String fileSystemPrefix) throws Exception {
         // Given
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
@@ -230,15 +229,14 @@ class IngestJobRunnerIT {
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
                 actualFiles,
-                hadoopConfiguration
-        );
+                hadoopConfiguration);
     }
 
     @ParameterizedTest(name = "backedBy: {0}, writeMode: {1}, fileSystem: {2}")
     @MethodSource("parametersForTests")
     void shouldBeAbleToHandleAllFileFormats(String recordBatchType,
-                                            String partitionFileWriterType,
-                                            String fileSystemPrefix) throws Exception {
+            String partitionFileWriterType,
+            String fileSystemPrefix) throws Exception {
         // Given
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
@@ -278,15 +276,14 @@ class IngestJobRunnerIT {
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
                 actualFiles,
-                hadoopConfiguration
-        );
+                hadoopConfiguration);
     }
 
     @ParameterizedTest(name = "backedBy: {0}, writeMode: {1}, fileSystem:{2}")
     @MethodSource("parametersForTests")
     void shouldIngestParquetFilesInNestedDirectories(String recordBatchType,
-                                                     String partitionFileWriterType,
-                                                     String fileSystemPrefix) throws Exception {
+            String partitionFileWriterType,
+            String fileSystemPrefix) throws Exception {
         // Given
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
@@ -295,16 +292,15 @@ class IngestJobRunnerIT {
         int noOfNestings = 4;
         int noOfFilesPerDirectory = 2;
         List<String> files = IntStream.range(0, noOfTopLevelDirectories)
-                .mapToObj(topLevelDirNo ->
-                        IntStream.range(0, noOfNestings).mapToObj(nestingNo -> {
-                            try {
-                                String dirName = String.format("dir-%d%s", topLevelDirNo, String.join("", Collections.nCopies(nestingNo, "/nested-dir")));
-                                return writeParquetFilesForIngest(
-                                        fileSystemPrefix, recordListAndSchema, dirName, noOfFilesPerDirectory);
-                            } catch (Exception e) {
-                                throw new RuntimeException(e);
-                            }
-                        }).flatMap(List::stream).collect(Collectors.toList()))
+                .mapToObj(topLevelDirNo -> IntStream.range(0, noOfNestings).mapToObj(nestingNo -> {
+                    try {
+                        String dirName = String.format("dir-%d%s", topLevelDirNo, String.join("", Collections.nCopies(nestingNo, "/nested-dir")));
+                        return writeParquetFilesForIngest(
+                                fileSystemPrefix, recordListAndSchema, dirName, noOfFilesPerDirectory);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                }).flatMap(List::stream).collect(Collectors.toList()))
                 .flatMap(List::stream).collect(Collectors.toList());
         List<Record> expectedRecords = Collections.nCopies(noOfTopLevelDirectories * noOfNestings * noOfFilesPerDirectory, recordListAndSchema.recordList).stream()
                 .flatMap(List::stream).collect(Collectors.toList());
@@ -334,8 +330,7 @@ class IngestJobRunnerIT {
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
                 actualFiles,
-                hadoopConfiguration
-        );
+                hadoopConfiguration);
     }
 
     @Test

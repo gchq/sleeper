@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,11 +28,11 @@ import java.util.Map;
 import static java.util.Objects.requireNonNull;
 
 /**
- * A factory class to create {@link SleeperConnector} objects.
+ * A factory to create Sleeper connectors. Uses Guice to perform dependency injection and construct the dependencies of
+ * the connector.
  * <p>
- * This implementation uses Guice to perform dependency-injection and construct the classes which are required by the
- * resulting Connector object. Guice is configured within {@link SleeperModule} The module is passed in during
- * construction so that a different module may be used during testing.
+ * Guice is configured within {@link SleeperModule}. The module is passed in during construction so that a different
+ * module may be used during testing.
  */
 public class SleeperConnectorFactory implements ConnectorFactory {
     private final Module guiceModule;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,11 +26,8 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-
 /**
- * The {@link WrappedKeyComparator} is a {@link Comparator} of Sleeper {@link Key}s
- * that sorts them in the natural way as defined by the Sleeper schema, i.e.
- * it sorts by the row keys and then the sort keys.
+ * A comparator to sort Sleeper keys by row keys then sort keys. This is the order defined by the Sleeper schema.
  */
 public class WrappedKeyComparator implements Comparator<Key>, Serializable {
     private static final long serialVersionUID = 7448396149070034670L;

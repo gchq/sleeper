@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,10 +48,11 @@ public class SleeperConfig {
     }
 
     /**
-     * The maximum number of splits that the {@link SleeperSplitManager} will return in a single batch. Experience
+     * The maximum number of splits to be returned in a single batch. Used by {@link SleeperSplitManager}. Experience
      * suggests that the framework will keep on requesting batches from the split manager and so constraining the size
      * of the batches makes little difference, unless the flow of splits is highly constrained by system parameters such
      * as:
+     *
      * <pre>
      *      query.min-schedule-split-batch-size=1
      *      query.schedule-split-batch-size=1
@@ -60,6 +61,7 @@ public class SleeperConfig {
      *      node-scheduler.max-unacknowledged-splits-per-task=1
      *      task.max-worker-threads=1
      * </pre>
+     *
      * Not all of these values may be necessary.
      *
      * @return The maximum number of splits to include in a single batch.

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,9 +25,8 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * This is an example implementation of a {@link SortedRecordIterator}. It
- * filters out {@link Record}s based on a timestamp. If the timestamp is more
- * than a certain length of time ago then the record is removed.
+ * Filters out records older than a specified age. If the specified timestamp field is more than a certain length of
+ * time ago then the record is removed. This is an example implementation of {@link SortedRecordIterator}.
  */
 public class AgeOffIterator implements SortedRecordIterator {
     private String fieldName;

@@ -81,9 +81,9 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_CLUSTER;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_CLOUDWATCH_RULE;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_RULES;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_RULE;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.job.common.WiremockTestHelper.wiremockEcsClient;
+import static sleeper.task.common.WiremockTestHelper.wiremockEcsClient;
 
 @WireMockTest
 class ShutdownSystemProcessesIT {
@@ -142,7 +142,7 @@ class ShutdownSystemProcessesIT {
             properties.set(PARTITION_SPLITTING_CLOUDWATCH_RULE, "test-partition-splitting-rule");
             properties.set(GARBAGE_COLLECTOR_CLOUDWATCH_RULE, "test-garbage-collector-rule");
             properties.set(INGEST_CLOUDWATCH_RULE, "test-ingest-task-creation-rule");
-            properties.set(TABLE_METRICS_RULES, "test-table-metrics-rule-1,test-table-metrics-rule-2");
+            properties.set(TABLE_METRICS_RULE, "test-table-metrics-rule-1,test-table-metrics-rule-2");
 
             stubFor(disableRuleRequest()
                     .willReturn(aResponse().withStatus(200)));
@@ -297,7 +297,6 @@ class ShutdownSystemProcessesIT {
             verify(1, listActiveClustersRequested());
         }
     }
-
 
     @Nested
     @DisplayName("Terminate running EMR Serverless Applications")

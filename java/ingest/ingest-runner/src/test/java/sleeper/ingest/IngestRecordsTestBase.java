@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -107,15 +107,13 @@ public class IngestRecordsTestBase {
         return ingestRecords.close();
     }
 
-    protected IngestResult ingestFromRecordIterator(Schema schema, StateStore stateStore, Iterator<Record> iterator)
-            throws StateStoreException, IteratorException, IOException {
+    protected IngestResult ingestFromRecordIterator(Schema schema, StateStore stateStore, Iterator<Record> iterator) throws StateStoreException, IteratorException, IOException {
         tableProperties.setSchema(schema);
         IngestFactory factory = createIngestFactory(stateStore);
         return factory.ingestFromRecordIterator(tableProperties, iterator);
     }
 
-    protected IngestResult ingestFromRecordIterator(StateStore stateStore, Iterator<Record> iterator)
-            throws StateStoreException, IteratorException, IOException {
+    protected IngestResult ingestFromRecordIterator(StateStore stateStore, Iterator<Record> iterator) throws StateStoreException, IteratorException, IOException {
         IngestFactory factory = createIngestFactory(stateStore);
         return factory.ingestFromRecordIterator(tableProperties, iterator);
     }
@@ -135,12 +133,12 @@ public class IngestRecordsTestBase {
 
     protected List<Record> readRecords(Stream<String> filenames) {
         return filenames.map(filename -> {
-                    try {
-                        return readRecordsFromParquetFile(filename, schema);
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                })
+            try {
+                return readRecordsFromParquetFile(filename, schema);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        })
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
     }

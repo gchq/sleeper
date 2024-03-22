@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,10 +28,9 @@ import java.util.Iterator;
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 
 /**
- * A {@link WriteParquetFiles} writes sorted Rows to a Parquet file. When it
- * comes across a {@link sleeper.core.record.Record} belonging to a different leaf partition
- * (denoted by the "partitionId" column), the Parquet file is flushed to the
- * file system along with its accompanying sketches file.
+ * Writes sorted rows to a Parquet file. When it comes across a {@link sleeper.core.record.Record} belonging to a
+ * different leaf partition (denoted by the "partitionId" column), the Parquet file is flushed to the file system along
+ * with its accompanying sketches file.
  */
 public class WriteParquetFiles implements MapPartitionsFunction<Row, Row> {
     private static final long serialVersionUID = 1873341639622053831L;

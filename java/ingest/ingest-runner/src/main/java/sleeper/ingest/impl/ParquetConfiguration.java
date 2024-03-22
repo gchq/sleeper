@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,11 +56,11 @@ public class ParquetConfiguration {
     }
 
     /**
-     * Create a {@link ParquetWriter} to write {@link Record} objects using the parameter values supplied during
-     * construction. It is the responsibility of the caller to close the writer after use.
+     * Create a writer to write records to a Parquet file. It is the responsibility of the caller to close the writer
+     * after use.
      *
-     * @param outputFile The name of the Parquet file to write to
-     * @return The {@link ParquetWriter} object
+     * @param  outputFile  The name of the Parquet file to write to
+     * @return             The {@link ParquetWriter} object
      * @throws IOException Thrown when the writer cannot be created
      */
     public ParquetWriter<Record> createParquetWriter(String outputFile) throws IOException {

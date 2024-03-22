@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.function.Supplier;
 
 /**
- * A {@link ConcatenatingIterator} iterator iterates through a list of iterator suppliers and for each one, reads it fully.
+ * Iterates through a list of iterator suppliers and for each one, reads it fully.
  */
 public class ConcatenatingIterator implements CloseableIterator<Record> {
     private final Iterator<Supplier<CloseableIterator<Record>>> iteratorSuppliers;

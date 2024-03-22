@@ -35,6 +35,8 @@ import sleeper.clients.util.CommandPipelineRunner;
 import sleeper.clients.util.EcrRepositoryCreator;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
+import sleeper.configuration.deploy.DeployInstanceConfiguration;
+import sleeper.configuration.deploy.DeployInstanceConfigurationFromTemplates;
 import sleeper.configuration.properties.SleeperPropertiesValidationReporter;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.local.SaveLocalProperties;
@@ -165,7 +167,7 @@ public class DeployNewInstance {
                 .build().invoke(instanceType, cdkCommand, runCommand);
         instanceProperties.loadFromS3GivenInstanceId(s3, instanceId);
         for (TableProperties tableProperties : deployInstanceConfiguration.getTableProperties()) {
-            LOGGER.info("Adding table " + tableProperties.getId());
+            LOGGER.info("Adding table " + tableProperties.getStatus());
             new AddTable(s3, dynamoDB, instanceProperties, tableProperties, getConfigurationForClient(instanceProperties, tableProperties)).run();
         }
         LOGGER.info("Finished deployment of new instance");

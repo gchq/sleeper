@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,13 +60,13 @@ public class IngestJobRunner implements IngestJobHandler {
     private final PropertiesReloader propertiesReloader;
 
     public IngestJobRunner(ObjectFactory objectFactory,
-                           InstanceProperties instanceProperties,
-                           TablePropertiesProvider tablePropertiesProvider,
-                           PropertiesReloader propertiesReloader,
-                           StateStoreProvider stateStoreProvider,
-                           String localDir,
-                           S3AsyncClient s3AsyncClient,
-                           Configuration hadoopConfiguration) {
+            InstanceProperties instanceProperties,
+            TablePropertiesProvider tablePropertiesProvider,
+            PropertiesReloader propertiesReloader,
+            StateStoreProvider stateStoreProvider,
+            String localDir,
+            S3AsyncClient s3AsyncClient,
+            Configuration hadoopConfiguration) {
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.propertiesReloader = propertiesReloader;
         this.fs = instanceProperties.get(FILE_SYSTEM);

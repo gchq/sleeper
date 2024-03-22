@@ -1,0 +1,9 @@
+Unreferenced files: 0
+Referenced files: 2
+File references: 4
+Partition at L:
+100 records (approx) in partial file 1
+50 records (approx) in partial file 2
+Partition at R:
+100 records (approx) in partial file 1
+50 records (approx) in partial file 2

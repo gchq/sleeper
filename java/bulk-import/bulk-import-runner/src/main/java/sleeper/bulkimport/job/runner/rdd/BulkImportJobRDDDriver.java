@@ -23,15 +23,12 @@ import org.apache.spark.sql.catalyst.encoders.RowEncoder;
 
 import sleeper.bulkimport.job.runner.BulkImportJobDriver;
 import sleeper.bulkimport.job.runner.BulkImportJobInput;
-import sleeper.bulkimport.job.runner.BulkImportJobRunner;
 import sleeper.bulkimport.job.runner.SparkFileReferenceRow;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 
 /**
- * This class runs {@link BulkImportJobDriver} with a {@link BulkImportJobRunner} which
- * uses the Spark RDD API to partition the data according to the Sleeper
- * partitions and for each partition, write a single sorted Parquet file.
+ * Runs a bulk import job using Spark's RDD API. Sorts and writes out the data split by Sleeper partition.
  */
 public class BulkImportJobRDDDriver {
     private BulkImportJobRDDDriver() {

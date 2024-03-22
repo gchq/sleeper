@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright 2022-2023 Crown Copyright
+# Copyright 2022-2024 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,14 +16,12 @@
 set -e
 unset CDPATH
 
-if [ "$#" -ne 1 ]; then
-  echo "Usage: $0 <instance-id>"
+if [ "$#" -lt 1 ] || [ "$#" -gt 2 ]; then
+  echo "Usage: $0 <instance-id> <optional-paused-true-or-false>"
   exit 1
 fi
-
-INSTANCE_ID=$1
 
 SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
 VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
 
-java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar"  sleeper.clients.deploy.DeployExistingInstance "${SCRIPTS_DIR}" "${INSTANCE_ID}"
+java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar"  sleeper.clients.deploy.DeployExistingInstance "${SCRIPTS_DIR}" "$@"

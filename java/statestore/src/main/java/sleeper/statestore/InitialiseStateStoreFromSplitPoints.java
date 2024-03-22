@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,12 +35,10 @@ import java.util.List;
 import static sleeper.configuration.ReadSplitPoints.readSplitPoints;
 
 /**
- * Initialises a {@link StateStore}. If a file of split points is
- * provided then these are used to create the initial {@link Partition}s.
- * Each line of the file should contain a single point which is a split in
- * the first dimension of the row key. (Only splitting by the first dimension
- * is supported.) If a file isn't provided then a single root {@link Partition}
- * is created.
+ * Initialises a state store. If a file of split points is provided then these are used to create the initial
+ * {@link Partition}s. Each line of the file should contain a single point which is a split in the first dimension of
+ * the row key. Only splitting by the first dimension is supported. If a file isn't provided then a single root
+ * {@link Partition} is created.
  */
 public class InitialiseStateStoreFromSplitPoints {
     private final StateStoreProvider stateStoreProvider;

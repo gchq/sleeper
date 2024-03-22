@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,8 +39,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Initialises a {@link StateStore} from a file of partitions created using ExportPartitions
- * to export the partition information from an existing table.
+ * Initialises a state store from a file of exported partitions. These can be created using ExportPartitions to export
+ * from an existing Sleeper table.
  */
 public class InitialiseStateStoreFromExportedPartitions {
 

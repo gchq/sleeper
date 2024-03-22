@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,8 +39,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 /**
- * A {@link Supplier} of {@link Record}s generated randomly that conform to the
- * given schema.
+ * A supplier of Sleeper records generated randomly that conform to the given schema.
  */
 public class RandomRecordSupplier implements Supplier<Record> {
     private final Map<String, Supplier<Object>> fieldNameToSupplier;

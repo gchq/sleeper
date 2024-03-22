@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,11 +22,12 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.table.InMemoryTableIndex;
-import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIndex;
+import sleeper.core.table.TableStatus;
+import sleeper.core.table.TableStatusTestHelper;
+import sleeper.ingest.job.status.InMemoryIngestJobStatusStore;
 import sleeper.ingest.job.status.IngestJobStatus;
 import sleeper.ingest.job.status.IngestJobStatusStore;
-import sleeper.ingest.job.status.WriteToMemoryIngestJobStatusStore;
 
 import java.time.Instant;
 import java.util.List;
@@ -42,12 +43,13 @@ import static sleeper.ingest.job.status.IngestJobStatusTestData.rejectedRun;
 public class IngestJobMessageHandlerTest {
 
     private final TableIndex tableIndex = new InMemoryTableIndex();
-    private final IngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
-    private final TableIdentity tableId = TableIdentity.uniqueIdAndName("test-table-id", "test-table");
+    private final IngestJobStatusStore ingestJobStatusStore = new InMemoryIngestJobStatusStore();
+    private final TableStatus table = TableStatusTestHelper.uniqueIdAndName("test-table-id", "test-table");
+    private final String tableId = table.getTableUniqueId();
 
     @BeforeEach
     void setUp() {
-        tableIndex.create(tableId);
+        tableIndex.create(table);
     }
 
     @Nested
@@ -156,7 +158,7 @@ public class IngestJobMessageHandlerTest {
             IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandlerWithDirectories(
                     Map.of("dir1", List.of("file1a.parquet", "file1b.parquet"),
                             "dir2", List.of("file2.parquet")))
-                    .build();
+                                    .build();
             String json = "{" +
                     "\"id\":\"test-job-id\"," +
                     "\"tableName\":\"test-table\"," +
@@ -177,8 +179,8 @@ public class IngestJobMessageHandlerTest {
             Instant validationTime = Instant.parse("2023-07-03T16:14:00Z");
             IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandlerWithDirectories(
                     Map.of("dir", List.of()))
-                    .timeSupplier(() -> validationTime)
-                    .build();
+                            .timeSupplier(() -> validationTime)
+                            .build();
             String json = "{" +
                     "\"id\":\"test-job-id\"," +
                     "\"tableName\":\"test-table\"," +
@@ -202,9 +204,9 @@ public class IngestJobMessageHandlerTest {
             Instant validationTime = Instant.parse("2023-07-03T16:14:00Z");
             IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandlerWithDirectories(
                     Map.of("dir", List.of()))
-                    .jobIdSupplier(() -> "test-job-id")
-                    .timeSupplier(() -> validationTime)
-                    .build();
+                            .jobIdSupplier(() -> "test-job-id")
+                            .timeSupplier(() -> validationTime)
+                            .build();
             String json = "{" +
                     "\"tableName\":\"test-table\"," +
                     "\"files\":[\"dir\"]" +
