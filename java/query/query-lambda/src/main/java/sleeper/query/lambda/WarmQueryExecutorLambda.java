@@ -31,7 +31,6 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.S3TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.range.Range;
 import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
@@ -47,7 +46,6 @@ import sleeper.query.model.QuerySerDe;
 import sleeper.query.output.ResultsOutputConstants;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 
-import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -67,14 +65,10 @@ import static sleeper.query.runner.output.NoResultsOutput.NO_RESULTS_OUTPUT;
 public class WarmQueryExecutorLambda implements RequestHandler<ScheduledEvent, Void> {
     private static final Logger LOGGER = LoggerFactory.getLogger(WarmQueryExecutorLambda.class);
 
-    private Instant lastUpdateTime;
     private InstanceProperties instanceProperties;
-    private TablePropertiesProvider tablePropertiesProvider;
     private final AmazonSQS sqsClient;
     private final AmazonS3 s3Client;
     private final AmazonDynamoDB dynamoClient;
-    private QueryMessageHandler messageHandler;
-    private SqsQueryProcessor processor;
     private final DynamoDBQueryTracker queryTracker;
 
     public WarmQueryExecutorLambda() throws ObjectFactoryException {
@@ -87,7 +81,6 @@ public class WarmQueryExecutorLambda implements RequestHandler<ScheduledEvent, V
         this.sqsClient = sqsClient;
         this.dynamoClient = dynamoClient;
         instanceProperties = loadInstanceProperties(s3Client, configBucket);
-        tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
         queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
     }
 

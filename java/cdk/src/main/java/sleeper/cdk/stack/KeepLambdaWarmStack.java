@@ -22,12 +22,10 @@ import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
-import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
-import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.cdk.Utils;
@@ -48,7 +46,7 @@ import static sleeper.configuration.properties.instance.QueryProperty.QUERY_PROC
 import static sleeper.configuration.properties.instance.QueryProperty.QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.instance.QueryProperty.QUERY_WARM_LAMBDA_EXECUTION_PERIOD_IN_MINUTES;
 
-/**
+/*
  * A {@link NestedStack} to handle keeping lambdas warm. This consists of a {@link Rule} that runs periodically triggering
  * a lambda {@link Function} to create the queries that are placed on the Query {@link Queue} for processing.
  * This will trigger the query lambdas thus keeping them warm.
