@@ -34,6 +34,7 @@ import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceSerDe;
 import sleeper.core.statestore.FileReferenceStore;
+import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.SplitRequestsFailedException;
 import sleeper.core.statestore.StateStoreException;
@@ -201,6 +202,16 @@ class S3FileReferenceStore implements FileReferenceStore {
     }
 
     @Override
+    public void atomicallyReplaceFileReferencesWithNewOnes(List<ReplaceFileReferencesRequest> requests) throws StateStoreException {
+        for (ReplaceFileReferencesRequest request : requests) {
+            atomicallyReplaceFileReferencesWithNewOne(
+                    request.getJobId(),
+                    request.getPartitionId(),
+                    request.getInputFiles(),
+                    request.getNewReference());
+        }
+    }
+
     public void atomicallyReplaceFileReferencesWithNewOne(
             String jobId, String partitionId, List<String> inputFiles, FileReference newReference) throws StateStoreException {
         Instant updateTime = clock.instant();

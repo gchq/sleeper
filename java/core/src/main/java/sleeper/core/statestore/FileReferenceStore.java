@@ -31,6 +31,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
+
 /**
  * Stores information about the data files in a Sleeper table. This includes a count of the number of references
  * to the file, and internal references which assign all the data in the file to non-overlapping partitions.
@@ -108,7 +110,7 @@ public interface FileReferenceStore {
     void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws SplitRequestsFailedException;
 
     /**
-     * Atomically applies the results of a job. Removes file references for a job's input files, and adds a reference to
+     * Atomically applies the results of jobs. Removes file references for a job's input files, and adds a reference to
      * an output file. This will be used for compaction.
      * <p>
      * This will validate that the input files were assigned to the job.
@@ -116,12 +118,7 @@ public interface FileReferenceStore {
      * This will decrement the number of references for each of the input files. If no other references exist for those
      * files, they will become available for garbage collection.
      *
-     * @param  jobId                                   The ID of the job
-     * @param  partitionId                             The partition which the job operated on
-     * @param  inputFiles                              The filenames of the input files, whose references in this
-     *                                                 partition should be removed
-     * @param  newReference                            The reference to a new file, including metadata in the output
-     *                                                 partition
+     * @param  requests                                requests for jobs to each have their results atomically applied
      * @throws FileNotFoundException                   if any of the input files do not exist
      * @throws FileReferenceNotFoundException          if any of the input files are not referenced in the partition
      * @throws FileReferenceNotAssignedToJobException  if any of the input files are not assigned to the job
@@ -129,17 +126,12 @@ public interface FileReferenceStore {
      * @throws FileAlreadyExistsException              if the output file already exists
      * @throws StateStoreException                     if the update fails for another reason
      */
-    void atomicallyReplaceFileReferencesWithNewOne(String jobId, String partitionId, List<String> inputFiles,
-            FileReference newReference) throws StateStoreException;
+    void atomicallyReplaceFileReferencesWithNewOnes(List<ReplaceFileReferencesRequest> requests) throws StateStoreException;
 
-    default void atomicallyReplaceFileReferencesWithNewOnes(List<ReplaceFileReferencesRequest> requests) throws StateStoreException {
-        for (ReplaceFileReferencesRequest request : requests) {
-            atomicallyReplaceFileReferencesWithNewOne(
-                    request.getJobId(),
-                    request.getPartitionId(),
-                    request.getInputFiles(),
-                    request.getNewReference());
-        }
+    default void atomicallyReplaceFileReferencesWithNewOne(String jobId, String partitionId, List<String> inputFiles,
+            FileReference newReference) throws StateStoreException {
+        atomicallyReplaceFileReferencesWithNewOnes(List.of(
+                replaceJobFileReferences(jobId, partitionId, inputFiles, newReference)));
     }
 
     /**

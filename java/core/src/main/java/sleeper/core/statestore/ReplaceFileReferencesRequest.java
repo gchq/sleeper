@@ -17,6 +17,10 @@ package sleeper.core.statestore;
 
 import java.util.List;
 
+/**
+ * A request to apply the results of a compaction in the state store. The old references will be deleted and a new
+ * reference will be created in one transaction.
+ */
 public class ReplaceFileReferencesRequest {
     private final String jobId;
     private final String partitionId;

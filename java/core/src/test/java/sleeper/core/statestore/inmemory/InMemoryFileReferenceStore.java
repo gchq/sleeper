@@ -152,7 +152,6 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
         }
     }
 
-    @Override
     public void atomicallyReplaceFileReferencesWithNewOne(String jobId, String partitionId, List<String> inputFiles, FileReference newReference) throws StateStoreException {
         for (String filename : inputFiles) {
             AllReferencesToAFile file = filesByFilename.get(filename);
