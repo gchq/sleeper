@@ -93,27 +93,23 @@ public class WarmQueryExecutorLambda implements RequestHandler<ScheduledEvent, V
                     Schema schema = tableProperty.getSchema();
                     Field field = schema.getRowKeyFields().get(0);
 
-                    // Create the max and min values for the query. We don't care what they are as long as the query runs
+                    // Create the value to be used in a query. We don't care what they are as long as the query runs
                     Type type = field.getType();
-                    Object min, max;
+                    Object value;
                     if (type instanceof IntType) {
-                        min = 0;
-                        max = 1;
+                        value = 0;
                     } else if (type instanceof LongType) {
-                        min = 0L;
-                        max = 1L;
+                        value = 0L;
                     } else if (type instanceof StringType) {
-                        min = "a";
-                        max = min;
+                        value = "a";
                     } else if (type instanceof ByteArrayType) {
-                        min = new byte[]{'a'};
-                        max = min;
+                        value = new byte[]{'a'};
                     } else {
                         throw new IllegalArgumentException("Unknown type in the schema: " + type);
                     }
 
                     Region region = new Region(Collections.singletonList(new Range.RangeFactory(schema)
-                            .createRange(field, min, max)));
+                            .createExactRange(field, value)));
 
                     QuerySerDe querySerDe = new QuerySerDe(schema);
                     Query query = Query.builder()

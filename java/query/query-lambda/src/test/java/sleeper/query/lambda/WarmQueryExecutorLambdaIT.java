@@ -135,7 +135,7 @@ public class WarmQueryExecutorLambdaIT {
         assertThat(result.getMessages()).hasSize(1);
 
         Query query = querySerDe.fromJson(result.getMessages().get(0).getBody());
-        Query expected = buildExpectedQuery(query.getQueryId(), tableProperties.get(TABLE_NAME), schema, "a", "a");
+        Query expected = buildExpectedQuery(query.getQueryId(), tableProperties.get(TABLE_NAME), schema, "a");
 
         assertThat(query).isEqualTo(expected);
     }
@@ -158,7 +158,7 @@ public class WarmQueryExecutorLambdaIT {
         Query query = querySerDe.fromJson(result.getMessages().get(0).getBody());
 
         byte[] value = new byte[]{'a'};
-        Query expected = buildExpectedQuery(query.getQueryId(), tableProperties.get(TABLE_NAME), schema, value, value);
+        Query expected = buildExpectedQuery(query.getQueryId(), tableProperties.get(TABLE_NAME), schema, value);
 
         assertThat(query).isEqualTo(expected);
     }
@@ -179,7 +179,7 @@ public class WarmQueryExecutorLambdaIT {
         assertThat(result.getMessages()).hasSize(1);
 
         Query query = querySerDe.fromJson(result.getMessages().get(0).getBody());
-        Query expected = buildExpectedQuery(query.getQueryId(), tableProperties.get(TABLE_NAME), schema, 0, 1);
+        Query expected = buildExpectedQuery(query.getQueryId(), tableProperties.get(TABLE_NAME), schema, 0);
 
         assertThat(query).isEqualTo(expected);
     }
@@ -200,7 +200,7 @@ public class WarmQueryExecutorLambdaIT {
         assertThat(result.getMessages()).hasSize(1);
 
         Query query = querySerDe.fromJson(result.getMessages().get(0).getBody());
-        Query expected = buildExpectedQuery(query.getQueryId(), tableProperties.get(TABLE_NAME), schema, 0L, 1L);
+        Query expected = buildExpectedQuery(query.getQueryId(), tableProperties.get(TABLE_NAME), schema, 0L);
 
         assertThat(query).isEqualTo(expected);
     }
@@ -233,9 +233,9 @@ public class WarmQueryExecutorLambdaIT {
                 .build();
     }
 
-    private Query buildExpectedQuery(String id, String tableName, Schema schema, Object min, Object max) {
+    private Query buildExpectedQuery(String id, String tableName, Schema schema, Object value) {
         Region region = new Region(Collections.singletonList(new Range.RangeFactory(schema)
-                .createRange(schema.getField("key").get(), min, max)));
+                .createExactRange(schema.getField("key").get(), value)));
 
         return Query.builder()
                 .queryId(id)
