@@ -134,8 +134,7 @@ public interface FileReferenceStore {
      * @param  jobId                                   the ID of the job
      * @param  partitionId                             the partition which the job operated on
      * @param  inputFiles                              the filenames of the input files, whose references in this
-     *                                                 partition should be
-     *                                                 removed
+     *                                                 partition should be removed
      * @param  newReference                            the reference to a new file, including metadata in the output
      *                                                 partition
      * @throws FileNotFoundException                   if any of the input files do not exist
