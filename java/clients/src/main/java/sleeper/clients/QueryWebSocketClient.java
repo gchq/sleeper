@@ -117,8 +117,6 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
     }
 
     public interface Client {
-        boolean connectBlocking() throws InterruptedException;
-
         void closeBlocking() throws InterruptedException;
 
         void startQuery(Query query) throws InterruptedException;

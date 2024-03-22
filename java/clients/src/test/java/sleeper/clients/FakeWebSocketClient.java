@@ -36,7 +36,6 @@ public class FakeWebSocketClient implements Client {
         this.messageHandler = new WebSocketMessageHandler(new QuerySerDe(tablePropertiesProvider), out);
     }
 
-    @Override
     public boolean connectBlocking() throws InterruptedException {
         connected = true;
         return connected;
