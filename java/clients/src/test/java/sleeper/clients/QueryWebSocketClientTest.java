@@ -400,6 +400,32 @@ public class QueryWebSocketClientTest {
             assertThat(client.sentMessages)
                     .containsExactly(querySerDe.toJson(expectedQuery));
         }
+
+        @Test
+        void shouldHandleConnectionClosingUnexpectedly() throws Exception {
+            // Given
+            Query expectedQuery = exactQuery("test-query-id", 123L);
+
+            // When
+            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            runQueryClient("test-query-id",
+                    withResponses(
+                            closeWithReason("Network error")));
+
+            // Then
+            assertThat(out.toString())
+                    .startsWith("Querying table test-table")
+                    .contains(PROMPT_QUERY_TYPE +
+                            PROMPT_EXACT_KEY_LONG_TYPE +
+                            "Connected to WebSocket API\n" +
+                            "Submitting Query: " + querySerDe.toJson(expectedQuery) + "\n" +
+                            "Disconnected from WebSocket API: Network error")
+                    .containsSubsequence("Query took", "seconds to return 0 records");
+            assertThat(client.connected).isFalse();
+            assertThat(client.closed).isTrue();
+            assertThat(client.sentMessages)
+                    .containsExactly(querySerDe.toJson(expectedQuery));
+        }
     }
 
     private Query exactQuery(String queryId, long value) {
