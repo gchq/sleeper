@@ -37,6 +37,9 @@ SUBNETS=<your-subnet-ids>
 ./scripts/test/deployAll/buildDeployTest.sh ${ID} ${VPC} ${SUBNETS}
 ```
 
+This should start a number of ECS tasks in the system test cluster for the instance. These will ingest some random data
+for testing, so wait for them to finish. You can use the AWS console or CLI to check this.
+
 The following tests can be used as a quick check that all is working correctly. They are not intended to fully test
 all aspects of the system. Any changes made by pull requests should be tested by doing a system test deployment on AWS
 if they are likely to either affect performance or involve changes to the way the system is deployed to AWS.
