@@ -20,6 +20,7 @@ import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceStore;
+import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.SplitRequestsFailedException;
 import sleeper.core.statestore.StateStoreException;
@@ -141,6 +142,17 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
     }
 
     @Override
+    public void atomicallyReplaceFileReferencesWithNewOnes(List<ReplaceFileReferencesRequest> requests) throws StateStoreException {
+        for (ReplaceFileReferencesRequest request : requests) {
+            atomicallyReplaceFileReferencesWithNewOne(
+                    request.getJobId(),
+                    request.getPartitionId(),
+                    request.getInputFiles(),
+                    request.getNewReference());
+        }
+    }
+
+    @Override
     public void atomicallyReplaceFileReferencesWithNewOne(String jobId, String partitionId, List<String> inputFiles, FileReference newReference) throws StateStoreException {
         for (String filename : inputFiles) {
             AllReferencesToAFile file = filesByFilename.get(filename);
@@ -224,9 +236,9 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
                 .filter(file -> file.getTotalReferenceCount() < 1)
                 .collect(toUnmodifiableList());
         List<AllReferencesToAFile> files = Stream.concat(
-                        filesByFilename.values().stream()
-                                .filter(file -> file.getTotalReferenceCount() > 0),
-                        filesWithNoReferences.stream().limit(maxUnreferencedFiles))
+                filesByFilename.values().stream()
+                        .filter(file -> file.getTotalReferenceCount() > 0),
+                filesWithNoReferences.stream().limit(maxUnreferencedFiles))
                 .collect(toUnmodifiableList());
         return new AllReferencesToAllFiles(files, filesWithNoReferences.size() > maxUnreferencedFiles);
     }
