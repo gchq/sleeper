@@ -145,8 +145,8 @@ public interface FileReferenceStore {
      * @throws FileAlreadyExistsException              if the output file already exists
      * @throws StateStoreException                     if the update fails for another reason
      */
-    default void atomicallyReplaceFileReferencesWithNewOne(String jobId, String partitionId, List<String> inputFiles,
-            FileReference newReference) throws StateStoreException {
+    default void atomicallyReplaceFileReferencesWithNewOne(
+            String jobId, String partitionId, List<String> inputFiles, FileReference newReference) throws StateStoreException {
         atomicallyReplaceFileReferencesWithNewOnes(List.of(
                 replaceJobFileReferences(jobId, partitionId, inputFiles, newReference)));
     }

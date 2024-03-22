@@ -246,29 +246,25 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
     @Override
     public void atomicallyReplaceFileReferencesWithNewOnes(List<ReplaceFileReferencesRequest> requests) throws StateStoreException {
         for (ReplaceFileReferencesRequest request : requests) {
-            atomicallyReplaceFileReferencesWithNewOne(
-                    request.getJobId(),
-                    request.getPartitionId(),
-                    request.getInputFiles(),
-                    request.getNewReference());
+            atomicallyReplaceFileReferencesWithNewOne(request);
         }
     }
 
-    public void atomicallyReplaceFileReferencesWithNewOne(
-            String jobId, String partitionId, List<String> inputFiles, FileReference newReference) throws StateStoreException {
-        FileReference.validateNewReferenceForJobOutput(inputFiles, newReference);
+    public void atomicallyReplaceFileReferencesWithNewOne(ReplaceFileReferencesRequest request) throws StateStoreException {
+        FileReference newReference = request.getNewReference();
+        FileReference.validateNewReferenceForJobOutput(request.getInputFiles(), newReference);
         // Delete record for file for current status
         Instant updateTime = clock.instant();
         List<TransactWriteItem> writes = new ArrayList<>();
         List<TransactWriteItem> referenceCountUpdates = new ArrayList<>();
-        inputFiles.forEach(filename -> {
+        request.getInputFiles().forEach(filename -> {
             Delete delete = new Delete()
                     .withTableName(activeTableName)
-                    .withKey(fileReferenceFormat.createActiveFileKey(partitionId, filename))
+                    .withKey(fileReferenceFormat.createActiveFileKey(request.getPartitionId(), filename))
                     .withExpressionAttributeNames(Map.of(
                             "#PartitionAndFilename", PARTITION_ID_AND_FILENAME,
                             "#JobId", JOB_ID))
-                    .withExpressionAttributeValues(Map.of(":jobid", createStringAttribute(jobId)))
+                    .withExpressionAttributeValues(Map.of(":jobid", createStringAttribute(request.getJobId())))
                     .withConditionExpression(
                             "attribute_exists(#PartitionAndFilename) and #JobId = :jobid")
                     .withReturnValuesOnConditionCheckFailure(ReturnValuesOnConditionCheckFailure.ALL_OLD);
@@ -287,9 +283,9 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
             List<ConsumedCapacity> consumedCapacity = transactWriteItemsResult.getConsumedCapacity();
             double totalConsumed = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
             LOGGER.debug("Removed {} file references and added 1 new file, capacity consumed = {}",
-                    inputFiles.size(), totalConsumed);
+                    request.getInputFiles().size(), totalConsumed);
         } catch (TransactionCanceledException e) {
-            throw FailedDynamoDBReplaceReferences.from(e, jobId, partitionId, inputFiles, newReference)
+            throw FailedDynamoDBReplaceReferences.from(e, request)
                     .buildStateStoreException(fileReferenceFormat);
         } catch (AmazonDynamoDBException e) {
             throw new StateStoreException("Failed to mark files ready for GC and add new files", e);
@@ -630,6 +626,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
      *
      * @param now Time to set to be the current time
      */
+    @Override
     public void fixTime(Instant now) {
         clock = Clock.fixed(now, ZoneId.of("UTC"));
     }
