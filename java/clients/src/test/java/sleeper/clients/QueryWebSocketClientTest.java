@@ -20,15 +20,13 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import sleeper.clients.FakeWebSocketClient.WebSocketResponse;
 import sleeper.clients.QueryWebSocketClient.Client;
-import sleeper.clients.QueryWebSocketClient.WebSocketMessageHandler;
 import sleeper.clients.testutil.TestConsoleInput;
 import sleeper.clients.testutil.ToStringPrintStream;
-import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.range.Range;
 import sleeper.core.range.Region;
 import sleeper.core.record.Record;
@@ -39,7 +37,6 @@ import sleeper.core.table.TableIndex;
 import sleeper.query.model.Query;
 import sleeper.query.model.QuerySerDe;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -122,9 +119,9 @@ public class QueryWebSocketClientTest {
                             "Query results:\n" +
                             expectedRecord)
                     .containsSubsequence("Query took", "seconds to return 1 records");
-            assertThat(client.connected).isFalse();
-            assertThat(client.closed).isTrue();
-            assertThat(client.sentMessages)
+            assertThat(client.isConnected()).isFalse();
+            assertThat(client.isClosed()).isTrue();
+            assertThat(client.getSentMessages())
                     .containsExactly(querySerDe.toJson(expectedQuery));
         }
 
@@ -155,9 +152,9 @@ public class QueryWebSocketClientTest {
                             "Query results:\n" +
                             expectedRecord)
                     .containsSubsequence("Query took", "seconds to return 1 records");
-            assertThat(client.connected).isFalse();
-            assertThat(client.closed).isTrue();
-            assertThat(client.sentMessages)
+            assertThat(client.isConnected()).isFalse();
+            assertThat(client.isClosed()).isTrue();
+            assertThat(client.getSentMessages())
                     .containsExactly(querySerDe.toJson(expectedQuery));
         }
 
@@ -200,9 +197,9 @@ public class QueryWebSocketClientTest {
                             expectedRecord2 + "\n" +
                             expectedRecord3)
                     .containsSubsequence("Query took", "seconds to return 3 records");
-            assertThat(client.connected).isFalse();
-            assertThat(client.closed).isTrue();
-            assertThat(client.sentMessages)
+            assertThat(client.isConnected()).isFalse();
+            assertThat(client.isClosed()).isTrue();
+            assertThat(client.getSentMessages())
                     .containsExactly(querySerDe.toJson(expectedQuery));
         }
 
@@ -231,9 +228,9 @@ public class QueryWebSocketClientTest {
                             "Query results:\n" +
                             expectedRecord)
                     .containsSubsequence("Query took", "seconds to return 1 records");
-            assertThat(client.connected).isFalse();
-            assertThat(client.closed).isTrue();
-            assertThat(client.sentMessages)
+            assertThat(client.isConnected()).isFalse();
+            assertThat(client.isClosed()).isTrue();
+            assertThat(client.getSentMessages())
                     .containsExactly(querySerDe.toJson(expectedQuery));
         }
     }
@@ -262,9 +259,9 @@ public class QueryWebSocketClientTest {
                             "Submitting Query: " + querySerDe.toJson(expectedQuery) + "\n" +
                             "Encountered an error: Connection failed\n")
                     .containsSubsequence("Query took", "seconds to return 0 records");
-            assertThat(client.connected).isFalse();
-            assertThat(client.closed).isTrue();
-            assertThat(client.sentMessages)
+            assertThat(client.isConnected()).isFalse();
+            assertThat(client.isClosed()).isTrue();
+            assertThat(client.getSentMessages())
                     .containsExactly(querySerDe.toJson(expectedQuery));
         }
 
@@ -288,9 +285,9 @@ public class QueryWebSocketClientTest {
                             "Submitting Query: " + querySerDe.toJson(expectedQuery) + "\n" +
                             "Encountered an error while running query test-query-id: Query failed")
                     .containsSubsequence("Query took", "seconds to return 0 records");
-            assertThat(client.connected).isFalse();
-            assertThat(client.closed).isTrue();
-            assertThat(client.sentMessages)
+            assertThat(client.isConnected()).isFalse();
+            assertThat(client.isClosed()).isTrue();
+            assertThat(client.getSentMessages())
                     .containsExactly(querySerDe.toJson(expectedQuery));
         }
 
@@ -314,9 +311,9 @@ public class QueryWebSocketClientTest {
                             "Submitting Query: " + querySerDe.toJson(expectedQuery) + "\n" +
                             "Received unrecognised message type: unknown")
                     .containsSubsequence("Query took", "seconds to return 0 records");
-            assertThat(client.connected).isFalse();
-            assertThat(client.closed).isTrue();
-            assertThat(client.sentMessages)
+            assertThat(client.isConnected()).isFalse();
+            assertThat(client.isClosed()).isTrue();
+            assertThat(client.getSentMessages())
                     .containsExactly(querySerDe.toJson(expectedQuery));
         }
 
@@ -341,9 +338,9 @@ public class QueryWebSocketClientTest {
                             "Received malformed JSON message from API:\n" +
                             "  {")
                     .containsSubsequence("Query took", "seconds to return 0 records");
-            assertThat(client.connected).isFalse();
-            assertThat(client.closed).isTrue();
-            assertThat(client.sentMessages)
+            assertThat(client.isConnected()).isFalse();
+            assertThat(client.isClosed()).isTrue();
+            assertThat(client.getSentMessages())
                     .containsExactly(querySerDe.toJson(expectedQuery));
         }
 
@@ -368,9 +365,9 @@ public class QueryWebSocketClientTest {
                             "Received message without queryId from API:\n" +
                             "  {\"message\":\"error\"}")
                     .containsSubsequence("Query took", "seconds to return 0 records");
-            assertThat(client.connected).isFalse();
-            assertThat(client.closed).isTrue();
-            assertThat(client.sentMessages)
+            assertThat(client.isConnected()).isFalse();
+            assertThat(client.isClosed()).isTrue();
+            assertThat(client.getSentMessages())
                     .containsExactly(querySerDe.toJson(expectedQuery));
         }
 
@@ -395,9 +392,9 @@ public class QueryWebSocketClientTest {
                             "Received message without message type from API:\n" +
                             "  {\"queryId\":\"test-query-id\"}")
                     .containsSubsequence("Query took", "seconds to return 0 records");
-            assertThat(client.connected).isFalse();
-            assertThat(client.closed).isTrue();
-            assertThat(client.sentMessages)
+            assertThat(client.isConnected()).isFalse();
+            assertThat(client.isClosed()).isTrue();
+            assertThat(client.getSentMessages())
                     .containsExactly(querySerDe.toJson(expectedQuery));
         }
 
@@ -421,9 +418,9 @@ public class QueryWebSocketClientTest {
                             "Submitting Query: " + querySerDe.toJson(expectedQuery) + "\n" +
                             "Disconnected from WebSocket API: Network error")
                     .containsSubsequence("Query took", "seconds to return 0 records");
-            assertThat(client.connected).isFalse();
-            assertThat(client.closed).isTrue();
-            assertThat(client.sentMessages)
+            assertThat(client.isConnected()).isFalse();
+            assertThat(client.isClosed()).isTrue();
+            assertThat(client.getSentMessages())
                     .containsExactly(querySerDe.toJson(expectedQuery));
         }
     }
@@ -496,58 +493,8 @@ public class QueryWebSocketClientTest {
         return client;
     }
 
-    private static class FakeWebSocketClient implements Client {
-        private boolean connected = false;
-        private boolean closed = false;
-        private WebSocketMessageHandler messageHandler;
-        private List<String> sentMessages = new ArrayList<>();
-        private List<WebSocketResponse> responses;
-
-        FakeWebSocketClient(TablePropertiesProvider tablePropertiesProvider, ConsoleOutput out) {
-            this.messageHandler = new WebSocketMessageHandler(new QuerySerDe(tablePropertiesProvider), out);
-        }
-
-        @Override
-        public boolean connectBlocking() throws InterruptedException {
-            connected = true;
-            return connected;
-        }
-
-        @Override
-        public void closeBlocking() throws InterruptedException {
-            connected = false;
-            closed = true;
-        }
-
-        public FakeWebSocketClient withResponses(WebSocketResponse... responses) {
-            this.responses = List.of(responses);
-            return this;
-        }
-
-        @Override
-        public void startQuery(Query query) throws InterruptedException {
-            connectBlocking();
-            messageHandler.onOpen(query, sentMessages::add);
-            responses.forEach(response -> response.sendTo(messageHandler));
-        }
-
-        @Override
-        public boolean hasQueryFinished() {
-            return messageHandler.hasQueryFinished();
-        }
-
-        @Override
-        public long getTotalRecordsReturned() {
-            return messageHandler.getTotalRecordsReturned();
-        }
-    }
-
-    private interface WebSocketResponse {
-        void sendTo(WebSocketMessageHandler client);
-    }
-
     public WebSocketResponse open(Query query) {
-        return messageHandler -> messageHandler.onOpen(query, client.sentMessages::add);
+        return messageHandler -> messageHandler.onOpen(query, client::send);
     }
 
     private WebSocketResponse message(String message) {
@@ -561,5 +508,4 @@ public class QueryWebSocketClientTest {
     public WebSocketResponse error(Exception error) {
         return messageHandler -> messageHandler.onError(error);
     }
-
 }
