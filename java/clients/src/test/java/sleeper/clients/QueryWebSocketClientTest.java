@@ -240,7 +240,7 @@ public class QueryWebSocketClientTest {
     class HandleErrors {
 
         @Test
-        void shouldHandleErrorIfExceptionEncountered() throws Exception {
+        void shouldHandleErrorIfExceptionEncounteredThatDoesNotCloseConnection() throws Exception {
             // Given
             Query expectedQuery = exactQuery("test-query-id", 123L);
 
@@ -248,7 +248,7 @@ public class QueryWebSocketClientTest {
             in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
             runQueryClient("test-query-id",
                     withResponses(
-                            error(new Exception("Connection failed"))));
+                            error(new Exception("Exception that will not terminate connection"))));
 
             // Then
             assertThat(out.toString())
@@ -257,7 +257,35 @@ public class QueryWebSocketClientTest {
                             PROMPT_EXACT_KEY_LONG_TYPE +
                             "Connected to WebSocket API\n" +
                             "Submitting Query: " + querySerDe.toJson(expectedQuery) + "\n" +
-                            "Encountered an error: Connection failed\n")
+                            "Encountered an error: Exception that will not terminate connection\n")
+                    .containsSubsequence("Query took", "seconds to return 0 records");
+            assertThat(client.isConnected()).isFalse();
+            assertThat(client.isClosed()).isTrue();
+            assertThat(client.getSentMessages())
+                    .containsExactly(querySerDe.toJson(expectedQuery));
+        }
+
+        @Test
+        void shouldHandleErrorIfExceptionEncounteredThatClosesConnection() throws Exception {
+            // Given
+            Query expectedQuery = exactQuery("test-query-id", 123L);
+
+            // When
+            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            runQueryClient("test-query-id",
+                    withResponses(
+                            error(new Exception("Exception that will terminate connection")),
+                            closeWithReason("Exception caused connection to terminate")));
+
+            // Then
+            assertThat(out.toString())
+                    .startsWith("Querying table test-table")
+                    .contains(PROMPT_QUERY_TYPE +
+                            PROMPT_EXACT_KEY_LONG_TYPE +
+                            "Connected to WebSocket API\n" +
+                            "Submitting Query: " + querySerDe.toJson(expectedQuery) + "\n" +
+                            "Encountered an error: Exception that will terminate connection\n" +
+                            "Disconnected from WebSocket API: Exception caused connection to terminate")
                     .containsSubsequence("Query took", "seconds to return 0 records");
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
