@@ -130,7 +130,7 @@ public interface FileReferenceStore {
 
     /**
      * Atomically applies the results of a job. Delegates to {@link #atomicallyReplaceFileReferencesWithNewOnes(List)}.
-     * 
+     *
      * @param  jobId                                   the ID of the job
      * @param  partitionId                             the partition which the job operated on
      * @param  inputFiles                              the filenames of the input files, whose references in this
