@@ -224,10 +224,6 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
 
         public void onOpen(Query query, Consumer<String> messageSender) {
             out.println("Connected to WebSocket API");
-            sendQuery(query, messageSender);
-        }
-
-        private void sendQuery(Query query, Consumer<String> messageSender) {
             String queryJson = querySerDe.toJson(query);
             out.println("Submitting Query: " + queryJson);
             messageSender.accept(queryJson);
