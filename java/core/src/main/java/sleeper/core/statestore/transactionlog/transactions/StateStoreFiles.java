@@ -29,7 +29,7 @@ import java.util.stream.Stream;
 public class StateStoreFiles {
     private final Map<String, AllReferencesToAFile> filesByFilename = new TreeMap<>();
 
-    void add(List<AllReferencesToAFile> files) {
+    void add(Iterable<AllReferencesToAFile> files) {
         for (AllReferencesToAFile file : files) {
             filesByFilename.put(file.getFilename(), file);
         }
@@ -72,6 +72,15 @@ public class StateStoreFiles {
                 filesByFilename.put(filename, updated);
             }
         }
+    }
+
+    public void replaceFiles(String partitionId, List<String> removeFiles, FileReference newReference, Instant updateTime) {
+        for (String filename : removeFiles) {
+            AllReferencesToAFile file = filesByFilename.get(filename);
+            AllReferencesToAFile updated = file.removeReferenceForPartition(partitionId, updateTime);
+            filesByFilename.put(filename, updated);
+        }
+        add(() -> AllReferencesToAFile.newFilesWithReferences(Stream.of(newReference), updateTime).iterator());
     }
 
 }

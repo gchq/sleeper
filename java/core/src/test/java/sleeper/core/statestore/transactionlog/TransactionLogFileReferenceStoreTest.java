@@ -16,7 +16,6 @@
 package sleeper.core.statestore.transactionlog;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -261,7 +260,6 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        @Disabled("TODO")
         public void shouldFindFileWhichHasTwoReferencesAndBothWereMarkedAsReadyForGC() throws Exception {
             // Given
             Instant updateTime = Instant.parse("2023-10-04T14:08:00Z");
@@ -378,7 +376,6 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        @Disabled("TODO")
         void shouldReportFileSplitOverTwoPartitionsWithOneSideCompacted() throws Exception {
             // Given
             splitPartition("root", "L", "R", 5);

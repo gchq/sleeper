@@ -25,6 +25,7 @@ import sleeper.core.statestore.SplitRequestsFailedException;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
 import sleeper.core.statestore.transactionlog.transactions.AssignJobIdsTransaction;
+import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
 import sleeper.core.statestore.transactionlog.transactions.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.transactions.StateStoreState;
 
@@ -64,6 +65,9 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
 
     @Override
     public void atomicallyReplaceFileReferencesWithNewOne(String jobId, String partitionId, List<String> inputFiles, FileReference newReference) throws StateStoreException {
+        state.update();
+        state.addTransaction(new ReplaceFileReferencesTransaction(
+                jobId, partitionId, inputFiles, newReference, clock.instant()));
     }
 
     @Override
