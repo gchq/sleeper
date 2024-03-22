@@ -132,6 +132,16 @@ public interface FileReferenceStore {
     void atomicallyReplaceFileReferencesWithNewOne(String jobId, String partitionId, List<String> inputFiles,
             FileReference newReference) throws StateStoreException;
 
+    default void atomicallyReplaceFileReferencesWithNewOnes(List<ReplaceFileReferencesRequest> requests) throws StateStoreException {
+        for (ReplaceFileReferencesRequest request : requests) {
+            atomicallyReplaceFileReferencesWithNewOne(
+                    request.getJobId(),
+                    request.getPartitionId(),
+                    request.getInputFiles(),
+                    request.getNewReference());
+        }
+    }
+
     /**
      * Atomically updates the job field of file references, as long as the job field is currently unset. This will be
      * used for compaction job input files.

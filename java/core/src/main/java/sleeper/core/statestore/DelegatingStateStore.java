@@ -57,6 +57,11 @@ public class DelegatingStateStore implements StateStore {
     }
 
     @Override
+    public void atomicallyReplaceFileReferencesWithNewOnes(List<ReplaceFileReferencesRequest> requests) throws StateStoreException {
+        fileReferenceStore.atomicallyReplaceFileReferencesWithNewOnes(requests);
+    }
+
+    @Override
     public void assignJobIds(List<AssignJobIdRequest> requests) throws StateStoreException {
         fileReferenceStore.assignJobIds(requests);
     }

@@ -57,6 +57,7 @@ import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.noFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.partialReadyForGCFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.readyForGCFilesReport;
+import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
 import static sleeper.core.statestore.SplitFileReferenceRequest.splitFileToChildPartitions;
 
 public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
@@ -605,6 +606,33 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             assertThat(store.getPartitionToReferencedFilesMap())
                     .containsOnlyKeys("root")
                     .hasEntrySatisfying("root", files -> assertThat(files).containsExactly("newFile"));
+        }
+
+        @Test
+        void shouldApplyMultipleCompactions() throws Exception {
+            // Given
+            FileReference oldFile1 = factory.rootFile("oldFile1", 100L);
+            FileReference newFile1 = factory.rootFile("newFile1", 100L);
+            FileReference oldFile2 = factory.rootFile("oldFile2", 100L);
+            FileReference newFile2 = factory.rootFile("newFile2", 100L);
+            store.addFiles(List.of(oldFile1, oldFile2));
+
+            // When
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "root", List.of("oldFile1")),
+                    assignJobOnPartitionToFiles("job2", "root", List.of("oldFile2"))));
+            store.atomicallyReplaceFileReferencesWithNewOnes(List.of(
+                    replaceJobFileReferences("job1", "root", List.of("oldFile1"), newFile1),
+                    replaceJobFileReferences("job2", "root", List.of("oldFile2"), newFile2)));
+
+            // Then
+            assertThat(store.getFileReferences()).containsExactly(newFile1, newFile2);
+            assertThat(store.getFileReferencesWithNoJobId()).containsExactly(newFile1, newFile2);
+            assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME))
+                    .containsExactly("oldFile1", "oldFile2");
+            assertThat(store.getPartitionToReferencedFilesMap())
+                    .containsOnlyKeys("root")
+                    .hasEntrySatisfying("root", files -> assertThat(files).containsExactly("newFile1", "newFile2"));
         }
 
         @Test
