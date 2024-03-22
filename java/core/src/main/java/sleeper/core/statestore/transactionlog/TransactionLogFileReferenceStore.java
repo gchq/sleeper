@@ -53,19 +53,16 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
         List<AllReferencesToAFile> updateFiles = files.stream()
                 .map(file -> file.withCreatedUpdateTime(updateTime))
                 .collect(toUnmodifiableList());
-        files().validateNewFiles(updateFiles);
         state.addTransaction(new AddFilesTransaction(updateFiles));
     }
 
     @Override
     public void assignJobIds(List<AssignJobIdRequest> requests) throws StateStoreException {
-        state.update();
         state.addTransaction(new AssignJobIdsTransaction(requests, clock.instant()));
     }
 
     @Override
     public void atomicallyReplaceFileReferencesWithNewOne(String jobId, String partitionId, List<String> inputFiles, FileReference newReference) throws StateStoreException {
-        state.update();
         state.addTransaction(new ReplaceFileReferencesTransaction(
                 jobId, partitionId, inputFiles, newReference, clock.instant()));
     }

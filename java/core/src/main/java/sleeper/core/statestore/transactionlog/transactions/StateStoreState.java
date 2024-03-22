@@ -16,6 +16,7 @@
 package sleeper.core.statestore.transactionlog.transactions;
 
 import sleeper.core.partition.Partition;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.TransactionLogStore;
 
 import java.util.Collection;
@@ -33,16 +34,18 @@ public class StateStoreState {
         this.logStore = logStore;
     }
 
-    public void addTransaction(Object transaction) {
+    public void addTransaction(StateStoreTransaction transaction) throws StateStoreException {
+        update();
+        transaction.validate(this);
         long transactionNumber = lastTransactionNumber + 1;
         logStore.addTransaction(transaction, transactionNumber);
-        apply(transaction);
+        transaction.apply(this);
         lastTransactionNumber = transactionNumber;
     }
 
     public void update() {
         logStore.readTransactionsAfter(lastTransactionNumber).forEach(transaction -> {
-            apply(transaction);
+            transaction.apply(this);
             lastTransactionNumber++;
         });
     }
@@ -51,25 +54,12 @@ public class StateStoreState {
         return partitionById.values();
     }
 
+    Map<String, Partition> partitionById() {
+        return partitionById;
+    }
+
     public StateStoreFiles files() {
         return files;
-    }
-
-    private void apply(Object transaction) {
-        if (transaction instanceof PartitionTransaction) {
-            apply((PartitionTransaction) transaction);
-        }
-        if (transaction instanceof FileTransaction) {
-            apply((FileTransaction) transaction);
-        }
-    }
-
-    private void apply(PartitionTransaction transaction) {
-        transaction.apply(partitionById);
-    }
-
-    private void apply(FileTransaction transaction) {
-        transaction.apply(files);
     }
 
 }

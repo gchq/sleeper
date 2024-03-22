@@ -15,12 +15,14 @@
  */
 package sleeper.core.statestore.transactionlog;
 
+import sleeper.core.statestore.transactionlog.transactions.StateStoreTransaction;
+
 import java.util.stream.Stream;
 
 public interface TransactionLogStore {
 
-    void addTransaction(Object transaction, long transactionNumber);
+    void addTransaction(StateStoreTransaction transaction, long transactionNumber);
 
-    Stream<Object> readTransactionsAfter(long startTransactionNumber);
+    Stream<StateStoreTransaction> readTransactionsAfter(long startTransactionNumber);
 
 }

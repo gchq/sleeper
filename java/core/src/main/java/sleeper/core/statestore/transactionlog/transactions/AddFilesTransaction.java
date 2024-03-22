@@ -16,10 +16,11 @@
 package sleeper.core.statestore.transactionlog.transactions;
 
 import sleeper.core.statestore.AllReferencesToAFile;
+import sleeper.core.statestore.StateStoreException;
 
 import java.util.List;
 
-public class AddFilesTransaction implements FileTransaction {
+public class AddFilesTransaction implements StateStoreTransaction {
 
     private final List<AllReferencesToAFile> files;
 
@@ -28,8 +29,13 @@ public class AddFilesTransaction implements FileTransaction {
     }
 
     @Override
-    public void apply(StateStoreFiles files) {
-        files.add(this.files);
+    public void validate(StateStoreState state) throws StateStoreException {
+        state.files().validateNewFiles(files);
+    }
+
+    @Override
+    public void apply(StateStoreState state) {
+        state.files().add(this.files);
     }
 
 }

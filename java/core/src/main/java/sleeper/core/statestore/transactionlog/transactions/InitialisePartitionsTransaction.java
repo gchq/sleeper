@@ -18,9 +18,8 @@ package sleeper.core.statestore.transactionlog.transactions;
 import sleeper.core.partition.Partition;
 
 import java.util.List;
-import java.util.Map;
 
-public class InitialisePartitionsTransaction implements PartitionTransaction {
+public class InitialisePartitionsTransaction implements StateStoreTransaction {
 
     private final List<Partition> partitions;
 
@@ -29,8 +28,12 @@ public class InitialisePartitionsTransaction implements PartitionTransaction {
     }
 
     @Override
-    public void apply(Map<String, Partition> partitionById) {
-        partitions.forEach(partition -> partitionById.put(partition.getId(), partition));
+    public void validate(StateStoreState state) {
+    }
+
+    @Override
+    public void apply(StateStoreState state) {
+        partitions.forEach(partition -> state.partitionById().put(partition.getId(), partition));
     }
 
 }

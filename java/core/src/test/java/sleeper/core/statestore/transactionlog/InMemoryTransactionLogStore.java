@@ -15,16 +15,18 @@
  */
 package sleeper.core.statestore.transactionlog;
 
+import sleeper.core.statestore.transactionlog.transactions.StateStoreTransaction;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
 public class InMemoryTransactionLogStore implements TransactionLogStore {
 
-    private List<Object> transactions = new ArrayList<>();
+    private List<StateStoreTransaction> transactions = new ArrayList<>();
 
     @Override
-    public void addTransaction(Object transaction, long transactionNumber) {
+    public void addTransaction(StateStoreTransaction transaction, long transactionNumber) {
         if (transactions.size() + 1 != transactionNumber) {
             throw new IllegalStateException("Next transaction number should be " + transactions.size() + ", found " + transactionNumber);
         }
@@ -32,7 +34,7 @@ public class InMemoryTransactionLogStore implements TransactionLogStore {
     }
 
     @Override
-    public Stream<Object> readTransactionsAfter(long lastTransactionNumber) {
+    public Stream<StateStoreTransaction> readTransactionsAfter(long lastTransactionNumber) {
         return transactions.stream()
                 .skip(lastTransactionNumber);
     }

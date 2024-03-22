@@ -15,8 +15,12 @@
  */
 package sleeper.core.statestore.transactionlog.transactions;
 
-public interface FileTransaction {
+import sleeper.core.statestore.StateStoreException;
 
-    void apply(StateStoreFiles files);
+public interface StateStoreTransaction {
+
+    void validate(StateStoreState state) throws StateStoreException;
+
+    void apply(StateStoreState state);
 
 }

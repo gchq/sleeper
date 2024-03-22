@@ -16,11 +16,12 @@
 package sleeper.core.statestore.transactionlog.transactions;
 
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.StateStoreException;
 
 import java.time.Instant;
 import java.util.List;
 
-public class ReplaceFileReferencesTransaction implements FileTransaction {
+public class ReplaceFileReferencesTransaction implements StateStoreTransaction {
 
     private final String jobId;
     private final String partitionId;
@@ -38,8 +39,12 @@ public class ReplaceFileReferencesTransaction implements FileTransaction {
     }
 
     @Override
-    public void apply(StateStoreFiles files) {
-        files.replaceFiles(partitionId, inputFiles, newReference, updateTime);
+    public void validate(StateStoreState state) throws StateStoreException {
+    }
+
+    @Override
+    public void apply(StateStoreState state) {
+        state.files().replaceFiles(partitionId, inputFiles, newReference, updateTime);
     }
 
     // For linting, since this field is only used to keep a record

@@ -27,6 +27,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.statestore.transactionlog.TransactionLogStore;
+import sleeper.core.statestore.transactionlog.transactions.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.transactions.TransactionSerDe;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
@@ -59,7 +60,7 @@ class DynamoDBTransactionLogStore implements TransactionLogStore {
     }
 
     @Override
-    public void addTransaction(Object transaction, long transactionNumber) {
+    public void addTransaction(StateStoreTransaction transaction, long transactionNumber) {
         dynamo.putItem(new PutItemRequest()
                 .withTableName(instanceProperties.get(TRANSACTION_LOG_TABLENAME))
                 .withItem(new DynamoDBRecordBuilder()
@@ -73,7 +74,7 @@ class DynamoDBTransactionLogStore implements TransactionLogStore {
     }
 
     @Override
-    public Stream<Object> readTransactionsAfter(long lastTransactionNumber) {
+    public Stream<StateStoreTransaction> readTransactionsAfter(long lastTransactionNumber) {
         return streamPagedItems(dynamo, new QueryRequest()
                 .withTableName(instanceProperties.get(TRANSACTION_LOG_TABLENAME))
                 .withConsistentRead(true)
@@ -87,11 +88,17 @@ class DynamoDBTransactionLogStore implements TransactionLogStore {
                 .flatMap(item -> readTransaction(item).stream());
     }
 
-    private Optional<Object> readTransaction(Map<String, AttributeValue> item) {
+    private Optional<StateStoreTransaction> readTransaction(Map<String, AttributeValue> item) {
         String className = item.get(TYPE).getS();
         try {
             Class<?> type = Class.forName(className);
-            return Optional.of(serDe.toTransaction(type, item.get(BODY).getS()));
+            if (!StateStoreTransaction.class.isAssignableFrom(type)) {
+                LOGGER.warn("Found non-transaction type for table {} transaction {}: {}",
+                        item.get(TABLE_ID).getS(), item.get(TRANSACTION_NUMBER).getS(), className);
+                return Optional.empty();
+            }
+            Class<? extends StateStoreTransaction> transactionType = (Class<? extends StateStoreTransaction>) type;
+            return Optional.of(serDe.toTransaction(transactionType, item.get(BODY).getS()));
         } catch (ClassNotFoundException e) {
             LOGGER.warn("Found unrecognised transaction type for table {} transaction {}: {}",
                     item.get(TABLE_ID).getS(), item.get(TRANSACTION_NUMBER).getS(), className);

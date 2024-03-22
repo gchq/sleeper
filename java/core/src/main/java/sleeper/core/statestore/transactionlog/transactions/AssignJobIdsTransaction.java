@@ -16,11 +16,12 @@
 package sleeper.core.statestore.transactionlog.transactions;
 
 import sleeper.core.statestore.AssignJobIdRequest;
+import sleeper.core.statestore.StateStoreException;
 
 import java.time.Instant;
 import java.util.List;
 
-public class AssignJobIdsTransaction implements FileTransaction {
+public class AssignJobIdsTransaction implements StateStoreTransaction {
 
     private final List<AssignJobIdRequest> requests;
     private final Instant updateTime;
@@ -31,8 +32,12 @@ public class AssignJobIdsTransaction implements FileTransaction {
     }
 
     @Override
-    public void apply(StateStoreFiles files) {
-        files.assignJobIds(requests, updateTime);
+    public void validate(StateStoreState state) throws StateStoreException {
+    }
+
+    @Override
+    public void apply(StateStoreState state) {
+        state.files().assignJobIds(requests, updateTime);
     }
 
 }

@@ -29,12 +29,6 @@ import java.util.stream.Stream;
 public class StateStoreFiles {
     private final Map<String, AllReferencesToAFile> filesByFilename = new TreeMap<>();
 
-    void add(Iterable<AllReferencesToAFile> files) {
-        for (AllReferencesToAFile file : files) {
-            filesByFilename.put(file.getFilename(), file);
-        }
-    }
-
     public Stream<FileReference> references() {
         return filesByFilename.values().stream()
                 .flatMap(file -> file.getInternalReferences().stream());
@@ -55,6 +49,12 @@ public class StateStoreFiles {
         return filesByFilename.isEmpty();
     }
 
+    void add(Iterable<AllReferencesToAFile> files) {
+        for (AllReferencesToAFile file : files) {
+            filesByFilename.put(file.getFilename(), file);
+        }
+    }
+
     public void validateNewFiles(List<AllReferencesToAFile> files) throws FileAlreadyExistsException {
         for (AllReferencesToAFile file : files) {
             if (filesByFilename.containsKey(file.getFilename())) {
@@ -63,7 +63,7 @@ public class StateStoreFiles {
         }
     }
 
-    public void assignJobIds(List<AssignJobIdRequest> requests, Instant updateTime) {
+    void assignJobIds(List<AssignJobIdRequest> requests, Instant updateTime) {
         for (AssignJobIdRequest request : requests) {
             for (String filename : request.getFilenames()) {
                 AllReferencesToAFile file = filesByFilename.get(filename);
@@ -74,7 +74,7 @@ public class StateStoreFiles {
         }
     }
 
-    public void replaceFiles(String partitionId, List<String> removeFiles, FileReference newReference, Instant updateTime) {
+    void replaceFiles(String partitionId, List<String> removeFiles, FileReference newReference, Instant updateTime) {
         for (String filename : removeFiles) {
             AllReferencesToAFile file = filesByFilename.get(filename);
             AllReferencesToAFile updated = file.removeReferenceForPartition(partitionId, updateTime);
