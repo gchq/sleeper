@@ -128,6 +128,23 @@ public interface FileReferenceStore {
      */
     void atomicallyReplaceFileReferencesWithNewOnes(List<ReplaceFileReferencesRequest> requests) throws StateStoreException;
 
+    /**
+     * Atomically applies the results of a job. Delegates to {@link #atomicallyReplaceFileReferencesWithNewOnes(List)}.
+     * 
+     * @param  jobId                                   the ID of the job
+     * @param  partitionId                             the partition which the job operated on
+     * @param  inputFiles                              the filenames of the input files, whose references in this
+     *                                                 partition should be
+     *                                                 removed
+     * @param  newReference                            the reference to a new file, including metadata in the output
+     *                                                 partition
+     * @throws FileNotFoundException                   if any of the input files do not exist
+     * @throws FileReferenceNotFoundException          if any of the input files are not referenced in the partition
+     * @throws FileReferenceNotAssignedToJobException  if any of the input files are not assigned to the job
+     * @throws NewReferenceSameAsOldReferenceException if the output file has the same filename as any of the inputs
+     * @throws FileAlreadyExistsException              if the output file already exists
+     * @throws StateStoreException                     if the update fails for another reason
+     */
     default void atomicallyReplaceFileReferencesWithNewOne(String jobId, String partitionId, List<String> inputFiles,
             FileReference newReference) throws StateStoreException {
         atomicallyReplaceFileReferencesWithNewOnes(List.of(
