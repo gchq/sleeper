@@ -404,7 +404,7 @@ class S3FileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public void clearFileData() {
+    public void clearFileData() throws StateStoreException {
         Path path = new Path(stateStorePath + "/files");
         try {
             path.getFileSystem(conf).delete(path, true);
