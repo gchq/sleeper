@@ -20,10 +20,11 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.task.common.RunCompactionTasks.Scaler;
+import sleeper.task.common.RunCompactionTasks.HostScaler;
 import sleeper.task.common.RunCompactionTasks.TaskCounts;
 
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -40,8 +41,8 @@ public class RunCompactionTasksTest {
     private static final String TEST_JOB_QUEUE = "test-job-queue";
     private static final String TEST_AUTO_SCALING_GROUP = "test-scaling-group";
     private final InstanceProperties instanceProperties = createInstance();
-    private final Map<String, Integer> numContainersByScalingGroup = new HashMap<>();
-    private final Scaler scaler = numContainersByScalingGroup::put;
+    private final List<Integer> scaleHostsRequests = new ArrayList<>();
+    private final HostScaler scaler = scaleHostsRequests::add;
 
     @DisplayName("Launch tasks using queue")
     @Nested
@@ -64,7 +65,7 @@ public class RunCompactionTasksTest {
             instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 5);
 
             // When
-            int tasksCreated = runTasks(messagesOnQueue(1), noExistingTasks());
+            int tasksCreated = runTasks(jobsOnQueue(1), noExistingTasks());
 
             // Then
             assertThat(tasksCreated).isEqualTo(1);
@@ -76,7 +77,7 @@ public class RunCompactionTasksTest {
             instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 5);
 
             // When
-            int tasksCreated = runTasks(messagesOnQueue(1), existingTasks(1));
+            int tasksCreated = runTasks(jobsOnQueue(1), existingTasks(1));
 
             // Then
             assertThat(tasksCreated).isEqualTo(1);
@@ -88,7 +89,7 @@ public class RunCompactionTasksTest {
             instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 1);
 
             // When
-            int tasksCreated = runTasks(messagesOnQueue(1), noExistingTasks());
+            int tasksCreated = runTasks(jobsOnQueue(1), noExistingTasks());
 
             // Then
             assertThat(tasksCreated).isEqualTo(1);
@@ -100,7 +101,7 @@ public class RunCompactionTasksTest {
             instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 1);
 
             // When
-            int tasksCreated = runTasks(messagesOnQueue(1), existingTasks(1));
+            int tasksCreated = runTasks(jobsOnQueue(1), existingTasks(1));
 
             // Then
             assertThat(tasksCreated).isZero();
@@ -112,7 +113,7 @@ public class RunCompactionTasksTest {
             instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 1);
 
             // When
-            int tasksCreated = runTasks(messagesOnQueue(2), noExistingTasks());
+            int tasksCreated = runTasks(jobsOnQueue(2), noExistingTasks());
 
             // Then
             assertThat(tasksCreated).isEqualTo(1);
@@ -124,7 +125,7 @@ public class RunCompactionTasksTest {
             instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 1);
 
             // When
-            int tasksCreated = runTasks(messagesOnQueue(1), existingTasks(2));
+            int tasksCreated = runTasks(jobsOnQueue(1), existingTasks(2));
 
             // Then
             assertThat(tasksCreated).isZero();
@@ -136,7 +137,7 @@ public class RunCompactionTasksTest {
             instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 2);
 
             // When
-            int tasksCreated = runTasks(messagesOnQueue(2), existingTasks(1));
+            int tasksCreated = runTasks(jobsOnQueue(2), existingTasks(1));
 
             // Then
             assertThat(tasksCreated).isEqualTo(1);
@@ -156,18 +157,6 @@ public class RunCompactionTasksTest {
         }
 
         @Test
-        void shouldCreateTasksWhenRunningOrPendingTasksIsAboveMaximumConcurrentTasks() {
-            // Given
-            instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 5);
-
-            // When
-            int tasksCreated = runToMeetTargetTasks(5, existingTasks(100));
-
-            // Then
-            assertThat(tasksCreated).isEqualTo(5);
-        }
-
-        @Test
         void shouldCreateTasksOverMaximumConcurrentTasks() {
             // Given
             instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 1);
@@ -177,6 +166,33 @@ public class RunCompactionTasksTest {
 
             // Then
             assertThat(tasksCreated).isEqualTo(2);
+        }
+
+        @Test
+        void shouldCreateTasksToMeetTargetWithExistingTasks() {
+            // When
+            int tasksCreated = runToMeetTargetTasks(5, existingTasks(2));
+
+            // Then
+            assertThat(tasksCreated).isEqualTo(3);
+        }
+
+        @Test
+        void shouldDoNothingWhenExistingTasksAreOverTarget() {
+            // When
+            int tasksCreated = runToMeetTargetTasks(2, existingTasks(3));
+
+            // Then
+            assertThat(tasksCreated).isEqualTo(0);
+        }
+
+        @Test
+        void shouldDoNothingWhenExistingTasksAreEqualToTarget() {
+            // When
+            int tasksCreated = runToMeetTargetTasks(2, existingTasks(2));
+
+            // Then
+            assertThat(tasksCreated).isEqualTo(0);
         }
     }
 
@@ -190,10 +206,10 @@ public class RunCompactionTasksTest {
             instanceProperties.set(COMPACTION_ECS_LAUNCHTYPE, "FARGATE");
 
             // When
-            runTasks(5, noExistingTasks());
+            runTasks(jobsOnQueue(5), noExistingTasks());
 
             // Then
-            assertThat(numContainersByScalingGroup).isEmpty();
+            assertThat(scaleHostsRequests).isEmpty();
         }
 
         @Test
@@ -202,11 +218,10 @@ public class RunCompactionTasksTest {
             instanceProperties.set(COMPACTION_ECS_LAUNCHTYPE, "EC2");
 
             // When
-            runTasks(5, noExistingTasks());
+            runTasks(jobsOnQueue(5), noExistingTasks());
 
             // Then
-            assertThat(numContainersByScalingGroup).isEqualTo(Map.of(
-                    TEST_AUTO_SCALING_GROUP, 5));
+            assertThat(scaleHostsRequests).containsExactly(5);
         }
 
         @Test
@@ -215,11 +230,10 @@ public class RunCompactionTasksTest {
             instanceProperties.set(COMPACTION_ECS_LAUNCHTYPE, "EC2");
 
             // When
-            runTasks(5, existingTasks(3));
+            runTasks(jobsOnQueue(5), existingTasks(3));
 
             // Then
-            assertThat(numContainersByScalingGroup).isEqualTo(Map.of(
-                    TEST_AUTO_SCALING_GROUP, 5));
+            assertThat(scaleHostsRequests).containsExactly(8);
         }
     }
 
@@ -227,12 +241,8 @@ public class RunCompactionTasksTest {
         return run(taskCounts, runTasks -> runTasks.run(queueMessageClient));
     }
 
-    private int runTasks(int requestedTasks, TaskCounts taskCounts) {
-        return runTasks(messagesOnQueue(requestedTasks), taskCounts);
-    }
-
     private int runToMeetTargetTasks(int requestedTasks, TaskCounts taskCounts) {
-        return run(taskCounts, runTasks -> runTasks.runAddingTasks(requestedTasks));
+        return run(taskCounts, runTasks -> runTasks.runToMeetTargetTasks(requestedTasks));
     }
 
     private int run(TaskCounts taskCounts, Consumer<RunCompactionTasks> run) {
@@ -253,10 +263,10 @@ public class RunCompactionTasksTest {
     }
 
     private static QueueMessageCount.Client noMessagesOnQueue() {
-        return messagesOnQueue(0);
+        return jobsOnQueue(0);
     }
 
-    private static QueueMessageCount.Client messagesOnQueue(int messageCount) {
+    private static QueueMessageCount.Client jobsOnQueue(int messageCount) {
         return InMemoryQueueMessageCounts.from(
                 Map.of(TEST_JOB_QUEUE, approximateNumberVisibleAndNotVisible(messageCount, 0)));
     }

@@ -112,7 +112,7 @@ public class AwsCompactionDriver implements CompactionDriver {
         CompactionTaskStatusStore store = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instance.getInstanceProperties());
         long tasksFinishedBefore = store.getAllTasks().stream().filter(CompactionTaskStatus::isFinished).count();
         new RunCompactionTasks(instance.getInstanceProperties(), ecsClient, asClient)
-                .runAddingTasks(numberOfTasks);
+                .runToMeetTargetTasks(numberOfTasks);
         try {
             poll.pollUntil("tasks are started", () -> {
                 long tasksStarted = store.getAllTasks().size() - tasksFinishedBefore;

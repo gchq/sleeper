@@ -62,13 +62,12 @@ import static sleeper.core.ContainerConstants.COMPACTION_CONTAINER_NAME;
 public class RunCompactionTasks {
     private static final Logger LOGGER = LoggerFactory.getLogger(RunCompactionTasks.class);
 
-    private final InstanceProperties instanceProperties;
     private final String sqsJobQueueUrl;
     private final String clusterName;
     private final String launchType;
     private final int maximumRunningTasks;
     private final TaskCounts taskCounts;
-    private final Scaler scaler;
+    private final HostScaler hostScaler;
     private final TaskLauncher launchTasks;
 
     public RunCompactionTasks(
@@ -80,10 +79,9 @@ public class RunCompactionTasks {
     }
 
     public RunCompactionTasks(
-            InstanceProperties instanceProperties, TaskCounts taskCounts, Scaler scaler, TaskLauncher launchTasks) {
-        this.instanceProperties = instanceProperties;
+            InstanceProperties instanceProperties, TaskCounts taskCounts, HostScaler hostScaler, TaskLauncher launchTasks) {
         this.taskCounts = taskCounts;
-        this.scaler = scaler;
+        this.hostScaler = hostScaler;
         this.launchTasks = launchTasks;
         this.sqsJobQueueUrl = instanceProperties.get(COMPACTION_JOB_QUEUE_URL);
         this.clusterName = instanceProperties.get(COMPACTION_CLUSTER);
@@ -99,8 +97,8 @@ public class RunCompactionTasks {
         void launchTasks(long startTime, int numberOfTasksToCreate);
     }
 
-    public interface Scaler {
-        void scaleTo(String asGroupName, int numberContainers);
+    public interface HostScaler {
+        void scaleTo(int numberContainers);
     }
 
     public void run(QueueMessageCount.Client queueMessageCount) {
@@ -118,31 +116,33 @@ public class RunCompactionTasks {
         int maxTasksToCreate = Math.max(0, maximumRunningTasks - numRunningAndPendingTasks);
         int numberOfTasksToCreate = Math.min(queueSize, maxTasksToCreate);
         if (launchType.equalsIgnoreCase("EC2")) {
-            scaler.scaleTo(instanceProperties.get(COMPACTION_AUTO_SCALING_GROUP), numberOfTasksToCreate);
+            hostScaler.scaleTo(numRunningAndPendingTasks + numberOfTasksToCreate);
         }
         LOGGER.info("Tasks to create is {}", numberOfTasksToCreate);
         launchTasks.launchTasks(startTime, numberOfTasksToCreate);
     }
 
-    public void runAddingTasks(int taskCount) {
-        runAddingTasks(System.currentTimeMillis(), taskCount);
+    public void runToMeetTargetTasks(int taskCount) {
+        runToMeetTargetTasks(System.currentTimeMillis(), taskCount);
     }
 
-    private void runAddingTasks(long startTime, int targetCount) {
+    private void runToMeetTargetTasks(long startTime, int targetCount) {
         if (targetCount == 0) {
             LOGGER.info("Finishing as target tasks was 0");
             return;
         }
+        int numRunningAndPendingTasks = taskCounts.getRunningAndPending(clusterName);
+        int numberOfTasksToCreate = Math.max(0, targetCount - numRunningAndPendingTasks);
 
         if (launchType.equalsIgnoreCase("EC2")) {
-            scaler.scaleTo(instanceProperties.get(COMPACTION_AUTO_SCALING_GROUP), targetCount);
+            hostScaler.scaleTo(targetCount);
         }
 
-        LOGGER.info("Tasks to create is {}", targetCount);
-        launchTasks.launchTasks(startTime, targetCount);
+        LOGGER.info("Tasks to create is {}", numberOfTasksToCreate);
+        launchTasks.launchTasks(startTime, numberOfTasksToCreate);
     }
 
-    private static Scaler createEC2Scaler(InstanceProperties instanceProperties, AmazonAutoScaling asClient, AmazonECS ecsClient) {
+    private static HostScaler createEC2Scaler(InstanceProperties instanceProperties, AmazonAutoScaling asClient, AmazonECS ecsClient) {
         String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
         String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
         Pair<Integer, Integer> requirements = Requirements.getArchRequirements(architecture, launchType, instanceProperties);
@@ -273,7 +273,7 @@ public class RunCompactionTasks {
             InstanceProperties instanceProperties = new InstanceProperties();
             instanceProperties.loadFromS3(s3Client, s3Bucket);
             new RunCompactionTasks(instanceProperties, ecsClient, asClient)
-                    .runAddingTasks(numberOfTasks);
+                    .runToMeetTargetTasks(numberOfTasks);
         } finally {
             sqsClient.shutdown();
             ecsClient.shutdown();
