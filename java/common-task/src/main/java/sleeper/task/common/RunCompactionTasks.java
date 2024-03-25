@@ -62,11 +62,10 @@ import static sleeper.core.ContainerConstants.COMPACTION_CONTAINER_NAME;
 public class RunCompactionTasks {
     private static final Logger LOGGER = LoggerFactory.getLogger(RunCompactionTasks.class);
 
-    private final String sqsJobQueueUrl;
-    private final int maximumRunningTasks;
+    private final InstanceProperties instanceProperties;
     private final TaskCounts taskCounts;
     private final HostScaler hostScaler;
-    private final TaskLauncher launchTasks;
+    private final TaskLauncher taskLauncher;
 
     public RunCompactionTasks(
             InstanceProperties instanceProperties, AmazonECS ecsClient, AmazonAutoScaling asClient) {
@@ -77,12 +76,11 @@ public class RunCompactionTasks {
     }
 
     public RunCompactionTasks(
-            InstanceProperties instanceProperties, TaskCounts taskCounts, HostScaler hostScaler, TaskLauncher launchTasks) {
+            InstanceProperties instanceProperties, TaskCounts taskCounts, HostScaler hostScaler, TaskLauncher taskLauncher) {
+        this.instanceProperties = instanceProperties;
         this.taskCounts = taskCounts;
         this.hostScaler = hostScaler;
-        this.launchTasks = launchTasks;
-        this.sqsJobQueueUrl = instanceProperties.get(COMPACTION_JOB_QUEUE_URL);
-        this.maximumRunningTasks = instanceProperties.getInt(MAXIMUM_CONCURRENT_COMPACTION_TASKS);
+        this.taskLauncher = taskLauncher;
     }
 
     public interface TaskCounts {
@@ -99,6 +97,8 @@ public class RunCompactionTasks {
 
     public void run(QueueMessageCount.Client queueMessageCount) {
         long startTime = System.currentTimeMillis();
+        String sqsJobQueueUrl = instanceProperties.get(COMPACTION_JOB_QUEUE_URL);
+        int maximumRunningTasks = instanceProperties.getInt(MAXIMUM_CONCURRENT_COMPACTION_TASKS);
         LOGGER.info("Queue URL is {}", sqsJobQueueUrl);
         // Find out number of messages in queue that are not being processed
         int queueSize = queueMessageCount.getQueueMessageCount(sqsJobQueueUrl)
@@ -132,7 +132,7 @@ public class RunCompactionTasks {
             return;
         }
         hostScaler.scaleTo(targetHosts);
-        launchTasks.launchTasks(startTime, createTasks);
+        taskLauncher.launchTasks(startTime, createTasks);
     }
 
     private static HostScaler createEC2Scaler(InstanceProperties instanceProperties, AmazonAutoScaling asClient, AmazonECS ecsClient) {
