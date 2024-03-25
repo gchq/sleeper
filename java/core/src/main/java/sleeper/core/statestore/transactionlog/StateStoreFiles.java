@@ -44,7 +44,7 @@ public class StateStoreFiles {
                 .filter(file -> file.getTotalReferenceCount() == 0)
                 .filter(file -> file.getLastStateStoreUpdateTime().isBefore(maxUpdateTime))
                 .map(AllReferencesToAFile::getFilename)
-                .collect(toUnmodifiableList()).stream();
+                .collect(toUnmodifiableList()).stream(); // Avoid concurrent modification during GC
     }
 
     public boolean isEmpty() {
@@ -57,6 +57,10 @@ public class StateStoreFiles {
 
     public void remove(String filename) {
         filesByFilename.remove(filename);
+    }
+
+    public void clear() {
+        filesByFilename.clear();
     }
 
     public Optional<AllReferencesToAFile> file(String filename) {

@@ -75,5 +75,5 @@ public interface PartitionStore {
      * so this should only be used when no files are present. The store must be initialised before the Sleeper table can
      * be used again. Any file references will need to be added again.
      */
-    void clearPartitionData();
+    void clearPartitionData() throws StateStoreException;
 }
