@@ -15,6 +15,7 @@
  */
 package sleeper.task.common;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -30,19 +31,21 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_AUTO_SCALING_GROUP;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CompactionProperty.MAXIMUM_CONCURRENT_COMPACTION_TASKS;
 import static sleeper.task.common.QueueMessageCount.approximateNumberVisibleAndNotVisible;
 
 public class RunCompactionTasksTest {
-    private static final String TEST_JOB_QUEUE = "test-job-queue";
-    private static final String TEST_AUTO_SCALING_GROUP = "test-scaling-group";
-    private final InstanceProperties instanceProperties = createInstance();
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final List<Integer> scaleToHostsRequests = new ArrayList<>();
     private final List<Integer> launchTasksRequests = new ArrayList<>();
     private final HostScaler scaler = scaleToHostsRequests::add;
     private final TaskLauncher taskLauncher = (startTime, numberOfTasks) -> launchTasksRequests.add(numberOfTasks);
+
+    @BeforeEach
+    void setUp() {
+        instanceProperties.set(COMPACTION_JOB_QUEUE_URL, "test-compaction-job-queue");
+    }
 
     @DisplayName("Launch tasks using queue")
     @Nested
@@ -53,7 +56,7 @@ public class RunCompactionTasksTest {
             instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 5);
 
             // When
-            runTasks(noMessagesOnQueue(), noExistingTasks());
+            runTasks(noJobsOnQueue(), noExistingTasks());
 
             // Then
             assertThat(scaleToHostsRequests).isEmpty();
@@ -229,20 +232,14 @@ public class RunCompactionTasksTest {
         return () -> tasks;
     }
 
-    private static QueueMessageCount.Client noMessagesOnQueue() {
+    private QueueMessageCount.Client noJobsOnQueue() {
         return jobsOnQueue(0);
     }
 
-    private static QueueMessageCount.Client jobsOnQueue(int messageCount) {
+    private QueueMessageCount.Client jobsOnQueue(int messageCount) {
         return InMemoryQueueMessageCounts.from(
-                Map.of(TEST_JOB_QUEUE, approximateNumberVisibleAndNotVisible(messageCount, 0)));
-    }
-
-    private static InstanceProperties createInstance() {
-        InstanceProperties instanceProperties = createTestInstanceProperties();
-        instanceProperties.set(COMPACTION_JOB_QUEUE_URL, TEST_JOB_QUEUE);
-        instanceProperties.set(COMPACTION_AUTO_SCALING_GROUP, TEST_AUTO_SCALING_GROUP);
-        return instanceProperties;
+                Map.of(instanceProperties.get(COMPACTION_JOB_QUEUE_URL),
+                        approximateNumberVisibleAndNotVisible(messageCount, 0)));
     }
 
 }
