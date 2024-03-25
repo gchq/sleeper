@@ -40,7 +40,7 @@ public class RunCompactionTasksTest {
     private final List<Integer> scaleToHostsRequests = new ArrayList<>();
     private final List<Integer> launchTasksRequests = new ArrayList<>();
     private final HostScaler scaler = scaleToHostsRequests::add;
-    private final TaskLauncher taskLauncher = (startTime, numberOfTasks) -> launchTasksRequests.add(numberOfTasks);
+    private final TaskLauncher taskLauncher = (numberOfTasks, checkAbort) -> launchTasksRequests.add(numberOfTasks);
 
     @BeforeEach
     void setUp() {

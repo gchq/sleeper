@@ -40,6 +40,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.function.BooleanSupplier;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_AUTO_SCALING_GROUP;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_CLUSTER;
@@ -88,7 +89,7 @@ public class RunCompactionTasks {
     }
 
     public interface TaskLauncher {
-        void launchTasks(long startTime, int numberOfTasksToCreate);
+        void launchTasks(int numberOfTasksToCreate, BooleanSupplier checkAbort);
     }
 
     public interface HostScaler {
@@ -111,20 +112,26 @@ public class RunCompactionTasks {
 
         int maxTasksToCreate = maximumRunningTasks - numRunningAndPendingTasks;
         int numberOfTasksToCreate = Math.min(queueSize, maxTasksToCreate);
-        scaleToHostsAndLaunchTasks(startTime, numRunningAndPendingTasks + numberOfTasksToCreate, numberOfTasksToCreate);
+        scaleToHostsAndLaunchTasks(numRunningAndPendingTasks + numberOfTasksToCreate, numberOfTasksToCreate,
+                () -> {
+                    // This lambda is triggered every minute so abort once get
+                    // close to 1 minute
+                    if (System.currentTimeMillis() - startTime > 50 * 1000L) {
+                        LOGGER.info("Running for more than 50 seconds, aborting");
+                        return true;
+                    } else {
+                        return false;
+                    }
+                });
     }
 
-    public void runToMeetTargetTasks(int taskCount) {
-        runToMeetTargetTasks(System.currentTimeMillis(), taskCount);
-    }
-
-    private void runToMeetTargetTasks(long startTime, int targetCount) {
+    public void runToMeetTargetTasks(int targetCount) {
         int numRunningAndPendingTasks = taskCounts.getRunningAndPending();
         int numberOfTasksToCreate = Math.max(0, targetCount - numRunningAndPendingTasks);
-        scaleToHostsAndLaunchTasks(startTime, targetCount, numberOfTasksToCreate);
+        scaleToHostsAndLaunchTasks(targetCount, numberOfTasksToCreate, () -> false);
     }
 
-    private void scaleToHostsAndLaunchTasks(long startTime, int targetHosts, int createTasks) {
+    private void scaleToHostsAndLaunchTasks(int targetHosts, int createTasks, BooleanSupplier checkAbort) {
         LOGGER.info("Target number of hosts is {}", targetHosts);
         LOGGER.info("Tasks to create is {}", createTasks);
         if (createTasks < 1) {
@@ -132,7 +139,7 @@ public class RunCompactionTasks {
             return;
         }
         hostScaler.scaleTo(targetHosts);
-        taskLauncher.launchTasks(startTime, createTasks);
+        taskLauncher.launchTasks(createTasks, checkAbort);
     }
 
     private static HostScaler createEC2Scaler(InstanceProperties instanceProperties, AmazonAutoScaling asClient, AmazonECS ecsClient) {
@@ -159,10 +166,12 @@ public class RunCompactionTasks {
      *
      * @param ecsClient             Amazon ECS client
      * @param instanceProperties    Properties for instance
-     * @param startTime             start time of Lambda
      * @param numberOfTasksToCreate number of tasks to create
+     * @param checkAbort            a condition under which launching will be aborted
      */
-    private static void launchTasks(AmazonECS ecsClient, InstanceProperties instanceProperties, long startTime, int numberOfTasksToCreate) {
+    private static void launchTasks(
+            AmazonECS ecsClient, InstanceProperties instanceProperties,
+            int numberOfTasksToCreate, BooleanSupplier checkAbort) {
         String clusterName = instanceProperties.get(COMPACTION_CLUSTER);
         String fargateTaskDefinition = instanceProperties.get(COMPACTION_TASK_FARGATE_DEFINITION_FAMILY);
         String ec2TaskDefinition = instanceProperties.get(COMPACTION_TASK_EC2_DEFINITION_FAMILY);
@@ -179,16 +188,7 @@ public class RunCompactionTasks {
                 .ecsClient(ecsClient)
                 .runTaskRequest(runTaskRequest)
                 .numberOfTasksToCreate(numberOfTasksToCreate)
-                .checkAbort(() -> {
-                    // This lambda is triggered every minute so abort once get
-                    // close to 1 minute
-                    if (System.currentTimeMillis() - startTime > 50 * 1000L) {
-                        LOGGER.info("Running for more than 50 seconds, aborting");
-                        return true;
-                    } else {
-                        return false;
-                    }
-                }));
+                .checkAbort(checkAbort));
     }
 
     /**
