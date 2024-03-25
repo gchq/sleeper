@@ -71,6 +71,7 @@ public class QueryWebSocketCommandLineClient extends QueryCommandLineClient {
     @Override
     protected void submitQuery(TableProperties tableProperties, Query query) {
         queryWebSocketClient.submitQuery(query);
+        queryWebSocketClient.waitForQuery();
     }
 
     public static void main(String[] args) throws StateStoreException {

@@ -61,6 +61,7 @@ public class QueryWebSocketClient {
     private final String apiUrl;
     private final Client client;
     private final ConsoleOutput out;
+    private Instant startTime;
 
     QueryWebSocketClient(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, ConsoleOutput out) {
         this(instanceProperties, tablePropertiesProvider, out, new WebSocketQueryClient(instanceProperties, tablePropertiesProvider, out));
@@ -77,8 +78,19 @@ public class QueryWebSocketClient {
 
     public void submitQuery(Query query) {
         try {
-            Instant startTime = Instant.now();
+            startTime = Instant.now();
             client.startQuery(query);
+        } catch (InterruptedException e) {
+        } finally {
+            try {
+                client.closeBlocking();
+            } catch (InterruptedException e) {
+            }
+        }
+    }
+
+    public void waitForQuery() {
+        try {
             while (!client.hasQueryFinished()) {
                 Thread.sleep(500);
             }
