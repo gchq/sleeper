@@ -23,14 +23,14 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-public class StateStoreState {
+public class TransactionLogHead {
 
     private final TransactionLogStore logStore;
     private final Map<String, Partition> partitionById = new HashMap<>();
     private final StateStoreFiles files = new StateStoreFiles();
     private long lastTransactionNumber = 0;
 
-    public StateStoreState(TransactionLogStore logStore) {
+    public TransactionLogHead(TransactionLogStore logStore) {
         this.logStore = logStore;
     }
 

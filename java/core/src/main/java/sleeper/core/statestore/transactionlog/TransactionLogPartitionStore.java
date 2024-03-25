@@ -31,9 +31,9 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 class TransactionLogPartitionStore implements PartitionStore {
 
     private final Schema schema;
-    private final StateStoreState state;
+    private final TransactionLogHead state;
 
-    TransactionLogPartitionStore(Schema schema, StateStoreState state) {
+    TransactionLogPartitionStore(Schema schema, TransactionLogHead state) {
         this.schema = schema;
         this.state = state;
     }

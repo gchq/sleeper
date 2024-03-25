@@ -16,7 +16,7 @@
 package sleeper.core.statestore.transactionlog.transactions;
 
 import sleeper.core.partition.Partition;
-import sleeper.core.statestore.transactionlog.StateStoreState;
+import sleeper.core.statestore.transactionlog.TransactionLogHead;
 
 import java.util.List;
 
@@ -29,11 +29,11 @@ public class InitialisePartitionsTransaction implements StateStoreTransaction {
     }
 
     @Override
-    public void validate(StateStoreState state) {
+    public void validate(TransactionLogHead state) {
     }
 
     @Override
-    public void apply(StateStoreState state) {
+    public void apply(TransactionLogHead state) {
         partitions.forEach(partition -> state.partitionById().put(partition.getId(), partition));
     }
 

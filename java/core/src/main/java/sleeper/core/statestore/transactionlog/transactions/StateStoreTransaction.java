@@ -16,12 +16,12 @@
 package sleeper.core.statestore.transactionlog.transactions;
 
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.statestore.transactionlog.StateStoreState;
+import sleeper.core.statestore.transactionlog.TransactionLogHead;
 
 public interface StateStoreTransaction {
 
-    void validate(StateStoreState state) throws StateStoreException;
+    void validate(TransactionLogHead state) throws StateStoreException;
 
-    void apply(StateStoreState state);
+    void apply(TransactionLogHead state);
 
 }
