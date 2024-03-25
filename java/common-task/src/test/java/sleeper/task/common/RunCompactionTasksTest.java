@@ -48,93 +48,132 @@ public class RunCompactionTasksTest {
     class LaunchTasksUsingQueue {
         @Test
         void shouldCreateNoTasksWhenQueueIsEmpty() {
+            // Given
+            instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 5);
+
             // When
-            int tasksCreated = runTasks(noMessagesOnQueue(), noRunningOrPendingTasks());
+            int tasksCreated = runTasks(noMessagesOnQueue(), noExistingTasks());
 
             // Then
             assertThat(tasksCreated).isZero();
         }
 
         @Test
-        void shouldCreateOneTasksWhenQueueHasOneMessages() {
+        void shouldCreateTaskWhenJobsOnQueueLessThanMax() {
+            // Given
+            instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 5);
+
             // When
-            int tasksCreated = runTasks(messagesOnQueue(5), noRunningOrPendingTasks());
+            int tasksCreated = runTasks(messagesOnQueue(1), noExistingTasks());
+
+            // Then
+            assertThat(tasksCreated).isEqualTo(1);
+        }
+
+        @Test
+        void shouldCreateTasksWhenJobsOnQueuePlusExistingTasksLessThanMax() {
+            // Given
+            instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 5);
+
+            // When
+            int tasksCreated = runTasks(messagesOnQueue(1), existingTasks(1));
+
+            // Then
+            assertThat(tasksCreated).isEqualTo(1);
+        }
+
+        @Test
+        void shouldCreateTasksWhenJobsOnQueueEqualToMax() {
+            // Given
+            instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 1);
+
+            // When
+            int tasksCreated = runTasks(messagesOnQueue(1), noExistingTasks());
+
+            // Then
+            assertThat(tasksCreated).isEqualTo(1);
+        }
+
+        @Test
+        void shouldLimitTasksCreatedWhenExistingTasksEqualToMax() {
+            // Given
+            instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 1);
+
+            // When
+            int tasksCreated = runTasks(messagesOnQueue(1), existingTasks(1));
+
+            // Then
+            assertThat(tasksCreated).isZero();
+        }
+
+        @Test
+        void shouldLimitTasksCreatedWhenJobsOnQueueGreaterThanMax() {
+            // Given
+            instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 1);
+
+            // When
+            int tasksCreated = runTasks(messagesOnQueue(2), noExistingTasks());
+
+            // Then
+            assertThat(tasksCreated).isEqualTo(1);
+        }
+
+        @Test
+        void shouldLimitTasksCreatedWhenExistingTasksGreaterThanMax() {
+            // Given
+            instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 1);
+
+            // When
+            int tasksCreated = runTasks(messagesOnQueue(1), existingTasks(2));
+
+            // Then
+            assertThat(tasksCreated).isZero();
+        }
+
+        @Test
+        void shouldLimitTasksCreatedWhenJobsOnQueuePlusExistingTasksGreaterThanMax() {
+            // Given
+            instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 2);
+
+            // When
+            int tasksCreated = runTasks(messagesOnQueue(2), existingTasks(1));
+
+            // Then
+            assertThat(tasksCreated).isEqualTo(1);
+        }
+    }
+
+    @DisplayName("Launch tasks with target number")
+    @Nested
+    class LaunchTasksWithTarget {
+        @Test
+        void shouldCreateTasksWithNoRunningOrPendingTasks() {
+            // When
+            int tasksCreated = runToMeetTargetTasks(1, noExistingTasks());
+
+            // Then
+            assertThat(tasksCreated).isOne();
+        }
+
+        @Test
+        void shouldCreateTasksWhenRunningOrPendingTasksIsAboveMaximumConcurrentTasks() {
+            // Given
+            instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 5);
+
+            // When
+            int tasksCreated = runToMeetTargetTasks(5, existingTasks(100));
 
             // Then
             assertThat(tasksCreated).isEqualTo(5);
         }
-    }
-
-    @DisplayName("Launch tasks with tasks already running")
-    @Nested
-    class LaunchConcurrentTasks {
-        @Test
-        void shouldCreateTasksUnderMaximumConcurrentLimit() {
-            // Given
-            instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 10);
-
-            // When
-            int tasksCreated = runTasks(1, noRunningOrPendingTasks());
-
-            // Then
-            assertThat(tasksCreated).isOne();
-        }
 
         @Test
-        void shouldCreateTasksUpToMaximumConcurrentTasks() {
+        void shouldCreateTasksOverMaximumConcurrentTasks() {
             // Given
             instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 1);
 
             // When
-            int tasksCreated = runTasks(2, noRunningOrPendingTasks());
-
-            // Then
-            assertThat(tasksCreated).isOne();
-        }
-
-        @Test
-        void shouldCreateTasksWithExistingRunningOrPendingTasks() {
-            // Given
-            instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 5);
-
-            // When
-            int tasksCreated = runTasks(5, runningOrPendingTasks(3));
-
-            // Then
-            assertThat(tasksCreated).isEqualTo(2);
-        }
-
-        @Test
-        void shouldNotCreateTasksWhenExistingRunningOrPendingTaskCountisEqualToMaximumConcurrentTasks() {
-            // Given
-            instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 5);
-
-            // When
-            int tasksCreated = runTasks(1, runningOrPendingTasks(5));
-
-            // Then
-            assertThat(tasksCreated).isZero();
-        }
-
-        @Test
-        void shouldNotCreateTasksWhenExistingRunningOrPendingTaskCountIsMoreThanMaxConcurrentTasks() {
-            // Given
-            instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 5);
-
-            // When
-            int tasksCreated = runTasks(1, runningOrPendingTasks(10));
-
-            // Then
-            assertThat(tasksCreated).isZero();
-        }
-
-        @Test
-        void shouldForceCreateTasksOverMaximumConcurrentTasks() {
-            // Given
-            instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 1);
-
-            // When
-            int tasksCreated = runToMeetTargetTasks(2, noRunningOrPendingTasks());
+            int tasksCreated = runToMeetTargetTasks(2, noExistingTasks());
 
             // Then
             assertThat(tasksCreated).isEqualTo(2);
@@ -151,7 +190,7 @@ public class RunCompactionTasksTest {
             instanceProperties.set(COMPACTION_ECS_LAUNCHTYPE, "FARGATE");
 
             // When
-            runTasks(5, noRunningOrPendingTasks());
+            runTasks(5, noExistingTasks());
 
             // Then
             assertThat(numContainersByScalingGroup).isEmpty();
@@ -163,7 +202,7 @@ public class RunCompactionTasksTest {
             instanceProperties.set(COMPACTION_ECS_LAUNCHTYPE, "EC2");
 
             // When
-            runTasks(5, noRunningOrPendingTasks());
+            runTasks(5, noExistingTasks());
 
             // Then
             assertThat(numContainersByScalingGroup).isEqualTo(Map.of(
@@ -176,7 +215,7 @@ public class RunCompactionTasksTest {
             instanceProperties.set(COMPACTION_ECS_LAUNCHTYPE, "EC2");
 
             // When
-            runTasks(5, runningOrPendingTasks(3));
+            runTasks(5, existingTasks(3));
 
             // Then
             assertThat(numContainersByScalingGroup).isEqualTo(Map.of(
@@ -193,7 +232,7 @@ public class RunCompactionTasksTest {
     }
 
     private int runToMeetTargetTasks(int requestedTasks, TaskCounts taskCounts) {
-        return run(taskCounts, runTasks -> runTasks.runToMeetTargetTasks(requestedTasks));
+        return run(taskCounts, runTasks -> runTasks.runAddingTasks(requestedTasks));
     }
 
     private int run(TaskCounts taskCounts, Consumer<RunCompactionTasks> run) {
@@ -205,11 +244,11 @@ public class RunCompactionTasksTest {
         return tasksLaunched.get();
     }
 
-    private static TaskCounts noRunningOrPendingTasks() {
-        return runningOrPendingTasks(0);
+    private static TaskCounts noExistingTasks() {
+        return existingTasks(0);
     }
 
-    private static TaskCounts runningOrPendingTasks(int tasks) {
+    private static TaskCounts existingTasks(int tasks) {
         return clusterName -> tasks;
     }
 

@@ -112,34 +112,34 @@ public class RunCompactionTasks {
         LOGGER.info("Queue size is {}", queueSize);
         // Request 1 task for each item on the queue
         LOGGER.info("Maximum concurrent tasks is {}", maximumRunningTasks);
-        runToMeetTargetTasks(startTime, Math.min(queueSize, maximumRunningTasks));
-    }
-
-    public void runToMeetTargetTasks(int requestedTasks) {
-        runToMeetTargetTasks(System.currentTimeMillis(), requestedTasks);
-    }
-
-    private void runToMeetTargetTasks(long startTime, int targetTasks) {
-        if (targetTasks == 0) {
-            LOGGER.info("Finishing as target tasks was 0");
-            return;
-        }
-        LOGGER.info("Target concurrent tasks is {}", targetTasks);
-
         int numRunningAndPendingTasks = taskCounts.getRunningAndPending(clusterName);
         LOGGER.info("Number of running and pending tasks is {}", numRunningAndPendingTasks);
-        if (numRunningAndPendingTasks >= targetTasks) {
-            LOGGER.info("Finishing as target has been reached");
+
+        int maxTasksToCreate = Math.max(0, maximumRunningTasks - numRunningAndPendingTasks);
+        int numberOfTasksToCreate = Math.min(queueSize, maxTasksToCreate);
+        if (launchType.equalsIgnoreCase("EC2")) {
+            scaler.scaleTo(instanceProperties.get(COMPACTION_AUTO_SCALING_GROUP), numberOfTasksToCreate);
+        }
+        LOGGER.info("Tasks to create is {}", numberOfTasksToCreate);
+        launchTasks.launchTasks(startTime, numberOfTasksToCreate);
+    }
+
+    public void runAddingTasks(int taskCount) {
+        runAddingTasks(System.currentTimeMillis(), taskCount);
+    }
+
+    private void runAddingTasks(long startTime, int targetCount) {
+        if (targetCount == 0) {
+            LOGGER.info("Finishing as target tasks was 0");
             return;
         }
 
         if (launchType.equalsIgnoreCase("EC2")) {
-            scaler.scaleTo(instanceProperties.get(COMPACTION_AUTO_SCALING_GROUP), targetTasks);
+            scaler.scaleTo(instanceProperties.get(COMPACTION_AUTO_SCALING_GROUP), targetCount);
         }
 
-        int numberOfTasksToCreate = targetTasks - numRunningAndPendingTasks;
-        LOGGER.info("Tasks to create is {}", numberOfTasksToCreate);
-        launchTasks.launchTasks(startTime, numberOfTasksToCreate);
+        LOGGER.info("Tasks to create is {}", targetCount);
+        launchTasks.launchTasks(startTime, targetCount);
     }
 
     private static Scaler createEC2Scaler(InstanceProperties instanceProperties, AmazonAutoScaling asClient, AmazonECS ecsClient) {
@@ -273,7 +273,7 @@ public class RunCompactionTasks {
             InstanceProperties instanceProperties = new InstanceProperties();
             instanceProperties.loadFromS3(s3Client, s3Bucket);
             new RunCompactionTasks(instanceProperties, ecsClient, asClient)
-                    .runToMeetTargetTasks(numberOfTasks);
+                    .runAddingTasks(numberOfTasks);
         } finally {
             sqsClient.shutdown();
             ecsClient.shutdown();
