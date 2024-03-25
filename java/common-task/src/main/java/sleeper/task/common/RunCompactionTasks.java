@@ -64,7 +64,6 @@ public class RunCompactionTasks {
 
     private final String sqsJobQueueUrl;
     private final String clusterName;
-    private final String launchType;
     private final int maximumRunningTasks;
     private final TaskCounts taskCounts;
     private final HostScaler hostScaler;
@@ -86,7 +85,6 @@ public class RunCompactionTasks {
         this.sqsJobQueueUrl = instanceProperties.get(COMPACTION_JOB_QUEUE_URL);
         this.clusterName = instanceProperties.get(COMPACTION_CLUSTER);
         this.maximumRunningTasks = instanceProperties.getInt(MAXIMUM_CONCURRENT_COMPACTION_TASKS);
-        this.launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
     }
 
     public interface TaskCounts {
@@ -113,13 +111,9 @@ public class RunCompactionTasks {
         int numRunningAndPendingTasks = taskCounts.getRunningAndPending(clusterName);
         LOGGER.info("Number of running and pending tasks is {}", numRunningAndPendingTasks);
 
-        int maxTasksToCreate = Math.max(0, maximumRunningTasks - numRunningAndPendingTasks);
+        int maxTasksToCreate = maximumRunningTasks - numRunningAndPendingTasks;
         int numberOfTasksToCreate = Math.min(queueSize, maxTasksToCreate);
-        if (launchType.equalsIgnoreCase("EC2")) {
-            hostScaler.scaleTo(numRunningAndPendingTasks + numberOfTasksToCreate);
-        }
-        LOGGER.info("Tasks to create is {}", numberOfTasksToCreate);
-        launchTasks.launchTasks(startTime, numberOfTasksToCreate);
+        scaleToHostsAndLaunchTasks(startTime, numRunningAndPendingTasks + numberOfTasksToCreate, numberOfTasksToCreate);
     }
 
     public void runToMeetTargetTasks(int taskCount) {
@@ -127,32 +121,36 @@ public class RunCompactionTasks {
     }
 
     private void runToMeetTargetTasks(long startTime, int targetCount) {
-        if (targetCount == 0) {
-            LOGGER.info("Finishing as target tasks was 0");
-            return;
-        }
         int numRunningAndPendingTasks = taskCounts.getRunningAndPending(clusterName);
         int numberOfTasksToCreate = Math.max(0, targetCount - numRunningAndPendingTasks);
+        scaleToHostsAndLaunchTasks(startTime, targetCount, numberOfTasksToCreate);
+    }
 
-        if (launchType.equalsIgnoreCase("EC2")) {
-            hostScaler.scaleTo(targetCount);
+    private void scaleToHostsAndLaunchTasks(long startTime, int targetHosts, int createTasks) {
+        LOGGER.info("Target number of hosts is {}", targetHosts);
+        LOGGER.info("Tasks to create is {}", createTasks);
+        if (createTasks < 1) {
+            LOGGER.info("Finishing as no new tasks needed");
+            return;
         }
-
-        LOGGER.info("Tasks to create is {}", numberOfTasksToCreate);
-        launchTasks.launchTasks(startTime, numberOfTasksToCreate);
+        hostScaler.scaleTo(targetHosts);
+        launchTasks.launchTasks(startTime, createTasks);
     }
 
     private static HostScaler createEC2Scaler(InstanceProperties instanceProperties, AmazonAutoScaling asClient, AmazonECS ecsClient) {
         String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
+        // Only need scaler for EC2
+        if (!launchType.equalsIgnoreCase("EC2")) {
+            return hostCount -> {
+            };
+        }
         String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
         Pair<Integer, Integer> requirements = Requirements.getArchRequirements(architecture, launchType, instanceProperties);
         // Bit hacky: EC2s don't give 100% of their memory for container use (OS
         // headroom, system tasks, etc.) so we have to make sure to reduce
         // the EC2 memory requirement by 5%. If we don't we end up asking for
         // 16GiB of RAM on a 16GiB box for example and container allocation will fail.
-        if (launchType.equalsIgnoreCase("EC2")) {
-            requirements = Pair.of(requirements.getLeft(), (int) (requirements.getRight() * 0.95));
-        }
+        requirements = Pair.of(requirements.getLeft(), (int) (requirements.getRight() * 0.95));
 
         return new EC2Scaler(asClient, ecsClient, instanceProperties.get(COMPACTION_AUTO_SCALING_GROUP),
                 instanceProperties.get(COMPACTION_CLUSTER), requirements.getLeft(), requirements.getRight())::scaleTo;
