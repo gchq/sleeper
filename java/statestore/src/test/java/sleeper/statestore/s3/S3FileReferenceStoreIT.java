@@ -1123,7 +1123,8 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
             store.addFile(file);
 
             // When
-            store.clearFileData();
+            store.clearSleeperTable();
+            store.initialise();
 
             // Then
             assertThat(store.getFileReferences()).isEmpty();
@@ -1142,7 +1143,8 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
                     .build()));
 
             // When
-            store.clearFileData();
+            store.clearSleeperTable();
+            store.initialise();
 
             // Then
             assertThat(store.getFileReferences()).isEmpty();

@@ -1123,7 +1123,8 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreOneTableTest
             store.addFile(file);
 
             // When
-            store.clearFileData();
+            store.clearSleeperTable();
+            store.initialise();
 
             // Then
             assertThat(store.getFileReferences()).isEmpty();
@@ -1142,7 +1143,8 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreOneTableTest
                     .build()));
 
             // When
-            store.clearFileData();
+            store.clearSleeperTable();
+            store.initialise();
 
             // Then
             assertThat(store.getFileReferences()).isEmpty();

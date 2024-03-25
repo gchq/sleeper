@@ -1122,7 +1122,8 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             store.addFile(file);
 
             // When
-            store.clearFileData();
+            store.clearSleeperTable();
+            store.initialise();
 
             // Then
             assertThat(store.getFileReferences()).isEmpty();
@@ -1141,7 +1142,8 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
                     .build()));
 
             // When
-            store.clearFileData();
+            store.clearSleeperTable();
+            store.initialise();
 
             // Then
             assertThat(store.getFileReferences()).isEmpty();
