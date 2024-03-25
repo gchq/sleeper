@@ -40,6 +40,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.function.BooleanSupplier;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_AUTO_SCALING_GROUP;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_CLUSTER;
@@ -63,48 +64,42 @@ public class RunCompactionTasks {
     private static final Logger LOGGER = LoggerFactory.getLogger(RunCompactionTasks.class);
 
     private final InstanceProperties instanceProperties;
-    private final String sqsJobQueueUrl;
-    private final String clusterName;
-    private final String launchType;
-    private final int maximumRunningTasks;
     private final TaskCounts taskCounts;
-    private final Scaler scaler;
-    private final TaskLauncher launchTasks;
+    private final HostScaler hostScaler;
+    private final TaskLauncher taskLauncher;
 
     public RunCompactionTasks(
             InstanceProperties instanceProperties, AmazonECS ecsClient, AmazonAutoScaling asClient) {
         this(instanceProperties,
-                (clusterName) -> ECSTaskCount.getNumPendingAndRunningTasks(clusterName, ecsClient),
+                () -> ECSTaskCount.getNumPendingAndRunningTasks(instanceProperties.get(COMPACTION_CLUSTER), ecsClient),
                 createEC2Scaler(instanceProperties, asClient, ecsClient),
-                (startTime, numberOfTasksToCreate) -> launchTasks(ecsClient, instanceProperties, startTime, numberOfTasksToCreate));
+                (numberOfTasks, checkAbort) -> launchTasks(ecsClient, instanceProperties, numberOfTasks, checkAbort));
     }
 
     public RunCompactionTasks(
-            InstanceProperties instanceProperties, TaskCounts taskCounts, Scaler scaler, TaskLauncher launchTasks) {
+            InstanceProperties instanceProperties, TaskCounts taskCounts, HostScaler hostScaler, TaskLauncher taskLauncher) {
         this.instanceProperties = instanceProperties;
         this.taskCounts = taskCounts;
-        this.scaler = scaler;
-        this.launchTasks = launchTasks;
-        this.sqsJobQueueUrl = instanceProperties.get(COMPACTION_JOB_QUEUE_URL);
-        this.clusterName = instanceProperties.get(COMPACTION_CLUSTER);
-        this.maximumRunningTasks = instanceProperties.getInt(MAXIMUM_CONCURRENT_COMPACTION_TASKS);
-        this.launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
+        this.hostScaler = hostScaler;
+        this.taskLauncher = taskLauncher;
     }
 
     public interface TaskCounts {
-        int getRunningAndPending(String clusterName);
+        int getRunningAndPending();
     }
 
     public interface TaskLauncher {
-        void launchTasks(long startTime, int numberOfTasksToCreate);
+        void launchTasks(int numberOfTasksToCreate, BooleanSupplier checkAbort);
     }
 
-    public interface Scaler {
-        void scaleTo(String asGroupName, int numberContainers);
+    public interface HostScaler {
+        void scaleTo(int numberContainers);
     }
 
     public void run(QueueMessageCount.Client queueMessageCount) {
         long startTime = System.currentTimeMillis();
+        String sqsJobQueueUrl = instanceProperties.get(COMPACTION_JOB_QUEUE_URL);
+        int maximumRunningTasks = instanceProperties.getInt(MAXIMUM_CONCURRENT_COMPACTION_TASKS);
         LOGGER.info("Queue URL is {}", sqsJobQueueUrl);
         // Find out number of messages in queue that are not being processed
         int queueSize = queueMessageCount.getQueueMessageCount(sqsJobQueueUrl)
@@ -112,47 +107,57 @@ public class RunCompactionTasks {
         LOGGER.info("Queue size is {}", queueSize);
         // Request 1 task for each item on the queue
         LOGGER.info("Maximum concurrent tasks is {}", maximumRunningTasks);
-        runToMeetTargetTasks(startTime, Math.min(queueSize, maximumRunningTasks));
-    }
-
-    public void runToMeetTargetTasks(int requestedTasks) {
-        runToMeetTargetTasks(System.currentTimeMillis(), requestedTasks);
-    }
-
-    private void runToMeetTargetTasks(long startTime, int targetTasks) {
-        if (targetTasks == 0) {
-            LOGGER.info("Finishing as target tasks was 0");
-            return;
-        }
-        LOGGER.info("Target concurrent tasks is {}", targetTasks);
-
-        int numRunningAndPendingTasks = taskCounts.getRunningAndPending(clusterName);
+        int numRunningAndPendingTasks = taskCounts.getRunningAndPending();
         LOGGER.info("Number of running and pending tasks is {}", numRunningAndPendingTasks);
-        if (numRunningAndPendingTasks >= targetTasks) {
-            LOGGER.info("Finishing as target has been reached");
-            return;
-        }
 
-        if (launchType.equalsIgnoreCase("EC2")) {
-            scaler.scaleTo(instanceProperties.get(COMPACTION_AUTO_SCALING_GROUP), targetTasks);
-        }
-
-        int numberOfTasksToCreate = targetTasks - numRunningAndPendingTasks;
-        LOGGER.info("Tasks to create is {}", numberOfTasksToCreate);
-        launchTasks.launchTasks(startTime, numberOfTasksToCreate);
+        int maxTasksToCreate = maximumRunningTasks - numRunningAndPendingTasks;
+        int numberOfTasksToCreate = Math.min(queueSize, maxTasksToCreate);
+        int targetTasks = numRunningAndPendingTasks + numberOfTasksToCreate;
+        scaleToHostsAndLaunchTasks(targetTasks, numberOfTasksToCreate,
+                () -> {
+                    // This lambda is triggered every minute so abort once get
+                    // close to 1 minute
+                    if (System.currentTimeMillis() - startTime > 50 * 1000L) {
+                        LOGGER.info("Running for more than 50 seconds, aborting");
+                        return true;
+                    } else {
+                        return false;
+                    }
+                });
     }
 
-    private static Scaler createEC2Scaler(InstanceProperties instanceProperties, AmazonAutoScaling asClient, AmazonECS ecsClient) {
+    public void runToMeetTargetTasks(int targetCount) {
+        int numRunningAndPendingTasks = taskCounts.getRunningAndPending();
+        LOGGER.info("Number of running and pending tasks is {}", numRunningAndPendingTasks);
+        int numberOfTasksToCreate = targetCount - numRunningAndPendingTasks;
+        scaleToHostsAndLaunchTasks(targetCount, numberOfTasksToCreate, () -> false);
+    }
+
+    private void scaleToHostsAndLaunchTasks(int targetTasks, int createTasks, BooleanSupplier checkAbort) {
+        LOGGER.info("Target number of tasks is {}", targetTasks);
+        LOGGER.info("Tasks to create is {}", createTasks);
+        if (createTasks < 1) {
+            LOGGER.info("Finishing as no new tasks are needed");
+            return;
+        }
+        hostScaler.scaleTo(targetTasks);
+        taskLauncher.launchTasks(createTasks, checkAbort);
+    }
+
+    private static HostScaler createEC2Scaler(InstanceProperties instanceProperties, AmazonAutoScaling asClient, AmazonECS ecsClient) {
         String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
+        // Only need scaler for EC2
+        if (!launchType.equalsIgnoreCase("EC2")) {
+            return hostCount -> {
+            };
+        }
         String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
         Pair<Integer, Integer> requirements = Requirements.getArchRequirements(architecture, launchType, instanceProperties);
         // Bit hacky: EC2s don't give 100% of their memory for container use (OS
         // headroom, system tasks, etc.) so we have to make sure to reduce
         // the EC2 memory requirement by 5%. If we don't we end up asking for
         // 16GiB of RAM on a 16GiB box for example and container allocation will fail.
-        if (launchType.equalsIgnoreCase("EC2")) {
-            requirements = Pair.of(requirements.getLeft(), (int) (requirements.getRight() * 0.95));
-        }
+        requirements = Pair.of(requirements.getLeft(), (int) (requirements.getRight() * 0.95));
 
         return new EC2Scaler(asClient, ecsClient, instanceProperties.get(COMPACTION_AUTO_SCALING_GROUP),
                 instanceProperties.get(COMPACTION_CLUSTER), requirements.getLeft(), requirements.getRight())::scaleTo;
@@ -163,10 +168,12 @@ public class RunCompactionTasks {
      *
      * @param ecsClient             Amazon ECS client
      * @param instanceProperties    Properties for instance
-     * @param startTime             start time of Lambda
      * @param numberOfTasksToCreate number of tasks to create
+     * @param checkAbort            a condition under which launching will be aborted
      */
-    private static void launchTasks(AmazonECS ecsClient, InstanceProperties instanceProperties, long startTime, int numberOfTasksToCreate) {
+    private static void launchTasks(
+            AmazonECS ecsClient, InstanceProperties instanceProperties,
+            int numberOfTasksToCreate, BooleanSupplier checkAbort) {
         String clusterName = instanceProperties.get(COMPACTION_CLUSTER);
         String fargateTaskDefinition = instanceProperties.get(COMPACTION_TASK_FARGATE_DEFINITION_FAMILY);
         String ec2TaskDefinition = instanceProperties.get(COMPACTION_TASK_EC2_DEFINITION_FAMILY);
@@ -183,16 +190,7 @@ public class RunCompactionTasks {
                 .ecsClient(ecsClient)
                 .runTaskRequest(runTaskRequest)
                 .numberOfTasksToCreate(numberOfTasksToCreate)
-                .checkAbort(() -> {
-                    // This lambda is triggered every minute so abort once get
-                    // close to 1 minute
-                    if (System.currentTimeMillis() - startTime > 50 * 1000L) {
-                        LOGGER.info("Running for more than 50 seconds, aborting");
-                        return true;
-                    } else {
-                        return false;
-                    }
-                }));
+                .checkAbort(checkAbort));
     }
 
     /**
