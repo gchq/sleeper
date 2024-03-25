@@ -73,7 +73,7 @@ public class RunCompactionTasks {
         this(instanceProperties,
                 () -> ECSTaskCount.getNumPendingAndRunningTasks(instanceProperties.get(COMPACTION_CLUSTER), ecsClient),
                 createEC2Scaler(instanceProperties, asClient, ecsClient),
-                (startTime, numberOfTasksToCreate) -> launchTasks(ecsClient, instanceProperties, startTime, numberOfTasksToCreate));
+                (numberOfTasks, checkAbort) -> launchTasks(ecsClient, instanceProperties, numberOfTasks, checkAbort));
     }
 
     public RunCompactionTasks(
@@ -112,7 +112,8 @@ public class RunCompactionTasks {
 
         int maxTasksToCreate = maximumRunningTasks - numRunningAndPendingTasks;
         int numberOfTasksToCreate = Math.min(queueSize, maxTasksToCreate);
-        scaleToHostsAndLaunchTasks(numRunningAndPendingTasks + numberOfTasksToCreate, numberOfTasksToCreate,
+        int targetTasks = numRunningAndPendingTasks + numberOfTasksToCreate;
+        scaleToHostsAndLaunchTasks(targetTasks, numberOfTasksToCreate,
                 () -> {
                     // This lambda is triggered every minute so abort once get
                     // close to 1 minute
@@ -127,18 +128,19 @@ public class RunCompactionTasks {
 
     public void runToMeetTargetTasks(int targetCount) {
         int numRunningAndPendingTasks = taskCounts.getRunningAndPending();
+        LOGGER.info("Number of running and pending tasks is {}", numRunningAndPendingTasks);
         int numberOfTasksToCreate = Math.max(0, targetCount - numRunningAndPendingTasks);
         scaleToHostsAndLaunchTasks(targetCount, numberOfTasksToCreate, () -> false);
     }
 
-    private void scaleToHostsAndLaunchTasks(int targetHosts, int createTasks, BooleanSupplier checkAbort) {
-        LOGGER.info("Target number of hosts is {}", targetHosts);
+    private void scaleToHostsAndLaunchTasks(int targetTasks, int createTasks, BooleanSupplier checkAbort) {
+        LOGGER.info("Target number of tasks is {}", targetTasks);
         LOGGER.info("Tasks to create is {}", createTasks);
         if (createTasks < 1) {
-            LOGGER.info("Finishing as no new tasks needed");
+            LOGGER.info("Finishing as no new tasks are needed");
             return;
         }
-        hostScaler.scaleTo(targetHosts);
+        hostScaler.scaleTo(targetTasks);
         taskLauncher.launchTasks(createTasks, checkAbort);
     }
 
