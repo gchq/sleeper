@@ -16,6 +16,7 @@
 package sleeper.core.statestore.transactionlog.transactions;
 
 import sleeper.core.partition.Partition;
+import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.TransactionLogHead;
 
 import java.util.List;

@@ -15,8 +15,6 @@
  */
 package sleeper.core.statestore.transactionlog;
 
-import sleeper.core.statestore.transactionlog.transactions.StateStoreTransaction;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;

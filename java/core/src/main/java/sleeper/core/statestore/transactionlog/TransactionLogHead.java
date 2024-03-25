@@ -16,7 +16,6 @@
 package sleeper.core.statestore.transactionlog;
 
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.statestore.transactionlog.transactions.StateStoreTransaction;
 
 public class TransactionLogHead {
 
