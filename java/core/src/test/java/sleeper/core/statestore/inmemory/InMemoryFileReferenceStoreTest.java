@@ -1122,7 +1122,8 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             store.addFile(file);
 
             // When
-            store.clearFileData();
+            store.clearSleeperTable();
+            store.initialise();
 
             // Then
             assertThat(store.getFileReferences()).isEmpty();
@@ -1141,7 +1142,8 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
                     .build()));
 
             // When
-            store.clearFileData();
+            store.clearSleeperTable();
+            store.initialise();
 
             // Then
             assertThat(store.getFileReferences()).isEmpty();

@@ -412,7 +412,6 @@ class S3FileReferenceStore implements FileReferenceStore {
             throw new UncheckedIOException(e);
         }
         s3RevisionIdStore.deleteFilesRevision();
-        initialise();
     }
 
     private String getFilesPath(S3RevisionId revisionId) {
