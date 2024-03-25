@@ -423,8 +423,7 @@ public class QueryWebSocketClientTest {
         return "{" +
                 "\"queryId\":\"" + queryId + "\", " +
                 "\"message\":\"records\"," +
-                "\"records\":[" + Stream.of(records).map(GSON::toJson).collect(Collectors.joining(","))
-                + "]" +
+                "\"records\":[" + Stream.of(records).map(GSON::toJson).collect(Collectors.joining(",")) + "]" +
                 "}";
     }
 
