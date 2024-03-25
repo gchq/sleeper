@@ -15,8 +15,6 @@
  */
 package sleeper.clients;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -44,6 +42,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.clients.QueryWebSocketClientTestHelper.completedQuery;
+import static sleeper.clients.QueryWebSocketClientTestHelper.message;
+import static sleeper.clients.QueryWebSocketClientTestHelper.queryResult;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
@@ -51,7 +52,6 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class QueryWebSocketClientTest {
-    private static final Gson GSON = new GsonBuilder().create();
     private final InstanceProperties instanceProperties = createInstance();
     private final Schema schema = schemaWithKey("key");
     private final Field rowKey = schema.getField("key").orElseThrow();
@@ -419,23 +419,6 @@ public class QueryWebSocketClientTest {
                 .build();
     }
 
-    private static String queryResult(String queryId, Record... records) {
-        return "{" +
-                "\"queryId\":\"" + queryId + "\", " +
-                "\"message\":\"records\"," +
-                "\"records\":[" + Stream.of(records).map(GSON::toJson).collect(Collectors.joining(",")) + "]" +
-                "}";
-    }
-
-    private static String completedQuery(String queryId, long recordCount) {
-        return "{" +
-                "\"queryId\":\"" + queryId + "\", " +
-                "\"message\":\"completed\"," +
-                "\"recordCount\":\"" + recordCount + "\"," +
-                "\"locations\":[{\"type\":\"websocket-endpoint\"}]" +
-                "}";
-    }
-
     private static String createdSubQueries(String queryId, String... subQueryIds) {
         return "{" +
                 "\"queryId\":\"" + queryId + "\", " +
@@ -470,15 +453,11 @@ public class QueryWebSocketClientTest {
         return client;
     }
 
-    private WebSocketResponse message(String message) {
-        return messageHandler -> messageHandler.onMessage(message);
-    }
-
-    public WebSocketResponse closeWithReason(String reason) {
+    public static WebSocketResponse closeWithReason(String reason) {
         return messageHandler -> messageHandler.onClose(reason);
     }
 
-    public WebSocketResponse error(Exception error) {
+    public static WebSocketResponse error(Exception error) {
         return messageHandler -> messageHandler.onError(error);
     }
 }
