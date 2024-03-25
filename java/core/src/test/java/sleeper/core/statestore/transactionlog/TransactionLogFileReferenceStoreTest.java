@@ -23,8 +23,14 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.SplitFileReferenceRequest;
+import sleeper.core.statestore.SplitFileReferences;
+import sleeper.core.statestore.SplitRequestsFailedException;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.FileAlreadyExistsException;
+import sleeper.core.statestore.exception.FileHasReferencesException;
 import sleeper.core.statestore.exception.FileNotFoundException;
+import sleeper.core.statestore.exception.FileReferenceAlreadyExistsException;
 import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
@@ -32,6 +38,7 @@ import sleeper.core.statestore.exception.NewReferenceSameAsOldReferenceException
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -47,8 +54,10 @@ import static sleeper.core.statestore.FileReferenceTestData.splitFile;
 import static sleeper.core.statestore.FileReferenceTestData.withJobId;
 import static sleeper.core.statestore.FileReferenceTestData.withLastUpdate;
 import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
+import static sleeper.core.statestore.FilesReportTestHelper.noFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.partialReadyForGCFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.readyForGCFilesReport;
+import static sleeper.core.statestore.SplitFileReferenceRequest.splitFileToChildPartitions;
 
 public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLogStateStoreTestBase {
 
@@ -211,6 +220,232 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             assertThatThrownBy(() -> store.addFilesWithReferences(List.of(fileWithReferences(rightFile))))
                     .isInstanceOf(FileAlreadyExistsException.class);
             assertThat(store.getFileReferences()).containsExactly(leftFile);
+        }
+    }
+
+    @Nested
+    @DisplayName("Split file references across multiple partitions")
+    class SplitFiles {
+        @Test
+        void shouldSplitOneFileInRootPartition() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            FileReference file = factory.rootFile("file", 100L);
+            store.addFile(file);
+
+            // When
+            SplitFileReferences.from(store).split();
+
+            // Then
+            List<FileReference> expectedReferences = List.of(splitFile(file, "L"), splitFile(file, "R"));
+            assertThat(store.getFileReferences())
+                    .containsExactlyInAnyOrderElementsOf(expectedReferences);
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
+                    .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, expectedReferences));
+        }
+
+        @Test
+        void shouldSplitTwoFilesInOnePartition() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            FileReference file1 = factory.rootFile("file1", 100L);
+            FileReference file2 = factory.rootFile("file2", 100L);
+            store.addFiles(List.of(file1, file2));
+
+            // When
+            SplitFileReferences.from(store).split();
+
+            // Then
+            List<FileReference> expectedReferences = List.of(
+                    splitFile(file1, "L"),
+                    splitFile(file1, "R"),
+                    splitFile(file2, "L"),
+                    splitFile(file2, "R"));
+            assertThat(store.getFileReferences())
+                    .containsExactlyInAnyOrderElementsOf(expectedReferences);
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
+                    .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, expectedReferences));
+        }
+
+        @Test
+        void shouldSplitOneFileFromTwoOriginalPartitions() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            splitPartition("L", "LL", "LR", 2);
+            splitPartition("R", "RL", "RR", 7);
+            FileReference file = factory.rootFile("file", 100L);
+            FileReference leftFile = splitFile(file, "L");
+            FileReference rightFile = splitFile(file, "R");
+            store.addFiles(List.of(leftFile, rightFile));
+
+            // When
+            SplitFileReferences.from(store).split();
+
+            // Then
+            List<FileReference> expectedReferences = List.of(
+                    splitFile(leftFile, "LL"),
+                    splitFile(leftFile, "LR"),
+                    splitFile(rightFile, "RL"),
+                    splitFile(rightFile, "RR"));
+            assertThat(store.getFileReferences())
+                    .containsExactlyInAnyOrderElementsOf(expectedReferences);
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
+                    .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, expectedReferences));
+        }
+
+        @Test
+        void shouldSplitFilesInDifferentPartitions() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            splitPartition("L", "LL", "LR", 2);
+            splitPartition("R", "RL", "RR", 7);
+            FileReference file1 = factory.partitionFile("L", "file1", 100L);
+            FileReference file2 = factory.partitionFile("R", "file2", 200L);
+            store.addFiles(List.of(file1, file2));
+
+            // When
+            SplitFileReferences.from(store).split();
+
+            // Then
+            List<FileReference> expectedReferences = List.of(
+                    splitFile(file1, "LL"),
+                    splitFile(file1, "LR"),
+                    splitFile(file2, "RL"),
+                    splitFile(file2, "RR"));
+            assertThat(store.getFileReferences())
+                    .containsExactlyInAnyOrderElementsOf(expectedReferences);
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
+                    .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, expectedReferences));
+        }
+
+        @Test
+        void shouldOnlyPerformOneLevelOfSplits() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5L);
+            splitPartition("L", "LL", "LR", 2L);
+            splitPartition("R", "RL", "RR", 7L);
+            FileReference file = factory.rootFile("file.parquet", 100L);
+            store.addFile(file);
+
+            // When
+            SplitFileReferences.from(store).split();
+
+            // Then
+            List<FileReference> expectedReferences = List.of(
+                    splitFile(file, "L"),
+                    splitFile(file, "R"));
+            assertThat(store.getFileReferences())
+                    .containsExactlyInAnyOrderElementsOf(expectedReferences);
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
+                    .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, expectedReferences));
+        }
+
+        @Test
+        void shouldNotSplitOneFileInLeafPartition() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5L);
+            FileReference file = factory.partitionFile("L", "already-split.parquet", 100L);
+            store.addFile(file);
+
+            // When
+            SplitFileReferences.from(store).split();
+
+            // Then
+            assertThat(store.getFileReferences())
+                    .containsExactly(file);
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
+                    .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, file));
+        }
+
+        @Test
+        void shouldDoNothingWhenNoFilesExist() throws StateStoreException {
+            // Given
+            splitPartition("root", "L", "R", 5);
+
+            // When
+            SplitFileReferences.from(store).split();
+
+            // Then
+            assertThat(store.getFileReferences()).isEmpty();
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
+                    .isEqualTo(noFilesReport());
+        }
+
+        @Test
+        void shouldFailToSplitFileWhichDoesNotExist() throws StateStoreException {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            FileReference file = factory.rootFile("file", 100L);
+
+            // When / Then
+            assertThatThrownBy(() -> store.splitFileReferences(List.of(
+                    splitFileToChildPartitions(file, "L", "R"))))
+                    .isInstanceOf(SplitRequestsFailedException.class)
+                    .hasCauseInstanceOf(FileNotFoundException.class);
+            assertThat(store.getFileReferences()).isEmpty();
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
+                    .isEqualTo(noFilesReport());
+        }
+
+        @Test
+        void shouldFailToSplitFileWhenReferenceDoesNotExistInPartition() throws StateStoreException {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            FileReference file = factory.rootFile("file", 100L);
+            FileReference existingReference = splitFile(file, "L");
+            store.addFile(existingReference);
+
+            // When / Then
+            assertThatThrownBy(() -> store.splitFileReferences(List.of(
+                    splitFileToChildPartitions(file, "L", "R"))))
+                    .isInstanceOf(SplitRequestsFailedException.class)
+                    .hasCauseInstanceOf(FileReferenceNotFoundException.class);
+            assertThat(store.getFileReferences()).containsExactly(existingReference);
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
+                    .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, existingReference));
+        }
+
+        @Test
+        void shouldFailToSplitFileWhenTheOriginalFileWasSplitIncorrectlyToMultipleLevels() throws StateStoreException {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            splitPartition("L", "LL", "LR", 2);
+            FileReference file = factory.rootFile("file", 100L);
+            FileReference leftFile = splitFile(file, "L");
+            FileReference nestedFile = splitFile(leftFile, "LL");
+            store.addFile(file);
+
+            // Ideally this would fail as this produces duplicate references to the same records,
+            // but not all state stores may be able to implement that
+            store.splitFileReferences(List.of(new SplitFileReferenceRequest(file, List.of(leftFile, nestedFile))));
+
+            // When / Then
+            assertThatThrownBy(() -> SplitFileReferences.from(store).split())
+                    .isInstanceOf(SplitRequestsFailedException.class)
+                    .hasCauseInstanceOf(FileReferenceAlreadyExistsException.class);
+            List<FileReference> expectedReferences = List.of(leftFile, nestedFile);
+            assertThat(store.getFileReferences()).containsExactlyInAnyOrderElementsOf(expectedReferences);
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
+                    .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, expectedReferences));
+        }
+
+        @Test
+        void shouldThrowExceptionWhenSplittingFileHasBeenAssignedToTheJob() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            FileReference file = factory.rootFile("file", 100L);
+            store.addFile(file);
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "root", List.of("file"))));
+
+            // When / Then
+            assertThatThrownBy(() -> store.splitFileReferences(List.of(splitFileToChildPartitions(file, "L", "R"))))
+                    .isInstanceOf(SplitRequestsFailedException.class)
+                    .hasCauseInstanceOf(FileReferenceAssignedToJobException.class);
+            assertThat(store.getFileReferences())
+                    .containsExactly(withJobId("job1", file));
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
+                    .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, withJobId("job1", file)));
         }
     }
 
@@ -599,6 +834,130 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             // When / Then
             assertThat(store.getReadyForGCFilenamesBefore(latestTimeForGc))
                     .isEmpty();
+        }
+    }
+
+    @Nested
+    @DisplayName("Apply garbage collection")
+    class ApplyGarbageCollection {
+
+        @Test
+        public void shouldDeleteGarbageCollectedFile() throws Exception {
+            // Given
+            FileReference oldFile = factory.rootFile("oldFile", 100L);
+            FileReference newFile = factory.rootFile("newFile", 100L);
+            store.addFile(oldFile);
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "root", List.of("oldFile"))));
+            store.atomicallyReplaceFileReferencesWithNewOne("job1", "root", List.of("oldFile"), newFile);
+
+            // When
+            store.deleteGarbageCollectedFileReferenceCounts(List.of("oldFile"));
+
+            // Then
+            assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
+        }
+
+        @Test
+        void shouldDeleteGarbageCollectedFileSplitAcrossTwoPartitions() throws Exception {
+            // Given we have partitions, input files and output files for compactions
+            splitPartition("root", "L", "R", 5);
+            FileReference rootFile = factory.rootFile("file", 100L);
+            FileReference leftFile = splitFile(rootFile, "L");
+            FileReference rightFile = splitFile(rootFile, "R");
+            FileReference leftOutputFile = factory.partitionFile("L", "leftOutput", 100L);
+            FileReference rightOutputFile = factory.partitionFile("R", "rightOutput", 100L);
+
+            // And the file was ingested as two references, then compacted into each partition
+            store.addFiles(List.of(leftFile, rightFile));
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "L", List.of("file")),
+                    assignJobOnPartitionToFiles("job2", "R", List.of("file"))));
+            store.atomicallyReplaceFileReferencesWithNewOne("job1", "L", List.of("file"), leftOutputFile);
+            store.atomicallyReplaceFileReferencesWithNewOne("job2", "R", List.of("file"), rightOutputFile);
+
+            // When
+            store.deleteGarbageCollectedFileReferenceCounts(List.of("file"));
+
+            // Then
+            assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
+                    .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, leftOutputFile, rightOutputFile));
+        }
+
+        @Test
+        public void shouldFailToDeleteActiveFile() throws Exception {
+            // Given
+            FileReference file = factory.rootFile("test", 100L);
+            store.addFile(file);
+
+            // When / Then
+            assertThatThrownBy(() -> store.deleteGarbageCollectedFileReferenceCounts(List.of("test")))
+                    .isInstanceOf(FileHasReferencesException.class);
+        }
+
+        @Test
+        public void shouldFailToDeleteFileWhichWasNotAdded() {
+            // When / Then
+            assertThatThrownBy(() -> store.deleteGarbageCollectedFileReferenceCounts(List.of("test")))
+                    .isInstanceOf(FileNotFoundException.class);
+        }
+
+        @Test
+        public void shouldFailToDeleteActiveFileWhenOneOfTwoSplitRecordsIsReadyForGC() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            FileReference rootFile = factory.rootFile("file", 100L);
+            FileReference leftFile = splitFile(rootFile, "L");
+            FileReference rightFile = splitFile(rootFile, "R");
+            FileReference leftOutputFile = factory.partitionFile("L", "leftOutput", 100L);
+            store.addFiles(List.of(leftFile, rightFile));
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "L", List.of("file"))));
+            store.atomicallyReplaceFileReferencesWithNewOne("job1", "L", List.of("file"), leftOutputFile);
+
+            // When / Then
+            assertThatThrownBy(() -> store.deleteGarbageCollectedFileReferenceCounts(List.of("file")))
+                    .isInstanceOf(FileHasReferencesException.class);
+        }
+
+        @Test
+        public void shouldDeleteGarbageCollectedFileWhileIteratingThroughReadyForGCFiles() throws Exception {
+            // Given
+            FileReference oldFile1 = factory.rootFile("oldFile1", 100L);
+            FileReference oldFile2 = factory.rootFile("oldFile2", 100L);
+            FileReference newFile = factory.rootFile("newFile", 100L);
+            store.addFiles(List.of(oldFile1, oldFile2));
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "root", List.of("oldFile1", "oldFile2"))));
+            store.atomicallyReplaceFileReferencesWithNewOne(
+                    "job1", "root", List.of("oldFile1", "oldFile2"), newFile);
+
+            // When
+            Iterator<String> iterator = store.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)).iterator();
+            store.deleteGarbageCollectedFileReferenceCounts(List.of(iterator.next()));
+
+            // Then
+            assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME))
+                    .containsExactly(iterator.next());
+            assertThat(iterator).isExhausted();
+        }
+
+        @Test
+        public void shouldFailToDeleteActiveFileWhenAlsoDeletingReadyForGCFile() throws Exception {
+            // Given
+            FileReference activeFile = factory.rootFile("activeFile", 100L);
+            store.addFilesWithReferences(List.of(
+                    fileWithNoReferences("gcFile"),
+                    fileWithReferences(List.of(activeFile))));
+
+            // When / Then
+            assertThatThrownBy(() -> store.deleteGarbageCollectedFileReferenceCounts(List.of("gcFile", "activeFile")))
+                    .isInstanceOf(FileHasReferencesException.class);
+            assertThat(store.getFileReferences())
+                    .containsExactly(activeFile);
+            assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME))
+                    .containsExactly("gcFile");
         }
     }
 

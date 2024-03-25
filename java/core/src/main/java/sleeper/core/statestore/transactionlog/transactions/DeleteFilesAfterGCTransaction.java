@@ -15,28 +15,37 @@
  */
 package sleeper.core.statestore.transactionlog.transactions;
 
-import sleeper.core.partition.Partition;
+import sleeper.core.statestore.AllReferencesToAFile;
+import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.exception.FileHasReferencesException;
+import sleeper.core.statestore.exception.FileNotFoundException;
 import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.TransactionLogHead;
 
 import java.util.List;
 
-public class InitialisePartitionsTransaction implements StateStoreTransaction {
+public class DeleteFilesAfterGCTransaction implements StateStoreTransaction {
 
-    private final List<Partition> partitions;
+    private final List<String> filenames;
 
-    public InitialisePartitionsTransaction(List<Partition> partitions) {
-        this.partitions = partitions;
+    public DeleteFilesAfterGCTransaction(List<String> filenames) {
+        this.filenames = filenames;
     }
 
     @Override
-    public void validate(TransactionLogHead state) {
+    public void validate(TransactionLogHead state) throws StateStoreException {
+        for (String filename : filenames) {
+            AllReferencesToAFile file = state.files().file(filename)
+                    .orElseThrow(() -> new FileNotFoundException(filename));
+            if (file.getTotalReferenceCount() > 0) {
+                throw new FileHasReferencesException(file);
+            }
+        }
     }
 
     @Override
     public void apply(TransactionLogHead state) {
-        state.partitions().clear();
-        partitions.forEach(state.partitions()::put);
+        filenames.forEach(state.files()::remove);
     }
 
 }

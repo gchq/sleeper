@@ -25,6 +25,8 @@ import java.util.TreeMap;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
+import static java.util.stream.Collectors.toUnmodifiableList;
+
 public class StateStoreFiles {
     private final Map<String, AllReferencesToAFile> filesByFilename = new TreeMap<>();
 
@@ -41,7 +43,8 @@ public class StateStoreFiles {
         return filesByFilename.values().stream()
                 .filter(file -> file.getTotalReferenceCount() == 0)
                 .filter(file -> file.getLastStateStoreUpdateTime().isBefore(maxUpdateTime))
-                .map(AllReferencesToAFile::getFilename);
+                .map(AllReferencesToAFile::getFilename)
+                .collect(toUnmodifiableList()).stream();
     }
 
     public boolean isEmpty() {
@@ -50,6 +53,10 @@ public class StateStoreFiles {
 
     public void add(AllReferencesToAFile file) {
         filesByFilename.put(file.getFilename(), file);
+    }
+
+    public void remove(String filename) {
+        filesByFilename.remove(filename);
     }
 
     public Optional<AllReferencesToAFile> file(String filename) {

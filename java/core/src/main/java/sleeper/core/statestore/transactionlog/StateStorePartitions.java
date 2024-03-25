@@ -19,8 +19,8 @@ import sleeper.core.partition.Partition;
 
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public class StateStorePartitions {
 
@@ -30,8 +30,16 @@ public class StateStorePartitions {
         return partitionById.values();
     }
 
-    public void initialise(List<Partition> partitions) {
-        partitions.forEach(partition -> partitionById.put(partition.getId(), partition));
+    public void clear() {
+        partitionById.clear();
+    }
+
+    public void put(Partition partition) {
+        partitionById.put(partition.getId(), partition);
+    }
+
+    public Optional<Partition> byId(String id) {
+        return Optional.ofNullable(partitionById.get(id));
     }
 
 }
