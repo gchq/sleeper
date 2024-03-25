@@ -33,7 +33,6 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.core.range.Range;
 import sleeper.core.range.Region;
-import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
@@ -46,6 +45,7 @@ import sleeper.query.model.QuerySerDe;
 import sleeper.query.output.ResultsOutputConstants;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -84,6 +84,30 @@ public class WarmQueryExecutorLambda implements RequestHandler<ScheduledEvent, V
         queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
     }
 
+    public static Region getRegion(Schema schema) {
+        List<Range> ranges = new ArrayList<>();
+        schema.getRowKeyFields().forEach(field -> {
+            // Create the value to be used in a query. We don't care what they are as long as the query runs
+            Type type = field.getType();
+            Object value;
+            if (type instanceof IntType) {
+                value = 0;
+            } else if (type instanceof LongType) {
+                value = 0L;
+            } else if (type instanceof StringType) {
+                value = "a";
+            } else if (type instanceof ByteArrayType) {
+                value = new byte[]{'a'};
+            } else {
+                throw new IllegalArgumentException("Unknown type in the schema: " + type);
+            }
+            ranges.add(new Range.RangeFactory(schema)
+                    .createExactRange(field, value));
+        });
+
+        return new Region(ranges);
+    }
+
     @Override
     public Void handleRequest(ScheduledEvent event, Context context) {
         LOGGER.info("Starting to build queries for the tables");
@@ -91,27 +115,9 @@ public class WarmQueryExecutorLambda implements RequestHandler<ScheduledEvent, V
                 .streamAllTables()
                 .forEach(tableProperty -> {
                     Schema schema = tableProperty.getSchema();
-                    Field field = schema.getRowKeyFields().get(0);
-
-                    // Create the value to be used in a query. We don't care what they are as long as the query runs
-                    Type type = field.getType();
-                    Object value;
-                    if (type instanceof IntType) {
-                        value = 0;
-                    } else if (type instanceof LongType) {
-                        value = 0L;
-                    } else if (type instanceof StringType) {
-                        value = "a";
-                    } else if (type instanceof ByteArrayType) {
-                        value = new byte[]{'a'};
-                    } else {
-                        throw new IllegalArgumentException("Unknown type in the schema: " + type);
-                    }
-
-                    Region region = new Region(Collections.singletonList(new Range.RangeFactory(schema)
-                            .createExactRange(field, value)));
-
+                    Region region = getRegion(schema);
                     QuerySerDe querySerDe = new QuerySerDe(schema);
+
                     Query query = Query.builder()
                             .queryId(UUID.randomUUID().toString())
                             .tableName(tableProperty.get(TABLE_NAME))

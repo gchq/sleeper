@@ -141,6 +141,27 @@ public class WarmQueryExecutorLambdaIT {
     }
 
     @Test
+    public void shouldCreateAQueryWitMultipleKeys() throws Exception {
+        // Given
+        Schema schema = getMultipleKeySchema();
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        createTable(tableProperties);
+        querySerDe = new QuerySerDe(schema);
+
+        // When
+        lambda.handleRequest(new ScheduledEvent(), null);
+
+        // Then
+        ReceiveMessageResult result = sqsClient.receiveMessage(new ReceiveMessageRequest(instanceProperties.get(QUERY_QUEUE_URL)));
+        assertThat(result.getMessages()).hasSize(1);
+
+        Query query = querySerDe.fromJson(result.getMessages().get(0).getBody());
+        Query expected = buildExpectedQuery(query.getQueryId(), tableProperties.get(TABLE_NAME), schema, "a");
+
+        assertThat(query).isEqualTo(expected);
+    }
+
+    @Test
     public void shouldCreateAQueryWithKeyTypeOfByteArray() throws Exception {
         // Given
         Schema schema = getByteArrayKeySchema();
@@ -207,36 +228,52 @@ public class WarmQueryExecutorLambdaIT {
 
     private Schema getStringKeySchema() {
         return Schema.builder()
-                .rowKeyFields(new Field("key", new StringType()))
-                .valueFields(new Field("value", new StringType()))
+                .rowKeyFields(new Field("test-key", new StringType()))
+                .sortKeyFields(new Field("test-sort", new StringType()))
+                .valueFields(new Field("test-value", new StringType()))
+                .build();
+    }
+
+    private Schema getMultipleKeySchema() {
+        return Schema.builder()
+                .rowKeyFields(List.of(new Field("test-key", new StringType()),
+                        new Field("test-key2", new StringType())))
+                .sortKeyFields(new Field("test-sort", new StringType()))
+                .valueFields(new Field("test-value", new StringType()))
                 .build();
     }
 
     private Schema getByteArrayKeySchema() {
         return Schema.builder()
-                .rowKeyFields(new Field("key", new ByteArrayType()))
-                .valueFields(new Field("value", new ByteArrayType()))
+                .rowKeyFields(new Field("test-key", new ByteArrayType()))
+                .sortKeyFields(new Field("test-sort", new ByteArrayType()))
+                .valueFields(new Field("test-value", new ByteArrayType()))
                 .build();
     }
 
     private Schema getIntKeySchema() {
         return Schema.builder()
-                .rowKeyFields(new Field("key", new IntType()))
-                .valueFields(new Field("value", new IntType()))
+                .rowKeyFields(new Field("test-key", new IntType()))
+                .sortKeyFields(new Field("test-sort", new IntType()))
+                .valueFields(new Field("test-value", new IntType()))
                 .build();
     }
 
     private Schema getLongKeySchema() {
         return Schema.builder()
-                .rowKeyFields(new Field("key", new LongType()))
-                .valueFields(new Field("value", new LongType()))
+                .rowKeyFields(new Field("test-key", new LongType()))
+                .sortKeyFields(new Field("test-sort", new LongType()))
+                .valueFields(new Field("test-value", new LongType()))
                 .build();
     }
 
     private Query buildExpectedQuery(String id, String tableName, Schema schema, Object value) {
-        Region region = new Region(Collections.singletonList(new Range.RangeFactory(schema)
-                .createExactRange(schema.getField("key").get(), value)));
-
+        List<Range> ranges = new ArrayList<>();
+        schema.getRowKeyFields().forEach(field -> {
+            ranges.add(new Range.RangeFactory(schema)
+                    .createExactRange(field, value));
+        });
+        Region region = new Region(ranges);
         return Query.builder()
                 .queryId(id)
                 .tableName(tableName)
