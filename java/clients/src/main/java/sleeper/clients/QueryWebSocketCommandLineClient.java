@@ -64,23 +64,23 @@ import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL;
 
-public class QueryWebSocketClient extends QueryCommandLineClient {
+public class QueryWebSocketCommandLineClient extends QueryCommandLineClient {
     private final String apiUrl;
     private final Client client;
 
-    private QueryWebSocketClient(
+    private QueryWebSocketCommandLineClient(
             InstanceProperties instanceProperties, TableIndex tableIndex, TablePropertiesProvider tablePropertiesProvider,
             ConsoleInput in, ConsoleOutput out) {
         this(instanceProperties, tableIndex, tablePropertiesProvider, in, out, new WebSocketQueryClient(instanceProperties, tablePropertiesProvider, out));
     }
 
-    private QueryWebSocketClient(
+    private QueryWebSocketCommandLineClient(
             InstanceProperties instanceProperties, TableIndex tableIndex, TablePropertiesProvider tablePropertiesProvider,
             ConsoleInput in, ConsoleOutput out, Client client) {
         this(instanceProperties, tableIndex, tablePropertiesProvider, in, out, client, () -> UUID.randomUUID().toString());
     }
 
-    QueryWebSocketClient(
+    QueryWebSocketCommandLineClient(
             InstanceProperties instanceProperties, TableIndex tableIndex, TablePropertiesProvider tablePropertiesProvider,
             ConsoleInput in, ConsoleOutput out, Client client, Supplier<String> queryIdSupplier) {
         super(instanceProperties, tableIndex, tablePropertiesProvider, in, out, queryIdSupplier);
@@ -363,7 +363,7 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
         InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, args[0]);
 
-        QueryWebSocketClient client = new QueryWebSocketClient(instanceProperties,
+        QueryWebSocketCommandLineClient client = new QueryWebSocketCommandLineClient(instanceProperties,
                 new DynamoDBTableIndex(instanceProperties, dynamoDBClient),
                 new TablePropertiesProvider(instanceProperties, amazonS3, dynamoDBClient),
                 new ConsoleInput(System.console()), new ConsoleOutput(System.out));

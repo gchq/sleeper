@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.FakeWebSocketClient.WebSocketResponse;
-import sleeper.clients.QueryWebSocketClient.Client;
+import sleeper.clients.QueryWebSocketCommandLineClient.Client;
 import sleeper.clients.testutil.TestConsoleInput;
 import sleeper.clients.testutil.ToStringPrintStream;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -510,7 +510,7 @@ public class QueryWebSocketClientTest {
     }
 
     protected void runQueryClient(String queryId, Client webSocketClient) throws Exception {
-        new QueryWebSocketClient(instanceProperties, tableIndex, new FixedTablePropertiesProvider(tableProperties),
+        new QueryWebSocketCommandLineClient(instanceProperties, tableIndex, new FixedTablePropertiesProvider(tableProperties),
                 in.consoleIn(), out.consoleOut(), webSocketClient, () -> queryId)
                 .run();
     }
