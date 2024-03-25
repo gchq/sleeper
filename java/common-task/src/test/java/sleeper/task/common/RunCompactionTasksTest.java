@@ -64,16 +64,16 @@ public class RunCompactionTasksTest {
         }
 
         @Test
-        void shouldCreateTaskWhenJobsOnQueueLessThanMax() {
+        void shouldCreateTasksWhenJobsOnQueueLessThanMax() {
             // Given
             instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 5);
 
             // When
-            runTasks(jobsOnQueue(1), noExistingTasks());
+            runTasks(jobsOnQueue(2), noExistingTasks());
 
             // Then
-            assertThat(scaleToHostsRequests).containsExactly(1);
-            assertThat(launchTasksRequests).containsExactly(1);
+            assertThat(scaleToHostsRequests).containsExactly(2);
+            assertThat(launchTasksRequests).containsExactly(2);
         }
 
         @Test
@@ -95,30 +95,17 @@ public class RunCompactionTasksTest {
             instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 5);
 
             // When
-            runTasks(jobsOnQueue(1), existingTasks(1));
+            runTasks(jobsOnQueue(2), existingTasks(1));
 
             // Then
-            assertThat(scaleToHostsRequests).containsExactly(2);
-            assertThat(launchTasksRequests).containsExactly(1);
+            assertThat(scaleToHostsRequests).containsExactly(3);
+            assertThat(launchTasksRequests).containsExactly(2);
         }
 
         @Test
         void shouldCreateNoTasksWhenExistingTasksEqualToMax() {
             // Given
-            instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 1);
-
-            // When
-            runTasks(jobsOnQueue(1), existingTasks(1));
-
-            // Then
-            assertThat(scaleToHostsRequests).isEmpty();
-            assertThat(launchTasksRequests).isEmpty();
-        }
-
-        @Test
-        void shouldCreateNoTasksWhenExistingTasksGreaterThanMax() {
-            // Given
-            instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 1);
+            instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 2);
 
             // When
             runTasks(jobsOnQueue(1), existingTasks(2));
@@ -129,28 +116,41 @@ public class RunCompactionTasksTest {
         }
 
         @Test
-        void shouldCreateTasksToMaxWhenJobsOnQueueGreaterThanMax() {
+        void shouldCreateNoTasksWhenExistingTasksGreaterThanMax() {
             // Given
-            instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 1);
+            instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 2);
 
             // When
-            runTasks(jobsOnQueue(2), noExistingTasks());
+            runTasks(jobsOnQueue(1), existingTasks(3));
 
             // Then
-            assertThat(scaleToHostsRequests).containsExactly(1);
-            assertThat(launchTasksRequests).containsExactly(1);
+            assertThat(scaleToHostsRequests).isEmpty();
+            assertThat(launchTasksRequests).isEmpty();
+        }
+
+        @Test
+        void shouldCreateTasksToMaxWhenJobsOnQueueGreaterThanMax() {
+            // Given
+            instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 2);
+
+            // When
+            runTasks(jobsOnQueue(3), noExistingTasks());
+
+            // Then
+            assertThat(scaleToHostsRequests).containsExactly(2);
+            assertThat(launchTasksRequests).containsExactly(2);
         }
 
         @Test
         void shouldCreateTasksToMaxWhenJobsOnQueuePlusExistingTasksGreaterThanMax() {
             // Given
-            instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 2);
+            instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 3);
 
             // When
-            runTasks(jobsOnQueue(2), existingTasks(1));
+            runTasks(jobsOnQueue(2), existingTasks(2));
 
             // Then
-            assertThat(scaleToHostsRequests).containsExactly(2);
+            assertThat(scaleToHostsRequests).containsExactly(4);
             assertThat(launchTasksRequests).containsExactly(1);
         }
     }
@@ -161,24 +161,24 @@ public class RunCompactionTasksTest {
         @Test
         void shouldCreateTasksWithNoExistingTasks() {
             // When
-            runToMeetTargetTasks(1, noExistingTasks());
-
-            // Then
-            assertThat(scaleToHostsRequests).containsExactly(1);
-            assertThat(launchTasksRequests).containsExactly(1);
-        }
-
-        @Test
-        void shouldCreateTasksOverMaximumConcurrentTasks() {
-            // Given
-            instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 1);
-
-            // When
             runToMeetTargetTasks(2, noExistingTasks());
 
             // Then
             assertThat(scaleToHostsRequests).containsExactly(2);
             assertThat(launchTasksRequests).containsExactly(2);
+        }
+
+        @Test
+        void shouldCreateTasksOverMaximumConcurrentTasks() {
+            // Given
+            instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 2);
+
+            // When
+            runToMeetTargetTasks(3, noExistingTasks());
+
+            // Then
+            assertThat(scaleToHostsRequests).containsExactly(3);
+            assertThat(launchTasksRequests).containsExactly(3);
         }
 
         @Test
