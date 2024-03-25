@@ -107,6 +107,8 @@ public class QueryWebSocketClientTest {
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
                     .containsExactly(querySerDe.toJson(query));
+            assertThat(client.getResults("test-query-id"))
+                    .containsExactly(expectedRecord);
         }
 
         @Test
@@ -136,6 +138,8 @@ public class QueryWebSocketClientTest {
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
                     .containsExactly(querySerDe.toJson(query));
+            assertThat(client.getResults("test-subquery"))
+                    .containsExactly(expectedRecord);
         }
 
         @Test
@@ -177,6 +181,12 @@ public class QueryWebSocketClientTest {
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
                     .containsExactly(querySerDe.toJson(query));
+            assertThat(client.getResults("subquery-1"))
+                    .containsExactly(expectedRecord1);
+            assertThat(client.getResults("subquery-2"))
+                    .containsExactly(expectedRecord2);
+            assertThat(client.getResults("subquery-3"))
+                    .containsExactly(expectedRecord3);
         }
 
         @Test
@@ -204,6 +214,8 @@ public class QueryWebSocketClientTest {
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
                     .containsExactly(querySerDe.toJson(query));
+            assertThat(client.getResults("test-query-id"))
+                    .containsExactly(expectedRecord);
         }
     }
 

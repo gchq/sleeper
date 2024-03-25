@@ -99,6 +99,8 @@ public class QueryWebSocketClient {
         boolean hasQueryFinished();
 
         long getTotalRecordsReturned();
+
+        List<Record> getResults(String queryId);
     }
 
     private static class WebSocketQueryClient extends WebSocketClient implements Client {
@@ -179,6 +181,11 @@ public class QueryWebSocketClient {
         @Override
         public void onError(Exception error) {
             messageHandler.onError(error);
+        }
+
+        @Override
+        public List<Record> getResults(String queryId) {
+            return messageHandler.getResults(queryId);
         }
     }
 
@@ -329,5 +336,8 @@ public class QueryWebSocketClient {
             return totalRecordsReturned;
         }
 
+        public List<Record> getResults(String queryId) {
+            return records.getOrDefault(queryId, List.of());
+        }
     }
 }
