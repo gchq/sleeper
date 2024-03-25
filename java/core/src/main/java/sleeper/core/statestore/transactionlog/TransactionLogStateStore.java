@@ -17,7 +17,6 @@ package sleeper.core.statestore.transactionlog;
 
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.DelegatingStateStore;
-import sleeper.core.statestore.transactionlog.transactions.StateStoreState;
 
 public class TransactionLogStateStore extends DelegatingStateStore {
 

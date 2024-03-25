@@ -17,6 +17,7 @@ package sleeper.core.statestore.transactionlog.transactions;
 
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.transactionlog.StateStoreState;
 
 import java.util.List;
 

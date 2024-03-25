@@ -16,6 +16,7 @@
 package sleeper.core.statestore.transactionlog.transactions;
 
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.transactionlog.StateStoreState;
 
 public interface StateStoreTransaction {
 

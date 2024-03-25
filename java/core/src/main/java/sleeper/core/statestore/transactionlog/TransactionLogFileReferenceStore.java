@@ -26,8 +26,6 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
 import sleeper.core.statestore.transactionlog.transactions.AssignJobIdsTransaction;
 import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
-import sleeper.core.statestore.transactionlog.transactions.StateStoreFiles;
-import sleeper.core.statestore.transactionlog.transactions.StateStoreState;
 
 import java.time.Clock;
 import java.time.Instant;
