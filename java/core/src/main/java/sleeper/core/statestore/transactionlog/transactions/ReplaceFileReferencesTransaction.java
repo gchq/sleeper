@@ -27,7 +27,6 @@ import sleeper.core.statestore.transactionlog.TransactionLogHead;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.stream.Stream;
 
 public class ReplaceFileReferencesTransaction implements StateStoreTransaction {
 
@@ -69,6 +68,6 @@ public class ReplaceFileReferencesTransaction implements StateStoreTransaction {
         for (String filename : inputFiles) {
             state.files().updateFile(filename, file -> file.removeReferenceForPartition(partitionId, updateTime));
         }
-        state.files().add(AllReferencesToAFile.newFilesWithReferences(Stream.of(newReference), updateTime));
+        state.files().add(AllReferencesToAFile.fileWithOneReference(newReference, updateTime));
     }
 }

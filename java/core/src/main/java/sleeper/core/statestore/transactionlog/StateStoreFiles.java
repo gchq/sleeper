@@ -48,8 +48,8 @@ public class StateStoreFiles {
         return filesByFilename.isEmpty();
     }
 
-    public void add(Stream<AllReferencesToAFile> files) {
-        files.forEach(file -> filesByFilename.put(file.getFilename(), file));
+    public void add(AllReferencesToAFile file) {
+        filesByFilename.put(file.getFilename(), file);
     }
 
     public Optional<AllReferencesToAFile> file(String filename) {
