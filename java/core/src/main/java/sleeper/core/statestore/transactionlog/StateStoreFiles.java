@@ -49,7 +49,7 @@ public class StateStoreFiles {
         return filesByFilename.isEmpty();
     }
 
-    void add(Iterable<AllReferencesToAFile> files) {
+    public void add(Iterable<AllReferencesToAFile> files) {
         for (AllReferencesToAFile file : files) {
             filesByFilename.put(file.getFilename(), file);
         }
@@ -63,7 +63,7 @@ public class StateStoreFiles {
         }
     }
 
-    void assignJobIds(List<AssignJobIdRequest> requests, Instant updateTime) {
+    public void assignJobIds(List<AssignJobIdRequest> requests, Instant updateTime) {
         for (AssignJobIdRequest request : requests) {
             for (String filename : request.getFilenames()) {
                 AllReferencesToAFile file = filesByFilename.get(filename);
@@ -74,7 +74,7 @@ public class StateStoreFiles {
         }
     }
 
-    void replaceFiles(String partitionId, List<String> removeFiles, FileReference newReference, Instant updateTime) {
+    public void replaceFiles(String partitionId, List<String> removeFiles, FileReference newReference, Instant updateTime) {
         for (String filename : removeFiles) {
             AllReferencesToAFile file = filesByFilename.get(filename);
             AllReferencesToAFile updated = file.removeReferenceForPartition(partitionId, updateTime);

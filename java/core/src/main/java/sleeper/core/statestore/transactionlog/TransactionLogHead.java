@@ -15,18 +15,13 @@
  */
 package sleeper.core.statestore.transactionlog;
 
-import sleeper.core.partition.Partition;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.transactions.StateStoreTransaction;
-
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 
 public class TransactionLogHead {
 
     private final TransactionLogStore logStore;
-    private final Map<String, Partition> partitionById = new HashMap<>();
+    private final StateStorePartitions partitions = new StateStorePartitions();
     private final StateStoreFiles files = new StateStoreFiles();
     private long lastTransactionNumber = 0;
 
@@ -50,12 +45,8 @@ public class TransactionLogHead {
         });
     }
 
-    public Collection<Partition> partitions() {
-        return partitionById.values();
-    }
-
-    Map<String, Partition> partitionById() {
-        return partitionById;
+    public StateStorePartitions partitions() {
+        return partitions;
     }
 
     public StateStoreFiles files() {

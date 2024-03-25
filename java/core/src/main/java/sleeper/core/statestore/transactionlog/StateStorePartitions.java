@@ -13,28 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.statestore.transactionlog.transactions;
+package sleeper.core.statestore.transactionlog;
 
 import sleeper.core.partition.Partition;
-import sleeper.core.statestore.transactionlog.TransactionLogHead;
 
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-public class InitialisePartitionsTransaction implements StateStoreTransaction {
+public class StateStorePartitions {
 
-    private final List<Partition> partitions;
+    private final Map<String, Partition> partitionById = new HashMap<>();
 
-    public InitialisePartitionsTransaction(List<Partition> partitions) {
-        this.partitions = partitions;
+    public Collection<Partition> all() {
+        return partitionById.values();
     }
 
-    @Override
-    public void validate(TransactionLogHead state) {
-    }
-
-    @Override
-    public void apply(TransactionLogHead state) {
-        state.partitions().initialise(partitions);
+    public void initialise(List<Partition> partitions) {
+        partitions.forEach(partition -> partitionById.put(partition.getId(), partition));
     }
 
 }

@@ -68,7 +68,7 @@ class TransactionLogPartitionStore implements PartitionStore {
 
     private Stream<Partition> partitions() {
         state.update();
-        return state.partitions().stream();
+        return state.partitions().all().stream();
     }
 
 }
