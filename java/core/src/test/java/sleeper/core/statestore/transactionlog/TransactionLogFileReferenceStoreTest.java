@@ -24,8 +24,11 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.exception.FileAlreadyExistsException;
+import sleeper.core.statestore.exception.FileNotFoundException;
 import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
+import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
+import sleeper.core.statestore.exception.NewReferenceSameAsOldReferenceException;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -340,6 +343,154 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
                     .isInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).containsExactly(existingReference);
             assertThat(store.getFileReferencesWithNoJobId()).containsExactly(existingReference);
+        }
+    }
+
+    @Nested
+    @DisplayName("Apply compaction")
+    class ApplyCompaction {
+
+        @Test
+        public void shouldSetFileReadyForGC() throws Exception {
+            // Given
+            FileReference oldFile = factory.rootFile("oldFile", 100L);
+            FileReference newFile = factory.rootFile("newFile", 100L);
+            store.addFile(oldFile);
+
+            // When
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "root", List.of("oldFile"))));
+            store.atomicallyReplaceFileReferencesWithNewOne("job1", "root", List.of("oldFile"), newFile);
+
+            // Then
+            assertThat(store.getFileReferences()).containsExactly(newFile);
+            assertThat(store.getFileReferencesWithNoJobId()).containsExactly(newFile);
+            assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME))
+                    .containsExactly("oldFile");
+            assertThat(store.getPartitionToReferencedFilesMap())
+                    .containsOnlyKeys("root")
+                    .hasEntrySatisfying("root", files -> assertThat(files).containsExactly("newFile"));
+        }
+
+        @Test
+        void shouldFailToSetReadyForGCWhenAlreadyReadyForGC() throws Exception {
+            // Given
+            FileReference oldFile = factory.rootFile("oldFile", 100L);
+            FileReference newFile = factory.rootFile("newFile", 100L);
+            store.addFile(oldFile);
+
+            // When
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "root", List.of("oldFile"))));
+            store.atomicallyReplaceFileReferencesWithNewOne("job1", "root", List.of("oldFile"), newFile);
+
+            // Then
+            assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOne("job1", "root", List.of("oldFile"), newFile))
+                    .isInstanceOf(FileReferenceNotFoundException.class);
+            assertThat(store.getFileReferences()).containsExactly(newFile);
+            assertThat(store.getFileReferencesWithNoJobId()).containsExactly(newFile);
+            assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME))
+                    .containsExactly("oldFile");
+            assertThat(store.getPartitionToReferencedFilesMap())
+                    .containsOnlyKeys("root")
+                    .hasEntrySatisfying("root", files -> assertThat(files).containsExactly("newFile"));
+        }
+
+        @Test
+        void shouldFailWhenFilesToMarkAsReadyForGCAreNotAssignedToJob() throws Exception {
+            // Given
+            FileReference oldFile = factory.rootFile("oldFile", 100L);
+            FileReference newFile = factory.rootFile("newFile", 100L);
+            store.addFile(oldFile);
+
+            // When / Then
+            assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOne(
+                    "job1", "root", List.of("oldFile"), newFile))
+                    .isInstanceOf(FileReferenceNotAssignedToJobException.class);
+        }
+
+        @Test
+        public void shouldFailToSetFileReadyForGCWhichDoesNotExist() throws Exception {
+            // Given
+            FileReference newFile = factory.rootFile("newFile", 100L);
+
+            // When / Then
+            assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOne(
+                    "job1", "root", List.of("oldFile"), newFile))
+                    .isInstanceOf(FileNotFoundException.class);
+            assertThat(store.getFileReferences()).isEmpty();
+            assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
+        }
+
+        @Test
+        public void shouldFailToSetFilesReadyForGCWhenOneDoesNotExist() throws Exception {
+            // Given
+            FileReference oldFile1 = factory.rootFile("oldFile1", 100L);
+            FileReference newFile = factory.rootFile("newFile", 100L);
+            store.addFile(oldFile1);
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "root", List.of("oldFile1"))));
+
+            // When / Then
+            assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOne(
+                    "job1", "root", List.of("oldFile1", "oldFile2"), newFile))
+                    .isInstanceOf(FileNotFoundException.class);
+            assertThat(store.getFileReferences()).containsExactly(withJobId("job1", oldFile1));
+            assertThat(store.getFileReferencesWithNoJobId()).isEmpty();
+            assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
+        }
+
+        @Test
+        public void shouldFailToSetFileReadyForGCWhenReferenceDoesNotExistInPartition() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            FileReference file = factory.rootFile("file", 100L);
+            FileReference existingReference = splitFile(file, "L");
+            store.addFile(existingReference);
+
+            // When / Then
+            assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOne(
+                    "job1", "root", List.of("file"), factory.rootFile("file2", 100L)))
+                    .isInstanceOf(FileReferenceNotFoundException.class);
+            assertThat(store.getFileReferences()).containsExactly(existingReference);
+            assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
+        }
+
+        @Test
+        void shouldFailWhenFileToBeMarkedReadyForGCHasSameFileNameAsNewFile() throws Exception {
+            // Given
+            FileReference file = factory.rootFile("file1", 100L);
+            store.addFile(file);
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "root", List.of("file1"))));
+
+            // When / Then
+            assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOne(
+                    "job1", "root", List.of("file1"), file))
+                    .isInstanceOf(NewReferenceSameAsOldReferenceException.class);
+            assertThat(store.getFileReferences()).containsExactly(withJobId("job1", file));
+            assertThat(store.getFileReferencesWithNoJobId()).isEmpty();
+            assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
+        }
+
+        @Test
+        public void shouldFailWhenOutputFileAlreadyExists() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            FileReference file = factory.rootFile("oldFile", 100L);
+            FileReference existingReference = splitFile(file, "L");
+            FileReference newReference = factory.partitionFile("L", "newFile", 100L);
+            store.addFiles(List.of(existingReference, newReference));
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "L", List.of("oldFile"))));
+
+            // When / Then
+            assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOne(
+                    "job1", "L", List.of("oldFile"), newReference))
+                    .isInstanceOf(FileAlreadyExistsException.class);
+            assertThat(store.getFileReferences()).containsExactlyInAnyOrder(
+                    withJobId("job1", existingReference), newReference);
+            assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
         }
     }
 

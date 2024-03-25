@@ -15,8 +15,13 @@
  */
 package sleeper.core.statestore.transactionlog.transactions;
 
+import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.exception.FileAlreadyExistsException;
+import sleeper.core.statestore.exception.FileNotFoundException;
+import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
+import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.TransactionLogHead;
 
@@ -32,16 +37,30 @@ public class ReplaceFileReferencesTransaction implements StateStoreTransaction {
     private final Instant updateTime;
 
     public ReplaceFileReferencesTransaction(
-            String jobId, String partitionId, List<String> inputFiles, FileReference newReference, Instant updateTime) {
+            String jobId, String partitionId, List<String> inputFiles, FileReference newReference, Instant updateTime)
+            throws StateStoreException {
         this.jobId = jobId;
         this.partitionId = partitionId;
         this.inputFiles = inputFiles;
         this.newReference = newReference;
         this.updateTime = updateTime;
+        FileReference.validateNewReferenceForJobOutput(inputFiles, newReference);
     }
 
     @Override
     public void validate(TransactionLogHead state) throws StateStoreException {
+        for (String filename : inputFiles) {
+            AllReferencesToAFile file = state.files().file(filename)
+                    .orElseThrow(() -> new FileNotFoundException(filename));
+            FileReference reference = file.getReferenceForPartitionId(partitionId)
+                    .orElseThrow(() -> new FileReferenceNotFoundException(filename, partitionId));
+            if (!jobId.equals(reference.getJobId())) {
+                throw new FileReferenceNotAssignedToJobException(reference, jobId);
+            }
+        }
+        if (state.files().file(newReference.getFilename()).isPresent()) {
+            throw new FileAlreadyExistsException(newReference.getFilename());
+        }
     }
 
     @Override
