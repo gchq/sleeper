@@ -68,19 +68,19 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
     private final String apiUrl;
     private final Client client;
 
-    protected QueryWebSocketClient(
+    private QueryWebSocketClient(
             InstanceProperties instanceProperties, TableIndex tableIndex, TablePropertiesProvider tablePropertiesProvider,
             ConsoleInput in, ConsoleOutput out) {
         this(instanceProperties, tableIndex, tablePropertiesProvider, in, out, new WebSocketQueryClient(instanceProperties, tablePropertiesProvider, out));
     }
 
-    protected QueryWebSocketClient(
+    private QueryWebSocketClient(
             InstanceProperties instanceProperties, TableIndex tableIndex, TablePropertiesProvider tablePropertiesProvider,
             ConsoleInput in, ConsoleOutput out, Client client) {
         this(instanceProperties, tableIndex, tablePropertiesProvider, in, out, client, () -> UUID.randomUUID().toString());
     }
 
-    protected QueryWebSocketClient(
+    QueryWebSocketClient(
             InstanceProperties instanceProperties, TableIndex tableIndex, TablePropertiesProvider tablePropertiesProvider,
             ConsoleInput in, ConsoleOutput out, Client client, Supplier<String> queryIdSupplier) {
         super(instanceProperties, tableIndex, tablePropertiesProvider, in, out, queryIdSupplier);
