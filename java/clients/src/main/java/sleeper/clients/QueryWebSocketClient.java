@@ -26,6 +26,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
+import com.google.gson.ToNumberPolicy;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 
@@ -33,6 +34,7 @@ import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.core.record.Record;
 import sleeper.core.util.LoggedDuration;
 import sleeper.query.model.Query;
 import sleeper.query.model.QuerySerDe;
@@ -181,9 +183,9 @@ public class QueryWebSocketClient {
     }
 
     public static class WebSocketMessageHandler {
-        private final Gson serde = new GsonBuilder().create();
+        private final Gson serde = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE).create();
         private final Set<String> outstandingQueries = new HashSet<>();
-        private final Map<String, List<String>> records = new TreeMap<>();
+        private final Map<String, List<Record>> records = new TreeMap<>();
         private final QuerySerDe querySerDe;
         private final ConsoleOutput out;
         private boolean queryComplete = false;
@@ -230,7 +232,7 @@ public class QueryWebSocketClient {
                     out.println("Query results:");
                     records.values().stream()
                             .flatMap(List::stream)
-                            .forEach(record -> out.println(record));
+                            .forEach(record -> out.println(record.toString()));
                 }
                 queryComplete = true;
             }
@@ -280,7 +282,9 @@ public class QueryWebSocketClient {
 
         private void handleRecords(JsonObject message, String queryId) {
             JsonArray recordBatch = message.getAsJsonArray("records");
-            List<String> recordList = recordBatch.asList().stream().map(JsonElement::getAsString).collect(Collectors.toList());
+            List<Record> recordList = recordBatch.asList().stream()
+                    .map(record -> serde.fromJson(record, Record.class))
+                    .collect(Collectors.toList());
             if (!records.containsKey(queryId)) {
                 records.put(queryId, recordList);
             } else {

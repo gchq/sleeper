@@ -15,6 +15,8 @@
  */
 package sleeper.clients;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -49,6 +51,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class QueryWebSocketClientTest {
+    private static final Gson GSON = new GsonBuilder().create();
     private final InstanceProperties instanceProperties = createInstance();
     private final Schema schema = schemaWithKey("key");
     private final Field rowKey = schema.getField("key").orElseThrow();
@@ -408,7 +411,8 @@ public class QueryWebSocketClientTest {
         return "{" +
                 "\"queryId\":\"" + queryId + "\", " +
                 "\"message\":\"records\"," +
-                "\"records\":[" + Stream.of(records).map(record -> "\"" + record + "\"").collect(Collectors.joining(",")) + "]" +
+                "\"records\":[" + Stream.of(records).map(GSON::toJson).collect(Collectors.joining(","))
+                + "]" +
                 "}";
     }
 
