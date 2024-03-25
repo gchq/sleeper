@@ -15,8 +15,8 @@
  */
 package sleeper.clients;
 
-import sleeper.clients.QueryWebSocketCommandLineClient.Client;
-import sleeper.clients.QueryWebSocketCommandLineClient.WebSocketMessageHandler;
+import sleeper.clients.QueryWebSocketClient.Client;
+import sleeper.clients.QueryWebSocketClient.WebSocketMessageHandler;
 import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.query.model.Query;
