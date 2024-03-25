@@ -129,7 +129,7 @@ public class RunCompactionTasks {
     public void runToMeetTargetTasks(int targetCount) {
         int numRunningAndPendingTasks = taskCounts.getRunningAndPending();
         LOGGER.info("Number of running and pending tasks is {}", numRunningAndPendingTasks);
-        int numberOfTasksToCreate = Math.max(0, targetCount - numRunningAndPendingTasks);
+        int numberOfTasksToCreate = targetCount - numRunningAndPendingTasks;
         scaleToHostsAndLaunchTasks(targetCount, numberOfTasksToCreate, () -> false);
     }
 

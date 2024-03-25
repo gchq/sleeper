@@ -150,7 +150,7 @@ public class RunCompactionTasksTest {
             runTasks(jobsOnQueue(2), existingTasks(2));
 
             // Then
-            assertThat(scaleToHostsRequests).containsExactly(4);
+            assertThat(scaleToHostsRequests).containsExactly(3);
             assertThat(launchTasksRequests).containsExactly(1);
         }
     }
