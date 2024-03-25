@@ -63,7 +63,6 @@ public class RunCompactionTasks {
     private static final Logger LOGGER = LoggerFactory.getLogger(RunCompactionTasks.class);
 
     private final String sqsJobQueueUrl;
-    private final String clusterName;
     private final int maximumRunningTasks;
     private final TaskCounts taskCounts;
     private final HostScaler hostScaler;
@@ -72,7 +71,7 @@ public class RunCompactionTasks {
     public RunCompactionTasks(
             InstanceProperties instanceProperties, AmazonECS ecsClient, AmazonAutoScaling asClient) {
         this(instanceProperties,
-                (clusterName) -> ECSTaskCount.getNumPendingAndRunningTasks(clusterName, ecsClient),
+                () -> ECSTaskCount.getNumPendingAndRunningTasks(instanceProperties.get(COMPACTION_CLUSTER), ecsClient),
                 createEC2Scaler(instanceProperties, asClient, ecsClient),
                 (startTime, numberOfTasksToCreate) -> launchTasks(ecsClient, instanceProperties, startTime, numberOfTasksToCreate));
     }
@@ -83,12 +82,11 @@ public class RunCompactionTasks {
         this.hostScaler = hostScaler;
         this.launchTasks = launchTasks;
         this.sqsJobQueueUrl = instanceProperties.get(COMPACTION_JOB_QUEUE_URL);
-        this.clusterName = instanceProperties.get(COMPACTION_CLUSTER);
         this.maximumRunningTasks = instanceProperties.getInt(MAXIMUM_CONCURRENT_COMPACTION_TASKS);
     }
 
     public interface TaskCounts {
-        int getRunningAndPending(String clusterName);
+        int getRunningAndPending();
     }
 
     public interface TaskLauncher {
@@ -108,7 +106,7 @@ public class RunCompactionTasks {
         LOGGER.info("Queue size is {}", queueSize);
         // Request 1 task for each item on the queue
         LOGGER.info("Maximum concurrent tasks is {}", maximumRunningTasks);
-        int numRunningAndPendingTasks = taskCounts.getRunningAndPending(clusterName);
+        int numRunningAndPendingTasks = taskCounts.getRunningAndPending();
         LOGGER.info("Number of running and pending tasks is {}", numRunningAndPendingTasks);
 
         int maxTasksToCreate = maximumRunningTasks - numRunningAndPendingTasks;
@@ -121,7 +119,7 @@ public class RunCompactionTasks {
     }
 
     private void runToMeetTargetTasks(long startTime, int targetCount) {
-        int numRunningAndPendingTasks = taskCounts.getRunningAndPending(clusterName);
+        int numRunningAndPendingTasks = taskCounts.getRunningAndPending();
         int numberOfTasksToCreate = Math.max(0, targetCount - numRunningAndPendingTasks);
         scaleToHostsAndLaunchTasks(startTime, targetCount, numberOfTasksToCreate);
     }

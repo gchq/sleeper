@@ -226,7 +226,7 @@ public class RunCompactionTasksTest {
     }
 
     private static TaskCounts existingTasks(int tasks) {
-        return clusterName -> tasks;
+        return () -> tasks;
     }
 
     private static QueueMessageCount.Client noMessagesOnQueue() {
