@@ -17,6 +17,7 @@ package sleeper.core.statestore.transactionlog.transactions;
 
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.exception.FileAlreadyExistsException;
 import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.TransactionLogHead;
 
@@ -32,7 +33,11 @@ public class AddFilesTransaction implements StateStoreTransaction {
 
     @Override
     public void validate(TransactionLogHead state) throws StateStoreException {
-        state.files().validateNewFiles(files);
+        for (AllReferencesToAFile file : files) {
+            if (state.files().file(file.getFilename()).isPresent()) {
+                throw new FileAlreadyExistsException(file.getFilename());
+            }
+        }
     }
 
     @Override

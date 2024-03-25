@@ -15,8 +15,12 @@
  */
 package sleeper.core.statestore.transactionlog.transactions;
 
+import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.AssignJobIdRequest;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
+import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.TransactionLogHead;
 
@@ -35,6 +39,17 @@ public class AssignJobIdsTransaction implements StateStoreTransaction {
 
     @Override
     public void validate(TransactionLogHead state) throws StateStoreException {
+        for (AssignJobIdRequest request : requests) {
+            for (String filename : request.getFilenames()) {
+                AllReferencesToAFile existingFile = state.files().file(filename)
+                        .orElseThrow(() -> new FileReferenceNotFoundException(filename, request.getPartitionId()));
+                FileReference existingReference = existingFile.getReferenceForPartitionId(request.getPartitionId())
+                        .orElseThrow(() -> new FileReferenceNotFoundException(filename, request.getPartitionId()));
+                if (existingReference.getJobId() != null) {
+                    throw new FileReferenceAssignedToJobException(existingReference);
+                }
+            }
+        }
     }
 
     @Override

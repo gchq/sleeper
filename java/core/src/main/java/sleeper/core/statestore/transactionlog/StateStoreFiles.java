@@ -18,11 +18,11 @@ package sleeper.core.statestore.transactionlog;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.exception.FileAlreadyExistsException;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TreeMap;
 import java.util.stream.Stream;
 
@@ -55,12 +55,8 @@ public class StateStoreFiles {
         }
     }
 
-    public void validateNewFiles(List<AllReferencesToAFile> files) throws FileAlreadyExistsException {
-        for (AllReferencesToAFile file : files) {
-            if (filesByFilename.containsKey(file.getFilename())) {
-                throw new FileAlreadyExistsException(file.getFilename());
-            }
-        }
+    public Optional<AllReferencesToAFile> file(String filename) {
+        return Optional.ofNullable(filesByFilename.get(filename));
     }
 
     public void assignJobIds(List<AssignJobIdRequest> requests, Instant updateTime) {

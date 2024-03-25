@@ -24,6 +24,8 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.exception.FileAlreadyExistsException;
+import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
+import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -39,6 +41,7 @@ import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToF
 import static sleeper.core.statestore.FileReferenceTestData.AFTER_DEFAULT_UPDATE_TIME;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
 import static sleeper.core.statestore.FileReferenceTestData.splitFile;
+import static sleeper.core.statestore.FileReferenceTestData.withJobId;
 import static sleeper.core.statestore.FileReferenceTestData.withLastUpdate;
 import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.partialReadyForGCFilesReport;
@@ -205,6 +208,138 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             assertThatThrownBy(() -> store.addFilesWithReferences(List.of(fileWithReferences(rightFile))))
                     .isInstanceOf(FileAlreadyExistsException.class);
             assertThat(store.getFileReferences()).containsExactly(leftFile);
+        }
+    }
+
+    @Nested
+    @DisplayName("Create compaction jobs")
+    class CreateCompactionJobs {
+
+        @Test
+        public void shouldMarkFileWithJobId() throws Exception {
+            // Given
+            FileReference file = factory.rootFile("file", 100L);
+            store.addFile(file);
+
+            // When
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job", "root", List.of("file"))));
+
+            // Then
+            assertThat(store.getFileReferences()).containsExactly(withJobId("job", file));
+            assertThat(store.getFileReferencesWithNoJobId()).isEmpty();
+        }
+
+        @Test
+        public void shouldMarkOneHalfOfSplitFileWithJobId() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            FileReference file = factory.rootFile("file", 100L);
+            FileReference left = splitFile(file, "L");
+            FileReference right = splitFile(file, "R");
+            store.addFiles(List.of(left, right));
+
+            // When
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job", "L", List.of("file"))));
+
+            // Then
+            assertThat(store.getFileReferences()).containsExactlyInAnyOrder(withJobId("job", left), right);
+            assertThat(store.getFileReferencesWithNoJobId()).containsExactly(right);
+        }
+
+        @Test
+        public void shouldMarkMultipleFilesWithJobIds() throws Exception {
+            // Given
+            FileReference file1 = factory.rootFile("file1", 100L);
+            FileReference file2 = factory.rootFile("file2", 100L);
+            store.addFiles(List.of(file1, file2));
+
+            // When
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "root", List.of("file1")),
+                    assignJobOnPartitionToFiles("job2", "root", List.of("file2"))));
+
+            // Then
+            assertThat(store.getFileReferences()).containsExactly(
+                    withJobId("job1", file1),
+                    withJobId("job2", file2));
+            assertThat(store.getFileReferencesWithNoJobId()).isEmpty();
+        }
+
+        @Test
+        public void shouldNotMarkFileWithJobIdWhenOneIsAlreadySet() throws Exception {
+            // Given
+            FileReference file = factory.rootFile("file", 100L);
+            store.addFile(file);
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "root", List.of("file"))));
+
+            // When / Then
+            assertThatThrownBy(() -> store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job2", "root", List.of("file")))))
+                    .isInstanceOf(FileReferenceAssignedToJobException.class);
+            assertThat(store.getFileReferences()).containsExactly(withJobId("job1", file));
+            assertThat(store.getFileReferencesWithNoJobId()).isEmpty();
+        }
+
+        @Test
+        public void shouldNotUpdateOtherFilesIfOneFileAlreadyHasJobId() throws Exception {
+            // Given
+            FileReference file1 = factory.rootFile("file1", 100L);
+            FileReference file2 = factory.rootFile("file2", 100L);
+            FileReference file3 = factory.rootFile("file3", 100L);
+            store.addFiles(List.of(file1, file2, file3));
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "root", List.of("file2"))));
+
+            // When / Then
+            assertThatThrownBy(() -> store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job2", "root", List.of("file1", "file2", "file3")))))
+                    .isInstanceOf(FileReferenceAssignedToJobException.class);
+            assertThat(store.getFileReferences()).containsExactlyInAnyOrder(
+                    file1, withJobId("job1", file2), file3);
+            assertThat(store.getFileReferencesWithNoJobId()).containsExactlyInAnyOrder(file1, file3);
+        }
+
+        @Test
+        public void shouldNotMarkFileWithJobIdWhenFileDoesNotExist() throws Exception {
+            // Given
+            FileReference file = factory.rootFile("existingFile", 100L);
+            store.addFile(file);
+
+            // When / Then
+            assertThatThrownBy(() -> store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "root", List.of("requestedFile")))))
+                    .isInstanceOf(FileReferenceNotFoundException.class);
+            assertThat(store.getFileReferences()).containsExactly(file);
+            assertThat(store.getFileReferencesWithNoJobId()).containsExactly(file);
+        }
+
+        @Test
+        public void shouldNotMarkFileWithJobIdWhenFileDoesNotExistAndStoreIsEmpty() throws Exception {
+            // When / Then
+            assertThatThrownBy(() -> store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "root", List.of("file")))))
+                    .isInstanceOf(FileReferenceNotFoundException.class);
+            assertThat(store.getFileReferences()).isEmpty();
+            assertThat(store.getFileReferencesWithNoJobId()).isEmpty();
+        }
+
+        @Test
+        public void shouldNotMarkFileWithJobIdWhenReferenceDoesNotExistInPartition() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            FileReference file = factory.rootFile("file", 100L);
+            FileReference existingReference = splitFile(file, "L");
+            store.addFile(existingReference);
+
+            // When / Then
+            assertThatThrownBy(() -> store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "root", List.of("file")))))
+                    .isInstanceOf(FileReferenceNotFoundException.class);
+            assertThat(store.getFileReferences()).containsExactly(existingReference);
+            assertThat(store.getFileReferencesWithNoJobId()).containsExactly(existingReference);
         }
     }
 
