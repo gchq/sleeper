@@ -82,8 +82,8 @@ public class WebSocketResultsOutputIT {
         // Then
         verify(1, postRequestedFor(url).withRequestBody(
                 matchingJsonPath("$.queryId", equalTo("query1"))
-                        .and(matchingJsonPath("$.message", equalTo("records")))
-        ));
+                        .and(matchingJsonPath("$.message", equalTo("records"))
+                                .and(matchingJsonPath("$.records", equalTo("[{\"values\":{\"id\":\"record1\"}}]"))))));
         assertThat(result.getRecordCount()).isZero();
         assertThat(result.getError()).hasMessageContaining("GoneException");
     }
@@ -117,7 +117,6 @@ public class WebSocketResultsOutputIT {
         // Then
         verify(records.size(), postRequestedFor(url).withRequestBody(
                 matchingJsonPath("$.queryId", equalTo("query1"))
-                        .and(matchingJsonPath("$.message", equalTo("records")))
-        ));
+                        .and(matchingJsonPath("$.message", equalTo("records")))));
     }
 }
