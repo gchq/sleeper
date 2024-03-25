@@ -27,6 +27,7 @@ import sleeper.core.statestore.transactionlog.TransactionLogHead;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.stream.Stream;
 
 public class ReplaceFileReferencesTransaction implements StateStoreTransaction {
 
@@ -65,11 +66,9 @@ public class ReplaceFileReferencesTransaction implements StateStoreTransaction {
 
     @Override
     public void apply(TransactionLogHead state) {
-        state.files().replaceFiles(partitionId, inputFiles, newReference, updateTime);
-    }
-
-    // For linting, since this field is only used to keep a record
-    String getJobId() {
-        return jobId;
+        for (String filename : inputFiles) {
+            state.files().updateFile(filename, file -> file.removeReferenceForPartition(partitionId, updateTime));
+        }
+        state.files().add(AllReferencesToAFile.newFilesWithReferences(Stream.of(newReference), updateTime));
     }
 }

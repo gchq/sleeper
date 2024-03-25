@@ -16,14 +16,13 @@
 package sleeper.core.statestore.transactionlog;
 
 import sleeper.core.statestore.AllReferencesToAFile;
-import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
+import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
 public class StateStoreFiles {
@@ -49,34 +48,18 @@ public class StateStoreFiles {
         return filesByFilename.isEmpty();
     }
 
-    public void add(Iterable<AllReferencesToAFile> files) {
-        for (AllReferencesToAFile file : files) {
-            filesByFilename.put(file.getFilename(), file);
-        }
+    public void add(Stream<AllReferencesToAFile> files) {
+        files.forEach(file -> filesByFilename.put(file.getFilename(), file));
     }
 
     public Optional<AllReferencesToAFile> file(String filename) {
         return Optional.ofNullable(filesByFilename.get(filename));
     }
 
-    public void assignJobIds(List<AssignJobIdRequest> requests, Instant updateTime) {
-        for (AssignJobIdRequest request : requests) {
-            for (String filename : request.getFilenames()) {
-                AllReferencesToAFile file = filesByFilename.get(filename);
-                AllReferencesToAFile updated = file.withJobIdForPartition(
-                        request.getJobId(), request.getPartitionId(), updateTime);
-                filesByFilename.put(filename, updated);
-            }
-        }
-    }
-
-    public void replaceFiles(String partitionId, List<String> removeFiles, FileReference newReference, Instant updateTime) {
-        for (String filename : removeFiles) {
-            AllReferencesToAFile file = filesByFilename.get(filename);
-            AllReferencesToAFile updated = file.removeReferenceForPartition(partitionId, updateTime);
-            filesByFilename.put(filename, updated);
-        }
-        add(() -> AllReferencesToAFile.newFilesWithReferences(Stream.of(newReference), updateTime).iterator());
+    public void updateFile(String filename, UnaryOperator<AllReferencesToAFile> update) {
+        AllReferencesToAFile existing = filesByFilename.get(filename);
+        AllReferencesToAFile updated = update.apply(existing);
+        filesByFilename.put(filename, updated);
     }
 
 }

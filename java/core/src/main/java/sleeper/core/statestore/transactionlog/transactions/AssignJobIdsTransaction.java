@@ -54,7 +54,12 @@ public class AssignJobIdsTransaction implements StateStoreTransaction {
 
     @Override
     public void apply(TransactionLogHead state) {
-        state.files().assignJobIds(requests, updateTime);
+        for (AssignJobIdRequest request : requests) {
+            for (String filename : request.getFilenames()) {
+                state.files().updateFile(filename,
+                        file -> file.withJobIdForPartition(request.getJobId(), request.getPartitionId(), updateTime));
+            }
+        }
     }
 
 }

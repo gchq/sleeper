@@ -42,7 +42,7 @@ public class AddFilesTransaction implements StateStoreTransaction {
 
     @Override
     public void apply(TransactionLogHead state) {
-        state.files().add(this.files);
+        state.files().add(files.stream());
     }
 
 }
