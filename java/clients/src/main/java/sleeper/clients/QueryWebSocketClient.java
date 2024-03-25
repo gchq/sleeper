@@ -36,6 +36,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.record.Record;
 import sleeper.core.util.LoggedDuration;
+import sleeper.core.util.PollWithRetries;
 import sleeper.query.model.Query;
 import sleeper.query.model.QuerySerDe;
 
@@ -62,6 +63,10 @@ public class QueryWebSocketClient {
     private final Client client;
     private final ConsoleOutput out;
     private Instant startTime;
+
+    public QueryWebSocketClient(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider) {
+        this(instanceProperties, tablePropertiesProvider, new ConsoleOutput(System.out));
+    }
 
     QueryWebSocketClient(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, ConsoleOutput out) {
         this(instanceProperties, tablePropertiesProvider, out, new WebSocketQueryClient(instanceProperties, tablePropertiesProvider, out));
@@ -90,10 +95,12 @@ public class QueryWebSocketClient {
     }
 
     public void waitForQuery() {
+        waitForQuery(PollWithRetries.intervalAndMaxPolls(500, 20));
+    }
+
+    public void waitForQuery(PollWithRetries poll) {
         try {
-            while (!client.hasQueryFinished()) {
-                Thread.sleep(500);
-            }
+            poll.pollUntil("query has finished", client::hasQueryFinished);
             LoggedDuration duration = LoggedDuration.withFullOutput(startTime, Instant.now());
             long recordsReturned = client.getTotalRecordsReturned();
             out.println("Query took " + duration + " to return " + recordsReturned + " records");
@@ -104,6 +111,10 @@ public class QueryWebSocketClient {
             } catch (InterruptedException e) {
             }
         }
+    }
+
+    public List<Record> getResults(Query query) {
+        return client.getResults(query.getQueryId());
     }
 
     public interface Client {
