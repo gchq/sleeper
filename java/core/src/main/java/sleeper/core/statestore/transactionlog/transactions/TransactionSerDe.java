@@ -21,12 +21,13 @@ import com.google.gson.GsonBuilder;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionSerDe.PartitionJsonSerDe;
 import sleeper.core.schema.Schema;
+import sleeper.core.util.GsonConfig;
 
 public class TransactionSerDe {
     private final Gson gson;
 
     public TransactionSerDe(Schema schema) {
-        GsonBuilder builder = new GsonBuilder()
+        GsonBuilder builder = GsonConfig.standardBuilder()
                 .registerTypeAdapter(Partition.class, new PartitionJsonSerDe(schema))
                 .serializeNulls();
         this.gson = builder.create();
