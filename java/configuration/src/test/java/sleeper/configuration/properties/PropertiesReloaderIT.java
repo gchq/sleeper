@@ -152,8 +152,7 @@ public class PropertiesReloaderIT {
         propertiesAfter.saveToS3(s3Client);
     }
 
-    private void updatePropertiesInS3(String tableName,
-            Consumer<TableProperties> extraProperties) {
+    private void updatePropertiesInS3(String tableName, Consumer<TableProperties> extraProperties) {
         TableProperties propertiesAfter = tablePropertiesStore.loadByName(tableName);
         extraProperties.accept(propertiesAfter);
         tablePropertiesStore.save(propertiesAfter);
