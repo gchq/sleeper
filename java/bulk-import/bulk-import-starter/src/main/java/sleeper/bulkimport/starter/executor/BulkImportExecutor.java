@@ -53,7 +53,8 @@ public class BulkImportExecutor {
     protected final PlatformExecutor platformExecutor;
     protected final Supplier<Instant> validationTimeSupplier;
 
-    public BulkImportExecutor(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
+    public BulkImportExecutor(
+            InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider, IngestJobStatusStore ingestJobStatusStore, AmazonS3 s3Client,
             PlatformExecutor platformExecutor, Supplier<Instant> validationTimeSupplier) {
         this.instanceProperties = instanceProperties;
