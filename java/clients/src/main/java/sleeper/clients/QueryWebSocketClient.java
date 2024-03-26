@@ -27,7 +27,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.ToNumberPolicy;
-import com.google.gson.reflect.TypeToken;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 
@@ -350,8 +349,5 @@ public class QueryWebSocketClient {
                     .flatMap(id -> records.getOrDefault(id, List.of()).stream())
                     .collect(Collectors.toList());
         }
-    }
-
-    public static class RecordListTypeToken extends TypeToken<List<Record>> {
     }
 }
