@@ -40,7 +40,8 @@ public class AverageRecordRateTest {
         // Then
         assertThat(rate).extracting("runCount", "recordsRead", "recordsWritten", "totalDuration",
                 "recordsReadPerSecond", "recordsWrittenPerSecond",
-                "averageRunRecordsReadPerSecond", "averageRunRecordsWrittenPerSecond").containsExactly(1, 100L, 100L, Duration.ofSeconds(10), 10.0, 10.0, 10.0, 10.0);
+                "averageRunRecordsReadPerSecond", "averageRunRecordsWrittenPerSecond")
+                .containsExactly(1, 100L, 100L, Duration.ofSeconds(10), 10.0, 10.0, 10.0, 10.0);
     }
 
     @Test
@@ -57,7 +58,8 @@ public class AverageRecordRateTest {
         // Then
         assertThat(rate).extracting("runCount", "recordsRead", "recordsWritten", "totalDuration",
                 "recordsReadPerSecond", "recordsWrittenPerSecond",
-                "averageRunRecordsReadPerSecond", "averageRunRecordsWrittenPerSecond").containsExactly(2, 150L, 150L, Duration.ofSeconds(20), 7.5, 7.5, 7.5, 7.5);
+                "averageRunRecordsReadPerSecond", "averageRunRecordsWrittenPerSecond")
+                .containsExactly(2, 150L, 150L, Duration.ofSeconds(20), 7.5, 7.5, 7.5, 7.5);
     }
 
     @Test
@@ -74,7 +76,8 @@ public class AverageRecordRateTest {
         // Then
         assertThat(rate).extracting("runCount", "recordsRead", "recordsWritten", "totalDuration",
                 "recordsReadPerSecond", "recordsWrittenPerSecond",
-                "averageRunRecordsReadPerSecond", "averageRunRecordsWrittenPerSecond").containsExactly(2, 950L, 950L, Duration.ofSeconds(100), 9.5, 9.5, 7.5, 7.5);
+                "averageRunRecordsReadPerSecond", "averageRunRecordsWrittenPerSecond")
+                .containsExactly(2, 950L, 950L, Duration.ofSeconds(100), 9.5, 9.5, 7.5, 7.5);
     }
 
     @Test
@@ -85,7 +88,8 @@ public class AverageRecordRateTest {
         // When / Then
         assertThat(rate).extracting("runCount", "recordsRead", "recordsWritten", "totalDuration",
                 "recordsReadPerSecond", "recordsWrittenPerSecond",
-                "averageRunRecordsReadPerSecond", "averageRunRecordsWrittenPerSecond").containsExactly(0, 0L, 0L, Duration.ZERO, Double.NaN, Double.NaN, Double.NaN, Double.NaN);
+                "averageRunRecordsReadPerSecond", "averageRunRecordsWrittenPerSecond")
+                .containsExactly(0, 0L, 0L, Duration.ZERO, Double.NaN, Double.NaN, Double.NaN, Double.NaN);
     }
 
     @Test
@@ -102,7 +106,8 @@ public class AverageRecordRateTest {
         // Then
         assertThat(rate).extracting("runCount", "recordsRead", "recordsWritten", "totalDuration",
                 "recordsReadPerSecond", "recordsWrittenPerSecond",
-                "averageRunRecordsReadPerSecond", "averageRunRecordsWrittenPerSecond").containsExactly(1, 100L, 100L, Duration.ofSeconds(20), 5.0, 5.0, 10.0, 10.0);
+                "averageRunRecordsReadPerSecond", "averageRunRecordsWrittenPerSecond")
+                .containsExactly(1, 100L, 100L, Duration.ofSeconds(20), 5.0, 5.0, 10.0, 10.0);
     }
 
     @Test
@@ -117,7 +122,8 @@ public class AverageRecordRateTest {
 
         assertThat(rate).extracting("runCount", "recordsRead", "recordsWritten", "totalDuration",
                 "recordsReadPerSecond", "recordsWrittenPerSecond",
-                "averageRunRecordsReadPerSecond", "averageRunRecordsWrittenPerSecond").containsExactly(2, 10L, 10L, Duration.ofSeconds(20), 0.5, 0.5, 1.0, 1.0);
+                "averageRunRecordsReadPerSecond", "averageRunRecordsWrittenPerSecond")
+                .containsExactly(2, 10L, 10L, Duration.ofSeconds(20), 0.5, 0.5, 1.0, 1.0);
     }
 
     @Test
@@ -132,7 +138,8 @@ public class AverageRecordRateTest {
 
         assertThat(rate).extracting("runCount", "recordsRead", "recordsWritten", "totalDuration",
                 "recordsReadPerSecond", "recordsWrittenPerSecond",
-                "averageRunRecordsReadPerSecond", "averageRunRecordsWrittenPerSecond").containsExactly(2, 10L, 20L, Duration.ofSeconds(20), 0.5, 1.0, 1.0, 1.0);
+                "averageRunRecordsReadPerSecond", "averageRunRecordsWrittenPerSecond")
+                .containsExactly(2, 10L, 20L, Duration.ofSeconds(20), 0.5, 1.0, 1.0, 1.0);
     }
 
     @Test
@@ -147,7 +154,8 @@ public class AverageRecordRateTest {
 
         assertThat(rate).extracting("runCount", "recordsRead", "recordsWritten", "totalDuration",
                 "recordsReadPerSecond", "recordsWrittenPerSecond",
-                "averageRunRecordsReadPerSecond", "averageRunRecordsWrittenPerSecond").containsExactly(2, 20L, 10L, Duration.ofSeconds(20), 1.0, 0.5, 1.0, 1.0);
+                "averageRunRecordsReadPerSecond", "averageRunRecordsWrittenPerSecond")
+                .containsExactly(2, 20L, 10L, Duration.ofSeconds(20), 1.0, 0.5, 1.0, 1.0);
     }
 
     @Test
@@ -162,7 +170,8 @@ public class AverageRecordRateTest {
 
         assertThat(rate).extracting("runCount", "recordsRead", "recordsWritten", "totalDuration",
                 "recordsReadPerSecond", "recordsWrittenPerSecond",
-                "averageRunRecordsReadPerSecond", "averageRunRecordsWrittenPerSecond").containsExactly(2, 20L, 20L, Duration.ofSeconds(10), 2.0, 2.0, 1.0, 1.0);
+                "averageRunRecordsReadPerSecond", "averageRunRecordsWrittenPerSecond")
+                .containsExactly(2, 20L, 20L, Duration.ofSeconds(10), 2.0, 2.0, 1.0, 1.0);
     }
 
     private static AverageRecordRate rateFrom(RecordsProcessedSummary... summaries) {
