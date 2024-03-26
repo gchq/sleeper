@@ -38,8 +38,8 @@ public class IngestRandomDataViaQueue {
     private IngestRandomDataViaQueue() {
     }
 
-    public static void sendJob(String jobId, String dir,
-            InstanceProperties instanceProperties, TableProperties tableProperties,
+    public static void sendJob(
+            String jobId, String dir, InstanceProperties instanceProperties, TableProperties tableProperties,
             SystemTestPropertyValues systemTestProperties) {
 
         AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
