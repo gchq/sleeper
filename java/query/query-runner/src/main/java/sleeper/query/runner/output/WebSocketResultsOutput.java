@@ -21,7 +21,6 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.record.Record;
 import sleeper.query.model.QueryOrLeafPartitionQuery;
-import sleeper.query.output.RecordListSerDe;
 import sleeper.query.output.ResultsOutput;
 import sleeper.query.output.ResultsOutputInfo;
 import sleeper.query.output.ResultsOutputLocation;
@@ -114,7 +113,7 @@ public class WebSocketResultsOutput extends WebSocketOutput implements ResultsOu
 
     private void publishBatch(Map<String, Object> message, List<Record> records) throws IOException {
         LOGGER.info("Publishing batch of {} records to WebSocket connection", records.size());
-        message.put("records", RecordListSerDe.toJson(records));
+        message.put("records", records);
         this.sendJson(message);
     }
 }
