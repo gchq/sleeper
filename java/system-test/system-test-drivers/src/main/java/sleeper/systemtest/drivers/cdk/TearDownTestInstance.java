@@ -40,9 +40,8 @@ public class TearDownTestInstance {
         TearDownInstance.builder()
                 .scriptsDir(Path.of(args[0]))
                 .instanceId(optionalArgument(args, 1).orElse(null))
-                .getExtraEcsClusters(properties ->
-                        Optional.ofNullable(properties.get(SYSTEM_TEST_CLUSTER_NAME))
-                                .stream().collect(Collectors.toUnmodifiableList()))
+                .getExtraEcsClusters(properties -> Optional.ofNullable(properties.get(SYSTEM_TEST_CLUSTER_NAME))
+                        .stream().collect(Collectors.toUnmodifiableList()))
                 .getExtraEcrRepositories(properties -> List.of(
                         Optional.ofNullable(properties.get(SYSTEM_TEST_REPO))
                                 .orElseGet(() -> properties.get(ID) + "/system-test")))

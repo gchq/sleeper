@@ -43,6 +43,7 @@ public class PropertyGroupWithCategory {
 
     public enum Category {
         INSTANCE("Instance Properties"), TABLE("Table Properties");
+
         private final String name;
 
         Category(String name) {

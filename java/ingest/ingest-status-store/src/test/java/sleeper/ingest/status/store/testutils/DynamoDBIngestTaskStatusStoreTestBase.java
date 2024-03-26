@@ -105,21 +105,20 @@ public class DynamoDBIngestTaskStatusStoreTestBase extends DynamoDBTestBase {
     protected static IngestTaskStatus finishedTaskWithDefaults() {
         return startedTaskWithDefaultsBuilder().finished(
                 defaultTaskFinishTime(), IngestTaskFinishedStatus.builder()
-                        .addJobSummary(defaultJobSummary())
-        ).build();
+                        .addJobSummary(defaultJobSummary()))
+                .build();
     }
 
     protected static IngestTaskStatus finishedTaskWithDefaultsAndDurationInSecondsNotAWholeNumber() {
         return startedTaskWithDefaultsBuilder().finished(
                 taskFinishTimeWithDurationInSecondsNotAWholeNumber(), IngestTaskFinishedStatus.builder()
-                        .addJobSummary(defaultJobSummary())
-        ).build();
+                        .addJobSummary(defaultJobSummary()))
+                .build();
     }
 
     protected static IngestTaskStatus finishedTaskWithNoJobsAndZeroDuration() {
         return startedTaskWithDefaultsBuilder().finished(
-                defaultTaskStartTime(), IngestTaskFinishedStatus.builder()
-        ).build();
+                defaultTaskStartTime(), IngestTaskFinishedStatus.builder()).build();
     }
 
     protected static IngestTaskStatus taskWithStartTime(Instant startTime) {
@@ -140,8 +139,7 @@ public class DynamoDBIngestTaskStatusStoreTestBase extends DynamoDBTestBase {
                 .finished(finishTime, IngestTaskFinishedStatus.builder()
                         .addJobSummary(new RecordsProcessedSummary(
                                 new RecordsProcessed(200, 100),
-                                startTime, finishTime
-                        )))
+                                startTime, finishTime)))
                 .build();
     }
 

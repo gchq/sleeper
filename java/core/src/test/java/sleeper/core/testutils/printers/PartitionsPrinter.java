@@ -44,8 +44,7 @@ public class PartitionsPrinter {
     }
 
     public static String printTablePartitionsExpectingIdentical(Schema schema, Map<String, PartitionTree> partitionsByTable) {
-        return TablesPrinter.printForAllTables(partitionsByTable.keySet(), table ->
-                printPartitions(schema, partitionsByTable.get(table)));
+        return TablesPrinter.printForAllTables(partitionsByTable.keySet(), table -> printPartitions(schema, partitionsByTable.get(table)));
     }
 
     public static String printPartitions(Schema schema, PartitionTree partitionTree) {

@@ -119,7 +119,7 @@ class BulkImportJobDriverTest {
         // When
         assertThatThrownBy(() -> runJob(job, "test-run", "test-task",
                 validationTime, startTime, finishTime, outputFiles, stateStore))
-                        .isInstanceOf(RuntimeException.class).hasCauseReference(jobFailure);
+                .isInstanceOf(RuntimeException.class).hasCauseReference(jobFailure);
 
         // Then
         assertThat(allJobsReported())
@@ -145,7 +145,7 @@ class BulkImportJobDriverTest {
         // When
         assertThatThrownBy(() -> runJob(job, "test-run", "test-task",
                 validationTime, startTime, finishTime, outputFiles, stateStore))
-                        .isInstanceOf(RuntimeException.class).hasCauseReference(jobFailure);
+                .isInstanceOf(RuntimeException.class).hasCauseReference(jobFailure);
 
         // Then
         assertThat(allJobsReported())

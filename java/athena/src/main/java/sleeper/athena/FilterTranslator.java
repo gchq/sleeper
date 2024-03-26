@@ -58,11 +58,11 @@ public class FilterTranslator {
     /**
      * Creates a single Parquet FilterPredicate based on the ValueSets. Will only Filter based on Primitive types and
      * will therefore ignore all others. If there is no resulting predicate (either caused by an empty, or null map or a
-     * map of non-primitive fields), this method will return null. If more than one primitive ValueSet exists in the map,
-     * the predicates of all the ValueSets will be ANDed together.
+     * map of non-primitive fields), this method will return null. If more than one primitive ValueSet exists in the
+     * map, the predicates of all the ValueSets will be ANDed together.
      *
-     * @param valueSets a map of field name to ValueSet
-     * @return A single parquet filter based on the ValueSets.
+     * @param  valueSets a map of field name to ValueSet
+     * @return           a single parquet filter based on the ValueSets
      */
     public FilterPredicate toPredicate(Map<String, ValueSet> valueSets) {
         if (valueSets == null || valueSets.isEmpty()) {
@@ -221,15 +221,14 @@ public class FilterTranslator {
                 });
     }
 
-
     /**
      * Wrapper around the FilterApi.and method which allows either side to be null. If both sides are null, null is
      * returned as the result. If one side is null, the other predicate will be returned. If both sides are non-null,
      * the predicates will be and-ed together
      *
-     * @param lhs left predicate
-     * @param rhs right predicate
-     * @return a Predicate which ensures both left and right predicates pass.
+     * @param  lhs left predicate
+     * @param  rhs right predicate
+     * @return     a Predicate which ensures both left and right predicates pass.
      */
     public static FilterPredicate and(FilterPredicate lhs, FilterPredicate rhs) {
         return merge(lhs, rhs, FilterApi::and);
@@ -240,9 +239,9 @@ public class FilterTranslator {
      * returned as the result. If one side is null, the other predicate will be returned. If both sides are non-null,
      * the predicates will be or-ed together
      *
-     * @param lhs left predicate
-     * @param rhs right predicate
-     * @return a Predicate which ensures both left and right predicates pass.
+     * @param  lhs left predicate
+     * @param  rhs right predicate
+     * @return     a Predicate which ensures both left and right predicates pass.
      */
     public static FilterPredicate or(FilterPredicate lhs, FilterPredicate rhs) {
         return merge(lhs, rhs, FilterApi::or);
