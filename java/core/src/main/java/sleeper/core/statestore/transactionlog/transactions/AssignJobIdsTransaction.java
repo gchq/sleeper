@@ -26,6 +26,7 @@ import sleeper.core.statestore.transactionlog.TransactionLogHead;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 
 public class AssignJobIdsTransaction implements StateStoreTransaction {
 
@@ -60,6 +61,28 @@ public class AssignJobIdsTransaction implements StateStoreTransaction {
                         file -> file.withJobIdForPartition(request.getJobId(), request.getPartitionId(), updateTime));
             }
         }
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(requests, updateTime);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof AssignJobIdsTransaction)) {
+            return false;
+        }
+        AssignJobIdsTransaction other = (AssignJobIdsTransaction) obj;
+        return Objects.equals(requests, other.requests) && Objects.equals(updateTime, other.updateTime);
+    }
+
+    @Override
+    public String toString() {
+        return "AssignJobIdsTransaction{requests=" + requests + ", updateTime=" + updateTime + "}";
     }
 
 }

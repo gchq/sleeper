@@ -21,14 +21,20 @@ import sleeper.core.statestore.exception.FileAlreadyExistsException;
 import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.TransactionLogHead;
 
+import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
+
+import static java.util.stream.Collectors.toUnmodifiableList;
 
 public class AddFilesTransaction implements StateStoreTransaction {
 
     private final List<AllReferencesToAFile> files;
+    private final Instant updateTime;
 
-    public AddFilesTransaction(List<AllReferencesToAFile> files) {
-        this.files = files;
+    public AddFilesTransaction(List<AllReferencesToAFile> files, Instant updateTime) {
+        this.files = files.stream().map(file -> file.withCreatedUpdateTime(null)).collect(toUnmodifiableList());
+        this.updateTime = updateTime;
     }
 
     @Override
@@ -43,8 +49,30 @@ public class AddFilesTransaction implements StateStoreTransaction {
     @Override
     public void apply(TransactionLogHead state) {
         for (AllReferencesToAFile file : files) {
-            state.files().add(file);
+            state.files().add(file.withCreatedUpdateTime(updateTime));
         }
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(files);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof AddFilesTransaction)) {
+            return false;
+        }
+        AddFilesTransaction other = (AddFilesTransaction) obj;
+        return Objects.equals(files, other.files);
+    }
+
+    @Override
+    public String toString() {
+        return "AddFilesTransaction{files=" + files + "}";
     }
 
 }

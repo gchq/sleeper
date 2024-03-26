@@ -23,12 +23,13 @@ import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.TransactionLogHead;
 
 import java.util.List;
+import java.util.Objects;
 
-public class DeleteFilesAfterGCTransaction implements StateStoreTransaction {
+public class DeleteFilesTransaction implements StateStoreTransaction {
 
     private final List<String> filenames;
 
-    public DeleteFilesAfterGCTransaction(List<String> filenames) {
+    public DeleteFilesTransaction(List<String> filenames) {
         this.filenames = filenames;
     }
 
@@ -48,4 +49,25 @@ public class DeleteFilesAfterGCTransaction implements StateStoreTransaction {
         filenames.forEach(state.files()::remove);
     }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(filenames);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof DeleteFilesTransaction)) {
+            return false;
+        }
+        DeleteFilesTransaction other = (DeleteFilesTransaction) obj;
+        return Objects.equals(filenames, other.filenames);
+    }
+
+    @Override
+    public String toString() {
+        return "DeleteFilesTransaction{filenames=" + filenames + "}";
+    }
 }

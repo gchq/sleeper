@@ -21,6 +21,7 @@ import com.google.gson.GsonBuilder;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionSerDe.PartitionJsonSerDe;
 import sleeper.core.schema.Schema;
+import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.util.GsonConfig;
 
 public class TransactionSerDe {
@@ -33,11 +34,11 @@ public class TransactionSerDe {
         this.gson = builder.create();
     }
 
-    public String toJson(Object transaction) {
+    public String toJson(StateStoreTransaction transaction) {
         return gson.toJson(transaction);
     }
 
-    public <T> T toTransaction(Class<T> type, String json) {
-        return gson.fromJson(json, type);
+    public StateStoreTransaction toTransaction(TransactionType type, String json) {
+        return gson.fromJson(json, type.getType());
     }
 }

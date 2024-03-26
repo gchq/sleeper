@@ -29,6 +29,7 @@ import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.TransactionLogStore;
 import sleeper.core.statestore.transactionlog.transactions.TransactionSerDe;
+import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
 import java.util.Map;
@@ -66,7 +67,7 @@ class DynamoDBTransactionLogStore implements TransactionLogStore {
                 .withItem(new DynamoDBRecordBuilder()
                         .string(TABLE_ID, tableProperties.get(TableProperty.TABLE_ID))
                         .number(TRANSACTION_NUMBER, transactionNumber)
-                        .string(TYPE, transaction.getClass().getName())
+                        .string(TYPE, TransactionType.getType(transaction).name())
                         .string(BODY, serDe.toJson(transaction))
                         .build())
                 .withConditionExpression("attribute_not_exists(#Number)")
@@ -89,19 +90,16 @@ class DynamoDBTransactionLogStore implements TransactionLogStore {
     }
 
     private Optional<StateStoreTransaction> readTransaction(Map<String, AttributeValue> item) {
-        String className = item.get(TYPE).getS();
+        return readType(item).map(type -> serDe.toTransaction(type, item.get(BODY).getS()));
+    }
+
+    private Optional<TransactionType> readType(Map<String, AttributeValue> item) {
+        String typeName = item.get(TYPE).getS();
         try {
-            Class<?> type = Class.forName(className);
-            if (!StateStoreTransaction.class.isAssignableFrom(type)) {
-                LOGGER.warn("Found non-transaction type for table {} transaction {}: {}",
-                        item.get(TABLE_ID).getS(), item.get(TRANSACTION_NUMBER).getS(), className);
-                return Optional.empty();
-            }
-            Class<? extends StateStoreTransaction> transactionType = (Class<? extends StateStoreTransaction>) type;
-            return Optional.of(serDe.toTransaction(transactionType, item.get(BODY).getS()));
-        } catch (ClassNotFoundException e) {
+            return Optional.of(TransactionType.valueOf(typeName));
+        } catch (Exception e) {
             LOGGER.warn("Found unrecognised transaction type for table {} transaction {}: {}",
-                    item.get(TABLE_ID).getS(), item.get(TRANSACTION_NUMBER).getS(), className);
+                    item.get(TABLE_ID).getS(), item.get(TRANSACTION_NUMBER).getS(), typeName, e);
             return Optional.empty();
         }
     }

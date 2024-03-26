@@ -19,6 +19,8 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.TransactionLogHead;
 
+import java.util.Objects;
+
 public class ClearFilesTransaction implements StateStoreTransaction {
 
     @Override
@@ -30,4 +32,18 @@ public class ClearFilesTransaction implements StateStoreTransaction {
         state.files().clear();
     }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof ClearFilesTransaction;
+    }
+
+    @Override
+    public String toString() {
+        return "ClearFilesTransaction{}";
+    }
 }

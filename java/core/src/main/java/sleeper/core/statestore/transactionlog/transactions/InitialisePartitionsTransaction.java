@@ -20,6 +20,7 @@ import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.TransactionLogHead;
 
 import java.util.List;
+import java.util.Objects;
 
 public class InitialisePartitionsTransaction implements StateStoreTransaction {
 
@@ -39,4 +40,25 @@ public class InitialisePartitionsTransaction implements StateStoreTransaction {
         partitions.forEach(state.partitions()::put);
     }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(partitions);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof InitialisePartitionsTransaction)) {
+            return false;
+        }
+        InitialisePartitionsTransaction other = (InitialisePartitionsTransaction) obj;
+        return Objects.equals(partitions, other.partitions);
+    }
+
+    @Override
+    public String toString() {
+        return "InitialisePartitionsTransaction{partitions=" + partitions + "}";
+    }
 }

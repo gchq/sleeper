@@ -26,7 +26,7 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
 import sleeper.core.statestore.transactionlog.transactions.AssignJobIdsTransaction;
 import sleeper.core.statestore.transactionlog.transactions.ClearFilesTransaction;
-import sleeper.core.statestore.transactionlog.transactions.DeleteFilesAfterGCTransaction;
+import sleeper.core.statestore.transactionlog.transactions.DeleteFilesTransaction;
 import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
 import sleeper.core.statestore.transactionlog.transactions.SplitFileReferencesTransaction;
 
@@ -50,11 +50,7 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
 
     @Override
     public void addFilesWithReferences(List<AllReferencesToAFile> files) throws StateStoreException {
-        Instant updateTime = clock.instant();
-        List<AllReferencesToAFile> updateFiles = files.stream()
-                .map(file -> file.withCreatedUpdateTime(updateTime))
-                .collect(toUnmodifiableList());
-        state.addTransaction(new AddFilesTransaction(updateFiles));
+        state.addTransaction(new AddFilesTransaction(files, clock.instant()));
     }
 
     @Override
@@ -75,7 +71,7 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
 
     @Override
     public void deleteGarbageCollectedFileReferenceCounts(List<String> filenames) throws StateStoreException {
-        state.addTransaction(new DeleteFilesAfterGCTransaction(filenames));
+        state.addTransaction(new DeleteFilesTransaction(filenames));
     }
 
     @Override
