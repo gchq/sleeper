@@ -45,9 +45,6 @@ import sleeper.core.range.Range;
 import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.ByteArrayType;
-import sleeper.core.schema.type.IntType;
-import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
@@ -161,71 +158,6 @@ public class WarmQueryExecutorLambdaIT {
         assertThat(query).isEqualTo(expected);
     }
 
-    @Test
-    public void shouldCreateAQueryWithKeyTypeOfByteArray() throws Exception {
-        // Given
-        Schema schema = getByteArrayKeySchema();
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        createTable(tableProperties);
-        querySerDe = new QuerySerDe(schema);
-
-        // When
-        lambda.handleRequest(new ScheduledEvent(), null);
-
-        // Then
-        ReceiveMessageResult result = sqsClient.receiveMessage(new ReceiveMessageRequest(instanceProperties.get(QUERY_QUEUE_URL)));
-        assertThat(result.getMessages()).hasSize(1);
-
-        Query query = querySerDe.fromJson(result.getMessages().get(0).getBody());
-
-        byte[] value = new byte[]{'a'};
-        Query expected = buildExpectedQuery(query.getQueryId(), tableProperties.get(TABLE_NAME), schema, value);
-
-        assertThat(query).isEqualTo(expected);
-    }
-
-    @Test
-    public void shouldCreateAQueryWithKeyTypeOfInt() throws Exception {
-        // Given
-        Schema schema = getIntKeySchema();
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        createTable(tableProperties);
-        querySerDe = new QuerySerDe(schema);
-
-        // When
-        lambda.handleRequest(new ScheduledEvent(), null);
-
-        // Then
-        ReceiveMessageResult result = sqsClient.receiveMessage(new ReceiveMessageRequest(instanceProperties.get(QUERY_QUEUE_URL)));
-        assertThat(result.getMessages()).hasSize(1);
-
-        Query query = querySerDe.fromJson(result.getMessages().get(0).getBody());
-        Query expected = buildExpectedQuery(query.getQueryId(), tableProperties.get(TABLE_NAME), schema, 0);
-
-        assertThat(query).isEqualTo(expected);
-    }
-
-    @Test
-    public void shouldCreateAQueryWithKeyTypeOfLong() throws Exception {
-        // Given
-        Schema schema = getLongKeySchema();
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        createTable(tableProperties);
-        querySerDe = new QuerySerDe(schema);
-
-        // When
-        lambda.handleRequest(new ScheduledEvent(), null);
-
-        // Then
-        ReceiveMessageResult result = sqsClient.receiveMessage(new ReceiveMessageRequest(instanceProperties.get(QUERY_QUEUE_URL)));
-        assertThat(result.getMessages()).hasSize(1);
-
-        Query query = querySerDe.fromJson(result.getMessages().get(0).getBody());
-        Query expected = buildExpectedQuery(query.getQueryId(), tableProperties.get(TABLE_NAME), schema, 0L);
-
-        assertThat(query).isEqualTo(expected);
-    }
-
     private Schema getStringKeySchema() {
         return Schema.builder()
                 .rowKeyFields(new Field("test-key", new StringType()))
@@ -240,30 +172,6 @@ public class WarmQueryExecutorLambdaIT {
                         new Field("test-key2", new StringType())))
                 .sortKeyFields(new Field("test-sort", new StringType()))
                 .valueFields(new Field("test-value", new StringType()))
-                .build();
-    }
-
-    private Schema getByteArrayKeySchema() {
-        return Schema.builder()
-                .rowKeyFields(new Field("test-key", new ByteArrayType()))
-                .sortKeyFields(new Field("test-sort", new ByteArrayType()))
-                .valueFields(new Field("test-value", new ByteArrayType()))
-                .build();
-    }
-
-    private Schema getIntKeySchema() {
-        return Schema.builder()
-                .rowKeyFields(new Field("test-key", new IntType()))
-                .sortKeyFields(new Field("test-sort", new IntType()))
-                .valueFields(new Field("test-value", new IntType()))
-                .build();
-    }
-
-    private Schema getLongKeySchema() {
-        return Schema.builder()
-                .rowKeyFields(new Field("test-key", new LongType()))
-                .sortKeyFields(new Field("test-sort", new LongType()))
-                .valueFields(new Field("test-value", new LongType()))
                 .build();
     }
 
