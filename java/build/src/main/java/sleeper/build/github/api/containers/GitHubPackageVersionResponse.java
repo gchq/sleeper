@@ -30,7 +30,8 @@ public class GitHubPackageVersionResponse {
     private final Metadata metadata;
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
-    public GitHubPackageVersionResponse(@JsonProperty("id") String id,
+    public GitHubPackageVersionResponse(
+            @JsonProperty("id") String id,
             @JsonProperty("updated_at") Instant updatedAt,
             @JsonProperty("metadata") Metadata metadata) {
         this.id = id;
