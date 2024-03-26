@@ -27,6 +27,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.ToNumberPolicy;
+import com.google.gson.reflect.TypeToken;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 
@@ -296,10 +297,8 @@ public class QueryWebSocketClient {
         }
 
         private void handleRecords(JsonObject message, String queryId) {
-            JsonArray recordBatch = message.getAsJsonArray("records");
-            List<Record> recordList = recordBatch.asList().stream()
-                    .map(record -> serde.fromJson(record, Record.class))
-                    .collect(Collectors.toList());
+            List<Record> recordList = serde.fromJson(message.get("records"), new TypeToken<List<Record>>() {
+            }.getType());
             if (!records.containsKey(queryId)) {
                 records.put(queryId, recordList);
             } else {
