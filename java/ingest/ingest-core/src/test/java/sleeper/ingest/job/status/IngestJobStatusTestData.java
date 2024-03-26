@@ -101,7 +101,6 @@ public class IngestJobStatusTestData {
                 .build();
     }
 
-
     public static ProcessRun rejectedRun(IngestJob job, Instant validationTime, String... reasons) {
         return rejectedRun(job, null, validationTime, List.of(reasons));
     }

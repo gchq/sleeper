@@ -27,9 +27,8 @@ public class GenericContainerAwsV1ClientHelper {
     }
 
     public static <B extends AwsClientBuilder<B, T>, T> T buildAwsV1Client(GenericContainer<?> container, int port, B builder) {
-        AwsClientBuilder.EndpointConfiguration endpointConfiguration =
-                new AwsClientBuilder.EndpointConfiguration("http://" + container.getHost() + ":"
-                        + container.getMappedPort(port), "us-west-2");
+        AwsClientBuilder.EndpointConfiguration endpointConfiguration = new AwsClientBuilder.EndpointConfiguration(
+                "http://" + container.getHost() + ":" + container.getMappedPort(port), "us-west-2");
         return builder
                 .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials("12345", "6789")))
                 .withEndpointConfiguration(endpointConfiguration)

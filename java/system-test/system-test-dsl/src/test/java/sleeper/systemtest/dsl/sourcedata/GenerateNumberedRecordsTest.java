@@ -137,8 +137,7 @@ public class GenerateNumberedRecordsTest {
                 .sortKeyFields(new Field("sortkey", new StringType()))
                 .valueFields(new Field("value", new StringType()))
                 .build();
-        GenerateNumberedValueOverrides overrides =
-                overrideKeyAndFieldType(ROW, StringType.class, numberStringAndZeroPadTo(3));
+        GenerateNumberedValueOverrides overrides = overrideKeyAndFieldType(ROW, StringType.class, numberStringAndZeroPadTo(3));
 
         // When/Then
         assertThat(GenerateNumberedRecords.from(schema, overrides, LongStream.of(1, 999)))

@@ -36,7 +36,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static sleeper.clients.testutil.ClientWiremockTestHelper.OPERATION_HEADER;
 
-
 public class WiremockEmrTestHelper {
     private WiremockEmrTestHelper() {
     }
@@ -98,7 +97,6 @@ public class WiremockEmrTestHelper {
                         equalTo(jobIdsCount + "")))
                 .willReturn(aResponse().withStatus(200));
     }
-
 
     public static RequestPatternBuilder terminateJobFlowsRequested() {
         return postRequestedFor(urlEqualTo("/"))

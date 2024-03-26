@@ -64,15 +64,13 @@ public class UpdatePropertiesWithTextEditor {
 
     public UpdatePropertiesRequest<InstanceProperties> openPropertiesFile(
             InstanceProperties properties, PropertyGroup propertyGroup) throws IOException, InterruptedException {
-        Properties after = editPropertiesAndMerge(properties, propertyGroup, writer ->
-                SleeperPropertiesPrettyPrinter.forInstancePropertiesWithGroup(writer, propertyGroup));
+        Properties after = editPropertiesAndMerge(properties, propertyGroup, writer -> SleeperPropertiesPrettyPrinter.forInstancePropertiesWithGroup(writer, propertyGroup));
         return buildRequest(properties, new InstanceProperties(after));
     }
 
     public UpdatePropertiesRequest<TableProperties> openPropertiesFile(
             TableProperties properties, PropertyGroup propertyGroup) throws IOException, InterruptedException {
-        Properties after = editPropertiesAndMerge(properties, propertyGroup, writer ->
-                SleeperPropertiesPrettyPrinter.forTablePropertiesWithGroup(writer, propertyGroup));
+        Properties after = editPropertiesAndMerge(properties, propertyGroup, writer -> SleeperPropertiesPrettyPrinter.forTablePropertiesWithGroup(writer, propertyGroup));
         return buildRequest(properties, TableProperties.reinitialise(properties, after));
     }
 

@@ -44,8 +44,8 @@ class PartitionsStatusReportScreenTest extends AdminClientMockStoreBase {
     void shouldRunPartitionStatusReport() throws Exception {
         // Given
         StateStore stateStore = StateStoreTestBuilder.from(createPartitionsBuilder()
-                        .leavesWithSplits(Arrays.asList("A", "B"), List.of("aaa"))
-                        .parentJoining("parent", "A", "B"))
+                .leavesWithSplits(Arrays.asList("A", "B"), List.of("aaa"))
+                .parentJoining("parent", "A", "B"))
                 .singleFileInEachLeafPartitionWithRecords(5)
                 .buildStateStore();
         setStateStoreForTable("test-table", stateStore);
