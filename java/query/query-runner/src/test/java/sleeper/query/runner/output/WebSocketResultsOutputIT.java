@@ -34,6 +34,7 @@ import java.util.Map;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
@@ -80,10 +81,11 @@ public class WebSocketResultsOutputIT {
         ResultsOutputInfo result = out.publish(new QueryOrLeafPartitionQuery(query), new WrappedIterator<>(records.iterator()));
 
         // Then
+        //"{"records":[{"values":{"id":"record1"}}],"message":"records","queryId":"query1"}"
         verify(1, postRequestedFor(url).withRequestBody(
                 matchingJsonPath("$.queryId", equalTo("query1"))
                         .and(matchingJsonPath("$.message", equalTo("records"))
-                                .and(matchingJsonPath("$.records", equalTo("[{\"values\":{\"id\":\"record1\"}}]"))))));
+                                .and(matchingJsonPath("$.records", equalToJson("[{\"values\":{\"id\":\"record1\"}}]"))))));
         assertThat(result.getRecordCount()).isZero();
         assertThat(result.getError()).hasMessageContaining("GoneException");
     }

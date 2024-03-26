@@ -515,7 +515,7 @@ public class SqsQueryProcessorLambdaIT {
             assertThat(status.getLastKnownState()).isEqualTo(COMPLETED);
             assertThat(status.getRecordCount().longValue()).isEqualTo(28);
             wireMockServer.verify(28, postRequestedFor(url));
-            wireMockServer.verify(1, postRequestedFor(url).withRequestBody(containing("\\\"day\\\":2,")));
+            wireMockServer.verify(1, postRequestedFor(url).withRequestBody(containing("\"day\":2,")));
         } finally {
             wireMockServer.stop();
         }
