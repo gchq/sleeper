@@ -175,7 +175,7 @@ class S3PartitionStore implements PartitionStore {
             Path path = new Path(stateStorePath + "/partitions");
             path.getFileSystem(conf).delete(path, true);
             s3RevisionIdStore.deletePartitionsRevision();
-        } catch (Exception e) {
+        } catch (IOException | RuntimeException e) {
             throw new StateStoreException("Failed deleting partitions file", e);
         }
     }

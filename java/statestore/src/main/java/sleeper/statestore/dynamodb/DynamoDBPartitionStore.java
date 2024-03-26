@@ -203,7 +203,7 @@ class DynamoDBPartitionStore implements PartitionStore {
                             .build())
                     .withKeyConditionExpression("#TableId = :table_id"),
                     partitionFormat::getKey);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             throw new StateStoreException("Failed deleting partitions", e);
         }
     }

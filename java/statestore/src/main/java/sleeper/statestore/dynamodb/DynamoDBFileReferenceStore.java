@@ -529,7 +529,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
         try {
             clearDynamoTable(activeTableName, fileReferenceFormat::getActiveFileKey);
             clearDynamoTable(fileReferenceCountTableName, item -> fileReferenceFormat.createReferenceCountKey(item.get(FILENAME).getS()));
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             throw new StateStoreException("Failed clearing files", e);
         }
     }
