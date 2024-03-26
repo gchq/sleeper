@@ -16,27 +16,37 @@
 package sleeper.core.statestore.transactionlog.transactions;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionSerDe.PartitionJsonSerDe;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.AllReferencesToAFileSerDe;
+import sleeper.core.statestore.FileReferenceSerDe;
 import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.util.GsonConfig;
 
 public class TransactionSerDe {
     private final Gson gson;
+    private final Gson gsonPrettyPrint;
 
     public TransactionSerDe(Schema schema) {
-        gson = GsonConfig.standardBuilder()
+        GsonBuilder builder = GsonConfig.standardBuilder()
                 .registerTypeAdapter(Partition.class, new PartitionJsonSerDe(schema))
                 .registerTypeAdapter(AllReferencesToAFile.class, AllReferencesToAFileSerDe.noUpdateTimes())
-                .serializeNulls().create();
+                .addSerializationExclusionStrategy(FileReferenceSerDe.excludeUpdateTimes())
+                .serializeNulls();
+        gson = builder.create();
+        gsonPrettyPrint = builder.setPrettyPrinting().create();
     }
 
     public String toJson(StateStoreTransaction transaction) {
         return gson.toJson(transaction);
+    }
+
+    public String toJsonPrettyPrint(StateStoreTransaction transaction) {
+        return gsonPrettyPrint.toJson(transaction);
     }
 
     public StateStoreTransaction toTransaction(TransactionType type, String json) {

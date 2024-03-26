@@ -7,12 +7,14 @@
         {
           "partitionId": "L",
           "numberOfRecords": 100,
+          "jobId": null,
           "countApproximate": true,
           "onlyContainsDataForThisPartition": false
         },
         {
           "partitionId": "R",
           "numberOfRecords": 100,
+          "jobId": null,
           "countApproximate": true,
           "onlyContainsDataForThisPartition": false
         }

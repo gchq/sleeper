@@ -15,7 +15,7 @@
  */
 package sleeper.core.statestore.transactionlog.transactions;
 
-import org.approvaltests.JsonApprovals;
+import org.approvaltests.Approvals;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionTree;
@@ -40,6 +40,17 @@ import static sleeper.core.statestore.SplitFileReferenceRequest.splitFileToChild
 
 public class TransactionSerDeTest {
 
+    private static void verify(Schema schema, StateStoreTransaction transaction) {
+        // When
+        TransactionSerDe serDe = new TransactionSerDe(schema);
+        TransactionType type = TransactionType.getType(transaction);
+        String json = serDe.toJsonPrettyPrint(transaction);
+
+        // Then
+        assertThat(serDe.toTransaction(type, json)).isEqualTo(transaction);
+        Approvals.verify(json);
+    }
+
     @Test
     void shouldSerDeAddFiles() {
         // Given
@@ -54,15 +65,7 @@ public class TransactionSerDeTest {
                         updateTime)
                         .collect(toUnmodifiableList()),
                 updateTime);
-
-        // When
-        TransactionSerDe serDe = new TransactionSerDe(schema);
-        TransactionType type = TransactionType.getType(transaction);
-        String json = serDe.toJson(transaction);
-
-        // Then
-        assertThat(serDe.toTransaction(type, json)).isEqualTo(transaction);
-        JsonApprovals.verifyJson(json);
+        verify(schema, transaction);
     }
 
     @Test
@@ -83,15 +86,7 @@ public class TransactionSerDeTest {
                         referenceForChildPartition(file, "R")),
                         updateTime).collect(toUnmodifiableList()),
                 updateTime);
-
-        // When
-        TransactionSerDe serDe = new TransactionSerDe(schema);
-        TransactionType type = TransactionType.getType(transaction);
-        String json = serDe.toJson(transaction);
-
-        // Then
-        assertThat(serDe.toTransaction(type, json)).isEqualTo(transaction);
-        JsonApprovals.verifyJson(json);
+        verify(schema, transaction);
     }
 
     @Test
@@ -103,45 +98,21 @@ public class TransactionSerDeTest {
                 assignJobOnPartitionToFiles("job2", "L",
                         List.of("file3.parquet", "file4.parquet"))),
                 Instant.parse("2024-03-26T09:44:01Z"));
-
-        // When
-        TransactionSerDe serDe = new TransactionSerDe(schemaWithKey("key"));
-        TransactionType type = TransactionType.getType(transaction);
-        String json = serDe.toJson(transaction);
-
-        // Then
-        assertThat(serDe.toTransaction(type, json)).isEqualTo(transaction);
-        JsonApprovals.verifyJson(json);
+        verify(schemaWithKey("key"), transaction);
     }
 
     @Test
     void shouldSerDeClearFiles() {
         // Given
         StateStoreTransaction transaction = new ClearFilesTransaction();
-
-        // When
-        TransactionSerDe serDe = new TransactionSerDe(schemaWithKey("key"));
-        TransactionType type = TransactionType.getType(transaction);
-        String json = serDe.toJson(transaction);
-
-        // Then
-        assertThat(serDe.toTransaction(type, json)).isEqualTo(transaction);
-        JsonApprovals.verifyJson(json);
+        verify(schemaWithKey("key"), transaction);
     }
 
     @Test
     void shouldSerDeDeleteFiles() {
         // Given
         StateStoreTransaction transaction = new DeleteFilesTransaction(List.of("file1.parquet", "file2.parquet"));
-
-        // When
-        TransactionSerDe serDe = new TransactionSerDe(schemaWithKey("key"));
-        TransactionType type = TransactionType.getType(transaction);
-        String json = serDe.toJson(transaction);
-
-        // Then
-        assertThat(serDe.toTransaction(type, json)).isEqualTo(transaction);
-        JsonApprovals.verifyJson(json);
+        verify(schemaWithKey("key"), transaction);
     }
 
     @Test
@@ -154,15 +125,7 @@ public class TransactionSerDeTest {
                 .splitToNewChildren("L", "LL", "LR", "g")
                 .splitToNewChildren("R", "RL", "RR", "u")
                 .buildList());
-
-        // When
-        TransactionSerDe serDe = new TransactionSerDe(schema);
-        TransactionType type = TransactionType.getType(transaction);
-        String json = serDe.toJson(transaction);
-
-        // Then
-        assertThat(serDe.toTransaction(type, json)).isEqualTo(transaction);
-        JsonApprovals.verifyJson(json);
+        verify(schema, transaction);
     }
 
     @Test
@@ -175,15 +138,7 @@ public class TransactionSerDeTest {
         StateStoreTransaction transaction = new ReplaceFileReferencesTransaction(
                 "job", "root", List.of("file1.parquet", "file2.parquet"),
                 fileFactory.rootFile("file3.parquet", 100), updateTime);
-
-        // When
-        TransactionSerDe serDe = new TransactionSerDe(schema);
-        TransactionType type = TransactionType.getType(transaction);
-        String json = serDe.toJson(transaction);
-
-        // Then
-        assertThat(serDe.toTransaction(type, json)).isEqualTo(transaction);
-        JsonApprovals.verifyJson(json);
+        verify(schema, transaction);
     }
 
     @Test
@@ -204,15 +159,7 @@ public class TransactionSerDeTest {
                 splitFileToChildPartitions(
                         fileFactory.partitionFile("L", "file2.parquet", 200), "LL", "LR")),
                 updateTime);
-
-        // When
-        TransactionSerDe serDe = new TransactionSerDe(schema);
-        TransactionType type = TransactionType.getType(transaction);
-        String json = serDe.toJson(transaction);
-
-        // Then
-        assertThat(serDe.toTransaction(type, json)).isEqualTo(transaction);
-        JsonApprovals.verifyJson(json);
+        verify(schema, transaction);
     }
 
     @Test
@@ -227,14 +174,6 @@ public class TransactionSerDeTest {
         StateStoreTransaction transaction = new SplitPartitionTransaction(
                 partitions.getPartition("L"),
                 List.of(partitions.getPartition("LL"), partitions.getPartition("LR")));
-
-        // When
-        TransactionSerDe serDe = new TransactionSerDe(schema);
-        TransactionType type = TransactionType.getType(transaction);
-        String json = serDe.toJson(transaction);
-
-        // Then
-        assertThat(serDe.toTransaction(type, json)).isEqualTo(transaction);
-        JsonApprovals.verifyJson(json);
+        verify(schema, transaction);
     }
 }

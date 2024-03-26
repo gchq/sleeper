@@ -50,14 +50,8 @@ public class AllReferencesToAFileSerDe {
             JsonArray referencesArr = object.get("references").getAsJsonArray();
             for (JsonElement referenceElem : referencesArr) {
                 JsonObject referenceObj = referenceElem.getAsJsonObject();
-                references.add(FileReference.builder()
-                        .filename(filename)
-                        .partitionId(referenceObj.get("partitionId").getAsString())
-                        .jobId(readNullableString(referenceObj.get("jobId")))
-                        .numberOfRecords(readNullableLong(referenceObj.get("numberOfRecords")))
-                        .countApproximate(referenceObj.get("countApproximate").getAsBoolean())
-                        .onlyContainsDataForThisPartition(referenceObj.get("onlyContainsDataForThisPartition").getAsBoolean())
-                        .build());
+                referenceObj.addProperty("filename", filename);
+                references.add(context.deserialize(referenceObj, FileReference.class));
             }
             return AllReferencesToAFile.builder()
                     .filename(filename)
@@ -73,32 +67,12 @@ public class AllReferencesToAFileSerDe {
             object.addProperty("totalReferenceCount", file.getTotalReferenceCount());
             JsonArray referencesArr = new JsonArray();
             for (FileReference reference : file.getInternalReferences()) {
-                JsonObject referenceObj = new JsonObject();
-                referenceObj.addProperty("partitionId", reference.getPartitionId());
-                referenceObj.addProperty("jobId", reference.getJobId());
-                referenceObj.addProperty("numberOfRecords", reference.getNumberOfRecords());
-                referenceObj.addProperty("countApproximate", reference.isCountApproximate());
-                referenceObj.addProperty("onlyContainsDataForThisPartition", reference.onlyContainsDataForThisPartition());
+                JsonObject referenceObj = context.serialize(reference).getAsJsonObject();
+                referenceObj.remove("filename");
                 referencesArr.add(referenceObj);
             }
             object.add("references", referencesArr);
             return object;
-        }
-    }
-
-    private static String readNullableString(JsonElement element) {
-        if (element.isJsonNull()) {
-            return null;
-        } else {
-            return element.getAsString();
-        }
-    }
-
-    private static Long readNullableLong(JsonElement element) {
-        if (element.isJsonNull()) {
-            return null;
-        } else {
-            return element.getAsLong();
         }
     }
 }
