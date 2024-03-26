@@ -96,8 +96,8 @@ public class TestUtils {
         return tableProperties;
     }
 
-    public static void ingestData(AmazonDynamoDB dynamoClient, String dataDir, InstanceProperties instanceProperties,
-            TableProperties table) {
+    public static void ingestData(
+            AmazonDynamoDB dynamoClient, String dataDir, InstanceProperties instanceProperties, TableProperties table) {
         try {
             IngestFactory factory = IngestFactory.builder()
                     .objectFactory(ObjectFactory.noUserJars())
