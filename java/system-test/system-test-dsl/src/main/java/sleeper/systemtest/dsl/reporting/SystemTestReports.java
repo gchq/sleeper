@@ -35,7 +35,8 @@ public class SystemTestReports {
         return new Builder(context);
     }
 
-    public static SystemTestBuilder builder(ReportingContext context,
+    public static SystemTestBuilder builder(
+            ReportingContext context,
             PartitionReportDriver partitionDriver,
             IngestReportsDriver ingestDriver,
             CompactionReportsDriver compactionDriver) {
@@ -70,7 +71,8 @@ public class SystemTestReports {
         private final IngestReportsDriver ingestDriver;
         private final CompactionReportsDriver compactionDriver;
 
-        private SystemTestBuilder(ReportingContext context,
+        private SystemTestBuilder(
+                ReportingContext context,
                 PartitionReportDriver partitionDriver,
                 IngestReportsDriver ingestDriver,
                 CompactionReportsDriver compactionDriver) {

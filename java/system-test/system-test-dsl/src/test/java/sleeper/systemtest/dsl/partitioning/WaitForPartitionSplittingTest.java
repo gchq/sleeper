@@ -45,8 +45,9 @@ class WaitForPartitionSplittingTest {
         void shouldFindSplitsNotFinishedWhenOnePartitionStillNeedsSplitting() {
             // Given
             TableProperties tableProperties = createTablePropertiesWithSplitThreshold("10");
-            StateStore stateStore = StateStoreTestBuilder.from(partitionsBuilder(tableProperties)
-                    .singlePartition("root"))
+            StateStore stateStore = StateStoreTestBuilder.from(
+                    partitionsBuilder(tableProperties)
+                            .singlePartition("root"))
                     .partitionFileWithRecords("root", "test.parquet", 11)
                     .buildStateStore();
 
@@ -62,8 +63,9 @@ class WaitForPartitionSplittingTest {
         void shouldFindSplitsFinishedWhenNoPartitionsNeedSplitting() {
             // Given
             TableProperties tableProperties = createTablePropertiesWithSplitThreshold("10");
-            StateStore stateStore = StateStoreTestBuilder.from(partitionsBuilder(tableProperties)
-                    .singlePartition("root"))
+            StateStore stateStore = StateStoreTestBuilder.from(
+                    partitionsBuilder(tableProperties)
+                            .singlePartition("root"))
                     .partitionFileWithRecords("root", "test.parquet", 5)
                     .buildStateStore();
 
@@ -79,13 +81,15 @@ class WaitForPartitionSplittingTest {
         void shouldFindSplitFinishedWhenOnePartitionWasSplitButSplittingCompactionHasNotHappenedYet() {
             // Given
             TableProperties tableProperties = createTablePropertiesWithSplitThreshold("10");
-            StateStore before = StateStoreTestBuilder.from(partitionsBuilder(tableProperties)
-                    .singlePartition("root"))
+            StateStore before = StateStoreTestBuilder.from(
+                    partitionsBuilder(tableProperties)
+                            .singlePartition("root"))
                     .partitionFileWithRecords("root", "test.parquet", 11)
                     .buildStateStore();
-            StateStore after = StateStoreTestBuilder.from(partitionsBuilder(tableProperties)
-                    .rootFirst("root")
-                    .splitToNewChildren("root", "left", "right", "split point"))
+            StateStore after = StateStoreTestBuilder.from(
+                    partitionsBuilder(tableProperties)
+                            .rootFirst("root")
+                            .splitToNewChildren("root", "left", "right", "split point"))
                     .partitionFileWithRecords("root", "test.parquet", 11)
                     .buildStateStore();
 
@@ -101,16 +105,18 @@ class WaitForPartitionSplittingTest {
         void shouldFindSplitsNotFinishedWhenTwoPartitionsNeededSplittingAndOneIsFinished() {
             // Given
             TableProperties tableProperties = createTablePropertiesWithSplitThreshold("10");
-            StateStore before = StateStoreTestBuilder.from(partitionsBuilder(tableProperties)
-                    .rootFirst("root")
-                    .splitToNewChildren("root", "left", "right", "split point"))
+            StateStore before = StateStoreTestBuilder.from(
+                    partitionsBuilder(tableProperties)
+                            .rootFirst("root")
+                            .splitToNewChildren("root", "left", "right", "split point"))
                     .partitionFileWithRecords("left", "left.parquet", 11)
                     .partitionFileWithRecords("right", "right.parquet", 11)
                     .buildStateStore();
-            StateStore after = StateStoreTestBuilder.from(partitionsBuilder(tableProperties)
-                    .rootFirst("root")
-                    .splitToNewChildren("root", "left", "right", "split point")
-                    .splitToNewChildren("left", "left left", "left right", "left split"))
+            StateStore after = StateStoreTestBuilder.from(
+                    partitionsBuilder(tableProperties)
+                            .rootFirst("root")
+                            .splitToNewChildren("root", "left", "right", "split point")
+                            .splitToNewChildren("left", "left left", "left right", "left split"))
                     .partitionFileWithRecords("left", "left.parquet", 11)
                     .partitionFileWithRecords("right", "right.parquet", 11)
                     .buildStateStore();
@@ -127,17 +133,19 @@ class WaitForPartitionSplittingTest {
         void shouldFindSplitsFinishedWhenTwoPartitionsNeededSplittingAndBothAreFinished() {
             // Given
             TableProperties tableProperties = createTablePropertiesWithSplitThreshold("10");
-            StateStore before = StateStoreTestBuilder.from(partitionsBuilder(tableProperties)
-                    .rootFirst("root")
-                    .splitToNewChildren("root", "left", "right", "split point"))
+            StateStore before = StateStoreTestBuilder.from(
+                    partitionsBuilder(tableProperties)
+                            .rootFirst("root")
+                            .splitToNewChildren("root", "left", "right", "split point"))
                     .partitionFileWithRecords("left", "left.parquet", 11)
                     .partitionFileWithRecords("right", "right.parquet", 11)
                     .buildStateStore();
-            StateStore after = StateStoreTestBuilder.from(partitionsBuilder(tableProperties)
-                    .rootFirst("root")
-                    .splitToNewChildren("root", "left", "right", "split point")
-                    .splitToNewChildren("left", "left left", "left right", "left split")
-                    .splitToNewChildren("right", "right left", "right right", "right split"))
+            StateStore after = StateStoreTestBuilder.from(
+                    partitionsBuilder(tableProperties)
+                            .rootFirst("root")
+                            .splitToNewChildren("root", "left", "right", "split point")
+                            .splitToNewChildren("left", "left left", "left right", "left split")
+                            .splitToNewChildren("right", "right left", "right right", "right split"))
                     .partitionFileWithRecords("left", "left.parquet", 11)
                     .partitionFileWithRecords("right", "right.parquet", 11)
                     .buildStateStore();
@@ -158,13 +166,15 @@ class WaitForPartitionSplittingTest {
         void shouldFindSplitFinishedWhenOnePartitionWasSplitButANewSplitIsNeeded() {
             // Given
             TableProperties tableProperties = createTablePropertiesWithSplitThreshold("10");
-            StateStore before = StateStoreTestBuilder.from(partitionsBuilder(tableProperties)
-                    .singlePartition("root"))
+            StateStore before = StateStoreTestBuilder.from(
+                    partitionsBuilder(tableProperties)
+                            .singlePartition("root"))
                     .partitionFileWithRecords("root", "test.parquet", 11)
                     .buildStateStore();
-            StateStore after = StateStoreTestBuilder.from(partitionsBuilder(tableProperties)
-                    .rootFirst("root")
-                    .splitToNewChildren("root", "left", "right", "split point"))
+            StateStore after = StateStoreTestBuilder.from(
+                    partitionsBuilder(tableProperties)
+                            .rootFirst("root")
+                            .splitToNewChildren("root", "left", "right", "split point"))
                     .partitionFileWithRecords("root", "test.parquet", 11)
                     .partitionFileWithRecords("left", "left.parquet", 11)
                     .buildStateStore();
@@ -181,9 +191,10 @@ class WaitForPartitionSplittingTest {
         void shouldFindSplitFinishedWhenTableIsReinitialisedAndDataMovedToRoot() {
             // Given
             TableProperties tableProperties = createTablePropertiesWithSplitThreshold("10");
-            StateStore before = StateStoreTestBuilder.from(partitionsBuilder(tableProperties)
-                    .rootFirst("root")
-                    .splitToNewChildren("root", "left", "right", "split point"))
+            StateStore before = StateStoreTestBuilder.from(
+                    partitionsBuilder(tableProperties)
+                            .rootFirst("root")
+                            .splitToNewChildren("root", "left", "right", "split point"))
                     .partitionFileWithRecords("left", "left.parquet", 11)
                     .buildStateStore();
             StateStore after = StateStoreTestBuilder.from(partitionsBuilder(tableProperties)
@@ -203,14 +214,16 @@ class WaitForPartitionSplittingTest {
         void shouldFindSplitNotFinishedWhenTableIsReinitialisedChangingRegionButPartitionStillNeedsSplitting() {
             // Given
             TableProperties tableProperties = createTablePropertiesWithSplitThreshold("10");
-            StateStore before = StateStoreTestBuilder.from(partitionsBuilder(tableProperties)
-                    .rootFirst("root")
-                    .splitToNewChildren("root", "left", "right", "split point before"))
+            StateStore before = StateStoreTestBuilder.from(
+                    partitionsBuilder(tableProperties)
+                            .rootFirst("root")
+                            .splitToNewChildren("root", "left", "right", "split point before"))
                     .partitionFileWithRecords("left", "left.parquet", 11)
                     .buildStateStore();
-            StateStore after = StateStoreTestBuilder.from(partitionsBuilder(tableProperties)
-                    .rootFirst("root")
-                    .splitToNewChildren("root", "left", "right", "split point after"))
+            StateStore after = StateStoreTestBuilder.from(
+                    partitionsBuilder(tableProperties)
+                            .rootFirst("root")
+                            .splitToNewChildren("root", "left", "right", "split point after"))
                     .partitionFileWithRecords("left", "left.parquet", 11)
                     .buildStateStore();
 
