@@ -128,7 +128,8 @@ class FailedDynamoDBSplitRequests {
         private final CancellationReason reasonDeleteOldFailed;
         private final List<CancellationReason> reasonsAddNewFailed;
 
-        RequestReferenceFailures(SplitFileReferenceRequest request,
+        RequestReferenceFailures(
+                SplitFileReferenceRequest request,
                 CancellationReason reasonDeleteOldFailed,
                 List<CancellationReason> reasonsAddNewFailed) {
             this.request = request;
