@@ -28,6 +28,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.ToNumberPolicy;
 import com.google.gson.reflect.TypeToken;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 
@@ -213,7 +214,7 @@ public class QueryWebSocketClient {
     }
 
     public static class WebSocketMessageHandler {
-        private final Gson serde = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE).create();
+        private static final Gson GSON = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE).create();
         private final Set<String> outstandingQueries = new HashSet<>();
         private final Map<String, List<String>> subqueryIdByParentQueryId = new HashMap<>();
         private final Map<String, List<Record>> records = new TreeMap<>();
@@ -272,7 +273,7 @@ public class QueryWebSocketClient {
 
         private Optional<JsonObject> deserialiseMessage(String json) {
             try {
-                JsonObject message = serde.fromJson(json, JsonObject.class);
+                JsonObject message = GSON.fromJson(json, JsonObject.class);
                 if (!message.has("queryId")) {
                     out.println("Received message without queryId from API:");
                     out.println("  " + json);
@@ -315,8 +316,9 @@ public class QueryWebSocketClient {
             });
         }
 
+        @SuppressFBWarnings("SIC_INNER_SHOULD_BE_STATIC_ANON") // TypeToken is intended to be used as an anonymous class
         private void handleRecords(JsonObject message, String queryId) {
-            List<Record> recordList = serde.fromJson(message.get("records"), new TypeToken<List<Record>>() {
+            List<Record> recordList = GSON.fromJson(message.get("records"), new TypeToken<List<Record>>() {
             }.getType());
             if (!records.containsKey(queryId)) {
                 records.put(queryId, recordList);
