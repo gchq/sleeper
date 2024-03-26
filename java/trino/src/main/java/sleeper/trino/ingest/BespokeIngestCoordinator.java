@@ -38,7 +38,8 @@ public class BespokeIngestCoordinator {
     private BespokeIngestCoordinator() {
     }
 
-    public static IngestCoordinator<Page> asyncFromPage(ObjectFactory objectFactory,
+    public static IngestCoordinator<Page> asyncFromPage(
+            ObjectFactory objectFactory,
             StateStore sleeperStateStore,
             InstanceProperties instanceProperties,
             TableProperties tableProperties,

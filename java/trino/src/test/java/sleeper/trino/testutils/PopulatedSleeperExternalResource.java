@@ -96,8 +96,8 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
         this(Map.of(), tableDefinitions, new SleeperConfig());
     }
 
-    public PopulatedSleeperExternalResource(Map<String, String> extraPropertiesForQueryRunner,
-            List<TableDefinition> tableDefinitions,
+    public PopulatedSleeperExternalResource(
+            Map<String, String> extraPropertiesForQueryRunner, List<TableDefinition> tableDefinitions,
             SleeperConfig sleeperConfig) {
         this.extraPropertiesForQueryRunner = requireNonNull(extraPropertiesForQueryRunner);
         this.tableDefinitions = requireNonNull(tableDefinitions);
@@ -116,10 +116,9 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
         return buildAwsV2Client(localStackContainer, LocalStackContainer.Service.S3, S3AsyncClient.builder());
     }
 
-    private void ingestData(InstanceProperties instanceProperties,
-            StateStoreProvider stateStoreProvider,
-            TableProperties tableProperties,
-            Iterator<Record> recordIterator) throws Exception {
+    private void ingestData(
+            InstanceProperties instanceProperties, StateStoreProvider stateStoreProvider,
+            TableProperties tableProperties, Iterator<Record> recordIterator) throws Exception {
         IngestFactory.builder()
                 .objectFactory(ObjectFactory.noUserJars())
                 .localDir(createTempDirectory(UUID.randomUUID().toString()).toString())
@@ -130,8 +129,7 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
                 .build().ingestFromRecordIterator(tableProperties, recordIterator);
     }
 
-    private TableProperties createTable(InstanceProperties instanceProperties,
-            TableDefinition tableDefinition) {
+    private TableProperties createTable(InstanceProperties instanceProperties, TableDefinition tableDefinition) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, tableDefinition.schema);
         tableProperties.set(TABLE_NAME, tableDefinition.tableName);
         S3TableProperties.getStore(instanceProperties, s3Client, dynamoDBClient).save(tableProperties);
@@ -228,10 +226,8 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
         public final List<Object> splitPoints;
         public final Stream<Record> recordStream;
 
-        public TableDefinition(String tableName,
-                Schema schema,
-                List<Object> splitPoints,
-                Stream<Record> recordStream) {
+        public TableDefinition(
+                String tableName, Schema schema, List<Object> splitPoints, Stream<Record> recordStream) {
             this.tableName = tableName;
             this.schema = schema;
             this.splitPoints = splitPoints;

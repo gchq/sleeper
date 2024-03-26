@@ -75,7 +75,8 @@ public class SleeperPartitioningHandle implements ConnectorPartitioningHandle {
     }
 
     @JsonCreator
-    public SleeperPartitioningHandle(@JsonProperty("sleeperColumnHandlesInOrder") List<SleeperColumnHandle> sleeperColumnHandlesInOrder,
+    public SleeperPartitioningHandle(
+            @JsonProperty("sleeperColumnHandlesInOrder") List<SleeperColumnHandle> sleeperColumnHandlesInOrder,
             @JsonProperty("partitionMinKeysAsString") String partitionMinKeysAsString) {
         this(sleeperColumnHandlesInOrder,
                 SleeperPartitioningHandle.decodeKeyListFromString(partitionMinKeysAsString));
