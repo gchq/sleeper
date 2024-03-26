@@ -27,7 +27,6 @@ import sleeper.core.statestore.transactionlog.TransactionLogHead;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Objects;
 
 public class ReplaceFileReferencesTransaction implements StateStoreTransaction {
 
@@ -43,7 +42,7 @@ public class ReplaceFileReferencesTransaction implements StateStoreTransaction {
         this.jobId = jobId;
         this.partitionId = partitionId;
         this.inputFiles = inputFiles;
-        this.newReference = newReference.toBuilder().lastStateStoreUpdateTime(null).build();
+        this.newReference = newReference;
         this.updateTime = updateTime;
         FileReference.validateNewReferenceForJobOutput(inputFiles, newReference);
     }
@@ -70,29 +69,5 @@ public class ReplaceFileReferencesTransaction implements StateStoreTransaction {
             state.files().updateFile(filename, file -> file.removeReferenceForPartition(partitionId, updateTime));
         }
         state.files().add(AllReferencesToAFile.fileWithOneReference(newReference, updateTime));
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(jobId, partitionId, inputFiles, newReference, updateTime);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (!(obj instanceof ReplaceFileReferencesTransaction)) {
-            return false;
-        }
-        ReplaceFileReferencesTransaction other = (ReplaceFileReferencesTransaction) obj;
-        return Objects.equals(jobId, other.jobId) && Objects.equals(partitionId, other.partitionId) && Objects.equals(inputFiles, other.inputFiles) && Objects.equals(newReference, other.newReference)
-                && Objects.equals(updateTime, other.updateTime);
-    }
-
-    @Override
-    public String toString() {
-        return "ReplaceFileReferencesTransaction{jobId=" + jobId + ", partitionId=" + partitionId + ", inputFiles=" + inputFiles + ", newReference=" + newReference + ", updateTime=" + updateTime
-                + "}";
     }
 }

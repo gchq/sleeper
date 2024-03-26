@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
 @SuppressFBWarnings("URF_UNREAD_FIELD") // Fields are read by GSON
 public class WaitForJobsStatus {
 
-    private static final Gson GSON = GsonConfig.standardBuilder().setPrettyPrinting()
+    private static final Gson GSON = GsonConfig.standardBuilder()
             .registerTypeAdapter(Duration.class, durationSerializer())
             .registerTypeAdapter(Instant.class, instantSerializer())
             .create();

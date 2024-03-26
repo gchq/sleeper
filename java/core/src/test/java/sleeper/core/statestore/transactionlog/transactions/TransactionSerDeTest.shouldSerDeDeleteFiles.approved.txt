@@ -1,6 +1,0 @@
-{
-  "filenames": [
-    "file1.parquet",
-    "file2.parquet"
-  ]
-}

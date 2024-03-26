@@ -28,9 +28,6 @@ import sleeper.core.statestore.transactionlog.TransactionLogHead;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Objects;
-
-import static java.util.stream.Collectors.toUnmodifiableList;
 
 public class SplitFileReferencesTransaction implements StateStoreTransaction {
 
@@ -38,9 +35,7 @@ public class SplitFileReferencesTransaction implements StateStoreTransaction {
     private final Instant updateTime;
 
     public SplitFileReferencesTransaction(List<SplitFileReferenceRequest> requests, Instant updateTime) {
-        this.requests = requests.stream()
-                .map(SplitFileReferenceRequest::withNoUpdateTimes)
-                .collect(toUnmodifiableList());
+        this.requests = requests;
         this.updateTime = updateTime;
     }
 
@@ -68,27 +63,5 @@ public class SplitFileReferencesTransaction implements StateStoreTransaction {
             state.files().updateFile(request.getFilename(),
                     file -> file.splitReferenceFromPartition(request.getFromPartitionId(), request.getNewReferences(), updateTime));
         }
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(requests, updateTime);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (!(obj instanceof SplitFileReferencesTransaction)) {
-            return false;
-        }
-        SplitFileReferencesTransaction other = (SplitFileReferencesTransaction) obj;
-        return Objects.equals(requests, other.requests) && Objects.equals(updateTime, other.updateTime);
-    }
-
-    @Override
-    public String toString() {
-        return "SplitFileReferencesTransaction{requests=" + requests + ", updateTime=" + updateTime + "}";
     }
 }

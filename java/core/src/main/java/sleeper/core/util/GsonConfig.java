@@ -35,7 +35,8 @@ public class GsonConfig {
 
     public static GsonBuilder standardBuilder() {
         return new GsonBuilder().serializeSpecialFloatingPointValues()
-                .registerTypeAdapter(Instant.class, new InstantSerDe());
+                .registerTypeAdapter(Instant.class, new InstantSerDe())
+                .setPrettyPrinting();
     }
 
     private static class InstantSerDe implements JsonSerializer<Instant>, JsonDeserializer<Instant> {

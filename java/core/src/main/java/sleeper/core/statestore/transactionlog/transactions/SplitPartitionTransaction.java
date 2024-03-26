@@ -22,7 +22,6 @@ import sleeper.core.statestore.transactionlog.TransactionLogHead;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 
 import static java.util.stream.Collectors.toUnmodifiableSet;
@@ -68,27 +67,5 @@ public class SplitPartitionTransaction implements StateStoreTransaction {
     public void apply(TransactionLogHead state) {
         state.partitions().put(parent);
         newChildren.forEach(state.partitions()::put);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(parent, newChildren);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (!(obj instanceof SplitPartitionTransaction)) {
-            return false;
-        }
-        SplitPartitionTransaction other = (SplitPartitionTransaction) obj;
-        return Objects.equals(parent, other.parent) && Objects.equals(newChildren, other.newChildren);
-    }
-
-    @Override
-    public String toString() {
-        return "SplitPartitionTransaction{parent=" + parent + ", newChildren=" + newChildren + "}";
     }
 }
