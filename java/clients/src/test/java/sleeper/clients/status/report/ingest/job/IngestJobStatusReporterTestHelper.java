@@ -43,7 +43,7 @@ public class IngestJobStatusReporterTestHelper {
     }
 
     public static String getStandardReport(JobQuery.Type query, List<IngestJobStatus> statusList, int numberInQueue,
-                                           Map<String, Integer> persistentEmrStepCount) {
+            Map<String, Integer> persistentEmrStepCount) {
         ToStringPrintStream output = new ToStringPrintStream();
         new StandardIngestJobStatusReporter(output.getPrintStream()).report(statusList, query,
                 ingestMessageCount(numberInQueue), persistentEmrStepCount);
@@ -55,7 +55,7 @@ public class IngestJobStatusReporterTestHelper {
     }
 
     public static String getJsonReport(JobQuery.Type query, List<IngestJobStatus> statusList, int numberInQueue,
-                                       Map<String, Integer> persistentEmrStepCount) {
+            Map<String, Integer> persistentEmrStepCount) {
         ToStringPrintStream output = new ToStringPrintStream();
         new JsonIngestJobStatusReporter(output.getPrintStream()).report(statusList, query,
                 ingestMessageCount(numberInQueue), persistentEmrStepCount);

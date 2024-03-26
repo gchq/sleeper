@@ -48,7 +48,7 @@ public class IngestRandomDataToDocker {
     private final long numberOfRecords;
 
     public IngestRandomDataToDocker(InstanceProperties instanceProperties, TableProperties tableProperties,
-                                    AmazonDynamoDB dynamoDB, long numberOfRecords) {
+            AmazonDynamoDB dynamoDB, long numberOfRecords) {
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
         this.dynamoDB = dynamoDB;

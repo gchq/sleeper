@@ -46,12 +46,10 @@ class FileIngestRequestTestHelperTest {
         assertThat(List.of(
                 helper.fileRequest().build(),
                 helper.fileRequest().build(),
-                helper.fileRequest().build()
-        )).containsExactly(
-                assertHelper.fileRequest().file("test-bucket/auto-named-file-1.parquet").build(),
-                assertHelper.fileRequest().file("test-bucket/auto-named-file-2.parquet").build(),
-                assertHelper.fileRequest().file("test-bucket/auto-named-file-3.parquet").build()
-        );
+                helper.fileRequest().build())).containsExactly(
+                        assertHelper.fileRequest().file("test-bucket/auto-named-file-1.parquet").build(),
+                        assertHelper.fileRequest().file("test-bucket/auto-named-file-2.parquet").build(),
+                        assertHelper.fileRequest().file("test-bucket/auto-named-file-3.parquet").build());
     }
 
     @Test
@@ -59,11 +57,9 @@ class FileIngestRequestTestHelperTest {
         assertThat(List.of(
                 helper.fileRequest().build(),
                 helper.fileRequest().build(),
-                helper.fileRequest().build()
-        )).containsExactly(
-                assertHelper.fileRequest().receivedTime(Instant.parse("2023-05-19T15:33:42Z")).build(),
-                assertHelper.fileRequest().receivedTime(Instant.parse("2023-05-19T15:33:43Z")).build(),
-                assertHelper.fileRequest().receivedTime(Instant.parse("2023-05-19T15:33:44Z")).build()
-        );
+                helper.fileRequest().build())).containsExactly(
+                        assertHelper.fileRequest().receivedTime(Instant.parse("2023-05-19T15:33:42Z")).build(),
+                        assertHelper.fileRequest().receivedTime(Instant.parse("2023-05-19T15:33:43Z")).build(),
+                        assertHelper.fileRequest().receivedTime(Instant.parse("2023-05-19T15:33:44Z")).build());
     }
 }

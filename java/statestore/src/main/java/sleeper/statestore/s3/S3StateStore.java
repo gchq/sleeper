@@ -41,14 +41,14 @@ public class S3StateStore extends DelegatingStateStore {
     public static final String CURRENT_UUID = "CURRENT_UUID";
 
     public S3StateStore(InstanceProperties instanceProperties,
-                        TableProperties tableProperties,
-                        AmazonDynamoDB dynamoDB,
-                        Configuration conf) {
+            TableProperties tableProperties,
+            AmazonDynamoDB dynamoDB,
+            Configuration conf) {
         super(S3FileReferenceStore.builder()
-                        .stateStorePath(stateStorePath(instanceProperties, tableProperties))
-                        .s3RevisionIdStore(new S3RevisionIdStore(dynamoDB, instanceProperties, tableProperties))
-                        .conf(conf)
-                        .build(),
+                .stateStorePath(stateStorePath(instanceProperties, tableProperties))
+                .s3RevisionIdStore(new S3RevisionIdStore(dynamoDB, instanceProperties, tableProperties))
+                .conf(conf)
+                .build(),
                 S3PartitionStore.builder()
                         .stateStorePath(stateStorePath(instanceProperties, tableProperties))
                         .s3RevisionIdStore(new S3RevisionIdStore(dynamoDB, instanceProperties, tableProperties))

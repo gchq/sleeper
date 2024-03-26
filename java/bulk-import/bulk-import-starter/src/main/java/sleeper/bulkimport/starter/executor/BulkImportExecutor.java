@@ -54,8 +54,8 @@ public class BulkImportExecutor {
     protected final Supplier<Instant> validationTimeSupplier;
 
     public BulkImportExecutor(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
-                              StateStoreProvider stateStoreProvider, IngestJobStatusStore ingestJobStatusStore, AmazonS3 s3Client,
-                              PlatformExecutor platformExecutor, Supplier<Instant> validationTimeSupplier) {
+            StateStoreProvider stateStoreProvider, IngestJobStatusStore ingestJobStatusStore, AmazonS3 s3Client,
+            PlatformExecutor platformExecutor, Supplier<Instant> validationTimeSupplier) {
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
@@ -108,7 +108,6 @@ public class BulkImportExecutor {
         if (null == bulkImportJob.getFiles() || bulkImportJob.getFiles().isEmpty()) {
             failedChecks.add("The input files must be set to a non-null and non-empty value.");
         }
-
 
         if (!failedChecks.isEmpty()) {
             String errorMessage = "The bulk import job failed validation with the following checks failing: \n"

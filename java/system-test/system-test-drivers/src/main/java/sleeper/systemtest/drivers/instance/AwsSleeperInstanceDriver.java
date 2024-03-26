@@ -63,7 +63,7 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
     private final AmazonECR ecr;
 
     public AwsSleeperInstanceDriver(SystemTestParameters parameters,
-                                    SystemTestClients clients) {
+            SystemTestClients clients) {
         this.parameters = parameters;
         this.dynamoDB = clients.getDynamoDB();
         this.s3 = clients.getS3();
@@ -97,8 +97,7 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
                     .deployPaused(true)
                     .instanceType(InvokeCdkForInstance.Type.STANDARD)
                     .runCommand(ClientUtils::runCommandLogOutput)
-                    .extraInstanceProperties(instanceProperties ->
-                            instanceProperties.set(JARS_BUCKET, parameters.buildJarsBucketName()))
+                    .extraInstanceProperties(instanceProperties -> instanceProperties.set(JARS_BUCKET, parameters.buildJarsBucketName()))
                     .deployWithClients(sts, regionProvider, s3, s3v2, ecr, dynamoDB);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

@@ -136,7 +136,7 @@ public abstract class CompactionJobStatusReporterTestBase {
     }
 
     public String verboseReportString(Function<PrintStream, CompactionJobStatusReporter> getReporter, List<CompactionJobStatus> statusList,
-                                      Type queryType) {
+            Type queryType) {
         ToStringPrintStream out = new ToStringPrintStream();
         getReporter.apply(out.getPrintStream())
                 .report(statusList, queryType);

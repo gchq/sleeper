@@ -78,8 +78,7 @@ public class RangeFactoryTest {
         RangeFactory rangeFactory = new RangeFactory(schema);
 
         // When / Then
-        assertThatThrownBy(() ->
-                rangeFactory.createRange(field, null, false, "A", true))
+        assertThatThrownBy(() -> rangeFactory.createRange(field, null, false, "A", true))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 }

@@ -57,11 +57,13 @@ public class ExpectedAdminConsoleValues {
             IntStream.range(0, INSTANCE_PROPERTY_GROUPS.size())
                     .mapToObj(index -> String.format("[%d] %s - %s%n", index + 2, "Instance Properties",
                             INSTANCE_PROPERTY_GROUPS.get(index).getName()))
-                    .collect(Collectors.joining()) +
+                    .collect(Collectors.joining())
+            +
             IntStream.range(0, TABLE_PROPERTY_GROUPS.size())
                     .mapToObj(index -> String.format("[%d] %s - %s%n", index + TABLE_START_INDEX, "Table Properties",
                             TABLE_PROPERTY_GROUPS.get(index).getName()))
-                    .collect(Collectors.joining()) +
+                    .collect(Collectors.joining())
+            +
             "\n" +
             "Input: \n";
 

@@ -76,7 +76,7 @@ public class SleeperPartitioningHandle implements ConnectorPartitioningHandle {
 
     @JsonCreator
     public SleeperPartitioningHandle(@JsonProperty("sleeperColumnHandlesInOrder") List<SleeperColumnHandle> sleeperColumnHandlesInOrder,
-                                     @JsonProperty("partitionMinKeysAsString") String partitionMinKeysAsString) {
+            @JsonProperty("partitionMinKeysAsString") String partitionMinKeysAsString) {
         this(sleeperColumnHandlesInOrder,
                 SleeperPartitioningHandle.decodeKeyListFromString(partitionMinKeysAsString));
     }
@@ -92,17 +92,13 @@ public class SleeperPartitioningHandle implements ConnectorPartitioningHandle {
         List<String> keyObjectTypesAsStrings = keyObjects.stream().map(obj -> obj.getClass().getCanonicalName()).collect(ImmutableList.toImmutableList());
         return Stream.of(keyObjectTypesAsStrings.stream(), keyObjects.stream())
                 .flatMap(Function.identity())
-                .map(obj -> (obj == null) ?
-                        ENCODED_NULL :
-                        Base64.getEncoder().encodeToString(obj.toString().getBytes(StandardCharsets.UTF_8)))
+                .map(obj -> (obj == null) ? ENCODED_NULL : Base64.getEncoder().encodeToString(obj.toString().getBytes(StandardCharsets.UTF_8)))
                 .collect(Collectors.joining(","));
     }
 
     private static Key decodeKeyFromString(String keyAsString) {
         List<String> allStrings = Arrays.stream(keyAsString.split(",", -1))
-                .map(str -> (str.equals(ENCODED_NULL)) ?
-                        null :
-                        new String(Base64.getDecoder().decode(str), StandardCharsets.UTF_8))
+                .map(str -> (str.equals(ENCODED_NULL)) ? null : new String(Base64.getDecoder().decode(str), StandardCharsets.UTF_8))
                 .collect(Collectors.toList());
         // Separate the two different arrays
         int noOfOjectsInKey = allStrings.size() / 2;

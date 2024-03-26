@@ -120,8 +120,7 @@ public class SizeRatioCompactionStrategyTest {
                 fileReferenceFactory.rootFile("A3", 9),
                 fileReferenceFactory.rootFile("A5", 10),
                 fileReferenceFactory.rootFile("B4", 90),
-                fileReferenceFactory.rootFile("A4", 9)
-        );
+                fileReferenceFactory.rootFile("A4", 9));
 
         // When
         List<CompactionJob> jobs = strategy.createCompactionJobs(List.of(), shuffledFiles, partitionTree.getAllPartitions());
@@ -159,8 +158,7 @@ public class SizeRatioCompactionStrategyTest {
                 fileReferenceFactory.rootFile("C2", 200),
                 fileReferenceFactory.rootFile("B4", 90),
                 fileReferenceFactory.rootFile("C3", 200),
-                fileReferenceFactory.rootFile("A4", 9)
-        );
+                fileReferenceFactory.rootFile("A4", 9));
 
         // When
         List<CompactionJob> jobs = strategy.createCompactionJobs(List.of(), shuffledFiles, partitionTree.getAllPartitions());

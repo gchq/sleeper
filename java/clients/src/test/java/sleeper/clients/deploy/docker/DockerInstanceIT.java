@@ -64,8 +64,7 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
         void shouldDeployInstance() throws Exception {
             // Given / When
             String instanceId = UUID.randomUUID().toString().substring(0, 18);
-            deployInstance(instanceId, tableProperties ->
-                    tableProperties.set(STATESTORE_CLASSNAME, DynamoDBStateStore.class.getName()));
+            deployInstance(instanceId, tableProperties -> tableProperties.set(STATESTORE_CLASSNAME, DynamoDBStateStore.class.getName()));
 
             // Then
             InstanceProperties instanceProperties = new InstanceProperties();
@@ -83,8 +82,7 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
         void shouldTearDownInstance() {
             // Given
             String instanceId = UUID.randomUUID().toString().substring(0, 18);
-            deployInstance(instanceId, tableProperties ->
-                    tableProperties.set(STATESTORE_CLASSNAME, DynamoDBStateStore.class.getName()));
+            deployInstance(instanceId, tableProperties -> tableProperties.set(STATESTORE_CLASSNAME, DynamoDBStateStore.class.getName()));
             InstanceProperties instanceProperties = new InstanceProperties();
             instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
 
@@ -110,8 +108,7 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
         void shouldDeployInstance() throws Exception {
             // Given / When
             String instanceId = UUID.randomUUID().toString().substring(0, 18);
-            deployInstance(instanceId, tableProperties ->
-                    tableProperties.set(STATESTORE_CLASSNAME, S3StateStore.class.getName()));
+            deployInstance(instanceId, tableProperties -> tableProperties.set(STATESTORE_CLASSNAME, S3StateStore.class.getName()));
 
             // Then
             InstanceProperties instanceProperties = new InstanceProperties();
@@ -127,8 +124,7 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
         void shouldTearDownInstance() {
             // Given
             String instanceId = UUID.randomUUID().toString().substring(0, 18);
-            deployInstance(instanceId, tableProperties ->
-                    tableProperties.set(STATESTORE_CLASSNAME, S3StateStore.class.getName()));
+            deployInstance(instanceId, tableProperties -> tableProperties.set(STATESTORE_CLASSNAME, S3StateStore.class.getName()));
             InstanceProperties instanceProperties = new InstanceProperties();
             instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
 
@@ -173,7 +169,7 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
         }
 
         private void ingestRecords(InstanceProperties instanceProperties, TableProperties tableProperties,
-                                   List<Record> records) throws Exception {
+                List<Record> records) throws Exception {
             IngestFactory.builder()
                     .instanceProperties(instanceProperties)
                     .objectFactory(ObjectFactory.noUserJars())

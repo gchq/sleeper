@@ -49,8 +49,8 @@ public class PropertyDiff {
     }
 
     public void print(ConsoleOutput out,
-                      SleeperPropertyIndex<?> propertyIndex,
-                      Set<SleeperProperty> invalidProperties) {
+            SleeperPropertyIndex<?> propertyIndex,
+            Set<SleeperProperty> invalidProperties) {
         out.println(propertyName);
         var propertyOpt = propertyIndex.getByName(propertyName);
         String description = propertyOpt.map(SleeperProperty::getDescription)

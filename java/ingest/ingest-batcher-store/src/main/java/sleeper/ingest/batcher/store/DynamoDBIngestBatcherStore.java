@@ -67,15 +67,15 @@ public class DynamoDBIngestBatcherStore implements IngestBatcherStore {
     private final int filesInAssignJobBatch;
 
     public DynamoDBIngestBatcherStore(AmazonDynamoDB dynamoDB,
-                                      InstanceProperties instanceProperties,
-                                      TablePropertiesProvider tablePropertiesProvider) {
+            InstanceProperties instanceProperties,
+            TablePropertiesProvider tablePropertiesProvider) {
         this(dynamoDB, instanceProperties, tablePropertiesProvider, FILES_IN_ASSIGN_JOB_BATCH);
     }
 
     public DynamoDBIngestBatcherStore(AmazonDynamoDB dynamoDB,
-                                      InstanceProperties instanceProperties,
-                                      TablePropertiesProvider tablePropertiesProvider,
-                                      int filesInAssignJobBatch) {
+            InstanceProperties instanceProperties,
+            TablePropertiesProvider tablePropertiesProvider,
+            int filesInAssignJobBatch) {
         this.dynamoDB = dynamoDB;
         this.requestsTableName = ingestRequestsTableName(instanceProperties.get(ID));
         this.tablePropertiesProvider = tablePropertiesProvider;
@@ -116,8 +116,8 @@ public class DynamoDBIngestBatcherStore implements IngestBatcherStore {
                                                 .withItem(DynamoDBIngestRequestFormat.createRecord(
                                                         tablePropertiesProvider, file.toBuilder().jobId(jobId).build()))
                                                 .withConditionExpression("attribute_not_exists(#filepath)")
-                                                .withExpressionAttributeNames(Map.of("#filepath", FILE_PATH))))
-                                ).collect(Collectors.toList()));
+                                                .withExpressionAttributeNames(Map.of("#filepath", FILE_PATH)))))
+                                .collect(Collectors.toList()));
                 TransactWriteItemsResult result = dynamoDB.transactWriteItems(request);
                 List<ConsumedCapacity> consumedCapacity = Optional.ofNullable(result.getConsumedCapacity()).orElse(List.of());
                 double totalConsumed = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
@@ -170,8 +170,8 @@ public class DynamoDBIngestBatcherStore implements IngestBatcherStore {
                             pendingFiles.stream()
                                     .map(request -> new WriteRequest()
                                             .withDeleteRequest(new DeleteRequest()
-                                                    .withKey(createUnassignedKey(request)))
-                                    ).collect(Collectors.toList())));
+                                                    .withKey(createUnassignedKey(request))))
+                                    .collect(Collectors.toList())));
         }
     }
 }

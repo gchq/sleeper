@@ -40,7 +40,7 @@ public class S3StateStoreStack extends NestedStack {
     private final TableDataStack dataStack;
 
     public S3StateStoreStack(Construct scope, String id, InstanceProperties instanceProperties,
-                             TableDataStack dataStack, ManagedPoliciesStack policiesStack) {
+            TableDataStack dataStack, ManagedPoliciesStack policiesStack) {
         super(scope, id);
         this.dataStack = dataStack;
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);

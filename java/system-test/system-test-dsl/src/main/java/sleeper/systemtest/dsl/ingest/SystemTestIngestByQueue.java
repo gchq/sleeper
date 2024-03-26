@@ -36,9 +36,9 @@ public class SystemTestIngestByQueue {
     private final List<String> sentJobIds = new ArrayList<>();
 
     public SystemTestIngestByQueue(IngestSourceFilesContext sourceFiles,
-                                   IngestByQueue ingest,
-                                   InvokeIngestTasksDriver invokeTasksDriver,
-                                   WaitForJobs waitForJobs) {
+            IngestByQueue ingest,
+            InvokeIngestTasksDriver invokeTasksDriver,
+            WaitForJobs waitForJobs) {
         this.sourceFiles = sourceFiles;
         this.ingest = ingest;
         this.invokeTasksDriver = invokeTasksDriver;

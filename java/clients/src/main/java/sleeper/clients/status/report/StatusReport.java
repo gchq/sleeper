@@ -57,13 +57,13 @@ public class StatusReport {
     private final TablePropertiesProvider tablePropertiesProvider;
 
     public StatusReport(InstanceProperties instanceProperties,
-                        TableProperties tableProperties,
-                        boolean verbose,
-                        StateStore stateStore,
-                        CompactionJobStatusStore compactionStatusStore,
-                        CompactionTaskStatusStore compactionTaskStatusStore,
-                        AmazonSQS sqsClient,
-                        TablePropertiesProvider tablePropertiesProvider) {
+            TableProperties tableProperties,
+            boolean verbose,
+            StateStore stateStore,
+            CompactionJobStatusStore compactionStatusStore,
+            CompactionTaskStatusStore compactionTaskStatusStore,
+            AmazonSQS sqsClient,
+            TablePropertiesProvider tablePropertiesProvider) {
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
         this.verbose = verbose;

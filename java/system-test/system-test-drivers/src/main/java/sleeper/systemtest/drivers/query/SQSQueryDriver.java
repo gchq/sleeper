@@ -57,9 +57,9 @@ public class SQSQueryDriver implements QuerySendAndWaitDriver {
             Duration.ofSeconds(2), Duration.ofMinutes(1));
 
     public SQSQueryDriver(SystemTestInstanceContext instance,
-                          AmazonSQS sqsClient,
-                          AmazonDynamoDB dynamoDBClient,
-                          AmazonS3 s3Client) {
+            AmazonSQS sqsClient,
+            AmazonDynamoDB dynamoDBClient,
+            AmazonS3 s3Client) {
         this.instance = instance;
         this.sqsClient = sqsClient;
         this.dynamoDBClient = dynamoDBClient;
@@ -110,8 +110,8 @@ public class SQSQueryDriver implements QuerySendAndWaitDriver {
         LOGGER.info("Loading results for query: {}", query.getQueryId());
         Schema schema = instance.getTablePropertiesByDeployedName(query.getTableName()).orElseThrow().getSchema();
         return s3Client.listObjects(
-                        instance.getInstanceProperties().get(QUERY_RESULTS_BUCKET),
-                        "query-" + query.getQueryId())
+                instance.getInstanceProperties().get(QUERY_RESULTS_BUCKET),
+                "query-" + query.getQueryId())
                 .getObjectSummaries().stream()
                 .flatMap(object -> ReadRecordsFromS3.getRecords(schema, object))
                 .collect(Collectors.toUnmodifiableList());

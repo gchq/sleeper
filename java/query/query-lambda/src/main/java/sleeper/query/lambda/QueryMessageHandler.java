@@ -37,13 +37,13 @@ public class QueryMessageHandler {
     private final Supplier<String> invalidQueryIdSupplier;
 
     public QueryMessageHandler(TablePropertiesProvider tablePropertiesProvider,
-                               QueryStatusReportListener queryTracker) {
+            QueryStatusReportListener queryTracker) {
         this(tablePropertiesProvider, queryTracker, () -> UUID.randomUUID().toString());
     }
 
     public QueryMessageHandler(TablePropertiesProvider tablePropertiesProvider,
-                               QueryStatusReportListener queryTracker,
-                               Supplier<String> invalidQueryIdSupplier) {
+            QueryStatusReportListener queryTracker,
+            Supplier<String> invalidQueryIdSupplier) {
         this.queryTracker = queryTracker;
         this.invalidQueryIdSupplier = invalidQueryIdSupplier;
         this.querySerDe = new QuerySerDe(tablePropertiesProvider);

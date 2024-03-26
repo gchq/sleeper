@@ -68,8 +68,8 @@ public class SystemTestClusterStack extends NestedStack {
     private IRole taskRole;
 
     public SystemTestClusterStack(Construct scope, String id,
-                                  SystemTestStandaloneProperties properties,
-                                  SystemTestBucketStack bucketStack) {
+            SystemTestStandaloneProperties properties,
+            SystemTestBucketStack bucketStack) {
         super(scope, id);
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(ID, properties.get(SYSTEM_TEST_ID));
@@ -82,11 +82,11 @@ public class SystemTestClusterStack extends NestedStack {
     }
 
     public SystemTestClusterStack(Construct scope, String id,
-                                  SystemTestProperties properties,
-                                  SystemTestBucketStack bucketStack,
-                                  CoreStacks coreStacks,
-                                  IngestStacks ingestStacks,
-                                  IngestBatcherStack ingestBatcherStack) {
+            SystemTestProperties properties,
+            SystemTestBucketStack bucketStack,
+            CoreStacks coreStacks,
+            IngestStacks ingestStacks,
+            IngestBatcherStack ingestBatcherStack) {
         super(scope, id);
         createSystemTestCluster(properties.testPropertiesOnly(), properties::set, properties, bucketStack);
 
@@ -99,9 +99,9 @@ public class SystemTestClusterStack extends NestedStack {
     }
 
     private void createSystemTestCluster(SystemTestPropertyValues properties,
-                                         SystemTestPropertySetter propertySetter,
-                                         InstanceProperties instanceProperties,
-                                         SystemTestBucketStack bucketStack) {
+            SystemTestPropertySetter propertySetter,
+            InstanceProperties instanceProperties,
+            SystemTestBucketStack bucketStack) {
         VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
                 .vpcId(instanceProperties.get(VPC_ID))
                 .build();

@@ -153,7 +153,7 @@ public class PropertiesReloaderIT {
     }
 
     private void updatePropertiesInS3(String tableName,
-                                      Consumer<TableProperties> extraProperties) {
+            Consumer<TableProperties> extraProperties) {
         TableProperties propertiesAfter = tablePropertiesStore.loadByName(tableName);
         extraProperties.accept(propertiesAfter);
         tablePropertiesStore.save(propertiesAfter);

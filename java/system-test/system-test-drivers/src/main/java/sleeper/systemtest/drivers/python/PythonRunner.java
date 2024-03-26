@@ -49,8 +49,8 @@ public class PythonRunner {
 
     private static CommandPipeline pythonPipeline(Path pythonDir, String... arguments) {
         return pipeline(command(Stream.concat(
-                        Stream.of(pythonDir.resolve("env/bin/python").toString()),
-                        Stream.of(arguments))
+                Stream.of(pythonDir.resolve("env/bin/python").toString()),
+                Stream.of(arguments))
                 .toArray(String[]::new)));
     }
 }

@@ -79,11 +79,10 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
     private final Map<String, String> extraPropertiesForQueryRunner;
     private final List<TableDefinition> tableDefinitions;
     private final SleeperConfig sleeperConfig;
-    private final LocalStackContainer localStackContainer =
-            new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
-                    .withServices(LocalStackContainer.Service.DYNAMODB, LocalStackContainer.Service.S3)
-                    .withLogConsumer(outputFrame -> System.out.print("LocalStack log: " + outputFrame.getUtf8String()))
-                    .withEnv("DEBUG", "1");
+    private final LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
+            .withServices(LocalStackContainer.Service.DYNAMODB, LocalStackContainer.Service.S3)
+            .withLogConsumer(outputFrame -> System.out.print("LocalStack log: " + outputFrame.getUtf8String()))
+            .withEnv("DEBUG", "1");
     private final HadoopConfigurationProvider hadoopConfigurationProvider = new HadoopConfigurationProviderForLocalStack(localStackContainer);
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private Configuration configuration;
@@ -98,8 +97,8 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
     }
 
     public PopulatedSleeperExternalResource(Map<String, String> extraPropertiesForQueryRunner,
-                                            List<TableDefinition> tableDefinitions,
-                                            SleeperConfig sleeperConfig) {
+            List<TableDefinition> tableDefinitions,
+            SleeperConfig sleeperConfig) {
         this.extraPropertiesForQueryRunner = requireNonNull(extraPropertiesForQueryRunner);
         this.tableDefinitions = requireNonNull(tableDefinitions);
         this.sleeperConfig = requireNonNull(sleeperConfig);
@@ -118,10 +117,9 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
     }
 
     private void ingestData(InstanceProperties instanceProperties,
-                            StateStoreProvider stateStoreProvider,
-                            TableProperties tableProperties,
-                            Iterator<Record> recordIterator)
-            throws Exception {
+            StateStoreProvider stateStoreProvider,
+            TableProperties tableProperties,
+            Iterator<Record> recordIterator) throws Exception {
         IngestFactory.builder()
                 .objectFactory(ObjectFactory.noUserJars())
                 .localDir(createTempDirectory(UUID.randomUUID().toString()).toString())
@@ -133,7 +131,7 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
     }
 
     private TableProperties createTable(InstanceProperties instanceProperties,
-                                        TableDefinition tableDefinition) {
+            TableDefinition tableDefinition) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, tableDefinition.schema);
         tableProperties.set(TABLE_NAME, tableDefinition.tableName);
         S3TableProperties.getStore(instanceProperties, s3Client, dynamoDBClient).save(tableProperties);
@@ -231,9 +229,9 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
         public final Stream<Record> recordStream;
 
         public TableDefinition(String tableName,
-                               Schema schema,
-                               List<Object> splitPoints,
-                               Stream<Record> recordStream) {
+                Schema schema,
+                List<Object> splitPoints,
+                Stream<Record> recordStream) {
             this.tableName = tableName;
             this.schema = schema;
             this.splitPoints = splitPoints;

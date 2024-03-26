@@ -46,15 +46,14 @@ public class ShutdownSystemProcesses {
     private final EmrServerlessClient emrServerlessClient;
 
     public ShutdownSystemProcesses(AmazonCloudWatchEvents cloudWatch, AmazonECS ecs,
-                                   AmazonElasticMapReduce emrClient, EmrServerlessClient emrServerlessClient) {
+            AmazonElasticMapReduce emrClient, EmrServerlessClient emrServerlessClient) {
         this.cloudWatch = cloudWatch;
         this.ecs = ecs;
         this.emrClient = emrClient;
         this.emrServerlessClient = emrServerlessClient;
     }
 
-    public void shutdown(InstanceProperties instanceProperties, List<String> extraECSClusters)
-            throws InterruptedException {
+    public void shutdown(InstanceProperties instanceProperties, List<String> extraECSClusters) throws InterruptedException {
         LOGGER.info("Pausing the system");
         PauseSystem.pause(cloudWatch, instanceProperties);
         stopECSTasks(instanceProperties, extraECSClusters);
@@ -72,13 +71,12 @@ public class ShutdownSystemProcesses {
         new TerminateEMRClusters(emrClient, properties).run();
     }
 
-    private void stopEMRServerlessApplication(InstanceProperties properties)
-            throws InterruptedException {
+    private void stopEMRServerlessApplication(InstanceProperties properties) throws InterruptedException {
         new TerminateEMRServerlessApplications(emrServerlessClient, properties).run();
     }
 
     private static void stopTasks(AmazonECS ecs, InstanceProperties properties,
-                                  InstanceProperty property) {
+            InstanceProperty property) {
         if (!properties.isSet(property)) {
             return;
         }
@@ -97,7 +95,7 @@ public class ShutdownSystemProcesses {
     }
 
     private static void forEachTaskArn(AmazonECS ecs, String clusterName,
-                                       Consumer<String> consumer) {
+            Consumer<String> consumer) {
         String nextToken = null;
         do {
             ListTasksResult result = ecs.listTasks(

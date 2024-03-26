@@ -42,7 +42,7 @@ public class AwsIngestSourceFilesDriver implements IngestSourceFilesDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(AwsIngestSourceFilesDriver.class);
 
     public void writeFile(InstanceProperties instanceProperties, TableProperties tableProperties,
-                          String path, boolean writeSketches, Iterator<Record> records) {
+            String path, boolean writeSketches, Iterator<Record> records) {
         Schema schema = tableProperties.getSchema();
         Configuration conf = HadoopConfigurationProvider.getConfigurationForClient(instanceProperties, tableProperties);
         Sketches sketches = Sketches.from(schema);

@@ -51,7 +51,7 @@ public class RestartSystem {
     }
 
     private static void enableRule(AmazonCloudWatchEvents cwClient,
-                                   SleeperScheduleRule.Value rules) {
+            SleeperScheduleRule.Value rules) {
         List<String> ruleNames = rules.getRuleNames();
         if (ruleNames.isEmpty()) {
             System.out.println("No rule found for property " + rules.getProperty() + ", not enabling");

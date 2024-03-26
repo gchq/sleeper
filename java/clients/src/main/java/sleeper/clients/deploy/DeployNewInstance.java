@@ -298,7 +298,7 @@ public class DeployNewInstance {
         }
 
         public void deployWithClients(AWSSecurityTokenService sts, AwsRegionProvider regionProvider,
-                                      AmazonS3 s3, S3Client s3v2, AmazonECR ecr, AmazonDynamoDB dynamoDB) throws IOException, InterruptedException {
+                AmazonS3 s3, S3Client s3v2, AmazonECR ecr, AmazonDynamoDB dynamoDB) throws IOException, InterruptedException {
             sts(sts).regionProvider(regionProvider)
                     .s3(s3).s3v2(s3v2).ecr(ecr)
                     .dynamoDB(dynamoDB)

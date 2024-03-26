@@ -72,12 +72,12 @@ public class FileWritingIterator implements Iterator<Row> {
     private Instant startTime = null;
 
     public FileWritingIterator(Iterator<Row> input, InstanceProperties instanceProperties,
-                               TableProperties tableProperties, Configuration conf) {
+            TableProperties tableProperties, Configuration conf) {
         this(input, instanceProperties, tableProperties, conf, () -> UUID.randomUUID().toString());
     }
 
     public FileWritingIterator(Iterator<Row> input, InstanceProperties instanceProperties,
-                               TableProperties tableProperties, Configuration conf, Supplier<String> outputFilenameSupplier) {
+            TableProperties tableProperties, Configuration conf, Supplier<String> outputFilenameSupplier) {
         this.input = input;
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;

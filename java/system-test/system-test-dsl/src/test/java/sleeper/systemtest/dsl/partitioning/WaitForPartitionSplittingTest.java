@@ -46,7 +46,7 @@ class WaitForPartitionSplittingTest {
             // Given
             TableProperties tableProperties = createTablePropertiesWithSplitThreshold("10");
             StateStore stateStore = StateStoreTestBuilder.from(partitionsBuilder(tableProperties)
-                            .singlePartition("root"))
+                    .singlePartition("root"))
                     .partitionFileWithRecords("root", "test.parquet", 11)
                     .buildStateStore();
 
@@ -63,7 +63,7 @@ class WaitForPartitionSplittingTest {
             // Given
             TableProperties tableProperties = createTablePropertiesWithSplitThreshold("10");
             StateStore stateStore = StateStoreTestBuilder.from(partitionsBuilder(tableProperties)
-                            .singlePartition("root"))
+                    .singlePartition("root"))
                     .partitionFileWithRecords("root", "test.parquet", 5)
                     .buildStateStore();
 
@@ -80,12 +80,12 @@ class WaitForPartitionSplittingTest {
             // Given
             TableProperties tableProperties = createTablePropertiesWithSplitThreshold("10");
             StateStore before = StateStoreTestBuilder.from(partitionsBuilder(tableProperties)
-                            .singlePartition("root"))
+                    .singlePartition("root"))
                     .partitionFileWithRecords("root", "test.parquet", 11)
                     .buildStateStore();
             StateStore after = StateStoreTestBuilder.from(partitionsBuilder(tableProperties)
-                            .rootFirst("root")
-                            .splitToNewChildren("root", "left", "right", "split point"))
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "left", "right", "split point"))
                     .partitionFileWithRecords("root", "test.parquet", 11)
                     .buildStateStore();
 
@@ -102,15 +102,15 @@ class WaitForPartitionSplittingTest {
             // Given
             TableProperties tableProperties = createTablePropertiesWithSplitThreshold("10");
             StateStore before = StateStoreTestBuilder.from(partitionsBuilder(tableProperties)
-                            .rootFirst("root")
-                            .splitToNewChildren("root", "left", "right", "split point"))
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "left", "right", "split point"))
                     .partitionFileWithRecords("left", "left.parquet", 11)
                     .partitionFileWithRecords("right", "right.parquet", 11)
                     .buildStateStore();
             StateStore after = StateStoreTestBuilder.from(partitionsBuilder(tableProperties)
-                            .rootFirst("root")
-                            .splitToNewChildren("root", "left", "right", "split point")
-                            .splitToNewChildren("left", "left left", "left right", "left split"))
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "left", "right", "split point")
+                    .splitToNewChildren("left", "left left", "left right", "left split"))
                     .partitionFileWithRecords("left", "left.parquet", 11)
                     .partitionFileWithRecords("right", "right.parquet", 11)
                     .buildStateStore();
@@ -128,16 +128,16 @@ class WaitForPartitionSplittingTest {
             // Given
             TableProperties tableProperties = createTablePropertiesWithSplitThreshold("10");
             StateStore before = StateStoreTestBuilder.from(partitionsBuilder(tableProperties)
-                            .rootFirst("root")
-                            .splitToNewChildren("root", "left", "right", "split point"))
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "left", "right", "split point"))
                     .partitionFileWithRecords("left", "left.parquet", 11)
                     .partitionFileWithRecords("right", "right.parquet", 11)
                     .buildStateStore();
             StateStore after = StateStoreTestBuilder.from(partitionsBuilder(tableProperties)
-                            .rootFirst("root")
-                            .splitToNewChildren("root", "left", "right", "split point")
-                            .splitToNewChildren("left", "left left", "left right", "left split")
-                            .splitToNewChildren("right", "right left", "right right", "right split"))
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "left", "right", "split point")
+                    .splitToNewChildren("left", "left left", "left right", "left split")
+                    .splitToNewChildren("right", "right left", "right right", "right split"))
                     .partitionFileWithRecords("left", "left.parquet", 11)
                     .partitionFileWithRecords("right", "right.parquet", 11)
                     .buildStateStore();
@@ -159,12 +159,12 @@ class WaitForPartitionSplittingTest {
             // Given
             TableProperties tableProperties = createTablePropertiesWithSplitThreshold("10");
             StateStore before = StateStoreTestBuilder.from(partitionsBuilder(tableProperties)
-                            .singlePartition("root"))
+                    .singlePartition("root"))
                     .partitionFileWithRecords("root", "test.parquet", 11)
                     .buildStateStore();
             StateStore after = StateStoreTestBuilder.from(partitionsBuilder(tableProperties)
-                            .rootFirst("root")
-                            .splitToNewChildren("root", "left", "right", "split point"))
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "left", "right", "split point"))
                     .partitionFileWithRecords("root", "test.parquet", 11)
                     .partitionFileWithRecords("left", "left.parquet", 11)
                     .buildStateStore();
@@ -182,12 +182,12 @@ class WaitForPartitionSplittingTest {
             // Given
             TableProperties tableProperties = createTablePropertiesWithSplitThreshold("10");
             StateStore before = StateStoreTestBuilder.from(partitionsBuilder(tableProperties)
-                            .rootFirst("root")
-                            .splitToNewChildren("root", "left", "right", "split point"))
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "left", "right", "split point"))
                     .partitionFileWithRecords("left", "left.parquet", 11)
                     .buildStateStore();
             StateStore after = StateStoreTestBuilder.from(partitionsBuilder(tableProperties)
-                            .singlePartition("root"))
+                    .singlePartition("root"))
                     .partitionFileWithRecords("root", "test.parquet", 11)
                     .buildStateStore();
 
@@ -204,13 +204,13 @@ class WaitForPartitionSplittingTest {
             // Given
             TableProperties tableProperties = createTablePropertiesWithSplitThreshold("10");
             StateStore before = StateStoreTestBuilder.from(partitionsBuilder(tableProperties)
-                            .rootFirst("root")
-                            .splitToNewChildren("root", "left", "right", "split point before"))
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "left", "right", "split point before"))
                     .partitionFileWithRecords("left", "left.parquet", 11)
                     .buildStateStore();
             StateStore after = StateStoreTestBuilder.from(partitionsBuilder(tableProperties)
-                            .rootFirst("root")
-                            .splitToNewChildren("root", "left", "right", "split point after"))
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "left", "right", "split point after"))
                     .partitionFileWithRecords("left", "left.parquet", 11)
                     .buildStateStore();
 

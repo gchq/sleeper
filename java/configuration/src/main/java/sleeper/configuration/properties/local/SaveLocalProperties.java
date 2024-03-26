@@ -49,8 +49,8 @@ public class SaveLocalProperties {
     }
 
     public static void saveToDirectory(Path directory,
-                                       InstanceProperties instanceProperties,
-                                       Stream<TableProperties> tablePropertiesStream) throws IOException {
+            InstanceProperties instanceProperties,
+            Stream<TableProperties> tablePropertiesStream) throws IOException {
         writeInstanceProperties(instanceProperties, directory.resolve("instance.properties"));
         Files.writeString(directory.resolve("tags.properties"), instanceProperties.getTagsPropertiesAsString());
         saveTablesToDirectory(directory, tablePropertiesStream);

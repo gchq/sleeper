@@ -30,7 +30,7 @@ public class CompactionTaskStatusesBuilder {
     public CompactionTaskStatusesBuilder taskStarted(
             String taskId, Instant startTime, Instant expiryDate) {
         builderById.computeIfAbsent(taskId,
-                        id -> CompactionTaskStatus.builder().taskId(id))
+                id -> CompactionTaskStatus.builder().taskId(id))
                 .startTime(startTime).expiryDate(expiryDate);
         return this;
     }

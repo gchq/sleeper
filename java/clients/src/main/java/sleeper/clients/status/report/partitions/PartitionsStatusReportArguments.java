@@ -38,8 +38,8 @@ public class PartitionsStatusReportArguments {
     private final Function<PrintStream, PartitionsStatusReporter> reporter;
 
     private PartitionsStatusReportArguments(String instanceId,
-                                            String tableName,
-                                            Function<PrintStream, PartitionsStatusReporter> reporter) {
+            String tableName,
+            Function<PrintStream, PartitionsStatusReporter> reporter) {
         this.instanceId = instanceId;
         this.tableName = tableName;
         this.reporter = reporter;

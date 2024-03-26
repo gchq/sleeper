@@ -123,9 +123,9 @@ public class IngestBatcherJobCreatorLambdaIT {
 
     private List<Message> consumeQueueMessages(InstanceProperty queueProperty) {
         return sqs.receiveMessage(new ReceiveMessageRequest()
-                        .withQueueUrl(instanceProperties.get(queueProperty))
-                        .withWaitTimeSeconds(1)
-                        .withMaxNumberOfMessages(10))
+                .withQueueUrl(instanceProperties.get(queueProperty))
+                .withWaitTimeSeconds(1)
+                .withMaxNumberOfMessages(10))
                 .getMessages();
     }
 

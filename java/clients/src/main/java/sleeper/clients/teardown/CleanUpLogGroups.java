@@ -44,8 +44,8 @@ public class CleanUpLogGroups {
 
     public static void run(CloudWatchLogsClient logs, CloudFormationClient cloudFormation) {
         run(logs, cloudFormation, Instant.now(), () ->
-                // See https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/cloudwatch_limits_cwl.html
-                sleepForSustainedRatePerSecond(4));
+        // See https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/cloudwatch_limits_cwl.html
+        sleepForSustainedRatePerSecond(4));
     }
 
     public static void run(CloudWatchLogsClient logsClient, CloudFormationClient cloudFormation, Instant queryTime, Runnable sleepForRateLimit) {

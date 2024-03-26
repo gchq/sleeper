@@ -154,8 +154,7 @@ public class IngestCoordinatorFileWritingStrategyIT {
                     recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                     recordListAndSchema,
                     actualFiles,
-                    hadoopConfiguration
-            );
+                    hadoopConfiguration);
         }
 
         @Test
@@ -196,8 +195,7 @@ public class IngestCoordinatorFileWritingStrategyIT {
                     recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                     recordListAndSchema,
                     actualFiles,
-                    hadoopConfiguration
-            );
+                    hadoopConfiguration);
         }
 
         @Test
@@ -247,8 +245,7 @@ public class IngestCoordinatorFileWritingStrategyIT {
                     recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                     recordListAndSchema,
                     actualFiles,
-                    hadoopConfiguration
-            );
+                    hadoopConfiguration);
         }
 
         @Test
@@ -304,8 +301,7 @@ public class IngestCoordinatorFileWritingStrategyIT {
                     recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                     recordListAndSchema,
                     actualFiles,
-                    hadoopConfiguration
-            );
+                    hadoopConfiguration);
         }
     }
 
@@ -354,8 +350,7 @@ public class IngestCoordinatorFileWritingStrategyIT {
                     recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                     recordListAndSchema,
                     actualFiles,
-                    hadoopConfiguration
-            );
+                    hadoopConfiguration);
         }
 
         @Test
@@ -397,8 +392,7 @@ public class IngestCoordinatorFileWritingStrategyIT {
                     recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                     recordListAndSchema,
                     actualFiles,
-                    hadoopConfiguration
-            );
+                    hadoopConfiguration);
         }
 
         @Test
@@ -446,8 +440,7 @@ public class IngestCoordinatorFileWritingStrategyIT {
                     recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                     recordListAndSchema,
                     actualFiles,
-                    hadoopConfiguration
-            );
+                    hadoopConfiguration);
         }
 
         @Test
@@ -499,8 +492,7 @@ public class IngestCoordinatorFileWritingStrategyIT {
                     recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                     recordListAndSchema,
                     actualFiles,
-                    hadoopConfiguration
-            );
+                    hadoopConfiguration);
         }
     }
 
@@ -517,11 +509,9 @@ public class IngestCoordinatorFileWritingStrategyIT {
             IngestCoordinatorTestParameters ingestCoordinatorTestParameters,
             int maxRecordsInMemory,
             long maxNoOfBytesToWriteToLocalStore) throws StateStoreException, IteratorException, IOException {
-        try (IngestCoordinator<Record> ingestCoordinator =
-                     directWriteBackedByArrayListWriteToLocalFile(arrayList ->
-                             arrayList.maxNoOfRecordsInMemory(maxRecordsInMemory)
-                                     .maxNoOfRecordsInLocalStore(maxNoOfBytesToWriteToLocalStore))
-                             .createIngestCoordinator(ingestCoordinatorTestParameters)) {
+        try (IngestCoordinator<Record> ingestCoordinator = directWriteBackedByArrayListWriteToLocalFile(arrayList -> arrayList.maxNoOfRecordsInMemory(maxRecordsInMemory)
+                .maxNoOfRecordsInLocalStore(maxNoOfBytesToWriteToLocalStore))
+                .createIngestCoordinator(ingestCoordinatorTestParameters)) {
             for (Record record : recordListAndSchema.recordList) {
                 ingestCoordinator.write(record);
             }
@@ -531,15 +521,13 @@ public class IngestCoordinatorFileWritingStrategyIT {
     private static void ingestRecords(
             RecordGenerator.RecordListAndSchema recordListAndSchema,
             IngestCoordinatorTestParameters ingestCoordinatorTestParameters) throws StateStoreException, IteratorException, IOException {
-        try (IngestCoordinator<Record> ingestCoordinator =
-                     directWriteBackedByArrowWriteToLocalFile()
-                             .createIngestCoordinator(ingestCoordinatorTestParameters)) {
+        try (IngestCoordinator<Record> ingestCoordinator = directWriteBackedByArrowWriteToLocalFile()
+                .createIngestCoordinator(ingestCoordinatorTestParameters)) {
             for (Record record : recordListAndSchema.recordList) {
                 ingestCoordinator.write(record);
             }
         }
     }
-
 
     private IngestCoordinatorTestParameters.Builder createTestParameterBuilder() {
         return IngestCoordinatorTestParameters

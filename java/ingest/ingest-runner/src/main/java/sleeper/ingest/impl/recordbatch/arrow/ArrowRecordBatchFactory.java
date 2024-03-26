@@ -78,13 +78,13 @@ public class ArrowRecordBatchFactory<INCOMINGDATATYPE> implements RecordBatchFac
             this.bufferAllocator = builder.bufferAllocator;
         }
         LOGGER.info("Created ArrowRecordBatchFactory with:\n" +
-                        "\tschema of {}\n" +
-                        "\tlocalWorkingDirectory of {}\n" +
-                        "\tworkingBufferAllocatorBytes of {}\n" +
-                        "\tmaxBatchBufferAllocatorBytes of {}\n" +
-                        "\tmaxNoOfBytesToWriteLocally of {}\n" +
-                        "\tmaxNoOfRecordsToWriteToArrowFileAtOnce of {}\n" +
-                        "\trecordWriter of type {}",
+                "\tschema of {}\n" +
+                "\tlocalWorkingDirectory of {}\n" +
+                "\tworkingBufferAllocatorBytes of {}\n" +
+                "\tmaxBatchBufferAllocatorBytes of {}\n" +
+                "\tmaxNoOfBytesToWriteLocally of {}\n" +
+                "\tmaxNoOfRecordsToWriteToArrowFileAtOnce of {}\n" +
+                "\trecordWriter of type {}",
                 this.schema, this.localWorkingDirectory, this.workingBufferAllocatorBytes,
                 this.maxBatchBufferAllocatorBytes, this.maxNoOfBytesToWriteLocally,
                 this.maxNoOfRecordsToWriteToArrowFileAtOnce, recordWriter.getClass().getSimpleName());

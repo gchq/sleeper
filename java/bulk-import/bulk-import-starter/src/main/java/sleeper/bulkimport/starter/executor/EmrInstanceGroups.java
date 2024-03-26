@@ -47,7 +47,7 @@ public class EmrInstanceGroups implements EmrInstanceConfiguration {
     }
 
     public EmrInstanceGroups(InstanceProperties instanceProperties,
-                             IntUnaryOperator randomSubnet) {
+            IntUnaryOperator randomSubnet) {
         this.instanceProperties = instanceProperties;
         this.randomSubnet = randomSubnet;
     }

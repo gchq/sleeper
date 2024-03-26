@@ -69,8 +69,8 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
     public static SleeperPropertiesPrettyPrinter<InstanceProperty> forInstancePropertiesWithGroup(
             PrintWriter writer, PropertyGroup group) {
         return builder().sortedProperties(InstanceProperty.getAll().stream()
-                        .filter(property -> property.getPropertyGroup().equals(group))
-                        .collect(Collectors.toList()))
+                .filter(property -> property.getPropertyGroup().equals(group))
+                .collect(Collectors.toList()))
                 .writer(writer).hideUnknownProperties(true).build();
     }
 
@@ -82,8 +82,8 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
     public static SleeperPropertiesPrettyPrinter<TableProperty> forTablePropertiesWithGroup(
             PrintWriter writer, PropertyGroup group) {
         return builder().sortedProperties(TableProperty.getAll().stream()
-                        .filter(property -> property.getPropertyGroup().equals(group))
-                        .collect(Collectors.toList()))
+                .filter(property -> property.getPropertyGroup().equals(group))
+                .collect(Collectors.toList()))
                 .writer(writer).hideUnknownProperties(true).build();
     }
 
@@ -109,8 +109,7 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
             if (!unknownProperties.isEmpty()) {
                 println();
                 println("# The following properties are not recognised by Sleeper.");
-                unknownProperties.keySet().stream().sorted().forEach(name ->
-                        printSetPropertyValue(name, unknownProperties.get(name)));
+                unknownProperties.keySet().stream().sorted().forEach(name -> printSetPropertyValue(name, unknownProperties.get(name)));
             }
         }
         writer.flush();
@@ -167,8 +166,7 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
     }
 
     public static String formatDescription(String lineStart, String description) {
-        return Arrays.stream(description.split("\n")).
-                map(line -> lineStart + WordUtils.wrap(line, 100).replace("\n", "\n" + lineStart))
+        return Arrays.stream(description.split("\n")).map(line -> lineStart + WordUtils.wrap(line, 100).replace("\n", "\n" + lineStart))
                 .collect(Collectors.joining("\n"));
     }
 

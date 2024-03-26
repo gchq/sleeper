@@ -60,7 +60,7 @@ public class IngestBatcherReport {
     private final TableStatusProvider tableProvider;
 
     public IngestBatcherReport(IngestBatcherStore batcherStore, IngestBatcherReporter reporter,
-                               BatcherQuery.Type queryType, TableStatusProvider tableProvider) {
+            BatcherQuery.Type queryType, TableStatusProvider tableProvider) {
         this.batcherStore = batcherStore;
         this.reporter = reporter;
         this.query = BatcherQuery.from(queryType, new ConsoleInput(System.console()));

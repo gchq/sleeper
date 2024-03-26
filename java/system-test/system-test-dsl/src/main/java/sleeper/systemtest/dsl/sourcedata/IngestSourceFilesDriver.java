@@ -25,5 +25,5 @@ import java.util.Iterator;
 public interface IngestSourceFilesDriver {
 
     void writeFile(InstanceProperties instanceProperties, TableProperties tableProperties,
-                   String path, boolean writeSketches, Iterator<Record> records);
+            String path, boolean writeSketches, Iterator<Record> records);
 }

@@ -44,10 +44,10 @@ public class SleeperTestModule implements Module {
     private final HadoopConfigurationProvider hadoopConfigurationProvider;
 
     public SleeperTestModule(SleeperConfig sleeperConfig,
-                             AmazonS3 s3Client,
-                             S3AsyncClient s3AsyncClient,
-                             AmazonDynamoDB dynamoDbClient,
-                             HadoopConfigurationProvider hadoopConfigurationProvider) {
+            AmazonS3 s3Client,
+            S3AsyncClient s3AsyncClient,
+            AmazonDynamoDB dynamoDbClient,
+            HadoopConfigurationProvider hadoopConfigurationProvider) {
         this.sleeperConfig = requireNonNull(sleeperConfig);
         this.s3Client = requireNonNull(s3Client);
         this.s3AsyncClient = requireNonNull(s3AsyncClient);

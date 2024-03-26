@@ -38,7 +38,7 @@ public class TableDataStack extends NestedStack {
     private final IBucket dataBucket;
 
     public TableDataStack(Construct scope, String id, InstanceProperties instanceProperties,
-                          ManagedPoliciesStack policiesStack) {
+            ManagedPoliciesStack policiesStack) {
         super(scope, id);
 
         String instanceId = instanceProperties.get(ID);

@@ -57,8 +57,8 @@ public class PropertiesDiff {
     }
 
     public void print(ConsoleOutput out,
-                      SleeperPropertyIndex<?> propertyIndex,
-                      Set<SleeperProperty> invalidProperties) {
+            SleeperPropertyIndex<?> propertyIndex,
+            Set<SleeperProperty> invalidProperties) {
         out.println("Found changes to properties:");
         out.println();
 

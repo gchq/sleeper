@@ -60,23 +60,22 @@ public class FilesStatusReport {
     }
 
     public FilesStatusReport(StateStore stateStore,
-                             int maxNumberOfFilesWithNoReferencesToCount,
-                             boolean verbose) {
+            int maxNumberOfFilesWithNoReferencesToCount,
+            boolean verbose) {
         this(stateStore, maxNumberOfFilesWithNoReferencesToCount, verbose, DEFAULT_STATUS_REPORTER);
     }
 
-
     public FilesStatusReport(StateStore stateStore,
-                             int maxNumberOfFilesWithNoReferencesToCount,
-                             boolean verbose,
-                             String outputType) {
+            int maxNumberOfFilesWithNoReferencesToCount,
+            boolean verbose,
+            String outputType) {
         this(stateStore, maxNumberOfFilesWithNoReferencesToCount, verbose, getReporter(outputType));
     }
 
     public FilesStatusReport(StateStore stateStore,
-                             int maxNumberOfFilesWithNoReferencesToCount,
-                             boolean verbose,
-                             FileStatusReporter fileStatusReporter) {
+            int maxNumberOfFilesWithNoReferencesToCount,
+            boolean verbose,
+            FileStatusReporter fileStatusReporter) {
         this.maxNumberOfFilesWithNoReferencesToCount = maxNumberOfFilesWithNoReferencesToCount;
         this.verbose = verbose;
         this.fileStatusReporter = fileStatusReporter;

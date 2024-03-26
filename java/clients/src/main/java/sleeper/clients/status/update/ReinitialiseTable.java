@@ -72,8 +72,7 @@ public class ReinitialiseTable {
     public void run() throws IOException, StateStoreException {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
-        TablePropertiesProvider tablePropertiesProvider =
-                new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
+        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
         TableProperties tableProperties = tablePropertiesProvider.getByName(tableName);
 
         Configuration conf = new Configuration();

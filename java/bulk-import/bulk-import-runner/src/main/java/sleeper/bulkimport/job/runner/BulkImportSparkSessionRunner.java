@@ -60,9 +60,9 @@ public class BulkImportSparkSessionRunner implements BulkImportJobDriver.Session
     private final StateStoreProvider stateStoreProvider;
 
     public BulkImportSparkSessionRunner(BulkImportJobRunner jobRunner,
-                                        InstanceProperties instanceProperties,
-                                        TablePropertiesProvider tablePropertiesProvider,
-                                        StateStoreProvider stateStoreProvider) {
+            InstanceProperties instanceProperties,
+            TablePropertiesProvider tablePropertiesProvider,
+            StateStoreProvider stateStoreProvider) {
         this.jobRunner = jobRunner;
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
@@ -74,7 +74,8 @@ public class BulkImportSparkSessionRunner implements BulkImportJobDriver.Session
         // Initialise Spark
         LOGGER.info("Initialising Spark");
         SparkSession session = new SparkSession.Builder().config(createSparkConf()).getOrCreate();
-        scala.collection.immutable.List<SparkStrategy> strategies = JavaConverters.collectionAsScalaIterable(Collections.singletonList((org.apache.spark.sql.execution.SparkStrategy) ExplicitRepartitionStrategy$.MODULE$)).toList();
+        scala.collection.immutable.List<SparkStrategy> strategies = JavaConverters
+                .collectionAsScalaIterable(Collections.singletonList((org.apache.spark.sql.execution.SparkStrategy) ExplicitRepartitionStrategy$.MODULE$)).toList();
         session.experimental().extraStrategies_$eq(strategies);
         SparkContext sparkContext = session.sparkContext();
         JavaSparkContext javaSparkContext = JavaSparkContext.fromSparkContext(sparkContext);
@@ -117,9 +118,9 @@ public class BulkImportSparkSessionRunner implements BulkImportJobDriver.Session
 
         LOGGER.info("Running bulk import job with id {}", job.getId());
         List<FileReference> fileReferences = jobRunner.createFileReferences(
-                        BulkImportJobInput.builder().rows(dataWithPartition)
-                                .instanceProperties(instanceProperties).tableProperties(tableProperties)
-                                .broadcastedPartitions(broadcastedPartitions).conf(conf).build())
+                BulkImportJobInput.builder().rows(dataWithPartition)
+                        .instanceProperties(instanceProperties).tableProperties(tableProperties)
+                        .broadcastedPartitions(broadcastedPartitions).conf(conf).build())
                 .collectAsList().stream()
                 .map(SparkFileReferenceRow::createFileReference)
                 .collect(Collectors.toList());

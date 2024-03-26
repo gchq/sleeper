@@ -35,7 +35,6 @@ public class SystemTestPythonIngest {
     private final WaitForJobs waitForJobs;
     private final List<String> sentJobIds = new ArrayList<>();
 
-
     public SystemTestPythonIngest(
             IngestByAnyQueueDriver fromS3Driver, IngestLocalFileByAnyQueueDriver localFileDriver,
             InvokeIngestTasksDriver tasksDriver, WaitForJobs waitForJobs) {

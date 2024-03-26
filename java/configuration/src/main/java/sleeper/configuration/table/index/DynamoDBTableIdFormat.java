@@ -33,7 +33,6 @@ class DynamoDBTableIdFormat {
     static final String TABLE_ID_FIELD = "TableId";
     static final String ONLINE_FIELD = "Online";
 
-
     public static Map<String, AttributeValue> getItem(TableStatus table) {
         return Map.of(
                 TABLE_ID_FIELD, createStringAttribute(table.getTableUniqueId()),

@@ -61,9 +61,9 @@ public class CommonEmrBulkImportHelper {
     private final CoreStacks coreStacks;
 
     public CommonEmrBulkImportHelper(Construct scope, String shortId,
-                                     InstanceProperties instanceProperties,
-                                     CoreStacks coreStacks,
-                                     IngestStatusStoreResources ingestStatusStoreResources) {
+            InstanceProperties instanceProperties,
+            CoreStacks coreStacks,
+            IngestStatusStoreResources ingestStatusStoreResources) {
         this.scope = scope;
         this.shortId = shortId;
         this.instanceProperties = instanceProperties;
@@ -87,9 +87,9 @@ public class CommonEmrBulkImportHelper {
                 .build();
 
         queueForDLs.metricApproximateNumberOfMessagesVisible().with(MetricOptions.builder()
-                        .period(Duration.seconds(60))
-                        .statistic("Sum")
-                        .build())
+                .period(Duration.seconds(60))
+                .statistic("Sum")
+                .build())
                 .createAlarm(scope, "BulkImport" + shortId + "UndeliveredJobsAlarm", CreateAlarmOptions.builder()
                         .alarmDescription("Alarms if there are any messages that have failed validation or failed to start a " + shortId + " EMR Spark job")
                         .evaluationPeriods(1)
@@ -115,13 +115,13 @@ public class CommonEmrBulkImportHelper {
     }
 
     public IFunction createJobStarterFunction(String bulkImportPlatform, Queue jobQueue, BuiltJars jars,
-                                              IBucket importBucket, CommonEmrBulkImportStack commonEmrStack) {
+            IBucket importBucket, CommonEmrBulkImportStack commonEmrStack) {
         return createJobStarterFunction(bulkImportPlatform, jobQueue, jars, importBucket,
                 List.of(commonEmrStack.getEmrRole(), commonEmrStack.getEc2Role()));
     }
 
     public IFunction createJobStarterFunction(String bulkImportPlatform, Queue jobQueue, BuiltJars jars,
-                                              IBucket importBucket, List<IRole> passRoles) {
+            IBucket importBucket, List<IRole> passRoles) {
         String instanceId = instanceProperties.get(ID);
         Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
         env.put("BULK_IMPORT_PLATFORM", bulkImportPlatform);

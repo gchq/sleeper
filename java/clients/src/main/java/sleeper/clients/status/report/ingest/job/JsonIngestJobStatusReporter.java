@@ -54,12 +54,12 @@ public class JsonIngestJobStatusReporter implements IngestJobStatusReporter {
 
     @Override
     public void report(List<IngestJobStatus> statusList, JobQuery.Type queryType, IngestQueueMessages queueMessages,
-                       Map<String, Integer> persistentEmrStepCount) {
+            Map<String, Integer> persistentEmrStepCount) {
         out.println(gson.toJson(createJsonReport(statusList, queueMessages, persistentEmrStepCount)));
     }
 
     private JsonObject createJsonReport(List<IngestJobStatus> statusList, IngestQueueMessages queueMessages,
-                                        Map<String, Integer> persistentEmrStepCount) {
+            Map<String, Integer> persistentEmrStepCount) {
         JsonObject jsonObject = new JsonObject();
         jsonObject.add("queueMessages", gson.toJsonTree(queueMessages));
         if (!persistentEmrStepCount.isEmpty()) {

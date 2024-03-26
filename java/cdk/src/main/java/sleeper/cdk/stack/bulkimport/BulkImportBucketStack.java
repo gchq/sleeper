@@ -34,8 +34,8 @@ public class BulkImportBucketStack extends NestedStack {
     private final IBucket importBucket;
 
     public BulkImportBucketStack(Construct scope,
-                                 String id,
-                                 InstanceProperties instanceProperties) {
+            String id,
+            InstanceProperties instanceProperties) {
         super(scope, id);
         importBucket = Bucket.Builder.create(this, "BulkImportBucket")
                 .bucketName(String.join("-", "sleeper", instanceProperties.get(ID),

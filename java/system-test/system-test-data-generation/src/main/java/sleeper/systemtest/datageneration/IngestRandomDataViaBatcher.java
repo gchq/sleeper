@@ -38,7 +38,7 @@ public class IngestRandomDataViaBatcher {
     }
 
     public static void sendRequest(String dir,
-                                   InstanceProperties instanceProperties, TableProperties tableProperties) {
+            InstanceProperties instanceProperties, TableProperties tableProperties) {
         AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
         String queueUrl = instanceProperties.get(INGEST_BATCHER_SUBMIT_QUEUE_URL);
         String jsonRequest = FileIngestRequestSerDe.toJson(List.of(dir), tableProperties.get(TABLE_NAME));

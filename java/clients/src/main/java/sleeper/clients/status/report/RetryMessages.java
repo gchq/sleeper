@@ -50,9 +50,9 @@ public class RetryMessages {
     private final int maxMessages;
 
     public RetryMessages(InstanceProperties instanceProperties,
-                         AmazonSQS sqsClient,
-                         String stack,
-                         int maxMessages) {
+            AmazonSQS sqsClient,
+            String stack,
+            int maxMessages) {
         this.instanceProperties = instanceProperties;
         this.sqsClient = sqsClient;
         this.stack = stack;

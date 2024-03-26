@@ -260,8 +260,7 @@ class IngestBatcherMinBatchSizeTest extends IngestBatcherTestBase {
             Instant batchTime = Instant.parse("2023-05-22T11:11:10.001Z");
 
             // When
-            batchFilesWithJobIds(List.of("test-job-id"), builder ->
-                    builder.timeSupplier(timeSupplier(batchTime)));
+            batchFilesWithJobIds(List.of("test-job-id"), builder -> builder.timeSupplier(timeSupplier(batchTime)));
 
             // Then
             assertThat(queues.getMessagesByQueueUrl())
@@ -284,8 +283,7 @@ class IngestBatcherMinBatchSizeTest extends IngestBatcherTestBase {
             Instant batchTime = Instant.parse("2023-05-22T11:11:10.001Z");
 
             // When
-            batchFilesWithJobIds(List.of("test-job-id"), builder ->
-                    builder.timeSupplier(timeSupplier(batchTime)));
+            batchFilesWithJobIds(List.of("test-job-id"), builder -> builder.timeSupplier(timeSupplier(batchTime)));
 
             // Then
             assertThat(queues.getMessagesByQueueUrl())

@@ -28,7 +28,7 @@ public interface PlatformExecutor {
     void runJobOnPlatform(BulkImportArguments arguments);
 
     static PlatformExecutor fromEnvironment(InstanceProperties instanceProperties,
-                                            TablePropertiesProvider tablePropertiesProvider) {
+            TablePropertiesProvider tablePropertiesProvider) {
         String platform = System.getenv(PLATFORM_ENV_VARIABLE);
         switch (platform) {
             case "NonPersistentEMR":

@@ -29,8 +29,8 @@ public class SleeperTablePartitionStructure {
     private final Map<String, List<String>> partitionToFileMapping;
 
     SleeperTablePartitionStructure(Instant asOfInstant,
-                                   List<Partition> allPartitions,
-                                   Map<String, List<String>> partitionToFileMapping) {
+            List<Partition> allPartitions,
+            Map<String, List<String>> partitionToFileMapping) {
         this.asOfInstant = asOfInstant;
         this.allPartitions = allPartitions;
         this.partitionToFileMapping = partitionToFileMapping;
