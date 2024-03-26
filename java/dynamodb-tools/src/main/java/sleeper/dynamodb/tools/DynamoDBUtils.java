@@ -188,7 +188,8 @@ public class DynamoDBUtils {
         return new LoadedItemsWithLimit(items, false);
     }
 
-    public static void deleteAllDynamoTableItems(AmazonDynamoDB dynamoDB, QueryRequest queryRequest,
+    public static void deleteAllDynamoTableItems(
+            AmazonDynamoDB dynamoDB, QueryRequest queryRequest,
             UnaryOperator<Map<String, AttributeValue>> getItemKeyForDelete) {
         LOGGER.info("Deleting all items from {} Dynamo DB Table", queryRequest.getTableName());
         long countOfDeletedItems = streamPagedItems(dynamoDB, queryRequest.withLimit(50))
