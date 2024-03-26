@@ -289,10 +289,10 @@ class InMemoryCompactionJobStatusStoreTest {
             assertThat(store.getJobsInTimePeriod(tableId,
                     Instant.parse("2023-03-29T12:00:00Z"),
                     Instant.parse("2023-03-29T13:00:00Z")))
-                            .containsExactly(
-                                    jobStatusFrom(records().fromUpdates(
-                                            forJob(job1.getId(), CompactionJobCreatedStatus.from(job1, createdTime1)),
-                                            forJobOnTask(job1.getId(), taskId1, startedCompactionStatus(startedTime1)))));
+                    .containsExactly(
+                            jobStatusFrom(records().fromUpdates(
+                                    forJob(job1.getId(), CompactionJobCreatedStatus.from(job1, createdTime1)),
+                                    forJobOnTask(job1.getId(), taskId1, startedCompactionStatus(startedTime1)))));
         }
 
         @Test

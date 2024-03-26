@@ -24,7 +24,8 @@ import java.util.Map;
 
 public interface IngestJobStatusReporter {
 
-    void report(List<IngestJobStatus> statusList, JobQuery.Type query, IngestQueueMessages queueMessages,
-                Map<String, Integer> persistentEmrStepCount);
+    void report(
+            List<IngestJobStatus> statusList, JobQuery.Type query, IngestQueueMessages queueMessages,
+            Map<String, Integer> persistentEmrStepCount);
 
 }

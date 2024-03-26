@@ -30,7 +30,7 @@ public class IngestTaskStatusesBuilder {
     public IngestTaskStatusesBuilder taskStarted(
             String taskId, Instant startTime, Instant expiryDate) {
         builderById.computeIfAbsent(taskId,
-                        id -> IngestTaskStatus.builder().taskId(id))
+                id -> IngestTaskStatus.builder().taskId(id))
                 .startTime(startTime).expiryDate(expiryDate);
         return this;
     }

@@ -45,8 +45,9 @@ public class IngestDockerStack implements DockerStack {
         return new Builder();
     }
 
-    public static IngestDockerStack from(InstanceProperties instanceProperties,
-                                         AmazonS3 s3Client, AmazonDynamoDB dynamoDB, AmazonSQS sqsClient) {
+    public static IngestDockerStack from(
+            InstanceProperties instanceProperties,
+            AmazonS3 s3Client, AmazonDynamoDB dynamoDB, AmazonSQS sqsClient) {
         return builder().instanceProperties(instanceProperties)
                 .s3Client(s3Client).dynamoDB(dynamoDB).sqsClient(sqsClient)
                 .build();

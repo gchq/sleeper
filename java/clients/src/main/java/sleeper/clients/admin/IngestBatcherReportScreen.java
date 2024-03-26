@@ -42,9 +42,9 @@ public class IngestBatcherReportScreen {
     private final AdminClientPropertiesStore store;
     private final AdminClientStatusStoreFactory statusStores;
 
-    public IngestBatcherReportScreen(ConsoleOutput out, ConsoleInput in,
-                                     TableIndex tableIndex, AdminClientPropertiesStore store,
-                                     AdminClientStatusStoreFactory statusStores) {
+    public IngestBatcherReportScreen(
+            ConsoleOutput out, ConsoleInput in,
+            TableIndex tableIndex, AdminClientPropertiesStore store, AdminClientStatusStoreFactory statusStores) {
         this.out = out;
         this.in = in;
         this.consoleHelper = new ConsoleHelper(out, in);
@@ -67,11 +67,8 @@ public class IngestBatcherReportScreen {
             }
             out.clearScreen("");
             consoleHelper.chooseOptionUntilValid("Which query type would you like to use",
-                    new MenuOption("All files", () ->
-                            runBatcherReport(ingestBatcherStoreOpt.get(), BatcherQuery.Type.ALL)),
-                    new MenuOption("Pending files", () ->
-                            runBatcherReport(ingestBatcherStoreOpt.get(), BatcherQuery.Type.PENDING))
-            ).run();
+                    new MenuOption("All files", () -> runBatcherReport(ingestBatcherStoreOpt.get(), BatcherQuery.Type.ALL)),
+                    new MenuOption("Pending files", () -> runBatcherReport(ingestBatcherStoreOpt.get(), BatcherQuery.Type.PENDING))).run();
         }
     }
 

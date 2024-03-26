@@ -41,8 +41,7 @@ public class RecordGenerator {
     private RecordGenerator() {
     }
 
-    public static <T> RecordListAndSchema genericKey1D(Type sleeperKeyTypeDimension0,
-                                                       List<T> keyObjectsDimension0) {
+    public static <T> RecordListAndSchema genericKey1D(Type sleeperKeyTypeDimension0, List<T> keyObjectsDimension0) {
         int noOfRecords = keyObjectsDimension0.size();
         Random valueRandom = new Random(0);
         RandomStringGenerator randomStringGenerator = new RandomStringGenerator.Builder()
@@ -77,10 +76,9 @@ public class RecordGenerator {
         return new RecordListAndSchema(recordList, sleeperSchema);
     }
 
-    public static <T, U> RecordListAndSchema genericKey2D(Type sleeperKeyTypeDimension0,
-                                                          Type sleeperKeyTypeDimension1,
-                                                          List<T> keyObjectsDimension0,
-                                                          List<U> keyObjectsDimension1) {
+    public static <T, U> RecordListAndSchema genericKey2D(
+            Type sleeperKeyTypeDimension0, Type sleeperKeyTypeDimension1,
+            List<T> keyObjectsDimension0, List<U> keyObjectsDimension1) {
         int noOfRecords = keyObjectsDimension0.size();
         if (keyObjectsDimension1.size() != noOfRecords) {
             throw new AssertionError();
@@ -121,10 +119,9 @@ public class RecordGenerator {
         return new RecordListAndSchema(recordList, sleeperSchema);
     }
 
-    public static <T, U> RecordListAndSchema genericKey1DSort1D(Type sleeperKeyTypeDimension0,
-                                                                Type sleeperSortKeyTypeDimension0,
-                                                                List<T> keyObjectsDimension0,
-                                                                List<U> sortKeyObjectsDimension0) {
+    public static <T, U> RecordListAndSchema genericKey1DSort1D(
+            Type sleeperKeyTypeDimension0, Type sleeperSortKeyTypeDimension0,
+            List<T> keyObjectsDimension0, List<U> sortKeyObjectsDimension0) {
         int noOfRecords = keyObjectsDimension0.size();
         if (sortKeyObjectsDimension0.size() != noOfRecords) {
             throw new AssertionError();
@@ -164,9 +161,8 @@ public class RecordGenerator {
         return new RecordListAndSchema(recordList, sleeperSchema);
     }
 
-    public static RecordListAndSchema byteArrayRowKeyLongSortKey(List<byte[]> byteArrayKeys,
-                                                                 List<Long> sortKeys,
-                                                                 List<Long> values) {
+    public static RecordListAndSchema byteArrayRowKeyLongSortKey(
+            List<byte[]> byteArrayKeys, List<Long> sortKeys, List<Long> values) {
         if (!(byteArrayKeys.size() == sortKeys.size() && sortKeys.size() == values.size())) {
             throw new AssertionError();
         }

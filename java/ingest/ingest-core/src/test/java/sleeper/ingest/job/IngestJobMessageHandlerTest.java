@@ -158,7 +158,7 @@ public class IngestJobMessageHandlerTest {
             IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandlerWithDirectories(
                     Map.of("dir1", List.of("file1a.parquet", "file1b.parquet"),
                             "dir2", List.of("file2.parquet")))
-                                    .build();
+                    .build();
             String json = "{" +
                     "\"id\":\"test-job-id\"," +
                     "\"tableName\":\"test-table\"," +
@@ -179,8 +179,8 @@ public class IngestJobMessageHandlerTest {
             Instant validationTime = Instant.parse("2023-07-03T16:14:00Z");
             IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandlerWithDirectories(
                     Map.of("dir", List.of()))
-                            .timeSupplier(() -> validationTime)
-                            .build();
+                    .timeSupplier(() -> validationTime)
+                    .build();
             String json = "{" +
                     "\"id\":\"test-job-id\"," +
                     "\"tableName\":\"test-table\"," +
@@ -204,9 +204,9 @@ public class IngestJobMessageHandlerTest {
             Instant validationTime = Instant.parse("2023-07-03T16:14:00Z");
             IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandlerWithDirectories(
                     Map.of("dir", List.of()))
-                            .jobIdSupplier(() -> "test-job-id")
-                            .timeSupplier(() -> validationTime)
-                            .build();
+                    .jobIdSupplier(() -> "test-job-id")
+                    .timeSupplier(() -> validationTime)
+                    .build();
             String json = "{" +
                     "\"tableName\":\"test-table\"," +
                     "\"files\":[\"dir\"]" +
