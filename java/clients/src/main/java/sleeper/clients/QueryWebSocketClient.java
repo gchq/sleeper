@@ -86,11 +86,7 @@ public class QueryWebSocketClient {
             startTime = Instant.now();
             client.startQuery(query);
         } catch (InterruptedException e) {
-        } finally {
-            try {
-                client.closeBlocking();
-            } catch (InterruptedException e) {
-            }
+            throw new RuntimeException(e);
         }
     }
 
