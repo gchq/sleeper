@@ -59,7 +59,6 @@ public class RecordListSerDeTest {
         recordList.add(record);
 
         // When / Then
-        // When / Then
         assertThat(RecordListSerDe.fromJson(recordList))
                 .isEqualTo(List.of(new Record(Map.of("key1", "abc", "key2", 123L))));
     }
