@@ -59,11 +59,10 @@ public class FilterTranslator {
      * Creates a single Parquet FilterPredicate based on the ValueSets. Will only Filter based on Primitive types and
      * will therefore ignore all others. If there is no resulting predicate (either caused by an empty, or null map or a
      * map of non-primitive fields), this method will return null. If more than one primitive ValueSet exists in the
-     * map,
-     * the predicates of all the ValueSets will be ANDed together.
+     * map, the predicates of all the ValueSets will be ANDed together.
      *
      * @param  valueSets a map of field name to ValueSet
-     * @return           A single parquet filter based on the ValueSets.
+     * @return           a single parquet filter based on the ValueSets
      */
     public FilterPredicate toPredicate(Map<String, ValueSet> valueSets) {
         if (valueSets == null || valueSets.isEmpty()) {
