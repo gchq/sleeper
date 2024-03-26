@@ -22,6 +22,7 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
+import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
@@ -54,8 +55,22 @@ public class StateStoreFiles {
         filesByFilename.put(file.getFilename(), file);
     }
 
+    public void remove(String filename) {
+        filesByFilename.remove(filename);
+    }
+
+    public void clear() {
+        filesByFilename.clear();
+    }
+
     public Optional<AllReferencesToAFile> file(String filename) {
         return Optional.ofNullable(filesByFilename.get(filename));
+    }
+
+    public void updateFile(String filename, UnaryOperator<AllReferencesToAFile> update) {
+        AllReferencesToAFile existing = filesByFilename.get(filename);
+        AllReferencesToAFile updated = update.apply(existing);
+        filesByFilename.put(filename, updated);
     }
 
 }
