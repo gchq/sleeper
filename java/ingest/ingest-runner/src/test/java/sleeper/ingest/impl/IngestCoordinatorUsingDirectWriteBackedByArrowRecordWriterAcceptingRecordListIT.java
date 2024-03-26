@@ -144,14 +144,16 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
         assertThat(actualActiveData.getSetOfAllRecords())
                 .isEqualTo(new HashSet<>(recordListAndSchema.recordList));
         assertThat(actualActiveData.getPartitionData("left"))
-                .satisfies(data -> assertThat(data.getFiles()).allSatisfy(file -> assertThatRecordsHaveFieldValuesThatAllAppearInRangeInSameOrder(
-                        data.getRecordsInFile(file),
-                        "key0", LongStream.range(-10_000, 0))))
+                .satisfies(data -> assertThat(data.getFiles()).allSatisfy(
+                        file -> assertThatRecordsHaveFieldValuesThatAllAppearInRangeInSameOrder(
+                                data.getRecordsInFile(file),
+                                "key0", LongStream.range(-10_000, 0))))
                 .satisfies(data -> assertThat(data.getNumRecords()).isEqualTo(10_000));
         assertThat(actualActiveData.getPartitionData("right"))
-                .satisfies(data -> assertThat(data.getFiles()).allSatisfy(file -> assertThatRecordsHaveFieldValuesThatAllAppearInRangeInSameOrder(
-                        data.getRecordsInFile(file),
-                        "key0", LongStream.range(0, 10_000))))
+                .satisfies(data -> assertThat(data.getFiles()).allSatisfy(
+                        file -> assertThatRecordsHaveFieldValuesThatAllAppearInRangeInSameOrder(
+                                data.getRecordsInFile(file),
+                                "key0", LongStream.range(0, 10_000))))
                 .satisfies(data -> assertThat(data.getNumRecords()).isEqualTo(10_000));
 
         ResultVerifier.assertOnSketch(
@@ -206,8 +208,8 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
         return List.of(recordLists);
     }
 
-    private static void ingestRecords(RecordGenerator.RecordListAndSchema recordListAndSchema,
-            IngestCoordinatorTestParameters parameters,
+    private static void ingestRecords(
+            RecordGenerator.RecordListAndSchema recordListAndSchema, IngestCoordinatorTestParameters parameters,
             Consumer<ArrowRecordBatchFactory.Builder<RecordList>> arrowConfig) throws Exception {
         try (IngestCoordinator<RecordList> ingestCoordinator = createIngestCoordinator(parameters, arrowConfig)) {
             for (RecordList recordList : buildScrambledRecordLists(recordListAndSchema)) {
@@ -216,7 +218,8 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
         }
     }
 
-    private static IngestCoordinator<RecordList> createIngestCoordinator(IngestCoordinatorTestParameters parameters,
+    private static IngestCoordinator<RecordList> createIngestCoordinator(
+            IngestCoordinatorTestParameters parameters,
             Consumer<ArrowRecordBatchFactory.Builder<RecordList>> arrowConfig) {
         return ingestCoordinatorDirectWriteBackedByArrow(parameters, parameters.getLocalFilePrefix(),
                 arrowConfig, new ArrowRecordWriterAcceptingRecordList());
