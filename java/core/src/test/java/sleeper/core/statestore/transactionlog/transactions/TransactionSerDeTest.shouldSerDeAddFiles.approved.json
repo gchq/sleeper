@@ -3,28 +3,26 @@
     {
       "filename": "file1.parquet",
       "totalReferenceCount": 1,
-      "internalReferenceByPartitionId": {
-        "root": {
-          "filename": "file1.parquet",
+      "references": [
+        {
           "partitionId": "root",
-          "numberOfRecords": 123,
+          "numberOfRecords": 100,
           "countApproximate": false,
           "onlyContainsDataForThisPartition": true
         }
-      }
+      ]
     },
     {
       "filename": "file2.parquet",
       "totalReferenceCount": 1,
-      "internalReferenceByPartitionId": {
-        "root": {
-          "filename": "file2.parquet",
+      "references": [
+        {
           "partitionId": "root",
-          "numberOfRecords": 123,
+          "numberOfRecords": 200,
           "countApproximate": false,
           "onlyContainsDataForThisPartition": true
         }
-      }
+      ]
     }
   ],
   "updateTime": 1711446181000

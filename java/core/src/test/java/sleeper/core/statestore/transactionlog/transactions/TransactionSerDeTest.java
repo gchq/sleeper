@@ -23,6 +23,7 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.AllReferencesToAFile;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 
@@ -34,6 +35,7 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
+import static sleeper.core.statestore.SplitFileReference.referenceForChildPartition;
 import static sleeper.core.statestore.SplitFileReferenceRequest.splitFileToChildPartitions;
 
 public class TransactionSerDeTest {
@@ -43,14 +45,43 @@ public class TransactionSerDeTest {
         // Given
         Schema schema = schemaWithKey("key");
         PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
-        FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
         Instant updateTime = Instant.parse("2024-03-26T09:43:01Z");
+        FileReferenceFactory fileFactory = FileReferenceFactory.fromUpdatedAt(partitions, updateTime);
         StateStoreTransaction transaction = new AddFilesTransaction(
                 AllReferencesToAFile.newFilesWithReferences(Stream.of(
-                        fileFactory.rootFile("file1.parquet", 123),
-                        fileFactory.rootFile("file2.parquet", 123)),
+                        fileFactory.rootFile("file1.parquet", 100),
+                        fileFactory.rootFile("file2.parquet", 200)),
                         updateTime)
                         .collect(toUnmodifiableList()),
+                updateTime);
+
+        // When
+        TransactionSerDe serDe = new TransactionSerDe(schema);
+        TransactionType type = TransactionType.getType(transaction);
+        String json = serDe.toJson(transaction);
+
+        // Then
+        assertThat(serDe.toTransaction(type, json)).isEqualTo(transaction);
+        JsonApprovals.verifyJson(json);
+    }
+
+    @Test
+    void shouldSerDeAddSplitFile() {
+        // Given
+        Schema schema = schemaWithKey("key", new StringType());
+        PartitionTree partitions = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", "p")
+                .buildTree();
+        Instant updateTime = Instant.parse("2024-03-26T09:43:01Z");
+        FileReferenceFactory fileFactory = FileReferenceFactory.fromUpdatedAt(partitions, updateTime);
+        FileReference file = fileFactory.rootFile("file.parquet", 200);
+        referenceForChildPartition(file, "L");
+        StateStoreTransaction transaction = new AddFilesTransaction(
+                AllReferencesToAFile.newFilesWithReferences(Stream.of(
+                        referenceForChildPartition(file, "L"),
+                        referenceForChildPartition(file, "R")),
+                        updateTime).collect(toUnmodifiableList()),
                 updateTime);
 
         // When

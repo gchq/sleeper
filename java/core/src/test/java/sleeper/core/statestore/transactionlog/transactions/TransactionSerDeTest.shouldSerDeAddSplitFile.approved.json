@@ -1,0 +1,23 @@
+{
+  "files": [
+    {
+      "filename": "file.parquet",
+      "totalReferenceCount": 2,
+      "references": [
+        {
+          "partitionId": "L",
+          "numberOfRecords": 100,
+          "countApproximate": true,
+          "onlyContainsDataForThisPartition": false
+        },
+        {
+          "partitionId": "R",
+          "numberOfRecords": 100,
+          "countApproximate": true,
+          "onlyContainsDataForThisPartition": false
+        }
+      ]
+    }
+  ],
+  "updateTime": 1711446181000
+}
