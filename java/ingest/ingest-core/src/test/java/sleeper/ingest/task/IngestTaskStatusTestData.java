@@ -45,19 +45,20 @@ public class IngestTaskStatusTestData {
         return builder.finished(finishTime, IngestTaskFinishedStatus.builder()).build();
     }
 
-    public static IngestTaskStatus finishedOneJobNoFiles(String taskId, Instant startTaskTime, Instant finishTaskTime,
-            Instant startJobTime, Instant finishJobTime) {
+    public static IngestTaskStatus finishedOneJobNoFiles(
+            String taskId, Instant startTaskTime, Instant finishTaskTime, Instant startJobTime, Instant finishJobTime) {
         return finishedOneJob(taskId, startTaskTime, finishTaskTime, startJobTime, finishJobTime, 0L, 0L);
     }
 
-    public static IngestTaskStatus finishedOneJobOneFile(String taskId, Instant startTaskTime, Instant finishTaskTime,
-            Instant startJobTime, Instant finishJobTime) {
+    public static IngestTaskStatus finishedOneJobOneFile(
+            String taskId, Instant startTaskTime, Instant finishTaskTime, Instant startJobTime, Instant finishJobTime) {
         return finishedOneJob(taskId, startTaskTime, finishTaskTime, startJobTime, finishJobTime,
                 DEFAULT_NUMBER_OF_RECORDS, DEFAULT_NUMBER_OF_RECORDS);
 
     }
 
-    public static IngestTaskStatus finishedOneJob(String taskId, Instant startTaskTime, Instant finishTaskTime,
+    public static IngestTaskStatus finishedOneJob(
+            String taskId, Instant startTaskTime, Instant finishTaskTime,
             Instant startJobTime, Instant finishJobTime,
             long recordsRead, long recordsWritten) {
         return IngestTaskStatus.builder().taskId(taskId).startTime(startTaskTime)
@@ -68,19 +69,19 @@ public class IngestTaskStatusTestData {
                 .build();
     }
 
-    public static IngestTaskStatus finishedMultipleJobs(String taskId, Instant startTaskTime, Instant finishTaskTime,
-            Duration duration, Instant... startJobTimes) {
+    public static IngestTaskStatus finishedMultipleJobs(
+            String taskId, Instant startTaskTime, Instant finishTaskTime, Duration duration, Instant... startJobTimes) {
         return finishedMultipleJobs(taskId, startTaskTime, finishTaskTime,
                 Stream.of(startJobTimes).map(startJobTime -> summary(startJobTime, duration, DEFAULT_NUMBER_OF_RECORDS, DEFAULT_NUMBER_OF_RECORDS)));
     }
 
-    public static IngestTaskStatus finishedMultipleJobs(String taskId, Instant startTaskTime, Instant finishTaskTime,
-            RecordsProcessedSummary... summaries) {
+    public static IngestTaskStatus finishedMultipleJobs(
+            String taskId, Instant startTaskTime, Instant finishTaskTime, RecordsProcessedSummary... summaries) {
         return finishedMultipleJobs(taskId, startTaskTime, finishTaskTime, Stream.of(summaries));
     }
 
-    private static IngestTaskStatus finishedMultipleJobs(String taskId, Instant startTaskTime, Instant finishTaskTime,
-            Stream<RecordsProcessedSummary> summaries) {
+    private static IngestTaskStatus finishedMultipleJobs(
+            String taskId, Instant startTaskTime, Instant finishTaskTime, Stream<RecordsProcessedSummary> summaries) {
         return IngestTaskStatus.builder().taskId(taskId).startTime(startTaskTime)
                 .finished(finishTaskTime, IngestTaskFinishedStatus.builder().jobSummaries(summaries))
                 .build();
