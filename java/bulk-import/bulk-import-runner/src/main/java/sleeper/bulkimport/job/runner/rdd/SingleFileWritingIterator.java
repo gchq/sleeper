@@ -72,20 +72,15 @@ public class SingleFileWritingIterator implements Iterator<Row> {
     private final String outputFilename;
     private Instant startTime;
 
-    public SingleFileWritingIterator(Iterator<Row> input,
-            InstanceProperties instanceProperties,
-            TableProperties tableProperties,
-            Configuration conf,
-            PartitionTree partitionTree) {
+    public SingleFileWritingIterator(
+            Iterator<Row> input, InstanceProperties instanceProperties, TableProperties tableProperties,
+            Configuration conf, PartitionTree partitionTree) {
         this(input, instanceProperties, tableProperties, conf, partitionTree, UUID.randomUUID().toString());
     }
 
-    public SingleFileWritingIterator(Iterator<Row> input,
-            InstanceProperties instanceProperties,
-            TableProperties tableProperties,
-            Configuration conf,
-            PartitionTree partitionTree,
-            String outputFilename) {
+    public SingleFileWritingIterator(
+            Iterator<Row> input, InstanceProperties instanceProperties, TableProperties tableProperties,
+            Configuration conf, PartitionTree partitionTree, String outputFilename) {
         this.input = input;
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
