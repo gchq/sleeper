@@ -80,7 +80,7 @@ public class SystemTestInstance {
         InstanceProperties properties = new InstanceProperties();
         properties.set(LOGGING_LEVEL, "debug");
         properties.set(OPTIONAL_STACKS, "IngestStack,EmrBulkImportStack,EmrServerlessBulkImportStack,IngestBatcherStack," +
-                "CompactionStack,GarbageCollectorStack,PartitionSplittingStack,QueryStack,TableMetricsStack");
+                "CompactionStack,GarbageCollectorStack,PartitionSplittingStack,QueryStack,WebSocketQueryStack,TableMetricsStack");
         properties.set(RETAIN_INFRA_AFTER_DESTROY, "false");
         properties.set(FORCE_RELOAD_PROPERTIES, "true");
         properties.set(DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS, "true");

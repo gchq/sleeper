@@ -43,6 +43,11 @@ public class SystemTestQuery {
         return this;
     }
 
+    public SystemTestQuery webSocket() {
+        driver = drivers.queryByWebSocket(context);
+        return this;
+    }
+
     public List<Record> allRecordsInTable() {
         return driver.run(queryCreator().allRecordsQuery());
     }

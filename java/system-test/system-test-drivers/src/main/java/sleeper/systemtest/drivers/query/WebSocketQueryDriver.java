@@ -23,6 +23,8 @@ import sleeper.core.record.Record;
 import sleeper.core.util.PollWithRetries;
 import sleeper.query.model.Query;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
+import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
+import sleeper.systemtest.dsl.query.QueryAllTablesSendAndWaitDriver;
 import sleeper.systemtest.dsl.query.QuerySendAndWaitDriver;
 
 import java.time.Duration;
@@ -34,6 +36,10 @@ public class WebSocketQueryDriver implements QuerySendAndWaitDriver {
     private final PollWithRetries poll = PollWithRetries.intervalAndPollingTimeout(
             Duration.ofSeconds(1), Duration.ofMinutes(1));
     private final QueryWebSocketClient queryWebSocketClient;
+
+    public static QueryAllTablesDriver allTablesDriver(SystemTestInstanceContext instance) {
+        return new QueryAllTablesSendAndWaitDriver(instance, new WebSocketQueryDriver(instance));
+    }
 
     public WebSocketQueryDriver(SystemTestInstanceContext instance) {
         this.queryWebSocketClient = new QueryWebSocketClient(instance.getInstanceProperties(), instance.getTablePropertiesProvider());
