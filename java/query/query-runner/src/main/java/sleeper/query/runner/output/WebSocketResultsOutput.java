@@ -113,7 +113,7 @@ public class WebSocketResultsOutput extends WebSocketOutput implements ResultsOu
 
     private void publishBatch(Map<String, Object> message, List<Record> records) throws IOException {
         LOGGER.info("Publishing batch of {} records to WebSocket connection", records.size());
-        message.put("records", serde.toJson(records));
+        message.put("records", serde.toJson(serde.toJsonTree(records)));
         this.sendJson(message);
     }
 }
