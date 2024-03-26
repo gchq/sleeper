@@ -31,8 +31,7 @@ public class LocalStackAwsV2ClientHelper {
         return builder
                 .endpointOverride(localStackContainer.getEndpointOverride(service))
                 .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(
-                        localStackContainer.getAccessKey(), localStackContainer.getSecretKey()
-                )))
+                        localStackContainer.getAccessKey(), localStackContainer.getSecretKey())))
                 .region(Region.of(localStackContainer.getRegion()))
                 .build();
     }

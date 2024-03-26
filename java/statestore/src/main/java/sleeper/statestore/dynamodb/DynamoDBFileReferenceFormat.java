@@ -64,8 +64,8 @@ class DynamoDBFileReferenceFormat {
     /**
      * Creates a record for the DynamoDB state store.
      *
-     * @param fileReference the File which the record is about
-     * @return A record in DynamoDB
+     * @param  fileReference the File which the record is about
+     * @return               A record in DynamoDB
      */
     Map<String, AttributeValue> createRecord(Map<String, AttributeValue> itemValues, FileReference fileReference) {
         if (null != fileReference.getNumberOfRecords()) {

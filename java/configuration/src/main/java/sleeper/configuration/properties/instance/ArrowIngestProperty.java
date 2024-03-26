@@ -20,7 +20,6 @@ import sleeper.configuration.properties.SleeperPropertyIndex;
 
 import java.util.List;
 
-
 public interface ArrowIngestProperty {
     UserDefinedInstanceProperty ARROW_INGEST_WORKING_BUFFER_BYTES = Index.propertyBuilder("sleeper.ingest.arrow.working.buffer.bytes")
             .description("The number of bytes to allocate to the Arrow working buffer. This buffer is used for sorting and other sundry " +

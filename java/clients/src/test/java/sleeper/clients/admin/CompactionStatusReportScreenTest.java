@@ -155,7 +155,7 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
 
         private RunAdminClient runCompactionJobStatusReport() {
             return runClient().enterPrompts(COMPACTION_STATUS_REPORT_OPTION,
-                            COMPACTION_JOB_STATUS_REPORT_OPTION, "test-table")
+                    COMPACTION_JOB_STATUS_REPORT_OPTION, "test-table")
                     .statusStore(statusStore);
         }
     }

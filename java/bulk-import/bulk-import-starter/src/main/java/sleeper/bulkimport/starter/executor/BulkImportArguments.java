@@ -64,9 +64,9 @@ public class BulkImportArguments {
         String configBucket = instanceProperties.get(CONFIG_BUCKET);
         String jobId = bulkImportJob.getId();
         return Stream.of(
-                        Stream.of("spark-submit", "--deploy-mode", "cluster"),
-                        sparkSubmitParameters(baseSparkConfig),
-                        Stream.of(jarLocation, configBucket, jobId, taskId, jobRunId, bulkImportMode))
+                Stream.of("spark-submit", "--deploy-mode", "cluster"),
+                sparkSubmitParameters(baseSparkConfig),
+                Stream.of(jarLocation, configBucket, jobId, taskId, jobRunId, bulkImportMode))
                 .flatMap(partialArgs -> partialArgs)
                 .collect(Collectors.toUnmodifiableList());
     }
@@ -92,10 +92,9 @@ public class BulkImportArguments {
         }
         return Stream.of(baseSparkConfig, userConfig)
                 .flatMap(config -> config.keySet().stream())
-                .distinct().flatMap(key ->
-                        mergeSparkValue(key, baseSparkConfig, userConfig)
-                                .map(value -> entry(key, value))
-                                .stream());
+                .distinct().flatMap(key -> mergeSparkValue(key, baseSparkConfig, userConfig)
+                        .map(value -> entry(key, value))
+                        .stream());
     }
 
     private static Optional<String> mergeSparkValue(

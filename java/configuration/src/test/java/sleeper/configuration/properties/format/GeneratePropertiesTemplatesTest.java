@@ -70,8 +70,7 @@ class GeneratePropertiesTemplatesTest {
                     Arguments.of(ACCOUNT, "1234567890"),
                     Arguments.of(REGION, "eu-west-2"),
                     Arguments.of(VPC_ID, "1234567890"),
-                    Arguments.of(SUBNETS, "subnet-abcdefgh")
-            );
+                    Arguments.of(SUBNETS, "subnet-abcdefgh"));
         }
     }
 

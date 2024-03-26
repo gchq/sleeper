@@ -46,8 +46,7 @@ public abstract class JarsBucketITBase {
     protected final S3Client s3 = S3Client.builder()
             .endpointOverride(localStackContainer.getEndpointOverride(LocalStackContainer.Service.S3))
             .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(
-                    localStackContainer.getAccessKey(), localStackContainer.getSecretKey()
-            )))
+                    localStackContainer.getAccessKey(), localStackContainer.getSecretKey())))
             .region(Region.of(localStackContainer.getRegion()))
             .build();
 

@@ -184,10 +184,9 @@ class DynamoDBPartitionStore implements PartitionStore {
         if (null == partitions || partitions.isEmpty()) {
             throw new StateStoreException("At least one partition must be provided");
         }
-        getAllPartitions().forEach(partition ->
-                dynamoDB.deleteItem(new DeleteItemRequest()
-                        .withTableName(dynamoTableName)
-                        .withKey(partitionFormat.getKeyFromPartition(partition))));
+        getAllPartitions().forEach(partition -> dynamoDB.deleteItem(new DeleteItemRequest()
+                .withTableName(dynamoTableName)
+                .withKey(partitionFormat.getKeyFromPartition(partition))));
         for (Partition partition : partitions) {
             addPartition(partition);
             LOGGER.debug("Added partition {}", partition);
@@ -197,11 +196,11 @@ class DynamoDBPartitionStore implements PartitionStore {
     @Override
     public void clearPartitionData() {
         deleteAllDynamoTableItems(dynamoDB, new QueryRequest().withTableName(dynamoTableName)
-                        .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID))
-                        .withExpressionAttributeValues(new DynamoDBRecordBuilder()
-                                .string(":table_id", sleeperTableId)
-                                .build())
-                        .withKeyConditionExpression("#TableId = :table_id"),
+                .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID))
+                .withExpressionAttributeValues(new DynamoDBRecordBuilder()
+                        .string(":table_id", sleeperTableId)
+                        .build())
+                .withKeyConditionExpression("#TableId = :table_id"),
                 partitionFormat::getKey);
     }
 

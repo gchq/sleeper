@@ -116,8 +116,7 @@ public class NightlyTestSummaryTable {
             TableField startTimeField, Map<String, TableField> fieldByTestName, TableWriter.Builder tableBuilder) {
         executions.forEach(execution -> tableBuilder.row(rowBuilder -> {
             rowBuilder.value(startTimeField, execution.startTime);
-            execution.tests.forEach(test ->
-                    rowBuilder.value(fieldByTestName.get(test.name), getTestStatus(test.exitCode)));
+            execution.tests.forEach(test -> rowBuilder.value(fieldByTestName.get(test.name), getTestStatus(test.exitCode)));
         }));
     }
 
