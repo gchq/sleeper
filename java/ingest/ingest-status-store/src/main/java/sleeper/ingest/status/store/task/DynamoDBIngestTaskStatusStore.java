@@ -105,7 +105,7 @@ public class DynamoDBIngestTaskStatusStore implements IngestTaskStatusStore {
     @Override
     public List<IngestTaskStatus> getAllTasks() {
         return DynamoDBIngestTaskStatusFormat.streamTaskStatuses(
-                        streamPagedItems(dynamoDB, new ScanRequest().withTableName(statusTableName)))
+                streamPagedItems(dynamoDB, new ScanRequest().withTableName(statusTableName)))
                 .collect(Collectors.toList());
     }
 
@@ -113,7 +113,7 @@ public class DynamoDBIngestTaskStatusStore implements IngestTaskStatusStore {
     public List<IngestTaskStatus> getTasksInTimePeriod(Instant startTime, Instant endTime) {
 
         return DynamoDBIngestTaskStatusFormat.streamTaskStatuses(
-                        streamPagedItems(dynamoDB, new ScanRequest().withTableName(statusTableName)))
+                streamPagedItems(dynamoDB, new ScanRequest().withTableName(statusTableName)))
                 .filter(task -> task.isInPeriod(startTime, endTime))
                 .collect(Collectors.toList());
     }
@@ -121,7 +121,7 @@ public class DynamoDBIngestTaskStatusStore implements IngestTaskStatusStore {
     @Override
     public List<IngestTaskStatus> getTasksInProgress() {
         return DynamoDBIngestTaskStatusFormat.streamTaskStatuses(
-                        streamPagedItems(dynamoDB, new ScanRequest().withTableName(statusTableName)))
+                streamPagedItems(dynamoDB, new ScanRequest().withTableName(statusTableName)))
                 .filter(task -> !task.isFinished())
                 .collect(Collectors.toList());
     }

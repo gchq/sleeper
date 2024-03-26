@@ -44,12 +44,13 @@ public final class SleeperQueryRunner {
     private SleeperQueryRunner() {
     }
 
-    public static DistributedQueryRunner createSleeperQueryRunner(Map<String, String> extraProperties,
-                                                                  SleeperConfig sleeperConfig,
-                                                                  AmazonS3 s3Client,
-                                                                  S3AsyncClient s3AsyncClient,
-                                                                  AmazonDynamoDB dynamoDBClient,
-                                                                  HadoopConfigurationProvider hadoopConfigurationProvider) throws Exception {
+    public static DistributedQueryRunner createSleeperQueryRunner(
+            Map<String, String> extraProperties,
+            SleeperConfig sleeperConfig,
+            AmazonS3 s3Client,
+            S3AsyncClient s3AsyncClient,
+            AmazonDynamoDB dynamoDBClient,
+            HadoopConfigurationProvider hadoopConfigurationProvider) throws Exception {
         Session session = testSessionBuilder()
                 .setCatalog(CATALOG)
                 .setSchema("default")

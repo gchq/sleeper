@@ -41,8 +41,7 @@ public class WriteRandomDataFiles {
 
     public static String writeToS3GetDirectory(
             InstanceProperties instanceProperties, TableProperties tableProperties,
-            SystemTestPropertyValues systemTestProperties, String jobId)
-            throws IOException {
+            SystemTestPropertyValues systemTestProperties, String jobId) throws IOException {
 
         String dir = systemTestProperties.get(SYSTEM_TEST_BUCKET_NAME) + "/ingest/" + jobId;
 
@@ -62,8 +61,7 @@ public class WriteRandomDataFiles {
 
     private static void writeToPath(
             String dir, String filePathPrefix, TableProperties tableProperties, Iterator<Record> recordIterator,
-            Configuration conf)
-            throws IOException {
+            Configuration conf) throws IOException {
         int fileNumber = 0;
         if (!dir.endsWith("/")) {
             dir = dir + "/";

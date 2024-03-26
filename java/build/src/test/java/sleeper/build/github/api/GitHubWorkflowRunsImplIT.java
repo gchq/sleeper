@@ -40,7 +40,6 @@ class GitHubWorkflowRunsImplIT {
     private static final GitHubHead GITHUB_EXAMPLE_HEAD = TestGitHubHead.exampleBuilder()
             .sha("acb5820ced9479c074f688cc328bf03f341a511d").build();
 
-
     private Optional<GitHubWorkflowRun> getLatestRun(
             WireMockRuntimeInfo runtimeInfo, GitHubHead head, String workflow) {
         return returnWithGitHubApi(runtimeInfo, api -> new GitHubWorkflowRunsImpl(api).getLatestRun(head, workflow));

@@ -339,14 +339,14 @@ public class QueryClientIT {
         new QueryClient(instanceProperties, tableIndex, new FixedTablePropertiesProvider(tablePropertiesList),
                 in.consoleIn(), out.consoleOut(), ObjectFactory.noUserJars(),
                 new FixedStateStoreProvider(stateStoreByTableName))
-                        .run();
+                .run();
     }
 
     private void runQueryClient(TableProperties tableProperties, StateStore stateStore) throws Exception {
         new QueryClient(instanceProperties, tableIndex, new FixedTablePropertiesProvider(tableProperties),
                 in.consoleIn(), out.consoleOut(), ObjectFactory.noUserJars(),
                 new FixedStateStoreProvider(tableProperties, stateStore))
-                        .run();
+                .run();
     }
 
     private void ingestData(TableProperties tableProperties, StateStore stateStore, Iterator<Record> recordIterator) throws Exception {

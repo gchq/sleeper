@@ -131,8 +131,8 @@ public class SyncJars {
         uploadJars.stream().parallel().forEach(jar -> {
             LOGGER.info("Uploading jar: {}", jar.getFileName());
             s3.putObject(builder -> builder
-                            .bucket(bucketName)
-                            .key(String.valueOf(jar.getFileName())),
+                    .bucket(bucketName)
+                    .key(String.valueOf(jar.getFileName())),
                     jar);
             LOGGER.info("Finished uploading jar: {}", jar.getFileName());
         });

@@ -39,7 +39,8 @@ public class SaveLocalProperties {
     private SaveLocalProperties() {
     }
 
-    public static InstanceProperties saveFromS3(AmazonS3 s3, AmazonDynamoDB dynamoDB, String instanceId, Path directory) throws IOException {
+    public static InstanceProperties saveFromS3(
+            AmazonS3 s3, AmazonDynamoDB dynamoDB, String instanceId, Path directory) throws IOException {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3GivenInstanceId(s3, instanceId);
         saveToDirectory(directory, instanceProperties,
@@ -48,15 +49,16 @@ public class SaveLocalProperties {
         return instanceProperties;
     }
 
-    public static void saveToDirectory(Path directory,
-                                       InstanceProperties instanceProperties,
-                                       Stream<TableProperties> tablePropertiesStream) throws IOException {
+    public static void saveToDirectory(
+            Path directory, InstanceProperties instanceProperties,
+            Stream<TableProperties> tablePropertiesStream) throws IOException {
         writeInstanceProperties(instanceProperties, directory.resolve("instance.properties"));
         Files.writeString(directory.resolve("tags.properties"), instanceProperties.getTagsPropertiesAsString());
         saveTablesToDirectory(directory, tablePropertiesStream);
     }
 
-    private static void saveTablesToDirectory(Path directory, Stream<TableProperties> tablePropertiesStream) throws IOException {
+    private static void saveTablesToDirectory(
+            Path directory, Stream<TableProperties> tablePropertiesStream) throws IOException {
         try {
             for (TableProperties tableProperties : (Iterable<TableProperties>) tablePropertiesStream::iterator) {
                 saveTableToDirectory(directory, tableProperties);

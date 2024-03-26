@@ -134,8 +134,7 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
                     s3BucketName, filePathPrefix,
                     s3TransferManager,
                     localWorkingDirectory,
-                    fileNameGenerator.get()
-            );
+                    fileNameGenerator.get());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

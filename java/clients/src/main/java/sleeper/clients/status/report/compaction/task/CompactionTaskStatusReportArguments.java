@@ -25,9 +25,8 @@ public class CompactionTaskStatusReportArguments {
     private final CompactionTaskStatusReporter reporter;
     private final CompactionTaskQuery query;
 
-    private CompactionTaskStatusReportArguments(String instanceId,
-                                                CompactionTaskStatusReporter reporter,
-                                                CompactionTaskQuery query) {
+    private CompactionTaskStatusReportArguments(
+            String instanceId, CompactionTaskStatusReporter reporter, CompactionTaskQuery query) {
         this.instanceId = instanceId;
         this.reporter = reporter;
         this.query = query;
