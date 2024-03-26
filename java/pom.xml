@@ -143,7 +143,7 @@
         <athena.version>2023.3.1</athena.version>
         <trino.version>390</trino.version>
         <!-- Trino's AssertJ plugin is not compatible with the latest version -->
-        <trino.assertj.version>3.18.1</trino.assertj.version>
+        <trino.assertj.version>3.25.3</trino.assertj.version>
         <!-- Build module uses Jersey for communicating with GitHub API -->
         <jersey.version>2.42</jersey.version>
         <!-- Netty version is managed because S3, Athena and Arrow depend on it but use incompatible versions -->
@@ -160,7 +160,7 @@
         <mockito.version>5.11.0</mockito.version>
         <testcontainers.version>1.19.7</testcontainers.version>
         <wiremock.version>2.35.2</wiremock.version>
-        <assertj.version>3.24.1</assertj.version>
+        <assertj.version>3.25.3</assertj.version>
         <approvaltests.version>22.3.3</approvaltests.version>
         <jsonunit.version>3.2.7</jsonunit.version>
         <checkstyle.version>10.14.2</checkstyle.version>
