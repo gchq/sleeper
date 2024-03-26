@@ -46,8 +46,7 @@ public class EmrInstanceGroups implements EmrInstanceConfiguration {
         this(instanceProperties, new Random()::nextInt);
     }
 
-    public EmrInstanceGroups(InstanceProperties instanceProperties,
-            IntUnaryOperator randomSubnet) {
+    public EmrInstanceGroups(InstanceProperties instanceProperties, IntUnaryOperator randomSubnet) {
         this.instanceProperties = instanceProperties;
         this.randomSubnet = randomSubnet;
     }
