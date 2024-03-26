@@ -15,18 +15,13 @@
  */
 package sleeper.clients;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
 import sleeper.clients.FakeWebSocketClient.WebSocketResponse;
 import sleeper.core.record.Record;
+import sleeper.query.output.RecordListSerDe;
 
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.List;
 
 public class QueryWebSocketClientTestHelper {
-
-    private static final Gson GSON = new GsonBuilder().create();
 
     private QueryWebSocketClientTestHelper() {
     }
@@ -35,7 +30,7 @@ public class QueryWebSocketClientTestHelper {
         return "{" +
                 "\"queryId\":\"" + queryId + "\", " +
                 "\"message\":\"records\"," +
-                "\"records\":[" + Stream.of(records).map(GSON::toJson).collect(Collectors.joining(",")) + "]" +
+                "\"records\":" + RecordListSerDe.toJson(List.of(records)) +
                 "}";
     }
 

@@ -28,7 +28,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.ToNumberPolicy;
 import com.google.gson.reflect.TypeToken;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 
@@ -41,6 +40,7 @@ import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.PollWithRetries;
 import sleeper.query.model.Query;
 import sleeper.query.model.QuerySerDe;
+import sleeper.query.output.RecordListSerDe;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -316,10 +316,8 @@ public class QueryWebSocketClient {
             });
         }
 
-        @SuppressFBWarnings("SIC_INNER_SHOULD_BE_STATIC_ANON") // TypeToken is intended to be used as an anonymous class
         private void handleRecords(JsonObject message, String queryId) {
-            List<Record> recordList = GSON.fromJson(message.get("records"), new TypeToken<List<Record>>() {
-            }.getType());
+            List<Record> recordList = RecordListSerDe.fromJson(message.get("records"));
             if (!records.containsKey(queryId)) {
                 records.put(queryId, recordList);
             } else {
@@ -371,5 +369,8 @@ public class QueryWebSocketClient {
                     .flatMap(id -> records.getOrDefault(id, List.of()).stream())
                     .collect(Collectors.toList());
         }
+    }
+
+    public static class RecordListTypeToken extends TypeToken<List<Record>> {
     }
 }

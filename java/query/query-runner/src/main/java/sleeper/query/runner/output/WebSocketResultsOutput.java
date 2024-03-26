@@ -15,14 +15,13 @@
  */
 package sleeper.query.runner.output;
 
-import com.google.gson.reflect.TypeToken;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.record.Record;
 import sleeper.query.model.QueryOrLeafPartitionQuery;
+import sleeper.query.output.RecordListSerDe;
 import sleeper.query.output.ResultsOutput;
 import sleeper.query.output.ResultsOutputInfo;
 import sleeper.query.output.ResultsOutputLocation;
@@ -113,11 +112,9 @@ public class WebSocketResultsOutput extends WebSocketOutput implements ResultsOu
         return new ResultsOutputInfo(count, outputLocations);
     }
 
-    @SuppressFBWarnings("SIC_INNER_SHOULD_BE_STATIC_ANON") // TypeToken is intended to be used as an anonymous class
     private void publishBatch(Map<String, Object> message, List<Record> records) throws IOException {
         LOGGER.info("Publishing batch of {} records to WebSocket connection", records.size());
-        message.put("records", serde.toJson(records, new TypeToken<List<Record>>() {
-        }.getType()));
+        message.put("records", RecordListSerDe.toJson(records));
         this.sendJson(message);
     }
 }
