@@ -405,13 +405,13 @@ class S3FileReferenceStore implements FileReferenceStore {
 
     @Override
     public void clearFileData() throws StateStoreException {
-        Path path = new Path(stateStorePath + "/files");
         try {
+            Path path = new Path(stateStorePath + "/files");
             path.getFileSystem(conf).delete(path, true);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+            s3RevisionIdStore.deleteFilesRevision();
+        } catch (Exception e) {
+            throw new StateStoreException("Failed deleting files file", e);
         }
-        s3RevisionIdStore.deleteFilesRevision();
     }
 
     private String getFilesPath(S3RevisionId revisionId) {

@@ -39,7 +39,6 @@ import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -171,14 +170,14 @@ class S3PartitionStore implements PartitionStore {
     }
 
     @Override
-    public void clearPartitionData() {
-        Path path = new Path(stateStorePath + "/partitions");
+    public void clearPartitionData() throws StateStoreException {
         try {
+            Path path = new Path(stateStorePath + "/partitions");
             path.getFileSystem(conf).delete(path, true);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+            s3RevisionIdStore.deletePartitionsRevision();
+        } catch (Exception e) {
+            throw new StateStoreException("Failed deleting partitions file", e);
         }
-        s3RevisionIdStore.deletePartitionsRevision();
     }
 
     private String getPartitionsPath(S3RevisionId revisionId) {
