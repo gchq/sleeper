@@ -59,22 +59,17 @@ public class FilesStatusReport {
         FILE_STATUS_REPORTERS.put("CSV", new CVSFileStatusReporter());
     }
 
-    public FilesStatusReport(StateStore stateStore,
-            int maxNumberOfFilesWithNoReferencesToCount,
-            boolean verbose) {
+    public FilesStatusReport(StateStore stateStore, int maxNumberOfFilesWithNoReferencesToCount, boolean verbose) {
         this(stateStore, maxNumberOfFilesWithNoReferencesToCount, verbose, DEFAULT_STATUS_REPORTER);
     }
 
-    public FilesStatusReport(StateStore stateStore,
-            int maxNumberOfFilesWithNoReferencesToCount,
-            boolean verbose,
-            String outputType) {
+    public FilesStatusReport(
+            StateStore stateStore, int maxNumberOfFilesWithNoReferencesToCount, boolean verbose, String outputType) {
         this(stateStore, maxNumberOfFilesWithNoReferencesToCount, verbose, getReporter(outputType));
     }
 
-    public FilesStatusReport(StateStore stateStore,
-            int maxNumberOfFilesWithNoReferencesToCount,
-            boolean verbose,
+    public FilesStatusReport(
+            StateStore stateStore, int maxNumberOfFilesWithNoReferencesToCount, boolean verbose,
             FileStatusReporter fileStatusReporter) {
         this.maxNumberOfFilesWithNoReferencesToCount = maxNumberOfFilesWithNoReferencesToCount;
         this.verbose = verbose;

@@ -47,9 +47,9 @@ public class CompactionStatusReportScreen {
     private final AdminClientStatusStoreFactory statusStores;
     private final TableSelectHelper tableSelectHelper;
 
-    public CompactionStatusReportScreen(ConsoleOutput out, ConsoleInput in,
-            AdminClientPropertiesStore store,
-            AdminClientStatusStoreFactory statusStores) {
+    public CompactionStatusReportScreen(
+            ConsoleOutput out, ConsoleInput in,
+            AdminClientPropertiesStore store, AdminClientStatusStoreFactory statusStores) {
         this.out = out;
         this.in = in;
         this.consoleHelper = new ConsoleHelper(out, in);

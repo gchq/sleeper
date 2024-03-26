@@ -38,20 +38,20 @@ public class CompactionTaskStatusReportTestHelper {
                 .taskId(taskId);
     }
 
-    public static CompactionTaskStatus finishedTask(String taskId, String startTime, String finishTime,
-            long recordsRead, long recordsWritten) {
+    public static CompactionTaskStatus finishedTask(
+            String taskId, String startTime, String finishTime, long recordsRead, long recordsWritten) {
         return finishedTaskBuilder(taskId, startTime, finishTime, recordsRead, recordsWritten).build();
     }
 
-    public static CompactionTaskStatus finishedTask(String taskId, String startTime, String finishTime,
-            RecordsProcessedSummary... summaries) {
+    public static CompactionTaskStatus finishedTask(
+            String taskId, String startTime, String finishTime, RecordsProcessedSummary... summaries) {
         return startedTaskBuilder(taskId, startTime)
                 .finished(Instant.parse(finishTime), CompactionTaskFinishedStatus.builder().jobSummaries(Stream.of(summaries)))
                 .build();
     }
 
-    private static CompactionTaskStatus.Builder finishedTaskBuilder(String taskId, String startTime,
-            String finishTime, long recordsRead, long recordsWritten) {
+    private static CompactionTaskStatus.Builder finishedTaskBuilder(
+            String taskId, String startTime, String finishTime, long recordsRead, long recordsWritten) {
         return startedTaskBuilder(taskId, startTime)
                 .finished(Instant.parse(finishTime),
                         taskFinishedStatus(startTime, finishTime, recordsRead, recordsWritten));

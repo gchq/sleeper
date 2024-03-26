@@ -52,7 +52,8 @@ public class TableDockerStack implements DockerStack {
         return new Builder();
     }
 
-    public static TableDockerStack from(InstanceProperties instanceProperties,
+    public static TableDockerStack from(
+            InstanceProperties instanceProperties,
             AmazonS3 s3Client, AmazonDynamoDB dynamoDB) {
         return builder().instanceProperties(instanceProperties)
                 .s3Client(s3Client).dynamoDB(dynamoDB)

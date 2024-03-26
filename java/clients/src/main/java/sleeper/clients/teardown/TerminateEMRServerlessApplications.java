@@ -44,8 +44,7 @@ public class TerminateEMRServerlessApplications {
     private final EmrServerlessClient emrServerlessClient;
     private final String applicationPrefix;
 
-    public TerminateEMRServerlessApplications(EmrServerlessClient emrServerlessClient,
-            InstanceProperties properties) {
+    public TerminateEMRServerlessApplications(EmrServerlessClient emrServerlessClient, InstanceProperties properties) {
         this.emrServerlessClient = emrServerlessClient;
         this.applicationPrefix = "sleeper-" + properties.get(ID);
     }

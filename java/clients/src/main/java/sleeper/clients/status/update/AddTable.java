@@ -42,13 +42,15 @@ public class AddTable {
     private final TablePropertiesStore tablePropertiesStore;
     private final StateStoreProvider stateStoreProvider;
 
-    public AddTable(AmazonS3 s3Client, AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties,
-            TableProperties tableProperties) {
+    public AddTable(
+            AmazonS3 s3Client, AmazonDynamoDB dynamoDB,
+            InstanceProperties instanceProperties, TableProperties tableProperties) {
         this(s3Client, dynamoDB, instanceProperties, tableProperties, getConfigurationForClient(instanceProperties));
     }
 
-    public AddTable(AmazonS3 s3Client, AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties,
-            TableProperties tableProperties, Configuration configuration) {
+    public AddTable(
+            AmazonS3 s3Client, AmazonDynamoDB dynamoDB,
+            InstanceProperties instanceProperties, TableProperties tableProperties, Configuration configuration) {
         this.tableProperties = tableProperties;
         this.tablePropertiesStore = S3TableProperties.getStore(instanceProperties, s3Client, dynamoDB);
         this.stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties, configuration);

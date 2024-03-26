@@ -66,7 +66,8 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
     }
 
     @Override
-    public void report(List<IngestJobStatus> statusList, JobQuery.Type query, IngestQueueMessages queueMessages,
+    public void report(
+            List<IngestJobStatus> statusList, JobQuery.Type query, IngestQueueMessages queueMessages,
             Map<String, Integer> persistentEmrStepCount) {
         out.println();
         out.println("Ingest Job Status Report");
@@ -81,7 +82,8 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
         }
     }
 
-    private void printSummary(List<IngestJobStatus> statusList, JobQuery.Type queryType,
+    private void printSummary(
+            List<IngestJobStatus> statusList, JobQuery.Type queryType,
             IngestQueueMessages queueMessages, Map<String, Integer> persistentEmrStepCount) {
         if (queryType.equals(JobQuery.Type.DETAILED)) {
             printDetailedSummary(statusList);
@@ -156,7 +158,8 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
         }
     }
 
-    private void printAllSummary(List<IngestJobStatus> statusList, IngestQueueMessages queueMessages,
+    private void printAllSummary(
+            List<IngestJobStatus> statusList, IngestQueueMessages queueMessages,
             Map<String, Integer> persistentEmrStepCount) {
         printUnfinishedSummary(statusList, queueMessages, persistentEmrStepCount);
         out.printf("Total jobs finished: %s%n", statusList.stream().filter(IngestJobStatus::isFinished).count());

@@ -45,7 +45,8 @@ public class ShutdownSystemProcesses {
     private final AmazonElasticMapReduce emrClient;
     private final EmrServerlessClient emrServerlessClient;
 
-    public ShutdownSystemProcesses(AmazonCloudWatchEvents cloudWatch, AmazonECS ecs,
+    public ShutdownSystemProcesses(
+            AmazonCloudWatchEvents cloudWatch, AmazonECS ecs,
             AmazonElasticMapReduce emrClient, EmrServerlessClient emrServerlessClient) {
         this.cloudWatch = cloudWatch;
         this.ecs = ecs;
@@ -75,8 +76,7 @@ public class ShutdownSystemProcesses {
         new TerminateEMRServerlessApplications(emrServerlessClient, properties).run();
     }
 
-    private static void stopTasks(AmazonECS ecs, InstanceProperties properties,
-            InstanceProperty property) {
+    private static void stopTasks(AmazonECS ecs, InstanceProperties properties, InstanceProperty property) {
         if (!properties.isSet(property)) {
             return;
         }
@@ -94,8 +94,7 @@ public class ShutdownSystemProcesses {
         });
     }
 
-    private static void forEachTaskArn(AmazonECS ecs, String clusterName,
-            Consumer<String> consumer) {
+    private static void forEachTaskArn(AmazonECS ecs, String clusterName, Consumer<String> consumer) {
         String nextToken = null;
         do {
             ListTasksResult result = ecs.listTasks(

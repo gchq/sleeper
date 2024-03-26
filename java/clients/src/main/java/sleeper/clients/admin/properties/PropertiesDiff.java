@@ -56,9 +56,8 @@ public class PropertiesDiff {
         return new PropertiesDiff(Collections.emptyMap());
     }
 
-    public void print(ConsoleOutput out,
-            SleeperPropertyIndex<?> propertyIndex,
-            Set<SleeperProperty> invalidProperties) {
+    public void print(
+            ConsoleOutput out, SleeperPropertyIndex<?> propertyIndex, Set<SleeperProperty> invalidProperties) {
         out.println("Found changes to properties:");
         out.println();
 

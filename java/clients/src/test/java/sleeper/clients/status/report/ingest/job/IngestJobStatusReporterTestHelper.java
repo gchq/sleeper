@@ -42,7 +42,8 @@ public class IngestJobStatusReporterTestHelper {
         return getStandardReport(query, statusList, numberInQueue, Collections.emptyMap());
     }
 
-    public static String getStandardReport(JobQuery.Type query, List<IngestJobStatus> statusList, int numberInQueue,
+    public static String getStandardReport(
+            JobQuery.Type query, List<IngestJobStatus> statusList, int numberInQueue,
             Map<String, Integer> persistentEmrStepCount) {
         ToStringPrintStream output = new ToStringPrintStream();
         new StandardIngestJobStatusReporter(output.getPrintStream()).report(statusList, query,
@@ -54,7 +55,8 @@ public class IngestJobStatusReporterTestHelper {
         return getJsonReport(query, statusList, numberInQueue, Collections.emptyMap());
     }
 
-    public static String getJsonReport(JobQuery.Type query, List<IngestJobStatus> statusList, int numberInQueue,
+    public static String getJsonReport(
+            JobQuery.Type query, List<IngestJobStatus> statusList, int numberInQueue,
             Map<String, Integer> persistentEmrStepCount) {
         ToStringPrintStream output = new ToStringPrintStream();
         new JsonIngestJobStatusReporter(output.getPrintStream()).report(statusList, query,

@@ -168,8 +168,8 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
                     .toIterable().containsExactlyElementsOf(records);
         }
 
-        private void ingestRecords(InstanceProperties instanceProperties, TableProperties tableProperties,
-                List<Record> records) throws Exception {
+        private void ingestRecords(
+                InstanceProperties instanceProperties, TableProperties tableProperties, List<Record> records) throws Exception {
             IngestFactory.builder()
                     .instanceProperties(instanceProperties)
                     .objectFactory(ObjectFactory.noUserJars())

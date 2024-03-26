@@ -266,10 +266,11 @@ public class UploadDockerImagesTest {
             properties.set(OPTIONAL_STACKS, "IngestStack");
 
             // When / Then
-            assertThatThrownBy(() -> uploader().upload(returningExitCode(123), StacksForDockerUpload.from(properties))).isInstanceOfSatisfying(CommandFailedException.class, e -> {
-                assertThat(e.getCommand()).isEqualTo(loginDockerCommand());
-                assertThat(e.getExitCode()).isEqualTo(123);
-            });
+            assertThatThrownBy(() -> uploader().upload(returningExitCode(123), StacksForDockerUpload.from(properties)))
+                    .isInstanceOfSatisfying(CommandFailedException.class, e -> {
+                        assertThat(e.getCommand()).isEqualTo(loginDockerCommand());
+                        assertThat(e.getExitCode()).isEqualTo(123);
+                    });
             assertThat(ecrClient.getRepositories()).isEmpty();
         }
 
@@ -300,8 +301,10 @@ public class UploadDockerImagesTest {
             properties.set(OPTIONAL_STACKS, "BuildxStack");
 
             // When / Then
-            assertThatThrownBy(() -> uploader().upload(returningExitCodeForCommand(123, createNewBuildxBuilderInstanceCommand()),
-                    StacksForDockerUpload.from(properties))).isInstanceOfSatisfying(CommandFailedException.class, e -> {
+            assertThatThrownBy(() -> uploader().upload(
+                    returningExitCodeForCommand(123, createNewBuildxBuilderInstanceCommand()),
+                    StacksForDockerUpload.from(properties)))
+                    .isInstanceOfSatisfying(CommandFailedException.class, e -> {
                         assertThat(e.getCommand()).isEqualTo(createNewBuildxBuilderInstanceCommand());
                         assertThat(e.getExitCode()).isEqualTo(123);
                     });
@@ -317,8 +320,10 @@ public class UploadDockerImagesTest {
             CommandPipeline buildImageCommand = buildImageCommand(
                     "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0",
                     "./docker/ingest");
-            assertThatThrownBy(() -> uploader().upload(returningExitCodeForCommand(42, buildImageCommand),
-                    StacksForDockerUpload.from(properties))).isInstanceOfSatisfying(CommandFailedException.class, e -> {
+            assertThatThrownBy(() -> uploader().upload(
+                    returningExitCodeForCommand(42, buildImageCommand),
+                    StacksForDockerUpload.from(properties)))
+                    .isInstanceOfSatisfying(CommandFailedException.class, e -> {
                         assertThat(e.getCommand()).isEqualTo(buildImageCommand);
                         assertThat(e.getExitCode()).isEqualTo(42);
                     });

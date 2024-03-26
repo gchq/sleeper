@@ -338,8 +338,8 @@ public class ReinitialiseTableIT {
         }
     }
 
-    private void assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions(String expectedFilesVersion,
-            String expectedPartitionsVersion) {
+    private void assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions(
+            String expectedFilesVersion, String expectedPartitionsVersion) {
         S3RevisionIdStore revisionIdStore = new S3RevisionIdStore(dynamoDBClient, instanceProperties, tableProperties);
         S3RevisionId filesRevisionId = revisionIdStore.getCurrentFilesRevisionId();
         S3RevisionId partitionsRevisionId = revisionIdStore.getCurrentPartitionsRevisionId();
