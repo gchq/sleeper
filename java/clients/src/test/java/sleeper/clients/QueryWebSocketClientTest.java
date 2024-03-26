@@ -42,6 +42,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.clients.QueryWebSocketClientTestHelper.completedQuery;
+import static sleeper.clients.QueryWebSocketClientTestHelper.message;
+import static sleeper.clients.QueryWebSocketClientTestHelper.queryResult;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
@@ -104,6 +107,8 @@ public class QueryWebSocketClientTest {
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
                     .containsExactly(querySerDe.toJson(query));
+            assertThat(client.getResults("test-query-id"))
+                    .containsExactly(expectedRecord);
         }
 
         @Test
@@ -133,6 +138,10 @@ public class QueryWebSocketClientTest {
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
                     .containsExactly(querySerDe.toJson(query));
+            assertThat(client.getResults("test-query-id"))
+                    .containsExactly(expectedRecord);
+            assertThat(client.getResults("test-subquery"))
+                    .containsExactly(expectedRecord);
         }
 
         @Test
@@ -174,6 +183,14 @@ public class QueryWebSocketClientTest {
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
                     .containsExactly(querySerDe.toJson(query));
+            assertThat(client.getResults("test-query-id"))
+                    .containsExactly(expectedRecord1, expectedRecord2, expectedRecord3);
+            assertThat(client.getResults("subquery-1"))
+                    .containsExactly(expectedRecord1);
+            assertThat(client.getResults("subquery-2"))
+                    .containsExactly(expectedRecord2);
+            assertThat(client.getResults("subquery-3"))
+                    .containsExactly(expectedRecord3);
         }
 
         @Test
@@ -201,6 +218,8 @@ public class QueryWebSocketClientTest {
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
                     .containsExactly(querySerDe.toJson(query));
+            assertThat(client.getResults("test-query-id"))
+                    .containsExactly(expectedRecord);
         }
     }
 
@@ -404,23 +423,6 @@ public class QueryWebSocketClientTest {
                 .build();
     }
 
-    private static String queryResult(String queryId, Record... records) {
-        return "{" +
-                "\"queryId\":\"" + queryId + "\", " +
-                "\"message\":\"records\"," +
-                "\"records\":[" + Stream.of(records).map(record -> "\"" + record + "\"").collect(Collectors.joining(",")) + "]" +
-                "}";
-    }
-
-    private static String completedQuery(String queryId, long recordCount) {
-        return "{" +
-                "\"queryId\":\"" + queryId + "\", " +
-                "\"message\":\"completed\"," +
-                "\"recordCount\":\"" + recordCount + "\"," +
-                "\"locations\":[{\"type\":\"websocket-endpoint\"}]" +
-                "}";
-    }
-
     private static String createdSubQueries(String queryId, String... subQueryIds) {
         return "{" +
                 "\"queryId\":\"" + queryId + "\", " +
@@ -455,15 +457,11 @@ public class QueryWebSocketClientTest {
         return client;
     }
 
-    private WebSocketResponse message(String message) {
-        return messageHandler -> messageHandler.onMessage(message);
-    }
-
-    public WebSocketResponse closeWithReason(String reason) {
+    public static WebSocketResponse closeWithReason(String reason) {
         return messageHandler -> messageHandler.onClose(reason);
     }
 
-    public WebSocketResponse error(Exception error) {
+    public static WebSocketResponse error(Exception error) {
         return messageHandler -> messageHandler.onError(error);
     }
 }
