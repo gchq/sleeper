@@ -42,8 +42,7 @@ public class DirectEmrServerlessDriver implements DirectBulkImportDriver {
     private final AmazonDynamoDB dynamoDBClient;
     private final EmrServerlessClient emrClient;
 
-    public DirectEmrServerlessDriver(SystemTestInstanceContext instance,
-            SystemTestClients clients) {
+    public DirectEmrServerlessDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
         this.instance = instance;
         this.s3Client = clients.getS3();
         this.dynamoDBClient = clients.getDynamoDB();

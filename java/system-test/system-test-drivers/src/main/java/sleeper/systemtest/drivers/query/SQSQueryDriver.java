@@ -56,10 +56,8 @@ public class SQSQueryDriver implements QuerySendAndWaitDriver {
     private final PollWithRetries poll = PollWithRetries.intervalAndPollingTimeout(
             Duration.ofSeconds(2), Duration.ofMinutes(1));
 
-    public SQSQueryDriver(SystemTestInstanceContext instance,
-            AmazonSQS sqsClient,
-            AmazonDynamoDB dynamoDBClient,
-            AmazonS3 s3Client) {
+    public SQSQueryDriver(
+            SystemTestInstanceContext instance, AmazonSQS sqsClient, AmazonDynamoDB dynamoDBClient, AmazonS3 s3Client) {
         this.instance = instance;
         this.sqsClient = sqsClient;
         this.dynamoDBClient = dynamoDBClient;

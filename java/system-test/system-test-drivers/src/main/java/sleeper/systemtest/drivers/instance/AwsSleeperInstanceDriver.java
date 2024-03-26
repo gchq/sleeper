@@ -62,8 +62,7 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
     private final CloudFormationClient cloudFormationClient;
     private final AmazonECR ecr;
 
-    public AwsSleeperInstanceDriver(SystemTestParameters parameters,
-            SystemTestClients clients) {
+    public AwsSleeperInstanceDriver(SystemTestParameters parameters, SystemTestClients clients) {
         this.parameters = parameters;
         this.dynamoDB = clients.getDynamoDB();
         this.s3 = clients.getS3();

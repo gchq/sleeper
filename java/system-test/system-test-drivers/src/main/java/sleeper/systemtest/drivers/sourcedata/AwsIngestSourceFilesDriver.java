@@ -41,7 +41,8 @@ import static sleeper.sketches.s3.SketchesSerDeToS3.sketchesPathForDataFile;
 public class AwsIngestSourceFilesDriver implements IngestSourceFilesDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(AwsIngestSourceFilesDriver.class);
 
-    public void writeFile(InstanceProperties instanceProperties, TableProperties tableProperties,
+    public void writeFile(
+            InstanceProperties instanceProperties, TableProperties tableProperties,
             String path, boolean writeSketches, Iterator<Record> records) {
         Schema schema = tableProperties.getSchema();
         Configuration conf = HadoopConfigurationProvider.getConfigurationForClient(instanceProperties, tableProperties);
