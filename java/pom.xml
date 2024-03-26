@@ -129,7 +129,7 @@
         <jjwt.build.version>0.12.5</jjwt.build.version>
         <facebook.collections.version>0.1.32</facebook.collections.version>
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
-        <guava.version>33.0.0-jre</guava.version>
+        <guava.version>33.1.0-jre</guava.version>
         <cdk.version>2.133.0</cdk.version>
         <cdk.kubectl.24.version>2.0.242</cdk.kubectl.24.version>
         <constructs.version>10.3.0</constructs.version>
