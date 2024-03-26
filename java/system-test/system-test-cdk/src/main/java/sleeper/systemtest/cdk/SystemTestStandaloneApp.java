@@ -37,8 +37,8 @@ import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_RE
 
 public class SystemTestStandaloneApp extends Stack {
 
-    public SystemTestStandaloneApp(App app, String id, StackProps props,
-            SystemTestStandaloneProperties properties, BuiltJars jars) {
+    public SystemTestStandaloneApp(
+            App app, String id, StackProps props, SystemTestStandaloneProperties properties, BuiltJars jars) {
         super(app, id, props);
 
         SystemTestBucketStack bucketStack = new SystemTestBucketStack(this, "SystemTestBucket", properties);
