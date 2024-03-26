@@ -52,8 +52,7 @@ public class PauseSystem {
                 .forEach(rules -> disableRule(cwClient, rules));
     }
 
-    private static void disableRule(AmazonCloudWatchEvents cwClient,
-                                    SleeperScheduleRule.Value rules) {
+    private static void disableRule(AmazonCloudWatchEvents cwClient, SleeperScheduleRule.Value rules) {
         List<String> ruleNames = rules.getRuleNames();
         if (ruleNames.isEmpty()) {
             System.out.println("No rule found for property " + rules.getProperty() + ", not disabling");

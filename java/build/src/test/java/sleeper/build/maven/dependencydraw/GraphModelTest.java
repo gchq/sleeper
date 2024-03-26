@@ -64,8 +64,7 @@ public class GraphModelTest {
         GraphModel model = GraphModel.from(rootBuilder().modulesArray(
                 sourceModuleBuilder("core").build(),
                 sourceModuleBuilder("configuration").dependenciesArray(dependency("sleeper:core")).build(),
-                sourceModuleBuilder("ingest").dependenciesArray(dependency("sleeper:configuration")).build()
-        ).build());
+                sourceModuleBuilder("ingest").dependenciesArray(dependency("sleeper:configuration")).build()).build());
 
         assertThat(model.getEdges())
                 .extracting(GraphEdge::toString)
@@ -81,8 +80,8 @@ public class GraphModelTest {
                 sourceModuleBuilder("configuration").dependenciesArray(dependency("sleeper:core")).build(),
                 sourceModuleBuilder("ingest").dependenciesArray(
                         dependency("sleeper:configuration"),
-                        dependency("sleeper:core")).build()
-        ).build());
+                        dependency("sleeper:core")).build())
+                .build());
 
         assertThat(model.getEdges())
                 .extracting(GraphEdge::toString)
@@ -99,8 +98,8 @@ public class GraphModelTest {
                 sourceModuleBuilder("ingest").dependenciesArray(dependency("sleeper:configuration")).build(),
                 sourceModuleBuilder("bulk-import").dependenciesArray(
                         dependency("sleeper:ingest"),
-                        dependency("sleeper:core")).build()
-        ).build());
+                        dependency("sleeper:core")).build())
+                .build());
 
         assertThat(model.getEdges())
                 .extracting(GraphEdge::toString)
@@ -116,8 +115,8 @@ public class GraphModelTest {
                 sourceModuleBuilder("core").build(),
                 sourceModuleBuilder("configuration").dependenciesArray(
                         dependency("sleeper:core"),
-                        dependency("sleeper:not-a-module")).build()
-        ).build());
+                        dependency("sleeper:not-a-module")).build())
+                .build());
 
         assertThat(model.getEdges())
                 .extracting(GraphEdge::toString)
@@ -130,8 +129,7 @@ public class GraphModelTest {
         GraphModel model = GraphModel.from(rootBuilder().modulesArray(
                 sourceModuleBuilder("core").build(),
                 sourceModuleBuilder("configuration").dependenciesArray(dependency("sleeper:core")).build(),
-                sourceModuleBuilder("ingest").dependenciesArray(dependency("sleeper:configuration")).build()
-        ).build());
+                sourceModuleBuilder("ingest").dependenciesArray(dependency("sleeper:configuration")).build()).build());
 
         assertThat(model.edgeByFromTo(moduleRef("configuration"), moduleRef("core")))
                 .map(GraphEdge::toString)

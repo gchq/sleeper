@@ -29,8 +29,8 @@ public class HadoopConfigurationLocalStackUtils {
      * with S3 and this means that any new LocalStack container will not be recognised once the first one has been used.
      * The FileSystem cache needs to be reset between different uses of a LocalStack container.
      *
-     * @param container LocalStack container to access for S3A file system
-     * @return Hadoop configuration
+     * @param  container LocalStack container to access for S3A file system
+     * @return           Hadoop configuration
      */
     public static Configuration getHadoopConfiguration(LocalStackContainer container) {
         Configuration configuration = new Configuration();

@@ -40,16 +40,15 @@ public class GetChunkConfig {
     }
 
     public static String get(ProjectChunk chunk, String property) {
-        return Property.valueOf(property.toUpperCase(Locale.ROOT))
-                .getter.apply(chunk);
+        return Property.valueOf(property.toUpperCase(Locale.ROOT)).getter.apply(chunk);
     }
 
     private static String gitHubActionsOutputs(ProjectChunk chunk) {
         return Stream.concat(
-                        Stream.of("chunkName=" + chunk.getName(),
-                                "moduleList=" + chunk.getMavenProjectList()),
-                        chunk.getWorkflowOutputs().entrySet().stream()
-                                .map(entry -> entry.getKey() + "=" + entry.getValue()))
+                Stream.of("chunkName=" + chunk.getName(),
+                        "moduleList=" + chunk.getMavenProjectList()),
+                chunk.getWorkflowOutputs().entrySet().stream()
+                        .map(entry -> entry.getKey() + "=" + entry.getValue()))
                 .collect(Collectors.joining("\n"));
     }
 

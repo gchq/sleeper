@@ -28,7 +28,7 @@ public class CloudFormationStacks {
 
     public CloudFormationStacks(CloudFormationClient cloudFormation) {
         this(cloudFormation.listStacksPaginator(b -> b.stackStatusFilters(
-                        StackStatus.CREATE_COMPLETE, StackStatus.UPDATE_COMPLETE)).stackSummaries()
+                StackStatus.CREATE_COMPLETE, StackStatus.UPDATE_COMPLETE)).stackSummaries()
                 .stream()
                 .filter(stack -> stack.parentId() == null)
                 .map(StackSummary::stackName).collect(Collectors.toList()));

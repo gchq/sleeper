@@ -174,8 +174,7 @@ public class InstanceConfigurationScreen {
                     chooseFromOptions(updatedProperties, changes, valid);
                 }
             });
-            MenuOption returnToEditor = new MenuOption("Return to editor", () ->
-                    withProperties(updatedProperties).viewAndEditProperties(changes));
+            MenuOption returnToEditor = new MenuOption("Return to editor", () -> withProperties(updatedProperties).viewAndEditProperties(changes));
             MenuOption discardChanges = new MenuOption("Discard changes and return to main menu", () -> {
             });
             if (valid) {
