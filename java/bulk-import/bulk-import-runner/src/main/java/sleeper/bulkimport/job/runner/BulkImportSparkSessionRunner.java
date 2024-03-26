@@ -59,10 +59,9 @@ public class BulkImportSparkSessionRunner implements BulkImportJobDriver.Session
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
 
-    public BulkImportSparkSessionRunner(BulkImportJobRunner jobRunner,
-            InstanceProperties instanceProperties,
-            TablePropertiesProvider tablePropertiesProvider,
-            StateStoreProvider stateStoreProvider) {
+    public BulkImportSparkSessionRunner(
+            BulkImportJobRunner jobRunner, InstanceProperties instanceProperties,
+            TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider) {
         this.jobRunner = jobRunner;
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
