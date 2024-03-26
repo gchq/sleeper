@@ -509,8 +509,10 @@ public class IngestCoordinatorFileWritingStrategyIT {
             IngestCoordinatorTestParameters ingestCoordinatorTestParameters,
             int maxRecordsInMemory,
             long maxNoOfBytesToWriteToLocalStore) throws StateStoreException, IteratorException, IOException {
-        try (IngestCoordinator<Record> ingestCoordinator = directWriteBackedByArrayListWriteToLocalFile(arrayList -> arrayList.maxNoOfRecordsInMemory(maxRecordsInMemory)
-                .maxNoOfRecordsInLocalStore(maxNoOfBytesToWriteToLocalStore))
+        try (IngestCoordinator<Record> ingestCoordinator = directWriteBackedByArrayListWriteToLocalFile(
+                arrayList -> arrayList
+                        .maxNoOfRecordsInMemory(maxRecordsInMemory)
+                        .maxNoOfRecordsInLocalStore(maxNoOfBytesToWriteToLocalStore))
                 .createIngestCoordinator(ingestCoordinatorTestParameters)) {
             for (Record record : recordListAndSchema.recordList) {
                 ingestCoordinator.write(record);
