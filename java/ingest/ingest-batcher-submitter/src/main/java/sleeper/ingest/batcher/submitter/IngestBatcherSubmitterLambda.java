@@ -63,7 +63,8 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
                 new DynamoDBTableIndex(instanceProperties, dynamoDBClient));
     }
 
-    public IngestBatcherSubmitterLambda(IngestBatcherStore store, InstanceProperties instanceProperties,
+    public IngestBatcherSubmitterLambda(
+            IngestBatcherStore store, InstanceProperties instanceProperties,
             TableIndex tableIndex, Configuration conf) {
         this.store = store;
         this.propertiesReloader = PropertiesReloader.neverReload();
