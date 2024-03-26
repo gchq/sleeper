@@ -35,7 +35,8 @@ public class IngestStacks {
     private final EksBulkImportStack eksBulkImportStack;
     private final EmrServerlessBulkImportStack emrServerlessBulkImportStack;
 
-    public IngestStacks(IngestStack ingestStack,
+    public IngestStacks(
+            IngestStack ingestStack,
             EmrBulkImportStack emrBulkImportStack,
             PersistentEmrBulkImportStack persistentEmrBulkImportStack,
             EksBulkImportStack eksBulkImportStack,

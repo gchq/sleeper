@@ -39,7 +39,8 @@ public class S3StateStoreStack extends NestedStack {
     private final Table revisionTable;
     private final TableDataStack dataStack;
 
-    public S3StateStoreStack(Construct scope, String id, InstanceProperties instanceProperties,
+    public S3StateStoreStack(
+            Construct scope, String id, InstanceProperties instanceProperties,
             TableDataStack dataStack, ManagedPoliciesStack policiesStack) {
         super(scope, id);
         this.dataStack = dataStack;

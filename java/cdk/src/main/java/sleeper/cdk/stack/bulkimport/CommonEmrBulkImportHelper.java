@@ -60,10 +60,9 @@ public class CommonEmrBulkImportHelper {
     private final IngestStatusStoreResources statusStoreResources;
     private final CoreStacks coreStacks;
 
-    public CommonEmrBulkImportHelper(Construct scope, String shortId,
-            InstanceProperties instanceProperties,
-            CoreStacks coreStacks,
-            IngestStatusStoreResources ingestStatusStoreResources) {
+    public CommonEmrBulkImportHelper(
+            Construct scope, String shortId, InstanceProperties instanceProperties,
+            CoreStacks coreStacks, IngestStatusStoreResources ingestStatusStoreResources) {
         this.scope = scope;
         this.shortId = shortId;
         this.instanceProperties = instanceProperties;
@@ -114,14 +113,16 @@ public class CommonEmrBulkImportHelper {
         return emrBulkImportJobQueue;
     }
 
-    public IFunction createJobStarterFunction(String bulkImportPlatform, Queue jobQueue, BuiltJars jars,
-            IBucket importBucket, CommonEmrBulkImportStack commonEmrStack) {
+    public IFunction createJobStarterFunction(
+            String bulkImportPlatform, Queue jobQueue, BuiltJars jars, IBucket importBucket,
+            CommonEmrBulkImportStack commonEmrStack) {
         return createJobStarterFunction(bulkImportPlatform, jobQueue, jars, importBucket,
                 List.of(commonEmrStack.getEmrRole(), commonEmrStack.getEc2Role()));
     }
 
-    public IFunction createJobStarterFunction(String bulkImportPlatform, Queue jobQueue, BuiltJars jars,
-            IBucket importBucket, List<IRole> passRoles) {
+    public IFunction createJobStarterFunction(
+            String bulkImportPlatform, Queue jobQueue, BuiltJars jars, IBucket importBucket,
+            List<IRole> passRoles) {
         String instanceId = instanceProperties.get(ID);
         Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
         env.put("BULK_IMPORT_PLATFORM", bulkImportPlatform);
