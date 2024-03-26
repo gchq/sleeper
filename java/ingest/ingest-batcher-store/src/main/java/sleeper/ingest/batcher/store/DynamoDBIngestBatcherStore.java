@@ -66,16 +66,15 @@ public class DynamoDBIngestBatcherStore implements IngestBatcherStore {
     private final TablePropertiesProvider tablePropertiesProvider;
     private final int filesInAssignJobBatch;
 
-    public DynamoDBIngestBatcherStore(AmazonDynamoDB dynamoDB,
-            InstanceProperties instanceProperties,
+    public DynamoDBIngestBatcherStore(
+            AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties,
             TablePropertiesProvider tablePropertiesProvider) {
         this(dynamoDB, instanceProperties, tablePropertiesProvider, FILES_IN_ASSIGN_JOB_BATCH);
     }
 
-    public DynamoDBIngestBatcherStore(AmazonDynamoDB dynamoDB,
-            InstanceProperties instanceProperties,
-            TablePropertiesProvider tablePropertiesProvider,
-            int filesInAssignJobBatch) {
+    public DynamoDBIngestBatcherStore(
+            AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties,
+            TablePropertiesProvider tablePropertiesProvider, int filesInAssignJobBatch) {
         this.dynamoDB = dynamoDB;
         this.requestsTableName = ingestRequestsTableName(instanceProperties.get(ID));
         this.tablePropertiesProvider = tablePropertiesProvider;
