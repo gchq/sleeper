@@ -28,6 +28,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesStore;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 
 import static sleeper.clients.util.BucketUtils.deleteAllObjectsInBucketWithPrefix;
@@ -56,7 +57,7 @@ public class DeleteTable {
         this.stateStoreProvider = stateStoreProvider;
     }
 
-    public void delete(String tableName) {
+    public void delete(String tableName) throws StateStoreException {
         TableProperties tableProperties = tablePropertiesStore.loadByName(tableName);
         deleteAllObjectsInBucketWithPrefix(s3Client, instanceProperties.get(DATA_BUCKET), tableProperties.get(TABLE_ID));
         stateStoreProvider.getStateStore(tableProperties).clearSleeperTable();
@@ -64,7 +65,7 @@ public class DeleteTable {
         LOGGER.info("Successfully deleted table {}", tableProperties.getStatus());
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws StateStoreException {
         if (args.length < 2 || args.length > 3) {
             System.out.println("Usage: <instance-id> <table-name> <optional-force-flag>");
         }
