@@ -19,6 +19,8 @@ package sleeper.core.statestore;
 import java.util.List;
 import java.util.Objects;
 
+import static java.util.stream.Collectors.toUnmodifiableList;
+
 /**
  * A request to split a file reference in the state store. The old reference will be deleted and new references will be
  * created in one transaction.
@@ -39,6 +41,14 @@ public class SplitFileReferenceRequest {
         return new SplitFileReferenceRequest(file,
                 List.of(SplitFileReference.referenceForChildPartition(file, leftPartition),
                         SplitFileReference.referenceForChildPartition(file, rightPartition)));
+    }
+
+    public SplitFileReferenceRequest withNoUpdateTimes() {
+        return new SplitFileReferenceRequest(
+                oldReference.toBuilder().lastStateStoreUpdateTime(null).build(),
+                newReferences.stream()
+                        .map(ref -> ref.toBuilder().lastStateStoreUpdateTime(null).build())
+                        .collect(toUnmodifiableList()));
     }
 
     public String getFilename() {

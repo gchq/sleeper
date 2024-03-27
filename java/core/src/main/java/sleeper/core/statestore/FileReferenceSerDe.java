@@ -16,6 +16,8 @@
 
 package sleeper.core.statestore;
 
+import com.google.gson.ExclusionStrategy;
+import com.google.gson.FieldAttributes;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.reflect.TypeToken;
@@ -47,5 +49,24 @@ public class FileReferenceSerDe {
     }
 
     private static class ListType extends TypeToken<List<FileReference>> {
+    }
+
+    public static ExclusionStrategy excludeUpdateTimes() {
+        return new ExcludeUpdateTimes();
+    }
+
+    private static class ExcludeUpdateTimes implements ExclusionStrategy {
+
+        @Override
+        public boolean shouldSkipField(FieldAttributes f) {
+            return f.getDeclaringClass() == FileReference.class
+                    && f.getName().equals("lastStateStoreUpdateTime");
+        }
+
+        @Override
+        public boolean shouldSkipClass(Class<?> clazz) {
+            return false;
+        }
+
     }
 }
