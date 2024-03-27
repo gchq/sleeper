@@ -20,6 +20,7 @@ import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceStore;
+import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.SplitRequestsFailedException;
 import sleeper.core.statestore.StateStoreException;
@@ -141,35 +142,42 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public void atomicallyReplaceFileReferencesWithNewOne(String jobId, String partitionId, List<String> inputFiles, FileReference newReference) throws StateStoreException {
-        for (String filename : inputFiles) {
+    public void atomicallyReplaceFileReferencesWithNewOnes(List<ReplaceFileReferencesRequest> requests) throws StateStoreException {
+        for (ReplaceFileReferencesRequest request : requests) {
+            atomicallyReplaceFileReferencesWithNewOne(request);
+        }
+    }
+
+    public void atomicallyReplaceFileReferencesWithNewOne(ReplaceFileReferencesRequest request) throws StateStoreException {
+        for (String filename : request.getInputFiles()) {
             AllReferencesToAFile file = filesByFilename.get(filename);
             if (file == null) {
                 throw new FileNotFoundException(filename);
             }
             Optional<FileReference> referenceOpt = file.getInternalReferences().stream()
-                    .filter(ref -> partitionId.equals(ref.getPartitionId())).findFirst();
+                    .filter(ref -> request.getPartitionId().equals(ref.getPartitionId())).findFirst();
             if (referenceOpt.isEmpty()) {
-                throw new FileReferenceNotFoundException(filename, partitionId);
+                throw new FileReferenceNotFoundException(filename, request.getPartitionId());
             }
             FileReference reference = referenceOpt.get();
-            if (!jobId.equals(reference.getJobId())) {
-                throw new FileReferenceNotAssignedToJobException(reference, jobId);
+            if (!request.getJobId().equals(reference.getJobId())) {
+                throw new FileReferenceNotAssignedToJobException(reference, request.getJobId());
             }
-            if (filename.equals(newReference.getFilename())) {
+            if (filename.equals(request.getNewReference().getFilename())) {
                 throw new NewReferenceSameAsOldReferenceException(filename);
             }
         }
-        if (filesByFilename.containsKey(newReference.getFilename())) {
-            throw new FileAlreadyExistsException(newReference.getFilename());
+        if (filesByFilename.containsKey(request.getNewReference().getFilename())) {
+            throw new FileAlreadyExistsException(request.getNewReference().getFilename());
         }
 
         Instant updateTime = clock.instant();
-        for (String filename : inputFiles) {
+        for (String filename : request.getInputFiles()) {
             filesByFilename.put(filename, filesByFilename.get(filename)
-                    .removeReferenceForPartition(partitionId, updateTime));
+                    .removeReferenceForPartition(request.getPartitionId(), updateTime));
         }
-        filesByFilename.put(newReference.getFilename(), fileWithOneReference(newReference, updateTime));
+        filesByFilename.put(request.getNewReference().getFilename(),
+                fileWithOneReference(request.getNewReference(), updateTime));
     }
 
     private Stream<FileReference> streamFileReferences() {
