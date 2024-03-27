@@ -52,6 +52,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -86,6 +87,28 @@ public class QueryWebSocketClient {
         }
     }
 
+    public CompletableFuture<List<Record>> submitQueryFuture(Query query) throws InterruptedException {
+        try {
+            startTime = Instant.now();
+            return client.startQueryFuture(query)
+                    .whenComplete((records, exception) -> {
+                        try {
+                            client.closeBlocking();
+                        } catch (InterruptedException e) {
+                        }
+                        LoggedDuration duration = LoggedDuration.withFullOutput(startTime, Instant.now());
+                        long recordsReturned = client.getTotalRecordsReturned();
+                        out.println("Query took " + duration + " to return " + recordsReturned + " records");
+                    });
+        } catch (InterruptedException e) {
+            try {
+                client.closeBlocking();
+            } catch (InterruptedException e2) {
+            }
+            throw e;
+        }
+    }
+
     public void waitForQuery() {
         try {
             while (!client.hasQueryFinished()) {
@@ -112,6 +135,8 @@ public class QueryWebSocketClient {
 
         void startQuery(Query query) throws InterruptedException;
 
+        CompletableFuture<List<Record>> startQueryFuture(Query query) throws InterruptedException;
+
         boolean hasQueryFinished();
 
         long getTotalRecordsReturned();
@@ -135,6 +160,13 @@ public class QueryWebSocketClient {
             this.serverUri = serverUri;
             this.out = out;
             this.messageHandler = messageHandler;
+        }
+
+        public CompletableFuture<List<Record>> startQueryFuture(Query query) throws InterruptedException {
+            CompletableFuture<List<Record>> future = new CompletableFuture<>();
+            messageHandler.setFuture(future);
+            startQuery(query);
+            return future;
         }
 
         public void startQuery(Query query) throws InterruptedException {
@@ -215,10 +247,15 @@ public class QueryWebSocketClient {
         private boolean queryComplete = false;
         private boolean queryFailed = false;
         private long totalRecordsReturned = 0L;
+        private CompletableFuture<List<Record>> future;
 
         public WebSocketMessageHandler(QuerySerDe querySerDe, ConsoleOutput out) {
             this.querySerDe = querySerDe;
             this.out = out;
+        }
+
+        public void setFuture(CompletableFuture<List<Record>> future) {
+            this.future = future;
         }
 
         public void onOpen(Query query, Consumer<String> messageSender) {
