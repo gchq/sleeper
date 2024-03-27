@@ -30,7 +30,8 @@ import com.google.gson.ToNumberPolicy;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 
-import sleeper.clients.exception.MalformedMessageException;
+import sleeper.clients.exception.MessageMalformedException;
+import sleeper.clients.exception.MessageMissingFieldException;
 import sleeper.clients.exception.UnknownMessageTypeException;
 import sleeper.clients.exception.WebSocketErrorException;
 import sleeper.clients.util.console.ConsoleOutput;
@@ -314,12 +315,14 @@ public class QueryWebSocketClient {
                     out.println("Received message without queryId from API:");
                     out.println("  " + json);
                     queryFailed = true;
+                    future.completeExceptionally(new MessageMissingFieldException("queryId"));
                     return Optional.empty();
                 }
                 if (!message.has("message")) {
                     out.println("Received message without message type from API:");
                     out.println("  " + json);
                     queryFailed = true;
+                    future.completeExceptionally(new MessageMissingFieldException("message"));
                     return Optional.empty();
                 }
                 return Optional.of(message);
@@ -327,7 +330,7 @@ public class QueryWebSocketClient {
                 out.println("Received malformed JSON message from API:");
                 out.println("  " + json);
                 queryFailed = true;
-                future.completeExceptionally(new MalformedMessageException(json));
+                future.completeExceptionally(new MessageMalformedException(json));
                 return Optional.empty();
             }
         }

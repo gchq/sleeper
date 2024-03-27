@@ -22,7 +22,8 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.clients.FakeWebSocketClient.WebSocketResponse;
 import sleeper.clients.QueryWebSocketClient.Client;
-import sleeper.clients.exception.MalformedMessageException;
+import sleeper.clients.exception.MessageMalformedException;
+import sleeper.clients.exception.MessageMissingFieldException;
 import sleeper.clients.exception.UnknownMessageTypeException;
 import sleeper.clients.exception.WebSocketErrorException;
 import sleeper.clients.testutil.ToStringPrintStream;
@@ -277,8 +278,9 @@ public class QueryWebSocketClientTest {
             Query query = exactQuery("test-query-id", 123L);
 
             // When / Then
-            assertThat(runQueryFuture(query, withResponses(
-                    message(unknownMessage("test-query-id")))))
+            assertThat(runQueryFuture(query,
+                    withResponses(
+                            message(unknownMessage("test-query-id")))))
                     .isCompletedExceptionally()
                     .failsWithin(Duration.ofMillis(10))
                     .withThrowableOfType(ExecutionException.class)
@@ -295,12 +297,13 @@ public class QueryWebSocketClientTest {
             Query query = exactQuery("test-query-id", 123L);
 
             // When / Then
-            assertThat(runQueryFuture(query, withResponses(
-                    message("{"))))
+            assertThat(runQueryFuture(query,
+                    withResponses(
+                            message("{"))))
                     .isCompletedExceptionally()
                     .failsWithin(Duration.ofMillis(10))
                     .withThrowableOfType(ExecutionException.class)
-                    .withCauseInstanceOf(MalformedMessageException.class);
+                    .withCauseInstanceOf(MessageMalformedException.class);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
@@ -313,9 +316,13 @@ public class QueryWebSocketClientTest {
             Query query = exactQuery("test-query-id", 123L);
 
             // When
-            runQuery(query,
+            assertThat(runQueryFuture(query,
                     withResponses(
-                            message("{\"message\":\"error\"}")));
+                            message("{\"message\":\"error\"}"))))
+                    .isCompletedExceptionally()
+                    .failsWithin(Duration.ofMillis(10))
+                    .withThrowableOfType(ExecutionException.class)
+                    .withCauseInstanceOf(MessageMissingFieldException.class);
 
             // Then
             assertThat(out.toString())
@@ -336,17 +343,13 @@ public class QueryWebSocketClientTest {
             Query query = exactQuery("test-query-id", 123L);
 
             // When
-            runQuery(query,
+            assertThat(runQueryFuture(query,
                     withResponses(
-                            message("{\"queryId\":\"test-query-id\"}")));
-
-            // Then
-            assertThat(out.toString())
-                    .startsWith("Connected to WebSocket API\n" +
-                            "Submitting Query: " + querySerDe.toJson(query) + "\n" +
-                            "Received message without message type from API:\n" +
-                            "  {\"queryId\":\"test-query-id\"}")
-                    .containsSubsequence("Query took", "seconds to return 0 records");
+                            message("{\"queryId\":\"test-query-id\"}"))))
+                    .isCompletedExceptionally()
+                    .failsWithin(Duration.ofMillis(10))
+                    .withThrowableOfType(ExecutionException.class)
+                    .withCauseInstanceOf(MessageMissingFieldException.class);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())

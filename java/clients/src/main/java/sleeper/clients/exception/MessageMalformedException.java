@@ -15,9 +15,9 @@
  */
 package sleeper.clients.exception;
 
-public class MalformedMessageException extends WebSocketException {
+public class MessageMalformedException extends WebSocketException {
 
-    public MalformedMessageException(String json) {
+    public MessageMalformedException(String json) {
         super("Received malformed message JSON: " + json);
     }
 }
