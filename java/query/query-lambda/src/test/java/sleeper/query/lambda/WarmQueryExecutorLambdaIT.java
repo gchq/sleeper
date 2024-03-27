@@ -137,39 +137,9 @@ public class WarmQueryExecutorLambdaIT {
         assertThat(query).isEqualTo(expected);
     }
 
-    @Test
-    public void shouldCreateAQueryWitMultipleKeys() throws Exception {
-        // Given
-        Schema schema = getMultipleKeySchema();
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        createTable(tableProperties);
-        querySerDe = new QuerySerDe(schema);
-
-        // When
-        lambda.handleRequest(new ScheduledEvent(), null);
-
-        // Then
-        ReceiveMessageResult result = sqsClient.receiveMessage(new ReceiveMessageRequest(instanceProperties.get(QUERY_QUEUE_URL)));
-        assertThat(result.getMessages()).hasSize(1);
-
-        Query query = querySerDe.fromJson(result.getMessages().get(0).getBody());
-        Query expected = buildExpectedQuery(query.getQueryId(), tableProperties.get(TABLE_NAME), schema, "a");
-
-        assertThat(query).isEqualTo(expected);
-    }
-
     private Schema getStringKeySchema() {
         return Schema.builder()
                 .rowKeyFields(new Field("test-key", new StringType()))
-                .sortKeyFields(new Field("test-sort", new StringType()))
-                .valueFields(new Field("test-value", new StringType()))
-                .build();
-    }
-
-    private Schema getMultipleKeySchema() {
-        return Schema.builder()
-                .rowKeyFields(List.of(new Field("test-key", new StringType()),
-                        new Field("test-key2", new StringType())))
                 .sortKeyFields(new Field("test-sort", new StringType()))
                 .valueFields(new Field("test-value", new StringType()))
                 .build();

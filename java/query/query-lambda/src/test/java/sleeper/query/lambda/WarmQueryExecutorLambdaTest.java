@@ -65,9 +65,26 @@ public class WarmQueryExecutorLambdaTest {
         assertThat(region).isEqualTo(expectedRegion(schema, 0L));
     }
 
+    @Test
+    public void testMultipleKeysInRegionAreReturned() {
+        Schema schema = getMultipleKeySchema();
+        Region region = WarmQueryExecutorLambda.getRegion(schema);
+
+        assertThat(region).isEqualTo(expectedRegion(schema, "a"));
+    }
+
     private Schema getStringKeySchema() {
         return Schema.builder()
                 .rowKeyFields(new Field("test-key", new StringType()))
+                .sortKeyFields(new Field("test-sort", new StringType()))
+                .valueFields(new Field("test-value", new StringType()))
+                .build();
+    }
+
+    private Schema getMultipleKeySchema() {
+        return Schema.builder()
+                .rowKeyFields(List.of(new Field("test-key", new StringType()),
+                        new Field("test-key2", new StringType())))
                 .sortKeyFields(new Field("test-sort", new StringType()))
                 .valueFields(new Field("test-value", new StringType()))
                 .build();
