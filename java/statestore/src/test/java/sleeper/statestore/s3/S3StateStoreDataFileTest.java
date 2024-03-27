@@ -81,8 +81,7 @@ public class S3StateStoreDataFileTest {
     @Test
     void shouldFailUpdateWithNoFurtherAttemptsWhenConditionFails() throws Exception {
         // When / Then
-        assertThatThrownBy(() ->
-                updateWithAttempts(10, existing -> "willNotHappen", existing -> "test condition failure"))
+        assertThatThrownBy(() -> updateWithAttempts(10, existing -> "willNotHappen", existing -> "test condition failure"))
                 .isInstanceOf(StateStoreException.class)
                 .hasMessageContaining("test condition failure");
         assertThat(loadCurrentData()).isEqualTo(INITIAL_DATA);
@@ -170,8 +169,7 @@ public class S3StateStoreDataFileTest {
 
         // When 2 attempts are allowed
         // Then the update fails
-        assertThatThrownBy(() ->
-                updateWithAttempts(2, existing -> "updated", existing -> ""))
+        assertThatThrownBy(() -> updateWithAttempts(2, existing -> "updated", existing -> ""))
                 .isInstanceOf(StateStoreException.class)
                 .hasMessage("Too many update attempts, failed after 2 attempts");
         assertThat(loadCurrentData()).isEqualTo("update-2");
@@ -197,8 +195,7 @@ public class S3StateStoreDataFileTest {
         dataFiles.setFailureOnNextDataLoad("Failed loading test data");
 
         // When / Then
-        assertThatThrownBy(() ->
-                updateWithAttempts(1, existing -> "updated", existing -> ""))
+        assertThatThrownBy(() -> updateWithAttempts(1, existing -> "updated", existing -> ""))
                 .isInstanceOf(StateStoreException.class)
                 .hasMessage("Too many update attempts, failed after 1 attempts");
         assertThat(loadCurrentData()).isEqualTo(INITIAL_DATA);
@@ -224,23 +221,20 @@ public class S3StateStoreDataFileTest {
         dataFiles.setFailureOnNextDataWrite("Failed writing test data");
 
         // When / Then
-        assertThatThrownBy(() ->
-                updateWithAttempts(1, existing -> "updated", existing -> ""))
+        assertThatThrownBy(() -> updateWithAttempts(1, existing -> "updated", existing -> ""))
                 .isInstanceOf(StateStoreException.class)
                 .hasMessage("Too many update attempts, failed after 1 attempts");
         assertThat(loadCurrentData()).isEqualTo(INITIAL_DATA);
         assertThat(foundWaits).isEmpty();
     }
 
-    private void updateWithAttempts(int attempts, Function<Object, Object> update, Function<Object, String> condition)
-            throws Exception {
+    private void updateWithAttempts(int attempts, Function<Object, Object> update, Function<Object, String> condition) throws Exception {
         updateWithFullJitterFractionAndAttempts(randomSeededJitterFraction(0), attempts, update, condition);
     }
 
     private void updateWithFullJitterFractionAndAttempts(
             DoubleSupplier jitterFractionSupplier, int attempts,
-            Function<Object, Object> update, Function<Object, String> condition)
-            throws Exception {
+            Function<Object, Object> update, Function<Object, String> condition) throws Exception {
         S3StateStoreDataFile.builder()
                 .description("object")
                 .revisionIdKey(REVISION_ID)

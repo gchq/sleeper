@@ -95,7 +95,9 @@ public class FileReference {
             return false;
         }
         FileReference fileReference = (FileReference) o;
-        return countApproximate == fileReference.countApproximate && onlyContainsDataForThisPartition == fileReference.onlyContainsDataForThisPartition && Objects.equals(filename, fileReference.filename) && Objects.equals(partitionId, fileReference.partitionId) && Objects.equals(numberOfRecords, fileReference.numberOfRecords) && Objects.equals(jobId, fileReference.jobId) && Objects.equals(lastStateStoreUpdateTime, fileReference.lastStateStoreUpdateTime);
+        return countApproximate == fileReference.countApproximate && onlyContainsDataForThisPartition == fileReference.onlyContainsDataForThisPartition
+                && Objects.equals(filename, fileReference.filename) && Objects.equals(partitionId, fileReference.partitionId) && Objects.equals(numberOfRecords, fileReference.numberOfRecords)
+                && Objects.equals(jobId, fileReference.jobId) && Objects.equals(lastStateStoreUpdateTime, fileReference.lastStateStoreUpdateTime);
     }
 
     @Override

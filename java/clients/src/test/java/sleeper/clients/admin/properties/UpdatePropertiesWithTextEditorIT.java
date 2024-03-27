@@ -168,8 +168,7 @@ class UpdatePropertiesWithTextEditorIT {
             properties.set(LOGGING_LEVEL, "ERROR");
 
             // When / Then
-            assertThat(helper.openFileGetPropertiesWritten(updater ->
-                    updater.openPropertiesFile(properties, InstancePropertyGroup.LOGGING)))
+            assertThat(helper.openFileGetPropertiesWritten(updater -> updater.openPropertiesFile(properties, InstancePropertyGroup.LOGGING)))
                     .isEqualTo(loadProperties("" +
                             "sleeper.logging.level=ERROR"));
         }
@@ -181,13 +180,12 @@ class UpdatePropertiesWithTextEditorIT {
             properties.set(LOGGING_LEVEL, "ERROR");
 
             // When
-            String tempFileString = Files.readString(helper.openFileGetPathToFile(updater ->
-                    updater.openPropertiesFile(properties, InstancePropertyGroup.LOGGING)));
+            String tempFileString = Files.readString(helper.openFileGetPathToFile(updater -> updater.openPropertiesFile(properties, InstancePropertyGroup.LOGGING)));
 
             // Then
             StringWriter writer = new StringWriter();
             SleeperPropertiesPrettyPrinter.forInstancePropertiesWithGroup(
-                            new PrintWriter(writer), InstancePropertyGroup.LOGGING)
+                    new PrintWriter(writer), InstancePropertyGroup.LOGGING)
                     .print(properties);
             assertThat(tempFileString).isEqualTo(writer.toString());
         }
@@ -256,8 +254,7 @@ class UpdatePropertiesWithTextEditorIT {
             properties.getProperties().setProperty("unknown.property", "some-value");
 
             // When
-            assertThat(helper.openFileGetPropertiesWritten(updater ->
-                    updater.openPropertiesFile(properties, InstancePropertyGroup.LOGGING)))
+            assertThat(helper.openFileGetPropertiesWritten(updater -> updater.openPropertiesFile(properties, InstancePropertyGroup.LOGGING)))
                     .isEmpty();
         }
 

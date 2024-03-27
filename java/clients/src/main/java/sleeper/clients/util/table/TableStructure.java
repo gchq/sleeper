@@ -66,9 +66,9 @@ public class TableStructure {
     private String paddedLine(IntFunction<String> getValue, List<TableFieldSummary> fieldSummaries) {
         return paddingBeforeRow
                 + fieldSummaries.stream()
-                .filter(TableFieldSummary::isVisible)
-                .map(field -> paddedValue(getValue.apply(field.getIndex()), field))
-                .collect(Collectors.joining(paddingBetweenColumns))
+                        .filter(TableFieldSummary::isVisible)
+                        .map(field -> paddedValue(getValue.apply(field.getIndex()), field))
+                        .collect(Collectors.joining(paddingBetweenColumns))
                 + paddingAfterRow;
     }
 

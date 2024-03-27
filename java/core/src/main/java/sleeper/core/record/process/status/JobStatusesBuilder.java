@@ -39,7 +39,6 @@ public class JobStatusesBuilder {
     }
 
     private static Comparator<JobStatusUpdates> latestFirstByFirstUpdate() {
-        return Comparator.comparing((JobStatusUpdates job) ->
-                job.getFirstRecord().getUpdateTime()).reversed();
+        return Comparator.comparing((JobStatusUpdates job) -> job.getFirstRecord().getUpdateTime()).reversed();
     }
 }

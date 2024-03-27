@@ -97,8 +97,8 @@ class PartitionsStatusReportTest {
                 .build();
         TableProperties tableProperties = createTablePropertiesWithSplitThreshold(schema, 10);
         StateStore store = StateStoreTestBuilder.from(new PartitionsBuilder(schema)
-                        .leavesWithSplits(Arrays.asList("A", "B"), List.of(new byte[42]))
-                        .parentJoining("parent", "A", "B"))
+                .leavesWithSplits(Arrays.asList("A", "B"), List.of(new byte[42]))
+                .parentJoining("parent", "A", "B"))
                 .singleFileInEachLeafPartitionWithRecords(5)
                 .buildStateStore();
 
@@ -112,9 +112,9 @@ class PartitionsStatusReportTest {
         // Given
         TableProperties tableProperties = createTablePropertiesWithSplitThreshold(10);
         StateStore store = StateStoreTestBuilder.from(createPartitionsBuilder()
-                        .leavesWithSplits(Arrays.asList("A", "B"), List.of(
-                                "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"))
-                        .parentJoining("parent", "A", "B"))
+                .leavesWithSplits(Arrays.asList("A", "B"), List.of(
+                        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"))
+                .parentJoining("parent", "A", "B"))
                 .singleFileInEachLeafPartitionWithRecords(5).buildStateStore();
 
         // When
@@ -132,9 +132,9 @@ class PartitionsStatusReportTest {
                 .build();
         TableProperties tableProperties = createTablePropertiesWithSplitThreshold(schema, 10);
         StateStore store = StateStoreTestBuilder.from(new PartitionsBuilder(schema)
-                        .rootFirst("parent")
-                        .splitToNewChildrenOnDimension("parent", "A", "B", 0, 123L)
-                        .splitToNewChildrenOnDimension("B", "C", "D", 1, "aaa"))
+                .rootFirst("parent")
+                .splitToNewChildrenOnDimension("parent", "A", "B", 0, 123L)
+                .splitToNewChildrenOnDimension("B", "C", "D", 1, "aaa"))
                 .singleFileInEachLeafPartitionWithRecords(5)
                 .buildStateStore();
 
@@ -163,8 +163,8 @@ class PartitionsStatusReportTest {
     void shouldReportWhenNonLeafPartitionRecordCountExceedsSplitThreshold() throws Exception {
         TableProperties properties = createTablePropertiesWithSplitThreshold(10);
         StateStore store = StateStoreTestBuilder.from(createPartitionsBuilder()
-                        .rootFirst("root")
-                        .splitToNewChildren("root", "L", "R", "abc"))
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", "abc"))
                 .partitionFileWithRecords("root", "not-split-yet.parquet", 100L)
                 .buildStateStore();
 

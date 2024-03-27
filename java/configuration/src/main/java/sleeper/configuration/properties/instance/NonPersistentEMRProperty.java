@@ -16,7 +16,6 @@
 
 package sleeper.configuration.properties.instance;
 
-
 import sleeper.configuration.Utils;
 import sleeper.configuration.properties.SleeperPropertyIndex;
 import sleeper.configuration.properties.validation.EmrInstanceTypeConfig;
@@ -96,7 +95,6 @@ public interface NonPersistentEMRProperty {
             .defaultValue("10")
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
-
 
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();

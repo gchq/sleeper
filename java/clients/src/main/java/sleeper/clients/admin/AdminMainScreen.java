@@ -38,25 +38,15 @@ public class AdminMainScreen {
 
     public void mainLoop(AdminClient client, String instanceId) throws InterruptedException {
         List<MenuOption> options = Arrays.asList(
-                new MenuOption("View/edit instance configuration", () ->
-                        client.instanceConfigurationScreen().viewAndEditProperties(instanceId)),
-                new MenuOption("View/edit table configuration", () ->
-                        client.instanceConfigurationScreen().viewAndEditTableProperties(instanceId)),
-                new MenuOption("View configuration by group", () ->
-                        client.instanceConfigurationScreen().viewAndEditPropertyGroup(instanceId)),
-                new MenuOption("Print Sleeper table names", () ->
-                        client.tableNamesReport().print()),
-                new MenuOption("Run partition status report", () ->
-                        client.partitionsStatusReportScreen().chooseTableAndPrint(instanceId)),
-                new MenuOption("Run files status report", () ->
-                        client.filesStatusReportScreen().chooseTableAndPrint(instanceId)),
-                new MenuOption("Run compaction status report", () ->
-                        client.compactionStatusReportScreen().chooseArgsAndPrint(instanceId)),
-                new MenuOption("Run ingest status report", () ->
-                        client.ingestStatusReportScreen().chooseArgsAndPrint(instanceId)),
-                new MenuOption("Run ingest batcher report", () ->
-                        client.ingestBatcherReportScreen().chooseArgsAndPrint(instanceId))
-        );
+                new MenuOption("View/edit instance configuration", () -> client.instanceConfigurationScreen().viewAndEditProperties(instanceId)),
+                new MenuOption("View/edit table configuration", () -> client.instanceConfigurationScreen().viewAndEditTableProperties(instanceId)),
+                new MenuOption("View configuration by group", () -> client.instanceConfigurationScreen().viewAndEditPropertyGroup(instanceId)),
+                new MenuOption("Print Sleeper table names", () -> client.tableNamesReport().print()),
+                new MenuOption("Run partition status report", () -> client.partitionsStatusReportScreen().chooseTableAndPrint(instanceId)),
+                new MenuOption("Run files status report", () -> client.filesStatusReportScreen().chooseTableAndPrint(instanceId)),
+                new MenuOption("Run compaction status report", () -> client.compactionStatusReportScreen().chooseArgsAndPrint(instanceId)),
+                new MenuOption("Run ingest status report", () -> client.ingestStatusReportScreen().chooseArgsAndPrint(instanceId)),
+                new MenuOption("Run ingest batcher report", () -> client.ingestBatcherReportScreen().chooseArgsAndPrint(instanceId)));
         while (true) {
             try {
                 chooseOption(options).run();
@@ -68,8 +58,7 @@ public class AdminMainScreen {
 
     private MenuOption chooseOption(List<MenuOption> options) throws UserExitedException {
         return chooseOption("", options)
-                .chooseUntilChoiceFound(() ->
-                        chooseOption("\nInput not recognised please try again\n", options));
+                .chooseUntilChoiceFound(() -> chooseOption("\nInput not recognised please try again\n", options));
     }
 
     private Chosen<MenuOption> chooseOption(String message, List<MenuOption> options) {

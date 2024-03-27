@@ -60,8 +60,7 @@ public class WebSocketQueryProcessorLambda implements RequestHandler<APIGatewayV
                 AmazonS3ClientBuilder.defaultClient(),
                 AmazonDynamoDBClientBuilder.defaultClient(),
                 AmazonSQSClientBuilder.defaultClient(),
-                System.getenv(CdkDefinedInstanceProperty.CONFIG_BUCKET.toEnvironmentVariable())
-        );
+                System.getenv(CdkDefinedInstanceProperty.CONFIG_BUCKET.toEnvironmentVariable()));
     }
 
     public WebSocketQueryProcessorLambda(AmazonS3 s3Client, AmazonDynamoDB dynamoClient, AmazonSQS sqsClient, String configBucket) {
@@ -119,10 +118,8 @@ public class WebSocketQueryProcessorLambda implements RequestHandler<APIGatewayV
                 query = query.withStatusReportDestination(statusReportDestination);
 
                 // Default to sending results back to client via WebSocket connection
-                if (
-                        query.getResultsPublisherConfig().get(ResultsOutputConstants.DESTINATION) == null ||
-                                query.getResultsPublisherConfig().get(ResultsOutputConstants.DESTINATION).equals(WebSocketResultsOutput.DESTINATION_NAME)
-                ) {
+                if (query.getResultsPublisherConfig().get(ResultsOutputConstants.DESTINATION) == null ||
+                        query.getResultsPublisherConfig().get(ResultsOutputConstants.DESTINATION).equals(WebSocketResultsOutput.DESTINATION_NAME)) {
                     query.getResultsPublisherConfig().put(ResultsOutputConstants.DESTINATION, WebSocketResultsOutput.DESTINATION_NAME);
                     query.getResultsPublisherConfig().put(WebSocketResultsOutput.ENDPOINT, endpoint);
                     query.getResultsPublisherConfig().put(WebSocketResultsOutput.CONNECTION_ID, event.getRequestContext().getConnectionId());
