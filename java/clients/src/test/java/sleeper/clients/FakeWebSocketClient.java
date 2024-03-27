@@ -25,6 +25,7 @@ import sleeper.query.model.QuerySerDe;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 public class FakeWebSocketClient implements Client {
     private boolean connected = false;
@@ -58,6 +59,14 @@ public class FakeWebSocketClient implements Client {
         connectBlocking();
         messageHandler.onOpen(query, sentMessages::add);
         responses.forEach(response -> response.sendTo(messageHandler));
+    }
+
+    @Override
+    public CompletableFuture<List<Record>> startQueryFuture(Query query) throws InterruptedException {
+        CompletableFuture<List<Record>> future = new CompletableFuture<>();
+        messageHandler.setFuture(future);
+        startQuery(query);
+        return future;
     }
 
     @Override

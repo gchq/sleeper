@@ -30,6 +30,8 @@ import com.google.gson.ToNumberPolicy;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 
+import sleeper.clients.exception.UnknownMessageTypeException;
+import sleeper.clients.exception.WebSocketErrorException;
 import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -248,6 +250,7 @@ public class QueryWebSocketClient {
         private boolean queryFailed = false;
         private long totalRecordsReturned = 0L;
         private CompletableFuture<List<Record>> future;
+        private String currentQueryId;
 
         public WebSocketMessageHandler(QuerySerDe querySerDe, ConsoleOutput out) {
             this.querySerDe = querySerDe;
@@ -265,6 +268,7 @@ public class QueryWebSocketClient {
             messageSender.accept(queryJson);
             outstandingQueries.add(query.getQueryId());
             subqueryIdByParentQueryId.put(query.getQueryId(), new ArrayList<>());
+            currentQueryId = query.getQueryId();
         }
 
         public void onMessage(String json) {
@@ -287,6 +291,7 @@ public class QueryWebSocketClient {
             } else {
                 out.println("Received unrecognised message type: " + messageType);
                 queryFailed = true;
+                future.completeExceptionally(new UnknownMessageTypeException(messageType));
             }
 
             if (outstandingQueries.isEmpty()) {
@@ -297,6 +302,7 @@ public class QueryWebSocketClient {
                             .forEach(record -> out.println(record.toString()));
                 }
                 queryComplete = true;
+                future.complete(getResults(currentQueryId));
             }
         }
 
@@ -325,9 +331,11 @@ public class QueryWebSocketClient {
         }
 
         private void handleError(JsonObject message, String queryId) {
-            out.println("Encountered an error while running query " + queryId + ": " + message.get("error").getAsString());
+            String error = message.get("error").getAsString();
+            out.println("Encountered an error while running query " + queryId + ": " + error);
             outstandingQueries.remove(queryId);
             queryFailed = true;
+            future.completeExceptionally(new WebSocketErrorException(error));
         }
 
         private void handleSubqueries(JsonObject message, String queryId) {
@@ -381,6 +389,7 @@ public class QueryWebSocketClient {
         public void onError(Exception error) {
             out.println("Encountered an error: " + error.getMessage());
             queryFailed = true;
+            future.completeExceptionally(new WebSocketErrorException(error));
         }
 
         public boolean hasQueryFinished() {
