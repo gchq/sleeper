@@ -103,6 +103,10 @@ public class QueryWebSocketClient {
         }
     }
 
+    public List<Record> getResults(Query query) {
+        return client.getResults(query.getQueryId());
+    }
+
     public interface Client {
         void closeBlocking() throws InterruptedException;
 
