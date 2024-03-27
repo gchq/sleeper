@@ -38,7 +38,7 @@ public class ProjectChunksValidateModulesInChunksTest {
     private final MavenModuleStructure maven = TestMavenModuleStructure.example();
 
     @Test
-    public void shouldValidateWhenAllCompiledModulesAreInChunks() {
+    public void shouldValidateWhenAllJavaModulesAreInChunks() {
         // Given
         ProjectChunks chunks = TestChunks.example();
 
@@ -50,7 +50,7 @@ public class ProjectChunksValidateModulesInChunksTest {
     }
 
     @Test
-    public void shouldFailValidationWhenOneCompiledModuleNotInAChunk() {
+    public void shouldFailValidationWhenOneJavaModuleNotInAChunk() {
         // Given
         ProjectChunks chunks = chunks(
                 chunk("common", "core"),
@@ -68,7 +68,7 @@ public class ProjectChunksValidateModulesInChunksTest {
     }
 
     @Test
-    public void shouldFailValidationWhenSeveralCompiledModulesNotInAChunk() {
+    public void shouldFailValidationWhenSeveralJavaModulesNotInAChunk() {
         // Given
         ProjectChunks chunks = chunks(
                 chunk("common", "core"),
@@ -82,6 +82,25 @@ public class ProjectChunksValidateModulesInChunksTest {
                 .isInstanceOf(IllegalStateException.class);
         assertThat(outputStream.toString()).contains(
                 "Maven modules not configured in any chunk: configuration, bulk-import/bulk-import-runner");
+    }
+
+    @Test
+    public void shouldFailValidationWhenOneModuleInAChunkIsNotAJavaModule() {
+        // Given
+        ProjectChunks chunks = chunks(
+                chunk("common", "core", "configuration"),
+                chunk("ingest", "ingest"),
+                chunk("bulk-import",
+                        "bulk-import",
+                        "bulk-import/bulk-import-common",
+                        "bulk-import/bulk-import-runner",
+                        "bulk-import/bulk-import-starter"));
+
+        // When / Then
+        assertThatThrownBy(() -> validateAllConfigured(chunks))
+                .isInstanceOf(IllegalStateException.class);
+        assertThat(outputStream.toString()).contains(
+                "Maven modules with no source code found in a chunk: bulk-import");
     }
 
     private void validateAllConfigured(ProjectChunks chunks) {

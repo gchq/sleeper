@@ -23,8 +23,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * A {@link Query} is a request for records with row keys that fall within one of
- * a list of {@link Region}s.
+ * A request for records with row keys that fall within one of a list of regions.
  */
 public class Query {
     private final String tableName;
@@ -121,7 +120,8 @@ public class Query {
             return false;
         }
         Query query = (Query) object;
-        return Objects.equals(tableName, query.tableName) && Objects.equals(queryId, query.queryId) && Objects.equals(regions, query.regions) && Objects.equals(processingConfig, query.processingConfig);
+        return Objects.equals(tableName, query.tableName) && Objects.equals(queryId, query.queryId) && Objects.equals(regions, query.regions)
+                && Objects.equals(processingConfig, query.processingConfig);
     }
 
     @Override

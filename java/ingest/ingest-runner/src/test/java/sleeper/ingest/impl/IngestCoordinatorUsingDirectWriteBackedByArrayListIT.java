@@ -194,8 +194,7 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
                 DirectPartitionFileWriterFactory.from(
                         parquetConfiguration,
                         "s3a://" + dataBucketName,
-                        fileNames.iterator()::next
-                ))
+                        fileNames.iterator()::next))
                 .ingestFileWritingStrategy(tableProperties.getEnumValue(INGEST_FILE_WRITING_STRATEGY, IngestFileWritingStrategy.class))
                 .build()) {
             for (Record record : recordListAndSchema.recordList) {

@@ -47,6 +47,10 @@ import java.util.stream.Collectors;
 import static sleeper.configuration.properties.table.TableProperty.QUERY_PROCESSOR_CACHE_TIMEOUT;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
+/**
+ * Runs queries against a Sleeper table by querying the state store and data files directly. An instance of this class
+ * cannot be used concurrently in multiple threads, due to how partitions are cached.
+ */
 public class QueryExecutor {
     private static final Logger LOGGER = LoggerFactory.getLogger(QueryExecutor.class);
 
@@ -67,11 +71,9 @@ public class QueryExecutor {
                 Instant.now());
     }
 
-    public QueryExecutor(ObjectFactory objectFactory,
-            StateStore stateStore,
-            TableProperties tableProperties,
-            LeafPartitionRecordRetriever recordRetriever,
-            Instant timeNow) {
+    public QueryExecutor(
+            ObjectFactory objectFactory, StateStore stateStore, TableProperties tableProperties,
+            LeafPartitionRecordRetriever recordRetriever, Instant timeNow) {
         this.objectFactory = objectFactory;
         this.stateStore = stateStore;
         this.tableProperties = tableProperties;
@@ -116,7 +118,7 @@ public class QueryExecutor {
         leafPartitions = partitions.stream()
                 .filter(Partition::isLeafPartition)
                 .collect(Collectors.toList());
-        partitionTree = PartitionTree.from(partitions);
+        partitionTree = new PartitionTree(partitions);
         partitionToFiles = partitionToFileMapping;
         nextInitialiseTime = now.plus(tableProperties.getInt(QUERY_PROCESSOR_CACHE_TIMEOUT), ChronoUnit.MINUTES);
         LOGGER.info("Loaded state for table {}. Found {} partitions. Next initialise time: {}",

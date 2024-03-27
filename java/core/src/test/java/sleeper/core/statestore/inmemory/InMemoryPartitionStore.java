@@ -80,7 +80,7 @@ public class InMemoryPartitionStore implements PartitionStore {
     @Override
     public void atomicallyUpdatePartitionAndCreateNewOnes(
             Partition parent, Partition left, Partition right) throws StateStoreException {
-        PartitionTree oldTree = PartitionTree.from(partitions);
+        PartitionTree oldTree = new PartitionTree(partitions);
         if (!oldTree.getPartition(parent.getId()).isLeafPartition()) {
             throw new StateStoreException("Partition has already been split: " + parent.getId());
         }

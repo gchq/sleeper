@@ -79,10 +79,9 @@ public class DeployedSystemTestResources {
     }
 
     public void resetProperties() {
-        updateProperties(properties ->
-                properties.getPropertiesIndex().getUserDefined().stream()
-                        .filter(property -> property.isEditable() && !property.isRunCdkDeployWhenChanged())
-                        .forEach(properties::unset));
+        updateProperties(properties -> properties.getPropertiesIndex().getUserDefined().stream()
+                .filter(property -> property.isEditable() && !property.isRunCdkDeployWhenChanged())
+                .forEach(properties::unset));
     }
 
     public boolean isSystemTestClusterEnabled() {

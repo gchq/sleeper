@@ -70,7 +70,7 @@ class WebSocketQueryStatusReportDestinationIT {
         Query query = Query.builder()
                 .tableName("tableName")
                 .queryId("q1")
-                .regions(List.of(Region.from(range)))
+                .regions(List.of(new Region(range)))
                 .build();
 
         // When
@@ -88,7 +88,7 @@ class WebSocketQueryStatusReportDestinationIT {
         Query query = Query.builder()
                 .tableName("tableName")
                 .queryId("q1")
-                .regions(List.of(Region.from(range)))
+                .regions(List.of(new Region(range)))
                 .build();
 
         // When
@@ -103,13 +103,13 @@ class WebSocketQueryStatusReportDestinationIT {
         // Given
         stubFor(post(config.getUrl()).willReturn(aResponse().withStatus(200)));
         Range range = config.getRangeFactory().createExactRange(SCHEMA.getRowKeyFields().get(0), "a");
-        Region region = Region.from(range);
+        Region region = new Region(range);
         Range partitionRange = config.getRangeFactory().createRange(SCHEMA.getRowKeyFields().get(0), "a", "b");
-        Region partitionRegion = Region.from(partitionRange);
+        Region partitionRegion = new Region(partitionRange);
         Query query = Query.builder()
                 .tableName("tableName")
                 .queryId("q1")
-                .regions(List.of(Region.from(range)))
+                .regions(List.of(new Region(range)))
                 .build();
         List<LeafPartitionQuery> subQueries = List.of(
                 LeafPartitionQuery.builder().parentQuery(query).tableId("tableId").subQueryId("s1").regions(List.of(region)).leafPartitionId("leaf1").partitionRegion(partitionRegion).files(List.of())
@@ -139,7 +139,7 @@ class WebSocketQueryStatusReportDestinationIT {
         Query query = Query.builder()
                 .tableName("tableName")
                 .queryId("q1")
-                .regions(List.of(Region.from(range)))
+                .regions(List.of(new Region(range)))
                 .build();
         ResultsOutputInfo result = new ResultsOutputInfo(1, Lists.newArrayList(
                 new ResultsOutputLocation("s3", "s3://bucket/file1.parquet"),
@@ -164,7 +164,7 @@ class WebSocketQueryStatusReportDestinationIT {
         Query query = Query.builder()
                 .tableName("tableName")
                 .queryId("q2")
-                .regions(List.of(Region.from(range)))
+                .regions(List.of(new Region(range)))
                 .build();
         ResultsOutputInfo result = new ResultsOutputInfo(1, Lists.newArrayList(
                 new ResultsOutputLocation("data", "s3://bucket/data/parquet"),
@@ -189,7 +189,7 @@ class WebSocketQueryStatusReportDestinationIT {
         Query query = Query.builder()
                 .tableName("tableName")
                 .queryId("q3")
-                .regions(List.of(Region.from(range)))
+                .regions(List.of(new Region(range)))
                 .build();
 
         // When

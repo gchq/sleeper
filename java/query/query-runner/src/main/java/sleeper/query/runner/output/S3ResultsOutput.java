@@ -45,7 +45,7 @@ import static sleeper.configuration.properties.instance.QueryProperty.DEFAULT_RE
 import static sleeper.io.parquet.record.ParquetRecordWriterFactory.parquetRecordWriterBuilder;
 
 /**
- * An implementation of {@link ResultsOutput} that writes results to Parquet files in an S3 bucket.
+ * A query results output that writes results to Parquet files in an S3 bucket.
  */
 public class S3ResultsOutput implements ResultsOutput {
     private static final Logger LOGGER = LoggerFactory.getLogger(S3ResultsOutput.class);

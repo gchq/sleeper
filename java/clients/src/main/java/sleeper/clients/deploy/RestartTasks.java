@@ -70,9 +70,8 @@ public class RestartTasks {
     }
 
     private void stopTasksInCluster(String cluster) {
-        ecs.listTasks(new ListTasksRequest().withCluster(cluster)).getTaskArns().forEach(task ->
-                ecs.stopTask(new StopTaskRequest().withTask(task).withCluster(cluster))
-        );
+        ecs.listTasks(new ListTasksRequest().withCluster(cluster)).getTaskArns()
+                .forEach(task -> ecs.stopTask(new StopTaskRequest().withTask(task).withCluster(cluster)));
     }
 
     public static final class Builder {

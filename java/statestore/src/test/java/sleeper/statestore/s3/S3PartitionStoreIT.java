@@ -285,11 +285,10 @@ public class S3PartitionStoreIT extends S3StateStoreOneTableTestBase {
                     tree.getPartition("rightChild"));
 
             // When / Then
-            assertThatThrownBy(() ->
-                    store.atomicallyUpdatePartitionAndCreateNewOnes(
-                            tree.getPartition("root"),
-                            tree.getPartition("leftChild"),
-                            tree.getPartition("rightChild")))
+            assertThatThrownBy(() -> store.atomicallyUpdatePartitionAndCreateNewOnes(
+                    tree.getPartition("root"),
+                    tree.getPartition("leftChild"),
+                    tree.getPartition("rightChild")))
                     .isInstanceOf(StateStoreException.class);
         }
 
@@ -305,11 +304,10 @@ public class S3PartitionStoreIT extends S3StateStoreOneTableTestBase {
                     .buildTree();
 
             // When / Then
-            assertThatThrownBy(() ->
-                    store.atomicallyUpdatePartitionAndCreateNewOnes(
-                            tree.getPartition("root"),
-                            tree.getPartition("LL"),
-                            tree.getPartition("LR")))
+            assertThatThrownBy(() -> store.atomicallyUpdatePartitionAndCreateNewOnes(
+                    tree.getPartition("root"),
+                    tree.getPartition("LL"),
+                    tree.getPartition("LR")))
                     .isInstanceOf(StateStoreException.class);
         }
 
@@ -329,11 +327,10 @@ public class S3PartitionStoreIT extends S3StateStoreOneTableTestBase {
                     .buildTree();
 
             // When / Then
-            assertThatThrownBy(() ->
-                    store.atomicallyUpdatePartitionAndCreateNewOnes(
-                            parentTree.getPartition("root"),
-                            childrenTree.getPartition("child1"),
-                            childrenTree.getPartition("child2")))
+            assertThatThrownBy(() -> store.atomicallyUpdatePartitionAndCreateNewOnes(
+                    parentTree.getPartition("root"),
+                    childrenTree.getPartition("child1"),
+                    childrenTree.getPartition("child2")))
                     .isInstanceOf(StateStoreException.class);
         }
 
@@ -349,11 +346,10 @@ public class S3PartitionStoreIT extends S3StateStoreOneTableTestBase {
                     .buildTree();
 
             // When / Then
-            assertThatThrownBy(() ->
-                    store.atomicallyUpdatePartitionAndCreateNewOnes(
-                            tree.getPartition("root"),
-                            tree.getPartition("L"), // Not a leaf
-                            tree.getPartition("R")))
+            assertThatThrownBy(() -> store.atomicallyUpdatePartitionAndCreateNewOnes(
+                    tree.getPartition("root"),
+                    tree.getPartition("L"), // Not a leaf
+                    tree.getPartition("R")))
                     .isInstanceOf(StateStoreException.class);
         }
     }

@@ -184,7 +184,7 @@ public class InMemoryCompaction {
     private static Partition getPartitionForJob(StateStore stateStore, CompactionJob job) {
         PartitionTree partitionTree = null;
         try {
-            partitionTree = PartitionTree.from(stateStore.getAllPartitions());
+            partitionTree = new PartitionTree(stateStore.getAllPartitions());
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
         }

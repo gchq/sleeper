@@ -55,7 +55,7 @@ public class SleeperPartitioner extends Partitioner {
         schema = new SchemaSerDe().fromJson(schemaAsString);
         numRowKeyFields = schema.getRowKeyFields().size();
         List<Partition> partitions = broadcastPartitions.getValue();
-        partitionTree = PartitionTree.from(partitions);
+        partitionTree = new PartitionTree(partitions);
         numLeafPartitions = (int) partitions.stream().filter(Partition::isLeafPartition).count();
         partitionIdToInt = new HashMap<>();
         List<String> leafPartitions = partitions.stream()

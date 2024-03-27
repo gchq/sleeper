@@ -33,7 +33,7 @@ import sleeper.task.common.RunCompactionTasks;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
- * A lambda function to execute {@link RunCompactionTasks}.
+ * A lambda function to start compaction tasks based on the number of queued compaction jobs.
  */
 @SuppressWarnings("unused")
 public class RunCompactionTasksLambda {

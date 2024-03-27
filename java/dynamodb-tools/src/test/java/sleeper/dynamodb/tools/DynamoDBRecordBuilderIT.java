@@ -42,7 +42,6 @@ class DynamoDBRecordBuilderIT extends DynamoDBTableTestBase {
         assertThat(result.getItems()).containsExactly(record);
     }
 
-
     @Test
     void shouldCreateRecordWithIntAttribute() {
         // Given

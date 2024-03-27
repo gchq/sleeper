@@ -77,8 +77,7 @@ public final class DeployedSleeperInstance {
         return configuration.getTableProperties();
     }
 
-    private boolean isRedeployNeeded(SystemTestParameters parameters,
-                                     DeployedSystemTestResources systemTest) {
+    private boolean isRedeployNeeded(SystemTestParameters parameters, DeployedSystemTestResources systemTest) {
         boolean redeployNeeded = false;
 
         Set<String> ingestRoles = new LinkedHashSet<>(instanceProperties.getList(INGEST_SOURCE_ROLE));

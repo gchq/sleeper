@@ -34,6 +34,10 @@ import static sleeper.configuration.properties.instance.CommonProperty.TABLE_PRO
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
+/**
+ * Caches Sleeper table properties to avoid repeated queries to the store. An instance of this class cannot be used
+ * concurrently in multiple threads, as the cache is not thread-safe.
+ */
 public class TablePropertiesProvider {
     private static final Logger LOGGER = LoggerFactory.getLogger(TablePropertiesProvider.class);
     private final TablePropertiesStore propertiesStore;

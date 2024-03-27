@@ -36,7 +36,7 @@ public class PartitionSerDeTest {
         Field field = new Field("key", new IntType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
-        Region region = Region.from(rangeFactory.createRange(field, 0, true, 10, false));
+        Region region = new Region(rangeFactory.createRange(field, 0, true, 10, false));
         Partition partition = Partition.builder()
                 .id("id")
                 .rowKeyTypes(schema.getRowKeyTypes())
@@ -61,7 +61,7 @@ public class PartitionSerDeTest {
         Field field = new Field("key", new LongType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
-        Region region = Region.from(rangeFactory.createRange(field, 1L, true, 10L, false));
+        Region region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
         Partition partition = Partition.builder()
                 .id("id")
                 .rowKeyTypes(schema.getRowKeyTypes())
@@ -86,7 +86,7 @@ public class PartitionSerDeTest {
         Field field = new Field("key", new StringType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
-        Region region = Region.from(rangeFactory.createRange(field, "A", true, "Z", false));
+        Region region = new Region(rangeFactory.createRange(field, "A", true, "Z", false));
         Partition partition = Partition.builder()
                 .id("id")
                 .rowKeyTypes(schema.getRowKeyTypes())
@@ -111,7 +111,7 @@ public class PartitionSerDeTest {
         Field field = new Field("key", new StringType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
-        Region region = Region.from(rangeFactory.createRange(field, "", true, null, false));
+        Region region = new Region(rangeFactory.createRange(field, "", true, null, false));
         Partition partition = Partition.builder()
                 .id("id")
                 .rowKeyTypes(schema.getRowKeyTypes())
@@ -136,7 +136,7 @@ public class PartitionSerDeTest {
         Field field = new Field("key", new ByteArrayType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
-        Region region = Region.from(rangeFactory.createRange(field, new byte[]{0}, true, new byte[]{64, 64}, false));
+        Region region = new Region(rangeFactory.createRange(field, new byte[]{0}, true, new byte[]{64, 64}, false));
         Partition partition = Partition.builder()
                 .id("id")
                 .rowKeyTypes(schema.getRowKeyTypes())
@@ -161,7 +161,7 @@ public class PartitionSerDeTest {
         Field field = new Field("key", new ByteArrayType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
-        Region region = Region.from(rangeFactory.createRange(field, new byte[]{}, true, null, false));
+        Region region = new Region(rangeFactory.createRange(field, new byte[]{}, true, null, false));
         Partition partition = Partition.builder()
                 .id("id")
                 .rowKeyTypes(schema.getRowKeyTypes())

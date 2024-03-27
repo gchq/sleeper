@@ -83,6 +83,16 @@
         <module name="JavadocType">
             <property name="id" value="javadocStyle"/>
         </module>
+        <module name="MissingJavadocMethod">
+            <property name="id" value="missingJavadocMethod"/>
+            <property name="allowMissingPropertyJavadoc" value="true"/>
+            <property name="allowedAnnotations" value="Override, Test"/>
+            <property name="scope" value="public"/>
+        </module>
+        <module name="MissingJavadocType">
+            <property name="id" value="missingJavadocType"/>
+            <property name="scope" value="private" />
+        </module>
         <module name="NonEmptyAtclauseDescription">
             <property name="id" value="nonEmptyAtClause"/>
         </module>

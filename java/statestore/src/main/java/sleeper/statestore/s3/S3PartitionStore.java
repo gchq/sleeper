@@ -118,9 +118,9 @@ class S3PartitionStore implements PartitionStore {
     }
 
     private static String validateSplitPartitionRequest(Map<String, Partition> partitionIdToPartition,
-                                                        Partition splitPartition,
-                                                        Partition newPartition1,
-                                                        Partition newPartition2) {
+            Partition splitPartition,
+            Partition newPartition1,
+            Partition newPartition2) {
         // Validate that splitPartition is there and is a leaf partition
         if (!partitionIdToPartition.containsKey(splitPartition.getId())) {
             return "splitPartition should be present";

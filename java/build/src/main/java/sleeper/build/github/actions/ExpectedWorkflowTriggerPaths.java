@@ -35,8 +35,7 @@ public class ExpectedWorkflowTriggerPaths {
         List<String> paths = new ArrayList<>(Arrays.asList(
                 project.workflowPathInRepository(chunk).toString(),
                 actualWorkflow.getUsesWorkflowPath().normalize().toString(),
-                project.getChunksYamlRelative().toString()
-        ));
+                project.getChunksYamlRelative().toString()));
         maven.ancestorsForModules(chunk.getModules())
                 .map(module -> module.pomPathInRepository(project).toString())
                 .forEach(paths::add);
@@ -46,6 +45,5 @@ public class ExpectedWorkflowTriggerPaths {
                 .forEach(paths::add);
         return paths;
     }
-
 
 }
