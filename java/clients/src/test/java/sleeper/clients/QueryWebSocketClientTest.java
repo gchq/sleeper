@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.clients.FakeWebSocketClient.WebSocketResponse;
 import sleeper.clients.QueryWebSocketClient.Client;
+import sleeper.clients.exception.MalformedMessageException;
 import sleeper.clients.exception.UnknownMessageTypeException;
 import sleeper.clients.exception.WebSocketErrorException;
 import sleeper.clients.testutil.ToStringPrintStream;
@@ -293,17 +294,13 @@ public class QueryWebSocketClientTest {
             // Given
             Query query = exactQuery("test-query-id", 123L);
 
-            // When
-            runQuery(query, withResponses(
-                    message("{")));
-
-            // Then
-            assertThat(out.toString())
-                    .startsWith("Connected to WebSocket API\n" +
-                            "Submitting Query: " + querySerDe.toJson(query) + "\n" +
-                            "Received malformed JSON message from API:\n" +
-                            "  {")
-                    .containsSubsequence("Query took", "seconds to return 0 records");
+            // When / Then
+            assertThat(runQueryFuture(query, withResponses(
+                    message("{"))))
+                    .isCompletedExceptionally()
+                    .failsWithin(Duration.ofMillis(10))
+                    .withThrowableOfType(ExecutionException.class)
+                    .withCauseInstanceOf(MalformedMessageException.class);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())

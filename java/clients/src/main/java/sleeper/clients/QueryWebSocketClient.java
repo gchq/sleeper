@@ -30,6 +30,7 @@ import com.google.gson.ToNumberPolicy;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 
+import sleeper.clients.exception.MalformedMessageException;
 import sleeper.clients.exception.UnknownMessageTypeException;
 import sleeper.clients.exception.WebSocketErrorException;
 import sleeper.clients.util.console.ConsoleOutput;
@@ -326,6 +327,7 @@ public class QueryWebSocketClient {
                 out.println("Received malformed JSON message from API:");
                 out.println("  " + json);
                 queryFailed = true;
+                future.completeExceptionally(new MalformedMessageException(json));
                 return Optional.empty();
             }
         }
