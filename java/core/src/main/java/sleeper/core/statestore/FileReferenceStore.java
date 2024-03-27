@@ -31,8 +31,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
-
 /**
  * Stores information about the data files in a Sleeper table. This includes a count of the number of references
  * to the file, and internal references which assign all the data in the file to non-overlapping partitions.
@@ -127,28 +125,6 @@ public interface FileReferenceStore {
      * @throws StateStoreException                     if the update fails for another reason
      */
     void atomicallyReplaceFileReferencesWithNewOnes(List<ReplaceFileReferencesRequest> requests) throws StateStoreException;
-
-    /**
-     * Atomically applies the results of a job. Delegates to {@link #atomicallyReplaceFileReferencesWithNewOnes(List)}.
-     *
-     * @param  jobId                                   the ID of the job
-     * @param  partitionId                             the partition which the job operated on
-     * @param  inputFiles                              the filenames of the input files, whose references in this
-     *                                                 partition should be removed
-     * @param  newReference                            the reference to a new file, including metadata in the output
-     *                                                 partition
-     * @throws FileNotFoundException                   if any of the input files do not exist
-     * @throws FileReferenceNotFoundException          if any of the input files are not referenced in the partition
-     * @throws FileReferenceNotAssignedToJobException  if any of the input files are not assigned to the job
-     * @throws NewReferenceSameAsOldReferenceException if the output file has the same filename as any of the inputs
-     * @throws FileAlreadyExistsException              if the output file already exists
-     * @throws StateStoreException                     if the update fails for another reason
-     */
-    default void atomicallyReplaceFileReferencesWithNewOne(
-            String jobId, String partitionId, List<String> inputFiles, FileReference newReference) throws StateStoreException {
-        atomicallyReplaceFileReferencesWithNewOnes(List.of(
-                replaceJobFileReferences(jobId, partitionId, inputFiles, newReference)));
-    }
 
     /**
      * Atomically updates the job field of file references, as long as the job field is currently unset. This will be

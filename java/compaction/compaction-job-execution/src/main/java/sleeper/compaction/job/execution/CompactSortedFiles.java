@@ -57,6 +57,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 
+import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
 import static sleeper.sketches.s3.SketchesSerDeToS3.sketchesPathForDataFile;
 
 /**
@@ -196,7 +197,8 @@ public class CompactSortedFiles implements CompactionTask.CompactionRunner {
                 .onlyContainsDataForThisPartition(true)
                 .build();
         try {
-            stateStore.atomicallyReplaceFileReferencesWithNewOne(job.getId(), job.getPartitionId(), job.getInputFiles(), fileReference);
+            stateStore.atomicallyReplaceFileReferencesWithNewOnes(List.of(
+                    replaceJobFileReferences(job.getId(), job.getPartitionId(), job.getInputFiles(), fileReference)));
             LOGGER.debug("Updated file references in state store");
         } catch (StateStoreException e) {
             LOGGER.error("Exception updating StateStore (moving input files to ready for GC and creating new active file): {}", e.getMessage());

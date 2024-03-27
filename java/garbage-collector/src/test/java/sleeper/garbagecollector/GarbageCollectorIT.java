@@ -70,6 +70,7 @@ import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCF
 import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.noFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.readyForGCFilesReport;
+import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
 
 public class GarbageCollectorIT {
@@ -336,8 +337,9 @@ public class GarbageCollectorIT {
         writeFile(newFilePath.toString());
         stateStore.assignJobIds(List.of(
                 assignJobOnPartitionToFiles("job1", "root", List.of(oldFile.getFilename()))));
-        stateStore.atomicallyReplaceFileReferencesWithNewOne("job1", "root", List.of(oldFile.getFilename()),
-                FileReferenceFactory.from(partitions).rootFile(newFilePath.toString(), 100));
+        stateStore.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
+                "job1", "root", List.of(oldFile.getFilename()),
+                FileReferenceFactory.from(partitions).rootFile(newFilePath.toString(), 100))));
     }
 
     private FileReference activeReference(Path filePath) {
