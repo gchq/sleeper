@@ -23,6 +23,7 @@ import sleeper.core.statestore.transactionlog.TransactionLogHead;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 
@@ -51,4 +52,27 @@ public class AddFilesTransaction implements StateStoreTransaction {
             state.files().add(file.withCreatedUpdateTime(updateTime));
         }
     }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(files);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof AddFilesTransaction)) {
+            return false;
+        }
+        AddFilesTransaction other = (AddFilesTransaction) obj;
+        return Objects.equals(files, other.files);
+    }
+
+    @Override
+    public String toString() {
+        return "AddFilesTransaction{files=" + files + "}";
+    }
+
 }
