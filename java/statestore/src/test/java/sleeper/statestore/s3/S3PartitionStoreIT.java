@@ -353,5 +353,4 @@ public class S3PartitionStoreIT extends S3StateStoreOneTableTestBase {
                     .isInstanceOf(StateStoreException.class);
         }
     }
-
 }

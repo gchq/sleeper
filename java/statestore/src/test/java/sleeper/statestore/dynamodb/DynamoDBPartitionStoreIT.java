@@ -353,5 +353,4 @@ public class DynamoDBPartitionStoreIT extends DynamoDBStateStoreOneTableTestBase
                     .isInstanceOf(StateStoreException.class);
         }
     }
-
 }

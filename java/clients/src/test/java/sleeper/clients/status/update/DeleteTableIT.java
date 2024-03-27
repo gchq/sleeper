@@ -188,7 +188,7 @@ public class DeleteTableIT {
                 .isInstanceOf(TableNotFoundException.class);
     }
 
-    private void deleteTable(String tableName) {
+    private void deleteTable(String tableName) throws Exception {
         new DeleteTable(instanceProperties, s3, propertiesStore, stateStoreProvider).delete(tableName);
     }
 

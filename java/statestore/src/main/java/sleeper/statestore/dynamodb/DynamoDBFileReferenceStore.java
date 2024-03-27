@@ -525,9 +525,13 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public void clearFileData() {
-        clearDynamoTable(activeTableName, fileReferenceFormat::getActiveFileKey);
-        clearDynamoTable(fileReferenceCountTableName, item -> fileReferenceFormat.createReferenceCountKey(item.get(FILENAME).getS()));
+    public void clearFileData() throws StateStoreException {
+        try {
+            clearDynamoTable(activeTableName, fileReferenceFormat::getActiveFileKey);
+            clearDynamoTable(fileReferenceCountTableName, item -> fileReferenceFormat.createReferenceCountKey(item.get(FILENAME).getS()));
+        } catch (RuntimeException e) {
+            throw new StateStoreException("Failed clearing files", e);
+        }
     }
 
     private void clearDynamoTable(String dynamoTableName, UnaryOperator<Map<String, AttributeValue>> getKey) {

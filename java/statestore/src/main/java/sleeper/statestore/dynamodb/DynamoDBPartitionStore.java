@@ -194,14 +194,18 @@ class DynamoDBPartitionStore implements PartitionStore {
     }
 
     @Override
-    public void clearPartitionData() {
-        deleteAllDynamoTableItems(dynamoDB, new QueryRequest().withTableName(dynamoTableName)
-                .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID))
-                .withExpressionAttributeValues(new DynamoDBRecordBuilder()
-                        .string(":table_id", sleeperTableId)
-                        .build())
-                .withKeyConditionExpression("#TableId = :table_id"),
-                partitionFormat::getKey);
+    public void clearPartitionData() throws StateStoreException {
+        try {
+            deleteAllDynamoTableItems(dynamoDB, new QueryRequest().withTableName(dynamoTableName)
+                    .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID))
+                    .withExpressionAttributeValues(new DynamoDBRecordBuilder()
+                            .string(":table_id", sleeperTableId)
+                            .build())
+                    .withKeyConditionExpression("#TableId = :table_id"),
+                    partitionFormat::getKey);
+        } catch (RuntimeException e) {
+            throw new StateStoreException("Failed deleting partitions", e);
+        }
     }
 
     private void addPartition(Partition partition) throws StateStoreException {
