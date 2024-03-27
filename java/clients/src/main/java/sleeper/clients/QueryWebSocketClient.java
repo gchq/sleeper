@@ -33,6 +33,7 @@ import org.java_websocket.handshake.ServerHandshake;
 import sleeper.clients.exception.MessageMalformedException;
 import sleeper.clients.exception.MessageMissingFieldException;
 import sleeper.clients.exception.UnknownMessageTypeException;
+import sleeper.clients.exception.WebSocketClosedException;
 import sleeper.clients.exception.WebSocketErrorException;
 import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
@@ -389,6 +390,7 @@ public class QueryWebSocketClient {
         public void onClose(String reason) {
             out.println("Disconnected from WebSocket API: " + reason);
             queryComplete = true;
+            future.completeExceptionally(new WebSocketClosedException(reason));
         }
 
         public void onError(Exception error) {

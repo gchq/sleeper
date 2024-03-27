@@ -25,6 +25,7 @@ import sleeper.clients.QueryWebSocketClient.Client;
 import sleeper.clients.exception.MessageMalformedException;
 import sleeper.clients.exception.MessageMissingFieldException;
 import sleeper.clients.exception.UnknownMessageTypeException;
+import sleeper.clients.exception.WebSocketClosedException;
 import sleeper.clients.exception.WebSocketErrorException;
 import sleeper.clients.testutil.ToStringPrintStream;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -315,7 +316,7 @@ public class QueryWebSocketClientTest {
             // Given
             Query query = exactQuery("test-query-id", 123L);
 
-            // When
+            // When / Then
             assertThat(runQueryFuture(query,
                     withResponses(
                             message("{\"message\":\"error\"}"))))
@@ -323,14 +324,6 @@ public class QueryWebSocketClientTest {
                     .failsWithin(Duration.ofMillis(10))
                     .withThrowableOfType(ExecutionException.class)
                     .withCauseInstanceOf(MessageMissingFieldException.class);
-
-            // Then
-            assertThat(out.toString())
-                    .startsWith("Connected to WebSocket API\n" +
-                            "Submitting Query: " + querySerDe.toJson(query) + "\n" +
-                            "Received message without queryId from API:\n" +
-                            "  {\"message\":\"error\"}")
-                    .containsSubsequence("Query took", "seconds to return 0 records");
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
@@ -342,7 +335,7 @@ public class QueryWebSocketClientTest {
             // Given
             Query query = exactQuery("test-query-id", 123L);
 
-            // When
+            // When / Then
             assertThat(runQueryFuture(query,
                     withResponses(
                             message("{\"queryId\":\"test-query-id\"}"))))
@@ -361,17 +354,14 @@ public class QueryWebSocketClientTest {
             // Given
             Query query = exactQuery("test-query-id", 123L);
 
-            // When
-            runQuery(query,
+            // When / Then
+            assertThat(runQueryFuture(query,
                     withResponses(
-                            closeWithReason("Network error")));
-
-            // Then
-            assertThat(out.toString())
-                    .startsWith("Connected to WebSocket API\n" +
-                            "Submitting Query: " + querySerDe.toJson(query) + "\n" +
-                            "Disconnected from WebSocket API: Network error")
-                    .containsSubsequence("Query took", "seconds to return 0 records");
+                            closeWithReason("Network error"))))
+                    .isCompletedExceptionally()
+                    .failsWithin(Duration.ofMillis(10))
+                    .withThrowableOfType(ExecutionException.class)
+                    .withCauseInstanceOf(WebSocketClosedException.class);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
