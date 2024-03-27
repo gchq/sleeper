@@ -40,14 +40,15 @@ import static sleeper.core.statestore.SplitFileReferenceRequest.splitFileToChild
 
 public class TransactionSerDeTest {
 
-    private static void verify(Schema schema, StateStoreTransaction transaction) {
+    private static void whenSerDeThenMatchAndVerify(Schema schema, StateStoreTransaction transaction) {
         // When
         TransactionSerDe serDe = new TransactionSerDe(schema);
         TransactionType type = TransactionType.getType(transaction);
         String json = serDe.toJsonPrettyPrint(transaction);
 
         // Then
-        assertThat(serDe.toTransaction(type, json)).isEqualTo(transaction);
+        assertThat(serDe.toTransaction(type, json))
+                .isEqualTo(transaction);
         Approvals.verify(json);
     }
 
@@ -65,7 +66,9 @@ public class TransactionSerDeTest {
                         updateTime)
                         .collect(toUnmodifiableList()),
                 updateTime);
-        verify(schema, transaction);
+
+        // When / Then
+        whenSerDeThenMatchAndVerify(schema, transaction);
     }
 
     @Test
@@ -86,7 +89,9 @@ public class TransactionSerDeTest {
                         referenceForChildPartition(file, "R")),
                         updateTime).collect(toUnmodifiableList()),
                 updateTime);
-        verify(schema, transaction);
+
+        // When / Then
+        whenSerDeThenMatchAndVerify(schema, transaction);
     }
 
     @Test
@@ -98,21 +103,27 @@ public class TransactionSerDeTest {
                 assignJobOnPartitionToFiles("job2", "L",
                         List.of("file3.parquet", "file4.parquet"))),
                 Instant.parse("2024-03-26T09:44:01Z"));
-        verify(schemaWithKey("key"), transaction);
+
+        // When / Then
+        whenSerDeThenMatchAndVerify(schemaWithKey("key"), transaction);
     }
 
     @Test
     void shouldSerDeClearFiles() {
         // Given
         StateStoreTransaction transaction = new ClearFilesTransaction();
-        verify(schemaWithKey("key"), transaction);
+
+        // When / Then
+        whenSerDeThenMatchAndVerify(schemaWithKey("key"), transaction);
     }
 
     @Test
     void shouldSerDeDeleteFiles() {
         // Given
         StateStoreTransaction transaction = new DeleteFilesTransaction(List.of("file1.parquet", "file2.parquet"));
-        verify(schemaWithKey("key"), transaction);
+
+        // When / Then
+        whenSerDeThenMatchAndVerify(schemaWithKey("key"), transaction);
     }
 
     @Test
@@ -125,7 +136,9 @@ public class TransactionSerDeTest {
                 .splitToNewChildren("L", "LL", "LR", "g")
                 .splitToNewChildren("R", "RL", "RR", "u")
                 .buildList());
-        verify(schema, transaction);
+
+        // When / Then
+        whenSerDeThenMatchAndVerify(schema, transaction);
     }
 
     @Test
@@ -138,7 +151,9 @@ public class TransactionSerDeTest {
         StateStoreTransaction transaction = new ReplaceFileReferencesTransaction(
                 "job", "root", List.of("file1.parquet", "file2.parquet"),
                 fileFactory.rootFile("file3.parquet", 100), updateTime);
-        verify(schema, transaction);
+
+        // When / Then
+        whenSerDeThenMatchAndVerify(schema, transaction);
     }
 
     @Test
@@ -159,7 +174,9 @@ public class TransactionSerDeTest {
                 splitFileToChildPartitions(
                         fileFactory.partitionFile("L", "file2.parquet", 200), "LL", "LR")),
                 updateTime);
-        verify(schema, transaction);
+
+        // When / Then
+        whenSerDeThenMatchAndVerify(schema, transaction);
     }
 
     @Test
@@ -174,6 +191,8 @@ public class TransactionSerDeTest {
         StateStoreTransaction transaction = new SplitPartitionTransaction(
                 partitions.getPartition("L"),
                 List.of(partitions.getPartition("LL"), partitions.getPartition("LR")));
-        verify(schema, transaction);
+
+        // When / Then
+        whenSerDeThenMatchAndVerify(schema, transaction);
     }
 }
