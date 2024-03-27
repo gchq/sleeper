@@ -36,6 +36,7 @@ import sleeper.cdk.stack.IngestBatcherStack;
 import sleeper.cdk.stack.IngestStack;
 import sleeper.cdk.stack.IngestStacks;
 import sleeper.cdk.stack.IngestStatusStoreStack;
+import sleeper.cdk.stack.KeepLambdaWarmStack;
 import sleeper.cdk.stack.ManagedPoliciesStack;
 import sleeper.cdk.stack.PartitionSplittingStack;
 import sleeper.cdk.stack.PropertiesStack;
@@ -88,7 +89,7 @@ public class SleeperCdkApp extends Stack {
     private PersistentEmrBulkImportStack persistentEmrBulkImportStack;
     private EksBulkImportStack eksBulkImportStack;
     private IngestStatusStoreStack ingestStatusStoreStack;
-    private QueryStack queryStack;
+    private QueryQueueStack queryQueueStack;
 
     public SleeperCdkApp(App app, String id, StackProps props, InstanceProperties instanceProperties, BuiltJars jars) {
         super(app, id, props);
@@ -237,9 +238,10 @@ public class SleeperCdkApp extends Stack {
                     topicStack.getTopic());
         }
 
+        QueryStack queryStack = null;
         // Stack to execute queries
         if (QUERY_STACK_NAMES.stream().anyMatch(optionalStacks::contains)) {
-            QueryQueueStack queryQueueStack = new QueryQueueStack(this, "QueryQueue", instanceProperties);
+            queryQueueStack = new QueryQueueStack(this, "QueryQueue", instanceProperties);
             queryStack = new QueryStack(this,
                     "Query",
                     instanceProperties, jars,
@@ -278,6 +280,15 @@ public class SleeperCdkApp extends Stack {
                     compactionStack,
                     partitionSplittingStack,
                     instanceProperties);
+        }
+
+        if (optionalStacks.contains(KeepLambdaWarmStack.class.getSimpleName())) {
+            new KeepLambdaWarmStack(this,
+                    "KeepLambdaWarmExecution",
+                    instanceProperties,
+                    jars,
+                    coreStacks,
+                    queryQueueStack);
         }
 
         this.generateProperties();

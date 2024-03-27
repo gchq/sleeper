@@ -79,6 +79,14 @@ public interface QueryProperty {
                     "value given below is 128KiB. This value can be overridden using the query config.")
             .defaultValue("" + (128 * 1024)) // 128 KiB
             .propertyGroup(InstancePropertyGroup.QUERY).build();
+    UserDefinedInstanceProperty QUERY_WARM_LAMBDA_EXECUTION_PERIOD_IN_MINUTES = Index
+            .propertyBuilder("sleeper.query.warm.lambda.period.minutes")
+            .description("The rate at which the query lambda runs to keep it warm (in minutes, must be >=1). " +
+                    " This only applies when the KeepLambdaWarmStack is enabled")
+            .defaultValue("5")
+            .validationPredicate(Utils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.QUERY)
+            .runCdkDeployWhenChanged(true).build();
 
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();

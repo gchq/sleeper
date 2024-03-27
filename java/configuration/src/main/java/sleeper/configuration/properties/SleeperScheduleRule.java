@@ -30,6 +30,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_JOB_CREATION_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_CLOUDWATCH_RULE;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_WARM_LAMBDA_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_RULE;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
@@ -55,6 +56,9 @@ public class SleeperScheduleRule {
     public static final SleeperScheduleRule INGEST_BATCHER_JOB_CREATION = add(
             INGEST_BATCHER_JOB_CREATION_CLOUDWATCH_RULE, "%s-IngestBatcherJobCreationRule");
     public static final SleeperScheduleRule TABLE_METRICS = add(TABLE_METRICS_RULE, "%s-MetricsPublishRule");
+    // Rule that triggers the query lambdas to keep warm
+    public static final SleeperScheduleRule QUERY_WARM_LAMBDA = add(
+        QUERY_WARM_LAMBDA_CLOUDWATCH_RULE, "%s-QueryWarmLambdaRule");
 
     private final InstanceProperty property;
     private final String nameFormat;
