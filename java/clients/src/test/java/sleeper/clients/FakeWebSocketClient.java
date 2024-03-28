@@ -19,7 +19,6 @@ import sleeper.clients.QueryWebSocketClient.Client;
 import sleeper.clients.QueryWebSocketClient.WebSocketMessageHandler;
 import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.core.record.Record;
 import sleeper.query.model.Query;
 import sleeper.query.model.QuerySerDe;
 
@@ -71,7 +70,7 @@ public class FakeWebSocketClient implements Client {
     }
 
     @Override
-    public List<Record> getResults(String queryId) {
+    public List<String> getResults(String queryId) {
         return messageHandler.getResults(queryId);
     }
 

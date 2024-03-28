@@ -34,11 +34,9 @@ import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.core.record.Record;
 import sleeper.core.util.LoggedDuration;
 import sleeper.query.model.Query;
 import sleeper.query.model.QuerySerDe;
-import sleeper.query.output.RecordListSerDe;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -104,7 +102,7 @@ public class QueryWebSocketClient {
 
         long getTotalRecordsReturned();
 
-        List<Record> getResults(String queryId);
+        List<String> getResults(String queryId);
     }
 
     private static class WebSocketQueryClient extends WebSocketClient implements Client {
@@ -188,7 +186,7 @@ public class QueryWebSocketClient {
         }
 
         @Override
-        public List<Record> getResults(String queryId) {
+        public List<String> getResults(String queryId) {
             return messageHandler.getResults(queryId);
         }
     }
@@ -197,7 +195,7 @@ public class QueryWebSocketClient {
         private static final Gson GSON = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE).create();
         private final Set<String> outstandingQueries = new HashSet<>();
         private final Map<String, List<String>> subqueryIdByParentQueryId = new HashMap<>();
-        private final Map<String, List<Record>> records = new TreeMap<>();
+        private final Map<String, List<String>> records = new TreeMap<>();
         private final QuerySerDe querySerDe;
         private final ConsoleOutput out;
         private boolean queryComplete = false;
@@ -297,7 +295,8 @@ public class QueryWebSocketClient {
         }
 
         private void handleRecords(JsonObject message, String queryId) {
-            List<Record> recordList = RecordListSerDe.fromJson(message.get("records"));
+            JsonArray recordBatch = message.getAsJsonArray("records");
+            List<String> recordList = recordBatch.asList().stream().map(JsonElement::getAsString).collect(Collectors.toList());
             if (!records.containsKey(queryId)) {
                 records.put(queryId, recordList);
             } else {
@@ -342,7 +341,7 @@ public class QueryWebSocketClient {
             return totalRecordsReturned;
         }
 
-        public List<Record> getResults(String queryId) {
+        public List<String> getResults(String queryId) {
             return Stream.concat(
                     Stream.of(queryId),
                     subqueryIdByParentQueryId.getOrDefault(queryId, List.of()).stream())

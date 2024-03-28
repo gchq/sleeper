@@ -111,7 +111,7 @@ public class QueryWebSocketClientTest {
             assertThat(client.getSentMessages())
                     .containsExactly(querySerDe.toJson(query));
             assertThat(client.getResults("test-query-id"))
-                    .containsExactly(expectedRecord);
+                    .containsExactly(expectedRecord.toString());
         }
 
         @Test
@@ -142,9 +142,9 @@ public class QueryWebSocketClientTest {
             assertThat(client.getSentMessages())
                     .containsExactly(querySerDe.toJson(query));
             assertThat(client.getResults("test-query-id"))
-                    .containsExactly(expectedRecord);
+                    .containsExactly(expectedRecord.toString());
             assertThat(client.getResults("test-subquery"))
-                    .containsExactly(expectedRecord);
+                    .containsExactly(expectedRecord.toString());
         }
 
         @Test
@@ -187,13 +187,13 @@ public class QueryWebSocketClientTest {
             assertThat(client.getSentMessages())
                     .containsExactly(querySerDe.toJson(query));
             assertThat(client.getResults("test-query-id"))
-                    .containsExactly(expectedRecord1, expectedRecord2, expectedRecord3);
+                    .containsExactly(expectedRecord1.toString(), expectedRecord2.toString(), expectedRecord3.toString());
             assertThat(client.getResults("subquery-1"))
-                    .containsExactly(expectedRecord1);
+                    .containsExactly(expectedRecord1.toString());
             assertThat(client.getResults("subquery-2"))
-                    .containsExactly(expectedRecord2);
+                    .containsExactly(expectedRecord2.toString());
             assertThat(client.getResults("subquery-3"))
-                    .containsExactly(expectedRecord3);
+                    .containsExactly(expectedRecord3.toString());
         }
 
         @Test
@@ -222,7 +222,7 @@ public class QueryWebSocketClientTest {
             assertThat(client.getSentMessages())
                     .containsExactly(querySerDe.toJson(query));
             assertThat(client.getResults("test-query-id"))
-                    .containsExactly(expectedRecord);
+                    .containsExactly(expectedRecord.toString());
         }
     }
 

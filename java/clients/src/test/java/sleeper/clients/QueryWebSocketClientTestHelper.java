@@ -17,9 +17,7 @@ package sleeper.clients;
 
 import sleeper.clients.FakeWebSocketClient.WebSocketResponse;
 import sleeper.core.record.Record;
-import sleeper.query.output.RecordListSerDe;
 
-import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -55,8 +53,8 @@ public class QueryWebSocketClientTestHelper {
         return "{" +
                 "\"queryId\":\"" + queryId + "\", " +
                 "\"message\":\"records\"," +
-                "\"records\":" + RecordListSerDe.toJson(List.of(records)) +
-                "}";
+                "\"records\":[" + Stream.of(records).map(record -> "\"" + record.toString() + "\"").collect(Collectors.joining(",")) +
+                "]}";
     }
 
     public static String completedQuery(String queryId, long recordCount) {
