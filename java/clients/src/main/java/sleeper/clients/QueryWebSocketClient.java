@@ -243,7 +243,7 @@ public class QueryWebSocketClient {
                     out.println("Query results:");
                     records.values().stream()
                             .flatMap(List::stream)
-                            .forEach(record -> out.println(record.toString()));
+                            .forEach(out::println);
                 }
                 queryComplete = true;
             }
