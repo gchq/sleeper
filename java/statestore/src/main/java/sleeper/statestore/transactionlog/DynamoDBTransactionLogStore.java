@@ -23,7 +23,6 @@ import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.statestore.transactionlog.StateStoreTransaction;
@@ -36,7 +35,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_TABLENAME;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
 
 class DynamoDBTransactionLogStore implements TransactionLogStore {
@@ -47,15 +45,15 @@ class DynamoDBTransactionLogStore implements TransactionLogStore {
     private static final String TYPE = "TYPE";
     private static final String BODY = "BODY";
 
-    private final InstanceProperties instanceProperties;
-    private final TableProperties tableProperties;
+    private final String logTableName;
+    private final String sleeperTableId;
     private final AmazonDynamoDB dynamo;
     private final TransactionSerDe serDe;
 
     DynamoDBTransactionLogStore(
-            InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamo) {
-        this.instanceProperties = instanceProperties;
-        this.tableProperties = tableProperties;
+            String logTableName, TableProperties tableProperties, AmazonDynamoDB dynamo) {
+        this.logTableName = logTableName;
+        this.sleeperTableId = tableProperties.get(TableProperty.TABLE_ID);
         this.dynamo = dynamo;
         this.serDe = new TransactionSerDe(tableProperties.getSchema());
     }
@@ -63,9 +61,9 @@ class DynamoDBTransactionLogStore implements TransactionLogStore {
     @Override
     public void addTransaction(StateStoreTransaction<?> transaction, long transactionNumber) {
         dynamo.putItem(new PutItemRequest()
-                .withTableName(instanceProperties.get(TRANSACTION_LOG_TABLENAME))
+                .withTableName(logTableName)
                 .withItem(new DynamoDBRecordBuilder()
-                        .string(TABLE_ID, tableProperties.get(TableProperty.TABLE_ID))
+                        .string(TABLE_ID, sleeperTableId)
                         .number(TRANSACTION_NUMBER, transactionNumber)
                         .string(TYPE, TransactionType.getType(transaction).name())
                         .string(BODY, serDe.toJson(transaction))
@@ -77,12 +75,12 @@ class DynamoDBTransactionLogStore implements TransactionLogStore {
     @Override
     public Stream<StateStoreTransaction<?>> readTransactionsAfter(long lastTransactionNumber) {
         return streamPagedItems(dynamo, new QueryRequest()
-                .withTableName(instanceProperties.get(TRANSACTION_LOG_TABLENAME))
+                .withTableName(logTableName)
                 .withConsistentRead(true)
                 .withKeyConditionExpression("#TableId = :table_id AND #Number > :number")
                 .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID, "#Number", TRANSACTION_NUMBER))
                 .withExpressionAttributeValues(new DynamoDBRecordBuilder()
-                        .string(":table_id", tableProperties.get(TableProperty.TABLE_ID))
+                        .string(":table_id", sleeperTableId)
                         .number(":number", lastTransactionNumber)
                         .build())
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL))
