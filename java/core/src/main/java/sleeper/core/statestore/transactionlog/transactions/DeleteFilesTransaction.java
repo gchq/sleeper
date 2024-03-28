@@ -19,13 +19,13 @@ import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.FileHasReferencesException;
 import sleeper.core.statestore.exception.FileNotFoundException;
-import sleeper.core.statestore.transactionlog.FileReferenceTransactionGeneric;
+import sleeper.core.statestore.transactionlog.FileReferenceTransaction;
 import sleeper.core.statestore.transactionlog.StateStoreFiles;
 
 import java.util.List;
 import java.util.Objects;
 
-public class DeleteFilesTransaction implements FileReferenceTransactionGeneric {
+public class DeleteFilesTransaction implements FileReferenceTransaction {
 
     private final List<String> filenames;
 

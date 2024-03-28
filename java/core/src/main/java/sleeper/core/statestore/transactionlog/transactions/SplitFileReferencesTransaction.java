@@ -23,7 +23,7 @@ import sleeper.core.statestore.exception.FileNotFoundException;
 import sleeper.core.statestore.exception.FileReferenceAlreadyExistsException;
 import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
-import sleeper.core.statestore.transactionlog.FileReferenceTransactionGeneric;
+import sleeper.core.statestore.transactionlog.FileReferenceTransaction;
 import sleeper.core.statestore.transactionlog.StateStoreFiles;
 
 import java.time.Instant;
@@ -32,7 +32,7 @@ import java.util.Objects;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 
-public class SplitFileReferencesTransaction implements FileReferenceTransactionGeneric {
+public class SplitFileReferencesTransaction implements FileReferenceTransaction {
 
     private final List<SplitFileReferenceRequest> requests;
     private final Instant updateTime;

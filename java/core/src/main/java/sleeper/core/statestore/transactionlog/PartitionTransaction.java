@@ -15,21 +15,6 @@
  */
 package sleeper.core.statestore.transactionlog;
 
-import sleeper.core.statestore.StateStoreException;
-
-public interface PartitionTransaction extends StateStoreTransaction {
-    @Override
-    default void validate(TransactionLogHead state) throws StateStoreException {
-        validate(state.partitions());
-    }
-
-    void validate(StateStorePartitions stateStorePartitions) throws StateStoreException;
-
-    @Override
-    default void apply(TransactionLogHead state) {
-        apply(state.partitions());
-    }
-
-    void apply(StateStorePartitions stateStorePartitions);
+public interface PartitionTransaction extends StateStoreTransactionGeneric<StateStorePartitions> {
 
 }

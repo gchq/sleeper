@@ -32,9 +32,9 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 class TransactionLogPartitionStore implements PartitionStore {
 
     private final Schema schema;
-    private final TransactionLogHeadGeneric<StateStorePartitions> head;
+    private final TransactionLogHead<StateStorePartitions> head;
 
-    TransactionLogPartitionStore(Schema schema, TransactionLogHeadGeneric<StateStorePartitions> head) {
+    TransactionLogPartitionStore(Schema schema, TransactionLogHead<StateStorePartitions> head) {
         this.schema = schema;
         this.head = head;
     }

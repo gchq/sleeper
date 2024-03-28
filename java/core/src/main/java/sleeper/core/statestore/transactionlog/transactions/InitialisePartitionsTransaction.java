@@ -16,13 +16,13 @@
 package sleeper.core.statestore.transactionlog.transactions;
 
 import sleeper.core.partition.Partition;
-import sleeper.core.statestore.transactionlog.PartitionTransactionGeneric;
+import sleeper.core.statestore.transactionlog.PartitionTransaction;
 import sleeper.core.statestore.transactionlog.StateStorePartitions;
 
 import java.util.List;
 import java.util.Objects;
 
-public class InitialisePartitionsTransaction implements PartitionTransactionGeneric {
+public class InitialisePartitionsTransaction implements PartitionTransaction {
 
     private final List<Partition> partitions;
 

@@ -15,20 +15,5 @@
  */
 package sleeper.core.statestore.transactionlog;
 
-import sleeper.core.statestore.StateStoreException;
-
-public interface FileReferenceTransaction extends StateStoreTransaction {
-    @Override
-    default void validate(TransactionLogHead state) throws StateStoreException {
-        validate(state.files());
-    }
-
-    void validate(StateStoreFiles stateStoreFiles) throws StateStoreException;
-
-    @Override
-    default void apply(TransactionLogHead state) {
-        apply(state.files());
-    }
-
-    void apply(StateStoreFiles stateStoreFiles);
+public interface FileReferenceTransaction extends StateStoreTransactionGeneric<StateStoreFiles> {
 }

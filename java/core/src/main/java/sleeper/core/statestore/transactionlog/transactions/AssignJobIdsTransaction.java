@@ -21,14 +21,14 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
-import sleeper.core.statestore.transactionlog.FileReferenceTransactionGeneric;
+import sleeper.core.statestore.transactionlog.FileReferenceTransaction;
 import sleeper.core.statestore.transactionlog.StateStoreFiles;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 
-public class AssignJobIdsTransaction implements FileReferenceTransactionGeneric {
+public class AssignJobIdsTransaction implements FileReferenceTransaction {
 
     private final List<AssignJobIdRequest> requests;
     private final Instant updateTime;

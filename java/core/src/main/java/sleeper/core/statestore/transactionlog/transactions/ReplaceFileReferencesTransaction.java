@@ -22,14 +22,14 @@ import sleeper.core.statestore.exception.FileAlreadyExistsException;
 import sleeper.core.statestore.exception.FileNotFoundException;
 import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
-import sleeper.core.statestore.transactionlog.FileReferenceTransactionGeneric;
+import sleeper.core.statestore.transactionlog.FileReferenceTransaction;
 import sleeper.core.statestore.transactionlog.StateStoreFiles;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 
-public class ReplaceFileReferencesTransaction implements FileReferenceTransactionGeneric {
+public class ReplaceFileReferencesTransaction implements FileReferenceTransaction {
 
     private final String jobId;
     private final String partitionId;

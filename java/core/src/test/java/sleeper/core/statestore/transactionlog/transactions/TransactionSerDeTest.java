@@ -25,8 +25,8 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.core.statestore.transactionlog.FileReferenceTransactionGeneric;
-import sleeper.core.statestore.transactionlog.PartitionTransactionGeneric;
+import sleeper.core.statestore.transactionlog.FileReferenceTransaction;
+import sleeper.core.statestore.transactionlog.PartitionTransaction;
 import sleeper.core.statestore.transactionlog.StateStoreTransactionGeneric;
 
 import java.time.Instant;
@@ -61,7 +61,7 @@ public class TransactionSerDeTest {
         PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
         Instant updateTime = Instant.parse("2024-03-26T09:43:01Z");
         FileReferenceFactory fileFactory = FileReferenceFactory.fromUpdatedAt(partitions, updateTime);
-        FileReferenceTransactionGeneric transaction = new AddFilesTransaction(
+        FileReferenceTransaction transaction = new AddFilesTransaction(
                 AllReferencesToAFile.newFilesWithReferences(Stream.of(
                         fileFactory.rootFile("file1.parquet", 100),
                         fileFactory.rootFile("file2.parquet", 200)),
@@ -85,7 +85,7 @@ public class TransactionSerDeTest {
         FileReferenceFactory fileFactory = FileReferenceFactory.fromUpdatedAt(partitions, updateTime);
         FileReference file = fileFactory.rootFile("file.parquet", 200);
         referenceForChildPartition(file, "L");
-        FileReferenceTransactionGeneric transaction = new AddFilesTransaction(
+        FileReferenceTransaction transaction = new AddFilesTransaction(
                 AllReferencesToAFile.newFilesWithReferences(Stream.of(
                         referenceForChildPartition(file, "L"),
                         referenceForChildPartition(file, "R")),
@@ -99,7 +99,7 @@ public class TransactionSerDeTest {
     @Test
     void shouldSerDeAssignJobIds() {
         // Given
-        FileReferenceTransactionGeneric transaction = new AssignJobIdsTransaction(List.of(
+        FileReferenceTransaction transaction = new AssignJobIdsTransaction(List.of(
                 assignJobOnPartitionToFiles("job1", "root",
                         List.of("file1.parquet", "file2.parquet")),
                 assignJobOnPartitionToFiles("job2", "L",
@@ -113,7 +113,7 @@ public class TransactionSerDeTest {
     @Test
     void shouldSerDeClearFiles() {
         // Given
-        FileReferenceTransactionGeneric transaction = new ClearFilesTransaction();
+        FileReferenceTransaction transaction = new ClearFilesTransaction();
 
         // When / Then
         whenSerDeThenMatchAndVerify(schemaWithKey("key"), transaction);
@@ -122,7 +122,7 @@ public class TransactionSerDeTest {
     @Test
     void shouldSerDeDeleteFiles() {
         // Given
-        FileReferenceTransactionGeneric transaction = new DeleteFilesTransaction(List.of("file1.parquet", "file2.parquet"));
+        FileReferenceTransaction transaction = new DeleteFilesTransaction(List.of("file1.parquet", "file2.parquet"));
 
         // When / Then
         whenSerDeThenMatchAndVerify(schemaWithKey("key"), transaction);
@@ -132,7 +132,7 @@ public class TransactionSerDeTest {
     void shouldSerDeInitialisePartitions() {
         // Given
         Schema schema = schemaWithKey("key", new StringType());
-        PartitionTransactionGeneric transaction = new InitialisePartitionsTransaction(new PartitionsBuilder(schema)
+        PartitionTransaction transaction = new InitialisePartitionsTransaction(new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", "p")
                 .splitToNewChildren("L", "LL", "LR", "g")
@@ -150,7 +150,7 @@ public class TransactionSerDeTest {
         PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
         Instant updateTime = Instant.parse("2023-03-26T10:05:01Z");
         FileReferenceFactory fileFactory = FileReferenceFactory.fromUpdatedAt(partitions, updateTime);
-        FileReferenceTransactionGeneric transaction = new ReplaceFileReferencesTransaction(
+        FileReferenceTransaction transaction = new ReplaceFileReferencesTransaction(
                 "job", "root", List.of("file1.parquet", "file2.parquet"),
                 fileFactory.rootFile("file3.parquet", 100), updateTime);
 
@@ -170,7 +170,7 @@ public class TransactionSerDeTest {
                 .buildTree();
         Instant updateTime = Instant.parse("2023-03-26T10:05:01Z");
         FileReferenceFactory fileFactory = FileReferenceFactory.fromUpdatedAt(partitions, updateTime);
-        FileReferenceTransactionGeneric transaction = new SplitFileReferencesTransaction(List.of(
+        FileReferenceTransaction transaction = new SplitFileReferencesTransaction(List.of(
                 splitFileToChildPartitions(
                         fileFactory.rootFile("file1.parquet", 100), "L", "R"),
                 splitFileToChildPartitions(
@@ -190,7 +190,7 @@ public class TransactionSerDeTest {
                 .splitToNewChildren("root", "L", "R", "p")
                 .splitToNewChildren("L", "LL", "LR", "g")
                 .buildTree();
-        PartitionTransactionGeneric transaction = new SplitPartitionTransaction(
+        PartitionTransaction transaction = new SplitPartitionTransaction(
                 partitions.getPartition("L"),
                 List.of(partitions.getPartition("LL"), partitions.getPartition("LR")));
 

@@ -41,10 +41,10 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 
 class TransactionLogFileReferenceStore implements FileReferenceStore {
 
-    private final TransactionLogHeadGeneric<StateStoreFiles> head;
+    private final TransactionLogHead<StateStoreFiles> head;
     private Clock clock = Clock.systemUTC();
 
-    TransactionLogFileReferenceStore(TransactionLogHeadGeneric<StateStoreFiles> state) {
+    TransactionLogFileReferenceStore(TransactionLogHead<StateStoreFiles> state) {
         this.head = state;
     }
 
