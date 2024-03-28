@@ -268,6 +268,30 @@ public class QueryWebSocketClientTest {
         }
 
         @Test
+        void shouldHandleErrorIfMessageWithErrorIsReceived() throws Exception {
+            // Given
+            Query query = exactQuery("test-query-id", 123L);
+
+            // When / Then
+            assertThat(runQueryFuture(query,
+                    withResponses(
+                            message(errorMessage("test-query-id", "Query failed")))))
+                    .isCompletedExceptionally()
+                    .failsWithin(Duration.ofMillis(10))
+                    .withThrowableOfType(ExecutionException.class)
+                    .withCauseInstanceOf(WebSocketErrorException.class);
+            assertThat(out.toString())
+                    .startsWith("Connected to WebSocket API\n" +
+                            "Submitting Query: " + querySerDe.toJson(query) + "\n" +
+                            "Encountered an error while running query test-query-id: Query failed")
+                    .containsSubsequence("Query took", "seconds to return 0 records");
+            assertThat(client.isConnected()).isFalse();
+            assertThat(client.isClosed()).isTrue();
+            assertThat(client.getSentMessages())
+                    .containsExactly(querySerDe.toJson(query));
+        }
+
+        @Test
         void shouldHandleMessageWithUnrecognisedType() throws Exception {
             // Given
             Query query = exactQuery("test-query-id", 123L);
