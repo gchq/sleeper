@@ -70,8 +70,11 @@ public class QueryWebSocketCommandLineClient extends QueryCommandLineClient {
 
     @Override
     protected void submitQuery(TableProperties tableProperties, Query query) {
-        queryWebSocketClient.submitQuery(query);
-        queryWebSocketClient.waitForQuery();
+        try {
+            queryWebSocketClient.submitQuery(query).join();
+        } catch (InterruptedException e) {
+            out.println("Failed to run query: " + e.getMessage());
+        }
     }
 
     public static void main(String[] args) throws StateStoreException {

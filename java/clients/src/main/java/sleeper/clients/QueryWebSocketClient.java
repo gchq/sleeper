@@ -83,16 +83,7 @@ public class QueryWebSocketClient {
         this.out = out;
     }
 
-    public void submitQuery(Query query) {
-        try {
-            startTime = Instant.now();
-            client.startQuery(query);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public CompletableFuture<List<Record>> submitQueryFuture(Query query) throws InterruptedException {
+    public CompletableFuture<List<Record>> submitQuery(Query query) throws InterruptedException {
         try {
             startTime = Instant.now();
             return client.startQueryFuture(query)
