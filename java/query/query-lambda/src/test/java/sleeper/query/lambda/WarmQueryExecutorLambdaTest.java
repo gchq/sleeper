@@ -26,7 +26,6 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -38,7 +37,7 @@ public class WarmQueryExecutorLambdaTest {
         Schema schema = getStringKeySchema();
         Region region = WarmQueryExecutorLambda.getRegion(schema);
 
-        assertThat(region).isEqualTo(expectedRegion(schema, "a"));
+        assertThat(region).isEqualTo(getExpectedRegion(schema, new Field("test-key", new StringType()), "a"));
     }
 
     @Test
@@ -46,7 +45,7 @@ public class WarmQueryExecutorLambdaTest {
         Schema schema = getByteArrayKeySchema();
         Region region = WarmQueryExecutorLambda.getRegion(schema);
 
-        assertThat(region).isEqualTo(expectedRegion(schema, new byte[]{'a'}));
+        assertThat(region).isEqualTo(getExpectedRegion(schema, new Field("test-key", new ByteArrayType()), new byte[]{'a'}));
     }
 
     @Test
@@ -54,7 +53,7 @@ public class WarmQueryExecutorLambdaTest {
         Schema schema = getIntKeySchema();
         Region region = WarmQueryExecutorLambda.getRegion(schema);
 
-        assertThat(region).isEqualTo(expectedRegion(schema, 0));
+        assertThat(region).isEqualTo(getExpectedRegion(schema, new Field("test-key", new IntType()), 0));
     }
 
     @Test
@@ -62,7 +61,7 @@ public class WarmQueryExecutorLambdaTest {
         Schema schema = getLongKeySchema();
         Region region = WarmQueryExecutorLambda.getRegion(schema);
 
-        assertThat(region).isEqualTo(expectedRegion(schema, 0L));
+        assertThat(region).isEqualTo(getExpectedRegion(schema, new Field("test-key", new LongType()), 0L));
     }
 
     @Test
@@ -70,7 +69,12 @@ public class WarmQueryExecutorLambdaTest {
         Schema schema = getMultipleKeySchema();
         Region region = WarmQueryExecutorLambda.getRegion(schema);
 
-        assertThat(region).isEqualTo(expectedRegion(schema, "a"));
+        Region expected = new Region(List.of(getExpectedRegion(schema, new Field("test-key", new StringType()), "a")
+                .getRange("test-key"),
+                getExpectedRegion(schema, new Field("test-key2", new StringType()), "a")
+                        .getRange("test-key2")));
+
+        assertThat(region).isEqualTo(expected);
     }
 
     private Schema getStringKeySchema() {
@@ -114,12 +118,8 @@ public class WarmQueryExecutorLambdaTest {
                 .build();
     }
 
-    private Region expectedRegion(Schema schema, Object value) {
-        List<Range> ranges = new ArrayList<>();
-        schema.getRowKeyFields().forEach(field -> {
-            ranges.add(new Range.RangeFactory(schema)
-                    .createExactRange(field, value));
-        });
-        return new Region(ranges);
+    private Region getExpectedRegion(Schema schema, Field rowKey, Object value) {
+        return new Region(List.of(new Range.RangeFactory(schema)
+                .createExactRange(rowKey, value)));
     }
 }

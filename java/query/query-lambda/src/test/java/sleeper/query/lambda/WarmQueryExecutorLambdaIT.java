@@ -132,7 +132,8 @@ public class WarmQueryExecutorLambdaIT {
         assertThat(result.getMessages()).hasSize(1);
 
         Query query = querySerDe.fromJson(result.getMessages().get(0).getBody());
-        Query expected = buildExpectedQuery(query.getQueryId(), tableProperties.get(TABLE_NAME), schema, "a");
+        Query expected = buildExpectedQuery(query.getQueryId(), tableProperties.get(TABLE_NAME), schema,
+                new Field("test-key", new StringType()), "a");
 
         assertThat(query).isEqualTo(expected);
     }
@@ -145,13 +146,9 @@ public class WarmQueryExecutorLambdaIT {
                 .build();
     }
 
-    private Query buildExpectedQuery(String id, String tableName, Schema schema, Object value) {
-        List<Range> ranges = new ArrayList<>();
-        schema.getRowKeyFields().forEach(field -> {
-            ranges.add(new Range.RangeFactory(schema)
-                    .createExactRange(field, value));
-        });
-        Region region = new Region(ranges);
+    private Query buildExpectedQuery(String id, String tableName, Schema schema, Field rowKey, Object value) {
+        Region region = new Region(List.of(new Range.RangeFactory(schema)
+                .createExactRange(rowKey, value)));
         return Query.builder()
                 .queryId(id)
                 .tableName(tableName)
