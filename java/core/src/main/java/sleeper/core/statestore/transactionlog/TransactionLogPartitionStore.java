@@ -21,6 +21,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.PartitionStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.transactions.InitialisePartitionsTransaction;
+import sleeper.core.statestore.transactionlog.transactions.SplitPartitionTransaction;
 
 import java.util.Collections;
 import java.util.List;
@@ -40,6 +41,7 @@ class TransactionLogPartitionStore implements PartitionStore {
 
     @Override
     public void atomicallyUpdatePartitionAndCreateNewOnes(Partition splitPartition, Partition newPartition1, Partition newPartition2) throws StateStoreException {
+        state.addTransaction(new SplitPartitionTransaction(splitPartition, List.of(newPartition1, newPartition2)));
     }
 
     @Override
