@@ -26,7 +26,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
-import com.google.gson.ToNumberPolicy;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 
@@ -192,7 +191,7 @@ public class QueryWebSocketClient {
     }
 
     public static class WebSocketMessageHandler {
-        private static final Gson GSON = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE).create();
+        private final Gson serde = new GsonBuilder().create();
         private final Set<String> outstandingQueries = new HashSet<>();
         private final Map<String, List<String>> subqueryIdByParentQueryId = new HashMap<>();
         private final Map<String, List<String>> records = new TreeMap<>();
@@ -251,7 +250,7 @@ public class QueryWebSocketClient {
 
         private Optional<JsonObject> deserialiseMessage(String json) {
             try {
-                JsonObject message = GSON.fromJson(json, JsonObject.class);
+                JsonObject message = serde.fromJson(json, JsonObject.class);
                 if (!message.has("queryId")) {
                     out.println("Received message without queryId from API:");
                     out.println("  " + json);
