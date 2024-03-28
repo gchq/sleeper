@@ -18,7 +18,7 @@ package sleeper.core.statestore.transactionlog.transactions;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.FileAlreadyExistsException;
-import sleeper.core.statestore.transactionlog.FileReferenceTransaction;
+import sleeper.core.statestore.transactionlog.FileReferenceTransactionGeneric;
 import sleeper.core.statestore.transactionlog.StateStoreFiles;
 
 import java.time.Instant;
@@ -27,7 +27,7 @@ import java.util.Objects;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 
-public class AddFilesTransaction implements FileReferenceTransaction {
+public class AddFilesTransaction implements FileReferenceTransactionGeneric {
 
     private final List<AllReferencesToAFile> files;
     private final Instant updateTime;

@@ -41,37 +41,37 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 
 class TransactionLogFileReferenceStore implements FileReferenceStore {
 
-    private final TransactionLogHead state;
+    private final TransactionLogHeadGeneric<StateStoreFiles> head;
     private Clock clock = Clock.systemUTC();
 
-    TransactionLogFileReferenceStore(TransactionLogHead state) {
-        this.state = state;
+    TransactionLogFileReferenceStore(TransactionLogHeadGeneric<StateStoreFiles> state) {
+        this.head = state;
     }
 
     @Override
     public void addFilesWithReferences(List<AllReferencesToAFile> files) throws StateStoreException {
-        state.addTransaction(new AddFilesTransaction(files, clock.instant()));
+        head.addTransaction(new AddFilesTransaction(files, clock.instant()));
     }
 
     @Override
     public void assignJobIds(List<AssignJobIdRequest> requests) throws StateStoreException {
-        state.addTransaction(new AssignJobIdsTransaction(requests, clock.instant()));
+        head.addTransaction(new AssignJobIdsTransaction(requests, clock.instant()));
     }
 
     @Override
     public void atomicallyReplaceFileReferencesWithNewOne(String jobId, String partitionId, List<String> inputFiles, FileReference newReference) throws StateStoreException {
-        state.addTransaction(new ReplaceFileReferencesTransaction(
+        head.addTransaction(new ReplaceFileReferencesTransaction(
                 jobId, partitionId, inputFiles, newReference, clock.instant()));
     }
 
     @Override
     public void clearFileData() throws StateStoreException {
-        state.addTransaction(new ClearFilesTransaction());
+        head.addTransaction(new ClearFilesTransaction());
     }
 
     @Override
     public void deleteGarbageCollectedFileReferenceCounts(List<String> filenames) throws StateStoreException {
-        state.addTransaction(new DeleteFilesTransaction(filenames));
+        head.addTransaction(new DeleteFilesTransaction(filenames));
     }
 
     @Override
@@ -127,15 +127,15 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
     @Override
     public void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws SplitRequestsFailedException {
         try {
-            state.addTransaction(new SplitFileReferencesTransaction(splitRequests, clock.instant()));
+            head.addTransaction(new SplitFileReferencesTransaction(splitRequests, clock.instant()));
         } catch (StateStoreException e) {
             throw new SplitRequestsFailedException(List.of(), splitRequests, e);
         }
     }
 
     private StateStoreFiles files() {
-        state.update();
-        return state.files();
+        head.update();
+        return head.state();
     }
 
 }

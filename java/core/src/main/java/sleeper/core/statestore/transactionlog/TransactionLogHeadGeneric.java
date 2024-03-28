@@ -20,12 +20,20 @@ import sleeper.core.statestore.StateStoreException;
 public class TransactionLogHeadGeneric<T> {
 
     private final TransactionLogStore logStore;
-    private final Class<StateStoreTransactionGeneric<T>> transactionType;
+    private final Class<? extends StateStoreTransactionGeneric<T>> transactionType;
     private final T state;
     private long lastTransactionNumber = 0;
 
+    public static TransactionLogHeadGeneric<StateStoreFiles> forFiles(TransactionLogStore logStore) {
+        return new TransactionLogHeadGeneric<StateStoreFiles>(logStore, FileReferenceTransactionGeneric.class, new StateStoreFiles());
+    }
+
+    public static TransactionLogHeadGeneric<StateStorePartitions> forPartitions(TransactionLogStore logStore) {
+        return new TransactionLogHeadGeneric<StateStorePartitions>(logStore, PartitionTransactionGeneric.class, new StateStorePartitions());
+    }
+
     public TransactionLogHeadGeneric(
-            TransactionLogStore logStore, Class<StateStoreTransactionGeneric<T>> transactionType, T state) {
+            TransactionLogStore logStore, Class<? extends StateStoreTransactionGeneric<T>> transactionType, T state) {
         this.logStore = logStore;
         this.transactionType = transactionType;
         this.state = state;
@@ -42,11 +50,11 @@ public class TransactionLogHeadGeneric<T> {
 
     public void update() {
         logStore.readTransactionsAfter(lastTransactionNumber)
+                .peek(transaction -> lastTransactionNumber++)
                 .filter(transactionType::isInstance)
                 .map(transactionType::cast)
                 .forEach(transaction -> {
                     transaction.apply(state);
-                    lastTransactionNumber++;
                 });
     }
 

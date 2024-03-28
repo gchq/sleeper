@@ -39,11 +39,11 @@ public class TransactionLogHead {
 
     public void update() {
         logStore.readTransactionsAfter(lastTransactionNumber)
+                .peek(transaction -> lastTransactionNumber++)
                 .filter(StateStoreTransaction.class::isInstance)
                 .map(StateStoreTransaction.class::cast)
                 .forEach(transaction -> {
                     transaction.apply(this);
-                    lastTransactionNumber++;
                 });
     }
 

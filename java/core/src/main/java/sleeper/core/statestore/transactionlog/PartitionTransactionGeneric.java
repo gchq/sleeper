@@ -15,18 +15,6 @@
  */
 package sleeper.core.statestore.transactionlog;
 
-import sleeper.core.schema.Schema;
-import sleeper.core.statestore.DelegatingStateStore;
-
-public class TransactionLogStateStore extends DelegatingStateStore {
-
-    public TransactionLogStateStore(Schema schema, TransactionLogStore logStore) {
-        this(schema, logStore, new TransactionLogHead(logStore));
-    }
-
-    private TransactionLogStateStore(Schema schema, TransactionLogStore logStore, TransactionLogHead state) {
-        super(new TransactionLogFileReferenceStore(TransactionLogHeadGeneric.forFiles(logStore)),
-                new TransactionLogPartitionStore(schema, state));
-    }
+public interface PartitionTransactionGeneric extends StateStoreTransactionGeneric<StateStorePartitions> {
 
 }
