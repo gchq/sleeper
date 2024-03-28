@@ -15,5 +15,5 @@
  */
 package sleeper.core.statestore.transactionlog;
 
-public interface FileReferenceTransaction extends StateStoreTransactionGeneric<StateStoreFiles> {
+public interface FileReferenceTransaction extends StateStoreTransaction<StateStoreFiles> {
 }

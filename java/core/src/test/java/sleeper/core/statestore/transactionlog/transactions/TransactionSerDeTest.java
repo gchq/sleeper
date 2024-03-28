@@ -27,7 +27,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.transactionlog.FileReferenceTransaction;
 import sleeper.core.statestore.transactionlog.PartitionTransaction;
-import sleeper.core.statestore.transactionlog.StateStoreTransactionGeneric;
+import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 
 import java.time.Instant;
 import java.util.List;
@@ -42,7 +42,7 @@ import static sleeper.core.statestore.SplitFileReferenceRequest.splitFileToChild
 
 public class TransactionSerDeTest {
 
-    private static void whenSerDeThenMatchAndVerify(Schema schema, StateStoreTransactionGeneric<?> transaction) {
+    private static void whenSerDeThenMatchAndVerify(Schema schema, StateStoreTransaction<?> transaction) {
         // When
         TransactionSerDe serDe = new TransactionSerDe(schema);
         TransactionType type = TransactionType.getType(transaction);

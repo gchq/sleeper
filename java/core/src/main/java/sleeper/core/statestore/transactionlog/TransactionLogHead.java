@@ -20,12 +20,12 @@ import sleeper.core.statestore.StateStoreException;
 public class TransactionLogHead<T> {
 
     private final TransactionLogStore logStore;
-    private final Class<? extends StateStoreTransactionGeneric<T>> transactionType;
+    private final Class<? extends StateStoreTransaction<T>> transactionType;
     private final T state;
     private long lastTransactionNumber = 0;
 
     private TransactionLogHead(
-            TransactionLogStore logStore, Class<? extends StateStoreTransactionGeneric<T>> transactionType, T state) {
+            TransactionLogStore logStore, Class<? extends StateStoreTransaction<T>> transactionType, T state) {
         this.logStore = logStore;
         this.transactionType = transactionType;
         this.state = state;
@@ -39,7 +39,7 @@ public class TransactionLogHead<T> {
         return new TransactionLogHead<StateStorePartitions>(logStore, PartitionTransaction.class, new StateStorePartitions());
     }
 
-    public void addTransaction(StateStoreTransactionGeneric<T> transaction) throws StateStoreException {
+    public void addTransaction(StateStoreTransaction<T> transaction) throws StateStoreException {
         update();
         transaction.validate(state);
         long transactionNumber = lastTransactionNumber + 1;

@@ -17,7 +17,7 @@ package sleeper.core.statestore.transactionlog;
 
 import sleeper.core.statestore.StateStoreException;
 
-public interface StateStoreTransactionGeneric<T> {
+public interface StateStoreTransaction<T> {
 
     void validate(T state) throws StateStoreException;
 

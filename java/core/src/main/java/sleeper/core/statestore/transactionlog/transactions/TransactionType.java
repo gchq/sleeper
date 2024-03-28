@@ -15,7 +15,7 @@
  */
 package sleeper.core.statestore.transactionlog.transactions;
 
-import sleeper.core.statestore.transactionlog.StateStoreTransactionGeneric;
+import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 
 public enum TransactionType {
 
@@ -28,17 +28,17 @@ public enum TransactionType {
     SPLIT_FILE_REFERENCES(SplitFileReferencesTransaction.class),
     SPLIT_PARTITION(SplitPartitionTransaction.class);
 
-    private final Class<? extends StateStoreTransactionGeneric<?>> type;
+    private final Class<? extends StateStoreTransaction<?>> type;
 
-    TransactionType(Class<? extends StateStoreTransactionGeneric<?>> type) {
+    TransactionType(Class<? extends StateStoreTransaction<?>> type) {
         this.type = type;
     }
 
-    public Class<? extends StateStoreTransactionGeneric<?>> getType() {
+    public Class<? extends StateStoreTransaction<?>> getType() {
         return type;
     }
 
-    public static TransactionType getType(StateStoreTransactionGeneric<?> transaction) {
+    public static TransactionType getType(StateStoreTransaction<?> transaction) {
         for (TransactionType type : values()) {
             if (type.getType().isInstance(transaction)) {
                 return type;

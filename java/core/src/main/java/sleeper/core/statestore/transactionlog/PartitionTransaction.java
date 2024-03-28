@@ -15,6 +15,6 @@
  */
 package sleeper.core.statestore.transactionlog;
 
-public interface PartitionTransaction extends StateStoreTransactionGeneric<StateStorePartitions> {
+public interface PartitionTransaction extends StateStoreTransaction<StateStorePartitions> {
 
 }

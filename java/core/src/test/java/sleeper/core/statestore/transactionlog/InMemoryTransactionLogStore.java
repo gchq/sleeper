@@ -21,10 +21,10 @@ import java.util.stream.Stream;
 
 public class InMemoryTransactionLogStore implements TransactionLogStore {
 
-    private List<StateStoreTransactionGeneric<?>> transactions = new ArrayList<>();
+    private List<StateStoreTransaction<?>> transactions = new ArrayList<>();
 
     @Override
-    public void addTransaction(StateStoreTransactionGeneric<?> transaction, long transactionNumber) {
+    public void addTransaction(StateStoreTransaction<?> transaction, long transactionNumber) {
         if (transactions.size() + 1 != transactionNumber) {
             throw new IllegalStateException("Next transaction number should be " + transactions.size() + ", found " + transactionNumber);
         }
@@ -32,7 +32,7 @@ public class InMemoryTransactionLogStore implements TransactionLogStore {
     }
 
     @Override
-    public Stream<StateStoreTransactionGeneric<?>> readTransactionsAfter(long lastTransactionNumber) {
+    public Stream<StateStoreTransaction<?>> readTransactionsAfter(long lastTransactionNumber) {
         return transactions.stream()
                 .skip(lastTransactionNumber);
     }

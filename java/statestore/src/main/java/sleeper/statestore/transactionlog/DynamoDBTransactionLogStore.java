@@ -26,7 +26,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
-import sleeper.core.statestore.transactionlog.StateStoreTransactionGeneric;
+import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.TransactionLogStore;
 import sleeper.core.statestore.transactionlog.transactions.TransactionSerDe;
 import sleeper.core.statestore.transactionlog.transactions.TransactionType;
@@ -61,7 +61,7 @@ class DynamoDBTransactionLogStore implements TransactionLogStore {
     }
 
     @Override
-    public void addTransaction(StateStoreTransactionGeneric<?> transaction, long transactionNumber) {
+    public void addTransaction(StateStoreTransaction<?> transaction, long transactionNumber) {
         dynamo.putItem(new PutItemRequest()
                 .withTableName(instanceProperties.get(TRANSACTION_LOG_TABLENAME))
                 .withItem(new DynamoDBRecordBuilder()
@@ -75,7 +75,7 @@ class DynamoDBTransactionLogStore implements TransactionLogStore {
     }
 
     @Override
-    public Stream<StateStoreTransactionGeneric<?>> readTransactionsAfter(long lastTransactionNumber) {
+    public Stream<StateStoreTransaction<?>> readTransactionsAfter(long lastTransactionNumber) {
         return streamPagedItems(dynamo, new QueryRequest()
                 .withTableName(instanceProperties.get(TRANSACTION_LOG_TABLENAME))
                 .withConsistentRead(true)
@@ -89,7 +89,7 @@ class DynamoDBTransactionLogStore implements TransactionLogStore {
                 .flatMap(item -> readTransaction(item).stream());
     }
 
-    private Optional<StateStoreTransactionGeneric<?>> readTransaction(Map<String, AttributeValue> item) {
+    private Optional<StateStoreTransaction<?>> readTransaction(Map<String, AttributeValue> item) {
         return readType(item)
                 .map(type -> serDe.toTransaction(type, item.get(BODY).getS()));
     }
