@@ -45,7 +45,8 @@ class TransactionLogPartitionStore implements PartitionStore {
     }
 
     @Override
-    public void clearPartitionData() {
+    public void clearPartitionData() throws StateStoreException {
+        state.addTransaction(new InitialisePartitionsTransaction(List.of()));
     }
 
     @Override
