@@ -23,6 +23,7 @@ import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.TransactionLogHead;
 
 import java.util.List;
+import java.util.Objects;
 
 public class DeleteFilesTransaction implements StateStoreTransaction {
 
@@ -46,5 +47,27 @@ public class DeleteFilesTransaction implements StateStoreTransaction {
     @Override
     public void apply(TransactionLogHead state) {
         filenames.forEach(state.files()::remove);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(filenames);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof DeleteFilesTransaction)) {
+            return false;
+        }
+        DeleteFilesTransaction other = (DeleteFilesTransaction) obj;
+        return Objects.equals(filenames, other.filenames);
+    }
+
+    @Override
+    public String toString() {
+        return "DeleteFilesTransaction{filenames=" + filenames + "}";
     }
 }
