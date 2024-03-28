@@ -24,7 +24,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.AllReferencesToAFileSerDe;
 import sleeper.core.statestore.FileReferenceSerDe;
-import sleeper.core.statestore.transactionlog.StateStoreTransaction;
+import sleeper.core.statestore.transactionlog.StateStoreTransactionGeneric;
 import sleeper.core.util.GsonConfig;
 
 public class TransactionSerDe {
@@ -41,15 +41,15 @@ public class TransactionSerDe {
         gsonPrettyPrint = builder.setPrettyPrinting().create();
     }
 
-    public String toJson(StateStoreTransaction transaction) {
+    public String toJson(StateStoreTransactionGeneric<?> transaction) {
         return gson.toJson(transaction);
     }
 
-    public String toJsonPrettyPrint(StateStoreTransaction transaction) {
+    public String toJsonPrettyPrint(StateStoreTransactionGeneric<?> transaction) {
         return gsonPrettyPrint.toJson(transaction);
     }
 
-    public StateStoreTransaction toTransaction(TransactionType type, String json) {
+    public StateStoreTransactionGeneric<?> toTransaction(TransactionType type, String json) {
         return gson.fromJson(json, type.getType());
     }
 }

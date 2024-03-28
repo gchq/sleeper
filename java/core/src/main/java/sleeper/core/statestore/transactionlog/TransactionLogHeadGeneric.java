@@ -17,42 +17,40 @@ package sleeper.core.statestore.transactionlog;
 
 import sleeper.core.statestore.StateStoreException;
 
-public class TransactionLogHead {
+public class TransactionLogHeadGeneric<T> {
 
     private final TransactionLogStore logStore;
-    private final StateStorePartitions partitions = new StateStorePartitions();
-    private final StateStoreFiles files = new StateStoreFiles();
+    private final Class<StateStoreTransactionGeneric<T>> transactionType;
+    private final T state;
     private long lastTransactionNumber = 0;
 
-    public TransactionLogHead(TransactionLogStore logStore) {
+    public TransactionLogHeadGeneric(
+            TransactionLogStore logStore, Class<StateStoreTransactionGeneric<T>> transactionType, T state) {
         this.logStore = logStore;
+        this.transactionType = transactionType;
+        this.state = state;
     }
 
-    public void addTransaction(StateStoreTransaction transaction) throws StateStoreException {
+    public void addTransaction(StateStoreTransactionGeneric<T> transaction) throws StateStoreException {
         update();
-        transaction.validate(this);
+        transaction.validate(state);
         long transactionNumber = lastTransactionNumber + 1;
         logStore.addTransaction(transaction, transactionNumber);
-        transaction.apply(this);
+        transaction.apply(state);
         lastTransactionNumber = transactionNumber;
     }
 
     public void update() {
         logStore.readTransactionsAfter(lastTransactionNumber)
-                .filter(StateStoreTransaction.class::isInstance)
-                .map(StateStoreTransaction.class::cast)
+                .filter(transactionType::isInstance)
+                .map(transactionType::cast)
                 .forEach(transaction -> {
-                    transaction.apply(this);
+                    transaction.apply(state);
                     lastTransactionNumber++;
                 });
     }
 
-    public StateStorePartitions partitions() {
-        return partitions;
+    public T state() {
+        return state;
     }
-
-    public StateStoreFiles files() {
-        return files;
-    }
-
 }
