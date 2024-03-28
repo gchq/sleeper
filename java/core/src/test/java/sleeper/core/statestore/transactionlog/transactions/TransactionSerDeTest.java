@@ -26,7 +26,7 @@ import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.transactionlog.FileReferenceTransactionGeneric;
-import sleeper.core.statestore.transactionlog.StateStoreTransaction;
+import sleeper.core.statestore.transactionlog.PartitionTransactionGeneric;
 import sleeper.core.statestore.transactionlog.StateStoreTransactionGeneric;
 
 import java.time.Instant;
@@ -132,7 +132,7 @@ public class TransactionSerDeTest {
     void shouldSerDeInitialisePartitions() {
         // Given
         Schema schema = schemaWithKey("key", new StringType());
-        StateStoreTransaction transaction = new InitialisePartitionsTransaction(new PartitionsBuilder(schema)
+        PartitionTransactionGeneric transaction = new InitialisePartitionsTransaction(new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", "p")
                 .splitToNewChildren("L", "LL", "LR", "g")
@@ -190,7 +190,7 @@ public class TransactionSerDeTest {
                 .splitToNewChildren("root", "L", "R", "p")
                 .splitToNewChildren("L", "LL", "LR", "g")
                 .buildTree();
-        StateStoreTransaction transaction = new SplitPartitionTransaction(
+        PartitionTransactionGeneric transaction = new SplitPartitionTransaction(
                 partitions.getPartition("L"),
                 List.of(partitions.getPartition("LL"), partitions.getPartition("LR")));
 

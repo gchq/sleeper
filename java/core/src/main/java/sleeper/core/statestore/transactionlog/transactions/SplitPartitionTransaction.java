@@ -17,7 +17,7 @@ package sleeper.core.statestore.transactionlog.transactions;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.statestore.transactionlog.PartitionTransaction;
+import sleeper.core.statestore.transactionlog.PartitionTransactionGeneric;
 import sleeper.core.statestore.transactionlog.StateStorePartitions;
 
 import java.util.HashSet;
@@ -27,7 +27,7 @@ import java.util.Set;
 
 import static java.util.stream.Collectors.toUnmodifiableSet;
 
-public class SplitPartitionTransaction implements PartitionTransaction {
+public class SplitPartitionTransaction implements PartitionTransactionGeneric {
 
     private final Partition parent;
     private final List<Partition> newChildren;

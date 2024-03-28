@@ -26,7 +26,7 @@ public class TransactionLogStateStore extends DelegatingStateStore {
 
     private TransactionLogStateStore(Schema schema, TransactionLogStore logStore, TransactionLogHead state) {
         super(new TransactionLogFileReferenceStore(TransactionLogHeadGeneric.forFiles(logStore)),
-                new TransactionLogPartitionStore(schema, state));
+                new TransactionLogPartitionStore(schema, TransactionLogHeadGeneric.forPartitions(logStore)));
     }
 
 }
