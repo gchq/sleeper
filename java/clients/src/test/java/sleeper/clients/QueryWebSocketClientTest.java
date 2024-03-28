@@ -38,13 +38,16 @@ import sleeper.query.model.QuerySerDe;
 
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.clients.QueryWebSocketClientTestHelper.closeWithReason;
 import static sleeper.clients.QueryWebSocketClientTestHelper.completedQuery;
+import static sleeper.clients.QueryWebSocketClientTestHelper.createdSubQueries;
+import static sleeper.clients.QueryWebSocketClientTestHelper.error;
+import static sleeper.clients.QueryWebSocketClientTestHelper.errorMessage;
 import static sleeper.clients.QueryWebSocketClientTestHelper.message;
 import static sleeper.clients.QueryWebSocketClientTestHelper.queryResult;
+import static sleeper.clients.QueryWebSocketClientTestHelper.unknownMessage;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
@@ -423,29 +426,6 @@ public class QueryWebSocketClientTest {
                 .build();
     }
 
-    private static String createdSubQueries(String queryId, String... subQueryIds) {
-        return "{" +
-                "\"queryId\":\"" + queryId + "\", " +
-                "\"message\":\"subqueries\"," +
-                "\"queryIds\":[" + Stream.of(subQueryIds).map(id -> "\"" + id + "\"").collect(Collectors.joining(",")) + "]" +
-                "}";
-    }
-
-    private static String errorMessage(String queryId, String message) {
-        return "{" +
-                "\"queryId\":\"" + queryId + "\", " +
-                "\"message\":\"error\"," +
-                "\"error\":\"" + message + "\"" +
-                "}";
-    }
-
-    private static String unknownMessage(String queryId) {
-        return "{" +
-                "\"queryId\":\"" + queryId + "\"," +
-                "\"message\":\"unknown\"" +
-                "}";
-    }
-
     protected void runQuery(Query query, Client webSocketClient) throws Exception {
         new QueryWebSocketClient(instanceProperties, new FixedTablePropertiesProvider(tableProperties),
                 out.consoleOut(), webSocketClient).submitQuery(query);
@@ -455,13 +435,5 @@ public class QueryWebSocketClientTest {
         client = new FakeWebSocketClient(new FixedTablePropertiesProvider(tableProperties), out.consoleOut());
         client.withResponses(responses);
         return client;
-    }
-
-    public static WebSocketResponse closeWithReason(String reason) {
-        return messageHandler -> messageHandler.onClose(reason);
-    }
-
-    public static WebSocketResponse error(Exception error) {
-        return messageHandler -> messageHandler.onError(error);
     }
 }
