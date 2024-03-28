@@ -24,19 +24,19 @@ public class TransactionLogHead<T> {
     private final T state;
     private long lastTransactionNumber = 0;
 
+    private TransactionLogHead(
+            TransactionLogStore logStore, Class<? extends StateStoreTransactionGeneric<T>> transactionType, T state) {
+        this.logStore = logStore;
+        this.transactionType = transactionType;
+        this.state = state;
+    }
+
     public static TransactionLogHead<StateStoreFiles> forFiles(TransactionLogStore logStore) {
         return new TransactionLogHead<StateStoreFiles>(logStore, FileReferenceTransaction.class, new StateStoreFiles());
     }
 
     public static TransactionLogHead<StateStorePartitions> forPartitions(TransactionLogStore logStore) {
         return new TransactionLogHead<StateStorePartitions>(logStore, PartitionTransaction.class, new StateStorePartitions());
-    }
-
-    public TransactionLogHead(
-            TransactionLogStore logStore, Class<? extends StateStoreTransactionGeneric<T>> transactionType, T state) {
-        this.logStore = logStore;
-        this.transactionType = transactionType;
-        this.state = state;
     }
 
     public void addTransaction(StateStoreTransactionGeneric<T> transaction) throws StateStoreException {
