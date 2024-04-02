@@ -15,6 +15,7 @@
  */
 package sleeper.clients;
 
+import org.java_websocket.framing.CloseFrame;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -54,7 +55,7 @@ import static sleeper.clients.QueryClientTestConstants.PROMPT_QUERY_TYPE;
 import static sleeper.clients.QueryClientTestConstants.RANGE_QUERY_OPTION;
 import static sleeper.clients.QueryClientTestConstants.YES_OPTION;
 import static sleeper.clients.QueryWebSocketClientTestHelper.asJson;
-import static sleeper.clients.QueryWebSocketClientTestHelper.closeWithReason;
+import static sleeper.clients.QueryWebSocketClientTestHelper.close;
 import static sleeper.clients.QueryWebSocketClientTestHelper.completedQuery;
 import static sleeper.clients.QueryWebSocketClientTestHelper.createdSubQueries;
 import static sleeper.clients.QueryWebSocketClientTestHelper.error;
@@ -265,7 +266,7 @@ public class QueryWebSocketCommandLineClientTest {
             runQueryClient("test-query-id",
                     withResponses(
                             error(new Exception("Exception that will terminate connection")),
-                            closeWithReason("Exception caused connection to terminate")));
+                            close(CloseFrame.ABNORMAL_CLOSE, "Exception caused connection to terminate")));
 
             // Then
             assertThat(out.toString())
@@ -415,7 +416,7 @@ public class QueryWebSocketCommandLineClientTest {
             in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
             runQueryClient("test-query-id",
                     withResponses(
-                            closeWithReason("Network error")));
+                            close(CloseFrame.TLS_ERROR, "Network error")));
 
             // Then
             assertThat(out.toString())

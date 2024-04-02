@@ -27,6 +27,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import org.java_websocket.client.WebSocketClient;
+import org.java_websocket.framing.CloseFrame;
 import org.java_websocket.handshake.ServerHandshake;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -97,6 +98,7 @@ public class QueryWebSocketClient {
             try {
                 client.closeBlocking();
             } catch (InterruptedException e2) {
+                throw e2;
             }
             throw e;
         }
@@ -108,8 +110,6 @@ public class QueryWebSocketClient {
 
     public interface Client {
         void closeBlocking() throws InterruptedException;
-
-        void startQuery(Query query) throws InterruptedException;
 
         CompletableFuture<List<String>> startQueryFuture(Query query) throws InterruptedException;
 
@@ -139,13 +139,9 @@ public class QueryWebSocketClient {
         public CompletableFuture<List<String>> startQueryFuture(Query query) throws InterruptedException {
             CompletableFuture<List<String>> future = new CompletableFuture<>();
             messageHandler.setFuture(future);
-            startQuery(query);
-            return future;
-        }
-
-        public void startQuery(Query query) throws InterruptedException {
             this.query = query;
             initialiseConnection(serverUri);
+            return future;
         }
 
         private void initialiseConnection(URI serverUri) throws InterruptedException {
@@ -197,7 +193,7 @@ public class QueryWebSocketClient {
 
         @Override
         public void onClose(int code, String reason, boolean remote) {
-            messageHandler.onClose(reason);
+            messageHandler.onClose(code, reason);
         }
 
         @Override
@@ -358,10 +354,13 @@ public class QueryWebSocketClient {
             totalRecordsReturned += returnedRecordCount;
         }
 
-        public void onClose(String reason) {
+        public void onClose(int code, String reason) {
             LOGGER.info("Disconnected from WebSocket API: " + reason);
-            queryComplete = true;
-            future.completeExceptionally(new WebSocketClosedException(reason));
+            if (code == CloseFrame.NORMAL) {
+                queryComplete = true;
+            } else {
+                future.completeExceptionally(new WebSocketClosedException(reason));
+            }
         }
 
         public void onError(Exception error) {
