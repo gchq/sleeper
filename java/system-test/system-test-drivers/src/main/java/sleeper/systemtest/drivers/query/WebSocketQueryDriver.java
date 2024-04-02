@@ -29,7 +29,9 @@ import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
 import sleeper.systemtest.dsl.query.QueryAllTablesSendAndWaitDriver;
 import sleeper.systemtest.dsl.query.QuerySendAndWaitDriver;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
@@ -37,7 +39,7 @@ public class WebSocketQueryDriver implements QuerySendAndWaitDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(WebSocketQueryDriver.class);
 
     private final QueryWebSocketClient queryWebSocketClient;
-    private CompletableFuture<List<String>> future;
+    private Map<String, CompletableFuture<List<String>>> future = new HashMap<>();
     private TablePropertiesProvider tablePropertiesProvider;
 
     public static QueryAllTablesDriver allTablesDriver(SystemTestInstanceContext instance) {
@@ -53,7 +55,7 @@ public class WebSocketQueryDriver implements QuerySendAndWaitDriver {
     public void send(Query query) {
         LOGGER.info("Submitting query: {}", query.getQueryId());
         try {
-            future = queryWebSocketClient.submitQuery(query);
+            future.put(query.getQueryId(), queryWebSocketClient.submitQuery(query));
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -61,8 +63,12 @@ public class WebSocketQueryDriver implements QuerySendAndWaitDriver {
 
     @Override
     public void waitFor(Query query) {
-        LOGGER.info("Waiting for query: {}", query.getQueryId());
-        future.join();
+        if (future.containsKey(query.getQueryId())) {
+            LOGGER.info("Waiting for query: {}", query.getQueryId());
+            future.get(query.getQueryId()).join();
+        } else {
+            LOGGER.info("Query not found");
+        }
     }
 
     @Override
