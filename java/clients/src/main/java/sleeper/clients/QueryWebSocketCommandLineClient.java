@@ -47,7 +47,7 @@ public class QueryWebSocketCommandLineClient extends QueryCommandLineClient {
             InstanceProperties instanceProperties, TableIndex tableIndex, TablePropertiesProvider tablePropertiesProvider,
             ConsoleInput in, ConsoleOutput out) {
         this(instanceProperties, tableIndex, tablePropertiesProvider, in, out,
-                new QueryWebSocketClient(instanceProperties, tablePropertiesProvider, out));
+                new QueryWebSocketClient(instanceProperties, tablePropertiesProvider));
     }
 
     private QueryWebSocketCommandLineClient(

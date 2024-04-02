@@ -452,7 +452,7 @@ public class QueryWebSocketCommandLineClientTest {
         try {
             new QueryWebSocketCommandLineClient(instanceProperties, tableIndex, new FixedTablePropertiesProvider(tableProperties),
                     in.consoleIn(), out.consoleOut(), new QueryWebSocketClient(instanceProperties,
-                            new FixedTablePropertiesProvider(tableProperties), out.consoleOut(), webSocketClient),
+                            new FixedTablePropertiesProvider(tableProperties), webSocketClient),
                     () -> queryId)
                     .run();
         } catch (CompletionException e) {
@@ -460,7 +460,7 @@ public class QueryWebSocketCommandLineClientTest {
     }
 
     private FakeWebSocketClient withResponses(WebSocketResponse... responses) {
-        client = new FakeWebSocketClient(new FixedTablePropertiesProvider(tableProperties), out.consoleOut());
+        client = new FakeWebSocketClient(new FixedTablePropertiesProvider(tableProperties));
         client.withResponses(responses);
         return client;
     }

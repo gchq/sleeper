@@ -36,7 +36,6 @@ import sleeper.clients.exception.MessageMissingFieldException;
 import sleeper.clients.exception.UnknownMessageTypeException;
 import sleeper.clients.exception.WebSocketClosedException;
 import sleeper.clients.exception.WebSocketErrorException;
-import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
@@ -67,20 +66,18 @@ public class QueryWebSocketClient {
     public static final Logger LOGGER = LoggerFactory.getLogger(QueryWebSocketClient.class);
     private final String apiUrl;
     private final Client client;
-    private final ConsoleOutput out;
     private Instant startTime;
 
-    QueryWebSocketClient(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, ConsoleOutput out) {
-        this(instanceProperties, tablePropertiesProvider, out, new WebSocketQueryClient(instanceProperties, tablePropertiesProvider, out));
+    QueryWebSocketClient(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider) {
+        this(instanceProperties, tablePropertiesProvider, new WebSocketQueryClient(instanceProperties, tablePropertiesProvider));
     }
 
-    QueryWebSocketClient(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, ConsoleOutput out, Client client) {
+    QueryWebSocketClient(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, Client client) {
         this.apiUrl = instanceProperties.get(CdkDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL);
         if (this.apiUrl == null) {
             throw new IllegalArgumentException("Use of this query client requires the WebSocket API to have been deployed as part of your Sleeper instance!");
         }
         this.client = client;
-        this.out = out;
     }
 
     public CompletableFuture<List<String>> submitQuery(Query query) throws InterruptedException {
@@ -124,20 +121,18 @@ public class QueryWebSocketClient {
     }
 
     private static class WebSocketQueryClient extends WebSocketClient implements Client {
-        private final ConsoleOutput out;
         private final WebSocketMessageHandler messageHandler;
         private final URI serverUri;
         private Query query;
 
-        private WebSocketQueryClient(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, ConsoleOutput out) {
+        private WebSocketQueryClient(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider) {
             this(URI.create(instanceProperties.get(QUERY_WEBSOCKET_API_URL)),
-                    out, new WebSocketMessageHandler(new QuerySerDe(tablePropertiesProvider), out));
+                    new WebSocketMessageHandler(new QuerySerDe(tablePropertiesProvider)));
         }
 
-        private WebSocketQueryClient(URI serverUri, ConsoleOutput out, WebSocketMessageHandler messageHandler) {
+        private WebSocketQueryClient(URI serverUri, WebSocketMessageHandler messageHandler) {
             super(serverUri);
             this.serverUri = serverUri;
-            this.out = out;
             this.messageHandler = messageHandler;
         }
 
@@ -222,16 +217,14 @@ public class QueryWebSocketClient {
         private final Map<String, List<String>> subqueryIdByParentQueryId = new HashMap<>();
         private final Map<String, List<String>> records = new TreeMap<>();
         private final QuerySerDe querySerDe;
-        private final ConsoleOutput out;
         private boolean queryComplete = false;
         private boolean queryFailed = false;
         private long totalRecordsReturned = 0L;
         private CompletableFuture<List<String>> future;
         private String currentQueryId;
 
-        public WebSocketMessageHandler(QuerySerDe querySerDe, ConsoleOutput out) {
+        public WebSocketMessageHandler(QuerySerDe querySerDe) {
             this.querySerDe = querySerDe;
-            this.out = out;
         }
 
         public void setFuture(CompletableFuture<List<String>> future) {
