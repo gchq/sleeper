@@ -163,7 +163,7 @@
         <assertj.version>3.25.3</assertj.version>
         <approvaltests.version>23.0.1</approvaltests.version>
         <jsonunit.version>3.2.7</jsonunit.version>
-        <checkstyle.version>10.14.2</checkstyle.version>
+        <checkstyle.version>10.15.0</checkstyle.version>
         <sleeper.system.test.short.id/>
         <sleeper.system.test.vpc.id/>
         <sleeper.system.test.subnet.ids/>
