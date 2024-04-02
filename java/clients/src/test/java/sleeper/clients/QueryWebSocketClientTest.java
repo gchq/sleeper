@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.clients.QueryWebSocketClientTestHelper.asJson;
 import static sleeper.clients.QueryWebSocketClientTestHelper.closeWithReason;
 import static sleeper.clients.QueryWebSocketClientTestHelper.completedQuery;
 import static sleeper.clients.QueryWebSocketClientTestHelper.createdSubQueries;
@@ -104,14 +105,14 @@ public class QueryWebSocketClientTest {
                             "Submitting Query: " + querySerDe.toJson(query) + "\n" +
                             "1 records returned by query: test-query-id. Remaining pending queries: 0\n" +
                             "Query results:\n" +
-                            expectedRecord)
+                            asJson(expectedRecord))
                     .containsSubsequence("Query took", "seconds to return 1 records");
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
                     .containsExactly(querySerDe.toJson(query));
             assertThat(client.getResults("test-query-id"))
-                    .containsExactly(expectedRecord.toString());
+                    .containsExactly(asJson(expectedRecord));
         }
 
         @Test
@@ -135,16 +136,16 @@ public class QueryWebSocketClientTest {
                             "  test-subquery\n" +
                             "1 records returned by query: test-subquery. Remaining pending queries: 0\n" +
                             "Query results:\n" +
-                            expectedRecord)
+                            asJson(expectedRecord))
                     .containsSubsequence("Query took", "seconds to return 1 records");
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
                     .containsExactly(querySerDe.toJson(query));
             assertThat(client.getResults("test-query-id"))
-                    .containsExactly(expectedRecord.toString());
+                    .containsExactly(asJson(expectedRecord));
             assertThat(client.getResults("test-subquery"))
-                    .containsExactly(expectedRecord.toString());
+                    .containsExactly(asJson(expectedRecord));
         }
 
         @Test
@@ -178,22 +179,22 @@ public class QueryWebSocketClientTest {
                             "1 records returned by query: subquery-2. Remaining pending queries: 1\n" +
                             "1 records returned by query: subquery-3. Remaining pending queries: 0\n" +
                             "Query results:\n" +
-                            expectedRecord1 + "\n" +
-                            expectedRecord2 + "\n" +
-                            expectedRecord3)
+                            asJson(expectedRecord1) + "\n" +
+                            asJson(expectedRecord2) + "\n" +
+                            asJson(expectedRecord3))
                     .containsSubsequence("Query took", "seconds to return 3 records");
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
                     .containsExactly(querySerDe.toJson(query));
             assertThat(client.getResults("test-query-id"))
-                    .containsExactly(expectedRecord1.toString(), expectedRecord2.toString(), expectedRecord3.toString());
+                    .containsExactly(asJson(expectedRecord1), asJson(expectedRecord2), asJson(expectedRecord3));
             assertThat(client.getResults("subquery-1"))
-                    .containsExactly(expectedRecord1.toString());
+                    .containsExactly(asJson(expectedRecord1));
             assertThat(client.getResults("subquery-2"))
-                    .containsExactly(expectedRecord2.toString());
+                    .containsExactly(asJson(expectedRecord2));
             assertThat(client.getResults("subquery-3"))
-                    .containsExactly(expectedRecord3.toString());
+                    .containsExactly(asJson(expectedRecord3));
         }
 
         @Test
@@ -215,14 +216,14 @@ public class QueryWebSocketClientTest {
                             "ERROR: API said it had returned 2 records for query test-query-id, but only received 1\n" +
                             "2 records returned by query: test-query-id. Remaining pending queries: 0\n" +
                             "Query results:\n" +
-                            expectedRecord)
+                            asJson(expectedRecord))
                     .containsSubsequence("Query took", "seconds to return 1 records");
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
                     .containsExactly(querySerDe.toJson(query));
             assertThat(client.getResults("test-query-id"))
-                    .containsExactly(expectedRecord.toString());
+                    .containsExactly(asJson(expectedRecord));
         }
     }
 

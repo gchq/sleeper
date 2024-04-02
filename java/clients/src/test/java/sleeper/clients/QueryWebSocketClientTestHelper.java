@@ -15,13 +15,18 @@
  */
 package sleeper.clients;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 import sleeper.clients.FakeWebSocketClient.WebSocketResponse;
 import sleeper.core.record.Record;
 
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class QueryWebSocketClientTestHelper {
+    private static final Gson GSON = new GsonBuilder().create();
 
     private QueryWebSocketClientTestHelper() {
     }
@@ -53,8 +58,8 @@ public class QueryWebSocketClientTestHelper {
         return "{" +
                 "\"queryId\":\"" + queryId + "\", " +
                 "\"message\":\"records\"," +
-                "\"records\":[" + Stream.of(records).map(record -> "\"" + record.toString() + "\"").collect(Collectors.joining(",")) +
-                "]}";
+                "\"records\":" + GSON.toJson(List.of(records)) +
+                "}";
     }
 
     public static String completedQuery(String queryId, long recordCount) {
@@ -76,5 +81,9 @@ public class QueryWebSocketClientTestHelper {
 
     public static WebSocketResponse error(Exception error) {
         return messageHandler -> messageHandler.onError(error);
+    }
+
+    public static String asJson(Record record) {
+        return GSON.toJson(record);
     }
 }
