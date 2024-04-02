@@ -88,8 +88,7 @@ public class InternalModuleIndexTest {
         InternalModuleIndex index = TestMavenModuleStructure.rootBuilder().modulesArray(
                 sourceModuleBuilder("a").build(),
                 sourceModuleBuilder("b").dependenciesArray(dependency("sleeper:a")).build(),
-                sourceModuleBuilder("c").dependenciesArray(dependency("sleeper:b")).build()
-        ).build().indexInternalModules();
+                sourceModuleBuilder("c").dependenciesArray(dependency("sleeper:b")).build()).build().indexInternalModules();
 
         // When / Then
         assertThat(index.dependencyPathsForModules("c"))
@@ -104,8 +103,7 @@ public class InternalModuleIndexTest {
                 sourceModuleBuilder("b").dependenciesArray(dependency("sleeper:a")).build(),
                 sourceModuleBuilder("c").dependenciesArray(dependency("sleeper:b")).build(),
                 sourceModuleBuilder("d").dependenciesArray(dependency("sleeper:c")).build(),
-                sourceModuleBuilder("e").dependenciesArray(dependency("sleeper:d")).build()
-        ).build().indexInternalModules();
+                sourceModuleBuilder("e").dependenciesArray(dependency("sleeper:d")).build()).build().indexInternalModules();
 
         // When / Then
         assertThat(index.dependencyPathsForModules("e"))
@@ -119,8 +117,7 @@ public class InternalModuleIndexTest {
                 sourceModuleBuilder("a").build(),
                 sourceModuleBuilder("b").dependenciesArray(
                         dependencyBuilder("sleeper:a").exported(false).build()).build(),
-                sourceModuleBuilder("c").dependenciesArray(dependency("sleeper:b")).build()
-        ).build().indexInternalModules();
+                sourceModuleBuilder("c").dependenciesArray(dependency("sleeper:b")).build()).build().indexInternalModules();
 
         // When / Then
         assertThat(index.dependencyPathsForModules("c"))
@@ -134,8 +131,7 @@ public class InternalModuleIndexTest {
                 sourceModuleBuilder("a").build(),
                 sourceModuleBuilder("b").dependenciesArray(
                         dependencyBuilder("sleeper:a").exported(false).build()).build(),
-                sourceModuleBuilder("c").dependenciesArray(dependency("sleeper:b")).build()
-        ).build().indexInternalModules();
+                sourceModuleBuilder("c").dependenciesArray(dependency("sleeper:b")).build()).build().indexInternalModules();
 
         // When / Then
         assertThat(index.dependencyPathsForModulesExcludingUnexportedTransitives("c"))
@@ -148,8 +144,8 @@ public class InternalModuleIndexTest {
         InternalModuleIndex index = TestMavenModuleStructure.rootBuilder().modulesArray(
                 sourceModuleBuilder("a").build(),
                 sourceModuleBuilder("b").dependenciesArray(
-                        dependencyBuilder("sleeper:a").exported(false).build()).build()
-        ).build().indexInternalModules();
+                        dependencyBuilder("sleeper:a").exported(false).build()).build())
+                .build().indexInternalModules();
 
         // When / Then
         assertThat(index.dependencyPathsForModulesExcludingUnexportedTransitives("b"))
@@ -162,8 +158,8 @@ public class InternalModuleIndexTest {
         InternalModuleIndex index = TestMavenModuleStructure.rootBuilder().modulesArray(
                 sourceModuleBuilder("a").build(),
                 sourceModuleBuilder("b").dependenciesArray(
-                        dependencyBuilder("sleeper:a").scope("something").exported(true).build()).build()
-        ).build().indexInternalModules();
+                        dependencyBuilder("sleeper:a").scope("something").exported(true).build()).build())
+                .build().indexInternalModules();
 
         // When / Then
         assertThat(index.dependencyPathsForModulesExcludingUnexportedTransitives("b"))
@@ -175,8 +171,7 @@ public class InternalModuleIndexTest {
         // Given
         InternalModuleIndex index = TestMavenModuleStructure.rootBuilder().modulesArray(
                 sourceModuleBuilder("a").build(),
-                sourceModuleBuilder("b").dependenciesArray(dependency("abc:a")).build()
-        ).build().indexInternalModules();
+                sourceModuleBuilder("b").dependenciesArray(dependency("abc:a")).build()).build().indexInternalModules();
 
         // When / Then
         assertThat(index.dependencyPathsForModules("b"))

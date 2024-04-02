@@ -147,7 +147,7 @@ class AdminClientIT extends AdminClientITBase {
 
         // Then
         assertThat(output).startsWith("Could not load properties for instance not-an-instance\n" +
-                        "Cause: The specified bucket does not exist")
+                "Cause: The specified bucket does not exist")
                 .contains("Amazon S3");
     }
 }

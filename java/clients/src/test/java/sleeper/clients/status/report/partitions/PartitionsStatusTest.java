@@ -104,8 +104,8 @@ class PartitionsStatusTest {
         // Given
         TableProperties tableProperties = createTablePropertiesWithSplitThreshold(10);
         StateStore store = StateStoreTestBuilder.from(createPartitionsBuilder()
-                        .rootFirst("root")
-                        .splitToNewChildren("root", "L", "R", "abc"))
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", "abc"))
                 .partitionFileWithRecords("root", "not-split-yet.parquet", 100L)
                 .buildStateStore();
 

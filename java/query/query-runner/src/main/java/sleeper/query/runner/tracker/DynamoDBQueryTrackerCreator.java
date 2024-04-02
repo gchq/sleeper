@@ -47,15 +47,13 @@ public class DynamoDBQueryTrackerCreator {
         String tableName = instanceProperties.get(QUERY_TRACKER_TABLE_NAME);
         dynamoDBClient.createTable(new CreateTableRequest(tableName, createKeySchema())
                 .withAttributeDefinitions(createAttributeDefinitions())
-                .withBillingMode(BillingMode.PAY_PER_REQUEST)
-        );
+                .withBillingMode(BillingMode.PAY_PER_REQUEST));
     }
 
     private Collection<AttributeDefinition> createAttributeDefinitions() {
         return Lists.newArrayList(
                 new AttributeDefinition(QUERY_ID, ScalarAttributeType.S),
-                new AttributeDefinition(SUB_QUERY_ID, ScalarAttributeType.S)
-        );
+                new AttributeDefinition(SUB_QUERY_ID, ScalarAttributeType.S));
     }
 
     private List<KeySchemaElement> createKeySchema() {
@@ -65,7 +63,6 @@ public class DynamoDBQueryTrackerCreator {
                         .withKeyType(KeyType.HASH),
                 new KeySchemaElement()
                         .withAttributeName(SUB_QUERY_ID)
-                        .withKeyType(KeyType.RANGE)
-        );
+                        .withKeyType(KeyType.RANGE));
     }
 }

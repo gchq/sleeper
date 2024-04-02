@@ -44,7 +44,6 @@ public class UploadDockerImages {
         dockerImageConfig = requireNonNull(builder.dockerImageConfig, "dockerImageConfig must not be null");
     }
 
-
     public static Builder builder() {
         return new Builder();
     }
@@ -57,8 +56,7 @@ public class UploadDockerImages {
         upload(runCommand, data, List.of());
     }
 
-    public void upload(CommandPipelineRunner runCommand, StacksForDockerUpload data, List<StackDockerImage> extraDockerImages)
-            throws IOException, InterruptedException {
+    public void upload(CommandPipelineRunner runCommand, StacksForDockerUpload data, List<StackDockerImage> extraDockerImages) throws IOException, InterruptedException {
         String repositoryHost = String.format("%s.dkr.ecr.%s.amazonaws.com", data.getAccount(), data.getRegion());
         List<StackDockerImage> stacksToUpload = dockerImageConfig.getStacksToDeploy(data.getStacks(), extraDockerImages);
         List<StackDockerImage> stacksToBuild = stacksToUpload.stream()

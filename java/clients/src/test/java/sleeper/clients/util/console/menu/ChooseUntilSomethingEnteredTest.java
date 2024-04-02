@@ -85,8 +85,7 @@ public class ChooseUntilSomethingEnteredTest extends ChooseOneTestBase {
 
         // When / Then
         Chosen<ConsoleChoice> chosen = chooseTestOption();
-        assertThatThrownBy(() ->
-                chosen.chooseUntilSomethingEntered(this::chooseTestOption))
+        assertThatThrownBy(() -> chosen.chooseUntilSomethingEntered(this::chooseTestOption))
                 .isInstanceOf(UserExitedException.class);
     }
 
@@ -97,8 +96,7 @@ public class ChooseUntilSomethingEnteredTest extends ChooseOneTestBase {
 
         // When / Then
         Chosen<ConsoleChoice> chosen = chooseTestOption();
-        assertThatThrownBy(() ->
-                chosen.chooseUntilSomethingEntered(this::chooseTestOption))
+        assertThatThrownBy(() -> chosen.chooseUntilSomethingEntered(this::chooseTestOption))
                 .isInstanceOf(UserExitedException.class);
     }
 }
