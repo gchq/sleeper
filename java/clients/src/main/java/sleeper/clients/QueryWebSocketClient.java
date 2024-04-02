@@ -68,7 +68,7 @@ public class QueryWebSocketClient {
     private final Client client;
     private Instant startTime;
 
-    QueryWebSocketClient(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider) {
+    public QueryWebSocketClient(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider) {
         this(instanceProperties, tablePropertiesProvider, new WebSocketQueryClient(instanceProperties, tablePropertiesProvider));
     }
 
