@@ -269,6 +269,31 @@ public class QueryWebSocketClientTest {
         }
 
         @Test
+        void shouldHandleErrorIfExceptionEncounteredWhenQueryCompletesAfter() throws Exception {
+            // Given
+            Query query = exactQuery("test-query-id", 123L);
+
+            // When / Then
+            assertThat(runQueryFuture(query,
+                    withResponses(
+                            error(new Exception("Exception that will not terminate connection")),
+                            message(completedQuery("test-query-id", 0L)))))
+                    .isCompletedExceptionally()
+                    .failsWithin(Duration.ofMillis(10))
+                    .withThrowableOfType(ExecutionException.class)
+                    .withCauseInstanceOf(WebSocketErrorException.class);
+            assertThat(out.toString())
+                    .startsWith("Connected to WebSocket API\n" +
+                            "Submitting Query: " + querySerDe.toJson(query) + "\n" +
+                            "Encountered an error: Exception that will not terminate connection\n")
+                    .containsSubsequence("Query took", "seconds to return 0 records");
+            assertThat(client.isConnected()).isFalse();
+            assertThat(client.isClosed()).isTrue();
+            assertThat(client.getSentMessages())
+                    .containsExactly(querySerDe.toJson(query));
+        }
+
+        @Test
         void shouldHandleErrorIfExceptionEncounteredThatClosesConnection() throws Exception {
             // Given
             Query query = exactQuery("test-query-id", 123L);
