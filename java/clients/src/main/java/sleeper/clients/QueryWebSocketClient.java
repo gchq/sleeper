@@ -123,10 +123,6 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
         return () -> new WebSocketQueryClient(instanceProperties, tablePropertiesProvider, out);
     }
 
-    public interface ClientCreator {
-        Client create(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, ConsoleOutput out);
-    }
-
     public interface Client {
         void closeBlocking() throws InterruptedException;
 
