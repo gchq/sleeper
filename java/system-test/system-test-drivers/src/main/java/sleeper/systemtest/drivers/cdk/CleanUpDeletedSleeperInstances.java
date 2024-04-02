@@ -59,8 +59,8 @@ public class CleanUpDeletedSleeperInstances {
     private Iterable<String> getInstanceIds() {
         CloudFormationStacks stacks = new CloudFormationStacks(clients.getCloudFormation());
         return () -> Stream.concat(
-                        instanceIdsByJarsBuckets(),
-                        instanceIdsByEcrRepositories())
+                instanceIdsByJarsBuckets(),
+                instanceIdsByEcrRepositories())
                 .filter(instanceId -> !stacks.getStackNames().contains(instanceId))
                 .distinct().iterator();
     }
@@ -75,8 +75,8 @@ public class CleanUpDeletedSleeperInstances {
 
     private Stream<String> allRepositoryNames() {
         return Stream.iterate(clients.getEcr().describeRepositories(new DescribeRepositoriesRequest()),
-                        result -> result.getNextToken() != null,
-                        result -> clients.getEcr().describeRepositories(new DescribeRepositoriesRequest().withNextToken(result.getNextToken())))
+                result -> result.getNextToken() != null,
+                result -> clients.getEcr().describeRepositories(new DescribeRepositoriesRequest().withNextToken(result.getNextToken())))
                 .flatMap(result -> result.getRepositories().stream())
                 .map(Repository::getRepositoryName);
     }
@@ -99,9 +99,8 @@ public class CleanUpDeletedSleeperInstances {
             throw new IllegalArgumentException("Usage: <scripts directory>");
         }
         Path scriptsDir = Paths.get(args[0]);
-        TearDownClients.withDefaults(clients ->
-                new CleanUpDeletedSleeperInstances(clients,
-                        TearDownInstance.builder().clients(clients).scriptsDir(scriptsDir))
-                        .run());
+        TearDownClients.withDefaults(clients -> new CleanUpDeletedSleeperInstances(clients,
+                TearDownInstance.builder().clients(clients).scriptsDir(scriptsDir))
+                .run());
     }
 }

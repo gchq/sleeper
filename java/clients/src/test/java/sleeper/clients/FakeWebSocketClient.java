@@ -17,14 +17,13 @@ package sleeper.clients;
 
 import sleeper.clients.QueryWebSocketClient.Client;
 import sleeper.clients.QueryWebSocketClient.WebSocketMessageHandler;
-import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.core.record.Record;
 import sleeper.query.model.Query;
 import sleeper.query.model.QuerySerDe;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 public class FakeWebSocketClient implements Client {
     private boolean connected = false;
@@ -33,8 +32,8 @@ public class FakeWebSocketClient implements Client {
     private List<String> sentMessages = new ArrayList<>();
     private List<WebSocketResponse> responses;
 
-    public FakeWebSocketClient(TablePropertiesProvider tablePropertiesProvider, ConsoleOutput out) {
-        this.messageHandler = new WebSocketMessageHandler(new QuerySerDe(tablePropertiesProvider), out);
+    public FakeWebSocketClient(TablePropertiesProvider tablePropertiesProvider) {
+        this.messageHandler = new WebSocketMessageHandler(new QuerySerDe(tablePropertiesProvider));
     }
 
     public boolean connectBlocking() throws InterruptedException {
@@ -61,6 +60,14 @@ public class FakeWebSocketClient implements Client {
     }
 
     @Override
+    public CompletableFuture<List<String>> startQueryFuture(Query query) throws InterruptedException {
+        CompletableFuture<List<String>> future = new CompletableFuture<>();
+        messageHandler.setFuture(future);
+        startQuery(query);
+        return future;
+    }
+
+    @Override
     public boolean hasQueryFinished() {
         return messageHandler.hasQueryFinished();
     }
@@ -71,7 +78,7 @@ public class FakeWebSocketClient implements Client {
     }
 
     @Override
-    public List<Record> getResults(String queryId) {
+    public List<String> getResults(String queryId) {
         return messageHandler.getResults(queryId);
     }
 

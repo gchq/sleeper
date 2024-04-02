@@ -26,20 +26,22 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
-import com.google.gson.ToNumberPolicy;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import sleeper.clients.util.console.ConsoleOutput;
+import sleeper.clients.exception.MessageMalformedException;
+import sleeper.clients.exception.MessageMissingFieldException;
+import sleeper.clients.exception.UnknownMessageTypeException;
+import sleeper.clients.exception.WebSocketClosedException;
+import sleeper.clients.exception.WebSocketErrorException;
 import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.core.record.Record;
 import sleeper.core.util.LoggedDuration;
-import sleeper.core.util.PollWithRetries;
 import sleeper.query.model.Query;
 import sleeper.query.model.QuerySerDe;
-import sleeper.query.output.RecordListSerDe;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -53,6 +55,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -60,57 +63,46 @@ import java.util.stream.Stream;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL;
 
 public class QueryWebSocketClient {
+    public static final Logger LOGGER = LoggerFactory.getLogger(QueryWebSocketClient.class);
     private final String apiUrl;
     private final Client client;
-    private final ConsoleOutput out;
     private Instant startTime;
 
-    public QueryWebSocketClient(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider) {
-        this(instanceProperties, tablePropertiesProvider, new ConsoleOutput(System.out));
+    QueryWebSocketClient(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider) {
+        this(instanceProperties, tablePropertiesProvider, new WebSocketQueryClient(instanceProperties, tablePropertiesProvider));
     }
 
-    QueryWebSocketClient(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, ConsoleOutput out) {
-        this(instanceProperties, tablePropertiesProvider, out, new WebSocketQueryClient(instanceProperties, tablePropertiesProvider, out));
-    }
-
-    QueryWebSocketClient(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, ConsoleOutput out, Client client) {
+    QueryWebSocketClient(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, Client client) {
         this.apiUrl = instanceProperties.get(CdkDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL);
         if (this.apiUrl == null) {
             throw new IllegalArgumentException("Use of this query client requires the WebSocket API to have been deployed as part of your Sleeper instance!");
         }
         this.client = client;
-        this.out = out;
     }
 
-    public void submitQuery(Query query) {
+    public CompletableFuture<List<String>> submitQuery(Query query) throws InterruptedException {
         try {
             startTime = Instant.now();
-            client.startQuery(query);
+            return client.startQueryFuture(query)
+                    .whenComplete((records, exception) -> {
+                        try {
+                            client.closeBlocking();
+                        } catch (InterruptedException e) {
+                        }
+                        LoggedDuration duration = LoggedDuration.withFullOutput(startTime, Instant.now());
+                        long recordsReturned = client.getTotalRecordsReturned();
+                        LOGGER.info("Query took " + duration + " to return " + recordsReturned + " records");
+                    });
         } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public void waitForQuery() {
-        waitForQuery(PollWithRetries.intervalAndMaxPolls(500, 20));
-    }
-
-    public void waitForQuery(PollWithRetries poll) {
-        try {
-            poll.pollUntil("query has finished", client::hasQueryFinished);
-            LoggedDuration duration = LoggedDuration.withFullOutput(startTime, Instant.now());
-            long recordsReturned = client.getTotalRecordsReturned();
-            out.println("Query took " + duration + " to return " + recordsReturned + " records");
-        } catch (InterruptedException e) {
-        } finally {
             try {
                 client.closeBlocking();
-            } catch (InterruptedException e) {
+            } catch (InterruptedException e2) {
             }
+            throw e;
         }
     }
 
-    public List<Record> getResults(Query query) {
+    public List<String> getResults(Query query) {
         return client.getResults(query.getQueryId());
     }
 
@@ -119,29 +111,36 @@ public class QueryWebSocketClient {
 
         void startQuery(Query query) throws InterruptedException;
 
+        CompletableFuture<List<String>> startQueryFuture(Query query) throws InterruptedException;
+
         boolean hasQueryFinished();
 
         long getTotalRecordsReturned();
 
-        List<Record> getResults(String queryId);
+        List<String> getResults(String queryId);
     }
 
     private static class WebSocketQueryClient extends WebSocketClient implements Client {
-        private final ConsoleOutput out;
         private final WebSocketMessageHandler messageHandler;
         private final URI serverUri;
         private Query query;
 
-        private WebSocketQueryClient(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, ConsoleOutput out) {
+        private WebSocketQueryClient(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider) {
             this(URI.create(instanceProperties.get(QUERY_WEBSOCKET_API_URL)),
-                    out, new WebSocketMessageHandler(new QuerySerDe(tablePropertiesProvider), out));
+                    new WebSocketMessageHandler(new QuerySerDe(tablePropertiesProvider)));
         }
 
-        private WebSocketQueryClient(URI serverUri, ConsoleOutput out, WebSocketMessageHandler messageHandler) {
+        private WebSocketQueryClient(URI serverUri, WebSocketMessageHandler messageHandler) {
             super(serverUri);
             this.serverUri = serverUri;
-            this.out = out;
             this.messageHandler = messageHandler;
+        }
+
+        public CompletableFuture<List<String>> startQueryFuture(Query query) throws InterruptedException {
+            CompletableFuture<List<String>> future = new CompletableFuture<>();
+            messageHandler.setFuture(future);
+            startQuery(query);
+            return future;
         }
 
         public void startQuery(Query query) throws InterruptedException {
@@ -158,12 +157,12 @@ public class QueryWebSocketClient {
             } catch (URISyntaxException e) {
                 System.err.println(e);
             }
-            out.println("Connecting to WebSocket API at " + serverUri);
+            LOGGER.info("Connecting to WebSocket API at " + serverUri);
             connectBlocking();
         }
 
         private Map<String, String> getAwsIamAuthHeaders(URI serverUri) throws URISyntaxException {
-            out.println("Obtaining AWS IAM creds...");
+            LOGGER.info("Obtaining AWS IAM creds...");
             AWSCredentials creds = DefaultAWSCredentialsProviderChain.getInstance().getCredentials();
 
             DefaultRequest<Object> request = new DefaultRequest<>("execute-api");
@@ -207,34 +206,39 @@ public class QueryWebSocketClient {
         }
 
         @Override
-        public List<Record> getResults(String queryId) {
+        public List<String> getResults(String queryId) {
             return messageHandler.getResults(queryId);
         }
     }
 
     public static class WebSocketMessageHandler {
-        private static final Gson GSON = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE).create();
+        private final Gson serde = new GsonBuilder().create();
         private final Set<String> outstandingQueries = new HashSet<>();
         private final Map<String, List<String>> subqueryIdByParentQueryId = new HashMap<>();
-        private final Map<String, List<Record>> records = new TreeMap<>();
+        private final Map<String, List<String>> records = new TreeMap<>();
         private final QuerySerDe querySerDe;
-        private final ConsoleOutput out;
         private boolean queryComplete = false;
         private boolean queryFailed = false;
         private long totalRecordsReturned = 0L;
+        private CompletableFuture<List<String>> future;
+        private String currentQueryId;
 
-        public WebSocketMessageHandler(QuerySerDe querySerDe, ConsoleOutput out) {
+        public WebSocketMessageHandler(QuerySerDe querySerDe) {
             this.querySerDe = querySerDe;
-            this.out = out;
+        }
+
+        public void setFuture(CompletableFuture<List<String>> future) {
+            this.future = future;
         }
 
         public void onOpen(Query query, Consumer<String> messageSender) {
-            out.println("Connected to WebSocket API");
+            LOGGER.info("Connected to WebSocket API");
             String queryJson = querySerDe.toJson(query);
-            out.println("Submitting Query: " + queryJson);
+            LOGGER.info("Submitting Query: " + queryJson);
             messageSender.accept(queryJson);
             outstandingQueries.add(query.getQueryId());
             subqueryIdByParentQueryId.put(query.getQueryId(), new ArrayList<>());
+            currentQueryId = query.getQueryId();
         }
 
         public void onMessage(String json) {
@@ -255,57 +259,64 @@ public class QueryWebSocketClient {
             } else if (messageType.equals("completed")) {
                 handleCompleted(message, queryId);
             } else {
-                out.println("Received unrecognised message type: " + messageType);
+                LOGGER.info("Received unrecognised message type: " + messageType);
                 queryFailed = true;
+                future.completeExceptionally(new UnknownMessageTypeException(messageType));
             }
 
             if (outstandingQueries.isEmpty()) {
                 if (!records.isEmpty()) {
-                    out.println("Query results:");
+                    LOGGER.info("Query results:");
                     records.values().stream()
                             .flatMap(List::stream)
-                            .forEach(record -> out.println(record.toString()));
+                            .forEach(LOGGER::info);
                 }
                 queryComplete = true;
+                future.complete(getResults(currentQueryId));
             }
         }
 
         private Optional<JsonObject> deserialiseMessage(String json) {
             try {
-                JsonObject message = GSON.fromJson(json, JsonObject.class);
+                JsonObject message = serde.fromJson(json, JsonObject.class);
                 if (!message.has("queryId")) {
-                    out.println("Received message without queryId from API:");
-                    out.println("  " + json);
+                    LOGGER.info("Received message without queryId from API:");
+                    LOGGER.info("  " + json);
                     queryFailed = true;
+                    future.completeExceptionally(new MessageMissingFieldException("queryId"));
                     return Optional.empty();
                 }
                 if (!message.has("message")) {
-                    out.println("Received message without message type from API:");
-                    out.println("  " + json);
+                    LOGGER.info("Received message without message type from API:");
+                    LOGGER.info("  " + json);
                     queryFailed = true;
+                    future.completeExceptionally(new MessageMissingFieldException("message"));
                     return Optional.empty();
                 }
                 return Optional.of(message);
             } catch (JsonSyntaxException e) {
-                out.println("Received malformed JSON message from API:");
-                out.println("  " + json);
+                LOGGER.info("Received malformed JSON message from API:");
+                LOGGER.info("  " + json);
                 queryFailed = true;
+                future.completeExceptionally(new MessageMalformedException(json));
                 return Optional.empty();
             }
         }
 
         private void handleError(JsonObject message, String queryId) {
-            out.println("Encountered an error while running query " + queryId + ": " + message.get("error").getAsString());
+            String error = message.get("error").getAsString();
+            LOGGER.info("Encountered an error while running query " + queryId + ": " + error);
             outstandingQueries.remove(queryId);
             queryFailed = true;
+            future.completeExceptionally(new WebSocketErrorException(error));
         }
 
         private void handleSubqueries(JsonObject message, String queryId) {
             JsonArray subQueryIdList = message.getAsJsonArray("queryIds");
-            out.println("Query " + queryId + " split into the following subQueries:");
+            LOGGER.info("Query " + queryId + " split into the following subQueries:");
             List<String> subQueryIds = subQueryIdList.asList().stream().map(JsonElement::getAsString).collect(Collectors.toList());
             for (String subQueryId : subQueryIds) {
-                out.println("  " + subQueryId);
+                LOGGER.info("  " + subQueryId);
                 outstandingQueries.add(subQueryId);
             }
             outstandingQueries.remove(queryId);
@@ -316,7 +327,11 @@ public class QueryWebSocketClient {
         }
 
         private void handleRecords(JsonObject message, String queryId) {
-            List<Record> recordList = RecordListSerDe.fromJson(message.get("records"));
+            JsonArray recordBatch = message.getAsJsonArray("records");
+            List<String> recordList = recordBatch.asList().stream()
+                    .map(jsonElement -> jsonElement.getAsJsonObject())
+                    .map(JsonObject::toString)
+                    .collect(Collectors.toList());
             if (!records.containsKey(queryId)) {
                 records.put(queryId, recordList);
             } else {
@@ -335,22 +350,24 @@ public class QueryWebSocketClient {
             long returnedRecordCount = records.getOrDefault(queryId, List.of()).size();
             if (recordsReturnedToClient && recordCountFromApi > 0) {
                 if (returnedRecordCount != recordCountFromApi) {
-                    out.println("ERROR: API said it had returned " + recordCountFromApi + " records for query " + queryId + ", but only received " + returnedRecordCount);
+                    LOGGER.info("ERROR: API said it had returned " + recordCountFromApi + " records for query " + queryId + ", but only received " + returnedRecordCount);
                 }
             }
             outstandingQueries.remove(queryId);
-            out.println(recordCountFromApi + " records returned by query: " + queryId + ". Remaining pending queries: " + outstandingQueries.size());
+            LOGGER.info(recordCountFromApi + " records returned by query: " + queryId + ". Remaining pending queries: " + outstandingQueries.size());
             totalRecordsReturned += returnedRecordCount;
         }
 
         public void onClose(String reason) {
-            out.println("Disconnected from WebSocket API: " + reason);
+            LOGGER.info("Disconnected from WebSocket API: " + reason);
             queryComplete = true;
+            future.completeExceptionally(new WebSocketClosedException(reason));
         }
 
         public void onError(Exception error) {
-            out.println("Encountered an error: " + error.getMessage());
+            LOGGER.info("Encountered an error: " + error.getMessage());
             queryFailed = true;
+            future.completeExceptionally(new WebSocketErrorException(error));
         }
 
         public boolean hasQueryFinished() {
@@ -361,7 +378,7 @@ public class QueryWebSocketClient {
             return totalRecordsReturned;
         }
 
-        public List<Record> getResults(String queryId) {
+        public List<String> getResults(String queryId) {
             return Stream.concat(
                     Stream.of(queryId),
                     subqueryIdByParentQueryId.getOrDefault(queryId, List.of()).stream())

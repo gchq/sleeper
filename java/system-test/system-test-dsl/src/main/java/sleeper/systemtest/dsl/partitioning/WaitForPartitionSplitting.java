@@ -58,8 +58,7 @@ public class WaitForPartitionSplitting {
 
     public void pollUntilFinished(TablePropertiesProvider propertiesProvider, StateStoreProvider stateStoreProvider) throws InterruptedException {
         LOGGER.info("Waiting for splits, expecting partitions to be split: {}", partitionIdsByTableId);
-        WAIT_FOR_SPLITS.pollUntil("partition splits finished", () ->
-                new FinishedCheck(propertiesProvider, stateStoreProvider).isFinished());
+        WAIT_FOR_SPLITS.pollUntil("partition splits finished", () -> new FinishedCheck(propertiesProvider, stateStoreProvider).isFinished());
     }
 
     public boolean isSplitFinished(TablePropertiesProvider propertiesProvider, StateStoreProvider stateStoreProvider) {

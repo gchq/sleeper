@@ -41,8 +41,7 @@ public class DynamoDBFileReferenceFormatTest {
                         "TableId", new AttributeValue().withS("test-table-id"),
                         "NumRecords", new AttributeValue().withN("100"),
                         "IsCountApproximate", new AttributeValue().withBOOL(false),
-                        "OnlyContainsDataForThisPartition", new AttributeValue().withBOOL(true)
-                ));
+                        "OnlyContainsDataForThisPartition", new AttributeValue().withBOOL(true)));
     }
 
     @Test
@@ -54,8 +53,7 @@ public class DynamoDBFileReferenceFormatTest {
         assertThat(fileReferenceFormat.createActiveFileKey(fileReference))
                 .isEqualTo(Map.of(
                         "TableId", new AttributeValue().withS("test-table-id"),
-                        "PartitionIdAndFileName", new AttributeValue().withS("partition1|file1.parquet")
-                ));
+                        "PartitionIdAndFileName", new AttributeValue().withS("partition1|file1.parquet")));
     }
 
     @Test
@@ -66,8 +64,7 @@ public class DynamoDBFileReferenceFormatTest {
                 "TableId", new AttributeValue().withS("test-table-id"),
                 "NumRecords", new AttributeValue().withN("100"),
                 "IsCountApproximate", new AttributeValue().withBOOL(true),
-                "OnlyContainsDataForThisPartition", new AttributeValue().withBOOL(false)
-        );
+                "OnlyContainsDataForThisPartition", new AttributeValue().withBOOL(false));
 
         // When / Then
         assertThat(fileReferenceFormat.getFileReferenceFromAttributeValues(item))

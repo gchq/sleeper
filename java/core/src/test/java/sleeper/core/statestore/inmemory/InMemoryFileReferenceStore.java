@@ -224,9 +224,9 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
                 .filter(file -> file.getTotalReferenceCount() < 1)
                 .collect(toUnmodifiableList());
         List<AllReferencesToAFile> files = Stream.concat(
-                        filesByFilename.values().stream()
-                                .filter(file -> file.getTotalReferenceCount() > 0),
-                        filesWithNoReferences.stream().limit(maxUnreferencedFiles))
+                filesByFilename.values().stream()
+                        .filter(file -> file.getTotalReferenceCount() > 0),
+                filesWithNoReferences.stream().limit(maxUnreferencedFiles))
                 .collect(toUnmodifiableList());
         return new AllReferencesToAllFiles(files, filesWithNoReferences.size() > maxUnreferencedFiles);
     }

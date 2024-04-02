@@ -33,8 +33,8 @@ public class DynamoDBAttributes {
     /**
      * Creates a String attribute. This method abstracts an AWS call to make life easier when upgrading SDK
      *
-     * @param str the string to convert
-     * @return the AttributeValue
+     * @param  str the string to convert
+     * @return     the AttributeValue
      */
     public static AttributeValue createStringAttribute(String str) {
         if (str == null) {
@@ -47,8 +47,8 @@ public class DynamoDBAttributes {
     /**
      * Creates a Number attribute. This method abstracts an AWS call to make life easier when upgrading SDK
      *
-     * @param number the number to convert
-     * @return the AttributeValue
+     * @param  number the number to convert
+     * @return        the AttributeValue
      */
     public static AttributeValue createNumberAttribute(Number number) {
         // To differentiate NaN and null:

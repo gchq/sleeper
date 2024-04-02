@@ -180,8 +180,7 @@ class DeleteGHCRVersionsIT {
     private void deleteVersions(WireMockRuntimeInfo runtimeInfo, String propertiesStr) {
         Properties properties = loadProperties(propertiesStr);
         properties.setProperty("organization", "test-org");
-        doWithGitHubApi(runtimeInfo, api ->
-                withApi(api).properties(properties).build().deleteVersions());
+        doWithGitHubApi(runtimeInfo, api -> withApi(api).properties(properties).build().deleteVersions());
     }
 
     private void packageVersionListReturns(String packageName, TestGHCRVersion... versions) {
