@@ -39,17 +39,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class SimpleKeyValueSchemaIT {
     private static final String TEST_TABLE_NAME = "mytable";
     private static final int NO_OF_RECORDS = 1000;
-    private static final List<PopulatedSleeperExternalResource.TableDefinition> TABLE_DEFINITIONS =
-            ImmutableList.of(
-                    new PopulatedSleeperExternalResource.TableDefinition(
-                            TEST_TABLE_NAME,
-                            generateSimpleSchema(),
-                            List.of(),
-                            generateSimpleRecordStream()));
+    private static final List<PopulatedSleeperExternalResource.TableDefinition> TABLE_DEFINITIONS = ImmutableList.of(
+            new PopulatedSleeperExternalResource.TableDefinition(
+                    TEST_TABLE_NAME,
+                    generateSimpleSchema(),
+                    List.of(),
+                    generateSimpleRecordStream()));
 
     @RegisterExtension
-    public static final PopulatedSleeperExternalResource POPULATED_SLEEPER_EXTERNAL_RESOURCE =
-            new PopulatedSleeperExternalResource(TABLE_DEFINITIONS);
+    public static final PopulatedSleeperExternalResource POPULATED_SLEEPER_EXTERNAL_RESOURCE = new PopulatedSleeperExternalResource(TABLE_DEFINITIONS);
     private static QueryAssertions assertions;
 
     private static Schema generateSimpleSchema() {
@@ -113,7 +111,8 @@ public class SimpleKeyValueSchemaIT {
         assertThat(assertions.query(String.format(
                 "SELECT key, value FROM sleeper.default.%s " +
                         "WHERE key BETWEEN 'key-000000000' AND 'key-000000010' " +
-                        "AND value IN ('val-000000001', 'val-000000002', 'val-000000099')", TEST_TABLE_NAME)))
+                        "AND value IN ('val-000000001', 'val-000000002', 'val-000000099')",
+                TEST_TABLE_NAME)))
                 .matches("VALUES " +
                         "(CAST ('key-000000001' AS VARCHAR), CAST('val-000000001' AS VARCHAR)), " +
                         "(CAST ('key-000000002' AS VARCHAR), CAST('val-000000002' AS VARCHAR))");
@@ -181,13 +180,14 @@ public class SimpleKeyValueSchemaIT {
     public void testCountMinMax() {
         assertThat(assertions.query(String.format(
                 "SELECT MIN(key), MAX(key), MIN(value), MAX(value), COUNT(*) " +
-                        "FROM sleeper.default.%s WHERE key LIKE 'key-%%'", TEST_TABLE_NAME)))
+                        "FROM sleeper.default.%s WHERE key LIKE 'key-%%'",
+                TEST_TABLE_NAME)))
                 .matches(String.format("VALUES (" +
-                                "CAST ('key-%09d' AS VARCHAR), " +
-                                "CAST ('key-%09d' AS VARCHAR), " +
-                                "CAST ('val-%09d' AS VARCHAR), " +
-                                "CAST ('val-%09d' AS VARCHAR), " +
-                                "CAST (%d AS BIGINT))",
+                        "CAST ('key-%09d' AS VARCHAR), " +
+                        "CAST ('key-%09d' AS VARCHAR), " +
+                        "CAST ('val-%09d' AS VARCHAR), " +
+                        "CAST ('val-%09d' AS VARCHAR), " +
+                        "CAST (%d AS BIGINT))",
                         0, NO_OF_RECORDS - 1, 0, NO_OF_RECORDS - 1, NO_OF_RECORDS));
     }
 }

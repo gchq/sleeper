@@ -35,11 +35,12 @@ public class IngestStacks {
     private final EksBulkImportStack eksBulkImportStack;
     private final EmrServerlessBulkImportStack emrServerlessBulkImportStack;
 
-    public IngestStacks(IngestStack ingestStack,
-                        EmrBulkImportStack emrBulkImportStack,
-                        PersistentEmrBulkImportStack persistentEmrBulkImportStack,
-                        EksBulkImportStack eksBulkImportStack,
-                        EmrServerlessBulkImportStack emrServerlessBulkImportStack) {
+    public IngestStacks(
+            IngestStack ingestStack,
+            EmrBulkImportStack emrBulkImportStack,
+            PersistentEmrBulkImportStack persistentEmrBulkImportStack,
+            EksBulkImportStack eksBulkImportStack,
+            EmrServerlessBulkImportStack emrServerlessBulkImportStack) {
         this.ingestStack = ingestStack;
         this.emrBulkImportStack = emrBulkImportStack;
         this.persistentEmrBulkImportStack = persistentEmrBulkImportStack;
@@ -49,11 +50,11 @@ public class IngestStacks {
 
     public Stream<Queue> ingestQueues() {
         return Stream.of(
-                        ingestQueue(ingestStack, IngestStack::getIngestJobQueue),
-                        ingestQueue(emrBulkImportStack, EmrBulkImportStack::getBulkImportJobQueue),
-                        ingestQueue(persistentEmrBulkImportStack, PersistentEmrBulkImportStack::getBulkImportJobQueue),
-                        ingestQueue(eksBulkImportStack, EksBulkImportStack::getBulkImportJobQueue),
-                        ingestQueue(emrServerlessBulkImportStack, EmrServerlessBulkImportStack::getBulkImportJobQueue))
+                ingestQueue(ingestStack, IngestStack::getIngestJobQueue),
+                ingestQueue(emrBulkImportStack, EmrBulkImportStack::getBulkImportJobQueue),
+                ingestQueue(persistentEmrBulkImportStack, PersistentEmrBulkImportStack::getBulkImportJobQueue),
+                ingestQueue(eksBulkImportStack, EksBulkImportStack::getBulkImportJobQueue),
+                ingestQueue(emrServerlessBulkImportStack, EmrServerlessBulkImportStack::getBulkImportJobQueue))
                 .flatMap(Optional::stream);
     }
 

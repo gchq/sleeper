@@ -69,8 +69,7 @@ public class DirectPartitionFileWriterFactory implements PartitionFileWriterFact
                     partition,
                     parquetConfiguration,
                     filePathPrefix,
-                    fileNameGenerator.get()
-            );
+                    fileNameGenerator.get());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

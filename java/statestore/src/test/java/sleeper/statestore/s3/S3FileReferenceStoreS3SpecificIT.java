@@ -103,8 +103,7 @@ public class S3FileReferenceStoreS3SpecificIT extends S3StateStoreOneTableTestBa
                         }
                     })
                     .map(runnable -> CompletableFuture.runAsync(runnable, executorService))
-                    .toArray(CompletableFuture[]::new)
-            ).join();
+                    .toArray(CompletableFuture[]::new)).join();
 
             // Then
             assertThat(new HashSet<>(store.getFileReferences()))

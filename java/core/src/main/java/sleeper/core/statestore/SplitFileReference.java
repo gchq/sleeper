@@ -32,9 +32,9 @@ public class SplitFileReference {
      * To split a file further down the tree this split must be repeated. This will compute an estimate of the number of
      * records in the file that are in this partition.
      *
-     * @param file             The file reference being split
-     * @param childPartitionId The ID of the child partition to create metadata for
-     * @return The reference to the new copy
+     * @param  file             The file reference being split
+     * @param  childPartitionId The ID of the child partition to create metadata for
+     * @return                  The reference to the new copy
      */
     public static FileReference referenceForChildPartition(FileReference file, String childPartitionId) {
         return referenceForChildPartition(file, childPartitionId, file.getNumberOfRecords() / 2);

@@ -246,7 +246,7 @@ public interface FileReferenceStore {
     /**
      * Clears all file data from the file reference store. Note that this does not delete any of the actual files.
      */
-    void clearFileData();
+    void clearFileData() throws StateStoreException;
 
     /**
      * Used to set the current time. Should only be called during tests.

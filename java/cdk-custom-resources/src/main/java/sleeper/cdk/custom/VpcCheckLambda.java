@@ -59,8 +59,7 @@ public class VpcCheckLambda {
     private void validateVpc(String vpcId, String region) {
         DescribeVpcEndpointsResult s3Endpoints = vpcClient.describeVpcEndpoints(new DescribeVpcEndpointsRequest()
                 .withFilters(new Filter("vpc-id", Lists.newArrayList(vpcId)),
-                        new Filter("service-name", Lists.newArrayList("com.amazonaws." + region + ".s3")))
-        );
+                        new Filter("service-name", Lists.newArrayList("com.amazonaws." + region + ".s3"))));
         List<VpcEndpoint> vpcEndpoints = s3Endpoints.getVpcEndpoints();
 
         if (vpcEndpoints.size() != 1) {

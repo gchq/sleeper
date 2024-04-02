@@ -75,7 +75,7 @@
         Hadoop client uses an old version of woodstox-core.
         Review when Hadoop is upgraded from 3.3.3, as it might upgrade to v6.
         -->
-        <woodstox.version>6.6.1</woodstox.version>
+        <woodstox.version>6.6.2</woodstox.version>
         <!-- Spark 3.3.1 uses an old version of Apache Ivy with vulnerabilities. Managed from 2.5.0. -->
         <ivy.version>2.5.2</ivy.version>
         <!--
@@ -84,7 +84,7 @@
         -->
         <snappy.version>1.1.10.5</snappy.version>
         <!-- Hadoop declares an old version of Protobuf with vulnerabilities. Managed from 2.5.0. -->
-        <protobuf.version>3.23.3</protobuf.version>
+        <protobuf.version>4.26.1</protobuf.version>
         <!-- Hadoop declares an old version of Nimbus with vulnerabilities. Managed from 9.8.1. -->
         <nimbus-jose-jwt.version>9.37.3</nimbus-jose-jwt.version>
         <!-- Hadoop declares an old version of Avro with vulnerabilities. Managed from 1.7.7. -->
@@ -111,15 +111,15 @@
         <!-- jungrapht-visualization-samples also declares an old version, which is a dependency of the build module. -->
         <logback.version>1.5.3</logback.version>
         <aws-java-sdk.version>1.12.498</aws-java-sdk.version>
-        <aws-java-sdk-v2.version>2.25.16</aws-java-sdk-v2.version>
-        <aws-crt.version>0.29.11</aws-crt.version>
+        <aws-java-sdk-v2.version>2.25.22</aws-java-sdk-v2.version>
+        <aws-crt.version>0.29.14</aws-crt.version>
         <aws-lambda-java-events.version>3.11.4</aws-lambda-java-events.version>
-        <aws-lambda-java-core.version>1.2.2</aws-lambda-java-core.version>
+        <aws-lambda-java-core.version>1.2.3</aws-lambda-java-core.version>
         <aws-lambda-powertools.version>1.18.0</aws-lambda-powertools.version>
-        <commons-lang3.version>3.12.0</commons-lang3.version>
+        <commons-lang3.version>3.14.0</commons-lang3.version>
         <commons-codec.version>1.16.1</commons-codec.version>
         <commons-io.version>2.13.0</commons-io.version>
-        <commons-configuration.version>2.9.0</commons-configuration.version>
+        <commons-configuration.version>2.10.1</commons-configuration.version>
         <commons-compress.version>1.26.1</commons-compress.version>
         <commons-text.version>1.11.0</commons-text.version>
         <janino.version>3.1.12</janino.version>
@@ -129,7 +129,7 @@
         <jjwt.build.version>0.12.5</jjwt.build.version>
         <facebook.collections.version>0.1.32</facebook.collections.version>
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
-        <guava.version>33.0.0-jre</guava.version>
+        <guava.version>33.1.0-jre</guava.version>
         <cdk.version>2.133.0</cdk.version>
         <cdk.kubectl.24.version>2.0.242</cdk.kubectl.24.version>
         <constructs.version>10.3.0</constructs.version>
@@ -139,7 +139,7 @@
         <reload4j.version>1.2.25</reload4j.version>
         <java-websocket.version>1.5.6</java-websocket.version>
         <arrow.version>11.0.0</arrow.version>
-        <bouncycastle.version>1.75</bouncycastle.version>
+        <bouncycastle.version>1.77</bouncycastle.version>
         <athena.version>2023.3.1</athena.version>
         <trino.version>390</trino.version>
         <!-- Trino's AssertJ plugin is not compatible with the latest version -->
@@ -150,7 +150,7 @@
         <netty.version>4.1.108.Final</netty.version>
         <!-- Jetty and Jakarta versions are managed because WireMock and Hadoop use different versions. -->
         <!-- We want to avoid mixing them but they should be compatible. -->
-        <jetty.version>9.4.53.v20231009</jetty.version>
+        <jetty.version>9.4.54.v20240208</jetty.version>
         <jakarta.activation.version>2.1.3</jakarta.activation.version>
         <jakarta.xml.bind.version>2.3.3</jakarta.xml.bind.version>
         <jungrapht.version>1.4</jungrapht.version>
@@ -160,8 +160,8 @@
         <mockito.version>5.11.0</mockito.version>
         <testcontainers.version>1.19.7</testcontainers.version>
         <wiremock.version>2.35.2</wiremock.version>
-        <assertj.version>3.24.1</assertj.version>
-        <approvaltests.version>22.3.3</approvaltests.version>
+        <assertj.version>3.25.3</assertj.version>
+        <approvaltests.version>23.0.1</approvaltests.version>
         <jsonunit.version>3.2.7</jsonunit.version>
         <checkstyle.version>10.14.2</checkstyle.version>
         <sleeper.system.test.short.id/>
@@ -174,14 +174,14 @@
         <sleeper.system.test.force.statestore.classname/>
         <!-- Maven plugins -->
         <checkstyle.plugin.version>3.3.1</checkstyle.plugin.version>
-        <release.plugin.version>3.0.0-M7</release.plugin.version>
+        <release.plugin.version>3.0.1</release.plugin.version>
         <surefire.plugin.version>3.2.5</surefire.plugin.version>
         <failsafe.plugin.version>${surefire.plugin.version}</failsafe.plugin.version>
         <surefire.report.plugin.version>${surefire.plugin.version}</surefire.report.plugin.version>
         <shade.plugin.version>3.5.2</shade.plugin.version>
-        <assembly.plugin.version>3.3.0</assembly.plugin.version>
+        <assembly.plugin.version>3.7.1</assembly.plugin.version>
         <jar.plugin.version>3.3.0</jar.plugin.version>
-        <compiler.plugin.version>3.10.1</compiler.plugin.version>
+        <compiler.plugin.version>3.13.0</compiler.plugin.version>
         <enforcer.plugin.version>3.4.1</enforcer.plugin.version>
         <distribution.format>dir</distribution.format>
         <spotbugs.version>4.8.3</spotbugs.version>

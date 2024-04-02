@@ -4,6 +4,12 @@ Releases
 This page documents the releases of Sleeper. Performance figures for each release
 are available [here](docs/13-system-tests.md#performance-benchmarks)
 
+## Version 0.22.1
+
+This is a bug-fix release. It contains a fix of the following bug:
+
+- Fixed bug in compaction task starter logic that was introduced in 0.22.0.
+
 ## Version 0.22.0
 
 *Note: this release contains breaking changes. It is not possible to upgrade from a previous version of Sleeper
