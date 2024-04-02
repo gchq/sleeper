@@ -66,8 +66,6 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 
 public class QueryWebSocketClient extends QueryCommandLineClient {
     private final String apiUrl;
-    private final InstanceProperties instanceProperties;
-    private final TablePropertiesProvider tablePropertiesProvider;
     private final ConsoleOutput out;
     private final Supplier<Client> clientSupplier;
 
@@ -88,8 +86,6 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
         if (this.apiUrl == null) {
             throw new IllegalArgumentException("Use of this query client requires the WebSocket API to have been deployed as part of your Sleeper instance!");
         }
-        this.instanceProperties = instanceProperties;
-        this.tablePropertiesProvider = tablePropertiesProvider;
         this.out = out;
         this.clientSupplier = clientSupplier;
     }
@@ -117,10 +113,6 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
             } catch (InterruptedException e) {
             }
         }
-    }
-
-    public Supplier<Client> defaultClient() {
-        return () -> new WebSocketQueryClient(instanceProperties, tablePropertiesProvider, out);
     }
 
     public interface Client {
