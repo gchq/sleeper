@@ -44,9 +44,8 @@ public class GenerateNumberedRecords {
     }
 
     private static Configuration configureOverrides(GenerateNumberedValueOverrides overrides) {
-        return (keyType, field) ->
-                overrides.getGenerator(keyType, field)
-                        .orElseGet(() -> GenerateNumberedValue.forField(keyType, field));
+        return (keyType, field) -> overrides.getGenerator(keyType, field)
+                .orElseGet(() -> GenerateNumberedValue.forField(keyType, field));
     }
 
     private Stream<Record> generate(LongStream numbers) {
@@ -59,9 +58,9 @@ public class GenerateNumberedRecords {
 
     private Map<String, Object> mapForNumber(long number) {
         return Stream.of(
-                        entriesForFieldType(number, KeyType.ROW, schema.getRowKeyFields()),
-                        entriesForFieldType(number, KeyType.SORT, schema.getSortKeyFields()),
-                        entriesForFieldType(number, KeyType.VALUE, schema.getValueFields()))
+                entriesForFieldType(number, KeyType.ROW, schema.getRowKeyFields()),
+                entriesForFieldType(number, KeyType.SORT, schema.getSortKeyFields()),
+                entriesForFieldType(number, KeyType.VALUE, schema.getValueFields()))
                 .flatMap(entryStream -> entryStream)
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }

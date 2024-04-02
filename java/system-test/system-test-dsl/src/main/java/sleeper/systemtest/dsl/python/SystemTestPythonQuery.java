@@ -63,7 +63,6 @@ public class SystemTestPythonQuery {
     }
 
     public Stream<Record> results() {
-        return queryIds.stream().flatMap(queryId ->
-                driver.results(outputDir, queryId));
+        return queryIds.stream().flatMap(queryId -> driver.results(outputDir, queryId));
     }
 }

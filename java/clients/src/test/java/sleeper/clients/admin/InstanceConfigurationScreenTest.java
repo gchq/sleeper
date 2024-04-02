@@ -705,7 +705,7 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
 
             // Then
             assertThat(output).startsWith(DISPLAY_MAIN_SCREEN +
-                            CLEAR_CONSOLE + GROUP_SELECT_SCREEN + CLEAR_CONSOLE + TABLE_SELECT_SCREEN)
+                    CLEAR_CONSOLE + GROUP_SELECT_SCREEN + CLEAR_CONSOLE + TABLE_SELECT_SCREEN)
                     .endsWith(PROPERTY_SAVE_CHANGES_SCREEN +
                             PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN +
                             DISPLAY_MAIN_SCREEN);

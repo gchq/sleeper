@@ -103,12 +103,11 @@ public class IngestCoordinatorFactory {
             Consumer<ArrayListRecordBatchFactory.Builder<Record>> arrowConfig) {
         try {
             ParquetConfiguration parquetConfiguration = parquetConfiguration(parameters);
-            ArrayListRecordBatchFactory.Builder<Record> arrayListRecordBatch =
-                    (ArrayListRecordBatchFactory.Builder<Record>) ArrayListRecordBatchFactory.builder()
-                            .parquetConfiguration(parquetConfiguration)
-                            .maxNoOfRecordsInLocalStore(1000)
-                            .maxNoOfRecordsInMemory(100000)
-                            .localWorkingDirectory(parameters.getWorkingDir());
+            ArrayListRecordBatchFactory.Builder<Record> arrayListRecordBatch = (ArrayListRecordBatchFactory.Builder<Record>) ArrayListRecordBatchFactory.builder()
+                    .parquetConfiguration(parquetConfiguration)
+                    .maxNoOfRecordsInLocalStore(1000)
+                    .maxNoOfRecordsInMemory(100000)
+                    .localWorkingDirectory(parameters.getWorkingDir());
             arrowConfig.accept(arrayListRecordBatch);
             return standardIngestCoordinatorBuilder(parameters,
                     arrayListRecordBatch.buildAcceptingRecords(),

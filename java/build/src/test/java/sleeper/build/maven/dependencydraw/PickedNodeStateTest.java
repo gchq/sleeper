@@ -34,8 +34,7 @@ public class PickedNodeStateTest {
         // Given
         GraphModel model = GraphModel.from(rootBuilder().modulesArray(
                 sourceModuleBuilder("core").build(),
-                sourceModuleBuilder("configuration").dependenciesArray(dependency("sleeper:core")).build()
-        ).build());
+                sourceModuleBuilder("configuration").dependenciesArray(dependency("sleeper:core")).build()).build());
 
         // When
         PickedNodeState picked = new PickedNodeState(model);
@@ -51,8 +50,7 @@ public class PickedNodeStateTest {
         // Given
         GraphModel model = GraphModel.from(rootBuilder().modulesArray(
                 sourceModuleBuilder("core").build(),
-                sourceModuleBuilder("configuration").dependenciesArray(dependency("sleeper:core")).build()
-        ).build());
+                sourceModuleBuilder("configuration").dependenciesArray(dependency("sleeper:core")).build()).build());
         PickedNodeState picked = new PickedNodeState(model);
 
         // When
@@ -69,8 +67,7 @@ public class PickedNodeStateTest {
         // Given
         GraphModel model = GraphModel.from(rootBuilder().modulesArray(
                 sourceModuleBuilder("core").build(),
-                sourceModuleBuilder("configuration").dependenciesArray(dependency("sleeper:core")).build()
-        ).build());
+                sourceModuleBuilder("configuration").dependenciesArray(dependency("sleeper:core")).build()).build());
         PickedNodeState picked = new PickedNodeState(model);
 
         // When
@@ -89,8 +86,7 @@ public class PickedNodeStateTest {
                 sourceModuleBuilder("core").build(),
                 sourceModuleBuilder("configuration").dependenciesArray(dependency("sleeper:core")).build(),
                 sourceModuleBuilder("ingest").dependenciesArray(dependency("sleeper:configuration")).build(),
-                sourceModuleBuilder("splitter").dependenciesArray(dependency("sleeper:configuration")).build()
-        ).build());
+                sourceModuleBuilder("splitter").dependenciesArray(dependency("sleeper:configuration")).build()).build());
         PickedNodeState picked = new PickedNodeState(model);
 
         // When
@@ -109,8 +105,7 @@ public class PickedNodeStateTest {
                 sourceModuleBuilder("core").build(),
                 sourceModuleBuilder("configuration").dependenciesArray(dependency("sleeper:core")).build(),
                 sourceModuleBuilder("ingest").dependenciesArray(dependency("sleeper:configuration")).build(),
-                sourceModuleBuilder("bulk-import").dependenciesArray(dependency("sleeper:ingest")).build()
-        ).build());
+                sourceModuleBuilder("bulk-import").dependenciesArray(dependency("sleeper:ingest")).build()).build());
         PickedNodeState picked = new PickedNodeState(model);
 
         // When

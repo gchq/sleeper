@@ -40,8 +40,8 @@ public class DynamoDBStateStoreStack extends NestedStack {
     private final Table fileReferenceCountTable;
     private final Table partitionTable;
 
-    public DynamoDBStateStoreStack(Construct scope, String id, InstanceProperties instanceProperties,
-                                   ManagedPoliciesStack policiesStack) {
+    public DynamoDBStateStoreStack(
+            Construct scope, String id, InstanceProperties instanceProperties, ManagedPoliciesStack policiesStack) {
         super(scope, id);
         String instanceId = instanceProperties.get(ID);
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);

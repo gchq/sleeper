@@ -41,8 +41,7 @@ public class UpdatePropertiesWithTextEditorTestHelper {
     }
 
     public String[] openInstancePropertiesGetCommandRun(InstanceProperties properties) throws Exception {
-        return commandRunOn(runCommand ->
-                updaterWithCommandHandler(runCommand).openPropertiesFile(properties));
+        return commandRunOn(runCommand -> updaterWithCommandHandler(runCommand).openPropertiesFile(properties));
     }
 
     public InstanceProperties openInstancePropertiesGetPropertiesWritten(InstanceProperties properties) throws Exception {

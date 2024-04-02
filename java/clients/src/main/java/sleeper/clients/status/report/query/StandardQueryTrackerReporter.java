@@ -71,7 +71,7 @@ public class StandardQueryTrackerReporter implements QueryTrackerReporter {
         }
         tableFactory.tableBuilder().itemsAndWriter(trackedQueries, this::writeQueryFields)
                 .showField(TrackerQuery.FAILED == queryType || (TrackerQuery.ALL == queryType &&
-                                trackedQueries.stream().anyMatch(query -> Objects.nonNull(query.getErrorMessage()))),
+                        trackedQueries.stream().anyMatch(query -> Objects.nonNull(query.getErrorMessage()))),
                         errorMessage)
                 .build().write(out);
     }

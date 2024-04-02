@@ -50,7 +50,6 @@ import java.util.stream.Stream;
 public class DynamoDBUtils {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBUtils.class);
 
-
     private DynamoDBUtils() {
     }
 
@@ -108,8 +107,7 @@ public class DynamoDBUtils {
                 .withTimeToLiveSpecification(
                         new TimeToLiveSpecification()
                                 .withEnabled(true)
-                                .withAttributeName(expiryField)
-                ));
+                                .withAttributeName(expiryField)));
         LOGGER.info("Configured TTL on field {}", expiryField);
     }
 
@@ -120,8 +118,7 @@ public class DynamoDBUtils {
 
     public static Stream<Map<String, AttributeValue>> streamPagedItems(AmazonDynamoDB dynamoDB, QueryRequest queryRequest) {
         return streamPagedResults(dynamoDB, queryRequest)
-                .flatMap(result ->
-                        result.getItems().stream());
+                .flatMap(result -> result.getItems().stream());
     }
 
     public static Stream<ScanResult> streamPagedResults(AmazonDynamoDB dynamoDB, ScanRequest scanRequest) {
@@ -191,8 +188,9 @@ public class DynamoDBUtils {
         return new LoadedItemsWithLimit(items, false);
     }
 
-    public static void deleteAllDynamoTableItems(AmazonDynamoDB dynamoDB, QueryRequest queryRequest,
-                                                 UnaryOperator<Map<String, AttributeValue>> getItemKeyForDelete) {
+    public static void deleteAllDynamoTableItems(
+            AmazonDynamoDB dynamoDB, QueryRequest queryRequest,
+            UnaryOperator<Map<String, AttributeValue>> getItemKeyForDelete) {
         LOGGER.info("Deleting all items from {} Dynamo DB Table", queryRequest.getTableName());
         long countOfDeletedItems = streamPagedItems(dynamoDB, queryRequest.withLimit(50))
                 .map(item -> {
