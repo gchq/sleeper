@@ -323,7 +323,7 @@ public class QueryWebSocketCommandLineClientTest {
                     .contains(PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
                             "Submitting query with ID: test-query-id\n" +
-                            "Query failed:  Unknown message type received: unknown")
+                            "Query failed: Unknown message type received: unknown")
                     .containsSubsequence("Query took", "seconds to return 0 records");
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
