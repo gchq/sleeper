@@ -30,9 +30,13 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.TableIndex;
+import sleeper.core.util.LoggedDuration;
 import sleeper.query.model.Query;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletionException;
 import java.util.function.Supplier;
 
 public class QueryWebSocketCommandLineClient extends QueryCommandLineClient {
@@ -70,10 +74,20 @@ public class QueryWebSocketCommandLineClient extends QueryCommandLineClient {
 
     @Override
     protected void submitQuery(TableProperties tableProperties, Query query) {
+        Instant startTime = Instant.now();
+        long recordsReturned = 0L;
         try {
-            queryWebSocketClient.submitQuery(query).join();
+            out.println("Submitting query with ID: " + query.getQueryId());
+            List<String> results = queryWebSocketClient.submitQuery(query).join();
+            out.println("Query results:");
+            results.forEach(out::println);
+            recordsReturned = results.size();
+        } catch (CompletionException e) {
+            out.println("Query failed: " + e.getCause().getMessage());
         } catch (InterruptedException e) {
-            out.println("Failed to run query: " + e.getMessage());
+            out.println("Query failed: " + e.getMessage());
+        } finally {
+            out.println("Query took " + LoggedDuration.withFullOutput(startTime, Instant.now()) + " to return " + recordsReturned + " records");
         }
     }
 
