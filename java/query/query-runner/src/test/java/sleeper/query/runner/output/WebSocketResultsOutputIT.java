@@ -81,7 +81,6 @@ public class WebSocketResultsOutputIT {
         ResultsOutputInfo result = out.publish(new QueryOrLeafPartitionQuery(query), new WrappedIterator<>(records.iterator()));
 
         // Then
-        //"{"records":[{"values":{"id":"record1"}}],"message":"records","queryId":"query1"}"
         verify(1, postRequestedFor(url).withRequestBody(
                 matchingJsonPath("$.queryId", equalTo("query1"))
                         .and(matchingJsonPath("$.message", equalTo("records"))

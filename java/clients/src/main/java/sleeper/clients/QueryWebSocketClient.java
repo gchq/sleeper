@@ -26,7 +26,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
-import com.google.gson.ToNumberPolicy;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 
@@ -39,11 +38,9 @@ import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.core.record.Record;
 import sleeper.core.util.LoggedDuration;
 import sleeper.query.model.Query;
 import sleeper.query.model.QuerySerDe;
-import sleeper.query.output.RecordListSerDe;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -83,7 +80,7 @@ public class QueryWebSocketClient {
         this.out = out;
     }
 
-    public CompletableFuture<List<Record>> submitQuery(Query query) throws InterruptedException {
+    public CompletableFuture<List<String>> submitQuery(Query query) throws InterruptedException {
         try {
             startTime = Instant.now();
             return client.startQueryFuture(query)
@@ -122,7 +119,7 @@ public class QueryWebSocketClient {
         }
     }
 
-    public List<Record> getResults(Query query) {
+    public List<String> getResults(Query query) {
         return client.getResults(query.getQueryId());
     }
 
@@ -131,13 +128,13 @@ public class QueryWebSocketClient {
 
         void startQuery(Query query) throws InterruptedException;
 
-        CompletableFuture<List<Record>> startQueryFuture(Query query) throws InterruptedException;
+        CompletableFuture<List<String>> startQueryFuture(Query query) throws InterruptedException;
 
         boolean hasQueryFinished();
 
         long getTotalRecordsReturned();
 
-        List<Record> getResults(String queryId);
+        List<String> getResults(String queryId);
     }
 
     private static class WebSocketQueryClient extends WebSocketClient implements Client {
@@ -158,8 +155,8 @@ public class QueryWebSocketClient {
             this.messageHandler = messageHandler;
         }
 
-        public CompletableFuture<List<Record>> startQueryFuture(Query query) throws InterruptedException {
-            CompletableFuture<List<Record>> future = new CompletableFuture<>();
+        public CompletableFuture<List<String>> startQueryFuture(Query query) throws InterruptedException {
+            CompletableFuture<List<String>> future = new CompletableFuture<>();
             messageHandler.setFuture(future);
             startQuery(query);
             return future;
@@ -228,22 +225,22 @@ public class QueryWebSocketClient {
         }
 
         @Override
-        public List<Record> getResults(String queryId) {
+        public List<String> getResults(String queryId) {
             return messageHandler.getResults(queryId);
         }
     }
 
     public static class WebSocketMessageHandler {
-        private static final Gson GSON = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE).create();
+        private final Gson serde = new GsonBuilder().create();
         private final Set<String> outstandingQueries = new HashSet<>();
         private final Map<String, List<String>> subqueryIdByParentQueryId = new HashMap<>();
-        private final Map<String, List<Record>> records = new TreeMap<>();
+        private final Map<String, List<String>> records = new TreeMap<>();
         private final QuerySerDe querySerDe;
         private final ConsoleOutput out;
         private boolean queryComplete = false;
         private boolean queryFailed = false;
         private long totalRecordsReturned = 0L;
-        private CompletableFuture<List<Record>> future;
+        private CompletableFuture<List<String>> future;
         private String currentQueryId;
 
         public WebSocketMessageHandler(QuerySerDe querySerDe, ConsoleOutput out) {
@@ -251,7 +248,7 @@ public class QueryWebSocketClient {
             this.out = out;
         }
 
-        public void setFuture(CompletableFuture<List<Record>> future) {
+        public void setFuture(CompletableFuture<List<String>> future) {
             this.future = future;
         }
 
@@ -293,7 +290,7 @@ public class QueryWebSocketClient {
                     out.println("Query results:");
                     records.values().stream()
                             .flatMap(List::stream)
-                            .forEach(record -> out.println(record.toString()));
+                            .forEach(out::println);
                 }
                 queryComplete = true;
                 future.complete(getResults(currentQueryId));
@@ -302,7 +299,7 @@ public class QueryWebSocketClient {
 
         private Optional<JsonObject> deserialiseMessage(String json) {
             try {
-                JsonObject message = GSON.fromJson(json, JsonObject.class);
+                JsonObject message = serde.fromJson(json, JsonObject.class);
                 if (!message.has("queryId")) {
                     out.println("Received message without queryId from API:");
                     out.println("  " + json);
@@ -351,7 +348,8 @@ public class QueryWebSocketClient {
         }
 
         private void handleRecords(JsonObject message, String queryId) {
-            List<Record> recordList = RecordListSerDe.fromJson(message.get("records"));
+            JsonArray recordBatch = message.getAsJsonArray("records");
+            List<String> recordList = recordBatch.asList().stream().map(JsonElement::getAsString).collect(Collectors.toList());
             if (!records.containsKey(queryId)) {
                 records.put(queryId, recordList);
             } else {
@@ -398,7 +396,7 @@ public class QueryWebSocketClient {
             return totalRecordsReturned;
         }
 
-        public List<Record> getResults(String queryId) {
+        public List<String> getResults(String queryId) {
             return Stream.concat(
                     Stream.of(queryId),
                     subqueryIdByParentQueryId.getOrDefault(queryId, List.of()).stream())

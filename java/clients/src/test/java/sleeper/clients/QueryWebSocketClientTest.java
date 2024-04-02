@@ -46,13 +46,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.clients.QueryWebSocketClientTestHelper.closeWithReason;
 import static sleeper.clients.QueryWebSocketClientTestHelper.completedQuery;
+import static sleeper.clients.QueryWebSocketClientTestHelper.createdSubQueries;
+import static sleeper.clients.QueryWebSocketClientTestHelper.error;
+import static sleeper.clients.QueryWebSocketClientTestHelper.errorMessage;
 import static sleeper.clients.QueryWebSocketClientTestHelper.message;
 import static sleeper.clients.QueryWebSocketClientTestHelper.queryResult;
+import static sleeper.clients.QueryWebSocketClientTestHelper.unknownMessage;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
@@ -102,7 +105,7 @@ public class QueryWebSocketClientTest {
                     withResponses(
                             message(queryResult("test-query-id", expectedRecord)),
                             message(completedQuery("test-query-id", 1L)))))
-                    .isCompletedWithValue(List.of(expectedRecord));
+                    .isCompletedWithValue(List.of(expectedRecord.toString()));
             assertThat(out.toString())
                     .startsWith("Connected to WebSocket API\n" +
                             "Submitting Query: " + querySerDe.toJson(query) + "\n" +
@@ -114,6 +117,8 @@ public class QueryWebSocketClientTest {
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
                     .containsExactly(querySerDe.toJson(query));
+            assertThat(client.getResults("test-query-id"))
+                    .containsExactly(expectedRecord.toString());
         }
 
         @Test
@@ -128,7 +133,7 @@ public class QueryWebSocketClientTest {
                             message(createdSubQueries("test-query-id", "test-subquery")),
                             message(queryResult("test-subquery", expectedRecord)),
                             message(completedQuery("test-subquery", 1L)))))
-                    .isCompletedWithValue(List.of(expectedRecord));
+                    .isCompletedWithValue(List.of(expectedRecord.toString()));
             assertThat(out.toString())
                     .startsWith("Connected to WebSocket API\n" +
                             "Submitting Query: " + querySerDe.toJson(query) + "\n" +
@@ -142,6 +147,10 @@ public class QueryWebSocketClientTest {
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
                     .containsExactly(querySerDe.toJson(query));
+            assertThat(client.getResults("test-query-id"))
+                    .containsExactly(expectedRecord.toString());
+            assertThat(client.getResults("test-subquery"))
+                    .containsExactly(expectedRecord.toString());
         }
 
         @Test
@@ -162,7 +171,7 @@ public class QueryWebSocketClientTest {
                             message(completedQuery("subquery-2", 1L)),
                             message(queryResult("subquery-3", expectedRecord3)),
                             message(completedQuery("subquery-3", 1L)))))
-                    .isCompletedWithValue(List.of(expectedRecord1, expectedRecord2, expectedRecord3));
+                    .isCompletedWithValue(List.of(expectedRecord1.toString(), expectedRecord2.toString(), expectedRecord3.toString()));
             assertThat(out.toString())
                     .startsWith("Connected to WebSocket API\n" +
                             "Submitting Query: " + querySerDe.toJson(query) + "\n" +
@@ -182,6 +191,14 @@ public class QueryWebSocketClientTest {
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
                     .containsExactly(querySerDe.toJson(query));
+            assertThat(client.getResults("test-query-id"))
+                    .containsExactly(expectedRecord1.toString(), expectedRecord2.toString(), expectedRecord3.toString());
+            assertThat(client.getResults("subquery-1"))
+                    .containsExactly(expectedRecord1.toString());
+            assertThat(client.getResults("subquery-2"))
+                    .containsExactly(expectedRecord2.toString());
+            assertThat(client.getResults("subquery-3"))
+                    .containsExactly(expectedRecord3.toString());
         }
 
         @Test
@@ -195,7 +212,7 @@ public class QueryWebSocketClientTest {
                     withResponses(
                             message(queryResult("test-query-id", expectedRecord)),
                             message(completedQuery("test-query-id", 2L)))))
-                    .isCompletedWithValue(List.of(expectedRecord));
+                    .isCompletedWithValue(List.of(expectedRecord.toString()));
             assertThat(out.toString())
                     .startsWith("Connected to WebSocket API\n" +
                             "Submitting Query: " + querySerDe.toJson(query) + "\n" +
@@ -209,7 +226,7 @@ public class QueryWebSocketClientTest {
             assertThat(client.getSentMessages())
                     .containsExactly(querySerDe.toJson(query));
             assertThat(client.getResults("test-query-id"))
-                    .containsExactly(expectedRecord);
+                    .containsExactly(expectedRecord.toString());
         }
     }
 
@@ -431,36 +448,13 @@ public class QueryWebSocketClientTest {
                 .build();
     }
 
-    private static String createdSubQueries(String queryId, String... subQueryIds) {
-        return "{" +
-                "\"queryId\":\"" + queryId + "\", " +
-                "\"message\":\"subqueries\"," +
-                "\"queryIds\":[" + Stream.of(subQueryIds).map(id -> "\"" + id + "\"").collect(Collectors.joining(",")) + "]" +
-                "}";
-    }
-
-    private static String errorMessage(String queryId, String message) {
-        return "{" +
-                "\"queryId\":\"" + queryId + "\", " +
-                "\"message\":\"error\"," +
-                "\"error\":\"" + message + "\"" +
-                "}";
-    }
-
-    private static String unknownMessage(String queryId) {
-        return "{" +
-                "\"queryId\":\"" + queryId + "\"," +
-                "\"message\":\"unknown\"" +
-                "}";
-    }
-
     protected void runQuery(Query query, Client webSocketClient) throws Exception {
         QueryWebSocketClient client = new QueryWebSocketClient(instanceProperties, new FixedTablePropertiesProvider(tableProperties),
                 out.consoleOut(), webSocketClient);
         client.submitQuery(query).get();
     }
 
-    protected CompletableFuture<List<Record>> runQueryFuture(Query query, Client webSocketClient) throws Exception {
+    protected CompletableFuture<List<String>> runQueryFuture(Query query, Client webSocketClient) throws Exception {
         QueryWebSocketClient client = new QueryWebSocketClient(instanceProperties, new FixedTablePropertiesProvider(tableProperties),
                 out.consoleOut(), webSocketClient);
         return client.submitQuery(query);
@@ -470,13 +464,5 @@ public class QueryWebSocketClientTest {
         client = new FakeWebSocketClient(new FixedTablePropertiesProvider(tableProperties), out.consoleOut());
         client.withResponses(responses);
         return client;
-    }
-
-    public static WebSocketResponse closeWithReason(String reason) {
-        return messageHandler -> messageHandler.onClose(reason);
-    }
-
-    public static WebSocketResponse error(Exception error) {
-        return messageHandler -> messageHandler.onError(error);
     }
 }

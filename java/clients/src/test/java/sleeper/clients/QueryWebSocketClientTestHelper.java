@@ -17,21 +17,44 @@ package sleeper.clients;
 
 import sleeper.clients.FakeWebSocketClient.WebSocketResponse;
 import sleeper.core.record.Record;
-import sleeper.query.output.RecordListSerDe;
 
-import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class QueryWebSocketClientTestHelper {
 
     private QueryWebSocketClientTestHelper() {
     }
 
+    public static String createdSubQueries(String queryId, String... subQueryIds) {
+        return "{" +
+                "\"queryId\":\"" + queryId + "\", " +
+                "\"message\":\"subqueries\"," +
+                "\"queryIds\":[" + Stream.of(subQueryIds).map(id -> "\"" + id + "\"").collect(Collectors.joining(",")) + "]" +
+                "}";
+    }
+
+    public static String errorMessage(String queryId, String message) {
+        return "{" +
+                "\"queryId\":\"" + queryId + "\", " +
+                "\"message\":\"error\"," +
+                "\"error\":\"" + message + "\"" +
+                "}";
+    }
+
+    public static String unknownMessage(String queryId) {
+        return "{" +
+                "\"queryId\":\"" + queryId + "\"," +
+                "\"message\":\"unknown\"" +
+                "}";
+    }
+
     public static String queryResult(String queryId, Record... records) {
         return "{" +
                 "\"queryId\":\"" + queryId + "\", " +
                 "\"message\":\"records\"," +
-                "\"records\":" + RecordListSerDe.toJson(List.of(records)) +
-                "}";
+                "\"records\":[" + Stream.of(records).map(record -> "\"" + record.toString() + "\"").collect(Collectors.joining(",")) +
+                "]}";
     }
 
     public static String completedQuery(String queryId, long recordCount) {
@@ -45,5 +68,13 @@ public class QueryWebSocketClientTestHelper {
 
     public static WebSocketResponse message(String message) {
         return messageHandler -> messageHandler.onMessage(message);
+    }
+
+    public static WebSocketResponse closeWithReason(String reason) {
+        return messageHandler -> messageHandler.onClose(reason);
+    }
+
+    public static WebSocketResponse error(Exception error) {
+        return messageHandler -> messageHandler.onError(error);
     }
 }
