@@ -102,23 +102,6 @@ public class QueryWebSocketClient {
         }
     }
 
-    public void waitForQuery() {
-        try {
-            while (!client.hasQueryFinished()) {
-                Thread.sleep(500);
-            }
-            LoggedDuration duration = LoggedDuration.withFullOutput(startTime, Instant.now());
-            long recordsReturned = client.getTotalRecordsReturned();
-            out.println("Query took " + duration + " to return " + recordsReturned + " records");
-        } catch (InterruptedException e) {
-        } finally {
-            try {
-                client.closeBlocking();
-            } catch (InterruptedException e) {
-            }
-        }
-    }
-
     public List<String> getResults(Query query) {
         return client.getResults(query.getQueryId());
     }
