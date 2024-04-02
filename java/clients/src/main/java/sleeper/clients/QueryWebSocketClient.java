@@ -66,30 +66,32 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 
 public class QueryWebSocketClient extends QueryCommandLineClient {
     private final String apiUrl;
-    private final Client client;
+    private final InstanceProperties instanceProperties;
+    private final TablePropertiesProvider tablePropertiesProvider;
+    private final ConsoleOutput out;
+    private final Supplier<Client> clientSupplier;
 
     private QueryWebSocketClient(
             InstanceProperties instanceProperties, TableIndex tableIndex, TablePropertiesProvider tablePropertiesProvider,
             ConsoleInput in, ConsoleOutput out) {
-        this(instanceProperties, tableIndex, tablePropertiesProvider, in, out, new WebSocketQueryClient(instanceProperties, tablePropertiesProvider, out));
-    }
-
-    private QueryWebSocketClient(
-            InstanceProperties instanceProperties, TableIndex tableIndex, TablePropertiesProvider tablePropertiesProvider,
-            ConsoleInput in, ConsoleOutput out, Client client) {
-        this(instanceProperties, tableIndex, tablePropertiesProvider, in, out, client, () -> UUID.randomUUID().toString());
+        this(instanceProperties, tableIndex, tablePropertiesProvider, in, out,
+                () -> new WebSocketQueryClient(instanceProperties, tablePropertiesProvider, out),
+                () -> UUID.randomUUID().toString());
     }
 
     QueryWebSocketClient(
             InstanceProperties instanceProperties, TableIndex tableIndex, TablePropertiesProvider tablePropertiesProvider,
-            ConsoleInput in, ConsoleOutput out, Client client, Supplier<String> queryIdSupplier) {
+            ConsoleInput in, ConsoleOutput out, Supplier<Client> clientSupplier, Supplier<String> queryIdSupplier) {
         super(instanceProperties, tableIndex, tablePropertiesProvider, in, out, queryIdSupplier);
 
         this.apiUrl = instanceProperties.get(CdkDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL);
         if (this.apiUrl == null) {
             throw new IllegalArgumentException("Use of this query client requires the WebSocket API to have been deployed as part of your Sleeper instance!");
         }
-        this.client = client;
+        this.instanceProperties = instanceProperties;
+        this.tablePropertiesProvider = tablePropertiesProvider;
+        this.out = out;
+        this.clientSupplier = clientSupplier;
     }
 
     @Override
@@ -98,6 +100,7 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
 
     @Override
     protected void submitQuery(TableProperties tableProperties, Query query) {
+        Client client = clientSupplier.get();
         try {
             Instant startTime = Instant.now();
             client.startQuery(query);
@@ -114,6 +117,14 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
             } catch (InterruptedException e) {
             }
         }
+    }
+
+    public Supplier<Client> defaultClient() {
+        return () -> new WebSocketQueryClient(instanceProperties, tablePropertiesProvider, out);
+    }
+
+    public interface ClientCreator {
+        Client create(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, ConsoleOutput out);
     }
 
     public interface Client {
