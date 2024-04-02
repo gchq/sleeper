@@ -98,6 +98,7 @@ public class QueryWebSocketClient {
             try {
                 client.closeBlocking();
             } catch (InterruptedException e2) {
+                throw e2;
             }
             throw e;
         }

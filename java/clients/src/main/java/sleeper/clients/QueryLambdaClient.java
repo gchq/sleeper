@@ -103,7 +103,7 @@ public class QueryLambdaClient extends QueryCommandLineClient {
     }
 
     @Override
-    protected void runQueries(TableProperties tableProperties) {
+    protected void runQueries(TableProperties tableProperties) throws InterruptedException {
         Scanner scanner = new Scanner(System.in, StandardCharsets.UTF_8.displayName());
         resultsPublisherConfig = new HashMap<>();
         while (true) {
@@ -133,7 +133,7 @@ public class QueryLambdaClient extends QueryCommandLineClient {
                 query.withResultsPublisherConfig(resultsPublisherConfig)));
     }
 
-    public static void main(String[] args) throws StateStoreException {
+    public static void main(String[] args) throws StateStoreException, InterruptedException {
         if (1 != args.length) {
             throw new IllegalArgumentException("Usage: <instance-id>");
         }
