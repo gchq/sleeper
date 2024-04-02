@@ -966,6 +966,10 @@ sleeper.default.query.results.rowgroup.size=8388608
 # The value given below is 128KiB. This value can be overridden using the query config.
 sleeper.default.query.results.page.size=131072
 
+# The rate at which the query lambda runs to keep it warm (in minutes, must be >=1).  This only
+# applies when the KeepLambdaWarmStack is enabled
+sleeper.query.warm.lambda.period.minutes=5
+
 
 ## The following properties relate to the dashboard.
 
