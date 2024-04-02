@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.schema.type.LongType;
+import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.SplitFileReferenceRequest;
@@ -54,6 +55,7 @@ import static sleeper.core.statestore.FileReferenceTestData.splitFile;
 import static sleeper.core.statestore.FileReferenceTestData.withJobId;
 import static sleeper.core.statestore.FileReferenceTestData.withLastUpdate;
 import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
+import static sleeper.core.statestore.FilesReportTestHelper.noFiles;
 import static sleeper.core.statestore.FilesReportTestHelper.noFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.partialReadyForGCFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.readyForGCFilesReport;
@@ -1107,6 +1109,48 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             // When / Then
             assertThat(store.getPartitionToReferencedFilesMap())
                     .isEqualTo(Map.of("L", List.of("file")));
+        }
+    }
+
+    @Nested
+    @DisplayName("Clear files")
+    class ClearFiles {
+        @Test
+        void shouldDeleteReferencedFileOnClear() throws Exception {
+            // Given
+            FileReference file = factory.rootFile("file", 100L);
+            store.addFile(file);
+
+            // When
+            store.clearSleeperTable();
+            store.initialise();
+
+            // Then
+            assertThat(store.getFileReferences()).isEmpty();
+            assertThat(store.getFileReferencesWithNoJobId()).isEmpty();
+            assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
+            assertThat(store.getPartitionToReferencedFilesMap()).isEmpty();
+            assertThat(store.getAllFilesWithMaxUnreferenced(100)).isEqualTo(noFiles());
+        }
+
+        @Test
+        void shouldDeleteUnreferencedFileOnClear() throws Exception {
+            // Given
+            store.addFilesWithReferences(List.of(AllReferencesToAFile.builder()
+                    .filename("file")
+                    .internalReferences(List.of())
+                    .build()));
+
+            // When
+            store.clearSleeperTable();
+            store.initialise();
+
+            // Then
+            assertThat(store.getFileReferences()).isEmpty();
+            assertThat(store.getFileReferencesWithNoJobId()).isEmpty();
+            assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
+            assertThat(store.getPartitionToReferencedFilesMap()).isEmpty();
+            assertThat(store.getAllFilesWithMaxUnreferenced(100)).isEqualTo(noFiles());
         }
     }
 }

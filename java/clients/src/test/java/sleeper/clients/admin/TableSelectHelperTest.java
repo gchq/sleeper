@@ -72,9 +72,8 @@ class TableSelectHelperTest extends AdminClientMockStoreBase {
 
     private String runTableSelectHelperGetOutput() {
         new TableSelectHelper(out.consoleOut(), in.consoleIn(), store)
-                .chooseTableOrReturnToMain(instanceId).ifPresent(tableProperties ->
-                        out.consoleOut().println("\n" +
-                                "Found table " + tableProperties.get(TABLE_NAME)));
+                .chooseTableOrReturnToMain(instanceId).ifPresent(tableProperties -> out.consoleOut().println("\n" +
+                        "Found table " + tableProperties.get(TABLE_NAME)));
         return out.toString();
     }
 }

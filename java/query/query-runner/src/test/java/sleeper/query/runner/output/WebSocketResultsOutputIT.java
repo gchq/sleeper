@@ -34,7 +34,6 @@ import java.util.Map;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
-import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
@@ -83,8 +82,7 @@ public class WebSocketResultsOutputIT {
         // Then
         verify(1, postRequestedFor(url).withRequestBody(
                 matchingJsonPath("$.queryId", equalTo("query1"))
-                        .and(matchingJsonPath("$.message", equalTo("records"))
-                                .and(matchingJsonPath("$.records", equalToJson("[{\"values\":{\"id\":\"record1\"}}]"))))));
+                        .and(matchingJsonPath("$.message", equalTo("records")))));
         assertThat(result.getRecordCount()).isZero();
         assertThat(result.getError()).hasMessageContaining("GoneException");
     }

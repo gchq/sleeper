@@ -87,8 +87,7 @@ public class AllReferencesToAFile {
                 .internalReferences(Stream.concat(
                         internalReferenceByPartitionId.values().stream()
                                 .filter(reference -> !partitionId.equals(reference.getPartitionId())),
-                        newReferences.stream().map(reference ->
-                                reference.toBuilder().lastStateStoreUpdateTime(updateTime).build())))
+                        newReferences.stream().map(reference -> reference.toBuilder().lastStateStoreUpdateTime(updateTime).build())))
                 .totalReferenceCount(totalReferenceCount - 1 + newReferences.size())
                 .lastStateStoreUpdateTime(updateTime)
                 .build();
@@ -166,7 +165,8 @@ public class AllReferencesToAFile {
             return false;
         }
         AllReferencesToAFile that = (AllReferencesToAFile) o;
-        return totalReferenceCount == that.totalReferenceCount && Objects.equals(filename, that.filename) && Objects.equals(lastStateStoreUpdateTime, that.lastStateStoreUpdateTime) && Objects.equals(internalReferenceByPartitionId, that.internalReferenceByPartitionId);
+        return totalReferenceCount == that.totalReferenceCount && Objects.equals(filename, that.filename) && Objects.equals(lastStateStoreUpdateTime, that.lastStateStoreUpdateTime)
+                && Objects.equals(internalReferenceByPartitionId, that.internalReferenceByPartitionId);
     }
 
     @Override

@@ -114,7 +114,7 @@ public class DynamoDBTableIndex implements TableIndex {
                 new ScanRequest()
                         .withTableName(onlineIndexDynamoTableName)
                         .withConsistentRead(stronglyConsistent))
-                                .map(DynamoDBTableIdFormat::readItem);
+                .map(DynamoDBTableIdFormat::readItem);
     }
 
     @Override
@@ -126,7 +126,7 @@ public class DynamoDBTableIndex implements TableIndex {
                         .withExpressionAttributeNames(Map.of("#online", TABLE_ONLINE_FIELD))
                         .withExpressionAttributeValues(Map.of(":true", createStringAttribute("true")))
                         .withConsistentRead(stronglyConsistent))
-                                .map(DynamoDBTableIdFormat::readItem);
+                .map(DynamoDBTableIdFormat::readItem);
     }
 
     @Override

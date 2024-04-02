@@ -75,8 +75,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         StateStore stateStore = inMemoryStateStoreWithFixedPartitions(new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", 2L)
-                .buildList()
-        );
+                .buildList());
 
         // When
         long numWritten = ingestRecords(schema, stateStore, getRecords()).getRecordsWritten();

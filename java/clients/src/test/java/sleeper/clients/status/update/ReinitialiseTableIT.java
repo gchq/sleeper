@@ -283,7 +283,6 @@ public class ReinitialiseTableIT {
             assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeletedWithS3StateStore();
         }
 
-
         @Test
         public void shouldSetUpSplitPointsFromFileWhenOptionSelected() throws Exception {
             // Given
@@ -310,7 +309,6 @@ public class ReinitialiseTableIT {
 
             assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeletedWithS3StateStore();
         }
-
 
         @Test
         public void shouldHandleEncodedSplitPointsFileWhenOptionSelected() throws Exception {
@@ -340,8 +338,8 @@ public class ReinitialiseTableIT {
         }
     }
 
-    private void assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions(String expectedFilesVersion,
-                                                                             String expectedPartitionsVersion) {
+    private void assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions(
+            String expectedFilesVersion, String expectedPartitionsVersion) {
         S3RevisionIdStore revisionIdStore = new S3RevisionIdStore(dynamoDBClient, instanceProperties, tableProperties);
         S3RevisionId filesRevisionId = revisionIdStore.getCurrentFilesRevisionId();
         S3RevisionId partitionsRevisionId = revisionIdStore.getCurrentPartitionsRevisionId();
@@ -419,15 +417,13 @@ public class ReinitialiseTableIT {
                 .run();
     }
 
-    private void reinitialiseTableFromSplitPoints(TableProperties tableProperties, String splitPointsFile)
-            throws StateStoreException, IOException {
+    private void reinitialiseTableFromSplitPoints(TableProperties tableProperties, String splitPointsFile) throws StateStoreException, IOException {
         new ReinitialiseTableFromSplitPoints(s3Client,
                 dynamoDBClient, instanceProperties.get(ID), tableProperties.get(TABLE_NAME), splitPointsFile, false)
                 .run();
     }
 
-    private void reinitialiseTableFromSplitPointsEncoded(TableProperties tableProperties, String splitPointsFile)
-            throws StateStoreException, IOException {
+    private void reinitialiseTableFromSplitPointsEncoded(TableProperties tableProperties, String splitPointsFile) throws StateStoreException, IOException {
         new ReinitialiseTableFromSplitPoints(s3Client,
                 dynamoDBClient, instanceProperties.get(ID), tableProperties.get(TABLE_NAME), splitPointsFile, true)
                 .run();
@@ -455,8 +451,7 @@ public class ReinitialiseTableIT {
         }
     }
 
-    private DynamoDBStateStore setupDynamoStateStore(TableProperties tableProperties)
-            throws IOException, StateStoreException {
+    private DynamoDBStateStore setupDynamoStateStore(TableProperties tableProperties) throws IOException, StateStoreException {
         //  - Create DynamoDBStateStore
         tableProperties.set(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "0");
         DynamoDBStateStore dynamoDBStateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDBClient);

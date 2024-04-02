@@ -35,16 +35,16 @@ public class SystemTestReports {
         return new Builder(context);
     }
 
-    public static SystemTestBuilder builder(ReportingContext context,
-                                            PartitionReportDriver partitionDriver,
-                                            IngestReportsDriver ingestDriver,
-                                            CompactionReportsDriver compactionDriver) {
+    public static SystemTestBuilder builder(
+            ReportingContext context,
+            PartitionReportDriver partitionDriver,
+            IngestReportsDriver ingestDriver,
+            CompactionReportsDriver compactionDriver) {
         return new SystemTestBuilder(context, partitionDriver, ingestDriver, compactionDriver);
     }
 
     public void print(TestContext testContext) {
-        context.print(testContext, (out, startTime) ->
-                reports.forEach(report -> report.print(out, startTime)));
+        context.print(testContext, (out, startTime) -> reports.forEach(report -> report.print(out, startTime)));
     }
 
     public static class Builder {
@@ -71,10 +71,11 @@ public class SystemTestReports {
         private final IngestReportsDriver ingestDriver;
         private final CompactionReportsDriver compactionDriver;
 
-        private SystemTestBuilder(ReportingContext context,
-                                  PartitionReportDriver partitionDriver,
-                                  IngestReportsDriver ingestDriver,
-                                  CompactionReportsDriver compactionDriver) {
+        private SystemTestBuilder(
+                ReportingContext context,
+                PartitionReportDriver partitionDriver,
+                IngestReportsDriver ingestDriver,
+                CompactionReportsDriver compactionDriver) {
             super(context);
             this.partitionDriver = partitionDriver;
             this.ingestDriver = ingestDriver;

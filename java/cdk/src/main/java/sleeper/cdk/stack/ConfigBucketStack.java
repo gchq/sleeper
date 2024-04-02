@@ -40,8 +40,8 @@ public class ConfigBucketStack extends NestedStack {
 
     private final IBucket configBucket;
 
-    public ConfigBucketStack(Construct scope, String id, InstanceProperties instanceProperties,
-                             ManagedPoliciesStack policiesStack) {
+    public ConfigBucketStack(
+            Construct scope, String id, InstanceProperties instanceProperties, ManagedPoliciesStack policiesStack) {
         super(scope, id);
 
         configBucket = Bucket.Builder.create(this, "ConfigBucket")

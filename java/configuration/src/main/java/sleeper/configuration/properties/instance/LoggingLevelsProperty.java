@@ -16,7 +16,6 @@
 
 package sleeper.configuration.properties.instance;
 
-
 import sleeper.configuration.properties.SleeperPropertyIndex;
 
 import java.util.List;
