@@ -53,6 +53,7 @@ import static sleeper.clients.QueryClientTestConstants.PROMPT_MIN_ROW_KEY_LONG_T
 import static sleeper.clients.QueryClientTestConstants.PROMPT_QUERY_TYPE;
 import static sleeper.clients.QueryClientTestConstants.RANGE_QUERY_OPTION;
 import static sleeper.clients.QueryClientTestConstants.YES_OPTION;
+import static sleeper.clients.QueryWebSocketClientTestHelper.asJson;
 import static sleeper.clients.QueryWebSocketClientTestHelper.closeWithReason;
 import static sleeper.clients.QueryWebSocketClientTestHelper.completedQuery;
 import static sleeper.clients.QueryWebSocketClientTestHelper.createdSubQueries;
@@ -124,7 +125,7 @@ public class QueryWebSocketCommandLineClientTest {
                             "Submitting Query: " + querySerDe.toJson(expectedQuery) + "\n" +
                             "1 records returned by query: test-query-id. Remaining pending queries: 0\n" +
                             "Query results:\n" +
-                            expectedRecord)
+                            asJson(expectedRecord))
                     .containsSubsequence("Query took", "seconds to return 1 records");
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
@@ -157,7 +158,7 @@ public class QueryWebSocketCommandLineClientTest {
                             "  test-subquery\n" +
                             "1 records returned by query: test-subquery. Remaining pending queries: 0\n" +
                             "Query results:\n" +
-                            expectedRecord)
+                            asJson(expectedRecord))
                     .containsSubsequence("Query took", "seconds to return 1 records");
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
@@ -200,9 +201,9 @@ public class QueryWebSocketCommandLineClientTest {
                             "1 records returned by query: subquery-2. Remaining pending queries: 1\n" +
                             "1 records returned by query: subquery-3. Remaining pending queries: 0\n" +
                             "Query results:\n" +
-                            expectedRecord1 + "\n" +
-                            expectedRecord2 + "\n" +
-                            expectedRecord3)
+                            asJson(expectedRecord1) + "\n" +
+                            asJson(expectedRecord2) + "\n" +
+                            asJson(expectedRecord3))
                     .containsSubsequence("Query took", "seconds to return 3 records");
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
@@ -233,7 +234,7 @@ public class QueryWebSocketCommandLineClientTest {
                             "ERROR: API said it had returned 2 records for query test-query-id, but only received 1\n" +
                             "2 records returned by query: test-query-id. Remaining pending queries: 0\n" +
                             "Query results:\n" +
-                            expectedRecord)
+                            asJson(expectedRecord))
                     .containsSubsequence("Query took", "seconds to return 1 records");
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();

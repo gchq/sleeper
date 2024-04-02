@@ -349,7 +349,10 @@ public class QueryWebSocketClient {
 
         private void handleRecords(JsonObject message, String queryId) {
             JsonArray recordBatch = message.getAsJsonArray("records");
-            List<String> recordList = recordBatch.asList().stream().map(JsonElement::getAsString).collect(Collectors.toList());
+            List<String> recordList = recordBatch.asList().stream()
+                    .map(jsonElement -> jsonElement.getAsJsonObject())
+                    .map(JsonObject::toString)
+                    .collect(Collectors.toList());
             if (!records.containsKey(queryId)) {
                 records.put(queryId, recordList);
             } else {
