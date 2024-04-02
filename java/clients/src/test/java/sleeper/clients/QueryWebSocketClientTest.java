@@ -449,12 +449,6 @@ public class QueryWebSocketClientTest {
                 .build();
     }
 
-    protected void runQuery(Query query, Client webSocketClient) throws Exception {
-        QueryWebSocketClient client = new QueryWebSocketClient(instanceProperties, new FixedTablePropertiesProvider(tableProperties),
-                out.consoleOut(), webSocketClient);
-        client.submitQuery(query).get();
-    }
-
     protected CompletableFuture<List<String>> runQueryFuture(Query query, Client webSocketClient) throws Exception {
         QueryWebSocketClient client = new QueryWebSocketClient(instanceProperties, new FixedTablePropertiesProvider(tableProperties),
                 out.consoleOut(), webSocketClient);

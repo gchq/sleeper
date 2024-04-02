@@ -109,8 +109,6 @@ public class QueryWebSocketClient {
     public interface Client {
         void closeBlocking() throws InterruptedException;
 
-        void startQuery(Query query) throws InterruptedException;
-
         CompletableFuture<List<String>> startQueryFuture(Query query) throws InterruptedException;
 
         boolean hasQueryFinished();
@@ -141,13 +139,9 @@ public class QueryWebSocketClient {
         public CompletableFuture<List<String>> startQueryFuture(Query query) throws InterruptedException {
             CompletableFuture<List<String>> future = new CompletableFuture<>();
             messageHandler.setFuture(future);
-            startQuery(query);
-            return future;
-        }
-
-        public void startQuery(Query query) throws InterruptedException {
             this.query = query;
             initialiseConnection(serverUri);
+            return future;
         }
 
         private void initialiseConnection(URI serverUri) throws InterruptedException {

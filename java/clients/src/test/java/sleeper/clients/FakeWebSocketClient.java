@@ -54,17 +54,12 @@ public class FakeWebSocketClient implements Client {
     }
 
     @Override
-    public void startQuery(Query query) throws InterruptedException {
-        connectBlocking();
-        messageHandler.onOpen(query, sentMessages::add);
-        responses.forEach(response -> response.sendTo(messageHandler));
-    }
-
-    @Override
     public CompletableFuture<List<String>> startQueryFuture(Query query) throws InterruptedException {
         CompletableFuture<List<String>> future = new CompletableFuture<>();
         messageHandler.setFuture(future);
-        startQuery(query);
+        connectBlocking();
+        messageHandler.onOpen(query, sentMessages::add);
+        responses.forEach(response -> response.sendTo(messageHandler));
         return future;
     }
 
