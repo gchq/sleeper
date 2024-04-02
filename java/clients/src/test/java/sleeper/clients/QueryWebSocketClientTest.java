@@ -15,6 +15,7 @@
  */
 package sleeper.clients;
 
+import org.java_websocket.framing.CloseFrame;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -48,7 +49,7 @@ import java.util.concurrent.ExecutionException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.QueryWebSocketClientTestHelper.asJson;
-import static sleeper.clients.QueryWebSocketClientTestHelper.closeWithReason;
+import static sleeper.clients.QueryWebSocketClientTestHelper.close;
 import static sleeper.clients.QueryWebSocketClientTestHelper.completedQuery;
 import static sleeper.clients.QueryWebSocketClientTestHelper.createdSubQueries;
 import static sleeper.clients.QueryWebSocketClientTestHelper.error;
@@ -103,7 +104,8 @@ public class QueryWebSocketClientTest {
             assertThat(runQueryFuture(query,
                     withResponses(
                             message(queryResult("test-query-id", expectedRecord)),
-                            message(completedQuery("test-query-id", 1L)))))
+                            message(completedQuery("test-query-id", 1L)),
+                            close("Connection closed normally"))))
                     .isCompletedWithValue(List.of(asJson(expectedRecord)));
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
@@ -124,7 +126,8 @@ public class QueryWebSocketClientTest {
                     withResponses(
                             message(createdSubQueries("test-query-id", "test-subquery")),
                             message(queryResult("test-subquery", expectedRecord)),
-                            message(completedQuery("test-subquery", 1L)))))
+                            message(completedQuery("test-subquery", 1L)),
+                            close("Connection closed normally"))))
                     .isCompletedWithValue(List.of(asJson(expectedRecord)));
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
@@ -153,7 +156,8 @@ public class QueryWebSocketClientTest {
                             message(queryResult("subquery-2", expectedRecord2)),
                             message(completedQuery("subquery-2", 1L)),
                             message(queryResult("subquery-3", expectedRecord3)),
-                            message(completedQuery("subquery-3", 1L)))))
+                            message(completedQuery("subquery-3", 1L)),
+                            close("Connection closed normally"))))
                     .isCompletedWithValue(List.of(asJson(expectedRecord1), asJson(expectedRecord2), asJson(expectedRecord3)));
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
@@ -179,7 +183,8 @@ public class QueryWebSocketClientTest {
             assertThat(runQueryFuture(query,
                     withResponses(
                             message(queryResult("test-query-id", expectedRecord)),
-                            message(completedQuery("test-query-id", 2L)))))
+                            message(completedQuery("test-query-id", 2L)),
+                            close("Connection closed normally"))))
                     .isCompletedWithValue(List.of(asJson(expectedRecord)));
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
@@ -214,6 +219,26 @@ public class QueryWebSocketClientTest {
         }
 
         @Test
+        void shouldHandleErrorIfExceptionEncounteredWhenQueryCompletesAfter() throws Exception {
+            // Given
+            Query query = exactQuery("test-query-id", 123L);
+
+            // When / Then
+            assertThat(runQueryFuture(query,
+                    withResponses(
+                            error(new Exception("Exception that will not terminate connection")),
+                            message(completedQuery("test-query-id", 0L)))))
+                    .isCompletedExceptionally()
+                    .failsWithin(Duration.ofMillis(10))
+                    .withThrowableOfType(ExecutionException.class)
+                    .withCauseInstanceOf(WebSocketErrorException.class);
+            assertThat(client.isConnected()).isFalse();
+            assertThat(client.isClosed()).isTrue();
+            assertThat(client.getSentMessages())
+                    .containsExactly(querySerDe.toJson(query));
+        }
+
+        @Test
         void shouldHandleErrorIfExceptionEncounteredThatClosesConnection() throws Exception {
             // Given
             Query query = exactQuery("test-query-id", 123L);
@@ -222,7 +247,7 @@ public class QueryWebSocketClientTest {
             assertThat(runQueryFuture(query,
                     withResponses(
                             error(new Exception("Exception that will terminate connection")),
-                            closeWithReason("Exception caused connection to terminate"))))
+                            close(CloseFrame.ABNORMAL_CLOSE, "Exception caused connection to terminate"))))
                     .isCompletedExceptionally()
                     .failsWithin(Duration.ofMillis(10))
                     .withThrowableOfType(ExecutionException.class)
@@ -336,7 +361,7 @@ public class QueryWebSocketClientTest {
             // When / Then
             assertThat(runQueryFuture(query,
                     withResponses(
-                            closeWithReason("Network error"))))
+                            close(CloseFrame.TLS_ERROR, "Network error"))))
                     .isCompletedExceptionally()
                     .failsWithin(Duration.ofMillis(10))
                     .withThrowableOfType(ExecutionException.class)
@@ -362,11 +387,6 @@ public class QueryWebSocketClientTest {
                 .queryId(queryId)
                 .regions(List.of(new Region(new Range(rowKey, min, true, max, false))))
                 .build();
-    }
-
-    protected void runQuery(Query query, Client webSocketClient) throws Exception {
-        QueryWebSocketClient client = new QueryWebSocketClient(instanceProperties, new FixedTablePropertiesProvider(tableProperties), webSocketClient);
-        client.submitQuery(query).get();
     }
 
     protected CompletableFuture<List<String>> runQueryFuture(Query query, Client webSocketClient) throws Exception {

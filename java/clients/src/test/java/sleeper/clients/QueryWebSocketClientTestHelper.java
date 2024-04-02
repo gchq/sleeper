@@ -17,6 +17,7 @@ package sleeper.clients;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import org.java_websocket.framing.CloseFrame;
 
 import sleeper.clients.FakeWebSocketClient.WebSocketResponse;
 import sleeper.core.record.Record;
@@ -75,8 +76,12 @@ public class QueryWebSocketClientTestHelper {
         return messageHandler -> messageHandler.onMessage(message);
     }
 
-    public static WebSocketResponse closeWithReason(String reason) {
-        return messageHandler -> messageHandler.onClose(reason);
+    public static WebSocketResponse close(String reason) {
+        return close(CloseFrame.NORMAL, reason);
+    }
+
+    public static WebSocketResponse close(int code, String reason) {
+        return messageHandler -> messageHandler.onClose(code, reason);
     }
 
     public static WebSocketResponse error(Exception error) {

@@ -73,7 +73,7 @@ public class QueryWebSocketCommandLineClient extends QueryCommandLineClient {
     }
 
     @Override
-    protected void submitQuery(TableProperties tableProperties, Query query) {
+    protected void submitQuery(TableProperties tableProperties, Query query) throws InterruptedException {
         Instant startTime = Instant.now();
         long recordsReturned = 0L;
         try {
@@ -86,12 +86,13 @@ public class QueryWebSocketCommandLineClient extends QueryCommandLineClient {
             out.println("Query failed: " + e.getCause().getMessage());
         } catch (InterruptedException e) {
             out.println("Query failed: " + e.getMessage());
+            throw e;
         } finally {
             out.println("Query took " + LoggedDuration.withFullOutput(startTime, Instant.now()) + " to return " + recordsReturned + " records");
         }
     }
 
-    public static void main(String[] args) throws StateStoreException {
+    public static void main(String[] args) throws StateStoreException, InterruptedException {
         if (1 != args.length) {
             throw new IllegalArgumentException("Usage: <instance-id>");
         }
