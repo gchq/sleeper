@@ -69,6 +69,11 @@ public class FakeWebSocketClient implements Client {
         return messageHandler.getTotalRecordsReturned();
     }
 
+    @Override
+    public List<String> getResults(String queryId) {
+        return messageHandler.getResults(queryId);
+    }
+
     public void send(String message) {
         sentMessages.add(message);
     }

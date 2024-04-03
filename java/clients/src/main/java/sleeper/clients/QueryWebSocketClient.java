@@ -20,10 +20,6 @@ import com.amazonaws.auth.AWS4Signer;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.http.HttpMethodName;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
@@ -33,16 +29,10 @@ import com.google.gson.JsonSyntaxException;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 
-import sleeper.clients.util.ClientUtils;
-import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.table.index.DynamoDBTableIndex;
-import sleeper.core.statestore.StateStoreException;
-import sleeper.core.table.TableIndex;
 import sleeper.core.util.LoggedDuration;
 import sleeper.query.model.Query;
 import sleeper.query.model.QuerySerDe;
@@ -50,6 +40,8 @@ import sleeper.query.model.QuerySerDe;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -57,31 +49,26 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL;
 
-public class QueryWebSocketClient extends QueryCommandLineClient {
+public class QueryWebSocketClient {
     private final String apiUrl;
     private final ConsoleOutput out;
     private final Supplier<Client> clientSupplier;
 
-    private QueryWebSocketClient(
-            InstanceProperties instanceProperties, TableIndex tableIndex, TablePropertiesProvider tablePropertiesProvider,
-            ConsoleInput in, ConsoleOutput out) {
-        this(instanceProperties, tableIndex, tablePropertiesProvider, in, out,
-                () -> new WebSocketQueryClient(instanceProperties, tablePropertiesProvider, out),
-                () -> UUID.randomUUID().toString());
+    public QueryWebSocketClient(
+            InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, ConsoleOutput out) {
+        this(instanceProperties, tablePropertiesProvider, out,
+                () -> new WebSocketQueryClient(instanceProperties, tablePropertiesProvider, out));
     }
 
-    QueryWebSocketClient(
-            InstanceProperties instanceProperties, TableIndex tableIndex, TablePropertiesProvider tablePropertiesProvider,
-            ConsoleInput in, ConsoleOutput out, Supplier<Client> clientSupplier, Supplier<String> queryIdSupplier) {
-        super(instanceProperties, tableIndex, tablePropertiesProvider, in, out, queryIdSupplier);
-
+    QueryWebSocketClient(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
+            ConsoleOutput out, Supplier<Client> clientSupplier) {
         this.apiUrl = instanceProperties.get(CdkDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL);
         if (this.apiUrl == null) {
             throw new IllegalArgumentException("Use of this query client requires the WebSocket API to have been deployed as part of your Sleeper instance!");
@@ -90,12 +77,7 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
         this.clientSupplier = clientSupplier;
     }
 
-    @Override
-    protected void init(TableProperties tableProperties) {
-    }
-
-    @Override
-    protected void submitQuery(TableProperties tableProperties, Query query) {
+    public void submitQuery(Query query) {
         Client client = clientSupplier.get();
         try {
             Instant startTime = Instant.now();
@@ -123,6 +105,8 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
         boolean hasQueryFinished();
 
         long getTotalRecordsReturned();
+
+        List<String> getResults(String queryId);
     }
 
     private static class WebSocketQueryClient extends WebSocketClient implements Client {
@@ -204,11 +188,17 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
         public void onError(Exception error) {
             messageHandler.onError(error);
         }
+
+        @Override
+        public List<String> getResults(String queryId) {
+            return messageHandler.getResults(queryId);
+        }
     }
 
     public static class WebSocketMessageHandler {
         private final Gson serde = new GsonBuilder().create();
         private final Set<String> outstandingQueries = new HashSet<>();
+        private final Map<String, List<String>> subqueryIdByParentQueryId = new HashMap<>();
         private final Map<String, List<String>> records = new TreeMap<>();
         private final QuerySerDe querySerDe;
         private final ConsoleOutput out;
@@ -227,6 +217,7 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
             out.println("Submitting Query: " + queryJson);
             messageSender.accept(queryJson);
             outstandingQueries.add(query.getQueryId());
+            subqueryIdByParentQueryId.put(query.getQueryId(), new ArrayList<>());
         }
 
         public void onMessage(String json) {
@@ -256,7 +247,7 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
                     out.println("Query results:");
                     records.values().stream()
                             .flatMap(List::stream)
-                            .forEach(record -> out.println(record));
+                            .forEach(out::println);
                 }
                 queryComplete = true;
             }
@@ -295,18 +286,24 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
         private void handleSubqueries(JsonObject message, String queryId) {
             JsonArray subQueryIdList = message.getAsJsonArray("queryIds");
             out.println("Query " + queryId + " split into the following subQueries:");
-            for (JsonElement subQueryIdElement : subQueryIdList) {
-                String subQueryId = subQueryIdElement.getAsString();
+            List<String> subQueryIds = subQueryIdList.asList().stream().map(JsonElement::getAsString).collect(Collectors.toList());
+            for (String subQueryId : subQueryIds) {
                 out.println("  " + subQueryId);
                 outstandingQueries.add(subQueryId);
             }
             outstandingQueries.remove(queryId);
-
+            subqueryIdByParentQueryId.compute(queryId, (query, subQueries) -> {
+                subQueries.addAll(subQueryIds);
+                return subQueries;
+            });
         }
 
         private void handleRecords(JsonObject message, String queryId) {
             JsonArray recordBatch = message.getAsJsonArray("records");
-            List<String> recordList = recordBatch.asList().stream().map(JsonElement::getAsString).collect(Collectors.toList());
+            List<String> recordList = recordBatch.asList().stream()
+                    .map(jsonElement -> jsonElement.getAsJsonObject())
+                    .map(JsonObject::toString)
+                    .collect(Collectors.toList());
             if (!records.containsKey(queryId)) {
                 records.put(queryId, recordList);
             } else {
@@ -351,21 +348,12 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
             return totalRecordsReturned;
         }
 
-    }
-
-    public static void main(String[] args) throws StateStoreException {
-        if (1 != args.length) {
-            throw new IllegalArgumentException("Usage: <instance-id>");
+        public List<String> getResults(String queryId) {
+            return Stream.concat(
+                    Stream.of(queryId),
+                    subqueryIdByParentQueryId.getOrDefault(queryId, List.of()).stream())
+                    .flatMap(id -> records.getOrDefault(id, List.of()).stream())
+                    .collect(Collectors.toList());
         }
-
-        AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
-        AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
-        InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, args[0]);
-
-        QueryWebSocketClient client = new QueryWebSocketClient(instanceProperties,
-                new DynamoDBTableIndex(instanceProperties, dynamoDBClient),
-                new TablePropertiesProvider(instanceProperties, amazonS3, dynamoDBClient),
-                new ConsoleInput(System.console()), new ConsoleOutput(System.out));
-        client.run();
     }
 }
