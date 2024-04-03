@@ -289,7 +289,6 @@ public class QueryWebSocketClient {
 
         private void handleError(JsonObject message, String queryId) {
             String error = message.get("error").getAsString();
-            LOGGER.error("Encountered an error while running query {}: {}", queryId, error);
             outstandingQueries.remove(queryId);
             queryFailed = true;
             future.completeExceptionally(new WebSocketErrorException(error));
@@ -354,7 +353,6 @@ public class QueryWebSocketClient {
         }
 
         public void onError(Exception error) {
-            LOGGER.error("Encountered an error", error);
             queryFailed = true;
             future.completeExceptionally(new WebSocketErrorException(error));
         }
