@@ -126,7 +126,8 @@ public class QueryWebSocketCommandLineClientTest {
                             "Submitting Query: " + querySerDe.toJson(expectedQuery) + "\n" +
                             "1 records returned by query: test-query-id. Remaining pending queries: 0\n" +
                             "Query results:\n" +
-                            asJson(expectedRecord))
+                            asJson(expectedRecord) + "\n" +
+                            "Disconnected from WebSocket API: Connection closed normally")
                     .containsSubsequence("Query took", "seconds to return 1 records");
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
@@ -159,7 +160,8 @@ public class QueryWebSocketCommandLineClientTest {
                             "  test-subquery\n" +
                             "1 records returned by query: test-subquery. Remaining pending queries: 0\n" +
                             "Query results:\n" +
-                            asJson(expectedRecord))
+                            asJson(expectedRecord) + "\n" +
+                            "Disconnected from WebSocket API: Connection closed normally")
                     .containsSubsequence("Query took", "seconds to return 1 records");
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
@@ -204,7 +206,8 @@ public class QueryWebSocketCommandLineClientTest {
                             "Query results:\n" +
                             asJson(expectedRecord1) + "\n" +
                             asJson(expectedRecord2) + "\n" +
-                            asJson(expectedRecord3))
+                            asJson(expectedRecord3) + "\n" +
+                            "Disconnected from WebSocket API: Connection closed normally")
                     .containsSubsequence("Query took", "seconds to return 3 records");
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
@@ -235,7 +238,8 @@ public class QueryWebSocketCommandLineClientTest {
                             "ERROR: API said it had returned 2 records for query test-query-id, but only received 1\n" +
                             "2 records returned by query: test-query-id. Remaining pending queries: 0\n" +
                             "Query results:\n" +
-                            asJson(expectedRecord))
+                            asJson(expectedRecord) + "\n" +
+                            "Disconnected from WebSocket API: Connection closed normally")
                     .containsSubsequence("Query took", "seconds to return 1 records");
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
