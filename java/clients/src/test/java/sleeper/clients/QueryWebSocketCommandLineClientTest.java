@@ -38,6 +38,7 @@ import sleeper.core.table.TableIndex;
 import sleeper.query.model.Query;
 import sleeper.query.model.QuerySerDe;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletionException;
@@ -72,6 +73,8 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 public class QueryWebSocketCommandLineClientTest {
     private static final String PROMPT_RANGE_QUERY = PROMPT_MIN_INCLUSIVE + PROMPT_MAX_INCLUSIVE +
             PROMPT_MIN_ROW_KEY_LONG_TYPE + PROMPT_MAX_ROW_KEY_LONG_TYPE;
+    private static final Instant START_TIME = Instant.parse("2024-04-03T14:00:00Z");
+    private static final Instant FINISH_TIME = Instant.parse("2024-04-03T14:00:01Z");
     private final InstanceProperties instanceProperties = createInstance();
     private final Schema schema = schemaWithKey("key");
     private final Field rowKey = schema.getField("key").orElseThrow();
@@ -119,13 +122,15 @@ public class QueryWebSocketCommandLineClientTest {
 
             // Then
             assertThat(out.toString())
-                    .startsWith("Querying table test-table")
-                    .contains(PROMPT_QUERY_TYPE +
+                    .isEqualTo("Querying table test-table\n" +
+                            "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
+                            PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
                             "Submitting query with ID: test-query-id\n" +
                             "Query results:\n" +
-                            asJson(expectedRecord))
-                    .containsSubsequence("Query took", "seconds to return 1 records");
+                            asJson(expectedRecord) + "\n" +
+                            "Query took 1 second to return 1 records\n" +
+                            PROMPT_QUERY_TYPE);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
@@ -148,13 +153,15 @@ public class QueryWebSocketCommandLineClientTest {
 
             // Then
             assertThat(out.toString())
-                    .startsWith("Querying table test-table")
-                    .contains(PROMPT_QUERY_TYPE +
+                    .isEqualTo("Querying table test-table\n" +
+                            "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
+                            PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
                             "Submitting query with ID: test-query-id\n" +
                             "Query results:\n" +
-                            asJson(expectedRecord))
-                    .containsSubsequence("Query took", "seconds to return 1 records");
+                            asJson(expectedRecord) + "\n" +
+                            "Query took 1 second to return 1 records\n" +
+                            PROMPT_QUERY_TYPE);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
@@ -183,15 +190,17 @@ public class QueryWebSocketCommandLineClientTest {
 
             // Then
             assertThat(out.toString())
-                    .startsWith("Querying table test-table")
-                    .contains(PROMPT_QUERY_TYPE +
+                    .isEqualTo("Querying table test-table\n" +
+                            "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
+                            PROMPT_QUERY_TYPE +
                             PROMPT_RANGE_QUERY +
                             "Submitting query with ID: test-query-id\n" +
                             "Query results:\n" +
                             asJson(expectedRecord1) + "\n" +
                             asJson(expectedRecord2) + "\n" +
-                            asJson(expectedRecord3))
-                    .containsSubsequence("Query took", "seconds to return 3 records");
+                            asJson(expectedRecord3) + "\n" +
+                            "Query took 1 second to return 3 records\n" +
+                            PROMPT_QUERY_TYPE);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
@@ -213,13 +222,15 @@ public class QueryWebSocketCommandLineClientTest {
 
             // Then
             assertThat(out.toString())
-                    .startsWith("Querying table test-table")
-                    .contains(PROMPT_QUERY_TYPE +
+                    .isEqualTo("Querying table test-table\n" +
+                            "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
+                            PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
                             "Submitting query with ID: test-query-id\n" +
                             "Query results:\n" +
-                            asJson(expectedRecord))
-                    .containsSubsequence("Query took", "seconds to return 1 records");
+                            asJson(expectedRecord) + "\n" +
+                            "Query took 1 second to return 1 records\n" +
+                            PROMPT_QUERY_TYPE);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
@@ -244,12 +255,14 @@ public class QueryWebSocketCommandLineClientTest {
 
             // Then
             assertThat(out.toString())
-                    .startsWith("Querying table test-table")
-                    .contains(PROMPT_QUERY_TYPE +
+                    .isEqualTo("Querying table test-table\n" +
+                            "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
+                            PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
                             "Submitting query with ID: test-query-id\n" +
-                            "Query failed: Error while running queries\n")
-                    .containsSubsequence("Query took", "seconds to return 0 records");
+                            "Query failed: Error while running queries\n" +
+                            "Query took 1 second to return 0 records\n" +
+                            PROMPT_QUERY_TYPE);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
@@ -270,12 +283,14 @@ public class QueryWebSocketCommandLineClientTest {
 
             // Then
             assertThat(out.toString())
-                    .startsWith("Querying table test-table")
-                    .contains(PROMPT_QUERY_TYPE +
+                    .isEqualTo("Querying table test-table\n" +
+                            "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
+                            PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
                             "Submitting query with ID: test-query-id\n" +
-                            "Query failed: Error while running queries\n")
-                    .containsSubsequence("Query took", "seconds to return 0 records");
+                            "Query failed: Error while running queries\n" +
+                            "Query took 1 second to return 0 records\n" +
+                            PROMPT_QUERY_TYPE);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
@@ -295,12 +310,14 @@ public class QueryWebSocketCommandLineClientTest {
 
             // Then
             assertThat(out.toString())
-                    .startsWith("Querying table test-table")
-                    .contains(PROMPT_QUERY_TYPE +
+                    .isEqualTo("Querying table test-table\n" +
+                            "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
+                            PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
                             "Submitting query with ID: test-query-id\n" +
-                            "Query failed: Error while running queries: Failure message")
-                    .containsSubsequence("Query took", "seconds to return 0 records");
+                            "Query failed: Error while running queries: Failure message\n" +
+                            "Query took 1 second to return 0 records\n" +
+                            PROMPT_QUERY_TYPE);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
@@ -320,12 +337,14 @@ public class QueryWebSocketCommandLineClientTest {
 
             // Then
             assertThat(out.toString())
-                    .startsWith("Querying table test-table")
-                    .contains(PROMPT_QUERY_TYPE +
+                    .isEqualTo("Querying table test-table\n" +
+                            "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
+                            PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
                             "Submitting query with ID: test-query-id\n" +
-                            "Query failed: Unknown message type received: unknown")
-                    .containsSubsequence("Query took", "seconds to return 0 records");
+                            "Query failed: Unknown message type received: unknown\n" +
+                            "Query took 1 second to return 0 records\n" +
+                            PROMPT_QUERY_TYPE);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
@@ -345,12 +364,14 @@ public class QueryWebSocketCommandLineClientTest {
 
             // Then
             assertThat(out.toString())
-                    .startsWith("Querying table test-table")
-                    .contains(PROMPT_QUERY_TYPE +
+                    .isEqualTo("Querying table test-table\n" +
+                            "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
+                            PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
                             "Submitting query with ID: test-query-id\n" +
-                            "Query failed: Received malformed message JSON: {")
-                    .containsSubsequence("Query took", "seconds to return 0 records");
+                            "Query failed: Received malformed message JSON: {\n" +
+                            "Query took 1 second to return 0 records\n" +
+                            PROMPT_QUERY_TYPE);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
@@ -370,12 +391,14 @@ public class QueryWebSocketCommandLineClientTest {
 
             // Then
             assertThat(out.toString())
-                    .startsWith("Querying table test-table")
-                    .contains(PROMPT_QUERY_TYPE +
+                    .isEqualTo("Querying table test-table\n" +
+                            "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
+                            PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
                             "Submitting query with ID: test-query-id\n" +
-                            "Query failed: Message missing required field: queryId")
-                    .containsSubsequence("Query took", "seconds to return 0 records");
+                            "Query failed: Message missing required field: queryId\n" +
+                            "Query took 1 second to return 0 records\n" +
+                            PROMPT_QUERY_TYPE);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
@@ -395,12 +418,14 @@ public class QueryWebSocketCommandLineClientTest {
 
             // Then
             assertThat(out.toString())
-                    .startsWith("Querying table test-table")
-                    .contains(PROMPT_QUERY_TYPE +
+                    .isEqualTo("Querying table test-table\n" +
+                            "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
+                            PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
                             "Submitting query with ID: test-query-id\n" +
-                            "Query failed: Message missing required field: message")
-                    .containsSubsequence("Query took", "seconds to return 0 records");
+                            "Query failed: Message missing required field: message\n" +
+                            "Query took 1 second to return 0 records\n" +
+                            PROMPT_QUERY_TYPE);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
@@ -420,12 +445,14 @@ public class QueryWebSocketCommandLineClientTest {
 
             // Then
             assertThat(out.toString())
-                    .startsWith("Querying table test-table")
-                    .contains(PROMPT_QUERY_TYPE +
+                    .isEqualTo("Querying table test-table\n" +
+                            "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
+                            PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
                             "Submitting query with ID: test-query-id\n" +
-                            "Query failed: WebSocket closed unexpectedly with reason: Network error")
-                    .containsSubsequence("Query took", "seconds to return 0 records");
+                            "Query failed: WebSocket closed unexpectedly with reason: Network error\n" +
+                            "Query took 1 second to return 0 records\n" +
+                            PROMPT_QUERY_TYPE);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
@@ -454,7 +481,7 @@ public class QueryWebSocketCommandLineClientTest {
             new QueryWebSocketCommandLineClient(instanceProperties, tableIndex, new FixedTablePropertiesProvider(tableProperties),
                     in.consoleIn(), out.consoleOut(), new QueryWebSocketClient(instanceProperties,
                             new FixedTablePropertiesProvider(tableProperties), webSocketClient),
-                    () -> queryId)
+                    () -> queryId, List.of(START_TIME, FINISH_TIME).iterator()::next)
                     .run();
         } catch (CompletionException e) {
         }

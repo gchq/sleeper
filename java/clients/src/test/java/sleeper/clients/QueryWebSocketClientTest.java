@@ -104,8 +104,7 @@ public class QueryWebSocketClientTest {
             assertThat(runQueryFuture(query,
                     withResponses(
                             message(queryResult("test-query-id", expectedRecord)),
-                            message(completedQuery("test-query-id", 1L)),
-                            close("Connection closed normally"))))
+                            message(completedQuery("test-query-id", 1L)))))
                     .isCompletedWithValue(List.of(asJson(expectedRecord)));
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
@@ -126,8 +125,7 @@ public class QueryWebSocketClientTest {
                     withResponses(
                             message(createdSubQueries("test-query-id", "test-subquery")),
                             message(queryResult("test-subquery", expectedRecord)),
-                            message(completedQuery("test-subquery", 1L)),
-                            close("Connection closed normally"))))
+                            message(completedQuery("test-subquery", 1L)))))
                     .isCompletedWithValue(List.of(asJson(expectedRecord)));
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
@@ -156,8 +154,7 @@ public class QueryWebSocketClientTest {
                             message(queryResult("subquery-2", expectedRecord2)),
                             message(completedQuery("subquery-2", 1L)),
                             message(queryResult("subquery-3", expectedRecord3)),
-                            message(completedQuery("subquery-3", 1L)),
-                            close("Connection closed normally"))))
+                            message(completedQuery("subquery-3", 1L)))))
                     .isCompletedWithValue(List.of(asJson(expectedRecord1), asJson(expectedRecord2), asJson(expectedRecord3)));
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
@@ -183,8 +180,7 @@ public class QueryWebSocketClientTest {
             assertThat(runQueryFuture(query,
                     withResponses(
                             message(queryResult("test-query-id", expectedRecord)),
-                            message(completedQuery("test-query-id", 2L)),
-                            close("Connection closed normally"))))
+                            message(completedQuery("test-query-id", 2L)))))
                     .isCompletedWithValue(List.of(asJson(expectedRecord)));
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
