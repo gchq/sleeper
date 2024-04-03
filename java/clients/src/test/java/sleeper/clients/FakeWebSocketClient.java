@@ -62,7 +62,7 @@ public class FakeWebSocketClient implements Client {
         messageHandler.setFuture(future);
         connectBlocking();
         messageHandler.onOpen(query, sentMessages::add);
-        responses.forEach(response -> response.sendTo(messageHandler));
+        responses.forEach(response -> response.sendTo(this));
         return future;
     }
 
@@ -97,7 +97,19 @@ public class FakeWebSocketClient implements Client {
         return sentMessages;
     }
 
+    public void onMessage(String message) {
+        messageHandler.onMessage(message);
+    }
+
+    public void onClose(String reason) {
+        messageHandler.onClose(reason);
+    }
+
+    public void onError(Exception error) {
+        messageHandler.onError(error);
+    }
+
     public interface WebSocketResponse {
-        void sendTo(WebSocketMessageHandler client);
+        void sendTo(FakeWebSocketClient client);
     }
 }
