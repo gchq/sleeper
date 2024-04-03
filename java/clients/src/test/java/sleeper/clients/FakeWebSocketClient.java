@@ -15,8 +15,6 @@
  */
 package sleeper.clients;
 
-import org.java_websocket.framing.CloseFrame;
-
 import sleeper.clients.QueryWebSocketClient.Client;
 import sleeper.clients.QueryWebSocketClient.WebSocketMessageHandler;
 import sleeper.clients.util.console.ConsoleOutput;
@@ -48,8 +46,8 @@ public class FakeWebSocketClient implements Client {
     public void closeBlocking() throws InterruptedException {
         connected = false;
         if (!closed) {
-            messageHandler.onClose(CloseFrame.NORMAL, "Connection closed normally");
             closed = true;
+            messageHandler.onClose("Connection closed normally");
         }
     }
 
