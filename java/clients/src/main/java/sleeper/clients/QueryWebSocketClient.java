@@ -67,7 +67,6 @@ public class QueryWebSocketClient {
     public static final Logger LOGGER = LoggerFactory.getLogger(QueryWebSocketClient.class);
     private final String apiUrl;
     private final Client client;
-    private Instant startTime;
 
     QueryWebSocketClient(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider) {
         this(instanceProperties, tablePropertiesProvider, new WebSocketQueryClient(instanceProperties, tablePropertiesProvider));
@@ -83,18 +82,20 @@ public class QueryWebSocketClient {
 
     public CompletableFuture<List<String>> submitQuery(Query query) throws InterruptedException {
         try {
-            startTime = Instant.now();
+            Instant startTime = Instant.now();
             return client.startQueryFuture(query)
                     .whenComplete((records, exception) -> {
                         try {
                             client.closeBlocking();
                         } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            throw new RuntimeException(e);
                         }
                         LoggedDuration duration = LoggedDuration.withFullOutput(startTime, Instant.now());
                         long recordsReturned = client.getTotalRecordsReturned();
                         LOGGER.info("Query took " + duration + " to return " + recordsReturned + " records");
                     });
-        } catch (InterruptedException e) {
+        } catch (Exception e) {
             try {
                 client.closeBlocking();
             } catch (InterruptedException e2) {
