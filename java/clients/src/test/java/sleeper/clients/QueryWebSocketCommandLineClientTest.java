@@ -39,8 +39,6 @@ import sleeper.query.model.QuerySerDe;
 
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.QueryClientTestConstants.EXACT_QUERY_OPTION;
@@ -54,6 +52,15 @@ import static sleeper.clients.QueryClientTestConstants.PROMPT_MIN_ROW_KEY_LONG_T
 import static sleeper.clients.QueryClientTestConstants.PROMPT_QUERY_TYPE;
 import static sleeper.clients.QueryClientTestConstants.RANGE_QUERY_OPTION;
 import static sleeper.clients.QueryClientTestConstants.YES_OPTION;
+import static sleeper.clients.QueryWebSocketClientTestHelper.asJson;
+import static sleeper.clients.QueryWebSocketClientTestHelper.closeWithReason;
+import static sleeper.clients.QueryWebSocketClientTestHelper.completedQuery;
+import static sleeper.clients.QueryWebSocketClientTestHelper.createdSubQueries;
+import static sleeper.clients.QueryWebSocketClientTestHelper.error;
+import static sleeper.clients.QueryWebSocketClientTestHelper.errorMessage;
+import static sleeper.clients.QueryWebSocketClientTestHelper.message;
+import static sleeper.clients.QueryWebSocketClientTestHelper.queryResult;
+import static sleeper.clients.QueryWebSocketClientTestHelper.unknownMessage;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
@@ -117,7 +124,7 @@ public class QueryWebSocketCommandLineClientTest {
                             "Submitting Query: " + querySerDe.toJson(expectedQuery) + "\n" +
                             "1 records returned by query: test-query-id. Remaining pending queries: 0\n" +
                             "Query results:\n" +
-                            expectedRecord)
+                            asJson(expectedRecord))
                     .containsSubsequence("Query took", "seconds to return 1 records");
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
@@ -150,7 +157,7 @@ public class QueryWebSocketCommandLineClientTest {
                             "  test-subquery\n" +
                             "1 records returned by query: test-subquery. Remaining pending queries: 0\n" +
                             "Query results:\n" +
-                            expectedRecord)
+                            asJson(expectedRecord))
                     .containsSubsequence("Query took", "seconds to return 1 records");
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
@@ -193,9 +200,9 @@ public class QueryWebSocketCommandLineClientTest {
                             "1 records returned by query: subquery-2. Remaining pending queries: 1\n" +
                             "1 records returned by query: subquery-3. Remaining pending queries: 0\n" +
                             "Query results:\n" +
-                            expectedRecord1 + "\n" +
-                            expectedRecord2 + "\n" +
-                            expectedRecord3)
+                            asJson(expectedRecord1) + "\n" +
+                            asJson(expectedRecord2) + "\n" +
+                            asJson(expectedRecord3))
                     .containsSubsequence("Query took", "seconds to return 3 records");
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
@@ -226,7 +233,7 @@ public class QueryWebSocketCommandLineClientTest {
                             "ERROR: API said it had returned 2 records for query test-query-id, but only received 1\n" +
                             "2 records returned by query: test-query-id. Remaining pending queries: 0\n" +
                             "Query results:\n" +
-                            expectedRecord)
+                            asJson(expectedRecord))
                     .containsSubsequence("Query took", "seconds to return 1 records");
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
@@ -469,46 +476,6 @@ public class QueryWebSocketCommandLineClientTest {
                 .build();
     }
 
-    private static String queryResult(String queryId, Record... records) {
-        return "{" +
-                "\"queryId\":\"" + queryId + "\", " +
-                "\"message\":\"records\"," +
-                "\"records\":[" + Stream.of(records).map(record -> "\"" + record + "\"").collect(Collectors.joining(",")) + "]" +
-                "}";
-    }
-
-    private static String completedQuery(String queryId, long recordCount) {
-        return "{" +
-                "\"queryId\":\"" + queryId + "\", " +
-                "\"message\":\"completed\"," +
-                "\"recordCount\":\"" + recordCount + "\"," +
-                "\"locations\":[{\"type\":\"websocket-endpoint\"}]" +
-                "}";
-    }
-
-    private static String createdSubQueries(String queryId, String... subQueryIds) {
-        return "{" +
-                "\"queryId\":\"" + queryId + "\", " +
-                "\"message\":\"subqueries\"," +
-                "\"queryIds\":[" + Stream.of(subQueryIds).map(id -> "\"" + id + "\"").collect(Collectors.joining(",")) + "]" +
-                "}";
-    }
-
-    private static String errorMessage(String queryId, String message) {
-        return "{" +
-                "\"queryId\":\"" + queryId + "\", " +
-                "\"message\":\"error\"," +
-                "\"error\":\"" + message + "\"" +
-                "}";
-    }
-
-    private static String unknownMessage(String queryId) {
-        return "{" +
-                "\"queryId\":\"" + queryId + "\"," +
-                "\"message\":\"unknown\"" +
-                "}";
-    }
-
     protected void runQueryClient(String queryId, Client webSocketClient) throws Exception {
         new QueryWebSocketCommandLineClient(instanceProperties, tableIndex, new FixedTablePropertiesProvider(tableProperties),
                 in.consoleIn(), out.consoleOut(), new QueryWebSocketClient(instanceProperties,
@@ -521,17 +488,5 @@ public class QueryWebSocketCommandLineClientTest {
         client = new FakeWebSocketClient(new FixedTablePropertiesProvider(tableProperties), out.consoleOut());
         client.withResponses(responses);
         return client;
-    }
-
-    private WebSocketResponse message(String message) {
-        return messageHandler -> messageHandler.onMessage(message);
-    }
-
-    public WebSocketResponse closeWithReason(String reason) {
-        return messageHandler -> messageHandler.onClose(reason);
-    }
-
-    public WebSocketResponse error(Exception error) {
-        return messageHandler -> messageHandler.onError(error);
     }
 }
