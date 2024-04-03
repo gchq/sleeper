@@ -25,10 +25,12 @@
     <suppress files="[\\/]src[\\/]test[\\/].*" id="missingSwitchDefault"/>
     <suppress files="[\\/]src[\\/]test[\\/].*" id="methodLengthMax"/>
     <suppress files="[\\/]src[\\/]test[\\/].*" id="parameterNumber"/>
-    <suppress files="[\\/]src[\\/]test[\\/].*Test$" id="missingJavadocMethod"/>
-    <suppress files="[\\/]src[\\/]test[\\/].*IT$" id="missingJavadocMethod"/>
-    <suppress files="[\\/]src[\\/]test[\\/].*Test$" id="missingJavadocType"/>
-    <suppress files="[\\/]src[\\/]test[\\/].*IT$" id="missingJavadocType"/>
+    <suppress files="[\\/]src[\\/]test[\\/].*TestBase.java$" id="missingJavadocMethod"/>
+    <suppress files="[\\/]src[\\/]test[\\/].*Test.java$" id="missingJavadocMethod"/>
+    <suppress files="[\\/]src[\\/]test[\\/].*IT.java$" id="missingJavadocMethod"/>
+    <suppress files="[\\/]src[\\/]test[\\/].*TestBase.java$" id="missingJavadocType"/>
+    <suppress files="[\\/]src[\\/]test[\\/].*Test.java$" id="missingJavadocType"/>
+    <suppress files="[\\/]src[\\/]test[\\/].*IT.java$" id="missingJavadocType"/>
     <suppress files=".*Application.java" id="hideUtilityClassConstructor"/>
     <suppress files="[\\/]athena[\\/].*" id="missingJavadocMethod"/>
     <suppress files="[\\/]athena[\\/].*" id="missingJavadocType"/>
