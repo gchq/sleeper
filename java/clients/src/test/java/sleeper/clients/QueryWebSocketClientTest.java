@@ -281,7 +281,9 @@ public class QueryWebSocketClientTest {
             assertThat(out.toString())
                     .startsWith("Connected to WebSocket API\n" +
                             "Submitting Query: " + querySerDe.toJson(query) + "\n" +
-                            "Encountered an error: Exception that will not terminate connection\n")
+                            "Encountered an error: Exception that will not terminate connection\n" +
+                            "0 records returned by query: test-query-id. Remaining pending queries: 0\n" +
+                            "Disconnected from WebSocket API: Connection closed normally\n")
                     .containsSubsequence("Query took", "seconds to return 0 records");
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
@@ -331,7 +333,8 @@ public class QueryWebSocketClientTest {
             assertThat(out.toString())
                     .startsWith("Connected to WebSocket API\n" +
                             "Submitting Query: " + querySerDe.toJson(query) + "\n" +
-                            "Encountered an error while running query test-query-id: Query failed")
+                            "Encountered an error while running query test-query-id: Query failed\n" +
+                            "Disconnected from WebSocket API: Connection closed normally\n")
                     .containsSubsequence("Query took", "seconds to return 0 records");
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
@@ -355,7 +358,8 @@ public class QueryWebSocketClientTest {
             assertThat(out.toString())
                     .startsWith("Connected to WebSocket API\n" +
                             "Submitting Query: " + querySerDe.toJson(query) + "\n" +
-                            "Received unrecognised message type: unknown")
+                            "Received unrecognised message type: unknown\n" +
+                            "Disconnected from WebSocket API: Connection closed normally\n")
                     .containsSubsequence("Query took", "seconds to return 0 records");
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
@@ -380,7 +384,8 @@ public class QueryWebSocketClientTest {
                     .startsWith("Connected to WebSocket API\n" +
                             "Submitting Query: " + querySerDe.toJson(query) + "\n" +
                             "Received malformed JSON message from API:\n" +
-                            "  {")
+                            "  {\n" +
+                            "Disconnected from WebSocket API: Connection closed normally\n")
                     .containsSubsequence("Query took", "seconds to return 0 records");
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
@@ -405,7 +410,8 @@ public class QueryWebSocketClientTest {
                     .startsWith("Connected to WebSocket API\n" +
                             "Submitting Query: " + querySerDe.toJson(query) + "\n" +
                             "Received message without queryId from API:\n" +
-                            "  {\"message\":\"error\"}")
+                            "  {\"message\":\"error\"}\n" +
+                            "Disconnected from WebSocket API: Connection closed normally\n")
                     .containsSubsequence("Query took", "seconds to return 0 records");
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
@@ -430,7 +436,8 @@ public class QueryWebSocketClientTest {
                     .startsWith("Connected to WebSocket API\n" +
                             "Submitting Query: " + querySerDe.toJson(query) + "\n" +
                             "Received message without message type from API:\n" +
-                            "  {\"queryId\":\"test-query-id\"}")
+                            "  {\"queryId\":\"test-query-id\"}\n" +
+                            "Disconnected from WebSocket API: Connection closed normally\n")
                     .containsSubsequence("Query took", "seconds to return 0 records");
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
