@@ -76,7 +76,7 @@ public class DashboardStack extends NestedStack {
         instanceId = instanceProperties.get(ID);
         tableNames = Utils.getAllTableProperties(instanceProperties, this)
                 .map(tableProperties -> tableProperties.get(TableProperty.TABLE_NAME))
-                .sorted()
+                .sorted().limit(10)
                 .collect(Collectors.toList());
         metricsNamespace = instanceProperties.get(METRICS_NAMESPACE);
         int timeWindowInMinutes = instanceProperties.getInt(DASHBOARD_TIME_WINDOW_MINUTES);
