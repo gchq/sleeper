@@ -256,18 +256,11 @@ public class QueryWebSocketClient {
             } else if (messageType.equals("completed")) {
                 handleCompleted(message, queryId);
             } else {
-                LOGGER.info("Received unrecognised message type: {}", messageType);
                 queryFailed = true;
                 future.completeExceptionally(new UnknownMessageTypeException(messageType));
             }
 
             if (outstandingQueries.isEmpty()) {
-                if (!records.isEmpty()) {
-                    LOGGER.info("Query results:");
-                    records.values().stream()
-                            .flatMap(List::stream)
-                            .forEach(LOGGER::info);
-                }
                 queryComplete = true;
                 future.complete(getResults(currentQueryId));
             }
@@ -277,23 +270,17 @@ public class QueryWebSocketClient {
             try {
                 JsonObject message = serde.fromJson(json, JsonObject.class);
                 if (!message.has("queryId")) {
-                    LOGGER.info("Received message without queryId from API:");
-                    LOGGER.info("  " + json);
                     queryFailed = true;
                     future.completeExceptionally(new MessageMissingFieldException("queryId"));
                     return Optional.empty();
                 }
                 if (!message.has("message")) {
-                    LOGGER.info("Received message without message type from API:");
-                    LOGGER.info("  " + json);
                     queryFailed = true;
                     future.completeExceptionally(new MessageMissingFieldException("message"));
                     return Optional.empty();
                 }
                 return Optional.of(message);
             } catch (JsonSyntaxException e) {
-                LOGGER.info("Received malformed JSON message from API:");
-                LOGGER.info("  " + json);
                 queryFailed = true;
                 future.completeExceptionally(new MessageMalformedException(json));
                 return Optional.empty();
@@ -302,7 +289,7 @@ public class QueryWebSocketClient {
 
         private void handleError(JsonObject message, String queryId) {
             String error = message.get("error").getAsString();
-            LOGGER.info("Encountered an error while running query {}: {}", queryId, error);
+            LOGGER.error("Encountered an error while running query {}: {}", queryId, error);
             outstandingQueries.remove(queryId);
             queryFailed = true;
             future.completeExceptionally(new WebSocketErrorException(error));
