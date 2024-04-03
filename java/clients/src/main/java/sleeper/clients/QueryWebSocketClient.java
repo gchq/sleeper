@@ -93,7 +93,7 @@ public class QueryWebSocketClient {
                         }
                         LoggedDuration duration = LoggedDuration.withFullOutput(startTime, Instant.now());
                         long recordsReturned = client.getTotalRecordsReturned();
-                        LOGGER.info("Query took " + duration + " to return " + recordsReturned + " records");
+                        LOGGER.info("Query took {} to return {} records", duration, recordsReturned);
                     });
         } catch (Exception e) {
             try {
@@ -231,7 +231,7 @@ public class QueryWebSocketClient {
         public void onOpen(Query query, Consumer<String> messageSender) {
             LOGGER.info("Connected to WebSocket API");
             String queryJson = querySerDe.toJson(query);
-            LOGGER.info("Submitting Query: " + queryJson);
+            LOGGER.info("Submitting Query: {}", queryJson);
             messageSender.accept(queryJson);
             outstandingQueries.add(query.getQueryId());
             subqueryIdByParentQueryId.put(query.getQueryId(), new ArrayList<>());
@@ -256,7 +256,7 @@ public class QueryWebSocketClient {
             } else if (messageType.equals("completed")) {
                 handleCompleted(message, queryId);
             } else {
-                LOGGER.info("Received unrecognised message type: " + messageType);
+                LOGGER.info("Received unrecognised message type: {}", messageType);
                 queryFailed = true;
                 future.completeExceptionally(new UnknownMessageTypeException(messageType));
             }
@@ -302,7 +302,7 @@ public class QueryWebSocketClient {
 
         private void handleError(JsonObject message, String queryId) {
             String error = message.get("error").getAsString();
-            LOGGER.info("Encountered an error while running query " + queryId + ": " + error);
+            LOGGER.info("Encountered an error while running query {}: {}", queryId, error);
             outstandingQueries.remove(queryId);
             queryFailed = true;
             future.completeExceptionally(new WebSocketErrorException(error));
@@ -310,7 +310,7 @@ public class QueryWebSocketClient {
 
         private void handleSubqueries(JsonObject message, String queryId) {
             JsonArray subQueryIdList = message.getAsJsonArray("queryIds");
-            LOGGER.info("Query " + queryId + " split into the following subQueries:");
+            LOGGER.info("Query {} split into the following subQueries:", queryId);
             List<String> subQueryIds = subQueryIdList.asList().stream().map(JsonElement::getAsString).collect(Collectors.toList());
             for (String subQueryId : subQueryIds) {
                 LOGGER.info("  " + subQueryId);
@@ -347,16 +347,18 @@ public class QueryWebSocketClient {
             long returnedRecordCount = records.getOrDefault(queryId, List.of()).size();
             if (recordsReturnedToClient && recordCountFromApi > 0) {
                 if (returnedRecordCount != recordCountFromApi) {
-                    LOGGER.info("ERROR: API said it had returned " + recordCountFromApi + " records for query " + queryId + ", but only received " + returnedRecordCount);
+                    LOGGER.error("API said it had returned {} records for query {}, but only received {}",
+                            recordCountFromApi, queryId, returnedRecordCount);
                 }
             }
             outstandingQueries.remove(queryId);
-            LOGGER.info(recordCountFromApi + " records returned by query: " + queryId + ". Remaining pending queries: " + outstandingQueries.size());
+            LOGGER.info("{} records returned by query {}. Remaining pending queries: {}",
+                    recordCountFromApi, queryId, outstandingQueries.size());
             totalRecordsReturned += returnedRecordCount;
         }
 
         public void onClose(int code, String reason) {
-            LOGGER.info("Disconnected from WebSocket API: " + reason);
+            LOGGER.info("Disconnected from WebSocket API: {}", reason);
             if (code == CloseFrame.NORMAL) {
                 queryComplete = true;
             } else {
@@ -365,7 +367,7 @@ public class QueryWebSocketClient {
         }
 
         public void onError(Exception error) {
-            LOGGER.info("Encountered an error: " + error.getMessage());
+            LOGGER.error("Encountered an error", error);
             queryFailed = true;
             future.completeExceptionally(new WebSocketErrorException(error));
         }
