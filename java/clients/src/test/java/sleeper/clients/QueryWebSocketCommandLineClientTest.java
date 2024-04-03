@@ -40,7 +40,6 @@ import sleeper.query.model.QuerySerDe;
 
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletionException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.QueryClientTestConstants.EXACT_QUERY_OPTION;
@@ -489,14 +488,11 @@ public class QueryWebSocketCommandLineClientTest {
     }
 
     protected void runQueryClient(String queryId, Client webSocketClient) throws Exception {
-        try {
-            new QueryWebSocketCommandLineClient(instanceProperties, tableIndex, new FixedTablePropertiesProvider(tableProperties),
-                    in.consoleIn(), out.consoleOut(), new QueryWebSocketClient(instanceProperties,
-                            new FixedTablePropertiesProvider(tableProperties), out.consoleOut(), webSocketClient),
-                    () -> queryId)
-                    .run();
-        } catch (CompletionException e) {
-        }
+        new QueryWebSocketCommandLineClient(instanceProperties, tableIndex, new FixedTablePropertiesProvider(tableProperties),
+                in.consoleIn(), out.consoleOut(), new QueryWebSocketClient(instanceProperties,
+                        new FixedTablePropertiesProvider(tableProperties), out.consoleOut(), webSocketClient),
+                () -> queryId)
+                .run();
     }
 
     private FakeWebSocketClient withResponses(WebSocketResponse... responses) {
