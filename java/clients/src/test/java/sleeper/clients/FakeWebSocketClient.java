@@ -15,8 +15,6 @@
  */
 package sleeper.clients;
 
-import org.java_websocket.framing.CloseFrame;
-
 import sleeper.clients.QueryWebSocketClient.Client;
 import sleeper.clients.QueryWebSocketClient.WebSocketMessageHandler;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
@@ -47,8 +45,8 @@ public class FakeWebSocketClient implements Client {
     public void closeBlocking() throws InterruptedException {
         connected = false;
         if (!closed) {
-            messageHandler.onClose(CloseFrame.NORMAL, "Connection closed normally");
             closed = true;
+            messageHandler.onClose("Connection closed normally");
         }
     }
 
@@ -63,7 +61,7 @@ public class FakeWebSocketClient implements Client {
         messageHandler.setFuture(future);
         connectBlocking();
         messageHandler.onOpen(query, sentMessages::add);
-        responses.forEach(response -> response.sendTo(messageHandler));
+        responses.forEach(response -> response.sendTo(this));
         return future;
     }
 
@@ -98,7 +96,19 @@ public class FakeWebSocketClient implements Client {
         return sentMessages;
     }
 
+    public void onMessage(String message) {
+        messageHandler.onMessage(message);
+    }
+
+    public void onClose(String reason) {
+        messageHandler.onClose(reason);
+    }
+
+    public void onError(Exception error) {
+        messageHandler.onError(error);
+    }
+
     public interface WebSocketResponse {
-        void sendTo(WebSocketMessageHandler client);
+        void sendTo(FakeWebSocketClient client);
     }
 }

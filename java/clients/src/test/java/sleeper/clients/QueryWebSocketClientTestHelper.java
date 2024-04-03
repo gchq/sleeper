@@ -72,15 +72,15 @@ public class QueryWebSocketClientTestHelper {
     }
 
     public static WebSocketResponse message(String message) {
-        return messageHandler -> messageHandler.onMessage(message);
+        return client -> client.onMessage(message);
     }
 
-    public static WebSocketResponse close(int code, String reason) {
-        return messageHandler -> messageHandler.onClose(code, reason);
+    public static WebSocketResponse close(String reason) {
+        return client -> client.onClose(reason);
     }
 
     public static WebSocketResponse error(Exception error) {
-        return messageHandler -> messageHandler.onError(error);
+        return client -> client.onError(error);
     }
 
     public static String asJson(Record record) {
