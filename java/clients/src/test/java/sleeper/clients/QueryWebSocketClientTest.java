@@ -15,7 +15,6 @@
  */
 package sleeper.clients;
 
-import org.java_websocket.framing.CloseFrame;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -243,7 +242,7 @@ public class QueryWebSocketClientTest {
             assertThat(runQueryFuture(query,
                     withResponses(
                             error(new Exception("Exception that will terminate connection")),
-                            close(CloseFrame.ABNORMAL_CLOSE, "Exception caused connection to terminate"))))
+                            close("Exception caused connection to terminate"))))
                     .isCompletedExceptionally()
                     .failsWithin(Duration.ofMillis(10))
                     .withThrowableOfType(ExecutionException.class)
@@ -357,7 +356,7 @@ public class QueryWebSocketClientTest {
             // When / Then
             assertThat(runQueryFuture(query,
                     withResponses(
-                            close(CloseFrame.TLS_ERROR, "Network error"))))
+                            close("Network error"))))
                     .isCompletedExceptionally()
                     .failsWithin(Duration.ofMillis(10))
                     .withThrowableOfType(ExecutionException.class)

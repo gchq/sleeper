@@ -15,7 +15,6 @@
  */
 package sleeper.clients;
 
-import org.java_websocket.framing.CloseFrame;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -41,7 +40,6 @@ import sleeper.query.model.QuerySerDe;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletionException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.QueryClientTestConstants.EXACT_QUERY_OPTION;
@@ -279,7 +277,7 @@ public class QueryWebSocketCommandLineClientTest {
             runQueryClient("test-query-id",
                     withResponses(
                             error(new Exception("Exception that will terminate connection")),
-                            close(CloseFrame.ABNORMAL_CLOSE, "Exception caused connection to terminate")));
+                            close("Exception caused connection to terminate")));
 
             // Then
             assertThat(out.toString())
@@ -441,7 +439,7 @@ public class QueryWebSocketCommandLineClientTest {
             in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
             runQueryClient("test-query-id",
                     withResponses(
-                            close(CloseFrame.TLS_ERROR, "Network error")));
+                            close("Network error")));
 
             // Then
             assertThat(out.toString())
@@ -477,14 +475,11 @@ public class QueryWebSocketCommandLineClientTest {
     }
 
     protected void runQueryClient(String queryId, Client webSocketClient) throws Exception {
-        try {
-            new QueryWebSocketCommandLineClient(instanceProperties, tableIndex, new FixedTablePropertiesProvider(tableProperties),
-                    in.consoleIn(), out.consoleOut(), new QueryWebSocketClient(instanceProperties,
-                            new FixedTablePropertiesProvider(tableProperties), webSocketClient),
-                    () -> queryId, List.of(START_TIME, FINISH_TIME).iterator()::next)
-                    .run();
-        } catch (CompletionException e) {
-        }
+        new QueryWebSocketCommandLineClient(instanceProperties, tableIndex, new FixedTablePropertiesProvider(tableProperties),
+                in.consoleIn(), out.consoleOut(), new QueryWebSocketClient(instanceProperties,
+                        new FixedTablePropertiesProvider(tableProperties), webSocketClient),
+                () -> queryId, List.of(START_TIME, FINISH_TIME).iterator()::next)
+                .run();
     }
 
     private FakeWebSocketClient withResponses(WebSocketResponse... responses) {

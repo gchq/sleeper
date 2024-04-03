@@ -27,7 +27,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import org.java_websocket.client.WebSocketClient;
-import org.java_websocket.framing.CloseFrame;
 import org.java_websocket.handshake.ServerHandshake;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -194,7 +193,7 @@ public class QueryWebSocketClient {
 
         @Override
         public void onClose(int code, String reason, boolean remote) {
-            messageHandler.onClose(code, reason);
+            messageHandler.onClose(reason);
         }
 
         @Override
@@ -343,13 +342,10 @@ public class QueryWebSocketClient {
             totalRecordsReturned += returnedRecordCount;
         }
 
-        public void onClose(int code, String reason) {
+        public void onClose(String reason) {
             LOGGER.info("Disconnected from WebSocket API: {}", reason);
-            if (code == CloseFrame.NORMAL) {
-                queryComplete = true;
-            } else {
-                future.completeExceptionally(new WebSocketClosedException(reason));
-            }
+            queryComplete = true;
+            future.completeExceptionally(new WebSocketClosedException(reason));
         }
 
         public void onError(Exception error) {
