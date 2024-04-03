@@ -130,7 +130,7 @@ public class SqsLeafPartitionQueryProcessor {
         } else if (S3ResultsOutput.S3.equals(destination)) {
             return new S3ResultsOutput(instanceProperties, tableProperties, resultsPublisherConfig);
         } else if (WebSocketResultsOutput.DESTINATION_NAME.equals(destination)) {
-            return new WebSocketResultsOutput(resultsPublisherConfig);
+            return new WebSocketResultsOutput(tableProperties.getSchema(), resultsPublisherConfig);
         } else {
             LOGGER.info("Unknown results publisher from config {}", resultsPublisherConfig);
             return (query, results) -> new ResultsOutputInfo(0, Collections.emptyList(),

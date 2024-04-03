@@ -26,8 +26,6 @@ import com.amazonaws.services.apigatewaymanagementapi.model.GoneException;
 import com.amazonaws.services.apigatewaymanagementapi.model.LimitExceededException;
 import com.amazonaws.services.apigatewaymanagementapi.model.PayloadTooLargeException;
 import com.amazonaws.services.apigatewaymanagementapi.model.PostToConnectionRequest;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
 import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
@@ -51,7 +49,6 @@ public class WebSocketOutput {
     private final AmazonApiGatewayManagementApi client;
     private final String connectionId;
     private boolean clientGone = false;
-    protected final Gson serde = new GsonBuilder().create();
 
     public WebSocketOutput(String awsRegion, String endpoint, String connectionId) {
         this(awsRegion, endpoint, connectionId, null);
@@ -110,10 +107,6 @@ public class WebSocketOutput {
 
     public String getConnectionId() {
         return connectionId;
-    }
-
-    public void sendJson(Map<String, Object> data) throws IOException {
-        sendString(this.serde.toJson(data));
     }
 
     public void sendString(String message) throws IOException {
