@@ -51,7 +51,7 @@ public class WebSocketResultsOutput extends WebSocketOutput implements ResultsOu
         super(config);
 
         this.serde = new GsonBuilder()
-                .registerTypeAdapter(Record.class, new RecordJSONSerDe(schema))
+                .registerTypeAdapter(Record.class, new RecordJSONSerDe.RecordGsonSerialiser(schema))
                 .create();
         String maxBatchSize = config.get(MAX_BATCH_SIZE);
         this.maxBatchSize = maxBatchSize != null && !maxBatchSize.isEmpty() ? Long.parseLong(maxBatchSize) : null;
