@@ -89,12 +89,13 @@ public class QueryWebSocketClient {
                         try {
                             client.closeBlocking();
                         } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
                         }
                         LoggedDuration duration = LoggedDuration.withFullOutput(startTime, Instant.now());
                         long recordsReturned = client.getTotalRecordsReturned();
                         out.println("Query took " + duration + " to return " + recordsReturned + " records");
                     });
-        } catch (InterruptedException e) {
+        } catch (Exception e) {
             try {
                 client.closeBlocking();
             } catch (InterruptedException e2) {
