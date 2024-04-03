@@ -89,6 +89,7 @@ public class QueryWebSocketClient {
                         try {
                             client.closeBlocking();
                         } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
                             throw new RuntimeException(e);
                         }
                         LoggedDuration duration = LoggedDuration.withFullOutput(startTime, Instant.now());
