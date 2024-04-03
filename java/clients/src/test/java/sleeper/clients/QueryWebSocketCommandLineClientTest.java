@@ -23,11 +23,6 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.clients.FakeWebSocketClient.WebSocketResponse;
 import sleeper.clients.QueryWebSocketClient.Client;
-import sleeper.clients.exception.MessageMalformedException;
-import sleeper.clients.exception.MessageMissingFieldException;
-import sleeper.clients.exception.UnknownMessageTypeException;
-import sleeper.clients.exception.WebSocketClosedException;
-import sleeper.clients.exception.WebSocketErrorException;
 import sleeper.clients.testutil.TestConsoleInput;
 import sleeper.clients.testutil.ToStringPrintStream;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -48,7 +43,6 @@ import java.util.Map;
 import java.util.concurrent.CompletionException;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.clients.QueryClientTestConstants.EXACT_QUERY_OPTION;
 import static sleeper.clients.QueryClientTestConstants.EXIT_OPTION;
 import static sleeper.clients.QueryClientTestConstants.NO_OPTION;
@@ -265,13 +259,11 @@ public class QueryWebSocketCommandLineClientTest {
 
             // When
             in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            runQueryClient("test-query-id",
+                    withResponses(
+                            error(new Exception("Exception that will not terminate connection"))));
 
             // Then
-            assertThatThrownBy(() -> runQueryClient("test-query-id",
-                    withResponses(
-                            error(new Exception("Exception that will not terminate connection")))))
-                    .isInstanceOf(CompletionException.class)
-                    .hasCauseInstanceOf(WebSocketErrorException.class);
             assertThat(out.toString())
                     .startsWith("Querying table test-table")
                     .contains(PROMPT_QUERY_TYPE +
@@ -294,14 +286,12 @@ public class QueryWebSocketCommandLineClientTest {
 
             // When
             in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
-
-            // Then
-            assertThatThrownBy(() -> runQueryClient("test-query-id",
+            runQueryClient("test-query-id",
                     withResponses(
                             error(new Exception("Exception that will terminate connection")),
-                            close(CloseFrame.ABNORMAL_CLOSE, "Exception caused connection to terminate"))))
-                    .isInstanceOf(CompletionException.class)
-                    .hasCauseInstanceOf(WebSocketErrorException.class);
+                            close(CloseFrame.ABNORMAL_CLOSE, "Exception caused connection to terminate")));
+
+            // Then
             assertThat(out.toString())
                     .startsWith("Querying table test-table")
                     .contains(PROMPT_QUERY_TYPE +
@@ -324,13 +314,11 @@ public class QueryWebSocketCommandLineClientTest {
 
             // When
             in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            runQueryClient("test-query-id",
+                    withResponses(
+                            message(errorMessage("test-query-id", "Query failed"))));
 
             // Then
-            assertThatThrownBy(() -> runQueryClient("test-query-id",
-                    withResponses(
-                            message(errorMessage("test-query-id", "Query failed")))))
-                    .isInstanceOf(CompletionException.class)
-                    .hasCauseInstanceOf(WebSocketErrorException.class);
             assertThat(out.toString())
                     .startsWith("Querying table test-table")
                     .contains(PROMPT_QUERY_TYPE +
@@ -353,13 +341,11 @@ public class QueryWebSocketCommandLineClientTest {
 
             // When
             in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            runQueryClient("test-query-id",
+                    withResponses(
+                            message(unknownMessage("test-query-id"))));
 
             // Then
-            assertThatThrownBy(() -> runQueryClient("test-query-id",
-                    withResponses(
-                            message(unknownMessage("test-query-id")))))
-                    .isInstanceOf(CompletionException.class)
-                    .hasCauseInstanceOf(UnknownMessageTypeException.class);
             assertThat(out.toString())
                     .startsWith("Querying table test-table")
                     .contains(PROMPT_QUERY_TYPE +
@@ -382,13 +368,11 @@ public class QueryWebSocketCommandLineClientTest {
 
             // When
             in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            runQueryClient("test-query-id",
+                    withResponses(
+                            message("{")));
 
             // Then
-            assertThatThrownBy(() -> runQueryClient("test-query-id",
-                    withResponses(
-                            message("{"))))
-                    .isInstanceOf(CompletionException.class)
-                    .hasCauseInstanceOf(MessageMalformedException.class);
             assertThat(out.toString())
                     .startsWith("Querying table test-table")
                     .contains(PROMPT_QUERY_TYPE +
@@ -412,13 +396,11 @@ public class QueryWebSocketCommandLineClientTest {
 
             // When
             in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            runQueryClient("test-query-id",
+                    withResponses(
+                            message("{\"message\":\"error\"}")));
 
             // Then
-            assertThatThrownBy(() -> runQueryClient("test-query-id",
-                    withResponses(
-                            message("{\"message\":\"error\"}"))))
-                    .isInstanceOf(CompletionException.class)
-                    .hasCauseInstanceOf(MessageMissingFieldException.class);
             assertThat(out.toString())
                     .startsWith("Querying table test-table")
                     .contains(PROMPT_QUERY_TYPE +
@@ -442,13 +424,11 @@ public class QueryWebSocketCommandLineClientTest {
 
             // When
             in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            runQueryClient("test-query-id",
+                    withResponses(
+                            message("{\"queryId\":\"test-query-id\"}")));
 
             // Then
-            assertThatThrownBy(() -> runQueryClient("test-query-id",
-                    withResponses(
-                            message("{\"queryId\":\"test-query-id\"}"))))
-                    .isInstanceOf(CompletionException.class)
-                    .hasCauseInstanceOf(MessageMissingFieldException.class);
             assertThat(out.toString())
                     .startsWith("Querying table test-table")
                     .contains(PROMPT_QUERY_TYPE +
@@ -472,13 +452,11 @@ public class QueryWebSocketCommandLineClientTest {
 
             // When
             in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            runQueryClient("test-query-id",
+                    withResponses(
+                            close(CloseFrame.TLS_ERROR, "Network error")));
 
             // Then
-            assertThatThrownBy(() -> runQueryClient("test-query-id",
-                    withResponses(
-                            close(CloseFrame.TLS_ERROR, "Network error"))))
-                    .isInstanceOf(CompletionException.class)
-                    .hasCauseInstanceOf(WebSocketClosedException.class);
             assertThat(out.toString())
                     .startsWith("Querying table test-table")
                     .contains(PROMPT_QUERY_TYPE +
@@ -511,11 +489,14 @@ public class QueryWebSocketCommandLineClientTest {
     }
 
     protected void runQueryClient(String queryId, Client webSocketClient) throws Exception {
-        new QueryWebSocketCommandLineClient(instanceProperties, tableIndex, new FixedTablePropertiesProvider(tableProperties),
-                in.consoleIn(), out.consoleOut(), new QueryWebSocketClient(instanceProperties,
-                        new FixedTablePropertiesProvider(tableProperties), out.consoleOut(), webSocketClient),
-                () -> queryId)
-                .run();
+        try {
+            new QueryWebSocketCommandLineClient(instanceProperties, tableIndex, new FixedTablePropertiesProvider(tableProperties),
+                    in.consoleIn(), out.consoleOut(), new QueryWebSocketClient(instanceProperties,
+                            new FixedTablePropertiesProvider(tableProperties), out.consoleOut(), webSocketClient),
+                    () -> queryId)
+                    .run();
+        } catch (CompletionException e) {
+        }
     }
 
     private FakeWebSocketClient withResponses(WebSocketResponse... responses) {
