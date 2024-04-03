@@ -66,7 +66,6 @@ public class QueryWebSocketClient {
     private final String apiUrl;
     private final Client client;
     private final ConsoleOutput out;
-    private Instant startTime;
 
     QueryWebSocketClient(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, ConsoleOutput out) {
         this(instanceProperties, tablePropertiesProvider, out, new WebSocketQueryClient(instanceProperties, tablePropertiesProvider, out));
@@ -83,7 +82,7 @@ public class QueryWebSocketClient {
 
     public CompletableFuture<List<String>> submitQuery(Query query) throws InterruptedException {
         try {
-            startTime = Instant.now();
+            Instant startTime = Instant.now();
             return client.startQueryFuture(query)
                     .whenComplete((records, exception) -> {
                         try {
