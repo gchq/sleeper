@@ -54,6 +54,7 @@ import java.util.concurrent.Executors;
 
 import static sleeper.configuration.properties.instance.QueryProperty.QUERY_PROCESSOR_LAMBDA_RECORD_RETRIEVAL_THREADS;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.query.runner.output.NoResultsOutput.NO_RESULTS_OUTPUT;
 
 public class SqsLeafPartitionQueryProcessor {
     private static final Logger LOGGER = LoggerFactory.getLogger(SqsLeafPartitionQueryProcessor.class);
