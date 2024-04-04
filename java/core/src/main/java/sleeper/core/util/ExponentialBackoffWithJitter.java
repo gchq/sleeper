@@ -18,6 +18,7 @@ package sleeper.core.util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Objects;
 import java.util.function.DoubleSupplier;
 
 public class ExponentialBackoffWithJitter {
@@ -28,9 +29,9 @@ public class ExponentialBackoffWithJitter {
     private final WaitRange waitRange;
 
     public ExponentialBackoffWithJitter(WaitRange waitRange, DoubleSupplier randomJitterFraction, Waiter waiter) {
-        this.waitRange = waitRange;
-        this.randomJitterFraction = randomJitterFraction;
-        this.waiter = waiter;
+        this.waitRange = Objects.requireNonNull(waitRange, "waitRange must not be null");
+        this.randomJitterFraction = Objects.requireNonNull(randomJitterFraction, "randomJitterFraction must not be null");
+        this.waiter = Objects.requireNonNull(waiter, "waiter must not be null");
     }
 
     public ExponentialBackoffWithJitter(WaitRange waitRange) {
