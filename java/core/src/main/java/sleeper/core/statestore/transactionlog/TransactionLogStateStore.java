@@ -18,8 +18,11 @@ package sleeper.core.statestore.transactionlog;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.DelegatingStateStore;
 import sleeper.core.util.ExponentialBackoffWithJitter;
+import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
 
 public class TransactionLogStateStore extends DelegatingStateStore {
+
+    public static final WaitRange RETRY_WAIT_RANGE = WaitRange.firstAndMaxWaitCeilingSecs(0.2, 30);
 
     public TransactionLogStateStore(Builder builder) {
         super(
@@ -38,7 +41,7 @@ public class TransactionLogStateStore extends DelegatingStateStore {
         private TransactionLogStore filesLogStore;
         private TransactionLogStore partitionsLogStore;
         private int maxAddTransactionAttempts = 10;
-        private ExponentialBackoffWithJitter retryBackoff = new ExponentialBackoffWithJitter();
+        private ExponentialBackoffWithJitter retryBackoff = new ExponentialBackoffWithJitter(RETRY_WAIT_RANGE);
 
         private Builder() {
         }

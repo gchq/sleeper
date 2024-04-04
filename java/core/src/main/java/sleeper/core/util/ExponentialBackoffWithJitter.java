@@ -18,9 +18,7 @@ package sleeper.core.util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Duration;
-import java.util.List;
-import java.util.Random;
+import java.util.Objects;
 import java.util.function.DoubleSupplier;
 
 public class ExponentialBackoffWithJitter {
@@ -28,39 +26,52 @@ public class ExponentialBackoffWithJitter {
 
     private final DoubleSupplier randomJitterFraction;
     private final Waiter waiter;
+    private final WaitRange waitRange;
 
-    public ExponentialBackoffWithJitter(DoubleSupplier randomJitterFraction, Waiter waiter) {
-        this.randomJitterFraction = randomJitterFraction;
-        this.waiter = waiter;
+    public ExponentialBackoffWithJitter(WaitRange waitRange, DoubleSupplier randomJitterFraction, Waiter waiter) {
+        this.waitRange = Objects.requireNonNull(waitRange, "waitRange must not be null");
+        this.randomJitterFraction = Objects.requireNonNull(randomJitterFraction, "randomJitterFraction must not be null");
+        this.waiter = Objects.requireNonNull(waiter, "waiter must not be null");
     }
 
-    public ExponentialBackoffWithJitter() {
-        this(Math::random, Thread::sleep);
+    public ExponentialBackoffWithJitter(WaitRange waitRange) {
+        this(waitRange, Math::random, Thread::sleep);
     }
 
-    public static ExponentialBackoffWithJitter fixJitterSeedAndRecordWaits(List<Duration> recordWaits) {
-        return new ExponentialBackoffWithJitter(
-                new Random(0)::nextDouble,
-                millis -> recordWaits.add(Duration.ofMillis(millis)));
-    }
-
-    public void waitBeforeAttempt(int attempt) throws InterruptedException {
+    public long waitBeforeAttempt(int attempt) throws InterruptedException {
         if (attempt == 0) {
-            return;
+            return 0;
         }
-        long waitMillis = getWaitMillisBeforeAttempt(attempt, randomJitterFraction.getAsDouble());
+        long waitMillis = getWaitMillisBeforeAttempt(attempt);
         LOGGER.debug("Sleeping for {} milliseconds", waitMillis);
         waiter.waitForMillis(waitMillis);
+        return waitMillis;
     }
 
-    public static long getWaitMillisBeforeAttempt(int attempt, double jitterFraction) {
+    private long getWaitMillisBeforeAttempt(int attempt) {
         // Implements exponential back-off with jitter, see
         // https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
-        int sleepTimeInSeconds = (int) Math.min(120, Math.pow(2.0, attempt + 1));
-        return (long) (jitterFraction * sleepTimeInSeconds * 1000L);
+        double sleepTimeInSeconds = Math.min(
+                waitRange.maxWaitCeilingSecs,
+                waitRange.firstWaitCeilingSecs * 0.5 * Math.pow(2.0, attempt));
+        return (long) (randomJitterFraction.getAsDouble() * sleepTimeInSeconds * 1000L);
     }
 
     interface Waiter {
         void waitForMillis(long milliseconds) throws InterruptedException;
+    }
+
+    public static class WaitRange {
+        private final double firstWaitCeilingSecs;
+        private final double maxWaitCeilingSecs;
+
+        private WaitRange(double firstWaitCeilingSecs, double maxWaitCeilingSecs) {
+            this.firstWaitCeilingSecs = firstWaitCeilingSecs;
+            this.maxWaitCeilingSecs = maxWaitCeilingSecs;
+        }
+
+        public static WaitRange firstAndMaxWaitCeilingSecs(double firstWaitCeilingSecs, double maxWaitCeilingSecs) {
+            return new WaitRange(firstWaitCeilingSecs, maxWaitCeilingSecs);
+        }
     }
 }
