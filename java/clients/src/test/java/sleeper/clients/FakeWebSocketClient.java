@@ -103,6 +103,8 @@ public class FakeWebSocketClient implements Client {
 
     public void onClose(String reason) {
         messageHandler.onClose(reason);
+        connected = false;
+        closed = true;
     }
 
     public void onError(Exception error) {
