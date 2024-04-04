@@ -158,6 +158,7 @@ public class TransactionLogStateStoreLogSpecificTest {
                 .schema(schema)
                 .filesLogStore(filesLogStore)
                 .partitionsLogStore(partitionsLogStore)
+                .maxAddTransactionAttempts(10)
                 .retryBackoff(ExponentialBackoffWithJitter.fixJitterSeedAndRecordWaits(retryWaits));
         config.accept(builder);
         StateStore stateStore = builder.build();
