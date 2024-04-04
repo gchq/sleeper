@@ -19,7 +19,6 @@ import sleeper.core.key.Key;
 import sleeper.core.range.Region;
 import sleeper.core.range.RegionCanonicaliser;
 import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.PrimitiveType;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -139,7 +138,6 @@ public class Partition {
     }
 
     public static final class Builder {
-        private List<PrimitiveType> rowKeyTypes;
         private Region region;
         private String id;
         private boolean leafPartition;
@@ -148,11 +146,6 @@ public class Partition {
         private int dimension = -1; // -1 used to indicate that it has not been split yet; when it has been split, indicates which dimension was used to split on.
 
         private Builder() {
-        }
-
-        public Builder rowKeyTypes(List<PrimitiveType> rowKeyTypes) {
-            this.rowKeyTypes = rowKeyTypes;
-            return this;
         }
 
         public Builder region(Region region) {
