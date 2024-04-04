@@ -40,12 +40,19 @@ public class TransactionLogHead<T> {
     }
 
     public void addTransaction(StateStoreTransaction<T> transaction) throws StateStoreException {
-        update();
-        transaction.validate(state);
-        long transactionNumber = lastTransactionNumber + 1;
-        logStore.addTransaction(transaction, transactionNumber);
-        transaction.apply(state);
-        lastTransactionNumber = transactionNumber;
+        while (true) {
+            update();
+            transaction.validate(state);
+            long transactionNumber = lastTransactionNumber + 1;
+            try {
+                logStore.addTransaction(transaction, transactionNumber);
+            } catch (UnreadTransactionException e) {
+                continue;
+            }
+            transaction.apply(state);
+            lastTransactionNumber = transactionNumber;
+            break;
+        }
     }
 
     public void update() {

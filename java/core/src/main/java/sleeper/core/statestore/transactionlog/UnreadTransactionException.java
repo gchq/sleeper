@@ -15,12 +15,11 @@
  */
 package sleeper.core.statestore.transactionlog;
 
-import java.util.stream.Stream;
+public class UnreadTransactionException extends Exception {
 
-public interface TransactionLogStore {
-
-    void addTransaction(StateStoreTransaction<?> transaction, long transactionNumber) throws UnreadTransactionException;
-
-    Stream<StateStoreTransaction<?>> readTransactionsAfter(long lastTransactionNumber);
+    public UnreadTransactionException(long expectedNewTransactionNumber, long lastStoreTransactionNumber) {
+        super("Unread transaction found. Adding after number " + lastStoreTransactionNumber + ", " +
+                "but expected new transaction to be number " + expectedNewTransactionNumber + ".");
+    }
 
 }

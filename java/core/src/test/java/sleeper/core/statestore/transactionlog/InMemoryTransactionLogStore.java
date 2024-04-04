@@ -21,12 +21,17 @@ import java.util.stream.Stream;
 
 public class InMemoryTransactionLogStore implements TransactionLogStore {
 
-    private List<StateStoreTransaction<?>> transactions = new ArrayList<>();
+    private static final Runnable DO_NOTHING = () -> {
+    };
+
+    private final List<StateStoreTransaction<?>> transactions = new ArrayList<>();
+    private Runnable beforeNextAdd = DO_NOTHING;
 
     @Override
-    public void addTransaction(StateStoreTransaction<?> transaction, long transactionNumber) {
+    public void addTransaction(StateStoreTransaction<?> transaction, long transactionNumber) throws UnreadTransactionException {
+        doBeforeNextAdd();
         if (transactions.size() + 1 != transactionNumber) {
-            throw new IllegalStateException("Next transaction number should be " + transactions.size() + ", found " + transactionNumber);
+            throw new UnreadTransactionException(transactionNumber, transactions.size());
         }
         transactions.add(transaction);
     }
@@ -37,4 +42,25 @@ public class InMemoryTransactionLogStore implements TransactionLogStore {
                 .skip(lastTransactionNumber);
     }
 
+    public void beforeNextAddTransaction(ThrowingRunnable action) {
+        beforeNextAdd = () -> {
+            try {
+                action.run();
+            } catch (RuntimeException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        };
+    }
+
+    private void doBeforeNextAdd() {
+        Runnable action = beforeNextAdd;
+        beforeNextAdd = DO_NOTHING;
+        action.run();
+    }
+
+    public interface ThrowingRunnable {
+        void run() throws Exception;
+    }
 }

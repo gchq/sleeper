@@ -15,49 +15,75 @@
  */
 package sleeper.core.statestore.transactionlog;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.statestore.transactionlog.transactions.InitialisePartitionsTransaction;
-import sleeper.core.statestore.transactionlog.transactions.SplitPartitionTransaction;
-
-import java.util.ArrayList;
-import java.util.List;
+import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.core.statestore.StateStore;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
 
 public class TransactionLogHeadTest {
 
+    private final Schema schema = schemaWithKey("key", new StringType());
+    private final PartitionsBuilder partitions = new PartitionsBuilder(schema).singlePartition("root");
+    private final InMemoryTransactionLogStore fileLogStore = new InMemoryTransactionLogStore();
+    private final InMemoryTransactionLogStore partitionLogStore = new InMemoryTransactionLogStore();
+    private final StateStore store = new TransactionLogStateStore(schema, fileLogStore, partitionLogStore);
+
+    @BeforeEach
+    void setUp() throws Exception {
+        store.fixTime(DEFAULT_UPDATE_TIME);
+        store.initialise(partitions.buildList());
+    }
+
+    private StateStore otherProcess() {
+        StateStore otherStore = new TransactionLogStateStore(schema, fileLogStore, partitionLogStore);
+        otherStore.fixTime(DEFAULT_UPDATE_TIME);
+        return otherStore;
+    }
+
     @Test
-    void shouldAddTransactionWhenAnotherProcessAddedATransactionToSameLog() throws Exception {
+    void shouldAddTransactionWhenAnotherProcessAddedATransactionBetweenAdds() throws Exception {
         // Given
-        TransactionLogStore store = new InMemoryTransactionLogStore();
-        TransactionLogHead<StateStorePartitions> head1 = TransactionLogHead.forPartitions(store);
-        TransactionLogHead<StateStorePartitions> head2 = TransactionLogHead.forPartitions(store);
-        PartitionsBuilder partitions = new PartitionsBuilder(schemaWithKey("key", new StringType()))
-                .singlePartition("root");
-
-        head1.addTransaction(new InitialisePartitionsTransaction(partitions.buildList()));
-
         PartitionTree afterRootSplit = partitions.splitToNewChildren("root", "L", "R", "l").buildTree();
-        head2.addTransaction(new SplitPartitionTransaction(
+        otherProcess().atomicallyUpdatePartitionAndCreateNewOnes(
                 afterRootSplit.getPartition("root"),
-                List.of(afterRootSplit.getPartition("L"), afterRootSplit.getPartition("R"))));
+                afterRootSplit.getPartition("L"), afterRootSplit.getPartition("R"));
 
         // When
         PartitionTree afterLeftSplit = partitions.splitToNewChildren("L", "LL", "LR", "f").buildTree();
-        head1.addTransaction(new SplitPartitionTransaction(
+        store.atomicallyUpdatePartitionAndCreateNewOnes(
                 afterLeftSplit.getPartition("L"),
-                List.of(afterLeftSplit.getPartition("LL"), afterLeftSplit.getPartition("LR"))));
+                afterLeftSplit.getPartition("LL"), afterLeftSplit.getPartition("LR"));
 
         // Then
-        assertThat(partitionTree(head1)).isEqualTo(afterLeftSplit);
+        assertThat(new PartitionTree(store.getAllPartitions())).isEqualTo(afterLeftSplit);
     }
 
-    private PartitionTree partitionTree(TransactionLogHead<StateStorePartitions> head) {
-        return new PartitionTree(new ArrayList<>(head.state().all()));
+    @Test
+    void shouldAddTransactionWhenAnotherProcessAddedATransactionBetweenUpdateAndAdd() throws Exception {
+        // Given
+        FileReferenceFactory fileFactory = FileReferenceFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
+        FileReference file1 = fileFactory.rootFile("file1.parquet", 100);
+        FileReference file2 = fileFactory.rootFile("file2.parquet", 200);
+        FileReference file3 = fileFactory.rootFile("file3.parquet", 300);
+        store.addFile(file1);
+        fileLogStore.beforeNextAddTransaction(() -> {
+            otherProcess().addFile(file2);
+        });
+
+        // When
+        store.addFile(file3);
+
+        // Then
+        assertThat(store.getFileReferences()).containsExactly(file1, file2, file3);
     }
 }
