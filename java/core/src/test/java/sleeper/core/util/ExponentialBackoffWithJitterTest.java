@@ -17,15 +17,16 @@ package sleeper.core.util;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.util.ExponentialBackoffWithJitter.Waiter;
-
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import java.util.function.DoubleSupplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.constantJitterFraction;
+import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.fixJitterSeed;
+import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.noJitter;
+import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.recordWaits;
 
 public class ExponentialBackoffWithJitterTest {
 
@@ -100,25 +101,9 @@ public class ExponentialBackoffWithJitterTest {
 
     private void makeAttempts(int attempts, DoubleSupplier randomJitterFraction) throws Exception {
         ExponentialBackoffWithJitter backoff = new ExponentialBackoffWithJitter(
-                randomJitterFraction, recordWaits());
+                randomJitterFraction, recordWaits(foundWaits));
         for (int i = 0; i < attempts; i++) {
             backoff.waitBeforeAttempt(i);
         }
-    }
-
-    private static DoubleSupplier fixJitterSeed() {
-        return new Random(0)::nextDouble;
-    }
-
-    private static DoubleSupplier noJitter() {
-        return () -> 1.0;
-    }
-
-    private static DoubleSupplier constantJitterFraction(double fraction) {
-        return () -> fraction;
-    }
-
-    private Waiter recordWaits() {
-        return millis -> foundWaits.add(Duration.ofMillis(millis));
     }
 }
