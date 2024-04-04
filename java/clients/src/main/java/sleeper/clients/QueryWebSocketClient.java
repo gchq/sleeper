@@ -84,13 +84,6 @@ public class QueryWebSocketClient {
             Instant startTime = Instant.now();
             return client.startQueryFuture(query)
                     .whenComplete((records, exception) -> {
-                        LOGGER.info("Query finished, closing client");
-                        try {
-                            client.closeBlocking();
-                        } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt();
-                            throw new RuntimeException(e);
-                        }
                         LoggedDuration duration = LoggedDuration.withFullOutput(startTime, Instant.now());
                         long recordsReturned = client.getTotalRecordsReturned();
                         LOGGER.info("Query took {} to return {} records", duration, recordsReturned);
@@ -135,6 +128,7 @@ public class QueryWebSocketClient {
             super(serverUri);
             this.serverUri = serverUri;
             this.messageHandler = messageHandler;
+            messageHandler.setCloser(this::closeBlocking);
         }
 
         public CompletableFuture<List<String>> startQueryFuture(Query query) throws InterruptedException {
@@ -208,12 +202,17 @@ public class QueryWebSocketClient {
         }
     }
 
+    public interface ClientCloser {
+        void close() throws InterruptedException;
+    }
+
     public static class WebSocketMessageHandler {
         private final Gson serde = new GsonBuilder().create();
         private final Set<String> outstandingQueries = new HashSet<>();
         private final Map<String, List<String>> subqueryIdByParentQueryId = new HashMap<>();
         private final Map<String, List<String>> records = new TreeMap<>();
         private final QuerySerDe querySerDe;
+        private ClientCloser clientCloser;
         private boolean queryComplete = false;
         private boolean queryFailed = false;
         private long totalRecordsReturned = 0L;
@@ -222,6 +221,10 @@ public class QueryWebSocketClient {
 
         public WebSocketMessageHandler(QuerySerDe querySerDe) {
             this.querySerDe = querySerDe;
+        }
+
+        public void setCloser(ClientCloser clientCloser) {
+            this.clientCloser = clientCloser;
         }
 
         public void setFuture(CompletableFuture<List<String>> future) {
@@ -263,6 +266,7 @@ public class QueryWebSocketClient {
             if (outstandingQueries.isEmpty()) {
                 queryComplete = true;
                 future.complete(getResults(currentQueryId));
+                close();
             }
         }
 
@@ -352,6 +356,7 @@ public class QueryWebSocketClient {
         public void onError(Exception error) {
             queryFailed = true;
             future.completeExceptionally(new WebSocketErrorException(error));
+            close();
         }
 
         public boolean hasQueryFinished() {
@@ -368,6 +373,16 @@ public class QueryWebSocketClient {
                     subqueryIdByParentQueryId.getOrDefault(queryId, List.of()).stream())
                     .flatMap(id -> records.getOrDefault(id, List.of()).stream())
                     .collect(Collectors.toList());
+        }
+
+        private void close() {
+            LOGGER.info("Query finished, closing client");
+            try {
+                clientCloser.close();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(e);
+            }
         }
     }
 }
