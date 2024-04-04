@@ -133,9 +133,5 @@ public class KryoSerializerTest {
         ImmutableListWrapper() {
             immutableList = List.of("test");
         }
-
-        List<String> getImmutableList() {
-            return immutableList;
-        }
     }
 }
