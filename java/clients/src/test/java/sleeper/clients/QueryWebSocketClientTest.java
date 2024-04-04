@@ -280,7 +280,8 @@ public class QueryWebSocketClientTest {
             // When / Then
             assertThat(runQueryFuture(query,
                     withResponses(
-                            message(unknownMessage("test-query-id")))))
+                            message(unknownMessage("test-query-id")),
+                            close("Connection closed normally"))))
                     .isCompletedExceptionally()
                     .failsWithin(Duration.ofMillis(10))
                     .withThrowableOfType(ExecutionException.class)
@@ -299,7 +300,8 @@ public class QueryWebSocketClientTest {
             // When / Then
             assertThat(runQueryFuture(query,
                     withResponses(
-                            message("{"))))
+                            message("{"),
+                            close("Connection closed normally"))))
                     .isCompletedExceptionally()
                     .failsWithin(Duration.ofMillis(10))
                     .withThrowableOfType(ExecutionException.class)
@@ -318,7 +320,8 @@ public class QueryWebSocketClientTest {
             // When / Then
             assertThat(runQueryFuture(query,
                     withResponses(
-                            message("{\"message\":\"error\"}"))))
+                            message("{\"message\":\"error\"}"),
+                            close("Connection closed normally"))))
                     .isCompletedExceptionally()
                     .failsWithin(Duration.ofMillis(10))
                     .withThrowableOfType(ExecutionException.class)
@@ -337,7 +340,8 @@ public class QueryWebSocketClientTest {
             // When / Then
             assertThat(runQueryFuture(query,
                     withResponses(
-                            message("{\"queryId\":\"test-query-id\"}"))))
+                            message("{\"queryId\":\"test-query-id\"}"),
+                            close("Connection closed normally"))))
                     .isCompletedExceptionally()
                     .failsWithin(Duration.ofMillis(10))
                     .withThrowableOfType(ExecutionException.class)
