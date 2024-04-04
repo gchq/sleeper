@@ -27,7 +27,8 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.List;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.FILE_TRANSACTION_LOG_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_TRANSACTION_LOG_TABLENAME;
 
 public class TransactionLogStateStoreCreator {
     private final AmazonDynamoDB dynamoDB;
@@ -39,7 +40,11 @@ public class TransactionLogStateStoreCreator {
     }
 
     public void create() {
-        String tableName = instanceProperties.get(TRANSACTION_LOG_TABLENAME);
+        createTransactionLogTable(instanceProperties.get(FILE_TRANSACTION_LOG_TABLENAME));
+        createTransactionLogTable(instanceProperties.get(PARTITION_TRANSACTION_LOG_TABLENAME));
+    }
+
+    private void createTransactionLogTable(String tableName) {
         List<AttributeDefinition> attributeDefinitions = List.of(
                 new AttributeDefinition(DynamoDBTransactionLogStateStore.TABLE_ID, ScalarAttributeType.S),
                 new AttributeDefinition(DynamoDBTransactionLogStateStore.TRANSACTION_NUMBER, ScalarAttributeType.N));

@@ -28,17 +28,17 @@ public enum TransactionType {
     SPLIT_FILE_REFERENCES(SplitFileReferencesTransaction.class),
     SPLIT_PARTITION(SplitPartitionTransaction.class);
 
-    private final Class<? extends StateStoreTransaction> type;
+    private final Class<? extends StateStoreTransaction<?>> type;
 
-    TransactionType(Class<? extends StateStoreTransaction> type) {
+    TransactionType(Class<? extends StateStoreTransaction<?>> type) {
         this.type = type;
     }
 
-    public Class<? extends StateStoreTransaction> getType() {
+    public Class<? extends StateStoreTransaction<?>> getType() {
         return type;
     }
 
-    public static TransactionType getType(StateStoreTransaction transaction) {
+    public static TransactionType getType(StateStoreTransaction<?> transaction) {
         for (TransactionType type : values()) {
             if (type.getType().isInstance(transaction)) {
                 return type;

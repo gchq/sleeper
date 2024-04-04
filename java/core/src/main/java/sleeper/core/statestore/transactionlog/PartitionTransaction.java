@@ -15,11 +15,6 @@
  */
 package sleeper.core.statestore.transactionlog;
 
-import sleeper.core.statestore.StateStoreException;
+public interface PartitionTransaction extends StateStoreTransaction<StateStorePartitions> {
 
-public interface StateStoreTransaction<T> {
-
-    void validate(T state) throws StateStoreException;
-
-    void apply(T state);
 }

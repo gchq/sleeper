@@ -32,21 +32,21 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 class TransactionLogPartitionStore implements PartitionStore {
 
     private final Schema schema;
-    private final TransactionLogHead state;
+    private final TransactionLogHead<StateStorePartitions> head;
 
-    TransactionLogPartitionStore(Schema schema, TransactionLogHead state) {
+    TransactionLogPartitionStore(Schema schema, TransactionLogHead<StateStorePartitions> head) {
         this.schema = schema;
-        this.state = state;
+        this.head = head;
     }
 
     @Override
     public void atomicallyUpdatePartitionAndCreateNewOnes(Partition splitPartition, Partition newPartition1, Partition newPartition2) throws StateStoreException {
-        state.addTransaction(new SplitPartitionTransaction(splitPartition, List.of(newPartition1, newPartition2)));
+        head.addTransaction(new SplitPartitionTransaction(splitPartition, List.of(newPartition1, newPartition2)));
     }
 
     @Override
     public void clearPartitionData() throws StateStoreException {
-        state.addTransaction(new InitialisePartitionsTransaction(List.of()));
+        head.addTransaction(new InitialisePartitionsTransaction(List.of()));
     }
 
     @Override
@@ -66,12 +66,12 @@ class TransactionLogPartitionStore implements PartitionStore {
 
     @Override
     public void initialise(List<Partition> partitions) throws StateStoreException {
-        state.addTransaction(new InitialisePartitionsTransaction(partitions));
+        head.addTransaction(new InitialisePartitionsTransaction(partitions));
     }
 
     private Stream<Partition> partitions() {
-        state.update();
-        return state.partitions().all().stream();
+        head.update();
+        return head.state().all().stream();
     }
 
 }

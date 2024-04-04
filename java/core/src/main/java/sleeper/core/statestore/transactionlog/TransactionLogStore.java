@@ -19,8 +19,8 @@ import java.util.stream.Stream;
 
 public interface TransactionLogStore {
 
-    void addTransaction(StateStoreTransaction transaction, long transactionNumber);
+    void addTransaction(StateStoreTransaction<?> transaction, long transactionNumber);
 
-    Stream<StateStoreTransaction> readTransactionsAfter(long startTransactionNumber);
+    Stream<StateStoreTransaction<?>> readTransactionsAfter(long lastTransactionNumber);
 
 }
