@@ -128,10 +128,6 @@ public class KryoSerializerTest {
     }
 
     private static class ImmutableListWrapper {
-        private final List<String> immutableList;
-
-        ImmutableListWrapper() {
-            immutableList = List.of("test");
-        }
+        List<String> immutableList = List.of("test");
     }
 }
