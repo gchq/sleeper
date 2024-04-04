@@ -42,8 +42,11 @@ public class InMemoryTransactionLogStateStoreTestBase {
     private void createStore(PartitionsBuilder partitions) {
         this.partitions = partitions;
         factory = FileReferenceFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
-        store = new TransactionLogStateStore(partitions.getSchema(),
-                new InMemoryTransactionLogStore(), new InMemoryTransactionLogStore());
+        store = TransactionLogStateStore.builder()
+                .schema(partitions.getSchema())
+                .filesLogStore(new InMemoryTransactionLogStore())
+                .partitionsLogStore(new InMemoryTransactionLogStore())
+                .build();
         store.fixTime(DEFAULT_UPDATE_TIME);
     }
 

@@ -34,13 +34,12 @@ public class TransactionLogHeadTest {
 
     private final Schema schema = schemaWithKey("key", new StringType());
     private final PartitionsBuilder partitions = new PartitionsBuilder(schema).singlePartition("root");
-    private final InMemoryTransactionLogStore fileLogStore = new InMemoryTransactionLogStore();
-    private final InMemoryTransactionLogStore partitionLogStore = new InMemoryTransactionLogStore();
-    private final StateStore store = new TransactionLogStateStore(schema, fileLogStore, partitionLogStore);
+    private final InMemoryTransactionLogStore filesLogStore = new InMemoryTransactionLogStore();
+    private final InMemoryTransactionLogStore partitionsLogStore = new InMemoryTransactionLogStore();
+    private final StateStore store = stateStore();
 
     @BeforeEach
     void setUp() throws Exception {
-        store.fixTime(DEFAULT_UPDATE_TIME);
         store.initialise(partitions.buildList());
     }
 
@@ -69,7 +68,7 @@ public class TransactionLogHeadTest {
         FileReference file2 = fileFactory().rootFile("file2.parquet", 200);
         FileReference file3 = fileFactory().rootFile("file3.parquet", 300);
         store.addFile(file1);
-        fileLogStore.beforeNextAddTransaction(() -> {
+        filesLogStore.beforeNextAddTransaction(() -> {
             otherProcess().addFile(file2);
         });
 
@@ -86,7 +85,7 @@ public class TransactionLogHeadTest {
         FileReference file1 = fileFactory().rootFile("file1.parquet", 100);
         FileReference file2 = fileFactory().rootFile("file2.parquet", 200);
         store.addFile(file1);
-        fileLogStore.beforeNextAddTransaction(() -> {
+        filesLogStore.beforeNextAddTransaction(() -> {
             throw new RuntimeException("Unexpected failure");
         });
 
@@ -98,9 +97,17 @@ public class TransactionLogHeadTest {
     }
 
     private StateStore otherProcess() {
-        StateStore otherStore = new TransactionLogStateStore(schema, fileLogStore, partitionLogStore);
-        otherStore.fixTime(DEFAULT_UPDATE_TIME);
-        return otherStore;
+        return stateStore();
+    }
+
+    private StateStore stateStore() {
+        StateStore stateStore = TransactionLogStateStore.builder()
+                .schema(schema)
+                .filesLogStore(filesLogStore)
+                .partitionsLogStore(partitionsLogStore)
+                .build();
+        stateStore.fixTime(DEFAULT_UPDATE_TIME);
+        return stateStore;
     }
 
     private FileReferenceFactory fileFactory() {

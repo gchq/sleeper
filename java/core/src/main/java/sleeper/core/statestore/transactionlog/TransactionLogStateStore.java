@@ -20,9 +20,41 @@ import sleeper.core.statestore.DelegatingStateStore;
 
 public class TransactionLogStateStore extends DelegatingStateStore {
 
-    public TransactionLogStateStore(Schema schema, TransactionLogStore filesLogStore, TransactionLogStore partitionsLogStore) {
-        super(new TransactionLogFileReferenceStore(TransactionLogHead.forFiles(filesLogStore)),
-                new TransactionLogPartitionStore(schema, TransactionLogHead.forPartitions(partitionsLogStore)));
+    public TransactionLogStateStore(Builder builder) {
+        super(new TransactionLogFileReferenceStore(TransactionLogHead.forFiles(builder.filesLogStore)),
+                new TransactionLogPartitionStore(builder.schema, TransactionLogHead.forPartitions(builder.partitionsLogStore)));
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static class Builder {
+        private Schema schema;
+        private TransactionLogStore filesLogStore;
+        private TransactionLogStore partitionsLogStore;
+
+        private Builder() {
+        }
+
+        public Builder schema(Schema schema) {
+            this.schema = schema;
+            return this;
+        }
+
+        public Builder filesLogStore(TransactionLogStore filesLogStore) {
+            this.filesLogStore = filesLogStore;
+            return this;
+        }
+
+        public Builder partitionsLogStore(TransactionLogStore partitionsLogStore) {
+            this.partitionsLogStore = partitionsLogStore;
+            return this;
+        }
+
+        public TransactionLogStateStore build() {
+            return new TransactionLogStateStore(this);
+        }
     }
 
 }
