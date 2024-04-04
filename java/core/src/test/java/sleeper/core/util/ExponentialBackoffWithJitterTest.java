@@ -17,6 +17,8 @@ package sleeper.core.util;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
+
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,6 +32,7 @@ import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.recordWai
 
 public class ExponentialBackoffWithJitterTest {
 
+    private static final WaitRange WAIT_RANGE = WaitRange.firstAndMaxWaitCeilingSecs(4, 120);
     private final List<Duration> foundWaits = new ArrayList<>();
 
     @Test
@@ -95,13 +98,58 @@ public class ExponentialBackoffWithJitterTest {
                 Duration.ofMinutes(1));
     }
 
+    @Test
+    void shouldWaitFor10AttemptsWithAdjustedWaitRangeNoJitter() throws Exception {
+        // When
+        makeAttempts(10,
+                WaitRange.firstAndMaxWaitCeilingSecs(0.2, 30),
+                noJitter());
+
+        // Then
+        assertThat(foundWaits).containsExactly(
+                Duration.parse("PT0.2S"),
+                Duration.parse("PT0.4S"),
+                Duration.parse("PT0.8S"),
+                Duration.parse("PT1.6S"),
+                Duration.parse("PT3.2S"),
+                Duration.parse("PT6.4S"),
+                Duration.parse("PT12.8S"),
+                Duration.parse("PT25.6S"),
+                Duration.ofSeconds(30));
+    }
+
+    @Test
+    void shouldWaitFor10AttemptsWithAdjustedWaitRange() throws Exception {
+        // When
+        makeAttempts(10,
+                WaitRange.firstAndMaxWaitCeilingSecs(0.2, 30),
+                fixJitterSeed());
+
+        // Then
+        assertThat(foundWaits).containsExactly(
+                Duration.parse("PT0.146S"),
+                Duration.parse("PT0.096S"),
+                Duration.parse("PT0.509S"),
+                Duration.parse("PT0.88S"),
+                Duration.parse("PT1.912S"),
+                Duration.parse("PT2.132S"),
+                Duration.parse("PT4.93S"),
+                Duration.parse("PT25.211S"),
+                Duration.parse("PT26.375S"));
+    }
+
     private void makeAttempts(int attempts) throws Exception {
         makeAttempts(attempts, fixJitterSeed());
     }
 
     private void makeAttempts(int attempts, DoubleSupplier randomJitterFraction) throws Exception {
+        makeAttempts(attempts, WAIT_RANGE, randomJitterFraction);
+    }
+
+    private void makeAttempts(
+            int attempts, WaitRange waitRange, DoubleSupplier randomJitterFraction) throws Exception {
         ExponentialBackoffWithJitter backoff = new ExponentialBackoffWithJitter(
-                randomJitterFraction, recordWaits(foundWaits));
+                waitRange, randomJitterFraction, recordWaits(foundWaits));
         for (int i = 0; i < attempts; i++) {
             backoff.waitBeforeAttempt(i);
         }

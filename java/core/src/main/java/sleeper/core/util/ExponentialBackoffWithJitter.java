@@ -25,33 +25,51 @@ public class ExponentialBackoffWithJitter {
 
     private final DoubleSupplier randomJitterFraction;
     private final Waiter waiter;
+    private final WaitRange waitRange;
 
-    public ExponentialBackoffWithJitter(DoubleSupplier randomJitterFraction, Waiter waiter) {
+    public ExponentialBackoffWithJitter(WaitRange waitRange, DoubleSupplier randomJitterFraction, Waiter waiter) {
+        this.waitRange = waitRange;
         this.randomJitterFraction = randomJitterFraction;
         this.waiter = waiter;
     }
 
-    public ExponentialBackoffWithJitter() {
-        this(Math::random, Thread::sleep);
+    public ExponentialBackoffWithJitter(WaitRange waitRange) {
+        this(waitRange, Math::random, Thread::sleep);
     }
 
     public void waitBeforeAttempt(int attempt) throws InterruptedException {
         if (attempt == 0) {
             return;
         }
-        long waitMillis = getWaitMillisBeforeAttempt(attempt, randomJitterFraction.getAsDouble());
+        long waitMillis = getWaitMillisBeforeAttempt(attempt);
         LOGGER.debug("Sleeping for {} milliseconds", waitMillis);
         waiter.waitForMillis(waitMillis);
     }
 
-    public static long getWaitMillisBeforeAttempt(int attempt, double jitterFraction) {
+    private long getWaitMillisBeforeAttempt(int attempt) {
         // Implements exponential back-off with jitter, see
         // https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
-        int sleepTimeInSeconds = (int) Math.min(120, Math.pow(2.0, attempt + 1));
-        return (long) (jitterFraction * sleepTimeInSeconds * 1000L);
+        double sleepTimeInSeconds = Math.min(
+                waitRange.maxWaitCeilingSecs,
+                waitRange.firstWaitCeilingSecs * 0.5 * Math.pow(2.0, attempt));
+        return (long) (randomJitterFraction.getAsDouble() * sleepTimeInSeconds * 1000L);
     }
 
     interface Waiter {
         void waitForMillis(long milliseconds) throws InterruptedException;
+    }
+
+    public static class WaitRange {
+        private final double firstWaitCeilingSecs;
+        private final double maxWaitCeilingSecs;
+
+        private WaitRange(double firstWaitCeilingSecs, double maxWaitCeilingSecs) {
+            this.firstWaitCeilingSecs = firstWaitCeilingSecs;
+            this.maxWaitCeilingSecs = maxWaitCeilingSecs;
+        }
+
+        public static WaitRange firstAndMaxWaitCeilingSecs(double firstWaitCeilingSecs, double maxWaitCeilingSecs) {
+            return new WaitRange(firstWaitCeilingSecs, maxWaitCeilingSecs);
+        }
     }
 }
