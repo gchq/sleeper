@@ -25,18 +25,27 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
+import sleeper.core.util.ExponentialBackoffWithJitter;
+
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
 
-public class TransactionLogHeadTest {
+public class TransactionLogStateStoreLogSpecificTest {
 
     private final Schema schema = schemaWithKey("key", new StringType());
     private final PartitionsBuilder partitions = new PartitionsBuilder(schema).singlePartition("root");
     private final InMemoryTransactionLogStore filesLogStore = new InMemoryTransactionLogStore();
     private final InMemoryTransactionLogStore partitionsLogStore = new InMemoryTransactionLogStore();
-    private final StateStore store = stateStore();
+    private final List<Duration> retryWaits = new ArrayList<>();
+    private StateStore store = stateStore();
 
     @BeforeEach
     void setUp() throws Exception {
@@ -58,7 +67,9 @@ public class TransactionLogHeadTest {
                 afterLeftSplit.getPartition("LL"), afterLeftSplit.getPartition("LR"));
 
         // Then
-        assertThat(new PartitionTree(store.getAllPartitions())).isEqualTo(afterLeftSplit);
+        assertThat(new PartitionTree(store.getAllPartitions()))
+                .isEqualTo(afterLeftSplit);
+        assertThat(retryWaits).isEmpty();
     }
 
     @Test
@@ -76,24 +87,61 @@ public class TransactionLogHeadTest {
         store.addFile(file3);
 
         // Then
-        assertThat(store.getFileReferences()).containsExactly(file1, file2, file3);
+        assertThat(store.getFileReferences())
+                .containsExactly(file1, file2, file3);
+        assertThat(retryWaits).hasSize(1);
     }
 
     @Test
     void shouldRetryAddTransactionWhenUnexpectedFailureOccurredAddingTransaction() throws Exception {
         // Given
-        FileReference file1 = fileFactory().rootFile("file1.parquet", 100);
-        FileReference file2 = fileFactory().rootFile("file2.parquet", 200);
-        store.addFile(file1);
         filesLogStore.beforeNextAddTransaction(() -> {
             throw new RuntimeException("Unexpected failure");
         });
+        FileReference file = fileFactory().rootFile("file.parquet", 100);
 
         // When
-        store.addFile(file2);
+        store.addFile(file);
 
         // Then
-        assertThat(store.getFileReferences()).containsExactly(file1, file2);
+        assertThat(store.getFileReferences())
+                .containsExactly(file);
+        assertThat(retryWaits).hasSize(1);
+    }
+
+    @Test
+    void shouldFailAfterTooManyTries() throws Exception {
+        // Given
+        store = stateStore(builder -> builder.maxAddTransactionAttempts(1));
+        RuntimeException failure = new RuntimeException("Unexpected failure");
+        filesLogStore.beforeNextAddTransaction(() -> {
+            throw failure;
+        });
+        FileReference file = fileFactory().rootFile("file.parquet", 100);
+
+        // When / Then
+        assertThatThrownBy(() -> store.addFile(file))
+                .isInstanceOf(StateStoreException.class)
+                .hasCause(failure);
+        assertThat(store.getFileReferences())
+                .isEmpty();
+        assertThat(retryWaits).isEmpty();
+    }
+
+    @Test
+    void shouldFailIfNoAttemptsConfigured() throws Exception {
+        // Given
+        store = stateStore(builder -> builder.maxAddTransactionAttempts(0));
+        FileReference file = fileFactory().rootFile("file.parquet", 100);
+
+        // When / Then
+        assertThatThrownBy(() -> store.addFile(file))
+                .isInstanceOf(StateStoreException.class)
+                .cause().isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("No attempts made");
+        assertThat(store.getFileReferences())
+                .isEmpty();
+        assertThat(retryWaits).isEmpty();
     }
 
     private StateStore otherProcess() {
@@ -101,11 +149,18 @@ public class TransactionLogHeadTest {
     }
 
     private StateStore stateStore() {
-        StateStore stateStore = TransactionLogStateStore.builder()
+        return stateStore(builder -> {
+        });
+    }
+
+    private StateStore stateStore(Consumer<TransactionLogStateStore.Builder> config) {
+        TransactionLogStateStore.Builder builder = TransactionLogStateStore.builder()
                 .schema(schema)
                 .filesLogStore(filesLogStore)
                 .partitionsLogStore(partitionsLogStore)
-                .build();
+                .retryBackoff(ExponentialBackoffWithJitter.fixJitterSeedAndRecordWaits(retryWaits));
+        config.accept(builder);
+        StateStore stateStore = builder.build();
         stateStore.fixTime(DEFAULT_UPDATE_TIME);
         return stateStore;
     }

@@ -17,12 +17,16 @@ package sleeper.core.statestore.transactionlog;
 
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.DelegatingStateStore;
+import sleeper.core.util.ExponentialBackoffWithJitter;
 
 public class TransactionLogStateStore extends DelegatingStateStore {
 
     public TransactionLogStateStore(Builder builder) {
-        super(new TransactionLogFileReferenceStore(TransactionLogHead.forFiles(builder.filesLogStore)),
-                new TransactionLogPartitionStore(builder.schema, TransactionLogHead.forPartitions(builder.partitionsLogStore)));
+        super(
+                new TransactionLogFileReferenceStore(
+                        TransactionLogHead.forFiles(builder.filesLogStore, builder.maxAddTransactionAttempts, builder.retryBackoff)),
+                new TransactionLogPartitionStore(builder.schema,
+                        TransactionLogHead.forPartitions(builder.partitionsLogStore, builder.maxAddTransactionAttempts, builder.retryBackoff)));
     }
 
     public static Builder builder() {
@@ -33,6 +37,8 @@ public class TransactionLogStateStore extends DelegatingStateStore {
         private Schema schema;
         private TransactionLogStore filesLogStore;
         private TransactionLogStore partitionsLogStore;
+        private int maxAddTransactionAttempts = 10;
+        private ExponentialBackoffWithJitter retryBackoff = new ExponentialBackoffWithJitter();
 
         private Builder() {
         }
@@ -49,6 +55,16 @@ public class TransactionLogStateStore extends DelegatingStateStore {
 
         public Builder partitionsLogStore(TransactionLogStore partitionsLogStore) {
             this.partitionsLogStore = partitionsLogStore;
+            return this;
+        }
+
+        public Builder maxAddTransactionAttempts(int maxAddTransactionAttempts) {
+            this.maxAddTransactionAttempts = maxAddTransactionAttempts;
+            return this;
+        }
+
+        public Builder retryBackoff(ExponentialBackoffWithJitter retryBackoff) {
+            this.retryBackoff = retryBackoff;
             return this;
         }
 
