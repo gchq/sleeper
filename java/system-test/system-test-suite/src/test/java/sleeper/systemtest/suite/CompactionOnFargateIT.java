@@ -53,7 +53,7 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.partitionsBuilder;
 
 @SystemTest
-public class CompactionIT {
+public class CompactionOnFargateIT {
     @TempDir
     private Path tempDir;
 
