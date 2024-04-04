@@ -27,7 +27,19 @@ import java.util.function.Function;
  */
 public interface SortedRecordIterator extends Function<CloseableIterator<Record>, CloseableIterator<Record>> {
 
+    /**
+     * Configure the iterator to accept records.
+     *
+     * @param configString configuration specific to the iterator which may be set before the iterator is used
+     * @param schema       the schema of the Sleeper table being processed
+     */
     void init(String configString, Schema schema);
 
+    /**
+     * This should provide a list of fields which will be read by the iterator. This is to ensure that those fields will
+     * be read from Sleeper, even if a client requested a limited set of fields which does not include them.
+     *
+     * @return names of fields that must be loaded
+     */
     List<String> getRequiredValueFields();
 }
