@@ -18,8 +18,8 @@ package sleeper.core.statestore.transactionlog.transactions;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.FileAlreadyExistsException;
-import sleeper.core.statestore.transactionlog.StateStoreTransaction;
-import sleeper.core.statestore.transactionlog.TransactionLogHead;
+import sleeper.core.statestore.transactionlog.FileReferenceTransaction;
+import sleeper.core.statestore.transactionlog.StateStoreFiles;
 
 import java.time.Instant;
 import java.util.List;
@@ -27,7 +27,7 @@ import java.util.Objects;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 
-public class AddFilesTransaction implements StateStoreTransaction {
+public class AddFilesTransaction implements FileReferenceTransaction {
 
     private final List<AllReferencesToAFile> files;
     private final Instant updateTime;
@@ -38,18 +38,18 @@ public class AddFilesTransaction implements StateStoreTransaction {
     }
 
     @Override
-    public void validate(TransactionLogHead state) throws StateStoreException {
+    public void validate(StateStoreFiles stateStoreFiles) throws StateStoreException {
         for (AllReferencesToAFile file : files) {
-            if (state.files().file(file.getFilename()).isPresent()) {
+            if (stateStoreFiles.file(file.getFilename()).isPresent()) {
                 throw new FileAlreadyExistsException(file.getFilename());
             }
         }
     }
 
     @Override
-    public void apply(TransactionLogHead state) {
+    public void apply(StateStoreFiles stateStoreFiles) {
         for (AllReferencesToAFile file : files) {
-            state.files().add(file.withCreatedUpdateTime(updateTime));
+            stateStoreFiles.add(file.withCreatedUpdateTime(updateTime));
         }
     }
 

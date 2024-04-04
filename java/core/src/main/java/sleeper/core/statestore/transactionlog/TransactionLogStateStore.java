@@ -20,13 +20,9 @@ import sleeper.core.statestore.DelegatingStateStore;
 
 public class TransactionLogStateStore extends DelegatingStateStore {
 
-    public TransactionLogStateStore(Schema schema, TransactionLogStore logStore) {
-        this(schema, new TransactionLogHead(logStore));
-    }
-
-    private TransactionLogStateStore(Schema schema, TransactionLogHead state) {
-        super(new TransactionLogFileReferenceStore(state),
-                new TransactionLogPartitionStore(schema, state));
+    public TransactionLogStateStore(Schema schema, TransactionLogStore filesLogStore, TransactionLogStore partitionsLogStore) {
+        super(new TransactionLogFileReferenceStore(TransactionLogHead.forFiles(filesLogStore)),
+                new TransactionLogPartitionStore(schema, TransactionLogHead.forPartitions(partitionsLogStore)));
     }
 
 }

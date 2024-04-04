@@ -16,13 +16,13 @@
 package sleeper.core.statestore.transactionlog.transactions;
 
 import sleeper.core.partition.Partition;
-import sleeper.core.statestore.transactionlog.StateStoreTransaction;
-import sleeper.core.statestore.transactionlog.TransactionLogHead;
+import sleeper.core.statestore.transactionlog.PartitionTransaction;
+import sleeper.core.statestore.transactionlog.StateStorePartitions;
 
 import java.util.List;
 import java.util.Objects;
 
-public class InitialisePartitionsTransaction implements StateStoreTransaction {
+public class InitialisePartitionsTransaction implements PartitionTransaction {
 
     private final List<Partition> partitions;
 
@@ -31,13 +31,13 @@ public class InitialisePartitionsTransaction implements StateStoreTransaction {
     }
 
     @Override
-    public void validate(TransactionLogHead state) {
+    public void validate(StateStorePartitions stateStorePartitions) {
     }
 
     @Override
-    public void apply(TransactionLogHead state) {
-        state.partitions().clear();
-        partitions.forEach(state.partitions()::put);
+    public void apply(StateStorePartitions stateStorePartitions) {
+        stateStorePartitions.clear();
+        partitions.forEach(stateStorePartitions::put);
     }
 
     @Override

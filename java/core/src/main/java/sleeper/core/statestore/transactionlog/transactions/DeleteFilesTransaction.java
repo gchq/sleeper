@@ -19,13 +19,13 @@ import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.FileHasReferencesException;
 import sleeper.core.statestore.exception.FileNotFoundException;
-import sleeper.core.statestore.transactionlog.StateStoreTransaction;
-import sleeper.core.statestore.transactionlog.TransactionLogHead;
+import sleeper.core.statestore.transactionlog.FileReferenceTransaction;
+import sleeper.core.statestore.transactionlog.StateStoreFiles;
 
 import java.util.List;
 import java.util.Objects;
 
-public class DeleteFilesTransaction implements StateStoreTransaction {
+public class DeleteFilesTransaction implements FileReferenceTransaction {
 
     private final List<String> filenames;
 
@@ -34,9 +34,9 @@ public class DeleteFilesTransaction implements StateStoreTransaction {
     }
 
     @Override
-    public void validate(TransactionLogHead state) throws StateStoreException {
+    public void validate(StateStoreFiles stateStoreFiles) throws StateStoreException {
         for (String filename : filenames) {
-            AllReferencesToAFile file = state.files().file(filename)
+            AllReferencesToAFile file = stateStoreFiles.file(filename)
                     .orElseThrow(() -> new FileNotFoundException(filename));
             if (file.getTotalReferenceCount() > 0) {
                 throw new FileHasReferencesException(file);
@@ -45,8 +45,8 @@ public class DeleteFilesTransaction implements StateStoreTransaction {
     }
 
     @Override
-    public void apply(TransactionLogHead state) {
-        filenames.forEach(state.files()::remove);
+    public void apply(StateStoreFiles stateStoreFiles) {
+        filenames.forEach(stateStoreFiles::remove);
     }
 
     @Override
