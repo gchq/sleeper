@@ -20,8 +20,11 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.util.ExponentialBackoffWithJitter;
 
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
+import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.fixJitterSeed;
+import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.noWaits;
 
 public class InMemoryTransactionLogStateStoreTestBase {
 
@@ -46,6 +49,8 @@ public class InMemoryTransactionLogStateStoreTestBase {
                 .schema(partitions.getSchema())
                 .filesLogStore(new InMemoryTransactionLogStore())
                 .partitionsLogStore(new InMemoryTransactionLogStore())
+                .retryBackoff(new ExponentialBackoffWithJitter(
+                        TransactionLogStateStore.RETRY_WAIT_RANGE, fixJitterSeed(), noWaits()))
                 .build();
         store.fixTime(DEFAULT_UPDATE_TIME);
     }
