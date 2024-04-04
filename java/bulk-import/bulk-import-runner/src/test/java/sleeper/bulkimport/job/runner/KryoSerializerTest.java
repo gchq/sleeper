@@ -32,6 +32,7 @@ import sleeper.core.schema.type.LongType;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -80,14 +81,14 @@ public class KryoSerializerTest {
     }
 
     @Test
-    void shouldFailToDeserializePartitionIfImmutableListsNotRegistered() {
+    void shouldFailToDeserializeClassWithImmutableListIfImmutableListsNotRegistered() {
         // Given
         Kryo kryo = kryoWithoutImmutableListSupport();
-        Partition partition = partitionWithNRowKeys(1);
+        ImmutableListWrapper immutableListWrapper = new ImmutableListWrapper();
 
         // When / Then
-        byte[] bytes = serialize(kryo, partition);
-        assertThatThrownBy(() -> deserialize(kryo, bytes, Partition.class))
+        byte[] bytes = serialize(kryo, immutableListWrapper);
+        assertThatThrownBy(() -> deserialize(kryo, bytes, ImmutableListWrapper.class))
                 .isInstanceOf(KryoException.class)
                 .hasCauseInstanceOf(UnsupportedOperationException.class);
     }
@@ -123,6 +124,18 @@ public class KryoSerializerTest {
     private static <T> T deserialize(Kryo kryo, byte[] bytes, Class<T> readClass) {
         try (Input input = new Input(new ByteArrayInputStream(bytes))) {
             return kryo.readObject(input, readClass);
+        }
+    }
+
+    private static class ImmutableListWrapper {
+        private final List<String> immutableList;
+
+        ImmutableListWrapper() {
+            immutableList = List.of("test");
+        }
+
+        List<String> getImmutableList() {
+            return immutableList;
         }
     }
 }
