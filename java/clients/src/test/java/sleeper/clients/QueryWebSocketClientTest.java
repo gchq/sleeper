@@ -429,7 +429,8 @@ public class QueryWebSocketClientTest {
 
     protected void runQuery(Query query, Client webSocketClient) throws Exception {
         new QueryWebSocketClient(instanceProperties, new FixedTablePropertiesProvider(tableProperties),
-                out.consoleOut(), webSocketClient).submitQuery(query);
+                out.consoleOut(), () -> webSocketClient)
+                .submitQuery(query);
     }
 
     private FakeWebSocketClient withResponses(WebSocketResponse... responses) {
