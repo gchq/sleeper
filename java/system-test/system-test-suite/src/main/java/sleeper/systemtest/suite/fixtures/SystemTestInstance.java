@@ -73,7 +73,7 @@ public class SystemTestInstance {
     public static final SystemTestInstanceConfiguration COMPACTION_PERFORMANCE = usingSystemTestDefaults("compact", SystemTestInstance::buildCompactionPerformanceConfiguration);
     public static final SystemTestInstanceConfiguration BULK_IMPORT_PERFORMANCE = usingSystemTestDefaults("emr", SystemTestInstance::buildBulkImportPerformanceConfiguration);
     public static final SystemTestInstanceConfiguration INGEST_NO_SOURCE_BUCKET = noSourceBucket("no-src", SystemTestInstance::buildMainConfiguration);
-    public static final SystemTestInstanceConfiguration COMPACTION_ON_EC2 = usingSystemTestDefaults("cmpt-ec2", SystemTestInstance::buildCompactionOnEC2Configuration);
+    public static final SystemTestInstanceConfiguration COMPACTION_ON_EC2 = usingSystemTestDefaults("cpt-ec2", SystemTestInstance::buildCompactionOnEC2Configuration);
 
     private static final String MAIN_EMR_MASTER_TYPES = "m6i.xlarge,m6a.xlarge,m5.xlarge,m5a.xlarge";
     private static final String MAIN_EMR_EXECUTOR_TYPES = "m6i.4xlarge,m6a.4xlarge,m5.4xlarge,m5a.4xlarge";
