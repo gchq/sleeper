@@ -37,7 +37,6 @@ import java.util.Optional;
  * their minimum but not contain their maximum.
  */
 public class Partition {
-    private final List<PrimitiveType> rowKeyTypes;
     private final Region region;
     private final String id;
     private final boolean leafPartition;
@@ -47,7 +46,6 @@ public class Partition {
 
     private Partition(Partition.Builder builder) {
         region = Objects.requireNonNull(builder.region, "region must not be null");
-        rowKeyTypes = Objects.requireNonNull(builder.rowKeyTypes, "rowKeyTypes must not be null");
         id = Objects.requireNonNull(builder.id, "id must not be null");
         leafPartition = builder.leafPartition;
         parentPartitionId = builder.parentPartitionId;
@@ -60,10 +58,6 @@ public class Partition {
 
     public static Builder builder() {
         return new Builder();
-    }
-
-    public List<PrimitiveType> getRowKeyTypes() {
-        return rowKeyTypes;
     }
 
     public Region getRegion() {
@@ -108,8 +102,7 @@ public class Partition {
         }
         Partition partition = (Partition) o;
 
-        return Objects.equals(rowKeyTypes, partition.rowKeyTypes)
-                && leafPartition == partition.leafPartition
+        return leafPartition == partition.leafPartition
                 && Objects.equals(region, partition.region)
                 && Objects.equals(id, partition.id)
                 && Objects.equals(parentPartitionId, partition.parentPartitionId)
@@ -119,21 +112,30 @@ public class Partition {
 
     @Override
     public int hashCode() {
-        return Objects.hash(rowKeyTypes, region, id, leafPartition,
+        return Objects.hash(region, id, leafPartition,
                 parentPartitionId, childPartitionIds, dimension);
     }
 
     @Override
     public String toString() {
         return "Partition{"
-                + "rowKeyTypes=" + rowKeyTypes
-                + ", region=" + region
+                + "region=" + region
                 + ", id='" + id + '\''
                 + ", leafPartition=" + leafPartition
                 + ", parentPartitionId='" + parentPartitionId + '\''
                 + ", childPartitionIds=" + childPartitionIds
                 + ", dimension=" + dimension
                 + '}';
+    }
+
+    public Builder toBuilder() {
+        return builder()
+                .region(region)
+                .id(id)
+                .leafPartition(leafPartition)
+                .childPartitionIds(childPartitionIds)
+                .parentPartitionId(parentPartitionId)
+                .dimension(dimension);
     }
 
     public static final class Builder {
@@ -202,15 +204,5 @@ public class Partition {
         public Region getRegion() {
             return region;
         }
-    }
-
-    public Builder toBuilder() {
-        return builder().rowKeyTypes(rowKeyTypes)
-                .region(region)
-                .id(id)
-                .leafPartition(leafPartition)
-                .childPartitionIds(childPartitionIds)
-                .parentPartitionId(parentPartitionId)
-                .dimension(dimension);
     }
 }
