@@ -37,13 +37,14 @@ public class ExponentialBackoffWithJitter {
         this(waitRange, Math::random, Thread::sleep);
     }
 
-    public void waitBeforeAttempt(int attempt) throws InterruptedException {
+    public long waitBeforeAttempt(int attempt) throws InterruptedException {
         if (attempt == 0) {
-            return;
+            return 0;
         }
         long waitMillis = getWaitMillisBeforeAttempt(attempt);
         LOGGER.debug("Sleeping for {} milliseconds", waitMillis);
         waiter.waitForMillis(waitMillis);
+        return waitMillis;
     }
 
     private long getWaitMillisBeforeAttempt(int attempt) {
