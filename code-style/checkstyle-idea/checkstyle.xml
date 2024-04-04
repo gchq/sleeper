@@ -88,6 +88,7 @@
             <property name="allowMissingPropertyJavadoc" value="true"/>
             <property name="allowedAnnotations" value="Override"/>
             <property name="scope" value="public"/>
+            <property name="tokens" value="METHOD_DEF,ANNOTATION_FIELD_DEF"/>
         </module>
         <module name="MissingJavadocType">
             <property name="id" value="missingJavadocType"/>
