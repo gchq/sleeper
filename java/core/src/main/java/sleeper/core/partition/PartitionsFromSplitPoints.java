@@ -126,7 +126,6 @@ public class PartitionsFromSplitPoints {
                         .childPartitionIds(childPartitionIds)
                         .leafPartition(false)
                         .dimension(0)
-                        .rowKeyTypes(schema.getRowKeyTypes())
                         .region(region);
                 leftPartition.parentPartitionId(id);
                 rightPartition.parentPartitionId(id);
@@ -153,7 +152,6 @@ public class PartitionsFromSplitPoints {
         for (Region region : leafRegions) {
             String id = UUID.randomUUID().toString();
             Partition.Builder partition = Partition.builder()
-                    .rowKeyTypes(schema.getRowKeyTypes())
                     .region(region)
                     .id(id)
                     .leafPartition(true)
@@ -178,7 +176,6 @@ public class PartitionsFromSplitPoints {
         }
         Region region = new Region(ranges);
         return Partition.builder()
-                .rowKeyTypes(schema.getRowKeyTypes())
                 .region(region)
                 .id("root")
                 .leafPartition(true)
