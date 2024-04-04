@@ -487,7 +487,7 @@ public class QueryWebSocketClientTest {
 
     protected CompletableFuture<List<String>> runQueryFuture(Query query, Client webSocketClient) throws Exception {
         QueryWebSocketClient client = new QueryWebSocketClient(instanceProperties, new FixedTablePropertiesProvider(tableProperties),
-                out.consoleOut(), webSocketClient);
+                out.consoleOut(), () -> webSocketClient);
         return client.submitQuery(query);
     }
 

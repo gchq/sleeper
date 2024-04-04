@@ -82,8 +82,12 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .build();
 
     // TransactionLogStateStore
-    CdkDefinedInstanceProperty TRANSACTION_LOG_TABLENAME = Index.propertyBuilder("sleeper.metadata.transactionlog.dynamo.log.table")
-            .description("The name of the DynamoDB table holding the state store transaction log.")
+    CdkDefinedInstanceProperty FILE_TRANSACTION_LOG_TABLENAME = Index.propertyBuilder("sleeper.metadata.transactionlog.dynamo.file.log.table")
+            .description("The name of the DynamoDB table holding the state store file transaction log.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+    CdkDefinedInstanceProperty PARTITION_TRANSACTION_LOG_TABLENAME = Index.propertyBuilder("sleeper.metadata.transactionlog.dynamo.partition.log.table")
+            .description("The name of the DynamoDB table holding the state store partition transaction log.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
 
@@ -152,6 +156,10 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .build();
     CdkDefinedInstanceProperty QUERY_TRACKER_TABLE_NAME = Index.propertyBuilder("sleeper.query.tracker.table.name")
             .description("The name of the table responsible for tracking query progress.")
+            .propertyGroup(InstancePropertyGroup.QUERY)
+            .build();
+    CdkDefinedInstanceProperty QUERY_WARM_LAMBDA_CLOUDWATCH_RULE = Index.propertyBuilder("sleeper.query.warm.lambda.rule")
+            .description("The name of the CloudWatch rule to trigger the query lambda to keep it warm.")
             .propertyGroup(InstancePropertyGroup.QUERY)
             .build();
     CdkDefinedInstanceProperty LEAF_PARTITION_QUERY_QUEUE_URL = Index.propertyBuilder("sleeper.query.leaf.partition.queue.url")

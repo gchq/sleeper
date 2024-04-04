@@ -22,14 +22,14 @@ import sleeper.core.statestore.exception.FileAlreadyExistsException;
 import sleeper.core.statestore.exception.FileNotFoundException;
 import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
-import sleeper.core.statestore.transactionlog.StateStoreTransaction;
-import sleeper.core.statestore.transactionlog.TransactionLogHead;
+import sleeper.core.statestore.transactionlog.FileReferenceTransaction;
+import sleeper.core.statestore.transactionlog.StateStoreFiles;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 
-public class ReplaceFileReferencesTransaction implements StateStoreTransaction {
+public class ReplaceFileReferencesTransaction implements FileReferenceTransaction {
 
     private final String jobId;
     private final String partitionId;
@@ -49,9 +49,9 @@ public class ReplaceFileReferencesTransaction implements StateStoreTransaction {
     }
 
     @Override
-    public void validate(TransactionLogHead state) throws StateStoreException {
+    public void validate(StateStoreFiles stateStoreFiles) throws StateStoreException {
         for (String filename : inputFiles) {
-            AllReferencesToAFile file = state.files().file(filename)
+            AllReferencesToAFile file = stateStoreFiles.file(filename)
                     .orElseThrow(() -> new FileNotFoundException(filename));
             FileReference reference = file.getReferenceForPartitionId(partitionId)
                     .orElseThrow(() -> new FileReferenceNotFoundException(filename, partitionId));
@@ -59,17 +59,17 @@ public class ReplaceFileReferencesTransaction implements StateStoreTransaction {
                 throw new FileReferenceNotAssignedToJobException(reference, jobId);
             }
         }
-        if (state.files().file(newReference.getFilename()).isPresent()) {
+        if (stateStoreFiles.file(newReference.getFilename()).isPresent()) {
             throw new FileAlreadyExistsException(newReference.getFilename());
         }
     }
 
     @Override
-    public void apply(TransactionLogHead state) {
+    public void apply(StateStoreFiles stateStoreFiles) {
         for (String filename : inputFiles) {
-            state.files().updateFile(filename, file -> file.removeReferenceForPartition(partitionId, updateTime));
+            stateStoreFiles.updateFile(filename, file -> file.removeReferenceForPartition(partitionId, updateTime));
         }
-        state.files().add(AllReferencesToAFile.fileWithOneReference(newReference, updateTime));
+        stateStoreFiles.add(AllReferencesToAFile.fileWithOneReference(newReference, updateTime));
     }
 
     @Override

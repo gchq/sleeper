@@ -23,8 +23,8 @@ import sleeper.core.statestore.exception.FileNotFoundException;
 import sleeper.core.statestore.exception.FileReferenceAlreadyExistsException;
 import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
-import sleeper.core.statestore.transactionlog.StateStoreTransaction;
-import sleeper.core.statestore.transactionlog.TransactionLogHead;
+import sleeper.core.statestore.transactionlog.FileReferenceTransaction;
+import sleeper.core.statestore.transactionlog.StateStoreFiles;
 
 import java.time.Instant;
 import java.util.List;
@@ -32,7 +32,7 @@ import java.util.Objects;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 
-public class SplitFileReferencesTransaction implements StateStoreTransaction {
+public class SplitFileReferencesTransaction implements FileReferenceTransaction {
 
     private final List<SplitFileReferenceRequest> requests;
     private final Instant updateTime;
@@ -45,9 +45,9 @@ public class SplitFileReferencesTransaction implements StateStoreTransaction {
     }
 
     @Override
-    public void validate(TransactionLogHead state) throws StateStoreException {
+    public void validate(StateStoreFiles stateStoreFiles) throws StateStoreException {
         for (SplitFileReferenceRequest request : requests) {
-            AllReferencesToAFile file = state.files().file(request.getFilename())
+            AllReferencesToAFile file = stateStoreFiles.file(request.getFilename())
                     .orElseThrow(() -> new FileNotFoundException(request.getFilename()));
             FileReference oldReference = file.getReferenceForPartitionId(request.getFromPartitionId())
                     .orElseThrow(() -> new FileReferenceNotFoundException(request.getOldReference()));
@@ -63,9 +63,9 @@ public class SplitFileReferencesTransaction implements StateStoreTransaction {
     }
 
     @Override
-    public void apply(TransactionLogHead state) {
+    public void apply(StateStoreFiles stateStoreFiles) {
         for (SplitFileReferenceRequest request : requests) {
-            state.files().updateFile(request.getFilename(),
+            stateStoreFiles.updateFile(request.getFilename(),
                     file -> file.splitReferenceFromPartition(request.getFromPartitionId(), request.getNewReferences(), updateTime));
         }
     }

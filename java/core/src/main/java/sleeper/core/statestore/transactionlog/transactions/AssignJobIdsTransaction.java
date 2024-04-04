@@ -21,14 +21,14 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
-import sleeper.core.statestore.transactionlog.StateStoreTransaction;
-import sleeper.core.statestore.transactionlog.TransactionLogHead;
+import sleeper.core.statestore.transactionlog.FileReferenceTransaction;
+import sleeper.core.statestore.transactionlog.StateStoreFiles;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 
-public class AssignJobIdsTransaction implements StateStoreTransaction {
+public class AssignJobIdsTransaction implements FileReferenceTransaction {
 
     private final List<AssignJobIdRequest> requests;
     private final Instant updateTime;
@@ -39,10 +39,10 @@ public class AssignJobIdsTransaction implements StateStoreTransaction {
     }
 
     @Override
-    public void validate(TransactionLogHead state) throws StateStoreException {
+    public void validate(StateStoreFiles stateStoreFiles) throws StateStoreException {
         for (AssignJobIdRequest request : requests) {
             for (String filename : request.getFilenames()) {
-                AllReferencesToAFile existingFile = state.files().file(filename)
+                AllReferencesToAFile existingFile = stateStoreFiles.file(filename)
                         .orElseThrow(() -> new FileReferenceNotFoundException(filename, request.getPartitionId()));
                 FileReference existingReference = existingFile.getReferenceForPartitionId(request.getPartitionId())
                         .orElseThrow(() -> new FileReferenceNotFoundException(filename, request.getPartitionId()));
@@ -54,10 +54,10 @@ public class AssignJobIdsTransaction implements StateStoreTransaction {
     }
 
     @Override
-    public void apply(TransactionLogHead state) {
+    public void apply(StateStoreFiles stateStoreFiles) {
         for (AssignJobIdRequest request : requests) {
             for (String filename : request.getFilenames()) {
-                state.files().updateFile(filename,
+                stateStoreFiles.updateFile(filename,
                         file -> file.withJobIdForPartition(request.getJobId(), request.getPartitionId(), updateTime));
             }
         }

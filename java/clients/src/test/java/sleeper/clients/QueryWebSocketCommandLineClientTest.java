@@ -489,7 +489,7 @@ public class QueryWebSocketCommandLineClientTest {
     protected void runQueryClient(String queryId, Client webSocketClient) throws Exception {
         new QueryWebSocketCommandLineClient(instanceProperties, tableIndex, new FixedTablePropertiesProvider(tableProperties),
                 in.consoleIn(), out.consoleOut(), new QueryWebSocketClient(instanceProperties,
-                        new FixedTablePropertiesProvider(tableProperties), out.consoleOut(), webSocketClient),
+                        new FixedTablePropertiesProvider(tableProperties), out.consoleOut(), () -> webSocketClient),
                 () -> queryId)
                 .run();
     }

@@ -16,20 +16,20 @@
 package sleeper.core.statestore.transactionlog.transactions;
 
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.statestore.transactionlog.StateStoreTransaction;
-import sleeper.core.statestore.transactionlog.TransactionLogHead;
+import sleeper.core.statestore.transactionlog.FileReferenceTransaction;
+import sleeper.core.statestore.transactionlog.StateStoreFiles;
 
 import java.util.Objects;
 
-public class ClearFilesTransaction implements StateStoreTransaction {
+public class ClearFilesTransaction implements FileReferenceTransaction {
 
     @Override
-    public void validate(TransactionLogHead state) throws StateStoreException {
+    public void validate(StateStoreFiles stateStoreFiles) throws StateStoreException {
     }
 
     @Override
-    public void apply(TransactionLogHead state) {
-        state.files().clear();
+    public void apply(StateStoreFiles stateStoreFiles) {
+        stateStoreFiles.clear();
     }
 
     @Override

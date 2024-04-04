@@ -41,15 +41,15 @@ public class TransactionSerDe {
         gsonPrettyPrint = builder.setPrettyPrinting().create();
     }
 
-    public String toJson(StateStoreTransaction transaction) {
+    public String toJson(StateStoreTransaction<?> transaction) {
         return gson.toJson(transaction);
     }
 
-    public String toJsonPrettyPrint(StateStoreTransaction transaction) {
+    public String toJsonPrettyPrint(StateStoreTransaction<?> transaction) {
         return gsonPrettyPrint.toJson(transaction);
     }
 
-    public StateStoreTransaction toTransaction(TransactionType type, String json) {
+    public StateStoreTransaction<?> toTransaction(TransactionType type, String json) {
         return gson.fromJson(json, type.getType());
     }
 }

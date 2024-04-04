@@ -56,6 +56,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -63,23 +64,28 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 
 public class QueryWebSocketClient {
     private final String apiUrl;
-    private final Client client;
     private final ConsoleOutput out;
+    private final Supplier<Client> clientSupplier;
+    private Client client;
 
-    QueryWebSocketClient(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, ConsoleOutput out) {
-        this(instanceProperties, tablePropertiesProvider, out, new WebSocketQueryClient(instanceProperties, tablePropertiesProvider, out));
+    public QueryWebSocketClient(
+            InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, ConsoleOutput out) {
+        this(instanceProperties, tablePropertiesProvider, out,
+                () -> new WebSocketQueryClient(instanceProperties, tablePropertiesProvider, out));
     }
 
-    QueryWebSocketClient(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, ConsoleOutput out, Client client) {
+    QueryWebSocketClient(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
+            ConsoleOutput out, Supplier<Client> clientSupplier) {
         this.apiUrl = instanceProperties.get(CdkDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL);
         if (this.apiUrl == null) {
             throw new IllegalArgumentException("Use of this query client requires the WebSocket API to have been deployed as part of your Sleeper instance!");
         }
-        this.client = client;
         this.out = out;
+        this.clientSupplier = clientSupplier;
     }
 
     public CompletableFuture<List<String>> submitQuery(Query query) throws InterruptedException {
+        client = clientSupplier.get();
         try {
             Instant startTime = Instant.now();
             return client.startQueryFuture(query)
@@ -105,7 +111,11 @@ public class QueryWebSocketClient {
     }
 
     public List<String> getResults(Query query) {
-        return client.getResults(query.getQueryId());
+        if (client == null) {
+            return List.of();
+        } else {
+            return client.getResults(query.getQueryId());
+        }
     }
 
     public interface Client {
