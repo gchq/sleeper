@@ -84,6 +84,7 @@ public class QueryWebSocketClient {
             Instant startTime = Instant.now();
             return client.startQueryFuture(query)
                     .whenComplete((records, exception) -> {
+                        LOGGER.info("Query finished, closing client");
                         try {
                             client.closeBlocking();
                         } catch (InterruptedException e) {
