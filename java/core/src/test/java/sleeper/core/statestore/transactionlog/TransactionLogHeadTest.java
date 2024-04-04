@@ -44,12 +44,6 @@ public class TransactionLogHeadTest {
         store.initialise(partitions.buildList());
     }
 
-    private StateStore otherProcess() {
-        StateStore otherStore = new TransactionLogStateStore(schema, fileLogStore, partitionLogStore);
-        otherStore.fixTime(DEFAULT_UPDATE_TIME);
-        return otherStore;
-    }
-
     @Test
     void shouldAddTransactionWhenAnotherProcessAddedATransactionBetweenAdds() throws Exception {
         // Given
@@ -69,12 +63,11 @@ public class TransactionLogHeadTest {
     }
 
     @Test
-    void shouldAddTransactionWhenAnotherProcessAddedATransactionBetweenUpdateAndAdd() throws Exception {
+    void shouldRetryAddTransactionWhenAnotherProcessAddedATransactionBetweenUpdateAndAdd() throws Exception {
         // Given
-        FileReferenceFactory fileFactory = FileReferenceFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
-        FileReference file1 = fileFactory.rootFile("file1.parquet", 100);
-        FileReference file2 = fileFactory.rootFile("file2.parquet", 200);
-        FileReference file3 = fileFactory.rootFile("file3.parquet", 300);
+        FileReference file1 = fileFactory().rootFile("file1.parquet", 100);
+        FileReference file2 = fileFactory().rootFile("file2.parquet", 200);
+        FileReference file3 = fileFactory().rootFile("file3.parquet", 300);
         store.addFile(file1);
         fileLogStore.beforeNextAddTransaction(() -> {
             otherProcess().addFile(file2);
@@ -85,5 +78,32 @@ public class TransactionLogHeadTest {
 
         // Then
         assertThat(store.getFileReferences()).containsExactly(file1, file2, file3);
+    }
+
+    @Test
+    void shouldRetryAddTransactionWhenUnexpectedFailureOccurredAddingTransaction() throws Exception {
+        // Given
+        FileReference file1 = fileFactory().rootFile("file1.parquet", 100);
+        FileReference file2 = fileFactory().rootFile("file2.parquet", 200);
+        store.addFile(file1);
+        fileLogStore.beforeNextAddTransaction(() -> {
+            throw new RuntimeException("Unexpected failure");
+        });
+
+        // When
+        store.addFile(file2);
+
+        // Then
+        assertThat(store.getFileReferences()).containsExactly(file1, file2);
+    }
+
+    private StateStore otherProcess() {
+        StateStore otherStore = new TransactionLogStateStore(schema, fileLogStore, partitionLogStore);
+        otherStore.fixTime(DEFAULT_UPDATE_TIME);
+        return otherStore;
+    }
+
+    private FileReferenceFactory fileFactory() {
+        return FileReferenceFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
     }
 }

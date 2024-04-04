@@ -46,7 +46,7 @@ public class TransactionLogHead<T> {
             long transactionNumber = lastTransactionNumber + 1;
             try {
                 logStore.addTransaction(transaction, transactionNumber);
-            } catch (UnreadTransactionException e) {
+            } catch (Exception e) {
                 continue;
             }
             transaction.apply(state);
