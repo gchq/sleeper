@@ -30,8 +30,11 @@ public class InMemoryTransactionLogStore implements TransactionLogStore {
     @Override
     public void addTransaction(StateStoreTransaction<?> transaction, long transactionNumber) throws UnreadTransactionException {
         doBeforeNextAdd();
-        if (transactions.size() + 1 != transactionNumber) {
-            throw new UnreadTransactionException(transactionNumber, transactions.size());
+        if (transactionNumber <= transactions.size()) {
+            throw new UnreadTransactionException(transactionNumber);
+        }
+        if (transactionNumber > transactions.size() + 1) {
+            throw new IllegalStateException("Attempted to add transaction " + transactionNumber + " when we only have " + transactions.size());
         }
         transactions.add(transaction);
     }

@@ -17,9 +17,13 @@ package sleeper.core.statestore.transactionlog;
 
 public class UnreadTransactionException extends Exception {
 
-    public UnreadTransactionException(long expectedNewTransactionNumber, long lastStoreTransactionNumber) {
-        super("Unread transaction found. Adding after number " + lastStoreTransactionNumber + ", " +
-                "but expected new transaction to be number " + expectedNewTransactionNumber + ".");
+    public UnreadTransactionException(long attemptedTransactionNumber) {
+        this(attemptedTransactionNumber, null);
+    }
+
+    public UnreadTransactionException(long attemptedTransactionNumber, Throwable cause) {
+        super("Unread transaction found. Adding transaction number " + attemptedTransactionNumber + ", " +
+                "but it already exists.", cause);
     }
 
 }

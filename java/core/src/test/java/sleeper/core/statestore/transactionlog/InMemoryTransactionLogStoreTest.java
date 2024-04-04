@@ -43,8 +43,8 @@ public class InMemoryTransactionLogStoreTest {
     void shouldFailToAddFirstTransactionWithTooHighNumber() throws Exception {
         // When / Then
         assertThatThrownBy(() -> store.addTransaction(new ClearFilesTransaction(), 2))
-                .isInstanceOf(UnreadTransactionException.class)
-                .hasMessage("Unread transaction found. Adding after number 0, but expected new transaction to be number 2.");
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("Attempted to add transaction 2 when we only have 0");
         assertThat(store.readTransactionsAfter(0)).isEmpty();
     }
 
@@ -56,7 +56,7 @@ public class InMemoryTransactionLogStoreTest {
         // When / Then
         assertThatThrownBy(() -> store.addTransaction(new DeleteFilesTransaction(List.of("file2.parquet")), 1))
                 .isInstanceOf(UnreadTransactionException.class)
-                .hasMessage("Unread transaction found. Adding after number 1, but expected new transaction to be number 1.");
+                .hasMessage("Unread transaction found. Adding transaction number 1, but it already exists.");
         assertThat(store.readTransactionsAfter(0))
                 .containsExactly(new DeleteFilesTransaction(List.of("file1.parquet")));
     }
@@ -70,7 +70,7 @@ public class InMemoryTransactionLogStoreTest {
         // When / Then
         assertThatThrownBy(() -> store.addTransaction(new DeleteFilesTransaction(List.of("file.parquet")), 1))
                 .isInstanceOf(UnreadTransactionException.class)
-                .hasMessage("Unread transaction found. Adding after number 1, but expected new transaction to be number 1.");
+                .hasMessage("Unread transaction found. Adding transaction number 1, but it already exists.");
         assertThat(store.readTransactionsAfter(0))
                 .containsExactly(new ClearFilesTransaction());
     }

@@ -17,6 +17,7 @@ package sleeper.statestore.transactionlog;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
@@ -27,6 +28,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.TransactionLogStore;
+import sleeper.core.statestore.transactionlog.UnreadTransactionException;
 import sleeper.core.statestore.transactionlog.transactions.TransactionSerDe;
 import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
@@ -59,17 +61,21 @@ class DynamoDBTransactionLogStore implements TransactionLogStore {
     }
 
     @Override
-    public void addTransaction(StateStoreTransaction<?> transaction, long transactionNumber) {
-        dynamo.putItem(new PutItemRequest()
-                .withTableName(logTableName)
-                .withItem(new DynamoDBRecordBuilder()
-                        .string(TABLE_ID, sleeperTableId)
-                        .number(TRANSACTION_NUMBER, transactionNumber)
-                        .string(TYPE, TransactionType.getType(transaction).name())
-                        .string(BODY, serDe.toJson(transaction))
-                        .build())
-                .withConditionExpression("attribute_not_exists(#Number)")
-                .withExpressionAttributeNames(Map.of("#Number", TRANSACTION_NUMBER)));
+    public void addTransaction(StateStoreTransaction<?> transaction, long transactionNumber) throws UnreadTransactionException {
+        try {
+            dynamo.putItem(new PutItemRequest()
+                    .withTableName(logTableName)
+                    .withItem(new DynamoDBRecordBuilder()
+                            .string(TABLE_ID, sleeperTableId)
+                            .number(TRANSACTION_NUMBER, transactionNumber)
+                            .string(TYPE, TransactionType.getType(transaction).name())
+                            .string(BODY, serDe.toJson(transaction))
+                            .build())
+                    .withConditionExpression("attribute_not_exists(#Number)")
+                    .withExpressionAttributeNames(Map.of("#Number", TRANSACTION_NUMBER)));
+        } catch (ConditionalCheckFailedException e) {
+            throw new UnreadTransactionException(transactionNumber, e);
+        }
     }
 
     @Override
