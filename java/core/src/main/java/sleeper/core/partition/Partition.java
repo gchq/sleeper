@@ -155,10 +155,6 @@ public class Partition {
             return this;
         }
 
-        public Builder rowKeyTypes(PrimitiveType... rowKeyTypes) {
-            return this.rowKeyTypes(Arrays.asList(rowKeyTypes));
-        }
-
         public Builder region(Region region) {
             this.region = region;
             return this;
