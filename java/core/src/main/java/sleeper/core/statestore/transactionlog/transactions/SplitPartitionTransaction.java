@@ -17,8 +17,8 @@ package sleeper.core.statestore.transactionlog.transactions;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.statestore.transactionlog.StateStoreTransaction;
-import sleeper.core.statestore.transactionlog.TransactionLogHead;
+import sleeper.core.statestore.transactionlog.PartitionTransaction;
+import sleeper.core.statestore.transactionlog.StateStorePartitions;
 
 import java.util.HashSet;
 import java.util.List;
@@ -27,7 +27,7 @@ import java.util.Set;
 
 import static java.util.stream.Collectors.toUnmodifiableSet;
 
-public class SplitPartitionTransaction implements StateStoreTransaction {
+public class SplitPartitionTransaction implements PartitionTransaction {
 
     private final Partition parent;
     private final List<Partition> newChildren;
@@ -38,8 +38,8 @@ public class SplitPartitionTransaction implements StateStoreTransaction {
     }
 
     @Override
-    public void validate(TransactionLogHead state) throws StateStoreException {
-        Partition existingParent = state.partitions().byId(parent.getId())
+    public void validate(StateStorePartitions stateStorePartitions) throws StateStoreException {
+        Partition existingParent = stateStorePartitions.byId(parent.getId())
                 .orElseThrow(() -> new StateStoreException("Parent partition not found"));
         if (!existingParent.isLeafPartition()) {
             throw new StateStoreException("Parent should be a leaf partition");
@@ -52,7 +52,7 @@ public class SplitPartitionTransaction implements StateStoreTransaction {
         }
 
         for (Partition child : newChildren) {
-            if (state.partitions().byId(child.getId()).isPresent()) {
+            if (stateStorePartitions.byId(child.getId()).isPresent()) {
                 throw new StateStoreException("Child partition should not be present");
             }
             if (!child.getParentPartitionId().equals(parent.getId())) {
@@ -65,9 +65,9 @@ public class SplitPartitionTransaction implements StateStoreTransaction {
     }
 
     @Override
-    public void apply(TransactionLogHead state) {
-        state.partitions().put(parent);
-        newChildren.forEach(state.partitions()::put);
+    public void apply(StateStorePartitions stateStorePartitions) {
+        stateStorePartitions.put(parent);
+        newChildren.forEach(stateStorePartitions::put);
     }
 
     @Override

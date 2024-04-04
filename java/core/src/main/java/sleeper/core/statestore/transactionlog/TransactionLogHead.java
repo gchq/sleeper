@@ -17,39 +17,48 @@ package sleeper.core.statestore.transactionlog;
 
 import sleeper.core.statestore.StateStoreException;
 
-public class TransactionLogHead {
+public class TransactionLogHead<T> {
 
     private final TransactionLogStore logStore;
-    private final StateStorePartitions partitions = new StateStorePartitions();
-    private final StateStoreFiles files = new StateStoreFiles();
+    private final Class<? extends StateStoreTransaction<T>> transactionType;
+    private final T state;
     private long lastTransactionNumber = 0;
 
-    public TransactionLogHead(TransactionLogStore logStore) {
+    private TransactionLogHead(
+            TransactionLogStore logStore, Class<? extends StateStoreTransaction<T>> transactionType, T state) {
         this.logStore = logStore;
+        this.transactionType = transactionType;
+        this.state = state;
     }
 
-    public void addTransaction(StateStoreTransaction transaction) throws StateStoreException {
+    public static TransactionLogHead<StateStoreFiles> forFiles(TransactionLogStore logStore) {
+        return new TransactionLogHead<StateStoreFiles>(logStore, FileReferenceTransaction.class, new StateStoreFiles());
+    }
+
+    public static TransactionLogHead<StateStorePartitions> forPartitions(TransactionLogStore logStore) {
+        return new TransactionLogHead<StateStorePartitions>(logStore, PartitionTransaction.class, new StateStorePartitions());
+    }
+
+    public void addTransaction(StateStoreTransaction<T> transaction) throws StateStoreException {
         update();
-        transaction.validate(this);
+        transaction.validate(state);
         long transactionNumber = lastTransactionNumber + 1;
         logStore.addTransaction(transaction, transactionNumber);
-        transaction.apply(this);
+        transaction.apply(state);
         lastTransactionNumber = transactionNumber;
     }
 
     public void update() {
-        logStore.readTransactionsAfter(lastTransactionNumber).forEach(transaction -> {
-            transaction.apply(this);
-            lastTransactionNumber++;
-        });
+        logStore.readTransactionsAfter(lastTransactionNumber)
+                .peek(transaction -> lastTransactionNumber++)
+                .filter(transactionType::isInstance)
+                .map(transactionType::cast)
+                .forEach(transaction -> {
+                    transaction.apply(state);
+                });
     }
 
-    public StateStorePartitions partitions() {
-        return partitions;
+    public T state() {
+        return state;
     }
-
-    public StateStoreFiles files() {
-        return files;
-    }
-
 }
