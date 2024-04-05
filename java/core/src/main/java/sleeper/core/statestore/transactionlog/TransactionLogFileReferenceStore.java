@@ -84,7 +84,8 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
         List<AllReferencesToAFile> files = new ArrayList<>();
         int foundUnreferenced = 0;
         boolean moreThanMax = false;
-        for (AllReferencesToAFile file : (Iterable<AllReferencesToAFile>) () -> files().referencedAndUnreferenced().iterator()) {
+        StateStoreFiles state = files();
+        for (AllReferencesToAFile file : (Iterable<AllReferencesToAFile>) () -> state.referencedAndUnreferenced().iterator()) {
             if (file.getTotalReferenceCount() < 1) {
                 if (foundUnreferenced >= maxUnreferencedFiles) {
                     moreThanMax = true;
@@ -116,7 +117,7 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public boolean hasNoFiles() {
+    public boolean hasNoFiles() throws StateStoreException {
         return files().isEmpty();
     }
 
@@ -133,7 +134,7 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
         }
     }
 
-    private StateStoreFiles files() {
+    private StateStoreFiles files() throws StateStoreException {
         head.update();
         return head.state();
     }

@@ -147,6 +147,24 @@ public class TransactionLogStateStoreLogSpecificTest {
         assertThat(retryWaits).isEmpty();
     }
 
+    @Test
+    void shouldFailIfReadingTransactionsFails() throws Exception {
+        // Given
+        FileReference file = fileFactory().rootFile("file.parquet", 100);
+        RuntimeException failure = new RuntimeException("Unexpected failure");
+        filesLogStore.beforeNextReadTransactions(() -> {
+            throw failure;
+        });
+
+        // When / Then
+        assertThatThrownBy(() -> store.addFile(file))
+                .isInstanceOf(StateStoreException.class)
+                .cause().isSameAs(failure);
+        assertThat(store.getFileReferences())
+                .isEmpty();
+        assertThat(retryWaits).isEmpty();
+    }
+
     private StateStore otherProcess() {
         return stateStore();
     }

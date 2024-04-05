@@ -241,7 +241,7 @@ public interface FileReferenceStore {
      *
      * @return a boolean representing whether the state store has files in it or not.
      */
-    boolean hasNoFiles();
+    boolean hasNoFiles() throws StateStoreException;
 
     /**
      * Clears all file data from the file reference store. Note that this does not delete any of the actual files.

@@ -69,7 +69,7 @@ class TransactionLogPartitionStore implements PartitionStore {
         head.addTransaction(new InitialisePartitionsTransaction(partitions));
     }
 
-    private Stream<Partition> partitions() {
+    private Stream<Partition> partitions() throws StateStoreException {
         head.update();
         return head.state().all().stream();
     }
