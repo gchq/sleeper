@@ -24,6 +24,7 @@ import sleeper.query.model.QuerySerDe;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 public class FakeWebSocketClient implements Client {
     private boolean connected = false;
@@ -43,8 +44,9 @@ public class FakeWebSocketClient implements Client {
 
     @Override
     public void closeBlocking() throws InterruptedException {
-        connected = false;
-        closed = true;
+        if (!closed) {
+            onClose("Connection closed normally");
+        }
     }
 
     public FakeWebSocketClient withResponses(WebSocketResponse... responses) {
@@ -53,10 +55,13 @@ public class FakeWebSocketClient implements Client {
     }
 
     @Override
-    public void startQuery(Query query) throws InterruptedException {
+    public CompletableFuture<List<String>> startQueryFuture(Query query) throws InterruptedException {
+        CompletableFuture<List<String>> future = new CompletableFuture<>();
+        messageHandler.setFuture(future);
         connectBlocking();
         messageHandler.onOpen(query, sentMessages::add);
-        responses.forEach(response -> response.sendTo(messageHandler));
+        responses.forEach(response -> response.sendTo(this));
+        return future;
     }
 
     @Override
@@ -90,7 +95,21 @@ public class FakeWebSocketClient implements Client {
         return sentMessages;
     }
 
+    public void onMessage(String message) {
+        messageHandler.onMessage(message);
+    }
+
+    public void onClose(String reason) {
+        messageHandler.onClose(reason);
+        connected = false;
+        closed = true;
+    }
+
+    public void onError(Exception error) {
+        messageHandler.onError(error);
+    }
+
     public interface WebSocketResponse {
-        void sendTo(WebSocketMessageHandler client);
+        void sendTo(FakeWebSocketClient client);
     }
 }

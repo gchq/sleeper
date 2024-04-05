@@ -84,7 +84,7 @@ public abstract class QueryCommandLineClient {
         this.out = out;
     }
 
-    public void run() throws StateStoreException {
+    public void run() throws StateStoreException, InterruptedException {
         TableProperties tableProperties = getTableProperties();
         init(tableProperties);
 
@@ -93,7 +93,7 @@ public abstract class QueryCommandLineClient {
 
     protected abstract void init(TableProperties tableProperties) throws StateStoreException;
 
-    protected abstract void submitQuery(TableProperties tableProperties, Query query);
+    protected abstract void submitQuery(TableProperties tableProperties, Query query) throws InterruptedException;
 
     protected TableProperties getTableProperties() {
         String tableName = promptTableName();
@@ -103,7 +103,7 @@ public abstract class QueryCommandLineClient {
         return tablePropertiesProvider.getByName(tableName);
     }
 
-    protected void runQueries(TableProperties tableProperties) {
+    protected void runQueries(TableProperties tableProperties) throws InterruptedException {
         String tableName = tableProperties.get(TABLE_NAME);
         Schema schema = tableProperties.getSchema();
         RangeFactory rangeFactory = new RangeFactory(schema);

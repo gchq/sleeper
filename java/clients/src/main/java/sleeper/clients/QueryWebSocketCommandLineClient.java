@@ -33,6 +33,7 @@ import sleeper.core.table.TableIndex;
 import sleeper.query.model.Query;
 
 import java.util.UUID;
+import java.util.concurrent.CompletionException;
 import java.util.function.Supplier;
 
 public class QueryWebSocketCommandLineClient extends QueryCommandLineClient {
@@ -69,11 +70,18 @@ public class QueryWebSocketCommandLineClient extends QueryCommandLineClient {
     }
 
     @Override
-    protected void submitQuery(TableProperties tableProperties, Query query) {
-        queryWebSocketClient.submitQuery(query);
+    protected void submitQuery(TableProperties tableProperties, Query query) throws InterruptedException {
+        try {
+            queryWebSocketClient.submitQuery(query).join();
+        } catch (CompletionException e) {
+            out.println("Failed to run query: " + e.getCause().getMessage());
+        } catch (InterruptedException e) {
+            out.println("Failed to run query: " + e.getMessage());
+            throw e;
+        }
     }
 
-    public static void main(String[] args) throws StateStoreException {
+    public static void main(String[] args) throws StateStoreException, InterruptedException {
         if (1 != args.length) {
             throw new IllegalArgumentException("Usage: <instance-id>");
         }

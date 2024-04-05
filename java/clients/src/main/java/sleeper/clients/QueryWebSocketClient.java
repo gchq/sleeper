@@ -29,6 +29,11 @@ import com.google.gson.JsonSyntaxException;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 
+import sleeper.clients.exception.MessageMalformedException;
+import sleeper.clients.exception.MessageMissingFieldException;
+import sleeper.clients.exception.UnknownMessageTypeException;
+import sleeper.clients.exception.WebSocketClosedException;
+import sleeper.clients.exception.WebSocketErrorException;
 import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -49,6 +54,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -60,6 +66,7 @@ public class QueryWebSocketClient {
     private final String apiUrl;
     private final ConsoleOutput out;
     private final Supplier<Client> clientSupplier;
+    private Client client;
 
     public QueryWebSocketClient(
             InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, ConsoleOutput out) {
@@ -77,30 +84,36 @@ public class QueryWebSocketClient {
         this.clientSupplier = clientSupplier;
     }
 
-    public void submitQuery(Query query) {
-        Client client = clientSupplier.get();
+    public CompletableFuture<List<String>> submitQuery(Query query) throws InterruptedException {
+        client = clientSupplier.get();
         try {
             Instant startTime = Instant.now();
-            client.startQuery(query);
-            while (!client.hasQueryFinished()) {
-                Thread.sleep(500);
-            }
-            LoggedDuration duration = LoggedDuration.withFullOutput(startTime, Instant.now());
-            long recordsReturned = client.getTotalRecordsReturned();
-            out.println("Query took " + duration + " to return " + recordsReturned + " records");
-        } catch (InterruptedException e) {
-        } finally {
+            return client.startQueryFuture(query)
+                    .whenComplete((records, exception) -> {
+                        try {
+                            client.closeBlocking();
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            throw new RuntimeException(e);
+                        }
+                        LoggedDuration duration = LoggedDuration.withFullOutput(startTime, Instant.now());
+                        long recordsReturned = client.getTotalRecordsReturned();
+                        out.println("Query took " + duration + " to return " + recordsReturned + " records");
+                    });
+        } catch (Exception e) {
             try {
                 client.closeBlocking();
-            } catch (InterruptedException e) {
+            } catch (InterruptedException e2) {
+                throw e2;
             }
+            throw e;
         }
     }
 
     public interface Client {
         void closeBlocking() throws InterruptedException;
 
-        void startQuery(Query query) throws InterruptedException;
+        CompletableFuture<List<String>> startQueryFuture(Query query) throws InterruptedException;
 
         boolean hasQueryFinished();
 
@@ -127,9 +140,12 @@ public class QueryWebSocketClient {
             this.messageHandler = messageHandler;
         }
 
-        public void startQuery(Query query) throws InterruptedException {
+        public CompletableFuture<List<String>> startQueryFuture(Query query) throws InterruptedException {
+            CompletableFuture<List<String>> future = new CompletableFuture<>();
+            messageHandler.setFuture(future);
             this.query = query;
             initialiseConnection(serverUri);
+            return future;
         }
 
         private void initialiseConnection(URI serverUri) throws InterruptedException {
@@ -205,10 +221,16 @@ public class QueryWebSocketClient {
         private boolean queryComplete = false;
         private boolean queryFailed = false;
         private long totalRecordsReturned = 0L;
+        private CompletableFuture<List<String>> future;
+        private String currentQueryId;
 
         public WebSocketMessageHandler(QuerySerDe querySerDe, ConsoleOutput out) {
             this.querySerDe = querySerDe;
             this.out = out;
+        }
+
+        public void setFuture(CompletableFuture<List<String>> future) {
+            this.future = future;
         }
 
         public void onOpen(Query query, Consumer<String> messageSender) {
@@ -218,6 +240,7 @@ public class QueryWebSocketClient {
             messageSender.accept(queryJson);
             outstandingQueries.add(query.getQueryId());
             subqueryIdByParentQueryId.put(query.getQueryId(), new ArrayList<>());
+            currentQueryId = query.getQueryId();
         }
 
         public void onMessage(String json) {
@@ -240,6 +263,7 @@ public class QueryWebSocketClient {
             } else {
                 out.println("Received unrecognised message type: " + messageType);
                 queryFailed = true;
+                future.completeExceptionally(new UnknownMessageTypeException(messageType));
             }
 
             if (outstandingQueries.isEmpty()) {
@@ -250,6 +274,7 @@ public class QueryWebSocketClient {
                             .forEach(out::println);
                 }
                 queryComplete = true;
+                future.complete(getResults(currentQueryId));
             }
         }
 
@@ -260,12 +285,14 @@ public class QueryWebSocketClient {
                     out.println("Received message without queryId from API:");
                     out.println("  " + json);
                     queryFailed = true;
+                    future.completeExceptionally(new MessageMissingFieldException("queryId"));
                     return Optional.empty();
                 }
                 if (!message.has("message")) {
                     out.println("Received message without message type from API:");
                     out.println("  " + json);
                     queryFailed = true;
+                    future.completeExceptionally(new MessageMissingFieldException("message"));
                     return Optional.empty();
                 }
                 return Optional.of(message);
@@ -273,14 +300,17 @@ public class QueryWebSocketClient {
                 out.println("Received malformed JSON message from API:");
                 out.println("  " + json);
                 queryFailed = true;
+                future.completeExceptionally(new MessageMalformedException(json));
                 return Optional.empty();
             }
         }
 
         private void handleError(JsonObject message, String queryId) {
-            out.println("Encountered an error while running query " + queryId + ": " + message.get("error").getAsString());
+            String error = message.get("error").getAsString();
+            out.println("Encountered an error while running query " + queryId + ": " + error);
             outstandingQueries.remove(queryId);
             queryFailed = true;
+            future.completeExceptionally(new WebSocketErrorException(error));
         }
 
         private void handleSubqueries(JsonObject message, String queryId) {
@@ -333,11 +363,13 @@ public class QueryWebSocketClient {
         public void onClose(String reason) {
             out.println("Disconnected from WebSocket API: " + reason);
             queryComplete = true;
+            future.completeExceptionally(new WebSocketClosedException(reason));
         }
 
         public void onError(Exception error) {
             out.println("Encountered an error: " + error.getMessage());
             queryFailed = true;
+            future.completeExceptionally(new WebSocketErrorException(error));
         }
 
         public boolean hasQueryFinished() {
