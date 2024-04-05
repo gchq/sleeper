@@ -110,14 +110,6 @@ public class QueryWebSocketClient {
         }
     }
 
-    public List<String> getResults(Query query) {
-        if (client == null) {
-            return List.of();
-        } else {
-            return client.getResults(query.getQueryId());
-        }
-    }
-
     public interface Client {
         void closeBlocking() throws InterruptedException;
 
