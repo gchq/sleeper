@@ -40,6 +40,7 @@ import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
+import sleeper.task.common.EC2Scaler;
 import sleeper.task.common.RunCompactionTasks;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_TRIGGER_LAMBDA_FUNCTION;
@@ -123,5 +124,10 @@ public class AwsCompactionDriver implements CompactionDriver {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public void scaleToZero() {
+        EC2Scaler.create(instance.getInstanceProperties(), asClient, ecsClient).scaleTo(0);
     }
 }

@@ -74,4 +74,8 @@ public class SystemTestCompaction {
         waitForJobs.waitForJobs(lastJobIds, poll);
         return this;
     }
+
+    public void scaleToZero() {
+        driver.scaleToZero();
+    }
 }

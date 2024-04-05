@@ -132,6 +132,9 @@ public class InMemoryCompaction {
             invokeTasks(numberOfTasks, poll);
         }
 
+        public void scaleToZero() {
+        }
+
         private void createJobs(Mode mode) {
             int batchSize = instance.getInstanceProperties().getInt(COMPACTION_JOB_CREATION_BATCH_SIZE);
             InvokeForTableRequest.forTables(

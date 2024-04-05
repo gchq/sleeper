@@ -16,6 +16,7 @@
 
 package sleeper.systemtest.suite;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -64,6 +65,11 @@ public class CompactionOnEC2IT {
         sleeper.connectToInstance(COMPACTION_ON_EC2);
         reporting.reportIfTestFailed(SystemTestReports.SystemTestBuilder::compactionTasksAndJobs);
         purgeQueues.purgeIfTestFailed(COMPACTION_JOB_QUEUE_URL);
+    }
+
+    @AfterEach
+    void tearDown(SleeperSystemTest sleeper) {
+        sleeper.compaction().scaleToZero();
     }
 
     @Nested
