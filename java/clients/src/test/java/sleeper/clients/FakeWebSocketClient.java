@@ -44,10 +44,8 @@ public class FakeWebSocketClient implements Client {
 
     @Override
     public void closeBlocking() throws InterruptedException {
-        connected = false;
         if (!closed) {
-            closed = true;
-            messageHandler.onClose("Connection closed normally");
+            onClose("Connection closed normally");
         }
     }
 
@@ -103,6 +101,8 @@ public class FakeWebSocketClient implements Client {
 
     public void onClose(String reason) {
         messageHandler.onClose(reason);
+        connected = false;
+        closed = true;
     }
 
     public void onError(Exception error) {
