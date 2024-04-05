@@ -56,7 +56,7 @@ public class TransactionLogStateStoreLogSpecificTest {
     }
 
     @Test
-    void shouldAddTransactionWhenAnotherProcessAddedATransactionBetweenAdds() throws Exception {
+    void shouldAddTransactionWhenAnotherProcessAddedATransaction() throws Exception {
         // Given
         PartitionTree afterRootSplit = partitions.splitToNewChildren("root", "L", "R", "l").buildTree();
         otherProcess().atomicallyUpdatePartitionAndCreateNewOnes(
