@@ -160,10 +160,10 @@ the system test cluster by adding a Maven argument to one of the other scripts l
 If you enable the system test cluster when you previously deployed with the same short ID without the cluster, this
 will also redeploy all Sleeper instances that you test against, to give the system test cluster access to them.
 
-### Results
+### Output
 
-Performance tests will output reports of jobs and tasks that were run, and statistics about their performance. Other
-tests may also output similar reports if they fail.
+You'll get a lot of output and logs from Maven. Performance tests will also output reports of jobs and tasks that were
+run, and statistics about their performance. Other tests may also output similar reports if they fail.
 
 By default you'll get results on the command line, but there might be too much output to find what you're interested in.
 You could redirect the output to a file to make it a bit easier to navigate, or you can set an output directory where
