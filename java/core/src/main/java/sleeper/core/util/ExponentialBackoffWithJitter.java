@@ -21,6 +21,12 @@ import org.slf4j.LoggerFactory;
 import java.util.Objects;
 import java.util.function.DoubleSupplier;
 
+/**
+ * Waits for increasing periods of time during retries. Uses exponential backoff with full jitter. See the below
+ * article.
+ * <p>
+ * https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
+ */
 public class ExponentialBackoffWithJitter {
     public static final Logger LOGGER = LoggerFactory.getLogger(ExponentialBackoffWithJitter.class);
 
@@ -49,8 +55,6 @@ public class ExponentialBackoffWithJitter {
     }
 
     private long getWaitMillisBeforeAttempt(int attempt) {
-        // Implements exponential back-off with jitter, see
-        // https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
         double sleepTimeInSeconds = Math.min(
                 waitRange.maxWaitCeilingSecs,
                 waitRange.firstWaitCeilingSecs * 0.5 * Math.pow(2.0, attempt));
