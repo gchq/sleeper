@@ -7,8 +7,8 @@ and tear them down afterwards.
 
 ### Setup
 
-If you want to run this manually you can use the Sleeper CLI. You can bring the CLI up to date and check out the Git
-repository like this:
+It's easiest to run this through the Sleeper CLI. You can bring the CLI up to date and check out the Git repository like
+this:
 
 ```bash
 sleeper cli upgrade main
