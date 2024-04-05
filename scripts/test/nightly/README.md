@@ -62,10 +62,9 @@ With the performance test suite, this will take 6 hours or so.
 
 ### Output
 
-You can check the output in `/tmp/sleeperTests.log`, but
-once each suite starts it will only update once the suite finishes. The output of the tests will be in a tmp folder in
-the Docker container, and will later be uploaded to S3. You can connect to the Docker container to view the output as
-it's happening:
+You can check the output in `/tmp/sleeperTests.log`, but once each suite starts it will only update once the suite
+finishes. The output of the tests will be in a tmp folder in the Docker container, and will later be uploaded to S3. You
+can connect to the Docker container to view the output as it's happening:
 
 ```bash
 docker images # Find the image ID of the sleeper-builder image with the 'current' tag
