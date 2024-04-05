@@ -65,6 +65,8 @@ To use the Sleeper CLI against AWS, you need to authenticate against your AWS ac
 `sleeper aws configure`, or other `sleeper aws` commands according to your AWS setup. AWS Environment variables
 will also be propagated to the Sleeper CLI.
 
+Most Sleeper clients also require you to set the default region.
+
 ### Deployment environment
 
 If the CDK has never been bootstrapped in your AWS account, this must be done first. This only needs to be done
