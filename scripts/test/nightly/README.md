@@ -58,7 +58,11 @@ To run the tests as they would be run by the cron job, use this command from the
 sleeper builder ./sleeper/scripts/test/nightly/updateAndRunTests.sh /sleeper-builder/nightlyTestSettings.json <test-type> &> /tmp/sleeperTests.log
 ```
 
-With the performance test suite, this will take 6 hours or so. You can check the output in `/tmp/sleeperTests.log`, but
+With the performance test suite, this will take 6 hours or so.
+
+### Output
+
+You can check the output in `/tmp/sleeperTests.log`, but
 once each suite starts it will only update once the suite finishes. The output of the tests will be in a tmp folder in
 the Docker container, and will later be uploaded to S3. You can connect to the Docker container to view the output as
 it's happening:
