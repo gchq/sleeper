@@ -148,12 +148,14 @@ an instance with the associated instance ID if one does not exist.
 
 ### Performance tests
 
-Performance tests use an ECS cluster for generating data, which we call the system test cluster. This is deployed in the
+Performance tests use an ECS cluster to generate data, which we call the system test cluster. This is deployed in the
 system test CDK stack with `SystemTestStandaloneApp`. This is a CloudFormation stack with the short ID as its name. For
 non-performance tests, the system test stack is still deployed, but the system test cluster is not.
 
 When you use `performanceTest.sh` this will enable the system test cluster. Note that this does not come with any
-additional costs, as data generation is done in AWS Fargate in tasks started for the specific test.
+additional costs, as data generation is done in AWS Fargate in tasks started for the specific test. You can also enable
+the system test cluster by adding a Maven argument to one of the other scripts like
+`-Dsleeper.system.test.cluster.enabled=true`.
 
 If you enable the system test cluster when you previously deployed with the same short ID without the cluster, this
 will also redeploy all Sleeper instances that you test against, to give the system test cluster access to them.
