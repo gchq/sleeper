@@ -23,6 +23,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.util.ExponentialBackoffWithJitter;
+import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
 import sleeper.core.util.LoggedDuration;
 
 import java.io.IOException;
@@ -30,7 +32,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.DoubleSupplier;
 import java.util.function.Function;
 
 /**
@@ -55,6 +56,8 @@ class S3StateStoreDataFile<T> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(S3StateStoreDataFile.class);
 
+    public static final WaitRange RETRY_WAIT_RANGE = WaitRange.firstAndMaxWaitCeilingSecs(4, 120);
+
     private final String description;
     private final String revisionIdKey;
     private final LoadS3RevisionId loadRevisionId;
@@ -63,8 +66,7 @@ class S3StateStoreDataFile<T> {
     private final LoadData<T> loadData;
     private final WriteData<T> writeData;
     private final DeleteFile deleteFile;
-    private final DoubleSupplier randomJitterFraction;
-    private final Waiter waiter;
+    private final ExponentialBackoffWithJitter retryBackoff;
 
     private S3StateStoreDataFile(Builder<T> builder) {
         description = Objects.requireNonNull(builder.description, "description must not be null");
@@ -75,8 +77,7 @@ class S3StateStoreDataFile<T> {
         loadData = Objects.requireNonNull(builder.loadData, "loadData must not be null");
         writeData = Objects.requireNonNull(builder.writeData, "writeData must not be null");
         deleteFile = Objects.requireNonNull(builder.deleteFile, "deleteFile must not be null");
-        randomJitterFraction = Objects.requireNonNull(builder.randomJitterFraction, "randomJitterFraction must not be null");
-        waiter = Objects.requireNonNull(builder.waiter, "waiter must not be null");
+        retryBackoff = Objects.requireNonNull(builder.retryBackoff, "retryBackoff must not be null");
     }
 
     static Builder<?> builder() {
@@ -100,7 +101,12 @@ class S3StateStoreDataFile<T> {
         int numberAttempts = 0;
         long totalTimeSleeping = 0L;
         while (numberAttempts < attempts) {
-            totalTimeSleeping += sleep(randomJitterFraction, waiter, numberAttempts);
+            try {
+                totalTimeSleeping += retryBackoff.waitBeforeAttempt(numberAttempts);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new StateStoreException("Interrupted waiting for retry", e);
+            }
             numberAttempts++;
             S3RevisionId revisionId = loadRevisionId.getCurrentRevisionId(revisionIdKey);
             String filePath = buildPathFromRevisionId.apply(revisionId);
@@ -162,19 +168,6 @@ class S3StateStoreDataFile<T> {
         }
     }
 
-    private static long sleep(DoubleSupplier randomJitterFraction, Waiter waiter, int n) throws StateStoreException {
-        if (n == 0) {
-            return 0;
-        }
-        // Implements exponential back-off with jitter, see
-        // https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
-        int sleepTimeInSeconds = (int) Math.min(120, Math.pow(2.0, n + 1));
-        long sleepTimeWithJitter = (long) (randomJitterFraction.getAsDouble() * sleepTimeInSeconds * 1000L);
-        LOGGER.debug("Sleeping for {} milliseconds", sleepTimeWithJitter);
-        waiter.waitForMillis(sleepTimeWithJitter);
-        return sleepTimeWithJitter;
-    }
-
     static final class Builder<T> {
         private String description;
         private String revisionIdKey;
@@ -184,8 +177,7 @@ class S3StateStoreDataFile<T> {
         private LoadData<T> loadData;
         private WriteData<T> writeData;
         private DeleteFile deleteFile;
-        private DoubleSupplier randomJitterFraction = Math::random;
-        private Waiter waiter = Waiter.threadSleep();
+        private ExponentialBackoffWithJitter retryBackoff = new ExponentialBackoffWithJitter(RETRY_WAIT_RANGE);
 
         private Builder() {
         }
@@ -235,13 +227,8 @@ class S3StateStoreDataFile<T> {
             return this;
         }
 
-        Builder<T> randomJitterFraction(DoubleSupplier randomJitterFraction) {
-            this.randomJitterFraction = randomJitterFraction;
-            return this;
-        }
-
-        Builder<T> waiter(Waiter waiter) {
-            this.waiter = waiter;
+        Builder<T> retryBackoff(ExponentialBackoffWithJitter retryBackoff) {
+            this.retryBackoff = retryBackoff;
             return this;
         }
 
@@ -279,21 +266,6 @@ class S3StateStoreDataFile<T> {
 
     interface UpdateS3RevisionId {
         void conditionalUpdateOfRevisionId(String revisionIdKey, S3RevisionId currentRevisionId, S3RevisionId newRevisionId);
-    }
-
-    interface Waiter {
-        void waitForMillis(long milliseconds) throws StateStoreException;
-
-        static Waiter threadSleep() {
-            return milliseconds -> {
-                try {
-                    Thread.sleep(milliseconds);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw new StateStoreException("Interrupted while waiting to retry update", e);
-                }
-            };
-        }
     }
 
     @FunctionalInterface
