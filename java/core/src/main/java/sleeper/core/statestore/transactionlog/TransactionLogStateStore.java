@@ -17,12 +17,64 @@ package sleeper.core.statestore.transactionlog;
 
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.DelegatingStateStore;
+import sleeper.core.util.ExponentialBackoffWithJitter;
+import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
 
 public class TransactionLogStateStore extends DelegatingStateStore {
 
-    public TransactionLogStateStore(Schema schema, TransactionLogStore filesLogStore, TransactionLogStore partitionsLogStore) {
-        super(new TransactionLogFileReferenceStore(TransactionLogHead.forFiles(filesLogStore)),
-                new TransactionLogPartitionStore(schema, TransactionLogHead.forPartitions(partitionsLogStore)));
+    public static final int MAX_ADD_TRANSACTION_ATTEMPTS = 10;
+    public static final WaitRange RETRY_WAIT_RANGE = WaitRange.firstAndMaxWaitCeilingSecs(0.2, 30);
+
+    public TransactionLogStateStore(Builder builder) {
+        super(
+                new TransactionLogFileReferenceStore(
+                        TransactionLogHead.forFiles(builder.filesLogStore, builder.maxAddTransactionAttempts, builder.retryBackoff)),
+                new TransactionLogPartitionStore(builder.schema,
+                        TransactionLogHead.forPartitions(builder.partitionsLogStore, builder.maxAddTransactionAttempts, builder.retryBackoff)));
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static class Builder {
+        private Schema schema;
+        private TransactionLogStore filesLogStore;
+        private TransactionLogStore partitionsLogStore;
+        private int maxAddTransactionAttempts = MAX_ADD_TRANSACTION_ATTEMPTS;
+        private ExponentialBackoffWithJitter retryBackoff = new ExponentialBackoffWithJitter(RETRY_WAIT_RANGE);
+
+        private Builder() {
+        }
+
+        public Builder schema(Schema schema) {
+            this.schema = schema;
+            return this;
+        }
+
+        public Builder filesLogStore(TransactionLogStore filesLogStore) {
+            this.filesLogStore = filesLogStore;
+            return this;
+        }
+
+        public Builder partitionsLogStore(TransactionLogStore partitionsLogStore) {
+            this.partitionsLogStore = partitionsLogStore;
+            return this;
+        }
+
+        public Builder maxAddTransactionAttempts(int maxAddTransactionAttempts) {
+            this.maxAddTransactionAttempts = maxAddTransactionAttempts;
+            return this;
+        }
+
+        public Builder retryBackoff(ExponentialBackoffWithJitter retryBackoff) {
+            this.retryBackoff = retryBackoff;
+            return this;
+        }
+
+        public TransactionLogStateStore build() {
+            return new TransactionLogStateStore(this);
+        }
     }
 
 }

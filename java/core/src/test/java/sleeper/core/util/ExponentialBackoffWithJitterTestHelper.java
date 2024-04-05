@@ -42,4 +42,9 @@ public class ExponentialBackoffWithJitterTestHelper {
     public static Waiter recordWaits(List<Duration> recordWaits) {
         return millis -> recordWaits.add(Duration.ofMillis(millis));
     }
+
+    public static Waiter noWaits() {
+        return millis -> {
+        };
+    }
 }
