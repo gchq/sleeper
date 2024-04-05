@@ -30,9 +30,9 @@ public class DynamoDBTransactionLogStateStore extends TransactionLogStateStore {
 
     public DynamoDBTransactionLogStateStore(
             InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamoDB) {
-        super(tableProperties.getSchema(),
-                new DynamoDBTransactionLogStore(instanceProperties.get(FILE_TRANSACTION_LOG_TABLENAME), tableProperties, dynamoDB),
-                new DynamoDBTransactionLogStore(instanceProperties.get(PARTITION_TRANSACTION_LOG_TABLENAME), tableProperties, dynamoDB));
+        super(builder().schema(tableProperties.getSchema())
+                .filesLogStore(new DynamoDBTransactionLogStore(instanceProperties.get(FILE_TRANSACTION_LOG_TABLENAME), tableProperties, dynamoDB))
+                .partitionsLogStore(new DynamoDBTransactionLogStore(instanceProperties.get(PARTITION_TRANSACTION_LOG_TABLENAME), tableProperties, dynamoDB)));
     }
 
 }

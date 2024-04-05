@@ -129,7 +129,7 @@ public class DelegatingStateStore implements StateStore {
     }
 
     @Override
-    public boolean hasNoFiles() {
+    public boolean hasNoFiles() throws StateStoreException {
         return fileReferenceStore.hasNoFiles();
     }
 
