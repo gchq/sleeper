@@ -80,7 +80,7 @@ in around 40 minutes. The nightly functional suite includes tests tagged as Slow
 nightly performance suite includes all tests, including ones tagged as Expensive. The performance tests work with a
 larger bulk of data. They take time to run and can be costly to run frequently.
 
-### Quick test suite
+### Running tests
 
 This command will build the system and run the default, quick system test suite:
 
@@ -88,40 +88,16 @@ This command will build the system and run the default, quick system test suite:
 ./scripts/test/maven/buildDeployTest.sh <short-id> <vpc> <subnets>
 ```
 
-The short ID will be used to generate the instance IDs of Sleeper instances deployed for the tests. The feature tests
-will run on one Sleeper instance, but the performance tests will deploy more. A separate system test CDK stack will also
+The short ID will be used to generate the instance IDs of Sleeper instances deployed for the tests. The quick test suite
+will run on one Sleeper instance, but other test suites will deploy more. A separate system test CDK stack will also
 be deployed with `SystemTestStandaloneApp`, for resources shared between tests. The system test stack will use the short
 ID as its stack name.
 
-After the tests, the instances will remain deployed. If you run again with the same short ID, the same instances will
-be used. Usually they will not be redeployed, but if configuration has changed which requires it, they will be updated
-automatically. If you've rebuilt the system, this will not automatically cause redeployment. You can force redeployment
-by setting the Maven property `sleeper.system.test.force.redeploy` for the system test stack,
-and `sleeper.system.test.instances.force.redeploy` for the Sleeper instances, like this:
+You can avoid rebuilding the whole system by using `deployTest.sh` instead of `buildDeployTest.sh`. This is useful if
+you've only changed test code and just want to re-run tests against the same instance.
 
-```bash
-./scripts/test/maven/buildDeployTest.sh <short-id> <vpc> <subnets> \
-  -Dsleeper.system.test.force.redeploy=true \
-  -Dsleeper.system.test.instances.force.redeploy=true
-```
-
-If you've only changed test code and just want to re-run the tests against the same instance, you can avoid rebuilding
-the whole system by using `deployTest.sh` instead of `buildDeployTest.sh`.
-
-### Tear down
-
-You can tear down all resources associated with a short ID like this:
-
-```bash
-./scripts/test/maven/tearDown.sh <short-id> <instance-ids>
-```
-
-This requires you to know which instance IDs are deployed. These will be in the form `<short-id>-<test-id>`. You can
-find the different test IDs in the SystemTestInstance class. These are the identifiers associated with each enum value,
-and you can find references to those enum values to find the tests that use them. When a test runs, it deploys an
-instance with the associated instance ID if one does not exist.
-
-### Other test suites
+There's also `performanceTest.sh` which acts like `deployTest.sh` but takes an argument for which tests you want to run,
+and it enables resources required for performance tests. These have no additional cost but do take some time to deploy.
 
 You can run specific tests like this:
 
@@ -139,8 +115,36 @@ You can run a specific test suite like this:
 
 This can also be used with NightlyFunctionalSystemTestSuite.
 
-This uses the same process as the other test scripts, and the same tear down script should be used to destroy resources
-afterwards.
+### Reusing resources
+
+After the tests, the instances will remain deployed. If you run again with the same short ID, the same instances will
+be used. Usually they will not be redeployed, but if configuration has changed which requires it, they will be updated
+automatically. If you've rebuilt the system, this will not automatically cause redeployment.
+
+You can force redeployment by setting the Maven property `sleeper.system.test.force.redeploy` to redeploy the system
+test stack, and `sleeper.system.test.instances.force.redeploy` to redeploy Sleeper instances used in the tests you run.
+You can add Maven arguments to a system test script like this:
+
+```bash
+./scripts/test/maven/buildDeployTest.sh <short-id> <vpc> <subnets> \
+  -Dsleeper.system.test.force.redeploy=true \
+  -Dsleeper.system.test.instances.force.redeploy=true
+```
+
+### Tear down
+
+You can tear down all resources associated with a short ID like this:
+
+```bash
+./scripts/test/maven/tearDown.sh <short-id> <instance-ids>
+```
+
+This requires you to know which instance IDs are deployed. These will be in the form `<short-id>-<short-instance-name>`.
+The easiest way to find these is by checking the CloudFormation stacks in the AWS console. An instance uses its instance
+ID as the stack name.
+
+You can also find the different short instance names used in the SystemTestInstance class. When a test runs, it deploys
+an instance with the associated instance ID if one does not exist.
 
 ### Performance tests
 
@@ -151,8 +155,8 @@ non-performance tests, the system test stack is still deployed, but the system t
 When you use `performanceTest.sh` this will enable the system test cluster. Note that this does not come with any
 additional costs, as data generation is done in AWS Fargate in tasks started for the specific test.
 
-When a system test has already deployed with the same short ID, the test suite will add the system test cluster to the
-stack if it's needed. This will also redeploy all instances to give the system test cluster access to them.
+If you enable the system test cluster when you previously deployed with the same short ID without the cluster, this
+will also redeploy all Sleeper instances that you test against, to give the system test cluster access to them.
 
 ### Results
 
