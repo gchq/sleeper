@@ -75,14 +75,18 @@ class TransactionLogHead<T> {
         }
     }
 
-    void update() {
-        logStore.readTransactionsAfter(lastTransactionNumber)
-                .peek(transaction -> lastTransactionNumber++)
-                .filter(transactionType::isInstance)
-                .map(transactionType::cast)
-                .forEach(transaction -> {
-                    transaction.apply(state);
-                });
+    void update() throws StateStoreException {
+        try {
+            logStore.readTransactionsAfter(lastTransactionNumber)
+                    .peek(transaction -> lastTransactionNumber++)
+                    .filter(transactionType::isInstance)
+                    .map(transactionType::cast)
+                    .forEach(transaction -> {
+                        transaction.apply(state);
+                    });
+        } catch (RuntimeException e) {
+            throw new StateStoreException("Failed reading transactions", e);
+        }
     }
 
     T state() {

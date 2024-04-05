@@ -26,6 +26,7 @@ public class InMemoryTransactionLogStore implements TransactionLogStore {
 
     private final List<StateStoreTransaction<?>> transactions = new ArrayList<>();
     private Runnable beforeNextAdd = DO_NOTHING;
+    private Runnable beforeNextRead = DO_NOTHING;
 
     @Override
     public void addTransaction(StateStoreTransaction<?> transaction, long transactionNumber) throws UnreadTransactionException {
@@ -41,12 +42,33 @@ public class InMemoryTransactionLogStore implements TransactionLogStore {
 
     @Override
     public Stream<StateStoreTransaction<?>> readTransactionsAfter(long lastTransactionNumber) {
+        doBeforeNextRead();
         return transactions.stream()
                 .skip(lastTransactionNumber);
     }
 
     public void beforeNextAddTransaction(ThrowingRunnable action) {
-        beforeNextAdd = () -> {
+        beforeNextAdd = wrappingCheckedExceptions(action);
+    }
+
+    public void beforeNextReadTransactions(ThrowingRunnable action) {
+        beforeNextRead = wrappingCheckedExceptions(action);
+    }
+
+    private void doBeforeNextAdd() {
+        Runnable action = beforeNextAdd;
+        beforeNextAdd = DO_NOTHING;
+        action.run();
+    }
+
+    private void doBeforeNextRead() {
+        Runnable action = beforeNextRead;
+        beforeNextRead = DO_NOTHING;
+        action.run();
+    }
+
+    private static Runnable wrappingCheckedExceptions(ThrowingRunnable action) {
+        return () -> {
             try {
                 action.run();
             } catch (RuntimeException e) {
@@ -55,12 +77,6 @@ public class InMemoryTransactionLogStore implements TransactionLogStore {
                 throw new RuntimeException(e);
             }
         };
-    }
-
-    private void doBeforeNextAdd() {
-        Runnable action = beforeNextAdd;
-        beforeNextAdd = DO_NOTHING;
-        action.run();
     }
 
     public interface ThrowingRunnable {

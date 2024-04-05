@@ -89,4 +89,17 @@ public class InMemoryTransactionLogStoreTest {
         assertThat(store.readTransactionsAfter(0))
                 .isEmpty();
     }
+
+    @Test
+    void shouldFailToReadTransactionsWhenExceptionWasThrownExplicitly() throws Exception {
+        // Given
+        RuntimeException failure = new RuntimeException("Fail test");
+        store.beforeNextReadTransactions(() -> {
+            throw failure;
+        });
+
+        // When / Then
+        assertThatThrownBy(() -> store.readTransactionsAfter(0))
+                .isSameAs(failure);
+    }
 }
