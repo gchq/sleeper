@@ -55,7 +55,7 @@ public class InMemoryTransactionLogStoreTest {
 
         // When / Then
         assertThatThrownBy(() -> store.addTransaction(new DeleteFilesTransaction(List.of("file2.parquet")), 1))
-                .isInstanceOf(UnreadTransactionException.class)
+                .isInstanceOf(DuplicateTransactionNumberException.class)
                 .hasMessage("Unread transaction found. Adding transaction number 1, but it already exists.");
         assertThat(store.readTransactionsAfter(0))
                 .containsExactly(new DeleteFilesTransaction(List.of("file1.parquet")));
@@ -69,7 +69,7 @@ public class InMemoryTransactionLogStoreTest {
 
         // When / Then
         assertThatThrownBy(() -> store.addTransaction(new DeleteFilesTransaction(List.of("file.parquet")), 1))
-                .isInstanceOf(UnreadTransactionException.class)
+                .isInstanceOf(DuplicateTransactionNumberException.class)
                 .hasMessage("Unread transaction found. Adding transaction number 1, but it already exists.");
         assertThat(store.readTransactionsAfter(0))
                 .containsExactly(new ClearFilesTransaction());
