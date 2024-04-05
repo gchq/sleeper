@@ -29,10 +29,10 @@ public class InMemoryTransactionLogStore implements TransactionLogStore {
     private Runnable beforeNextRead = DO_NOTHING;
 
     @Override
-    public void addTransaction(StateStoreTransaction<?> transaction, long transactionNumber) throws UnreadTransactionException {
+    public void addTransaction(StateStoreTransaction<?> transaction, long transactionNumber) throws DuplicateTransactionNumberException {
         doBeforeNextAdd();
         if (transactionNumber <= transactions.size()) {
-            throw new UnreadTransactionException(transactionNumber);
+            throw new DuplicateTransactionNumberException(transactionNumber);
         }
         if (transactionNumber > transactions.size() + 1) {
             throw new IllegalStateException("Attempted to add transaction " + transactionNumber + " when we only have " + transactions.size());

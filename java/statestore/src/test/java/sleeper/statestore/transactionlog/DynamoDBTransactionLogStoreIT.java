@@ -18,8 +18,8 @@ package sleeper.statestore.transactionlog;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.statestore.transactionlog.DuplicateTransactionNumberException;
 import sleeper.core.statestore.transactionlog.TransactionLogStore;
-import sleeper.core.statestore.transactionlog.UnreadTransactionException;
 import sleeper.core.statestore.transactionlog.transactions.ClearFilesTransaction;
 import sleeper.core.statestore.transactionlog.transactions.DeleteFilesTransaction;
 
@@ -55,7 +55,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
 
         // When / Then
         assertThatThrownBy(() -> store.addTransaction(new DeleteFilesTransaction(List.of("file2.parquet")), 1))
-                .isInstanceOf(UnreadTransactionException.class)
+                .isInstanceOf(DuplicateTransactionNumberException.class)
                 .hasMessage("Unread transaction found. Adding transaction number 1, but it already exists.");
         assertThat(store.readTransactionsAfter(0))
                 .containsExactly(new DeleteFilesTransaction(List.of("file1.parquet")));

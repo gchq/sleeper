@@ -26,9 +26,9 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
+import sleeper.core.statestore.transactionlog.DuplicateTransactionNumberException;
 import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.TransactionLogStore;
-import sleeper.core.statestore.transactionlog.UnreadTransactionException;
 import sleeper.core.statestore.transactionlog.transactions.TransactionSerDe;
 import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
@@ -61,7 +61,7 @@ class DynamoDBTransactionLogStore implements TransactionLogStore {
     }
 
     @Override
-    public void addTransaction(StateStoreTransaction<?> transaction, long transactionNumber) throws UnreadTransactionException {
+    public void addTransaction(StateStoreTransaction<?> transaction, long transactionNumber) throws DuplicateTransactionNumberException {
         try {
             dynamo.putItem(new PutItemRequest()
                     .withTableName(logTableName)
@@ -74,7 +74,7 @@ class DynamoDBTransactionLogStore implements TransactionLogStore {
                     .withConditionExpression("attribute_not_exists(#Number)")
                     .withExpressionAttributeNames(Map.of("#Number", TRANSACTION_NUMBER)));
         } catch (ConditionalCheckFailedException e) {
-            throw new UnreadTransactionException(transactionNumber, e);
+            throw new DuplicateTransactionNumberException(transactionNumber, e);
         }
     }
 
