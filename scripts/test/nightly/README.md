@@ -42,10 +42,20 @@ authenticate with GitHub and merge the develop branch into main. If you don't ne
 
 There's an [example crontab](crontab.example) you can edit and use to regularly run nightly system tests.
 
+You'll need to choose a test type to run. This can be either "performance" or "functional". This will use the
+acceptance tests as described in the
+[system tests documentation](../../../docs/13-system-tests.md#acceptance-tests). The test type will decide which test
+suites to run. Please see that document for details of the test suites.
+
+The functional test type will run the nightly functional test suite. The performance test type will run the nightly
+performance test suite. There's currently no test type that uses the quick test suite.
+
+Both test types may also run the nightly functional test suite again, against an alternative state store implementation.
+
 To run the tests as they would be run by the cron job, use this command from the host machine:
 
 ```bash
-sleeper builder ./sleeper/scripts/test/nightly/updateAndRunTests.sh /sleeper-builder/nightlyTestSettings.json performance &> /tmp/sleeperTests.log
+sleeper builder ./sleeper/scripts/test/nightly/updateAndRunTests.sh /sleeper-builder/nightlyTestSettings.json <test-type> &> /tmp/sleeperTests.log
 ```
 
 This will take 6 hours or so. You can check the output in `/tmp/sleeperTests.log`, but once each suite starts it will

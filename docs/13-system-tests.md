@@ -70,8 +70,19 @@ These tests run in JUnit, and use the class `SleeperSystemTest` as the entry poi
 specific language (DSL) for working with a deployed instance of Sleeper in JUnit. Please review the comment at the top
 of that class, and look at the tests in that module for examples.
 
-This test suite contains both feature tests, and performance tests which work with a larger bulk of data. By default,
-the suite skips the performance tests. You can run the default test suite, with just the feature tests, like this:
+This test module contains several JUnit test suites:
+- QuickSystemTestSuite (the default)
+- NightlyFunctionalSystemTestSuite
+- NightlyPerformanceSystemTestSuite
+
+Tests that are tagged as Slow or Expensive will not be included in the quick suite. The quick suite is intended to run
+in less than an hour. The nightly functional suite includes tests tagged as Slow, and will take a bit longer. The
+nightly performance suite includes all tests, including ones tagged as Expensive. The performance tests work with a
+larger bulk of data. They take time to run and can be costly to run frequently.
+
+### Quick test suite
+
+This command will build the system and run the default, quick system test suite:
 
 ```bash
 ./scripts/test/maven/buildDeployTest.sh <short-id> <vpc> <subnets>
@@ -97,6 +108,8 @@ and `sleeper.system.test.instances.force.redeploy` for the Sleeper instances, li
 If you've only changed test code and just want to re-run the tests against the same instance, you can avoid rebuilding
 the whole system by using `deployTest.sh` instead of `buildDeployTest.sh`.
 
+### Tear down
+
 You can tear down all resources associated with a short ID like this:
 
 ```bash
@@ -108,33 +121,43 @@ find the different test IDs in the SystemTestInstance class. These are the ident
 and you can find references to those enum values to find the tests that use them. When a test runs, it deploys an
 instance with the associated instance ID if one does not exist.
 
-### Performance tests
+### Other test suites
 
-You can run specific performance tests like this:
+You can run specific tests like this:
 
 ```bash
 ./scripts/build/buildForTest.sh # This is not necessary if you used buildDeployTest.sh or have already built the system
 ./scripts/test/maven/performanceTest.sh <short-id> <vpc> <subnets> CompactionPerformanceIT,IngestPerformanceIT
 ```
 
+You can run a specific test suite like this:
+
+```bash
+./scripts/build/buildForTest.sh # This is not necessary if you used buildDeployTest.sh or have already built the system
+./scripts/test/maven/performanceTest.sh <short-id> <vpc> <subnets> NightlyPerformanceSystemTestSuite
+```
+
+This can also be used with NightlyFunctionalSystemTestSuite.
+
+This uses the same process as the other test scripts, and the same tear down script should be used to destroy resources
+afterwards.
+
+### Performance tests
+
 Performance tests use an ECS cluster for generating data, which we call the system test cluster. This is deployed in the
 system test CDK stack with `SystemTestStandaloneApp`. This is a CloudFormation stack with the short ID as its name. For
 non-performance tests, the system test stack is still deployed, but the system test cluster is not.
 
+When you use `performanceTest.sh` this will enable the system test cluster. Note that this does not come with any
+additional costs, as data generation is done in AWS Fargate in tasks started for the specific test.
+
 When a system test has already deployed with the same short ID, the test suite will add the system test cluster to the
 stack if it's needed. This will also redeploy all instances to give the system test cluster access to them.
 
-The test suite decides whether to run performance tests or not by whether the system test cluster is enabled.
-The `performanceTest.sh` script enables the system test cluster. You can also run all tests in one execution, including
-performance tests, like this:
-
-```bash
-./scripts/test/maven/buildDeployTest.sh <short-id> <vpc> <subnets> -Dsleeper.system.test.cluster.enabled=true
-```
-
 ### Results
 
-Performance tests will output reports of jobs and tasks that were run, and statistics about their performance.
+Performance tests will output reports of jobs and tasks that were run, and statistics about their performance. Other
+tests may also output similar reports if they fail.
 
 By default you'll get results on the command line, but there might be too much output to find what you're interested in.
 You could redirect the output to a file to make it a bit easier to navigate, or you can set an output directory where
