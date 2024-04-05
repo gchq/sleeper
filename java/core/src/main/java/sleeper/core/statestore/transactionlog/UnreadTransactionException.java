@@ -15,6 +15,12 @@
  */
 package sleeper.core.statestore.transactionlog;
 
+/**
+ * Failure adding a transaction when one already exists with that number. This means there is at least one transaction
+ * in the log that has not been read yet. This will usually result in a retry. The current state will be updated with
+ * any unread transactions, the new transaction will be revalidated against the new state, and then it will be added
+ * with a new transaction number.
+ */
 public class UnreadTransactionException extends Exception {
 
     public UnreadTransactionException(long attemptedTransactionNumber) {
