@@ -167,8 +167,8 @@ public class SleeperCdkApp extends Stack {
         if (optionalStacks.contains(EmrServerlessBulkImportStack.class.getSimpleName())) {
             emrServerlessBulkImportStack = new EmrServerlessBulkImportStack(this, "BulkImportEMRServerless",
                     instanceProperties, jars,
+                    topicStack.getTopic(),
                     bulkImportBucketStack,
-                    topicStack,
                     coreStacks,
                     ingestStatusStoreStack.getResources());
 
@@ -182,9 +182,9 @@ public class SleeperCdkApp extends Stack {
         if (optionalStacks.contains(EmrBulkImportStack.class.getSimpleName())) {
             emrBulkImportStack = new EmrBulkImportStack(this, "BulkImportEMR",
                     instanceProperties, jars,
+                    topicStack.getTopic(),
                     bulkImportBucketStack,
                     emrBulkImportCommonStack,
-                    topicStack,
                     coreStacks,
                     ingestStatusStoreStack.getResources());
         }
@@ -192,11 +192,10 @@ public class SleeperCdkApp extends Stack {
         // Stack to run bulk import jobs via a persistent EMR cluster
         if (optionalStacks.contains(PersistentEmrBulkImportStack.class.getSimpleName())) {
             persistentEmrBulkImportStack = new PersistentEmrBulkImportStack(this, "BulkImportPersistentEMR",
-                    instanceProperties,
-                    jars,
+                    instanceProperties, jars,
+                    topicStack.getTopic(),
                     bulkImportBucketStack,
                     emrBulkImportCommonStack,
-                    topicStack,
                     coreStacks,
                     ingestStatusStoreStack.getResources());
         }
@@ -204,11 +203,10 @@ public class SleeperCdkApp extends Stack {
         // Stack to run bulk import jobs via EKS
         if (optionalStacks.contains(EksBulkImportStack.class.getSimpleName())) {
             eksBulkImportStack = new EksBulkImportStack(this, "BulkImportEKS",
-                    instanceProperties,
-                    jars,
+                    instanceProperties, jars,
+                    topicStack.getTopic(),
                     bulkImportBucketStack,
                     coreStacks,
-                    topicStack,
                     ingestStatusStoreStack);
         }
 

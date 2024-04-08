@@ -100,8 +100,7 @@ public final class EksBulkImportStack extends NestedStack {
 
     public EksBulkImportStack(
             Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars,
-            BulkImportBucketStack importBucketStack, CoreStacks coreStacks,
-            Topic errorsTopic, IngestStatusStoreStack statusStoreStack) {
+            Topic errorsTopic, BulkImportBucketStack importBucketStack, CoreStacks coreStacks, IngestStatusStoreStack statusStoreStack) {
         super(scope, id);
 
         String instanceId = instanceProperties.get(ID);
