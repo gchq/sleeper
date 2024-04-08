@@ -217,8 +217,8 @@ public class SleeperCdkApp extends Stack {
             new GarbageCollectorStack(this,
                     "GarbageCollector",
                     instanceProperties, jars,
-                    coreStacks,
-                    topicStack.getTopic());
+                    topicStack.getTopic(),
+                    coreStacks);
         }
 
         // Stack for containers for compactions and splitting compactions
@@ -226,8 +226,8 @@ public class SleeperCdkApp extends Stack {
             compactionStack = new CompactionStack(this,
                     "Compaction",
                     instanceProperties, jars,
-                    coreStacks,
-                    topicStack.getTopic());
+                    topicStack.getTopic(),
+                    coreStacks);
         }
 
         // Stack to split partitions
@@ -235,8 +235,8 @@ public class SleeperCdkApp extends Stack {
             partitionSplittingStack = new PartitionSplittingStack(this,
                     "PartitionSplitting",
                     instanceProperties, jars,
-                    coreStacks,
-                    topicStack.getTopic());
+                    topicStack.getTopic(),
+                    coreStacks);
         }
 
         QueryStack queryStack = null;
@@ -260,8 +260,8 @@ public class SleeperCdkApp extends Stack {
             ingestStack = new IngestStack(this,
                     "Ingest",
                     instanceProperties, jars,
-                    coreStacks,
                     topicStack.getTopic(),
+                    coreStacks,
                     ingestStatusStoreStack);
         }
 
@@ -271,7 +271,10 @@ public class SleeperCdkApp extends Stack {
         // Stack to batch up files to ingest and create jobs
         if (optionalStacks.contains(IngestBatcherStack.class.getSimpleName())) {
             ingestBatcherStack = new IngestBatcherStack(this, "IngestBatcher",
-                    instanceProperties, jars, coreStacks, ingestStacks);
+                    instanceProperties, jars,
+                    topicStack.getTopic(),
+                    coreStacks,
+                    ingestStacks);
         }
 
         if (optionalStacks.contains(DashboardStack.class.getSimpleName())) {

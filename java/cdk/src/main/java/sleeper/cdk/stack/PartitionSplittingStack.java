@@ -80,8 +80,8 @@ public class PartitionSplittingStack extends NestedStack {
             String id,
             InstanceProperties instanceProperties,
             BuiltJars jars,
-            CoreStacks coreStacks,
-            Topic topic) {
+            Topic topic,
+            CoreStacks coreStacks) {
         super(scope, id);
 
         // Jars bucket

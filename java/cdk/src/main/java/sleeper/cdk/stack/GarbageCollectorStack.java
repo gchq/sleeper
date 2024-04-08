@@ -65,7 +65,7 @@ public class GarbageCollectorStack extends NestedStack {
 
     public GarbageCollectorStack(
             Construct scope, String id, InstanceProperties instanceProperties,
-            BuiltJars jars, CoreStacks coreStacks, Topic topic) {
+            BuiltJars jars, Topic topic, CoreStacks coreStacks) {
         super(scope, id);
 
         // Jars bucket
