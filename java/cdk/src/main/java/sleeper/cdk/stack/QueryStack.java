@@ -272,7 +272,7 @@ public class QueryStack extends NestedStack {
         instanceProperties.set(CdkDefinedInstanceProperty.LEAF_PARTITION_QUERY_QUEUE_ARN, leafPartitionQueryQueue.getQueueArn());
         instanceProperties.set(CdkDefinedInstanceProperty.LEAF_PARTITION_QUERY_QUEUE_DLQ_URL, leafPartitionQueryDlq.getQueueUrl());
         instanceProperties.set(CdkDefinedInstanceProperty.LEAF_PARTITION_QUERY_QUEUE_DLQ_ARN, leafPartitionQueryDlq.getQueueArn());
-        createAlarmForDlq(this, "LeafPartitionQueryDeadLetterQueue",
+        createAlarmForDlq(this, "LeafPartitionQueryAlarm",
                 "Alarms if there are any messages on the dead letter queue for the leaf partition query queue",
                 leafPartitionQueryDlq, topic);
         CfnOutputProps leafPartitionQueryQueueOutputNameProps = new CfnOutputProps.Builder()
