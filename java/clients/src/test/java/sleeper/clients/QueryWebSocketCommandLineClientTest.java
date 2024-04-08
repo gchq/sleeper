@@ -331,8 +331,7 @@ public class QueryWebSocketCommandLineClientTest {
             in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
             runQueryClient("test-query-id",
                     withResponses(
-                            message(unknownMessage("test-query-id")),
-                            close("Connection closed normally")));
+                            message(unknownMessage("test-query-id"))));
 
             // Then
             assertThat(out.toString())
@@ -359,8 +358,7 @@ public class QueryWebSocketCommandLineClientTest {
             in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
             runQueryClient("test-query-id",
                     withResponses(
-                            message("{"),
-                            close("Connection closed normally")));
+                            message("{")));
 
             // Then
             assertThat(out.toString())
@@ -387,8 +385,7 @@ public class QueryWebSocketCommandLineClientTest {
             in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
             runQueryClient("test-query-id",
                     withResponses(
-                            message("{\"message\":\"error\"}"),
-                            close("Connection closed normally")));
+                            message("{\"message\":\"error\"}")));
 
             // Then
             assertThat(out.toString())
@@ -415,8 +412,7 @@ public class QueryWebSocketCommandLineClientTest {
             in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
             runQueryClient("test-query-id",
                     withResponses(
-                            message("{\"queryId\":\"test-query-id\"}"),
-                            close("Connection closed normally")));
+                            message("{\"queryId\":\"test-query-id\"}")));
 
             // Then
             assertThat(out.toString())
