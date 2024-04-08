@@ -29,6 +29,7 @@ import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
 import sleeper.systemtest.dsl.query.QueryAllTablesSendAndWaitDriver;
 import sleeper.systemtest.dsl.query.QuerySendAndWaitDriver;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +40,7 @@ public class WebSocketQueryDriver implements QuerySendAndWaitDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(WebSocketQueryDriver.class);
 
     private final QueryWebSocketClient queryWebSocketClient;
+    private List<String> recordsJson = new ArrayList<>();
     private Map<String, CompletableFuture<List<String>>> future = new HashMap<>();
     private TablePropertiesProvider tablePropertiesProvider;
 
@@ -65,7 +67,7 @@ public class WebSocketQueryDriver implements QuerySendAndWaitDriver {
     public void waitFor(Query query) {
         if (future.containsKey(query.getQueryId())) {
             LOGGER.info("Waiting for query: {}", query.getQueryId());
-            future.get(query.getQueryId()).join();
+            recordsJson = future.get(query.getQueryId()).join();
         } else {
             LOGGER.info("Query not found");
         }
@@ -76,7 +78,7 @@ public class WebSocketQueryDriver implements QuerySendAndWaitDriver {
         LOGGER.info("Loading results for query: {}", query.getQueryId());
         Schema schema = tablePropertiesProvider.getByName(query.getTableName()).getSchema();
         RecordJSONSerDe recordSerDe = new RecordJSONSerDe(schema);
-        return queryWebSocketClient.getResults(query).stream()
+        return recordsJson.stream()
                 .map(recordSerDe::fromJson)
                 .collect(Collectors.toList());
     }
