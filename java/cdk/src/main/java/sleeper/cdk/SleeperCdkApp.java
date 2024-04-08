@@ -217,7 +217,8 @@ public class SleeperCdkApp extends Stack {
             new GarbageCollectorStack(this,
                     "GarbageCollector",
                     instanceProperties, jars,
-                    coreStacks);
+                    coreStacks,
+                    topicStack.getTopic());
         }
 
         // Stack for containers for compactions and splitting compactions
@@ -225,8 +226,8 @@ public class SleeperCdkApp extends Stack {
             compactionStack = new CompactionStack(this,
                     "Compaction",
                     instanceProperties, jars,
-                    topicStack.getTopic(),
-                    coreStacks);
+                    coreStacks,
+                    topicStack.getTopic());
         }
 
         // Stack to split partitions

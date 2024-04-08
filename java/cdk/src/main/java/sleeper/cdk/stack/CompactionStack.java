@@ -156,8 +156,8 @@ public class CompactionStack extends NestedStack {
             String id,
             InstanceProperties instanceProperties,
             BuiltJars jars,
-            Topic topic,
-            CoreStacks coreStacks) {
+            CoreStacks coreStacks,
+            Topic topic) {
         super(scope, id);
         this.instanceProperties = instanceProperties;
         statusStore = CompactionStatusStoreResources.from(this, instanceProperties);
