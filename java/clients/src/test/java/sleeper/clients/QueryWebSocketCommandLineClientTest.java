@@ -37,6 +37,7 @@ import sleeper.core.table.TableIndex;
 import sleeper.query.model.Query;
 import sleeper.query.model.QuerySerDe;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
@@ -70,6 +71,8 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 public class QueryWebSocketCommandLineClientTest {
     private static final String PROMPT_RANGE_QUERY = PROMPT_MIN_INCLUSIVE + PROMPT_MAX_INCLUSIVE +
             PROMPT_MIN_ROW_KEY_LONG_TYPE + PROMPT_MAX_ROW_KEY_LONG_TYPE;
+    private static final Instant START_TIME = Instant.parse("2024-04-03T14:00:00Z");
+    private static final Instant FINISH_TIME = Instant.parse("2024-04-03T14:00:01Z");
     private final InstanceProperties instanceProperties = createInstance();
     private final Schema schema = schemaWithKey("key");
     private final Field rowKey = schema.getField("key").orElseThrow();
@@ -117,16 +120,15 @@ public class QueryWebSocketCommandLineClientTest {
 
             // Then
             assertThat(out.toString())
-                    .startsWith("Querying table test-table")
-                    .contains(PROMPT_QUERY_TYPE +
+                    .isEqualTo("Querying table test-table\n" +
+                            "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
+                            PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
-                            "Connected to WebSocket API\n" +
-                            "Submitting Query: " + querySerDe.toJson(expectedQuery) + "\n" +
-                            "1 records returned by query: test-query-id. Remaining pending queries: 0\n" +
+                            "Submitting query with ID: test-query-id\n" +
                             "Query results:\n" +
                             asJson(expectedRecord) + "\n" +
-                            "Disconnected from WebSocket API: Connection closed normally")
-                    .containsSubsequence("Query took", "seconds to return 1 records");
+                            "Query took 1 second to return 1 records\n" +
+                            PROMPT_QUERY_TYPE);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
@@ -149,18 +151,15 @@ public class QueryWebSocketCommandLineClientTest {
 
             // Then
             assertThat(out.toString())
-                    .startsWith("Querying table test-table")
-                    .contains(PROMPT_QUERY_TYPE +
+                    .isEqualTo("Querying table test-table\n" +
+                            "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
+                            PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
-                            "Connected to WebSocket API\n" +
-                            "Submitting Query: " + querySerDe.toJson(expectedQuery) + "\n" +
-                            "Query test-query-id split into the following subQueries:\n" +
-                            "  test-subquery\n" +
-                            "1 records returned by query: test-subquery. Remaining pending queries: 0\n" +
+                            "Submitting query with ID: test-query-id\n" +
                             "Query results:\n" +
                             asJson(expectedRecord) + "\n" +
-                            "Disconnected from WebSocket API: Connection closed normally")
-                    .containsSubsequence("Query took", "seconds to return 1 records");
+                            "Query took 1 second to return 1 records\n" +
+                            PROMPT_QUERY_TYPE);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
@@ -189,24 +188,17 @@ public class QueryWebSocketCommandLineClientTest {
 
             // Then
             assertThat(out.toString())
-                    .startsWith("Querying table test-table")
-                    .contains(PROMPT_QUERY_TYPE +
+                    .isEqualTo("Querying table test-table\n" +
+                            "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
+                            PROMPT_QUERY_TYPE +
                             PROMPT_RANGE_QUERY +
-                            "Connected to WebSocket API\n" +
-                            "Submitting Query: " + querySerDe.toJson(expectedQuery) + "\n" +
-                            "Query test-query-id split into the following subQueries:\n" +
-                            "  subquery-1\n" +
-                            "  subquery-2\n" +
-                            "  subquery-3\n" +
-                            "1 records returned by query: subquery-1. Remaining pending queries: 2\n" +
-                            "1 records returned by query: subquery-2. Remaining pending queries: 1\n" +
-                            "1 records returned by query: subquery-3. Remaining pending queries: 0\n" +
+                            "Submitting query with ID: test-query-id\n" +
                             "Query results:\n" +
                             asJson(expectedRecord1) + "\n" +
                             asJson(expectedRecord2) + "\n" +
                             asJson(expectedRecord3) + "\n" +
-                            "Disconnected from WebSocket API: Connection closed normally")
-                    .containsSubsequence("Query took", "seconds to return 3 records");
+                            "Query took 1 second to return 3 records\n" +
+                            PROMPT_QUERY_TYPE);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
@@ -228,17 +220,15 @@ public class QueryWebSocketCommandLineClientTest {
 
             // Then
             assertThat(out.toString())
-                    .startsWith("Querying table test-table")
-                    .contains(PROMPT_QUERY_TYPE +
+                    .isEqualTo("Querying table test-table\n" +
+                            "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
+                            PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
-                            "Connected to WebSocket API\n" +
-                            "Submitting Query: " + querySerDe.toJson(expectedQuery) + "\n" +
-                            "ERROR: API said it had returned 2 records for query test-query-id, but only received 1\n" +
-                            "2 records returned by query: test-query-id. Remaining pending queries: 0\n" +
+                            "Submitting query with ID: test-query-id\n" +
                             "Query results:\n" +
                             asJson(expectedRecord) + "\n" +
-                            "Disconnected from WebSocket API: Connection closed normally")
-                    .containsSubsequence("Query took", "seconds to return 1 records");
+                            "Query took 1 second to return 1 records\n" +
+                            PROMPT_QUERY_TYPE);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
@@ -263,14 +253,14 @@ public class QueryWebSocketCommandLineClientTest {
 
             // Then
             assertThat(out.toString())
-                    .startsWith("Querying table test-table")
-                    .contains(PROMPT_QUERY_TYPE +
+                    .isEqualTo("Querying table test-table\n" +
+                            "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
+                            PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
-                            "Connected to WebSocket API\n" +
-                            "Submitting Query: " + querySerDe.toJson(expectedQuery) + "\n" +
-                            "Encountered an error: Exception that will not terminate connection\n" +
-                            "Disconnected from WebSocket API: Connection closed normally\n")
-                    .containsSubsequence("Query took", "seconds to return 0 records");
+                            "Submitting query with ID: test-query-id\n" +
+                            "Query failed: Error while running queries\n" +
+                            "Query took 1 second to return 0 records\n" +
+                            PROMPT_QUERY_TYPE);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
@@ -291,14 +281,14 @@ public class QueryWebSocketCommandLineClientTest {
 
             // Then
             assertThat(out.toString())
-                    .startsWith("Querying table test-table")
-                    .contains(PROMPT_QUERY_TYPE +
+                    .isEqualTo("Querying table test-table\n" +
+                            "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
+                            PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
-                            "Connected to WebSocket API\n" +
-                            "Submitting Query: " + querySerDe.toJson(expectedQuery) + "\n" +
-                            "Encountered an error: Exception that will terminate connection\n" +
-                            "Disconnected from WebSocket API: Exception caused connection to terminate")
-                    .containsSubsequence("Query took", "seconds to return 0 records");
+                            "Submitting query with ID: test-query-id\n" +
+                            "Query failed: Error while running queries\n" +
+                            "Query took 1 second to return 0 records\n" +
+                            PROMPT_QUERY_TYPE);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
@@ -314,18 +304,18 @@ public class QueryWebSocketCommandLineClientTest {
             in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
             runQueryClient("test-query-id",
                     withResponses(
-                            message(errorMessage("test-query-id", "Query failed"))));
+                            message(errorMessage("test-query-id", "Failure message"))));
 
             // Then
             assertThat(out.toString())
-                    .startsWith("Querying table test-table")
-                    .contains(PROMPT_QUERY_TYPE +
+                    .isEqualTo("Querying table test-table\n" +
+                            "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
+                            PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
-                            "Connected to WebSocket API\n" +
-                            "Submitting Query: " + querySerDe.toJson(expectedQuery) + "\n" +
-                            "Encountered an error while running query test-query-id: Query failed\n" +
-                            "Disconnected from WebSocket API: Connection closed normally\n")
-                    .containsSubsequence("Query took", "seconds to return 0 records");
+                            "Submitting query with ID: test-query-id\n" +
+                            "Query failed: Error while running queries: Failure message\n" +
+                            "Query took 1 second to return 0 records\n" +
+                            PROMPT_QUERY_TYPE);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
@@ -345,14 +335,14 @@ public class QueryWebSocketCommandLineClientTest {
 
             // Then
             assertThat(out.toString())
-                    .startsWith("Querying table test-table")
-                    .contains(PROMPT_QUERY_TYPE +
+                    .isEqualTo("Querying table test-table\n" +
+                            "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
+                            PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
-                            "Connected to WebSocket API\n" +
-                            "Submitting Query: " + querySerDe.toJson(expectedQuery) + "\n" +
-                            "Received unrecognised message type: unknown\n" +
-                            "Disconnected from WebSocket API: Connection closed normally\n")
-                    .containsSubsequence("Query took", "seconds to return 0 records");
+                            "Submitting query with ID: test-query-id\n" +
+                            "Query failed: Unknown message type received: unknown\n" +
+                            "Query took 1 second to return 0 records\n" +
+                            PROMPT_QUERY_TYPE);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
@@ -372,15 +362,14 @@ public class QueryWebSocketCommandLineClientTest {
 
             // Then
             assertThat(out.toString())
-                    .startsWith("Querying table test-table")
-                    .contains(PROMPT_QUERY_TYPE +
+                    .isEqualTo("Querying table test-table\n" +
+                            "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
+                            PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
-                            "Connected to WebSocket API\n" +
-                            "Submitting Query: " + querySerDe.toJson(expectedQuery) + "\n" +
-                            "Received malformed JSON message from API:\n" +
-                            "  {\n" +
-                            "Disconnected from WebSocket API: Connection closed normally\n")
-                    .containsSubsequence("Query took", "seconds to return 0 records");
+                            "Submitting query with ID: test-query-id\n" +
+                            "Query failed: Received malformed message JSON: {\n" +
+                            "Query took 1 second to return 0 records\n" +
+                            PROMPT_QUERY_TYPE);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
@@ -400,15 +389,14 @@ public class QueryWebSocketCommandLineClientTest {
 
             // Then
             assertThat(out.toString())
-                    .startsWith("Querying table test-table")
-                    .contains(PROMPT_QUERY_TYPE +
+                    .isEqualTo("Querying table test-table\n" +
+                            "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
+                            PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
-                            "Connected to WebSocket API\n" +
-                            "Submitting Query: " + querySerDe.toJson(expectedQuery) + "\n" +
-                            "Received message without queryId from API:\n" +
-                            "  {\"message\":\"error\"}\n" +
-                            "Disconnected from WebSocket API: Connection closed normally\n")
-                    .containsSubsequence("Query took", "seconds to return 0 records");
+                            "Submitting query with ID: test-query-id\n" +
+                            "Query failed: Message missing required field: queryId\n" +
+                            "Query took 1 second to return 0 records\n" +
+                            PROMPT_QUERY_TYPE);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
@@ -428,15 +416,14 @@ public class QueryWebSocketCommandLineClientTest {
 
             // Then
             assertThat(out.toString())
-                    .startsWith("Querying table test-table")
-                    .contains(PROMPT_QUERY_TYPE +
+                    .isEqualTo("Querying table test-table\n" +
+                            "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
+                            PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
-                            "Connected to WebSocket API\n" +
-                            "Submitting Query: " + querySerDe.toJson(expectedQuery) + "\n" +
-                            "Received message without message type from API:\n" +
-                            "  {\"queryId\":\"test-query-id\"}\n" +
-                            "Disconnected from WebSocket API: Connection closed normally\n")
-                    .containsSubsequence("Query took", "seconds to return 0 records");
+                            "Submitting query with ID: test-query-id\n" +
+                            "Query failed: Message missing required field: message\n" +
+                            "Query took 1 second to return 0 records\n" +
+                            PROMPT_QUERY_TYPE);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
@@ -456,13 +443,14 @@ public class QueryWebSocketCommandLineClientTest {
 
             // Then
             assertThat(out.toString())
-                    .startsWith("Querying table test-table")
-                    .contains(PROMPT_QUERY_TYPE +
+                    .isEqualTo("Querying table test-table\n" +
+                            "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
+                            PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
-                            "Connected to WebSocket API\n" +
-                            "Submitting Query: " + querySerDe.toJson(expectedQuery) + "\n" +
-                            "Disconnected from WebSocket API: Network error")
-                    .containsSubsequence("Query took", "seconds to return 0 records");
+                            "Submitting query with ID: test-query-id\n" +
+                            "Query failed: WebSocket closed unexpectedly with reason: Network error\n" +
+                            "Query took 1 second to return 0 records\n" +
+                            PROMPT_QUERY_TYPE);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
@@ -489,13 +477,13 @@ public class QueryWebSocketCommandLineClientTest {
     protected void runQueryClient(String queryId, Client webSocketClient) throws Exception {
         new QueryWebSocketCommandLineClient(instanceProperties, tableIndex, new FixedTablePropertiesProvider(tableProperties),
                 in.consoleIn(), out.consoleOut(), new QueryWebSocketClient(instanceProperties,
-                        new FixedTablePropertiesProvider(tableProperties), out.consoleOut(), () -> webSocketClient),
-                () -> queryId)
+                        new FixedTablePropertiesProvider(tableProperties), () -> webSocketClient),
+                () -> queryId, List.of(START_TIME, FINISH_TIME).iterator()::next)
                 .run();
     }
 
     private FakeWebSocketClient withResponses(WebSocketResponse... responses) {
-        client = new FakeWebSocketClient(new FixedTablePropertiesProvider(tableProperties), out.consoleOut());
+        client = new FakeWebSocketClient(new FixedTablePropertiesProvider(tableProperties));
         client.withResponses(responses);
         return client;
     }

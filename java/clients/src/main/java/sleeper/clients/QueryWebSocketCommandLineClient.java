@@ -30,8 +30,11 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.TableIndex;
+import sleeper.core.util.LoggedDuration;
 import sleeper.query.model.Query;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletionException;
 import java.util.function.Supplier;
@@ -39,23 +42,25 @@ import java.util.function.Supplier;
 public class QueryWebSocketCommandLineClient extends QueryCommandLineClient {
     private final String apiUrl;
     private final QueryWebSocketClient queryWebSocketClient;
+    private final Supplier<Instant> timeSupplier;
 
     private QueryWebSocketCommandLineClient(
             InstanceProperties instanceProperties, TableIndex tableIndex, TablePropertiesProvider tablePropertiesProvider,
             ConsoleInput in, ConsoleOutput out) {
         this(instanceProperties, tableIndex, tablePropertiesProvider, in, out,
-                new QueryWebSocketClient(instanceProperties, tablePropertiesProvider, out));
+                new QueryWebSocketClient(instanceProperties, tablePropertiesProvider), Instant::now);
     }
 
     private QueryWebSocketCommandLineClient(
             InstanceProperties instanceProperties, TableIndex tableIndex, TablePropertiesProvider tablePropertiesProvider,
-            ConsoleInput in, ConsoleOutput out, QueryWebSocketClient client) {
-        this(instanceProperties, tableIndex, tablePropertiesProvider, in, out, client, () -> UUID.randomUUID().toString());
+            ConsoleInput in, ConsoleOutput out, QueryWebSocketClient client, Supplier<Instant> timeSupplier) {
+        this(instanceProperties, tableIndex, tablePropertiesProvider, in, out, client, () -> UUID.randomUUID().toString(), timeSupplier);
     }
 
     QueryWebSocketCommandLineClient(
             InstanceProperties instanceProperties, TableIndex tableIndex, TablePropertiesProvider tablePropertiesProvider,
-            ConsoleInput in, ConsoleOutput out, QueryWebSocketClient client, Supplier<String> queryIdSupplier) {
+            ConsoleInput in, ConsoleOutput out, QueryWebSocketClient client, Supplier<String> queryIdSupplier,
+            Supplier<Instant> timeSupplier) {
         super(instanceProperties, tableIndex, tablePropertiesProvider, in, out, queryIdSupplier);
 
         this.apiUrl = instanceProperties.get(CdkDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL);
@@ -63,6 +68,7 @@ public class QueryWebSocketCommandLineClient extends QueryCommandLineClient {
             throw new IllegalArgumentException("Use of this query client requires the WebSocket API to have been deployed as part of your Sleeper instance!");
         }
         this.queryWebSocketClient = client;
+        this.timeSupplier = timeSupplier;
     }
 
     @Override
@@ -71,13 +77,21 @@ public class QueryWebSocketCommandLineClient extends QueryCommandLineClient {
 
     @Override
     protected void submitQuery(TableProperties tableProperties, Query query) throws InterruptedException {
+        Instant startTime = timeSupplier.get();
+        long recordsReturned = 0L;
         try {
-            queryWebSocketClient.submitQuery(query).join();
+            out.println("Submitting query with ID: " + query.getQueryId());
+            List<String> results = queryWebSocketClient.submitQuery(query).join();
+            out.println("Query results:");
+            results.forEach(out::println);
+            recordsReturned = results.size();
         } catch (CompletionException e) {
-            out.println("Failed to run query: " + e.getCause().getMessage());
+            out.println("Query failed: " + e.getCause().getMessage());
         } catch (InterruptedException e) {
-            out.println("Failed to run query: " + e.getMessage());
+            out.println("Query failed: " + e.getMessage());
             throw e;
+        } finally {
+            out.println("Query took " + LoggedDuration.withFullOutput(startTime, timeSupplier.get()) + " to return " + recordsReturned + " records");
         }
     }
 
