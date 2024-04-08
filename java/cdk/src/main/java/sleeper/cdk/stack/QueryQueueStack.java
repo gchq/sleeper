@@ -20,6 +20,7 @@ import software.amazon.awscdk.CfnOutputProps;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.iam.IGrantable;
+import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
@@ -28,6 +29,7 @@ import sleeper.cdk.Utils;
 import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
+import static sleeper.cdk.Utils.createAlarmForDlq;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.QueryProperty.QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS;
 
@@ -42,9 +44,10 @@ public class QueryQueueStack extends NestedStack {
 
     public QueryQueueStack(Construct scope,
             String id,
-            InstanceProperties instanceProperties) {
+            InstanceProperties instanceProperties,
+            Topic topic) {
         super(scope, id);
-        queryQueue = setupQueryQueue(instanceProperties);
+        queryQueue = setupQueryQueue(instanceProperties, topic);
     }
 
     /***
@@ -53,7 +56,7 @@ public class QueryQueueStack extends NestedStack {
      * @param  instanceProperties containing configuration details
      * @return                    the queue to be used for queries
      */
-    private Queue setupQueryQueue(InstanceProperties instanceProperties) {
+    private Queue setupQueryQueue(InstanceProperties instanceProperties, Topic topic) {
         String dlQueueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-QueryDLQ");
         Queue queryQueueForDLs = Queue.Builder
                 .create(this, "QueriesDeadLetterQueue")
@@ -74,7 +77,9 @@ public class QueryQueueStack extends NestedStack {
         instanceProperties.set(CdkDefinedInstanceProperty.QUERY_QUEUE_ARN, queryQueue.getQueueArn());
         instanceProperties.set(CdkDefinedInstanceProperty.QUERY_DLQ_URL, queryQueueForDLs.getQueueUrl());
         instanceProperties.set(CdkDefinedInstanceProperty.QUERY_DLQ_ARN, queryQueueForDLs.getQueueArn());
-
+        createAlarmForDlq(this, "QueriesAlarm",
+                "Alarms if there are any messages on the dead letter queue for the queries queue",
+                queryQueueForDLs, topic);
         CfnOutputProps queriesQueueOutputNameProps = new CfnOutputProps.Builder()
                 .value(queryQueue.getQueueName())
                 .exportName(instanceProperties.get(ID) + "-" + QUERY_QUEUE_NAME)

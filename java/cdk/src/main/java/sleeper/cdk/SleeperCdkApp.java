@@ -242,7 +242,9 @@ public class SleeperCdkApp extends Stack {
         QueryStack queryStack = null;
         // Stack to execute queries
         if (QUERY_STACK_NAMES.stream().anyMatch(optionalStacks::contains)) {
-            queryQueueStack = new QueryQueueStack(this, "QueryQueue", instanceProperties);
+            queryQueueStack = new QueryQueueStack(this, "QueryQueue",
+                    instanceProperties,
+                    topicStack.getTopic());
             queryStack = new QueryStack(this,
                     "Query",
                     instanceProperties, jars,
