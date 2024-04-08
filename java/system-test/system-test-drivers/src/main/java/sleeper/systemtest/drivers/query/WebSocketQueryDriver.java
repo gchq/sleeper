@@ -26,56 +26,37 @@ import sleeper.core.schema.Schema;
 import sleeper.query.model.Query;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
-import sleeper.systemtest.dsl.query.QueryAllTablesSendAndWaitDriver;
-import sleeper.systemtest.dsl.query.QuerySendAndWaitDriver;
+import sleeper.systemtest.dsl.query.QueryAllTablesInParallelDriver;
+import sleeper.systemtest.dsl.query.QueryDriver;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
-public class WebSocketQueryDriver implements QuerySendAndWaitDriver {
+public class WebSocketQueryDriver implements QueryDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(WebSocketQueryDriver.class);
 
+    private final TablePropertiesProvider tablePropertiesProvider;
     private final QueryWebSocketClient queryWebSocketClient;
-    private List<String> recordsJson = new ArrayList<>();
-    private Map<String, CompletableFuture<List<String>>> future = new HashMap<>();
-    private TablePropertiesProvider tablePropertiesProvider;
 
     public static QueryAllTablesDriver allTablesDriver(SystemTestInstanceContext instance) {
-        return new QueryAllTablesSendAndWaitDriver(instance, new WebSocketQueryDriver(instance));
+        return new QueryAllTablesInParallelDriver(instance, new WebSocketQueryDriver(instance));
     }
 
     public WebSocketQueryDriver(SystemTestInstanceContext instance) {
-        this.queryWebSocketClient = new QueryWebSocketClient(instance.getInstanceProperties(), instance.getTablePropertiesProvider());
         this.tablePropertiesProvider = instance.getTablePropertiesProvider();
+        this.queryWebSocketClient = new QueryWebSocketClient(instance.getInstanceProperties(), tablePropertiesProvider);
     }
 
     @Override
-    public void send(Query query) {
+    public List<Record> run(Query query) {
+        List<String> recordsJson = new ArrayList<>();
         LOGGER.info("Submitting query: {}", query.getQueryId());
         try {
-            future.put(query.getQueryId(), queryWebSocketClient.submitQuery(query));
+            recordsJson = queryWebSocketClient.submitQuery(query).join();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    @Override
-    public void waitFor(Query query) {
-        if (future.containsKey(query.getQueryId())) {
-            LOGGER.info("Waiting for query: {}", query.getQueryId());
-            recordsJson = future.get(query.getQueryId()).join();
-        } else {
-            LOGGER.info("Query not found");
-        }
-    }
-
-    @Override
-    public List<Record> getResults(Query query) {
-        LOGGER.info("Loading results for query: {}", query.getQueryId());
         Schema schema = tablePropertiesProvider.getByName(query.getTableName()).getSchema();
         RecordJSONSerDe recordSerDe = new RecordJSONSerDe(schema);
         return recordsJson.stream()
