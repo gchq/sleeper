@@ -29,7 +29,6 @@ import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
 import sleeper.systemtest.dsl.query.QueryAllTablesInParallelDriver;
 import sleeper.systemtest.dsl.query.QueryDriver;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -50,18 +49,16 @@ public class WebSocketQueryDriver implements QueryDriver {
 
     @Override
     public List<Record> run(Query query) {
-        List<String> recordsJson = new ArrayList<>();
         LOGGER.info("Submitting query: {}", query.getQueryId());
+        Schema schema = tablePropertiesProvider.getByName(query.getTableName()).getSchema();
+        RecordJSONSerDe recordSerDe = new RecordJSONSerDe(schema);
         try {
-            recordsJson = queryWebSocketClient.submitQuery(query).join();
+            return queryWebSocketClient.submitQuery(query).join().stream()
+                    .map(recordSerDe::fromJson)
+                    .collect(Collectors.toList());
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        Schema schema = tablePropertiesProvider.getByName(query.getTableName()).getSchema();
-        RecordJSONSerDe recordSerDe = new RecordJSONSerDe(schema);
-        return recordsJson.stream()
-                .map(recordSerDe::fromJson)
-                .collect(Collectors.toList());
     }
 
 }
