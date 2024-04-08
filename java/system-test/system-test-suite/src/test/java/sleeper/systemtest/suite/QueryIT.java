@@ -239,5 +239,13 @@ public class QueryIT {
                     .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.concat(
                             LongStream.range(10, 20), LongStream.range(30, 40))));
         }
+
+        @Test
+        void shouldRunQueryReturningNoRecords(SleeperSystemTest sleeper) {
+            // When/Then
+            assertThat(sleeper.query().webSocket()
+                    .allRecordsInTable())
+                    .isEmpty();
+        }
     }
 }
