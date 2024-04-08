@@ -139,7 +139,7 @@
         <reload4j.version>1.2.25</reload4j.version>
         <java-websocket.version>1.5.6</java-websocket.version>
         <arrow.version>11.0.0</arrow.version>
-        <bouncycastle.version>1.77</bouncycastle.version>
+        <bouncycastle.version>1.78</bouncycastle.version>
         <athena.version>2023.3.1</athena.version>
         <trino.version>390</trino.version>
         <!-- Trino's AssertJ plugin is not compatible with the latest version -->
