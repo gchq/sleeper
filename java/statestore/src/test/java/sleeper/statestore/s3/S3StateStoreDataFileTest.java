@@ -20,6 +20,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.util.ExponentialBackoffWithJitter;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -31,6 +32,7 @@ import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.recordWaits;
 import static sleeper.statestore.s3.InMemoryS3StateStoreDataFiles.buildPathFromRevisionId;
 import static sleeper.statestore.s3.S3StateStoreDataFile.conditionCheckFor;
 
@@ -243,8 +245,8 @@ public class S3StateStoreDataFileTest {
                 .buildPathFromRevisionId(InMemoryS3StateStoreDataFiles::buildPathFromRevisionId)
                 .loadAndWriteData(dataFiles::load, dataFiles::write)
                 .deleteFile(dataFiles::delete)
-                .randomJitterFraction(jitterFractionSupplier)
-                .waiter(waiter())
+                .retryBackoff(new ExponentialBackoffWithJitter(
+                        S3StateStoreDataFile.RETRY_WAIT_RANGE, jitterFractionSupplier, recordWaits(foundWaits)))
                 .build().updateWithAttempts(attempts, update, conditionCheckFor(condition));
     }
 
@@ -279,9 +281,5 @@ public class S3StateStoreDataFileTest {
     private static DoubleSupplier randomSeededJitterFraction(int seed) {
         Random random = new Random(seed);
         return random::nextDouble;
-    }
-
-    private S3StateStoreDataFile.Waiter waiter() {
-        return milliseconds -> foundWaits.add(Duration.ofMillis(milliseconds));
     }
 }

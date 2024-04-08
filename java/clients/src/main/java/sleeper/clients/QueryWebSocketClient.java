@@ -104,14 +104,6 @@ public class QueryWebSocketClient {
         }
     }
 
-    public List<String> getResults(Query query) {
-        if (client == null) {
-            return List.of();
-        } else {
-            return client.getResults(query.getQueryId());
-        }
-    }
-
     public interface Client {
         void closeBlocking() throws InterruptedException;
 
@@ -254,6 +246,7 @@ public class QueryWebSocketClient {
         public void onMessage(String json) {
             Optional<JsonObject> messageOpt = deserialiseMessage(json);
             if (!messageOpt.isPresent()) {
+                close();
                 return;
             }
             JsonObject message = messageOpt.get();
@@ -271,6 +264,7 @@ public class QueryWebSocketClient {
             } else {
                 queryFailed = true;
                 future.completeExceptionally(new UnknownMessageTypeException(messageType));
+                close();
             }
 
             if (outstandingQueries.isEmpty()) {
@@ -306,6 +300,7 @@ public class QueryWebSocketClient {
             outstandingQueries.remove(queryId);
             queryFailed = true;
             future.completeExceptionally(new WebSocketErrorException(error));
+            close();
         }
 
         private void handleSubqueries(JsonObject message, String queryId) {

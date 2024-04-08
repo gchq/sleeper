@@ -262,7 +262,6 @@ public class SplitMultiDimensionalPartitionImpl {
         leftChildRanges.add(rangeForSplitDimensionLeftChild);
         Region leftChildRegion = new Region(leftChildRanges);
         Partition leftChild = Partition.builder()
-                .rowKeyTypes(schema.getRowKeyTypes())
                 .region(leftChildRegion)
                 .id(idSupplier.get())
                 .leafPartition(true)
@@ -276,7 +275,6 @@ public class SplitMultiDimensionalPartitionImpl {
         rightChildRanges.add(rangeForSplitDimensionRightChild);
         Region rightChildRegion = new Region(rightChildRanges);
         Partition rightChild = Partition.builder()
-                .rowKeyTypes(schema.getRowKeyTypes())
                 .region(rightChildRegion)
                 .id(idSupplier.get())
                 .leafPartition(true)
