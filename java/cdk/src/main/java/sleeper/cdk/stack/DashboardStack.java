@@ -52,25 +52,18 @@ import static sleeper.configuration.properties.instance.DashboardProperty.DASHBO
 
 @SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR")
 public class DashboardStack extends NestedStack {
-    private final CompactionStack compactionStack;
-    private final PartitionSplittingStack partitionSplittingStack;
     private final String instanceId;
     private final List<String> tableNames;
     private final String metricsNamespace;
     private final Duration window;
     private final Dashboard dashboard;
     private final List<IMetric> errorMetrics = new ArrayList<>();
+    private final List<Metric> compactionAndSplittingJobsSubmitted = new ArrayList<>();
+    private final List<Metric> compactionAndSplittingJobsWaiting = new ArrayList<>();
+    private final List<Metric> oldestCompactionAndSplittingJobs = new ArrayList<>();
 
-    public DashboardStack(
-            Construct scope,
-            String id,
-            CompactionStack compactionStack,
-            PartitionSplittingStack partitionSplittingStack,
-            InstanceProperties instanceProperties) {
+    public DashboardStack(Construct scope, String id, InstanceProperties instanceProperties) {
         super(scope, id);
-
-        this.compactionStack = compactionStack;
-        this.partitionSplittingStack = partitionSplittingStack;
 
         instanceId = instanceProperties.get(ID);
         tableNames = Utils.getAllTableProperties(instanceProperties, this)
@@ -84,9 +77,7 @@ public class DashboardStack extends NestedStack {
         window = Duration.minutes(timeWindowInMinutes);
         dashboard = Dashboard.Builder.create(this, "dashboard").dashboardName(instanceId).build();
 
-        addErrorMetrics();
         addTableWidgets();
-        addCompactionWidgets();
 
         CfnOutput.Builder.create(this, "DashboardUrl")
                 .value(constructUrl())
@@ -101,19 +92,7 @@ public class DashboardStack extends NestedStack {
 
     public void addErrorMetric(String label, Queue errorQueue) {
         errorMetrics.add(errorQueue.metricApproximateNumberOfMessagesVisible(
-                MetricOptions.builder().label("Ingest Errors").period(window).statistic("Sum").build()));
-    }
-
-    private void addErrorMetrics() {
-        if (null != compactionStack) {
-            errorMetrics.add(compactionStack.getCompactionDeadLetterQueue().metricApproximateNumberOfMessagesVisible(
-                    MetricOptions.builder().label("Compaction Errors").period(window).statistic("Sum").build()));
-        }
-        if (null != partitionSplittingStack) {
-            errorMetrics.add(partitionSplittingStack.getDeadLetterQueue().metricApproximateNumberOfMessagesVisible(
-                    MetricOptions.builder().label("Partition Split Errors").period(window).statistic("Sum").build()));
-        }
-
+                MetricOptions.builder().label(label).period(window).statistic("Sum").build()));
     }
 
     public void addErrorMetricsWidgets() {
@@ -127,7 +106,7 @@ public class DashboardStack extends NestedStack {
         }
     }
 
-    public void addIngestWidgets(Queue ingestJobQueue) {
+    public void addIngestWidgets(Queue jobQueue) {
         dashboard.addWidgets(
                 TextWidget.Builder.create()
                         .markdown("## Standard Ingest")
@@ -137,7 +116,7 @@ public class DashboardStack extends NestedStack {
                 GraphWidget.Builder.create()
                         .view(GraphWidgetView.TIME_SERIES)
                         .title("NumberOfJobsSubmitted")
-                        .left(Collections.singletonList(ingestJobQueue.metricNumberOfMessagesSent(MetricOptions.builder()
+                        .left(Collections.singletonList(jobQueue.metricNumberOfMessagesSent(MetricOptions.builder()
                                 .unit(Unit.COUNT)
                                 .period(window)
                                 .statistic("Sum")
@@ -147,7 +126,7 @@ public class DashboardStack extends NestedStack {
                 GraphWidget.Builder.create()
                         .view(GraphWidgetView.TIME_SERIES)
                         .title("NumberOfJobsWaiting")
-                        .left(Collections.singletonList(ingestJobQueue.metricApproximateNumberOfMessagesVisible(MetricOptions.builder()
+                        .left(Collections.singletonList(jobQueue.metricApproximateNumberOfMessagesVisible(MetricOptions.builder()
                                 .unit(Unit.COUNT)
                                 .period(window)
                                 .statistic("Average")
@@ -157,7 +136,7 @@ public class DashboardStack extends NestedStack {
                 GraphWidget.Builder.create()
                         .view(GraphWidgetView.TIME_SERIES)
                         .title("AgeOfOldestWaitingJob")
-                        .left(Collections.singletonList(ingestJobQueue.metricApproximateAgeOfOldestMessage(MetricOptions.builder()
+                        .left(Collections.singletonList(jobQueue.metricApproximateAgeOfOldestMessage(MetricOptions.builder()
                                 .unit(Unit.SECONDS)
                                 .period(window)
                                 .statistic("Maximum")
@@ -276,62 +255,39 @@ public class DashboardStack extends NestedStack {
         });
     }
 
-    private void addCompactionWidgets() {
-        if (compactionStack == null && partitionSplittingStack == null) {
-            return;
-        }
-        List<Metric> jobsSubmittedMetrics = new ArrayList<>();
-        List<Metric> jobsWaitingMetrics = new ArrayList<>();
-        List<Metric> oldestJobMetrics = new ArrayList<>();
+    public void addCompactionMetrics(Queue jobQueue) {
+        addCompactionAndSplittingMetrics("Compaction", jobQueue);
+    }
 
-        if (null != compactionStack) {
-            jobsSubmittedMetrics.add(
-                    compactionStack.getCompactionJobsQueue().metricNumberOfMessagesSent(MetricOptions.builder()
-                            .label("Compaction")
-                            .unit(Unit.COUNT)
-                            .period(window)
-                            .statistic("Sum")
-                            .build()));
-            jobsWaitingMetrics.add(
-                    compactionStack.getCompactionJobsQueue().metricApproximateNumberOfMessagesVisible(MetricOptions.builder()
-                            .label("Compaction")
-                            .unit(Unit.COUNT)
-                            .period(window)
-                            .statistic("Average")
-                            .build()));
-            oldestJobMetrics.add(
-                    compactionStack.getCompactionJobsQueue().metricApproximateAgeOfOldestMessage(MetricOptions.builder()
-                            .label("Compaction")
-                            .unit(Unit.COUNT)
-                            .period(window)
-                            .statistic("Maximum")
-                            .build()));
-        }
+    public void addPartitionSplittingMetrics(Queue jobQueue) {
+        addCompactionAndSplittingMetrics("Partition Splits", jobQueue);
+    }
 
-        if (null != partitionSplittingStack) {
-            jobsSubmittedMetrics.add(
-                    partitionSplittingStack.getJobQueue().metricNumberOfMessagesSent(MetricOptions.builder()
-                            .label("Partition Splits")
-                            .unit(Unit.COUNT)
-                            .period(window)
-                            .statistic("Sum")
-                            .build()));
-            jobsWaitingMetrics.add(
-                    partitionSplittingStack.getJobQueue().metricApproximateNumberOfMessagesVisible(MetricOptions.builder()
-                            .label("Partition Splits")
-                            .unit(Unit.COUNT)
-                            .period(window)
-                            .statistic("Average")
-                            .build()));
-            oldestJobMetrics.add(
-                    partitionSplittingStack.getJobQueue().metricApproximateAgeOfOldestMessage(MetricOptions.builder()
-                            .label("Partition Splits")
-                            .unit(Unit.COUNT)
-                            .period(window)
-                            .statistic("Maximum")
-                            .build()));
-        }
+    private void addCompactionAndSplittingMetrics(String label, Queue jobQueue) {
+        compactionAndSplittingJobsSubmitted.add(
+                jobQueue.metricNumberOfMessagesSent(MetricOptions.builder()
+                        .label(label)
+                        .unit(Unit.COUNT)
+                        .period(window)
+                        .statistic("Sum")
+                        .build()));
+        compactionAndSplittingJobsWaiting.add(
+                jobQueue.metricApproximateNumberOfMessagesVisible(MetricOptions.builder()
+                        .label(label)
+                        .unit(Unit.COUNT)
+                        .period(window)
+                        .statistic("Average")
+                        .build()));
+        oldestCompactionAndSplittingJobs.add(
+                jobQueue.metricApproximateAgeOfOldestMessage(MetricOptions.builder()
+                        .label(label)
+                        .unit(Unit.COUNT)
+                        .period(window)
+                        .statistic("Maximum")
+                        .build()));
+    }
 
+    public void addCompactionWidgets() {
         dashboard.addWidgets(
                 TextWidget.Builder.create()
                         .markdown("## Compactions and Splits")
@@ -341,19 +297,19 @@ public class DashboardStack extends NestedStack {
                 GraphWidget.Builder.create()
                         .view(GraphWidgetView.TIME_SERIES)
                         .title("NumberOfJobsSubmitted")
-                        .left(jobsSubmittedMetrics)
+                        .left(compactionAndSplittingJobsSubmitted)
                         .width(6)
                         .build(),
                 GraphWidget.Builder.create()
                         .view(GraphWidgetView.TIME_SERIES)
                         .title("NumberOfJobsWaiting")
-                        .left(jobsWaitingMetrics)
+                        .left(compactionAndSplittingJobsWaiting)
                         .width(6)
                         .build(),
                 GraphWidget.Builder.create()
                         .view(GraphWidgetView.TIME_SERIES)
                         .title("AgeOfOldestWaitingJob")
-                        .left(oldestJobMetrics)
+                        .left(oldestCompactionAndSplittingJobs)
                         .width(6)
                         .build());
     }

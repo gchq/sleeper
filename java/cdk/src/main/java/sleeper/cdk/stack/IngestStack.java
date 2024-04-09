@@ -297,8 +297,4 @@ public class IngestStack extends NestedStack {
     public Queue getIngestJobQueue() {
         return ingestJobQueue;
     }
-
-    public Queue getErrorQueue() {
-        return ingestDLQ;
-    }
 }

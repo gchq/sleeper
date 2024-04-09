@@ -148,11 +148,7 @@ public class SleeperCdkApp extends Stack {
             new TableMetricsStack(this, "TableMetrics", instanceProperties, jars, topicStack.getTopic(), coreStacks);
         }
         if (optionalStacks.contains(DashboardStack.class.getSimpleName())) {
-            dashboardStack = new DashboardStack(this,
-                    "Dashboard",
-                    compactionStack,
-                    partitionSplittingStack,
-                    instanceProperties);
+            dashboardStack = new DashboardStack(this, "Dashboard", instanceProperties);
         }
         // Stack for Athena analytics
         if (optionalStacks.contains(AthenaStack.class.getSimpleName())) {
@@ -231,7 +227,8 @@ public class SleeperCdkApp extends Stack {
                     "Compaction",
                     instanceProperties, jars,
                     topicStack.getTopic(),
-                    coreStacks);
+                    coreStacks,
+                    dashboardStack);
         }
 
         // Stack to split partitions
@@ -240,7 +237,8 @@ public class SleeperCdkApp extends Stack {
                     "PartitionSplitting",
                     instanceProperties, jars,
                     topicStack.getTopic(),
-                    coreStacks);
+                    coreStacks,
+                    dashboardStack);
         }
 
         QueryStack queryStack = null;

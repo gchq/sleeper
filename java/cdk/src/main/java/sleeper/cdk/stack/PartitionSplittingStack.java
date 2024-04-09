@@ -81,7 +81,8 @@ public class PartitionSplittingStack extends NestedStack {
             InstanceProperties instanceProperties,
             BuiltJars jars,
             Topic topic,
-            CoreStacks coreStacks) {
+            CoreStacks coreStacks,
+            DashboardStack dashboardStack) {
         super(scope, id);
 
         // Jars bucket
@@ -91,7 +92,7 @@ public class PartitionSplittingStack extends NestedStack {
         QueueAndDlq batchQueueAndDlq = createBatchQueues(instanceProperties);
         this.partitionSplittingBatchQueue = batchQueueAndDlq.queue;
         // Create queue for partition splitting job definitions
-        QueueAndDlq jobQueueAndDlq = createJobQueues(instanceProperties, topic);
+        QueueAndDlq jobQueueAndDlq = createJobQueues(instanceProperties, topic, dashboardStack);
         this.partitionSplittingJobQueue = jobQueueAndDlq.queue;
         this.partitionSplittingJobDlq = jobQueueAndDlq.dlq;
 
@@ -136,7 +137,7 @@ public class PartitionSplittingStack extends NestedStack {
         return new QueueAndDlq(partitionSplittingBatchQueue, partitionSplittingBatchDlq);
     }
 
-    private QueueAndDlq createJobQueues(InstanceProperties instanceProperties, Topic topic) {
+    private QueueAndDlq createJobQueues(InstanceProperties instanceProperties, Topic topic, DashboardStack dashboardStack) {
         // Create queue for partition splitting job definitions
         Queue partitionSplittingJobDlq = Queue.Builder
                 .create(this, "PartitionSplittingDeadLetterQueue")
@@ -160,6 +161,9 @@ public class PartitionSplittingStack extends NestedStack {
         createAlarmForDlq(this, "PartitionSplittingAlarm",
                 "Alarms if there are any messages on the dead letter queue for the partition splitting queue",
                 partitionSplittingJobDlq, topic);
+
+        dashboardStack.addPartitionSplittingMetrics(partitionSplittingJobQueue);
+        dashboardStack.addErrorMetric("Partition Split Errors", partitionSplittingJobDlq);
 
         CfnOutputProps partitionSplittingQueueOutputProps = new CfnOutputProps.Builder()
                 .value(partitionSplittingJobQueue.getQueueUrl())

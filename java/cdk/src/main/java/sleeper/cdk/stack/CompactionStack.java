@@ -157,7 +157,8 @@ public class CompactionStack extends NestedStack {
             InstanceProperties instanceProperties,
             BuiltJars jars,
             Topic topic,
-            CoreStacks coreStacks) {
+            CoreStacks coreStacks,
+            DashboardStack dashboardStack) {
         super(scope, id);
         this.instanceProperties = instanceProperties;
         statusStore = CompactionStatusStoreResources.from(this, instanceProperties);
@@ -179,7 +180,7 @@ public class CompactionStack extends NestedStack {
         LambdaCode taskCreatorJar = jars.lambdaCode(BuiltJar.COMPACTION_TASK_CREATOR, jarsBucket);
 
         // SQS queue for the compaction jobs
-        Queue compactionJobsQueue = sqsQueueForCompactionJobs(topic);
+        Queue compactionJobsQueue = sqsQueueForCompactionJobs(topic, dashboardStack);
 
         // Lambda to periodically check for compaction jobs that should be created
         lambdaToCreateCompactionJobsBatchedViaSQS(coreStacks, topic, jarsBucket, jobCreatorJar, compactionJobsQueue);
@@ -193,7 +194,7 @@ public class CompactionStack extends NestedStack {
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
-    private Queue sqsQueueForCompactionJobs(Topic topic) {
+    private Queue sqsQueueForCompactionJobs(Topic topic, DashboardStack dashboardStack) {
         // Create queue for compaction job definitions
         String dlQueueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-CompactionJobDLQ");
         compactionDLQ = Queue.Builder
@@ -223,6 +224,9 @@ public class CompactionStack extends NestedStack {
         createAlarmForDlq(this, "CompactionAlarm",
                 "Alarms if there are any messages on the dead letter queue for the compactions queue",
                 compactionDLQ, topic);
+
+        dashboardStack.addCompactionMetrics(compactionJobQ);
+        dashboardStack.addErrorMetric("Compaction Errors", compactionDLQ);
 
         CfnOutputProps compactionJobDefinitionsQueueProps = new CfnOutputProps.Builder()
                 .value(compactionJobQ.getQueueUrl())
