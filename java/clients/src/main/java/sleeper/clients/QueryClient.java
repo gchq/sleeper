@@ -133,7 +133,7 @@ public class QueryClient extends QueryCommandLineClient {
         return queryExecutor.execute(query);
     }
 
-    public static void main(String[] args) throws StateStoreException, ObjectFactoryException {
+    public static void main(String[] args) throws StateStoreException, ObjectFactoryException, InterruptedException {
         if (1 != args.length) {
             throw new IllegalArgumentException("Usage: <instance-id>");
         }

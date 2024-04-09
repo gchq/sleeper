@@ -21,20 +21,66 @@ import java.util.stream.Stream;
 
 public class InMemoryTransactionLogStore implements TransactionLogStore {
 
-    private List<StateStoreTransaction> transactions = new ArrayList<>();
+    private static final Runnable DO_NOTHING = () -> {
+    };
+
+    private final List<TransactionLogEntry> transactions = new ArrayList<>();
+    private Runnable beforeNextAdd = DO_NOTHING;
+    private Runnable beforeNextRead = DO_NOTHING;
 
     @Override
-    public void addTransaction(StateStoreTransaction transaction, long transactionNumber) {
-        if (transactions.size() + 1 != transactionNumber) {
-            throw new IllegalStateException("Next transaction number should be " + transactions.size() + ", found " + transactionNumber);
+    public void addTransaction(TransactionLogEntry entry) throws DuplicateTransactionNumberException {
+        long transactionNumber = entry.getTransactionNumber();
+        doBeforeNextAdd();
+        if (transactionNumber <= transactions.size()) {
+            throw new DuplicateTransactionNumberException(transactionNumber);
         }
-        transactions.add(transaction);
+        if (transactionNumber > transactions.size() + 1) {
+            throw new IllegalStateException("Attempted to add transaction " + transactionNumber + " when we only have " + transactions.size());
+        }
+        transactions.add(entry);
     }
 
     @Override
-    public Stream<StateStoreTransaction> readTransactionsAfter(long lastTransactionNumber) {
+    public Stream<TransactionLogEntry> readTransactionsAfter(long lastTransactionNumber) {
+        doBeforeNextRead();
         return transactions.stream()
                 .skip(lastTransactionNumber);
     }
 
+    public void beforeNextAddTransaction(ThrowingRunnable action) {
+        beforeNextAdd = wrappingCheckedExceptions(action);
+    }
+
+    public void beforeNextReadTransactions(ThrowingRunnable action) {
+        beforeNextRead = wrappingCheckedExceptions(action);
+    }
+
+    private void doBeforeNextAdd() {
+        Runnable action = beforeNextAdd;
+        beforeNextAdd = DO_NOTHING;
+        action.run();
+    }
+
+    private void doBeforeNextRead() {
+        Runnable action = beforeNextRead;
+        beforeNextRead = DO_NOTHING;
+        action.run();
+    }
+
+    private static Runnable wrappingCheckedExceptions(ThrowingRunnable action) {
+        return () -> {
+            try {
+                action.run();
+            } catch (RuntimeException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        };
+    }
+
+    public interface ThrowingRunnable {
+        void run() throws Exception;
+    }
 }

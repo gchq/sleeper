@@ -17,10 +17,9 @@ package sleeper.core.statestore.transactionlog;
 
 import sleeper.core.statestore.StateStoreException;
 
-public interface StateStoreTransaction {
+public interface StateStoreTransaction<T> {
 
-    void validate(TransactionLogHead state) throws StateStoreException;
+    void validate(T state) throws StateStoreException;
 
-    void apply(TransactionLogHead state);
-
+    void apply(T state);
 }

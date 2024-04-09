@@ -77,6 +77,8 @@ public class DashboardStack extends NestedStack {
         tableNames = Utils.getAllTableProperties(instanceProperties, this)
                 .map(tableProperties -> tableProperties.get(TableProperty.TABLE_NAME))
                 .sorted()
+                // There's a limit of 500 widgets in a dashboard, including the widgets not associated with a table
+                .limit(50)
                 .collect(Collectors.toList());
         metricsNamespace = instanceProperties.get(METRICS_NAMESPACE);
         int timeWindowInMinutes = instanceProperties.getInt(DASHBOARD_TIME_WINDOW_MINUTES);

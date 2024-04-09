@@ -22,6 +22,9 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.record.Record;
+import sleeper.core.schema.Field;
+import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.StringType;
 import sleeper.query.model.Query;
 import sleeper.query.model.QueryOrLeafPartitionQuery;
 import sleeper.query.output.ResultsOutputInfo;
@@ -44,6 +47,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @WireMockTest
 public class WebSocketResultsOutputIT {
+    private final Schema schema = Schema.builder()
+            .rowKeyFields(List.of(new Field("id", new StringType())))
+            .build();
 
     private final Query query = Query.builder()
             .tableName("table1")
@@ -67,7 +73,7 @@ public class WebSocketResultsOutputIT {
         config.put(WebSocketResultsOutput.MAX_BATCH_SIZE, "1");
         config.put(WebSocketResultsOutput.ACCESS_KEY, "accessKey");
         config.put(WebSocketResultsOutput.SECRET_KEY, "secretKey");
-        WebSocketResultsOutput out = new WebSocketResultsOutput(config);
+        WebSocketResultsOutput out = new WebSocketResultsOutput(schema, config);
 
         List<Record> records = new ArrayList<>();
         records.add(new Record(Collections.singletonMap("id", "record1")));
@@ -101,7 +107,7 @@ public class WebSocketResultsOutputIT {
         config.put(WebSocketResultsOutput.MAX_BATCH_SIZE, "1");
         config.put(WebSocketResultsOutput.ACCESS_KEY, "accessKey");
         config.put(WebSocketResultsOutput.SECRET_KEY, "secretKey");
-        WebSocketResultsOutput out = new WebSocketResultsOutput(config);
+        WebSocketResultsOutput out = new WebSocketResultsOutput(schema, config);
 
         List<Record> records = new ArrayList<>();
         records.add(new Record(Collections.singletonMap("id", "record1")));

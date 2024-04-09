@@ -81,6 +81,8 @@ public interface SystemTestDrivers {
 
     QueryAllTablesDriver directQuery(SystemTestContext context);
 
+    QueryAllTablesDriver queryByWebSocket(SystemTestContext context);
+
     ClearQueryResultsDriver clearQueryResults(SystemTestContext context);
 
     CompactionDriver compaction(SystemTestContext context);

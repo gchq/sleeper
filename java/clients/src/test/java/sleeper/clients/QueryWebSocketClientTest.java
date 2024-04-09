@@ -22,7 +22,11 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.clients.FakeWebSocketClient.WebSocketResponse;
 import sleeper.clients.QueryWebSocketClient.Client;
-import sleeper.clients.testutil.ToStringPrintStream;
+import sleeper.clients.exception.MessageMalformedException;
+import sleeper.clients.exception.MessageMissingFieldException;
+import sleeper.clients.exception.UnknownMessageTypeException;
+import sleeper.clients.exception.WebSocketClosedException;
+import sleeper.clients.exception.WebSocketErrorException;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
@@ -36,12 +40,15 @@ import sleeper.core.table.TableIndex;
 import sleeper.query.model.Query;
 import sleeper.query.model.QuerySerDe;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.QueryWebSocketClientTestHelper.asJson;
-import static sleeper.clients.QueryWebSocketClientTestHelper.closeWithReason;
+import static sleeper.clients.QueryWebSocketClientTestHelper.close;
 import static sleeper.clients.QueryWebSocketClientTestHelper.completedQuery;
 import static sleeper.clients.QueryWebSocketClientTestHelper.createdSubQueries;
 import static sleeper.clients.QueryWebSocketClientTestHelper.error;
@@ -60,7 +67,6 @@ public class QueryWebSocketClientTest {
     private final Schema schema = schemaWithKey("key");
     private final Field rowKey = schema.getField("key").orElseThrow();
     private final TableIndex tableIndex = new InMemoryTableIndex();
-    private final ToStringPrintStream out = new ToStringPrintStream();
     private final QuerySerDe querySerDe = new QuerySerDe(schema);
     private TableProperties tableProperties;
     private FakeWebSocketClient client;
@@ -93,20 +99,12 @@ public class QueryWebSocketClientTest {
             Query query = exactQuery("test-query-id", 123);
             Record expectedRecord = new Record(Map.of("key", 123L));
 
-            // When
-            runQuery(query,
+            // When / Then
+            assertThat(runQueryFuture(query,
                     withResponses(
                             message(queryResult("test-query-id", expectedRecord)),
-                            message(completedQuery("test-query-id", 1L))));
-
-            // Then
-            assertThat(out.toString())
-                    .startsWith("Connected to WebSocket API\n" +
-                            "Submitting Query: " + querySerDe.toJson(query) + "\n" +
-                            "1 records returned by query: test-query-id. Remaining pending queries: 0\n" +
-                            "Query results:\n" +
-                            asJson(expectedRecord))
-                    .containsSubsequence("Query took", "seconds to return 1 records");
+                            message(completedQuery("test-query-id", 1L)))))
+                    .isCompletedWithValue(List.of(asJson(expectedRecord)));
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
@@ -121,23 +119,13 @@ public class QueryWebSocketClientTest {
             Query query = exactQuery("test-query-id", 123);
             Record expectedRecord = new Record(Map.of("key", 123L));
 
-            // When
-            runQuery(query,
+            // When / Then
+            assertThat(runQueryFuture(query,
                     withResponses(
                             message(createdSubQueries("test-query-id", "test-subquery")),
                             message(queryResult("test-subquery", expectedRecord)),
-                            message(completedQuery("test-subquery", 1L))));
-
-            // Then
-            assertThat(out.toString())
-                    .startsWith("Connected to WebSocket API\n" +
-                            "Submitting Query: " + querySerDe.toJson(query) + "\n" +
-                            "Query test-query-id split into the following subQueries:\n" +
-                            "  test-subquery\n" +
-                            "1 records returned by query: test-subquery. Remaining pending queries: 0\n" +
-                            "Query results:\n" +
-                            asJson(expectedRecord))
-                    .containsSubsequence("Query took", "seconds to return 1 records");
+                            message(completedQuery("test-subquery", 1L)))))
+                    .isCompletedWithValue(List.of(asJson(expectedRecord)));
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
@@ -156,8 +144,8 @@ public class QueryWebSocketClientTest {
             Record expectedRecord2 = new Record(Map.of("key", 456L));
             Record expectedRecord3 = new Record(Map.of("key", 789L));
 
-            // When
-            runQuery(query,
+            // When / Then
+            assertThat(runQueryFuture(query,
                     withResponses(
                             message(createdSubQueries("test-query-id", "subquery-1", "subquery-2", "subquery-3")),
                             message(queryResult("subquery-1", expectedRecord1)),
@@ -165,24 +153,8 @@ public class QueryWebSocketClientTest {
                             message(queryResult("subquery-2", expectedRecord2)),
                             message(completedQuery("subquery-2", 1L)),
                             message(queryResult("subquery-3", expectedRecord3)),
-                            message(completedQuery("subquery-3", 1L))));
-
-            // Then
-            assertThat(out.toString())
-                    .startsWith("Connected to WebSocket API\n" +
-                            "Submitting Query: " + querySerDe.toJson(query) + "\n" +
-                            "Query test-query-id split into the following subQueries:\n" +
-                            "  subquery-1\n" +
-                            "  subquery-2\n" +
-                            "  subquery-3\n" +
-                            "1 records returned by query: subquery-1. Remaining pending queries: 2\n" +
-                            "1 records returned by query: subquery-2. Remaining pending queries: 1\n" +
-                            "1 records returned by query: subquery-3. Remaining pending queries: 0\n" +
-                            "Query results:\n" +
-                            asJson(expectedRecord1) + "\n" +
-                            asJson(expectedRecord2) + "\n" +
-                            asJson(expectedRecord3))
-                    .containsSubsequence("Query took", "seconds to return 3 records");
+                            message(completedQuery("subquery-3", 1L)))))
+                    .isCompletedWithValue(List.of(asJson(expectedRecord1), asJson(expectedRecord2), asJson(expectedRecord3)));
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
@@ -203,21 +175,12 @@ public class QueryWebSocketClientTest {
             Query query = exactQuery("test-query-id", 123);
             Record expectedRecord = new Record(Map.of("key", 123L));
 
-            // When
-            runQuery(query,
+            // When / Then
+            assertThat(runQueryFuture(query,
                     withResponses(
                             message(queryResult("test-query-id", expectedRecord)),
-                            message(completedQuery("test-query-id", 2L))));
-
-            // Then
-            assertThat(out.toString())
-                    .startsWith("Connected to WebSocket API\n" +
-                            "Submitting Query: " + querySerDe.toJson(query) + "\n" +
-                            "ERROR: API said it had returned 2 records for query test-query-id, but only received 1\n" +
-                            "2 records returned by query: test-query-id. Remaining pending queries: 0\n" +
-                            "Query results:\n" +
-                            asJson(expectedRecord))
-                    .containsSubsequence("Query took", "seconds to return 1 records");
+                            message(completedQuery("test-query-id", 2L)))))
+                    .isCompletedWithValue(List.of(asJson(expectedRecord)));
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
@@ -236,17 +199,34 @@ public class QueryWebSocketClientTest {
             // Given
             Query query = exactQuery("test-query-id", 123L);
 
-            // When
-            runQuery(query,
+            // When / Then
+            assertThat(runQueryFuture(query,
                     withResponses(
-                            error(new Exception("Exception that will not terminate connection"))));
+                            error(new Exception("Exception that will not terminate connection")))))
+                    .isCompletedExceptionally()
+                    .failsWithin(Duration.ofMillis(10))
+                    .withThrowableOfType(ExecutionException.class)
+                    .withCauseInstanceOf(WebSocketErrorException.class);
+            assertThat(client.isConnected()).isFalse();
+            assertThat(client.isClosed()).isTrue();
+            assertThat(client.getSentMessages())
+                    .containsExactly(querySerDe.toJson(query));
+        }
 
-            // Then
-            assertThat(out.toString())
-                    .startsWith("Connected to WebSocket API\n" +
-                            "Submitting Query: " + querySerDe.toJson(query) + "\n" +
-                            "Encountered an error: Exception that will not terminate connection\n")
-                    .containsSubsequence("Query took", "seconds to return 0 records");
+        @Test
+        void shouldHandleErrorIfExceptionEncounteredWhenQueryCompletesAfter() throws Exception {
+            // Given
+            Query query = exactQuery("test-query-id", 123L);
+
+            // When / Then
+            assertThat(runQueryFuture(query,
+                    withResponses(
+                            error(new Exception("Exception that will not terminate connection")),
+                            message(completedQuery("test-query-id", 0L)))))
+                    .isCompletedExceptionally()
+                    .failsWithin(Duration.ofMillis(10))
+                    .withThrowableOfType(ExecutionException.class)
+                    .withCauseInstanceOf(WebSocketErrorException.class);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
@@ -258,19 +238,15 @@ public class QueryWebSocketClientTest {
             // Given
             Query query = exactQuery("test-query-id", 123L);
 
-            // When
-            runQuery(query,
+            // When / Then
+            assertThat(runQueryFuture(query,
                     withResponses(
                             error(new Exception("Exception that will terminate connection")),
-                            closeWithReason("Exception caused connection to terminate")));
-
-            // Then
-            assertThat(out.toString())
-                    .startsWith("Connected to WebSocket API\n" +
-                            "Submitting Query: " + querySerDe.toJson(query) + "\n" +
-                            "Encountered an error: Exception that will terminate connection\n" +
-                            "Disconnected from WebSocket API: Exception caused connection to terminate")
-                    .containsSubsequence("Query took", "seconds to return 0 records");
+                            close("Exception caused connection to terminate"))))
+                    .isCompletedExceptionally()
+                    .failsWithin(Duration.ofMillis(10))
+                    .withThrowableOfType(ExecutionException.class)
+                    .withCauseInstanceOf(WebSocketErrorException.class);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
@@ -282,17 +258,14 @@ public class QueryWebSocketClientTest {
             // Given
             Query query = exactQuery("test-query-id", 123L);
 
-            // When
-            runQuery(query,
+            // When / Then
+            assertThat(runQueryFuture(query,
                     withResponses(
-                            message(errorMessage("test-query-id", "Query failed"))));
-
-            // Then
-            assertThat(out.toString())
-                    .startsWith("Connected to WebSocket API\n" +
-                            "Submitting Query: " + querySerDe.toJson(query) + "\n" +
-                            "Encountered an error while running query test-query-id: Query failed")
-                    .containsSubsequence("Query took", "seconds to return 0 records");
+                            message(errorMessage("test-query-id", "Query failed")))))
+                    .isCompletedExceptionally()
+                    .failsWithin(Duration.ofMillis(10))
+                    .withThrowableOfType(ExecutionException.class)
+                    .withCauseInstanceOf(WebSocketErrorException.class);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
@@ -304,16 +277,14 @@ public class QueryWebSocketClientTest {
             // Given
             Query query = exactQuery("test-query-id", 123L);
 
-            // When
-            runQuery(query, withResponses(
-                    message(unknownMessage("test-query-id"))));
-
-            // Then
-            assertThat(out.toString())
-                    .startsWith("Connected to WebSocket API\n" +
-                            "Submitting Query: " + querySerDe.toJson(query) + "\n" +
-                            "Received unrecognised message type: unknown")
-                    .containsSubsequence("Query took", "seconds to return 0 records");
+            // When / Then
+            assertThat(runQueryFuture(query,
+                    withResponses(
+                            message(unknownMessage("test-query-id")))))
+                    .isCompletedExceptionally()
+                    .failsWithin(Duration.ofMillis(10))
+                    .withThrowableOfType(ExecutionException.class)
+                    .withCauseInstanceOf(UnknownMessageTypeException.class);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
@@ -325,17 +296,14 @@ public class QueryWebSocketClientTest {
             // Given
             Query query = exactQuery("test-query-id", 123L);
 
-            // When
-            runQuery(query, withResponses(
-                    message("{")));
-
-            // Then
-            assertThat(out.toString())
-                    .startsWith("Connected to WebSocket API\n" +
-                            "Submitting Query: " + querySerDe.toJson(query) + "\n" +
-                            "Received malformed JSON message from API:\n" +
-                            "  {")
-                    .containsSubsequence("Query took", "seconds to return 0 records");
+            // When / Then
+            assertThat(runQueryFuture(query,
+                    withResponses(
+                            message("{"))))
+                    .isCompletedExceptionally()
+                    .failsWithin(Duration.ofMillis(10))
+                    .withThrowableOfType(ExecutionException.class)
+                    .withCauseInstanceOf(MessageMalformedException.class);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
@@ -347,18 +315,14 @@ public class QueryWebSocketClientTest {
             // Given
             Query query = exactQuery("test-query-id", 123L);
 
-            // When
-            runQuery(query,
+            // When / Then
+            assertThat(runQueryFuture(query,
                     withResponses(
-                            message("{\"message\":\"error\"}")));
-
-            // Then
-            assertThat(out.toString())
-                    .startsWith("Connected to WebSocket API\n" +
-                            "Submitting Query: " + querySerDe.toJson(query) + "\n" +
-                            "Received message without queryId from API:\n" +
-                            "  {\"message\":\"error\"}")
-                    .containsSubsequence("Query took", "seconds to return 0 records");
+                            message("{\"message\":\"error\"}"))))
+                    .isCompletedExceptionally()
+                    .failsWithin(Duration.ofMillis(10))
+                    .withThrowableOfType(ExecutionException.class)
+                    .withCauseInstanceOf(MessageMissingFieldException.class);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
@@ -370,18 +334,14 @@ public class QueryWebSocketClientTest {
             // Given
             Query query = exactQuery("test-query-id", 123L);
 
-            // When
-            runQuery(query,
+            // When / Then
+            assertThat(runQueryFuture(query,
                     withResponses(
-                            message("{\"queryId\":\"test-query-id\"}")));
-
-            // Then
-            assertThat(out.toString())
-                    .startsWith("Connected to WebSocket API\n" +
-                            "Submitting Query: " + querySerDe.toJson(query) + "\n" +
-                            "Received message without message type from API:\n" +
-                            "  {\"queryId\":\"test-query-id\"}")
-                    .containsSubsequence("Query took", "seconds to return 0 records");
+                            message("{\"queryId\":\"test-query-id\"}"))))
+                    .isCompletedExceptionally()
+                    .failsWithin(Duration.ofMillis(10))
+                    .withThrowableOfType(ExecutionException.class)
+                    .withCauseInstanceOf(MessageMissingFieldException.class);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
@@ -393,17 +353,14 @@ public class QueryWebSocketClientTest {
             // Given
             Query query = exactQuery("test-query-id", 123L);
 
-            // When
-            runQuery(query,
+            // When / Then
+            assertThat(runQueryFuture(query,
                     withResponses(
-                            closeWithReason("Network error")));
-
-            // Then
-            assertThat(out.toString())
-                    .startsWith("Connected to WebSocket API\n" +
-                            "Submitting Query: " + querySerDe.toJson(query) + "\n" +
-                            "Disconnected from WebSocket API: Network error")
-                    .containsSubsequence("Query took", "seconds to return 0 records");
+                            close("Network error"))))
+                    .isCompletedExceptionally()
+                    .failsWithin(Duration.ofMillis(10))
+                    .withThrowableOfType(ExecutionException.class)
+                    .withCauseInstanceOf(WebSocketClosedException.class);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
@@ -427,13 +384,14 @@ public class QueryWebSocketClientTest {
                 .build();
     }
 
-    protected void runQuery(Query query, Client webSocketClient) throws Exception {
-        new QueryWebSocketClient(instanceProperties, new FixedTablePropertiesProvider(tableProperties),
-                out.consoleOut(), webSocketClient).submitQuery(query);
+    protected CompletableFuture<List<String>> runQueryFuture(Query query, Client webSocketClient) throws Exception {
+        QueryWebSocketClient client = new QueryWebSocketClient(instanceProperties,
+                new FixedTablePropertiesProvider(tableProperties), () -> webSocketClient);
+        return client.submitQuery(query);
     }
 
     private FakeWebSocketClient withResponses(WebSocketResponse... responses) {
-        client = new FakeWebSocketClient(new FixedTablePropertiesProvider(tableProperties), out.consoleOut());
+        client = new FakeWebSocketClient(new FixedTablePropertiesProvider(tableProperties));
         client.withResponses(responses);
         return client;
     }

@@ -16,40 +16,84 @@
 package sleeper.core.statestore.transactionlog;
 
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.util.ExponentialBackoffWithJitter;
 
-public class TransactionLogHead {
+class TransactionLogHead<T> {
 
     private final TransactionLogStore logStore;
-    private final StateStorePartitions partitions = new StateStorePartitions();
-    private final StateStoreFiles files = new StateStoreFiles();
+    private final int maxAddTransactionAttempts;
+    private final ExponentialBackoffWithJitter retryBackoff;
+    private final Class<? extends StateStoreTransaction<T>> transactionType;
+    private final T state;
     private long lastTransactionNumber = 0;
 
-    public TransactionLogHead(TransactionLogStore logStore) {
+    private TransactionLogHead(
+            TransactionLogStore logStore, int maxAddTransactionAttempts, ExponentialBackoffWithJitter retryBackoff,
+            Class<? extends StateStoreTransaction<T>> transactionType, T state) {
         this.logStore = logStore;
+        this.maxAddTransactionAttempts = maxAddTransactionAttempts;
+        this.retryBackoff = retryBackoff;
+        this.transactionType = transactionType;
+        this.state = state;
     }
 
-    public void addTransaction(StateStoreTransaction transaction) throws StateStoreException {
-        update();
-        transaction.validate(this);
-        long transactionNumber = lastTransactionNumber + 1;
-        logStore.addTransaction(transaction, transactionNumber);
-        transaction.apply(this);
-        lastTransactionNumber = transactionNumber;
+    static TransactionLogHead<StateStoreFiles> forFiles(TransactionLogStore logStore, int retries, ExponentialBackoffWithJitter retryBackoff) {
+        return new TransactionLogHead<StateStoreFiles>(logStore, retries, retryBackoff,
+                FileReferenceTransaction.class, new StateStoreFiles());
     }
 
-    public void update() {
-        logStore.readTransactionsAfter(lastTransactionNumber).forEach(transaction -> {
-            transaction.apply(this);
-            lastTransactionNumber++;
-        });
+    static TransactionLogHead<StateStorePartitions> forPartitions(TransactionLogStore logStore, int retries, ExponentialBackoffWithJitter retryBackoff) {
+        return new TransactionLogHead<StateStorePartitions>(logStore, retries, retryBackoff,
+                PartitionTransaction.class, new StateStorePartitions());
     }
 
-    public StateStorePartitions partitions() {
-        return partitions;
+    void addTransaction(StateStoreTransaction<T> transaction) throws StateStoreException {
+        Exception failure = new IllegalArgumentException("No attempts made");
+        for (int attempt = 0; attempt < maxAddTransactionAttempts; attempt++) {
+            try {
+                retryBackoff.waitBeforeAttempt(attempt);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new StateStoreException("Interrupted while waiting to retry", e);
+            }
+            update();
+            transaction.validate(state);
+            long transactionNumber = lastTransactionNumber + 1;
+            try {
+                logStore.addTransaction(new TransactionLogEntry(transactionNumber, transaction));
+            } catch (Exception e) {
+                failure = e;
+                continue;
+            }
+            transaction.apply(state);
+            lastTransactionNumber = transactionNumber;
+            failure = null;
+            break;
+        }
+        if (failure != null) {
+            throw new StateStoreException("Failed adding transaction", failure);
+        }
     }
 
-    public StateStoreFiles files() {
-        return files;
+    void update() throws StateStoreException {
+        try {
+            logStore.readTransactionsAfter(lastTransactionNumber)
+                    .forEach(this::applyTransaction);
+        } catch (RuntimeException e) {
+            throw new StateStoreException("Failed reading transactions", e);
+        }
     }
 
+    private void applyTransaction(TransactionLogEntry entry) {
+        if (!transactionType.isInstance(entry.getTransaction())) {
+            return;
+        }
+        transactionType.cast(entry.getTransaction())
+                .apply(state);
+        lastTransactionNumber = entry.getTransactionNumber();
+    }
+
+    T state() {
+        return state;
+    }
 }

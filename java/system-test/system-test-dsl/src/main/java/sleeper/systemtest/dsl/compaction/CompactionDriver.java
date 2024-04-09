@@ -40,4 +40,6 @@ public interface CompactionDriver {
     default void forceStartTasks(int expectedTasks) {
         forceStartTasks(expectedTasks, PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(3)));
     }
+
+    void scaleToZero();
 }

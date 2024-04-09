@@ -27,11 +27,6 @@ import software.amazon.awscdk.services.autoscaling.BlockDeviceVolume;
 import software.amazon.awscdk.services.autoscaling.CfnAutoScalingGroup;
 import software.amazon.awscdk.services.autoscaling.EbsDeviceOptions;
 import software.amazon.awscdk.services.autoscaling.EbsDeviceVolumeType;
-import software.amazon.awscdk.services.cloudwatch.Alarm;
-import software.amazon.awscdk.services.cloudwatch.ComparisonOperator;
-import software.amazon.awscdk.services.cloudwatch.MetricOptions;
-import software.amazon.awscdk.services.cloudwatch.TreatMissingData;
-import software.amazon.awscdk.services.cloudwatch.actions.SnsAction;
 import software.amazon.awscdk.services.ec2.IVpc;
 import software.amazon.awscdk.services.ec2.InstanceClass;
 import software.amazon.awscdk.services.ec2.InstanceSize;
@@ -92,6 +87,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 
+import static sleeper.cdk.Utils.createAlarmForDlq;
 import static sleeper.cdk.Utils.createLambdaLogGroup;
 import static sleeper.cdk.Utils.shouldDeployPaused;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_AUTO_SCALING_GROUP;
@@ -186,7 +182,7 @@ public class CompactionStack extends NestedStack {
         Queue compactionJobsQueue = sqsQueueForCompactionJobs(topic);
 
         // Lambda to periodically check for compaction jobs that should be created
-        lambdaToCreateCompactionJobsBatchedViaSQS(coreStacks, jarsBucket, jobCreatorJar, compactionJobsQueue);
+        lambdaToCreateCompactionJobsBatchedViaSQS(coreStacks, topic, jarsBucket, jobCreatorJar, compactionJobsQueue);
 
         // ECS cluster for compaction tasks
         ecsClusterForCompactionTasks(coreStacks, jarsBucket, taskCreatorJar, compactionJobsQueue);
@@ -223,21 +219,10 @@ public class CompactionStack extends NestedStack {
         instanceProperties.set(COMPACTION_JOB_DLQ_ARN,
                 compactionJobDefinitionsDeadLetterQueue.getQueue().getQueueArn());
 
-        // Add alarm to send message to SNS if there are any messages on the dead letter
-        // queue
-        Alarm compactionAlarm = Alarm.Builder
-                .create(this, "CompactionAlarm")
-                .alarmDescription(
-                        "Alarms if there are any messages on the dead letter queue for the compactions queue")
-                .metric(compactionDLQ.metricApproximateNumberOfMessagesVisible()
-                        .with(MetricOptions.builder().statistic("Sum").period(Duration.seconds(60)).build()))
-                .comparisonOperator(ComparisonOperator.GREATER_THAN_THRESHOLD)
-                .threshold(0)
-                .evaluationPeriods(1)
-                .datapointsToAlarm(1)
-                .treatMissingData(TreatMissingData.IGNORE)
-                .build();
-        compactionAlarm.addAlarmAction(new SnsAction(topic));
+        // Add alarm to send message to SNS if there are any messages on the dead letter queue
+        createAlarmForDlq(this, "CompactionAlarm",
+                "Alarms if there are any messages on the dead letter queue for the compactions queue",
+                compactionDLQ, topic);
 
         CfnOutputProps compactionJobDefinitionsQueueProps = new CfnOutputProps.Builder()
                 .value(compactionJobQ.getQueueUrl())
@@ -252,7 +237,7 @@ public class CompactionStack extends NestedStack {
     }
 
     private void lambdaToCreateCompactionJobsBatchedViaSQS(
-            CoreStacks coreStacks, IBucket jarsBucket, LambdaCode jobCreatorJar, Queue compactionJobsQueue) {
+            CoreStacks coreStacks, Topic topic, IBucket jarsBucket, LambdaCode jobCreatorJar, Queue compactionJobsQueue) {
 
         // Function to create compaction jobs
         Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
@@ -284,7 +269,7 @@ public class CompactionStack extends NestedStack {
                 .logGroup(createLambdaLogGroup(this, "CompactionJobsCreationHandlerLogGroup", functionName, instanceProperties)));
 
         // Send messages from the trigger function to the handler function
-        Queue jobCreationQueue = sqsQueueForCompactionJobCreation();
+        Queue jobCreationQueue = sqsQueueForCompactionJobCreation(topic);
         handlerFunction.addEventSource(new SqsEventSource(jobCreationQueue,
                 SqsEventSourceProps.builder().batchSize(1).build()));
 
@@ -311,7 +296,7 @@ public class CompactionStack extends NestedStack {
         instanceProperties.set(COMPACTION_JOB_CREATION_CLOUDWATCH_RULE, rule.getRuleName());
     }
 
-    private Queue sqsQueueForCompactionJobCreation() {
+    private Queue sqsQueueForCompactionJobCreation(Topic topic) {
         // Create queue for compaction job creation invocation
         Queue deadLetterQueue = Queue.Builder
                 .create(this, "CompactionJobCreationDLQ")
@@ -332,6 +317,9 @@ public class CompactionStack extends NestedStack {
         instanceProperties.set(COMPACTION_JOB_CREATION_BATCH_DLQ_URL, deadLetterQueue.getQueueUrl());
         instanceProperties.set(COMPACTION_JOB_CREATION_BATCH_DLQ_ARN, deadLetterQueue.getQueueArn());
 
+        createAlarmForDlq(this, "CompactionJobCreationBatchAlarm",
+                "Alarms if there are any messages on the dead letter queue for the compaction job creation batch queue",
+                deadLetterQueue, topic);
         return queue;
     }
 
@@ -488,9 +476,7 @@ public class CompactionStack extends NestedStack {
 
     private FargateTaskDefinition compactionFargateTaskDefinition() {
         String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
-        String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
-        Pair<Integer, Integer> requirements = Requirements.getArchRequirements(architecture, launchType,
-                instanceProperties);
+        Pair<Integer, Integer> requirements = Requirements.getArchRequirements(architecture, instanceProperties);
         return FargateTaskDefinition.Builder
                 .create(this, "CompactionFargateTaskDefinition")
                 .family(instanceProperties.get(ID) + "CompactionFargateTaskFamily")
@@ -514,9 +500,7 @@ public class CompactionStack extends NestedStack {
     private ContainerDefinitionOptions createFargateContainerDefinition(
             ContainerImage image, Map<String, String> environment, InstanceProperties instanceProperties) {
         String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
-        String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
-        Pair<Integer, Integer> requirements = Requirements.getArchRequirements(architecture, launchType,
-                instanceProperties);
+        Pair<Integer, Integer> requirements = Requirements.getArchRequirements(architecture, instanceProperties);
         return ContainerDefinitionOptions.builder()
                 .image(image)
                 .environment(environment)
@@ -529,9 +513,7 @@ public class CompactionStack extends NestedStack {
     private ContainerDefinitionOptions createEC2ContainerDefinition(
             ContainerImage image, Map<String, String> environment, InstanceProperties instanceProperties) {
         String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
-        String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
-        Pair<Integer, Integer> requirements = Requirements.getArchRequirements(architecture, launchType,
-                instanceProperties);
+        Pair<Integer, Integer> requirements = Requirements.getArchRequirements(architecture, instanceProperties);
         return ContainerDefinitionOptions.builder()
                 .image(image)
                 .environment(environment)

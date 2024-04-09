@@ -40,6 +40,7 @@ import sleeper.systemtest.drivers.python.PythonQueryDriver;
 import sleeper.systemtest.drivers.query.DirectQueryDriver;
 import sleeper.systemtest.drivers.query.S3ResultsDriver;
 import sleeper.systemtest.drivers.query.SQSQueryDriver;
+import sleeper.systemtest.drivers.query.WebSocketQueryDriver;
 import sleeper.systemtest.drivers.sourcedata.AwsGeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.drivers.sourcedata.AwsIngestSourceFilesDriver;
 import sleeper.systemtest.dsl.SystemTestContext;
@@ -148,6 +149,11 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
     @Override
     public QueryAllTablesDriver directQuery(SystemTestContext context) {
         return DirectQueryDriver.allTablesDriver(context.instance());
+    }
+
+    @Override
+    public QueryAllTablesDriver queryByWebSocket(SystemTestContext context) {
+        return WebSocketQueryDriver.allTablesDriver(context.instance());
     }
 
     @Override

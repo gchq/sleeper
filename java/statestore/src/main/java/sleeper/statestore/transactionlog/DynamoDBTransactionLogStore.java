@@ -17,26 +17,29 @@ package sleeper.statestore.transactionlog;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
+import sleeper.core.statestore.transactionlog.DuplicateTransactionNumberException;
 import sleeper.core.statestore.transactionlog.StateStoreTransaction;
+import sleeper.core.statestore.transactionlog.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.TransactionLogStore;
 import sleeper.core.statestore.transactionlog.transactions.TransactionSerDe;
 import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Stream;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_TABLENAME;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.getLongAttribute;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.getNumberAttribute;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.getStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
 
 class DynamoDBTransactionLogStore implements TransactionLogStore {
@@ -47,60 +50,69 @@ class DynamoDBTransactionLogStore implements TransactionLogStore {
     private static final String TYPE = "TYPE";
     private static final String BODY = "BODY";
 
-    private final InstanceProperties instanceProperties;
-    private final TableProperties tableProperties;
+    private final String logTableName;
+    private final String sleeperTableId;
     private final AmazonDynamoDB dynamo;
     private final TransactionSerDe serDe;
 
     DynamoDBTransactionLogStore(
-            InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamo) {
-        this.instanceProperties = instanceProperties;
-        this.tableProperties = tableProperties;
+            String logTableName, TableProperties tableProperties, AmazonDynamoDB dynamo) {
+        this.logTableName = logTableName;
+        this.sleeperTableId = tableProperties.get(TableProperty.TABLE_ID);
         this.dynamo = dynamo;
         this.serDe = new TransactionSerDe(tableProperties.getSchema());
     }
 
     @Override
-    public void addTransaction(StateStoreTransaction transaction, long transactionNumber) {
-        dynamo.putItem(new PutItemRequest()
-                .withTableName(instanceProperties.get(TRANSACTION_LOG_TABLENAME))
-                .withItem(new DynamoDBRecordBuilder()
-                        .string(TABLE_ID, tableProperties.get(TableProperty.TABLE_ID))
-                        .number(TRANSACTION_NUMBER, transactionNumber)
-                        .string(TYPE, TransactionType.getType(transaction).name())
-                        .string(BODY, serDe.toJson(transaction))
-                        .build())
-                .withConditionExpression("attribute_not_exists(#Number)")
-                .withExpressionAttributeNames(Map.of("#Number", TRANSACTION_NUMBER)));
+    public void addTransaction(TransactionLogEntry entry) throws DuplicateTransactionNumberException {
+        long transactionNumber = entry.getTransactionNumber();
+        StateStoreTransaction<?> transaction = entry.getTransaction();
+        try {
+            dynamo.putItem(new PutItemRequest()
+                    .withTableName(logTableName)
+                    .withItem(new DynamoDBRecordBuilder()
+                            .string(TABLE_ID, sleeperTableId)
+                            .number(TRANSACTION_NUMBER, transactionNumber)
+                            .string(TYPE, TransactionType.getType(transaction).name())
+                            .string(BODY, serDe.toJson(transaction))
+                            .build())
+                    .withConditionExpression("attribute_not_exists(#Number)")
+                    .withExpressionAttributeNames(Map.of("#Number", TRANSACTION_NUMBER)));
+        } catch (ConditionalCheckFailedException e) {
+            throw new DuplicateTransactionNumberException(transactionNumber, e);
+        }
     }
 
     @Override
-    public Stream<StateStoreTransaction> readTransactionsAfter(long lastTransactionNumber) {
+    public Stream<TransactionLogEntry> readTransactionsAfter(long lastTransactionNumber) {
         return streamPagedItems(dynamo, new QueryRequest()
-                .withTableName(instanceProperties.get(TRANSACTION_LOG_TABLENAME))
+                .withTableName(logTableName)
                 .withConsistentRead(true)
                 .withKeyConditionExpression("#TableId = :table_id AND #Number > :number")
                 .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID, "#Number", TRANSACTION_NUMBER))
                 .withExpressionAttributeValues(new DynamoDBRecordBuilder()
-                        .string(":table_id", tableProperties.get(TableProperty.TABLE_ID))
+                        .string(":table_id", sleeperTableId)
                         .number(":number", lastTransactionNumber)
                         .build())
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL))
-                .flatMap(item -> readTransaction(item).stream());
+                .map(this::readTransaction);
     }
 
-    private Optional<StateStoreTransaction> readTransaction(Map<String, AttributeValue> item) {
-        return readType(item).map(type -> serDe.toTransaction(type, item.get(BODY).getS()));
+    private TransactionLogEntry readTransaction(Map<String, AttributeValue> item) {
+        long number = getLongAttribute(item, TRANSACTION_NUMBER, -1);
+        TransactionType type = readType(item);
+        StateStoreTransaction<?> transaction = serDe.toTransaction(type, getStringAttribute(item, BODY));
+        return new TransactionLogEntry(number, transaction);
     }
 
-    private Optional<TransactionType> readType(Map<String, AttributeValue> item) {
-        String typeName = item.get(TYPE).getS();
+    private TransactionType readType(Map<String, AttributeValue> item) {
+        String typeName = getStringAttribute(item, TYPE);
         try {
-            return Optional.of(TransactionType.valueOf(typeName));
-        } catch (Exception e) {
+            return TransactionType.valueOf(typeName);
+        } catch (RuntimeException e) {
             LOGGER.warn("Found unrecognised transaction type for table {} transaction {}: {}",
-                    item.get(TABLE_ID).getS(), item.get(TRANSACTION_NUMBER).getS(), typeName, e);
-            return Optional.empty();
+                    getStringAttribute(item, TABLE_ID), getNumberAttribute(item, TRANSACTION_NUMBER), typeName, e);
+            throw e;
         }
     }
 

@@ -21,13 +21,18 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.FILE_TRANSACTION_LOG_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_TRANSACTION_LOG_TABLENAME;
+
 public class DynamoDBTransactionLogStateStore extends TransactionLogStateStore {
     public static final String TABLE_ID = "TABLE_ID";
     public static final String TRANSACTION_NUMBER = "TRANSACTION_NUMBER";
 
     public DynamoDBTransactionLogStateStore(
             InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamoDB) {
-        super(tableProperties.getSchema(), new DynamoDBTransactionLogStore(instanceProperties, tableProperties, dynamoDB));
+        super(builder().schema(tableProperties.getSchema())
+                .filesLogStore(new DynamoDBTransactionLogStore(instanceProperties.get(FILE_TRANSACTION_LOG_TABLENAME), tableProperties, dynamoDB))
+                .partitionsLogStore(new DynamoDBTransactionLogStore(instanceProperties.get(PARTITION_TRANSACTION_LOG_TABLENAME), tableProperties, dynamoDB)));
     }
 
 }

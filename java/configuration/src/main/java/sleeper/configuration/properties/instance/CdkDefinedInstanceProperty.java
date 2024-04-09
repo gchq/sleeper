@@ -82,8 +82,12 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .build();
 
     // TransactionLogStateStore
-    CdkDefinedInstanceProperty TRANSACTION_LOG_TABLENAME = Index.propertyBuilder("sleeper.metadata.transactionlog.dynamo.log.table")
-            .description("The name of the DynamoDB table holding the state store transaction log.")
+    CdkDefinedInstanceProperty FILE_TRANSACTION_LOG_TABLENAME = Index.propertyBuilder("sleeper.metadata.transactionlog.dynamo.file.log.table")
+            .description("The name of the DynamoDB table holding the state store file transaction log.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+    CdkDefinedInstanceProperty PARTITION_TRANSACTION_LOG_TABLENAME = Index.propertyBuilder("sleeper.metadata.transactionlog.dynamo.partition.log.table")
+            .description("The name of the DynamoDB table holding the state store partition transaction log.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
 
