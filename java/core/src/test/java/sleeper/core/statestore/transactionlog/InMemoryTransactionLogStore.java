@@ -38,7 +38,7 @@ public class InMemoryTransactionLogStore implements TransactionLogStore {
         if (transactionNumber > transactions.size() + 1) {
             throw new IllegalStateException("Attempted to add transaction " + transactionNumber + " when we only have " + transactions.size());
         }
-        transactions.add(new TransactionLogEntry(transactionNumber, entry.getTransaction()));
+        transactions.add(entry);
     }
 
     @Override
