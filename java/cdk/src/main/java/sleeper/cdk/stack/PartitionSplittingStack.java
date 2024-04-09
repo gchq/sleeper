@@ -162,8 +162,10 @@ public class PartitionSplittingStack extends NestedStack {
                 "Alarms if there are any messages on the dead letter queue for the partition splitting queue",
                 partitionSplittingJobDlq, topic);
 
-        dashboardStack.addPartitionSplittingMetrics(partitionSplittingJobQueue);
-        dashboardStack.addErrorMetric("Partition Split Errors", partitionSplittingJobDlq);
+        if (dashboardStack != null) {
+            dashboardStack.addPartitionSplittingMetrics(partitionSplittingJobQueue);
+            dashboardStack.addErrorMetric("Partition Split Errors", partitionSplittingJobDlq);
+        }
 
         CfnOutputProps partitionSplittingQueueOutputProps = new CfnOutputProps.Builder()
                 .value(partitionSplittingJobQueue.getQueueUrl())

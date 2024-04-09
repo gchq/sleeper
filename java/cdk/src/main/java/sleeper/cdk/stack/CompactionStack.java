@@ -225,8 +225,10 @@ public class CompactionStack extends NestedStack {
                 "Alarms if there are any messages on the dead letter queue for the compactions queue",
                 compactionDLQ, topic);
 
-        dashboardStack.addCompactionMetrics(compactionJobQ);
-        dashboardStack.addErrorMetric("Compaction Errors", compactionDLQ);
+        if (dashboardStack != null) {
+            dashboardStack.addCompactionMetrics(compactionJobQ);
+            dashboardStack.addErrorMetric("Compaction Errors", compactionDLQ);
+        }
 
         CfnOutputProps compactionJobDefinitionsQueueProps = new CfnOutputProps.Builder()
                 .value(compactionJobQ.getQueueUrl())
