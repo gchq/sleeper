@@ -15,6 +15,7 @@
  */
 package sleeper.core.statestore.transactionlog;
 
+import java.time.Instant;
 import java.util.Objects;
 
 /**
@@ -23,10 +24,16 @@ import java.util.Objects;
 public class TransactionLogEntry {
 
     private final long transactionNumber;
+    private final Instant updateTime;
     private final StateStoreTransaction<?> transaction;
 
     public TransactionLogEntry(long transactionNumber, StateStoreTransaction<?> transaction) {
+        this(transactionNumber, null, transaction);
+    }
+
+    public TransactionLogEntry(long transactionNumber, Instant updateTime, StateStoreTransaction<?> transaction) {
         this.transactionNumber = transactionNumber;
+        this.updateTime = updateTime;
         this.transaction = transaction;
     }
 
@@ -52,12 +59,14 @@ public class TransactionLogEntry {
             return false;
         }
         TransactionLogEntry other = (TransactionLogEntry) obj;
-        return transactionNumber == other.transactionNumber && Objects.equals(transaction, other.transaction);
+        return transactionNumber == other.transactionNumber
+                && Objects.equals(updateTime, other.updateTime)
+                && Objects.equals(transaction, other.transaction);
     }
 
     @Override
     public String toString() {
-        return "TransactionLogEntry{transactionNumber=" + transactionNumber + ", transaction=" + transaction + "}";
+        return "TransactionLogEntry{transactionNumber=" + transactionNumber + ", updateTime=" + updateTime + ", transaction=" + transaction + "}";
     }
 
 }

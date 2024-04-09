@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.statestore.transactionlog.DuplicateTransactionNumberException;
+import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.TransactionLogStore;
 import sleeper.core.statestore.transactionlog.transactions.ClearFilesTransaction;
@@ -29,6 +30,7 @@ import sleeper.core.statestore.transactionlog.transactions.DeleteFilesTransactio
 import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
+import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -41,15 +43,20 @@ import static sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore
 
 public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestBase {
 
+    private static final Instant DEFAULT_UPDATE_TIME = Instant.parse("2024-04-09T14:01:01Z");
     protected final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
     private final TransactionLogStore store = new DynamoDBTransactionLogStore(
             instanceProperties.get(FILE_TRANSACTION_LOG_TABLENAME),
             tableProperties, dynamoDBClient);
 
+    private TransactionLogEntry logEntry(long number, StateStoreTransaction<?> transaction) {
+        return new TransactionLogEntry(number, DEFAULT_UPDATE_TIME, transaction);
+    }
+
     @Test
     void shouldAddFirstTransaction() throws Exception {
         // Given
-        TransactionLogEntry entry = new TransactionLogEntry(1, new ClearFilesTransaction());
+        TransactionLogEntry entry = logEntry(1, new ClearFilesTransaction());
 
         // When
         store.addTransaction(entry);
@@ -62,9 +69,9 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
     @Test
     void shouldFailToAddTransactionWhenOneAlreadyExistsWithSameNumber() throws Exception {
         // Given
-        TransactionLogEntry entry1 = new TransactionLogEntry(1,
+        TransactionLogEntry entry1 = logEntry(1,
                 new DeleteFilesTransaction(List.of("file1.parquet")));
-        TransactionLogEntry entry2 = new TransactionLogEntry(1,
+        TransactionLogEntry entry2 = logEntry(1,
                 new DeleteFilesTransaction(List.of("file2.parquet")));
         store.addTransaction(entry1);
 
