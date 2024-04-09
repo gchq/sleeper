@@ -118,6 +118,13 @@ public class SystemTestInstanceContext {
         return currentTables.getTableProperties();
     }
 
+    /**
+     * Retrieves table properties by name. Table properties created by tests are stored in-memory, and can be retrieved
+     * using this method. This avoids having to load them from S3 (as with {@link #getTablePropertiesProvider()}).
+     *
+     * @param  tableName the name of the table to load
+     * @return           the table properties of the table
+     */
     public Optional<TableProperties> getTablePropertiesByDeployedName(String tableName) {
         return currentTables.getTablePropertiesByName(tableName);
     }

@@ -153,6 +153,11 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
     }
 
     @Override
+    public QueryAllTablesDriver queryByWebSocket(SystemTestContext context) {
+        return InMemoryQueryByQueueDriver.allTablesDriver(context.instance(), data);
+    }
+
+    @Override
     public PurgeQueueDriver purgeQueues(SystemTestContext context) {
         return properties -> {
         };
