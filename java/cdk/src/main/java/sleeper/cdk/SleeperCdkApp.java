@@ -290,7 +290,9 @@ public class SleeperCdkApp extends Stack {
                     queryQueueStack);
         }
 
-        dashboardStack.addWidgets();
+        if (dashboardStack != null) {
+            dashboardStack.addWidgets();
+        }
         this.generateProperties();
         addTags(app);
     }
