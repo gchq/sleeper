@@ -29,6 +29,8 @@ import sleeper.cdk.Utils;
 import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
+import java.util.Optional;
+
 import static sleeper.cdk.Utils.createAlarmForDlq;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.QueryProperty.QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS;
@@ -45,9 +47,10 @@ public class QueryQueueStack extends NestedStack {
     public QueryQueueStack(Construct scope,
             String id,
             InstanceProperties instanceProperties,
-            Topic topic) {
+            Topic topic,
+            Optional<DashboardStack> dashboardStackOpt) {
         super(scope, id);
-        queryQueue = setupQueryQueue(instanceProperties, topic);
+        queryQueue = setupQueryQueue(instanceProperties, topic, dashboardStackOpt);
     }
 
     /***
@@ -56,7 +59,7 @@ public class QueryQueueStack extends NestedStack {
      * @param  instanceProperties containing configuration details
      * @return                    the queue to be used for queries
      */
-    private Queue setupQueryQueue(InstanceProperties instanceProperties, Topic topic) {
+    private Queue setupQueryQueue(InstanceProperties instanceProperties, Topic topic, Optional<DashboardStack> dashboardStackOpt) {
         String dlQueueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-QueryDLQ");
         Queue queryDlq = Queue.Builder
                 .create(this, "QueryDeadLetterQueue")
@@ -80,6 +83,7 @@ public class QueryQueueStack extends NestedStack {
         createAlarmForDlq(this, "QueryAlarm",
                 "Alarms if there are any messages on the dead letter queue for the query queue",
                 queryDlq, topic);
+        dashboardStackOpt.ifPresent(dashboardStack -> dashboardStack.addErrorMetric("Query Errors", queryDlq));
         CfnOutputProps queryQueueOutputNameProps = new CfnOutputProps.Builder()
                 .value(queryQueue.getQueueName())
                 .exportName(instanceProperties.get(ID) + "-" + QUERY_QUEUE_NAME)
