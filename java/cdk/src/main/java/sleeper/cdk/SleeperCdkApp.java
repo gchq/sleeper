@@ -80,8 +80,6 @@ public class SleeperCdkApp extends Stack {
     private IngestStacks ingestStacks;
     private IngestStack ingestStack;
     private IngestBatcherStack ingestBatcherStack;
-    private CompactionStack compactionStack;
-    private PartitionSplittingStack partitionSplittingStack;
     private BulkImportBucketStack bulkImportBucketStack;
     private CommonEmrBulkImportStack emrBulkImportCommonStack;
     private EmrBulkImportStack emrBulkImportStack;
@@ -223,7 +221,7 @@ public class SleeperCdkApp extends Stack {
 
         // Stack for containers for compactions and splitting compactions
         if (optionalStacks.contains(CompactionStack.class.getSimpleName())) {
-            compactionStack = new CompactionStack(this,
+            new CompactionStack(this,
                     "Compaction",
                     instanceProperties, jars,
                     topicStack.getTopic(),
@@ -233,7 +231,7 @@ public class SleeperCdkApp extends Stack {
 
         // Stack to split partitions
         if (optionalStacks.contains(PartitionSplittingStack.class.getSimpleName())) {
-            partitionSplittingStack = new PartitionSplittingStack(this,
+            new PartitionSplittingStack(this,
                     "PartitionSplitting",
                     instanceProperties, jars,
                     topicStack.getTopic(),
