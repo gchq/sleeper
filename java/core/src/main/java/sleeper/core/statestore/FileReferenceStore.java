@@ -251,7 +251,7 @@ public interface FileReferenceStore {
     /**
      * Used to fix the time of file updates. Should only be called during tests.
      *
-     * @param time Time to set to be the current time
+     * @param time the time that any future file updates will be considered to occur
      */
     void fixFileUpdateTime(Instant time);
 }

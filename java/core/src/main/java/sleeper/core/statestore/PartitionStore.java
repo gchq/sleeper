@@ -81,7 +81,7 @@ public interface PartitionStore {
     /**
      * Used to fix the time of partition updates. Should only be called during tests.
      *
-     * @param time Time to set to be the current time
+     * @param time the time that any future partition updates will be considered to occur
      */
     default void fixPartitionUpdateTime(Instant time) {
     }
