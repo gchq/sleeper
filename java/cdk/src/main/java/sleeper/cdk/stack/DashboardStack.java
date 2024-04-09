@@ -64,6 +64,8 @@ public class DashboardStack extends NestedStack {
     private Metric ingestJobsSubmitted;
     private Metric ingestJobsWaiting;
     private Metric oldestIngestJob;
+    private boolean compactionStacksDeployed = false;
+    private boolean ingestStackDeployed = false;
 
     public DashboardStack(Construct scope, String id, InstanceProperties instanceProperties) {
         super(scope, id);
@@ -115,6 +117,7 @@ public class DashboardStack extends NestedStack {
     }
 
     public void addIngestMetrics(Queue jobQueue) {
+        ingestStackDeployed = true;
         ingestJobsSubmitted = jobQueue.metricNumberOfMessagesSent(MetricOptions.builder()
                 .unit(Unit.COUNT)
                 .period(window)
@@ -133,6 +136,9 @@ public class DashboardStack extends NestedStack {
     }
 
     public void addIngestWidgets() {
+        if (!ingestStackDeployed) {
+            return;
+        }
         dashboard.addWidgets(
                 TextWidget.Builder.create()
                         .markdown("## Standard Ingest")
@@ -270,10 +276,12 @@ public class DashboardStack extends NestedStack {
     }
 
     public void addCompactionMetrics(Queue jobQueue) {
+        compactionStacksDeployed = true;
         addCompactionAndSplittingMetrics("Compaction", jobQueue);
     }
 
     public void addPartitionSplittingMetrics(Queue jobQueue) {
+        compactionStacksDeployed = true;
         addCompactionAndSplittingMetrics("Partition Splits", jobQueue);
     }
 
@@ -302,6 +310,9 @@ public class DashboardStack extends NestedStack {
     }
 
     public void addCompactionWidgets() {
+        if (!compactionStacksDeployed) {
+            return;
+        }
         dashboard.addWidgets(
                 TextWidget.Builder.create()
                         .markdown("## Compactions and Splits")
