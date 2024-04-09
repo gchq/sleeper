@@ -39,7 +39,7 @@ import static sleeper.configuration.properties.instance.QueryProperty.QUERY_PROC
 public class QueryQueueStack extends NestedStack {
     public static final String QUERY_QUEUE_NAME = "QueryQueueName";
     public static final String QUERY_QUEUE_URL = "QueryQueueUrl";
-    public static final String QUERY_DL_QUEUE_URL = "QueryDLQueueUrl";
+    public static final String QUERY_DLQ_URL = "QueryDLQUrl";
     private Queue queryQueue;
 
     public QueryQueueStack(Construct scope,
@@ -94,9 +94,9 @@ public class QueryQueueStack extends NestedStack {
 
         CfnOutputProps querDlqOutputProps = new CfnOutputProps.Builder()
                 .value(queryDlq.getQueueUrl())
-                .exportName(instanceProperties.get(ID) + "-" + QUERY_DL_QUEUE_URL)
+                .exportName(instanceProperties.get(ID) + "-" + QUERY_DLQ_URL)
                 .build();
-        new CfnOutput(this, QUERY_DL_QUEUE_URL, querDlqOutputProps);
+        new CfnOutput(this, QUERY_DLQ_URL, querDlqOutputProps);
 
         return queryQueue;
     }

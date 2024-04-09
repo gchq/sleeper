@@ -78,7 +78,7 @@ import static sleeper.configuration.properties.instance.QueryProperty.QUERY_RESU
 public class QueryStack extends NestedStack {
     public static final String LEAF_PARTITION_QUERY_QUEUE_NAME = "LeafPartitionQueryQueueName";
     public static final String LEAF_PARTITION_QUERY_QUEUE_URL = "LeafPartitionQueryQueueUrl";
-    public static final String LEAF_PARTITION_QUERY_DL_QUEUE_URL = "LeafPartitionQueryDLQueueUrl";
+    public static final String LEAF_PARTITION_QUERY_DLQ_URL = "LeafPartitionQueryDLQUrl";
     public static final String QUERY_RESULTS_QUEUE_NAME = "QueryResultsQueueName";
     public static final String QUERY_RESULTS_QUEUE_URL = "QueryResultsQueueUrl";
     public static final String QUERY_LAMBDA_ROLE_ARN = "QueryLambdaRoleArn";
@@ -289,9 +289,9 @@ public class QueryStack extends NestedStack {
 
         CfnOutputProps leafPartitionQueryDlqOutputProps = new CfnOutputProps.Builder()
                 .value(leafPartitionQueryDlq.getQueueUrl())
-                .exportName(instanceProperties.get(ID) + "-" + LEAF_PARTITION_QUERY_DL_QUEUE_URL)
+                .exportName(instanceProperties.get(ID) + "-" + LEAF_PARTITION_QUERY_DLQ_URL)
                 .build();
-        new CfnOutput(this, LEAF_PARTITION_QUERY_DL_QUEUE_URL, leafPartitionQueryDlqOutputProps);
+        new CfnOutput(this, LEAF_PARTITION_QUERY_DLQ_URL, leafPartitionQueryDlqOutputProps);
 
         return leafPartitionQueryQueue;
     }
