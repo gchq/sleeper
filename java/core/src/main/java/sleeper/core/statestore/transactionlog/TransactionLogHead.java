@@ -60,7 +60,7 @@ class TransactionLogHead<T> {
             transaction.validate(state);
             long transactionNumber = lastTransactionNumber + 1;
             try {
-                logStore.addTransaction(transaction, transactionNumber);
+                logStore.addTransaction(new TransactionLogEntry(transactionNumber, transaction));
             } catch (Exception e) {
                 failure = e;
                 continue;
@@ -78,15 +78,19 @@ class TransactionLogHead<T> {
     void update() throws StateStoreException {
         try {
             logStore.readTransactionsAfter(lastTransactionNumber)
-                    .peek(transaction -> lastTransactionNumber++)
-                    .filter(transactionType::isInstance)
-                    .map(transactionType::cast)
-                    .forEach(transaction -> {
-                        transaction.apply(state);
-                    });
+                    .forEach(this::applyTransaction);
         } catch (RuntimeException e) {
             throw new StateStoreException("Failed reading transactions", e);
         }
+    }
+
+    private void applyTransaction(TransactionLogEntry entry) {
+        if (!transactionType.isInstance(entry.getTransaction())) {
+            return;
+        }
+        transactionType.cast(entry.getTransaction())
+                .apply(state);
+        lastTransactionNumber = entry.getTransactionNumber();
     }
 
     T state() {

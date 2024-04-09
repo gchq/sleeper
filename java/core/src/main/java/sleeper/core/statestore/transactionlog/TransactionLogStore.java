@@ -19,8 +19,8 @@ import java.util.stream.Stream;
 
 public interface TransactionLogStore {
 
-    void addTransaction(StateStoreTransaction<?> transaction, long transactionNumber) throws DuplicateTransactionNumberException;
+    void addTransaction(TransactionLogEntry entry) throws DuplicateTransactionNumberException;
 
-    Stream<StateStoreTransaction<?>> readTransactionsAfter(long lastTransactionNumber);
+    Stream<TransactionLogEntry> readTransactionsAfter(long lastTransactionNumber);
 
 }

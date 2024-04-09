@@ -24,12 +24,13 @@ public class InMemoryTransactionLogStore implements TransactionLogStore {
     private static final Runnable DO_NOTHING = () -> {
     };
 
-    private final List<StateStoreTransaction<?>> transactions = new ArrayList<>();
+    private final List<TransactionLogEntry> transactions = new ArrayList<>();
     private Runnable beforeNextAdd = DO_NOTHING;
     private Runnable beforeNextRead = DO_NOTHING;
 
     @Override
-    public void addTransaction(StateStoreTransaction<?> transaction, long transactionNumber) throws DuplicateTransactionNumberException {
+    public void addTransaction(TransactionLogEntry entry) throws DuplicateTransactionNumberException {
+        long transactionNumber = entry.getTransactionNumber();
         doBeforeNextAdd();
         if (transactionNumber <= transactions.size()) {
             throw new DuplicateTransactionNumberException(transactionNumber);
@@ -37,11 +38,11 @@ public class InMemoryTransactionLogStore implements TransactionLogStore {
         if (transactionNumber > transactions.size() + 1) {
             throw new IllegalStateException("Attempted to add transaction " + transactionNumber + " when we only have " + transactions.size());
         }
-        transactions.add(transaction);
+        transactions.add(entry);
     }
 
     @Override
-    public Stream<StateStoreTransaction<?>> readTransactionsAfter(long lastTransactionNumber) {
+    public Stream<TransactionLogEntry> readTransactionsAfter(long lastTransactionNumber) {
         doBeforeNextRead();
         return transactions.stream()
                 .skip(lastTransactionNumber);
