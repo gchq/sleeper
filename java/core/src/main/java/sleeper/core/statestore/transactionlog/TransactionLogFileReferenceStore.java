@@ -50,18 +50,18 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
 
     @Override
     public void addFilesWithReferences(List<AllReferencesToAFile> files) throws StateStoreException {
-        head.addTransaction(clock.instant(), new AddFilesTransaction(files, clock.instant()));
+        head.addTransaction(clock.instant(), new AddFilesTransaction(files));
     }
 
     @Override
     public void assignJobIds(List<AssignJobIdRequest> requests) throws StateStoreException {
-        head.addTransaction(clock.instant(), new AssignJobIdsTransaction(requests, clock.instant()));
+        head.addTransaction(clock.instant(), new AssignJobIdsTransaction(requests));
     }
 
     @Override
     public void atomicallyReplaceFileReferencesWithNewOne(String jobId, String partitionId, List<String> inputFiles, FileReference newReference) throws StateStoreException {
         head.addTransaction(clock.instant(), new ReplaceFileReferencesTransaction(
-                jobId, partitionId, inputFiles, newReference, clock.instant()));
+                jobId, partitionId, inputFiles, newReference));
     }
 
     @Override
@@ -128,7 +128,7 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
     @Override
     public void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws SplitRequestsFailedException {
         try {
-            head.addTransaction(clock.instant(), new SplitFileReferencesTransaction(splitRequests, clock.instant()));
+            head.addTransaction(clock.instant(), new SplitFileReferencesTransaction(splitRequests));
         } catch (StateStoreException e) {
             throw new SplitRequestsFailedException(List.of(), splitRequests, e);
         }

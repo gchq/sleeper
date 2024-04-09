@@ -67,7 +67,7 @@ class TransactionLogHead<T> {
                 failure = e;
                 continue;
             }
-            transaction.apply(state);
+            transaction.apply(state, updateTime);
             lastTransactionNumber = transactionNumber;
             failure = null;
             break;
@@ -91,7 +91,7 @@ class TransactionLogHead<T> {
             return;
         }
         transactionType.cast(entry.getTransaction())
-                .apply(state);
+                .apply(state, entry.getUpdateTime());
         lastTransactionNumber = entry.getTransactionNumber();
     }
 

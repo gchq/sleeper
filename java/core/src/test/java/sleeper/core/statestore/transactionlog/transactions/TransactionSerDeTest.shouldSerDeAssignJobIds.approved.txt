@@ -16,6 +16,5 @@
         "file4.parquet"
       ]
     }
-  ],
-  "updateTime": 1711446241000
+  ]
 }

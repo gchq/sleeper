@@ -19,6 +19,7 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.FileReferenceTransaction;
 import sleeper.core.statestore.transactionlog.StateStoreFiles;
 
+import java.time.Instant;
 import java.util.Objects;
 
 public class ClearFilesTransaction implements FileReferenceTransaction {
@@ -28,7 +29,7 @@ public class ClearFilesTransaction implements FileReferenceTransaction {
     }
 
     @Override
-    public void apply(StateStoreFiles stateStoreFiles) {
+    public void apply(StateStoreFiles stateStoreFiles, Instant updateTime) {
         stateStoreFiles.clear();
     }
 

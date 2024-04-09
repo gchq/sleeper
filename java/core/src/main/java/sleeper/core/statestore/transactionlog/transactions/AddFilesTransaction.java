@@ -30,11 +30,9 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 public class AddFilesTransaction implements FileReferenceTransaction {
 
     private final List<AllReferencesToAFile> files;
-    private final Instant updateTime;
 
-    public AddFilesTransaction(List<AllReferencesToAFile> files, Instant updateTime) {
+    public AddFilesTransaction(List<AllReferencesToAFile> files) {
         this.files = files.stream().map(file -> file.withCreatedUpdateTime(null)).collect(toUnmodifiableList());
-        this.updateTime = updateTime;
     }
 
     @Override
@@ -47,7 +45,7 @@ public class AddFilesTransaction implements FileReferenceTransaction {
     }
 
     @Override
-    public void apply(StateStoreFiles stateStoreFiles) {
+    public void apply(StateStoreFiles stateStoreFiles, Instant updateTime) {
         for (AllReferencesToAFile file : files) {
             stateStoreFiles.add(file.withCreatedUpdateTime(updateTime));
         }
