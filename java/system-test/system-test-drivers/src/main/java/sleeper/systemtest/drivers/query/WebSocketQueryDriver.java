@@ -19,7 +19,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.clients.QueryWebSocketClient;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.record.Record;
 import sleeper.core.record.serialiser.RecordJSONSerDe;
 import sleeper.core.schema.Schema;
@@ -35,7 +34,7 @@ import java.util.stream.Collectors;
 public class WebSocketQueryDriver implements QueryDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(WebSocketQueryDriver.class);
 
-    private final TablePropertiesProvider tablePropertiesProvider;
+    private final SystemTestInstanceContext instance;
     private final QueryWebSocketClient queryWebSocketClient;
 
     public static QueryAllTablesDriver allTablesDriver(SystemTestInstanceContext instance) {
@@ -43,14 +42,14 @@ public class WebSocketQueryDriver implements QueryDriver {
     }
 
     public WebSocketQueryDriver(SystemTestInstanceContext instance) {
-        this.tablePropertiesProvider = instance.getTablePropertiesProvider();
-        this.queryWebSocketClient = new QueryWebSocketClient(instance.getInstanceProperties(), tablePropertiesProvider);
+        this.instance = instance;
+        this.queryWebSocketClient = new QueryWebSocketClient(instance.getInstanceProperties(), instance.getTablePropertiesProvider());
     }
 
     @Override
     public List<Record> run(Query query) {
         LOGGER.info("Submitting query: {}", query.getQueryId());
-        Schema schema = tablePropertiesProvider.getByName(query.getTableName()).getSchema();
+        Schema schema = instance.getTablePropertiesByDeployedName(query.getTableName()).orElseThrow().getSchema();
         RecordJSONSerDe recordSerDe = new RecordJSONSerDe(schema);
         try {
             return queryWebSocketClient.submitQuery(query).join().stream()
