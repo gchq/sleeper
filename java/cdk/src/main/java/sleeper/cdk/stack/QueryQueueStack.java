@@ -58,45 +58,45 @@ public class QueryQueueStack extends NestedStack {
      */
     private Queue setupQueryQueue(InstanceProperties instanceProperties, Topic topic) {
         String dlQueueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-QueryDLQ");
-        Queue queryQueueForDLs = Queue.Builder
-                .create(this, "QueriesDeadLetterQueue")
+        Queue queryDlq = Queue.Builder
+                .create(this, "QueryDeadLetterQueue")
                 .queueName(dlQueueName)
                 .build();
         DeadLetterQueue queryDeadLetterQueue = DeadLetterQueue.builder()
                 .maxReceiveCount(1)
-                .queue(queryQueueForDLs)
+                .queue(queryDlq)
                 .build();
-        String queryQueueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-QueriesQueue");
+        String queryQueueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-QueryQueue");
         Queue queryQueue = Queue.Builder
-                .create(this, "QueriesQueue")
+                .create(this, "QueryQueue")
                 .queueName(queryQueueName)
                 .deadLetterQueue(queryDeadLetterQueue)
                 .visibilityTimeout(Duration.seconds(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS)))
                 .build();
         instanceProperties.set(CdkDefinedInstanceProperty.QUERY_QUEUE_URL, queryQueue.getQueueUrl());
         instanceProperties.set(CdkDefinedInstanceProperty.QUERY_QUEUE_ARN, queryQueue.getQueueArn());
-        instanceProperties.set(CdkDefinedInstanceProperty.QUERY_DLQ_URL, queryQueueForDLs.getQueueUrl());
-        instanceProperties.set(CdkDefinedInstanceProperty.QUERY_DLQ_ARN, queryQueueForDLs.getQueueArn());
-        createAlarmForDlq(this, "QueriesAlarm",
-                "Alarms if there are any messages on the dead letter queue for the queries queue",
-                queryQueueForDLs, topic);
-        CfnOutputProps queriesQueueOutputNameProps = new CfnOutputProps.Builder()
+        instanceProperties.set(CdkDefinedInstanceProperty.QUERY_DLQ_URL, queryDlq.getQueueUrl());
+        instanceProperties.set(CdkDefinedInstanceProperty.QUERY_DLQ_ARN, queryDlq.getQueueArn());
+        createAlarmForDlq(this, "QueryAlarm",
+                "Alarms if there are any messages on the dead letter queue for the query queue",
+                queryDlq, topic);
+        CfnOutputProps queryQueueOutputNameProps = new CfnOutputProps.Builder()
                 .value(queryQueue.getQueueName())
                 .exportName(instanceProperties.get(ID) + "-" + QUERY_QUEUE_NAME)
                 .build();
-        new CfnOutput(this, QUERY_QUEUE_NAME, queriesQueueOutputNameProps);
+        new CfnOutput(this, QUERY_QUEUE_NAME, queryQueueOutputNameProps);
 
-        CfnOutputProps queriesQueueOutputProps = new CfnOutputProps.Builder()
+        CfnOutputProps queryQueueOutputProps = new CfnOutputProps.Builder()
                 .value(queryQueue.getQueueUrl())
                 .exportName(instanceProperties.get(ID) + "-" + QUERY_QUEUE_URL)
                 .build();
-        new CfnOutput(this, QUERY_QUEUE_URL, queriesQueueOutputProps);
+        new CfnOutput(this, QUERY_QUEUE_URL, queryQueueOutputProps);
 
-        CfnOutputProps queriesDLQueueOutputProps = new CfnOutputProps.Builder()
-                .value(queryQueueForDLs.getQueueUrl())
+        CfnOutputProps querDlqOutputProps = new CfnOutputProps.Builder()
+                .value(queryDlq.getQueueUrl())
                 .exportName(instanceProperties.get(ID) + "-" + QUERY_DL_QUEUE_URL)
                 .build();
-        new CfnOutput(this, QUERY_DL_QUEUE_URL, queriesDLQueueOutputProps);
+        new CfnOutput(this, QUERY_DL_QUEUE_URL, querDlqOutputProps);
 
         return queryQueue;
     }

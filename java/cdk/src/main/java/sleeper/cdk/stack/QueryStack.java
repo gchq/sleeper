@@ -204,7 +204,7 @@ public class QueryStack extends NestedStack {
     private IFunction setupLeafPartitionQueryQueueAndLambda(
             CoreStacks coreStacks, InstanceProperties instanceProperties, Topic topic, LambdaCode queryJar,
             IBucket jarsBucket, ITable queryTrackingTable) {
-        Queue leafPartitionQueriesQueue = setupLeafPartitionQueryQueue(instanceProperties, topic);
+        Queue leafPartitionQueryQueue = setupLeafPartitionQueryQueue(instanceProperties, topic);
         Queue queryResultsQueue = setupResultsQueue(instanceProperties);
         IBucket queryResultsBucket = setupResultsBucket(instanceProperties);
         String leafQueryFunctionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
@@ -214,13 +214,13 @@ public class QueryStack extends NestedStack {
                 "When a query arrives on the query SQS queue, this lambda is invoked to execute the query");
 
         attachPolicy(lambda, "LeafPartition");
-        setPermissionsForLambda(coreStacks, jarsBucket, lambda, queryTrackingTable, leafPartitionQueriesQueue, queryResultsQueue, queryResultsBucket);
+        setPermissionsForLambda(coreStacks, jarsBucket, lambda, queryTrackingTable, leafPartitionQueryQueue, queryResultsQueue, queryResultsBucket);
 
         SqsEventSourceProps eventSourceProps = SqsEventSourceProps.builder()
                 .batchSize(1)
                 .build();
 
-        lambda.addEventSource(new SqsEventSource(leafPartitionQueriesQueue, eventSourceProps));
+        lambda.addEventSource(new SqsEventSource(leafPartitionQueryQueue, eventSourceProps));
 
         return lambda;
     }
@@ -287,11 +287,11 @@ public class QueryStack extends NestedStack {
                 .build();
         new CfnOutput(this, LEAF_PARTITION_QUERY_QUEUE_URL, leafPartitionQueryQueueOutputProps);
 
-        CfnOutputProps leafPartitionQueryDLQueueOutputProps = new CfnOutputProps.Builder()
+        CfnOutputProps leafPartitionQueryDlqOutputProps = new CfnOutputProps.Builder()
                 .value(leafPartitionQueryDlq.getQueueUrl())
                 .exportName(instanceProperties.get(ID) + "-" + LEAF_PARTITION_QUERY_DL_QUEUE_URL)
                 .build();
-        new CfnOutput(this, LEAF_PARTITION_QUERY_DL_QUEUE_URL, leafPartitionQueryDLQueueOutputProps);
+        new CfnOutput(this, LEAF_PARTITION_QUERY_DL_QUEUE_URL, leafPartitionQueryDlqOutputProps);
 
         return leafPartitionQueryQueue;
     }
