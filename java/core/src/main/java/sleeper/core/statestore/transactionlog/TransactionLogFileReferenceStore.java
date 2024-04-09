@@ -50,28 +50,28 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
 
     @Override
     public void addFilesWithReferences(List<AllReferencesToAFile> files) throws StateStoreException {
-        head.addTransaction(new AddFilesTransaction(files, clock.instant()));
+        head.addTransaction(clock.instant(), new AddFilesTransaction(files, clock.instant()));
     }
 
     @Override
     public void assignJobIds(List<AssignJobIdRequest> requests) throws StateStoreException {
-        head.addTransaction(new AssignJobIdsTransaction(requests, clock.instant()));
+        head.addTransaction(clock.instant(), new AssignJobIdsTransaction(requests, clock.instant()));
     }
 
     @Override
     public void atomicallyReplaceFileReferencesWithNewOne(String jobId, String partitionId, List<String> inputFiles, FileReference newReference) throws StateStoreException {
-        head.addTransaction(new ReplaceFileReferencesTransaction(
+        head.addTransaction(clock.instant(), new ReplaceFileReferencesTransaction(
                 jobId, partitionId, inputFiles, newReference, clock.instant()));
     }
 
     @Override
     public void clearFileData() throws StateStoreException {
-        head.addTransaction(new ClearFilesTransaction());
+        head.addTransaction(clock.instant(), new ClearFilesTransaction());
     }
 
     @Override
     public void deleteGarbageCollectedFileReferenceCounts(List<String> filenames) throws StateStoreException {
-        head.addTransaction(new DeleteFilesTransaction(filenames));
+        head.addTransaction(clock.instant(), new DeleteFilesTransaction(filenames));
     }
 
     @Override
@@ -128,7 +128,7 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
     @Override
     public void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws SplitRequestsFailedException {
         try {
-            head.addTransaction(new SplitFileReferencesTransaction(splitRequests, clock.instant()));
+            head.addTransaction(clock.instant(), new SplitFileReferencesTransaction(splitRequests, clock.instant()));
         } catch (StateStoreException e) {
             throw new SplitRequestsFailedException(List.of(), splitRequests, e);
         }

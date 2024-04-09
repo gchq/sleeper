@@ -27,10 +27,6 @@ public class TransactionLogEntry {
     private final Instant updateTime;
     private final StateStoreTransaction<?> transaction;
 
-    public TransactionLogEntry(long transactionNumber, StateStoreTransaction<?> transaction) {
-        this(transactionNumber, null, transaction);
-    }
-
     public TransactionLogEntry(long transactionNumber, Instant updateTime, StateStoreTransaction<?> transaction) {
         this.transactionNumber = transactionNumber;
         this.updateTime = updateTime;
@@ -39,6 +35,10 @@ public class TransactionLogEntry {
 
     public long getTransactionNumber() {
         return transactionNumber;
+    }
+
+    public Instant getUpdateTime() {
+        return updateTime;
     }
 
     public StateStoreTransaction<?> getTransaction() {
