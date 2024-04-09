@@ -136,7 +136,7 @@ public class PartitionSplittingStack extends NestedStack {
                 partitionSplittingBatchDlq, topic);
 
         dashboardStackOpt.ifPresent(dashboardStack -> {
-            dashboardStack.addErrorMetric("Partition Split Errors", partitionSplittingBatchDlq);
+            dashboardStack.addErrorMetric("Partition Split Batching Errors", partitionSplittingBatchDlq);
         });
         return partitionSplittingBatchQueue;
     }
