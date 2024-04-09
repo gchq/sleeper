@@ -83,17 +83,17 @@ public class PartitionSplittingStack extends NestedStack {
             BuiltJars jars,
             Topic topic,
             CoreStacks coreStacks,
-            Optional<DashboardStack> dashboardStack) {
+            Optional<DashboardStack> dashboardStackOpt) {
         super(scope, id);
 
         // Jars bucket
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
 
         // Create queue for batching tables
-        QueueAndDlq batchQueueAndDlq = createBatchQueues(instanceProperties);
+        QueueAndDlq batchQueueAndDlq = createBatchQueues(instanceProperties, topic, dashboardStackOpt);
         this.partitionSplittingBatchQueue = batchQueueAndDlq.queue;
         // Create queue for partition splitting job definitions
-        QueueAndDlq jobQueueAndDlq = createJobQueues(instanceProperties, topic, dashboardStack);
+        QueueAndDlq jobQueueAndDlq = createJobQueues(instanceProperties, topic, dashboardStackOpt);
         this.partitionSplittingJobQueue = jobQueueAndDlq.queue;
         this.partitionSplittingJobDlq = jobQueueAndDlq.dlq;
 
@@ -115,7 +115,7 @@ public class PartitionSplittingStack extends NestedStack {
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
-    private QueueAndDlq createBatchQueues(InstanceProperties instanceProperties) {
+    private QueueAndDlq createBatchQueues(InstanceProperties instanceProperties, Topic topic, Optional<DashboardStack> dashboardStackOpt) {
         // Create queue for batching tables
         Queue partitionSplittingBatchDlq = Queue.Builder
                 .create(this, "PartitionSplittingBatchDeadLetterQueue")
@@ -135,6 +135,13 @@ public class PartitionSplittingStack extends NestedStack {
         instanceProperties.set(PARTITION_SPLITTING_TABLE_BATCH_QUEUE_ARN, partitionSplittingBatchQueue.getQueueArn());
         instanceProperties.set(PARTITION_SPLITTING_TABLE_BATCH_DLQ_URL, partitionSplittingBatchDlq.getQueueUrl());
         instanceProperties.set(PARTITION_SPLITTING_TABLE_BATCH_DLQ_ARN, partitionSplittingBatchDlq.getQueueArn());
+        createAlarmForDlq(this, "PartitionSplittingBatchAlarm",
+                "Alarms if there are any messages on the dead letter queue for the partition splitting batch queue",
+                partitionSplittingBatchDlq, topic);
+
+        dashboardStackOpt.ifPresent(dashboardStack -> {
+            dashboardStack.addErrorMetric("Partition Split Errors", partitionSplittingBatchDlq);
+        });
         return new QueueAndDlq(partitionSplittingBatchQueue, partitionSplittingBatchDlq);
     }
 
