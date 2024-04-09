@@ -36,7 +36,7 @@ public class InMemoryTransactionLogStoreTest {
 
         // Then
         assertThat(store.readTransactionsAfter(0))
-                .containsExactly(new ClearFilesTransaction());
+                .containsExactly(new TransactionLogEntry(1, new ClearFilesTransaction()));
     }
 
     @Test
@@ -58,7 +58,7 @@ public class InMemoryTransactionLogStoreTest {
                 .isInstanceOf(DuplicateTransactionNumberException.class)
                 .hasMessage("Unread transaction found. Adding transaction number 1, but it already exists.");
         assertThat(store.readTransactionsAfter(0))
-                .containsExactly(new DeleteFilesTransaction(List.of("file1.parquet")));
+                .containsExactly(new TransactionLogEntry(1, new DeleteFilesTransaction(List.of("file1.parquet"))));
     }
 
     @Test
@@ -72,7 +72,7 @@ public class InMemoryTransactionLogStoreTest {
                 .isInstanceOf(DuplicateTransactionNumberException.class)
                 .hasMessage("Unread transaction found. Adding transaction number 1, but it already exists.");
         assertThat(store.readTransactionsAfter(0))
-                .containsExactly(new ClearFilesTransaction());
+                .containsExactly(new TransactionLogEntry(1, new ClearFilesTransaction()));
     }
 
     @Test

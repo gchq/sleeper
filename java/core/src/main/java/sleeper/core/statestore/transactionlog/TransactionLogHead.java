@@ -77,7 +77,7 @@ class TransactionLogHead<T> {
 
     void update() throws StateStoreException {
         try {
-            logStore.readTransactionEntriesAfter(lastTransactionNumber)
+            logStore.readTransactionsAfter(lastTransactionNumber)
                     .forEach(this::applyTransaction);
         } catch (RuntimeException e) {
             throw new StateStoreException("Failed reading transactions", e);
