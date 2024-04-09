@@ -41,6 +41,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.Collections;
 import java.util.Locale;
+import java.util.Optional;
 
 import static sleeper.cdk.Utils.createAlarmForDlq;
 import static sleeper.cdk.Utils.createLambdaLogGroup;
@@ -59,7 +60,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.TABLE_BAT
 public class TableMetricsStack extends NestedStack {
     public TableMetricsStack(
             Construct scope, String id, InstanceProperties instanceProperties,
-            BuiltJars jars, Topic topic, CoreStacks coreStacks) {
+            BuiltJars jars, Topic topic, CoreStacks coreStacks, Optional<DashboardStack> dashboardStackOpt) {
         super(scope, id);
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
         LambdaCode metricsJar = jars.lambdaCode(BuiltJar.METRICS, jarsBucket);
@@ -121,6 +122,7 @@ public class TableMetricsStack extends NestedStack {
         createAlarmForDlq(this, "MetricsJobAlarm",
                 "Alarms if there are any messages on the dead letter queue for the table metrics queue",
                 deadLetterQueue, topic);
+        dashboardStackOpt.ifPresent(dashboardStack -> dashboardStack.addErrorMetric("Table Metrics Errors", deadLetterQueue));
         queue.grantSendMessages(tableMetricsTrigger);
         tableMetricsPublisher.addEventSource(new SqsEventSource(queue,
                 SqsEventSourceProps.builder().batchSize(1).build()));
