@@ -40,6 +40,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 
 import static sleeper.cdk.Utils.createAlarmForDlq;
 import static sleeper.cdk.Utils.createLambdaLogGroup;
@@ -65,7 +66,7 @@ public class GarbageCollectorStack extends NestedStack {
 
     public GarbageCollectorStack(
             Construct scope, String id, InstanceProperties instanceProperties,
-            BuiltJars jars, Topic topic, CoreStacks coreStacks) {
+            BuiltJars jars, Topic topic, CoreStacks coreStacks, Optional<DashboardStack> dashboardStackOpt) {
         super(scope, id);
 
         // Jars bucket
@@ -145,6 +146,7 @@ public class GarbageCollectorStack extends NestedStack {
         createAlarmForDlq(this, "GarbageCollectorAlarm",
                 "Alarms if there are any messages on the dead letter queue for the garbage collector queue",
                 deadLetterQueue, topic);
+        dashboardStackOpt.ifPresent(dashboardStack -> dashboardStack.addErrorMetric("Garbage Collection Errors", deadLetterQueue));
         queue.grantSendMessages(triggerFunction);
         handlerFunction.addEventSource(new SqsEventSource(queue,
                 SqsEventSourceProps.builder().batchSize(1).build()));
