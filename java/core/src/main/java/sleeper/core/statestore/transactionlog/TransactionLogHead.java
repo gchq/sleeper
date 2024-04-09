@@ -60,7 +60,7 @@ class TransactionLogHead<T> {
             transaction.validate(state);
             long transactionNumber = lastTransactionNumber + 1;
             try {
-                logStore.addTransaction(transaction, transactionNumber);
+                logStore.addTransaction(new TransactionLogEntry(transactionNumber, transaction));
             } catch (Exception e) {
                 failure = e;
                 continue;

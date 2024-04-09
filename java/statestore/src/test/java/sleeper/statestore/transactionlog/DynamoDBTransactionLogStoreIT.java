@@ -48,25 +48,32 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
 
     @Test
     void shouldAddFirstTransaction() throws Exception {
+        // Given
+        TransactionLogEntry entry = new TransactionLogEntry(1, new ClearFilesTransaction());
+
         // When
-        store.addTransaction(new ClearFilesTransaction(), 1);
+        store.addTransaction(entry);
 
         // Then
         assertThat(store.readTransactionsAfter(0))
-                .containsExactly(new TransactionLogEntry(1, new ClearFilesTransaction()));
+                .containsExactly(entry);
     }
 
     @Test
     void shouldFailToAddTransactionWhenOneAlreadyExistsWithSameNumber() throws Exception {
         // Given
-        store.addTransaction(new DeleteFilesTransaction(List.of("file1.parquet")), 1);
+        TransactionLogEntry entry1 = new TransactionLogEntry(1,
+                new DeleteFilesTransaction(List.of("file1.parquet")));
+        TransactionLogEntry entry2 = new TransactionLogEntry(1,
+                new DeleteFilesTransaction(List.of("file2.parquet")));
+        store.addTransaction(entry1);
 
         // When / Then
-        assertThatThrownBy(() -> store.addTransaction(new DeleteFilesTransaction(List.of("file2.parquet")), 1))
+        assertThatThrownBy(() -> store.addTransaction(entry2))
                 .isInstanceOf(DuplicateTransactionNumberException.class)
                 .hasMessage("Unread transaction found. Adding transaction number 1, but it already exists.");
         assertThat(store.readTransactionsAfter(0))
-                .containsExactly(new TransactionLogEntry(1, new DeleteFilesTransaction(List.of("file1.parquet"))));
+                .containsExactly(entry1);
     }
 
     @Test
