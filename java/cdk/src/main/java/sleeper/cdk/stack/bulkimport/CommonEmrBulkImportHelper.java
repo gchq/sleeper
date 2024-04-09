@@ -34,6 +34,7 @@ import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.stack.CoreStacks;
+import sleeper.cdk.stack.DashboardStack;
 import sleeper.cdk.stack.IngestStatusStoreResources;
 import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -41,6 +42,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static sleeper.cdk.Utils.createAlarmForDlq;
@@ -55,15 +57,17 @@ public class CommonEmrBulkImportHelper {
     private final InstanceProperties instanceProperties;
     private final IngestStatusStoreResources statusStoreResources;
     private final CoreStacks coreStacks;
+    private final Optional<DashboardStack> dashboardStackOpt;
 
     public CommonEmrBulkImportHelper(
             Construct scope, String shortId, InstanceProperties instanceProperties,
-            CoreStacks coreStacks, IngestStatusStoreResources ingestStatusStoreResources) {
+            CoreStacks coreStacks, IngestStatusStoreResources ingestStatusStoreResources, Optional<DashboardStack> dashboardStackOpt) {
         this.scope = scope;
         this.shortId = shortId;
         this.instanceProperties = instanceProperties;
         this.coreStacks = coreStacks;
         this.statusStoreResources = ingestStatusStoreResources;
+        this.dashboardStackOpt = dashboardStackOpt;
     }
 
     // Queue for messages to trigger jobs - note that each concrete substack
@@ -81,9 +85,9 @@ public class CommonEmrBulkImportHelper {
                 .build();
 
         createAlarmForDlq(scope, "BulkImport" + shortId + "UndeliveredJobsAlarm",
-                "Alarms if there are any messages that have failed validation or failed to start a " + shortId + " EMR Spark job",
+                "Alarms if there are any messages that have failed validation or failed to start a " + shortId + " Spark job",
                 queueForDLs, errorsTopic);
-
+        dashboardStackOpt.ifPresent(dashboardStack -> dashboardStack.addErrorMetric("Bulk Import " + shortId + " Errors", queueForDLs));
         Queue emrBulkImportJobQueue = Queue.Builder
                 .create(scope, "BulkImport" + shortId + "JobQueue")
                 .deadLetterQueue(deadLetterQueue)

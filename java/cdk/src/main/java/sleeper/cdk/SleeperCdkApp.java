@@ -172,7 +172,8 @@ public class SleeperCdkApp extends Stack {
                     topicStack.getTopic(),
                     bulkImportBucketStack,
                     coreStacks,
-                    ingestStatusStoreStack.getResources());
+                    ingestStatusStoreStack.getResources(),
+                    dashboardStackOpt);
 
             // Stack to created EMR studio to be used to access EMR Serverless
             if (optionalStacks.contains(EmrStudioStack.class.getSimpleName())) {
@@ -187,7 +188,8 @@ public class SleeperCdkApp extends Stack {
                     bulkImportBucketStack,
                     emrBulkImportCommonStack,
                     coreStacks,
-                    ingestStatusStoreStack.getResources());
+                    ingestStatusStoreStack.getResources(),
+                    dashboardStackOpt);
         }
 
         // Stack to run bulk import jobs via a persistent EMR cluster
@@ -198,7 +200,8 @@ public class SleeperCdkApp extends Stack {
                     bulkImportBucketStack,
                     emrBulkImportCommonStack,
                     coreStacks,
-                    ingestStatusStoreStack.getResources());
+                    ingestStatusStoreStack.getResources(),
+                    dashboardStackOpt);
         }
 
         // Stack to run bulk import jobs via EKS
