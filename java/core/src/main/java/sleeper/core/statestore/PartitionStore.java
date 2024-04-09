@@ -79,7 +79,7 @@ public interface PartitionStore {
     void clearPartitionData() throws StateStoreException;
 
     /**
-     * Used to set the current time. Should only be called during tests.
+     * Used to fix the time of partition updates. Should only be called during tests.
      *
      * @param time Time to set to be the current time
      */
