@@ -56,6 +56,13 @@ public class KeySerDe {
         this.numRowKeysInSchema = this.rowKeyTypes.size();
     }
 
+    /**
+     * Write values of key fields to a byte array.
+     *
+     * @param  key         values to serialise
+     * @return             the values serialised as a byte array
+     * @throws IOException if data could not be written to the byte array
+     */
     public byte[] serialise(Key key) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(baos);
@@ -108,6 +115,13 @@ public class KeySerDe {
         return baos.toByteArray();
     }
 
+    /**
+     * Read values of key fields from a byte array.
+     *
+     * @param  bytes       byte array to read
+     * @return             the values contained in the byte array
+     * @throws IOException if the byte array could not be read
+     */
     public Key deserialise(byte[] bytes) throws IOException {
         ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
         DataInputStream dis = new DataInputStream(bais);
