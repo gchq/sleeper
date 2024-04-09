@@ -77,16 +77,20 @@ class TransactionLogHead<T> {
 
     void update() throws StateStoreException {
         try {
-            logStore.readTransactionsAfter(lastTransactionNumber)
-                    .peek(transaction -> lastTransactionNumber++)
-                    .filter(transactionType::isInstance)
-                    .map(transactionType::cast)
-                    .forEach(transaction -> {
-                        transaction.apply(state);
-                    });
+            logStore.readTransactionEntriesAfter(lastTransactionNumber)
+                    .forEach(this::applyTransaction);
         } catch (RuntimeException e) {
             throw new StateStoreException("Failed reading transactions", e);
         }
+    }
+
+    private void applyTransaction(TransactionLogEntry entry) {
+        if (!transactionType.isInstance(entry.getTransaction())) {
+            return;
+        }
+        transactionType.cast(entry.getTransaction())
+                .apply(state);
+        lastTransactionNumber = entry.getTransactionNumber();
     }
 
     T state() {

@@ -15,6 +15,7 @@
  */
 package sleeper.core.statestore.transactionlog;
 
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
 
 public interface TransactionLogStore {
@@ -22,5 +23,11 @@ public interface TransactionLogStore {
     void addTransaction(StateStoreTransaction<?> transaction, long transactionNumber) throws DuplicateTransactionNumberException;
 
     Stream<StateStoreTransaction<?>> readTransactionsAfter(long lastTransactionNumber);
+
+    default Stream<TransactionLogEntry> readTransactionEntriesAfter(long lastTransactionNumber) {
+        AtomicLong transactionNumberTracker = new AtomicLong(lastTransactionNumber);
+        return readTransactionsAfter(lastTransactionNumber)
+                .map(transaction -> new TransactionLogEntry(transactionNumberTracker.incrementAndGet(), transaction));
+    }
 
 }
