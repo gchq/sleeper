@@ -90,6 +90,7 @@ public class SleeperCdkApp extends Stack {
     private EksBulkImportStack eksBulkImportStack;
     private IngestStatusStoreStack ingestStatusStoreStack;
     private QueryQueueStack queryQueueStack;
+    private DashboardStack dashboardStack;
 
     public SleeperCdkApp(App app, String id, StackProps props, InstanceProperties instanceProperties, BuiltJars jars) {
         super(app, id, props);
@@ -146,7 +147,13 @@ public class SleeperCdkApp extends Stack {
         if (optionalStacks.contains(TableMetricsStack.class.getSimpleName())) {
             new TableMetricsStack(this, "TableMetrics", instanceProperties, jars, topicStack.getTopic(), coreStacks);
         }
-
+        if (optionalStacks.contains(DashboardStack.class.getSimpleName())) {
+            dashboardStack = new DashboardStack(this,
+                    "Dashboard",
+                    compactionStack,
+                    partitionSplittingStack,
+                    instanceProperties);
+        }
         // Stack for Athena analytics
         if (optionalStacks.contains(AthenaStack.class.getSimpleName())) {
             new AthenaStack(this, "Athena", instanceProperties, jars, coreStacks);
@@ -177,7 +184,6 @@ public class SleeperCdkApp extends Stack {
                 new EmrStudioStack(this, "EmrStudio", instanceProperties);
             }
         }
-
         // Stack to run bulk import jobs via EMR (one cluster per bulk import job)
         if (optionalStacks.contains(EmrBulkImportStack.class.getSimpleName())) {
             emrBulkImportStack = new EmrBulkImportStack(this, "BulkImportEMR",
@@ -263,7 +269,8 @@ public class SleeperCdkApp extends Stack {
                     instanceProperties, jars,
                     topicStack.getTopic(),
                     coreStacks,
-                    ingestStatusStoreStack);
+                    ingestStatusStoreStack,
+                    dashboardStack);
         }
 
         // Aggregate ingest stacks
@@ -278,15 +285,6 @@ public class SleeperCdkApp extends Stack {
                     ingestStacks);
         }
 
-        if (optionalStacks.contains(DashboardStack.class.getSimpleName())) {
-            new DashboardStack(this,
-                    "Dashboard",
-                    ingestStack,
-                    compactionStack,
-                    partitionSplittingStack,
-                    instanceProperties);
-        }
-
         if (optionalStacks.contains(KeepLambdaWarmStack.class.getSimpleName())) {
             new KeepLambdaWarmStack(this,
                     "KeepLambdaWarmExecution",
@@ -296,6 +294,7 @@ public class SleeperCdkApp extends Stack {
                     queryQueueStack);
         }
 
+        dashboardStack.addErrorMetricsWidgets();
         this.generateProperties();
         addTags(app);
     }

@@ -30,6 +30,7 @@ import software.amazon.awscdk.services.cloudwatch.SingleValueWidget;
 import software.amazon.awscdk.services.cloudwatch.TextWidget;
 import software.amazon.awscdk.services.cloudwatch.Unit;
 import software.amazon.awscdk.services.cloudwatch.YAxisProps;
+import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.cdk.Utils;
@@ -51,7 +52,6 @@ import static sleeper.configuration.properties.instance.DashboardProperty.DASHBO
 
 @SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR")
 public class DashboardStack extends NestedStack {
-    private final IngestStack ingestStack;
     private final CompactionStack compactionStack;
     private final PartitionSplittingStack partitionSplittingStack;
     private final String instanceId;
@@ -59,17 +59,16 @@ public class DashboardStack extends NestedStack {
     private final String metricsNamespace;
     private final Duration window;
     private final Dashboard dashboard;
+    private final List<IMetric> errorMetrics = new ArrayList<>();
 
     public DashboardStack(
             Construct scope,
             String id,
-            IngestStack ingestStack,
             CompactionStack compactionStack,
             PartitionSplittingStack partitionSplittingStack,
             InstanceProperties instanceProperties) {
         super(scope, id);
 
-        this.ingestStack = ingestStack;
         this.compactionStack = compactionStack;
         this.partitionSplittingStack = partitionSplittingStack;
 
@@ -86,7 +85,6 @@ public class DashboardStack extends NestedStack {
         dashboard = Dashboard.Builder.create(this, "dashboard").dashboardName(instanceId).build();
 
         addErrorMetrics();
-        addIngestWidgets();
         addTableWidgets();
         addCompactionWidgets();
 
@@ -101,12 +99,12 @@ public class DashboardStack extends NestedStack {
         return "https://" + this.getRegion() + ".console.aws.amazon.com/cloudwatch/home#dashboards:name=" + instanceId + ";expand=true";
     }
 
+    public void addErrorMetric(String label, Queue errorQueue) {
+        errorMetrics.add(errorQueue.metricApproximateNumberOfMessagesVisible(
+                MetricOptions.builder().label("Ingest Errors").period(window).statistic("Sum").build()));
+    }
+
     private void addErrorMetrics() {
-        List<IMetric> errorMetrics = new ArrayList<>();
-        if (null != ingestStack) {
-            errorMetrics.add(ingestStack.getErrorQueue().metricApproximateNumberOfMessagesVisible(
-                    MetricOptions.builder().label("Ingest Errors").period(window).statistic("Sum").build()));
-        }
         if (null != compactionStack) {
             errorMetrics.add(compactionStack.getCompactionDeadLetterQueue().metricApproximateNumberOfMessagesVisible(
                     MetricOptions.builder().label("Compaction Errors").period(window).statistic("Sum").build()));
@@ -116,6 +114,9 @@ public class DashboardStack extends NestedStack {
                     MetricOptions.builder().label("Partition Split Errors").period(window).statistic("Sum").build()));
         }
 
+    }
+
+    public void addErrorMetricsWidgets() {
         if (!errorMetrics.isEmpty()) {
             dashboard.addWidgets(
                     SingleValueWidget.Builder.create()
@@ -126,11 +127,7 @@ public class DashboardStack extends NestedStack {
         }
     }
 
-    private void addIngestWidgets() {
-        if (ingestStack == null) {
-            return;
-        }
-
+    public void addIngestWidgets(Queue ingestJobQueue) {
         dashboard.addWidgets(
                 TextWidget.Builder.create()
                         .markdown("## Standard Ingest")
@@ -140,7 +137,7 @@ public class DashboardStack extends NestedStack {
                 GraphWidget.Builder.create()
                         .view(GraphWidgetView.TIME_SERIES)
                         .title("NumberOfJobsSubmitted")
-                        .left(Collections.singletonList(ingestStack.getIngestJobQueue().metricNumberOfMessagesSent(MetricOptions.builder()
+                        .left(Collections.singletonList(ingestJobQueue.metricNumberOfMessagesSent(MetricOptions.builder()
                                 .unit(Unit.COUNT)
                                 .period(window)
                                 .statistic("Sum")
@@ -150,7 +147,7 @@ public class DashboardStack extends NestedStack {
                 GraphWidget.Builder.create()
                         .view(GraphWidgetView.TIME_SERIES)
                         .title("NumberOfJobsWaiting")
-                        .left(Collections.singletonList(ingestStack.getIngestJobQueue().metricApproximateNumberOfMessagesVisible(MetricOptions.builder()
+                        .left(Collections.singletonList(ingestJobQueue.metricApproximateNumberOfMessagesVisible(MetricOptions.builder()
                                 .unit(Unit.COUNT)
                                 .period(window)
                                 .statistic("Average")
@@ -160,7 +157,7 @@ public class DashboardStack extends NestedStack {
                 GraphWidget.Builder.create()
                         .view(GraphWidgetView.TIME_SERIES)
                         .title("AgeOfOldestWaitingJob")
-                        .left(Collections.singletonList(ingestStack.getIngestJobQueue().metricApproximateAgeOfOldestMessage(MetricOptions.builder()
+                        .left(Collections.singletonList(ingestJobQueue.metricApproximateAgeOfOldestMessage(MetricOptions.builder()
                                 .unit(Unit.SECONDS)
                                 .period(window)
                                 .statistic("Maximum")
