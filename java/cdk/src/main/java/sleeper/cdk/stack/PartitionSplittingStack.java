@@ -42,6 +42,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 
 import static sleeper.cdk.Utils.createAlarmForDlq;
 import static sleeper.cdk.Utils.createLambdaLogGroup;
@@ -82,7 +83,7 @@ public class PartitionSplittingStack extends NestedStack {
             BuiltJars jars,
             Topic topic,
             CoreStacks coreStacks,
-            DashboardStack dashboardStack) {
+            Optional<DashboardStack> dashboardStack) {
         super(scope, id);
 
         // Jars bucket
@@ -137,7 +138,7 @@ public class PartitionSplittingStack extends NestedStack {
         return new QueueAndDlq(partitionSplittingBatchQueue, partitionSplittingBatchDlq);
     }
 
-    private QueueAndDlq createJobQueues(InstanceProperties instanceProperties, Topic topic, DashboardStack dashboardStack) {
+    private QueueAndDlq createJobQueues(InstanceProperties instanceProperties, Topic topic, Optional<DashboardStack> dashboardStackOpt) {
         // Create queue for partition splitting job definitions
         Queue partitionSplittingJobDlq = Queue.Builder
                 .create(this, "PartitionSplittingDeadLetterQueue")
@@ -162,10 +163,10 @@ public class PartitionSplittingStack extends NestedStack {
                 "Alarms if there are any messages on the dead letter queue for the partition splitting queue",
                 partitionSplittingJobDlq, topic);
 
-        if (dashboardStack != null) {
+        dashboardStackOpt.ifPresent(dashboardStack -> {
             dashboardStack.addPartitionSplittingMetrics(partitionSplittingJobQueue);
             dashboardStack.addErrorMetric("Partition Split Errors", partitionSplittingJobDlq);
-        }
+        });
 
         CfnOutputProps partitionSplittingQueueOutputProps = new CfnOutputProps.Builder()
                 .value(partitionSplittingJobQueue.getQueueUrl())

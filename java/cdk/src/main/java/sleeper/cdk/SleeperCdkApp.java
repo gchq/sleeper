@@ -60,6 +60,7 @@ import sleeper.cdk.stack.bulkimport.PersistentEmrBulkImportStack;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -88,7 +89,7 @@ public class SleeperCdkApp extends Stack {
     private EksBulkImportStack eksBulkImportStack;
     private IngestStatusStoreStack ingestStatusStoreStack;
     private QueryQueueStack queryQueueStack;
-    private DashboardStack dashboardStack;
+    private Optional<DashboardStack> dashboardStackOpt = Optional.empty();
 
     public SleeperCdkApp(App app, String id, StackProps props, InstanceProperties instanceProperties, BuiltJars jars) {
         super(app, id, props);
@@ -146,7 +147,7 @@ public class SleeperCdkApp extends Stack {
             new TableMetricsStack(this, "TableMetrics", instanceProperties, jars, topicStack.getTopic(), coreStacks);
         }
         if (optionalStacks.contains(DashboardStack.class.getSimpleName())) {
-            dashboardStack = new DashboardStack(this, "Dashboard", instanceProperties);
+            dashboardStackOpt = Optional.of(new DashboardStack(this, "Dashboard", instanceProperties));
         }
         // Stack for Athena analytics
         if (optionalStacks.contains(AthenaStack.class.getSimpleName())) {
@@ -226,7 +227,7 @@ public class SleeperCdkApp extends Stack {
                     instanceProperties, jars,
                     topicStack.getTopic(),
                     coreStacks,
-                    dashboardStack);
+                    dashboardStackOpt);
         }
 
         // Stack to split partitions
@@ -236,7 +237,7 @@ public class SleeperCdkApp extends Stack {
                     instanceProperties, jars,
                     topicStack.getTopic(),
                     coreStacks,
-                    dashboardStack);
+                    dashboardStackOpt);
         }
 
         QueryStack queryStack = null;
@@ -266,7 +267,7 @@ public class SleeperCdkApp extends Stack {
                     topicStack.getTopic(),
                     coreStacks,
                     ingestStatusStoreStack,
-                    dashboardStack);
+                    dashboardStackOpt);
         }
 
         // Aggregate ingest stacks
@@ -290,9 +291,7 @@ public class SleeperCdkApp extends Stack {
                     queryQueueStack);
         }
 
-        if (dashboardStack != null) {
-            dashboardStack.addWidgets();
-        }
+        dashboardStackOpt.ifPresent(DashboardStack::addWidgets);
         this.generateProperties();
         addTags(app);
     }

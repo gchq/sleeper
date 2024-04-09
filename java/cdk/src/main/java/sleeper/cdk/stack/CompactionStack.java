@@ -85,6 +85,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 import static sleeper.cdk.Utils.createAlarmForDlq;
@@ -158,7 +159,7 @@ public class CompactionStack extends NestedStack {
             BuiltJars jars,
             Topic topic,
             CoreStacks coreStacks,
-            DashboardStack dashboardStack) {
+            Optional<DashboardStack> dashboardStackOpt) {
         super(scope, id);
         this.instanceProperties = instanceProperties;
         statusStore = CompactionStatusStoreResources.from(this, instanceProperties);
@@ -180,7 +181,7 @@ public class CompactionStack extends NestedStack {
         LambdaCode taskCreatorJar = jars.lambdaCode(BuiltJar.COMPACTION_TASK_CREATOR, jarsBucket);
 
         // SQS queue for the compaction jobs
-        Queue compactionJobsQueue = sqsQueueForCompactionJobs(topic, dashboardStack);
+        Queue compactionJobsQueue = sqsQueueForCompactionJobs(topic, dashboardStackOpt);
 
         // Lambda to periodically check for compaction jobs that should be created
         lambdaToCreateCompactionJobsBatchedViaSQS(coreStacks, topic, jarsBucket, jobCreatorJar, compactionJobsQueue);
@@ -194,7 +195,7 @@ public class CompactionStack extends NestedStack {
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
-    private Queue sqsQueueForCompactionJobs(Topic topic, DashboardStack dashboardStack) {
+    private Queue sqsQueueForCompactionJobs(Topic topic, Optional<DashboardStack> dashboardStackOpt) {
         // Create queue for compaction job definitions
         String dlQueueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-CompactionJobDLQ");
         compactionDLQ = Queue.Builder
@@ -225,10 +226,10 @@ public class CompactionStack extends NestedStack {
                 "Alarms if there are any messages on the dead letter queue for the compactions queue",
                 compactionDLQ, topic);
 
-        if (dashboardStack != null) {
+        dashboardStackOpt.ifPresent(dashboardStack -> {
             dashboardStack.addCompactionMetrics(compactionJobQ);
             dashboardStack.addErrorMetric("Compaction Errors", compactionDLQ);
-        }
+        });
 
         CfnOutputProps compactionJobDefinitionsQueueProps = new CfnOutputProps.Builder()
                 .value(compactionJobQ.getQueueUrl())

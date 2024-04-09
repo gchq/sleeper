@@ -55,6 +55,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Optional;
 
 import static sleeper.cdk.Utils.createAlarmForDlq;
 import static sleeper.cdk.Utils.createLambdaLogGroup;
@@ -100,7 +101,7 @@ public class IngestStack extends NestedStack {
             Topic topic,
             CoreStacks coreStacks,
             IngestStatusStoreStack statusStoreStack,
-            DashboardStack dashboardStack) {
+            Optional<DashboardStack> dashboardStackOpt) {
         super(scope, id);
         this.instanceProperties = instanceProperties;
         this.statusStore = statusStoreStack.getResources();
@@ -118,7 +119,7 @@ public class IngestStack extends NestedStack {
         LambdaCode taskCreatorJar = jars.lambdaCode(BuiltJar.INGEST_STARTER, jarsBucket);
 
         // SQS queue for ingest jobs
-        sqsQueueForIngestJobs(coreStacks, topic, dashboardStack);
+        sqsQueueForIngestJobs(coreStacks, topic, dashboardStackOpt);
 
         // ECS cluster for ingest tasks
         ecsClusterForIngestTasks(jarsBucket, coreStacks, ingestJobQueue);
@@ -129,7 +130,7 @@ public class IngestStack extends NestedStack {
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
-    private Queue sqsQueueForIngestJobs(CoreStacks coreStacks, Topic topic, DashboardStack dashboardStack) {
+    private Queue sqsQueueForIngestJobs(CoreStacks coreStacks, Topic topic, Optional<DashboardStack> dashboardStackOpt) {
         // Create queue for ingest job definitions
         String dlQueueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-IngestJobDLQ");
 
@@ -159,10 +160,10 @@ public class IngestStack extends NestedStack {
                 "Alarms if there are any messages on the dead letter queue for the ingest queue",
                 ingestDLQ, topic);
 
-        if (dashboardStack != null) {
+        dashboardStackOpt.ifPresent(dashboardStack -> {
             dashboardStack.addIngestMetrics(ingestJobQueue);
             dashboardStack.addErrorMetric("Ingest Errors", ingestDLQ);
-        }
+        });
 
         CfnOutputProps ingestJobQueueProps = new CfnOutputProps.Builder()
                 .value(ingestJobQueue.getQueueUrl())
