@@ -20,11 +20,6 @@ import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.CfnOutputProps;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
-import software.amazon.awscdk.services.cloudwatch.Alarm;
-import software.amazon.awscdk.services.cloudwatch.ComparisonOperator;
-import software.amazon.awscdk.services.cloudwatch.MetricOptions;
-import software.amazon.awscdk.services.cloudwatch.TreatMissingData;
-import software.amazon.awscdk.services.cloudwatch.actions.SnsAction;
 import software.amazon.awscdk.services.ec2.IVpc;
 import software.amazon.awscdk.services.ec2.Vpc;
 import software.amazon.awscdk.services.ec2.VpcLookupOptions;
@@ -61,6 +56,7 @@ import java.util.Collections;
 import java.util.Locale;
 import java.util.Objects;
 
+import static sleeper.cdk.Utils.createAlarmForDlq;
 import static sleeper.cdk.Utils.createLambdaLogGroup;
 import static sleeper.cdk.Utils.shouldDeployPaused;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_CLOUDWATCH_RULE;
@@ -101,8 +97,8 @@ public class IngestStack extends NestedStack {
             String id,
             InstanceProperties instanceProperties,
             BuiltJars jars,
-            CoreStacks coreStacks,
             Topic topic,
+            CoreStacks coreStacks,
             IngestStatusStoreStack statusStoreStack) {
         super(scope, id);
         this.instanceProperties = instanceProperties;
@@ -158,18 +154,9 @@ public class IngestStack extends NestedStack {
         ingestJobQueue.grantSendMessages(coreStacks.getIngestPolicy());
 
         // Add alarm to send message to SNS if there are any messages on the dead letter queue
-        Alarm ingestAlarm = Alarm.Builder
-                .create(this, "IngestAlarm")
-                .alarmDescription("Alarms if there are any messages on the dead letter queue for the ingest queue")
-                .metric(ingestDLQ.metricApproximateNumberOfMessagesVisible()
-                        .with(MetricOptions.builder().statistic("Sum").period(Duration.seconds(60)).build()))
-                .comparisonOperator(ComparisonOperator.GREATER_THAN_THRESHOLD)
-                .threshold(0)
-                .evaluationPeriods(1)
-                .datapointsToAlarm(1)
-                .treatMissingData(TreatMissingData.IGNORE)
-                .build();
-        ingestAlarm.addAlarmAction(new SnsAction(topic));
+        createAlarmForDlq(this, "IngestAlarm",
+                "Alarms if there are any messages on the dead letter queue for the ingest queue",
+                ingestDLQ, topic);
 
         CfnOutputProps ingestJobQueueProps = new CfnOutputProps.Builder()
                 .value(ingestJobQueue.getQueueUrl())

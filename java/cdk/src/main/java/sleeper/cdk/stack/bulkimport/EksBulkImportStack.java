@@ -22,11 +22,6 @@ import org.apache.commons.io.IOUtils;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.cdk.lambdalayer.kubectl.v24.KubectlV24Layer;
-import software.amazon.awscdk.services.cloudwatch.ComparisonOperator;
-import software.amazon.awscdk.services.cloudwatch.CreateAlarmOptions;
-import software.amazon.awscdk.services.cloudwatch.MetricOptions;
-import software.amazon.awscdk.services.cloudwatch.TreatMissingData;
-import software.amazon.awscdk.services.cloudwatch.actions.SnsAction;
 import software.amazon.awscdk.services.ec2.ISubnet;
 import software.amazon.awscdk.services.ec2.IVpc;
 import software.amazon.awscdk.services.ec2.Subnet;
@@ -51,7 +46,7 @@ import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
-import software.amazon.awscdk.services.sns.ITopic;
+import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.amazon.awscdk.services.stepfunctions.Choice;
@@ -71,7 +66,6 @@ import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.stack.CoreStacks;
 import sleeper.cdk.stack.IngestStatusStoreStack;
-import sleeper.cdk.stack.TopicStack;
 import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
@@ -84,6 +78,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 
+import static sleeper.cdk.Utils.createAlarmForDlq;
 import static sleeper.cdk.Utils.createLambdaLogGroup;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_ARN;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
@@ -105,8 +100,7 @@ public final class EksBulkImportStack extends NestedStack {
 
     public EksBulkImportStack(
             Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars,
-            BulkImportBucketStack importBucketStack, CoreStacks coreStacks,
-            TopicStack errorsTopicStack, IngestStatusStoreStack statusStoreStack) {
+            Topic errorsTopic, BulkImportBucketStack importBucketStack, CoreStacks coreStacks, IngestStatusStoreStack statusStoreStack) {
         super(scope, id);
 
         String instanceId = instanceProperties.get(ID);
@@ -121,19 +115,9 @@ public final class EksBulkImportStack extends NestedStack {
                 .queue(queueForDLs)
                 .build();
 
-        queueForDLs.metricApproximateNumberOfMessagesVisible().with(MetricOptions.builder()
-                .period(Duration.seconds(60))
-                .statistic("Sum")
-                .build())
-                .createAlarm(this, "BulkImportEKSUndeliveredJobsAlarm", CreateAlarmOptions.builder()
-                        .alarmDescription("Alarms if there are any messages that have failed validation or failed to be passed to the statemachine")
-                        .evaluationPeriods(1)
-                        .comparisonOperator(ComparisonOperator.GREATER_THAN_THRESHOLD)
-                        .threshold(0)
-                        .datapointsToAlarm(1)
-                        .treatMissingData(TreatMissingData.IGNORE)
-                        .build())
-                .addAlarmAction(new SnsAction(errorsTopicStack.getTopic()));
+        createAlarmForDlq(this, "BulkImportEKSUndeliveredJobsAlarm",
+                "Alarms if there are any messages that have failed validation or failed to be passed to the statemachine",
+                queueForDLs, errorsTopic);
 
         bulkImportJobQueue = Queue.Builder
                 .create(this, "BulkImportEKSJobQueue")
@@ -218,7 +202,7 @@ public final class EksBulkImportStack extends NestedStack {
                 .forEach(sa -> sa.getNode().addDependency(namespace));
         coreStacks.grantIngest(sparkServiceAccount.getRole());
 
-        StateMachine stateMachine = createStateMachine(bulkImportCluster, instanceProperties, errorsTopicStack.getTopic());
+        StateMachine stateMachine = createStateMachine(bulkImportCluster, instanceProperties, errorsTopic);
         instanceProperties.set(CdkDefinedInstanceProperty.BULK_IMPORT_EKS_STATE_MACHINE_ARN, stateMachine.getStateMachineArn());
 
         bulkImportCluster.getAwsAuth().addRoleMapping(stateMachine.getRole(), AwsAuthMapping.builder()
@@ -244,8 +228,7 @@ public final class EksBulkImportStack extends NestedStack {
                 .build());
     }
 
-    private StateMachine createStateMachine(Cluster cluster, InstanceProperties instanceProperties,
-            ITopic errorsTopic) {
+    private StateMachine createStateMachine(Cluster cluster, InstanceProperties instanceProperties, Topic errorsTopic) {
         String imageName = instanceProperties.get(ACCOUNT) +
                 ".dkr.ecr." +
                 instanceProperties.get(REGION) +

@@ -16,6 +16,8 @@
 package sleeper.query.runner.tracker;
 
 import com.amazonaws.auth.AWSCredentials;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,6 +34,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class WebSocketQueryStatusReportDestination extends WebSocketOutput implements QueryStatusReportListener {
+    private final Gson serde = new GsonBuilder().create();
     private static final Logger LOGGER = LoggerFactory.getLogger(WebSocketQueryStatusReportDestination.class);
 
     public WebSocketQueryStatusReportDestination(String region, String endpoint, String connectionId) {
@@ -115,7 +118,7 @@ public class WebSocketQueryStatusReportDestination extends WebSocketOutput imple
         record.put("queryId", queryId);
 
         try {
-            sendJson(record);
+            sendString(serde.toJson(record));
         } catch (IOException e) {
             LOGGER.error("Unable to send query status report to websocket", e);
         }

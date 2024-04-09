@@ -18,13 +18,21 @@ package sleeper.cdk;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.internal.BucketNameUtils;
+import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.Tags;
+import software.amazon.awscdk.services.cloudwatch.Alarm;
+import software.amazon.awscdk.services.cloudwatch.ComparisonOperator;
+import software.amazon.awscdk.services.cloudwatch.MetricOptions;
+import software.amazon.awscdk.services.cloudwatch.TreatMissingData;
+import software.amazon.awscdk.services.cloudwatch.actions.SnsAction;
 import software.amazon.awscdk.services.ecs.AwsLogDriverProps;
 import software.amazon.awscdk.services.ecs.LogDriver;
 import software.amazon.awscdk.services.logs.LogGroup;
 import software.amazon.awscdk.services.logs.RetentionDays;
+import software.amazon.awscdk.services.sns.Topic;
+import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
@@ -281,6 +289,21 @@ public class Utils {
         } else {
             return size;
         }
+    }
+
+    public static void createAlarmForDlq(Construct scope, String name, String description, Queue dlq, Topic topic) {
+        Alarm alarm = Alarm.Builder
+                .create(scope, name)
+                .alarmDescription(description)
+                .metric(dlq.metricApproximateNumberOfMessagesVisible()
+                        .with(MetricOptions.builder().statistic("Sum").period(Duration.seconds(60)).build()))
+                .comparisonOperator(ComparisonOperator.GREATER_THAN_THRESHOLD)
+                .threshold(0)
+                .evaluationPeriods(1)
+                .datapointsToAlarm(1)
+                .treatMissingData(TreatMissingData.IGNORE)
+                .build();
+        alarm.addAlarmAction(new SnsAction(topic));
     }
 
 }
