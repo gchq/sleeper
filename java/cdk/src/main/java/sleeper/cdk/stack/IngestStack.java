@@ -159,7 +159,7 @@ public class IngestStack extends NestedStack {
                 "Alarms if there are any messages on the dead letter queue for the ingest queue",
                 ingestDLQ, topic);
 
-        dashboardStack.addIngestWidgets(ingestJobQueue);
+        dashboardStack.addIngestMetrics(ingestJobQueue);
         dashboardStack.addErrorMetric("Ingest Errors", ingestDLQ);
 
         CfnOutputProps ingestJobQueueProps = new CfnOutputProps.Builder()

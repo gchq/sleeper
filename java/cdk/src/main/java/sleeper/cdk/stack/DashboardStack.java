@@ -61,6 +61,9 @@ public class DashboardStack extends NestedStack {
     private final List<Metric> compactionAndSplittingJobsSubmitted = new ArrayList<>();
     private final List<Metric> compactionAndSplittingJobsWaiting = new ArrayList<>();
     private final List<Metric> oldestCompactionAndSplittingJobs = new ArrayList<>();
+    private Metric ingestJobsSubmitted;
+    private Metric ingestJobsWaiting;
+    private Metric oldestIngestJob;
 
     public DashboardStack(Construct scope, String id, InstanceProperties instanceProperties) {
         super(scope, id);
@@ -77,8 +80,6 @@ public class DashboardStack extends NestedStack {
         window = Duration.minutes(timeWindowInMinutes);
         dashboard = Dashboard.Builder.create(this, "dashboard").dashboardName(instanceId).build();
 
-        addTableWidgets();
-
         CfnOutput.Builder.create(this, "DashboardUrl")
                 .value(constructUrl())
                 .build();
@@ -88,6 +89,13 @@ public class DashboardStack extends NestedStack {
 
     private String constructUrl() {
         return "https://" + this.getRegion() + ".console.aws.amazon.com/cloudwatch/home#dashboards:name=" + instanceId + ";expand=true";
+    }
+
+    public void addWidgets() {
+        addErrorMetricsWidgets();
+        addIngestWidgets();
+        addTableWidgets();
+        addCompactionWidgets();
     }
 
     public void addErrorMetric(String label, Queue errorQueue) {
@@ -106,7 +114,25 @@ public class DashboardStack extends NestedStack {
         }
     }
 
-    public void addIngestWidgets(Queue jobQueue) {
+    public void addIngestMetrics(Queue jobQueue) {
+        ingestJobsSubmitted = jobQueue.metricNumberOfMessagesSent(MetricOptions.builder()
+                .unit(Unit.COUNT)
+                .period(window)
+                .statistic("Sum")
+                .build());
+        ingestJobsWaiting = jobQueue.metricApproximateNumberOfMessagesVisible(MetricOptions.builder()
+                .unit(Unit.COUNT)
+                .period(window)
+                .statistic("Average")
+                .build());
+        oldestIngestJob = jobQueue.metricApproximateAgeOfOldestMessage(MetricOptions.builder()
+                .unit(Unit.SECONDS)
+                .period(window)
+                .statistic("Maximum")
+                .build());
+    }
+
+    public void addIngestWidgets() {
         dashboard.addWidgets(
                 TextWidget.Builder.create()
                         .markdown("## Standard Ingest")
@@ -116,31 +142,19 @@ public class DashboardStack extends NestedStack {
                 GraphWidget.Builder.create()
                         .view(GraphWidgetView.TIME_SERIES)
                         .title("NumberOfJobsSubmitted")
-                        .left(Collections.singletonList(jobQueue.metricNumberOfMessagesSent(MetricOptions.builder()
-                                .unit(Unit.COUNT)
-                                .period(window)
-                                .statistic("Sum")
-                                .build())))
+                        .left(List.of(ingestJobsSubmitted))
                         .width(6)
                         .build(),
                 GraphWidget.Builder.create()
                         .view(GraphWidgetView.TIME_SERIES)
                         .title("NumberOfJobsWaiting")
-                        .left(Collections.singletonList(jobQueue.metricApproximateNumberOfMessagesVisible(MetricOptions.builder()
-                                .unit(Unit.COUNT)
-                                .period(window)
-                                .statistic("Average")
-                                .build())))
+                        .left(List.of(ingestJobsWaiting))
                         .width(6)
                         .build(),
                 GraphWidget.Builder.create()
                         .view(GraphWidgetView.TIME_SERIES)
                         .title("AgeOfOldestWaitingJob")
-                        .left(Collections.singletonList(jobQueue.metricApproximateAgeOfOldestMessage(MetricOptions.builder()
-                                .unit(Unit.SECONDS)
-                                .period(window)
-                                .statistic("Maximum")
-                                .build())))
+                        .left(List.of(oldestIngestJob))
                         .width(6)
                         .build(),
                 GraphWidget.Builder.create()
