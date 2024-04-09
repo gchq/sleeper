@@ -74,7 +74,7 @@ class TransactionLogPartitionStore implements PartitionStore {
     }
 
     @Override
-    public void fixTime(Instant time) {
+    public void fixPartitionUpdateTime(Instant time) {
         clock = Clock.fixed(time, ZoneId.of("UTC"));
     }
 

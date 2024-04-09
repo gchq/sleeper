@@ -75,7 +75,7 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public void fixTime(Instant time) {
+    public void fixFileUpdateTime(Instant time) {
         clock = Clock.fixed(time, ZoneId.of("UTC"));
     }
 

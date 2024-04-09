@@ -253,5 +253,5 @@ public interface FileReferenceStore {
      *
      * @param time Time to set to be the current time
      */
-    void fixTime(Instant time);
+    void fixFileUpdateTime(Instant time);
 }

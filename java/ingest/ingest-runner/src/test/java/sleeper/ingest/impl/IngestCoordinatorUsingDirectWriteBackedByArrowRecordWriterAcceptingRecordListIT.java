@@ -64,7 +64,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
         StateStore stateStore = inMemoryStateStoreWithFixedPartitions(tree.getAllPartitions());
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString();
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
-        stateStore.fixTime(stateStoreUpdateTime);
+        stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile", "rightFile"))
                 .stateStore(stateStore)
@@ -117,7 +117,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
         StateStore stateStore = inMemoryStateStoreWithFixedPartitions(tree.getAllPartitions());
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString();
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
-        stateStore.fixTime(stateStoreUpdateTime);
+        stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile1", "rightFile1", "leftFile2", "rightFile2"))
                 .stateStore(stateStore)
@@ -175,7 +175,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
                         .buildList());
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString();
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
-        stateStore.fixTime(stateStoreUpdateTime);
+        stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile", "rightFile"))
                 .stateStore(stateStore)

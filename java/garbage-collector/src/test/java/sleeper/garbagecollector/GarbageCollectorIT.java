@@ -99,7 +99,7 @@ public class GarbageCollectorIT {
             // Given
             Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
             Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
-            stateStore.fixTime(oldEnoughTime);
+            stateStore.fixFileUpdateTime(oldEnoughTime);
             table.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, 10);
             Path oldFile = tempDir.resolve("old-file.parquet");
             Path newFile = tempDir.resolve("new-file.parquet");
@@ -119,7 +119,7 @@ public class GarbageCollectorIT {
             // Given
             Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
             Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
-            stateStore.fixTime(oldEnoughTime);
+            stateStore.fixFileUpdateTime(oldEnoughTime);
             table.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, 10);
             Path filePath = tempDir.resolve("test-file.parquet");
             createActiveFile(filePath, stateStore);
@@ -138,7 +138,7 @@ public class GarbageCollectorIT {
             // Given
             Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
             Instant notOldEnoughTime = currentTime.minus(Duration.ofMinutes(5));
-            stateStore.fixTime(notOldEnoughTime);
+            stateStore.fixFileUpdateTime(notOldEnoughTime);
             table.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, 10);
             Path oldFile = tempDir.resolve("old-file.parquet");
             Path newFile = tempDir.resolve("new-file.parquet");
@@ -160,7 +160,7 @@ public class GarbageCollectorIT {
             // Given
             Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
             Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
-            stateStore.fixTime(oldEnoughTime);
+            stateStore.fixFileUpdateTime(oldEnoughTime);
             table.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, 10);
             Path oldFile1 = tempDir.resolve("old-file-1.parquet");
             Path oldFile2 = tempDir.resolve("old-file-2.parquet");
@@ -189,7 +189,7 @@ public class GarbageCollectorIT {
             instanceProperties.setNumber(GARBAGE_COLLECTOR_BATCH_SIZE, 2);
             Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
             Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
-            stateStore.fixTime(oldEnoughTime);
+            stateStore.fixFileUpdateTime(oldEnoughTime);
             table.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, 10);
             Path oldFile1 = tempDir.resolve("old-file-1.parquet");
             Path oldFile2 = tempDir.resolve("old-file-2.parquet");
@@ -223,7 +223,7 @@ public class GarbageCollectorIT {
             // Given
             Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
             Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
-            stateStore.fixTime(oldEnoughTime);
+            stateStore.fixFileUpdateTime(oldEnoughTime);
             table.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, 10);
             stateStore.addFilesWithReferences(List.of(
                     fileWithNoReferences("/tmp/not-a-file.parquet")));
@@ -376,7 +376,7 @@ public class GarbageCollectorIT {
 
     private StateStore stateStoreWithFixedTime(TableProperties table, Instant fixedTime) {
         StateStore store = stateStore(table);
-        store.fixTime(fixedTime);
+        store.fixFileUpdateTime(fixedTime);
         return store;
     }
 

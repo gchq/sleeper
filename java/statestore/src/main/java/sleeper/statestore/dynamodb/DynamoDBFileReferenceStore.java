@@ -623,7 +623,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
      *
      * @param now Time to set to be the current time
      */
-    public void fixTime(Instant now) {
+    public void fixFileUpdateTime(Instant now) {
         clock = Clock.fixed(now, ZoneId.of("UTC"));
     }
 

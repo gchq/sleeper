@@ -52,7 +52,7 @@ public class InMemoryTransactionLogStateStoreTestBase {
                 .retryBackoff(new ExponentialBackoffWithJitter(
                         TransactionLogStateStore.RETRY_WAIT_RANGE, fixJitterSeed(), noWaits()))
                 .build();
-        store.fixTime(DEFAULT_UPDATE_TIME);
+        store.fixFileUpdateTime(DEFAULT_UPDATE_TIME);
     }
 
     protected void splitPartition(String parentId, String leftId, String rightId, long splitPoint) throws StateStoreException {

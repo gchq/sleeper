@@ -83,6 +83,6 @@ public interface PartitionStore {
      *
      * @param time Time to set to be the current time
      */
-    default void fixTime(Instant time) {
+    default void fixPartitionUpdateTime(Instant time) {
     }
 }

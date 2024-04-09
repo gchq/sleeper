@@ -144,8 +144,12 @@ public class DelegatingStateStore implements StateStore {
     }
 
     @Override
-    public void fixTime(Instant now) {
-        fileReferenceStore.fixTime(now);
-        partitionStore.fixTime(now);
+    public void fixFileUpdateTime(Instant now) {
+        fileReferenceStore.fixFileUpdateTime(now);
+    }
+
+    @Override
+    public void fixPartitionUpdateTime(Instant now) {
+        partitionStore.fixPartitionUpdateTime(now);
     }
 }
