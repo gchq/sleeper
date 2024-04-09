@@ -280,7 +280,8 @@ public class SleeperCdkApp extends Stack {
                     instanceProperties, jars,
                     topicStack.getTopic(),
                     coreStacks,
-                    ingestStacks);
+                    ingestStacks,
+                    dashboardStackOpt);
         }
 
         if (optionalStacks.contains(KeepLambdaWarmStack.class.getSimpleName())) {
