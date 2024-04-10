@@ -34,7 +34,7 @@ public class LoggedDuration {
     }
 
     /**
-     * Returns an instance of this class which formats a duration with full output.
+     * Returns an instance of this class which formats a duration as a string with full output.
      * E.g "1 hour 2 minutes 3 seconds"
      *
      * @param  start the start time to calculate the duration from
@@ -46,7 +46,7 @@ public class LoggedDuration {
     }
 
     /**
-     * Returns an instance of this class which formats a duration with short output.
+     * Returns an instance of this class which formats a duration as a string with short output.
      * E.g "1h 2m 3s"
      *
      * @param  start the start time to calculate the duration from
@@ -58,7 +58,7 @@ public class LoggedDuration {
     }
 
     /**
-     * Returns an instance of this class which formats a duration with full output.
+     * Returns an instance of this class which formats a duration as a string with full output.
      * E.g "1 hour 2 minutes 3 seconds"
      *
      * @param  duration the duration
@@ -69,7 +69,7 @@ public class LoggedDuration {
     }
 
     /**
-     * Returns an instance of this class which formats a duration with short output.
+     * Returns an instance of this class which formats a duration as a string with short output.
      * E.g "1h 2m 3s"
      *
      * @param  duration the duration
