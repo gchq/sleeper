@@ -20,6 +20,7 @@ import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -89,8 +90,8 @@ public class PartitionFactory {
         Range parentRange = parentRegion.getRange(splitField.getName());
         Range leftRange = rangeFactory.createRange(splitField, parentRange.getMin(), splitPoint);
         Range rightRange = rangeFactory.createRange(splitField, splitPoint, parentRange.getMax());
-        Partition.Builder leftPartition = partition(leftId, parentRegion.childWithRange(leftRange));
-        Partition.Builder rightPartition = partition(rightId, parentRegion.childWithRange(rightRange));
+        Partition.Builder leftPartition = partition(leftId, copyRegionWithRange(parentRegion, leftRange));
+        Partition.Builder rightPartition = partition(rightId, copyRegionWithRange(parentRegion, rightRange));
         leftPartition.parentPartitionId(parent.getId());
         rightPartition.parentPartitionId(parent.getId());
         Partition.Builder updatedParent = parent.toBuilder()
@@ -101,6 +102,12 @@ public class PartitionFactory {
                 .parent(updatedParent)
                 .children(List.of(leftPartition, rightPartition))
                 .build();
+    }
+
+    private Region copyRegionWithRange(Region parentRegion, Range childRange) {
+        List<Range> ranges = new ArrayList<>(parentRegion.getRanges());
+        ranges.add(childRange);
+        return new Region(ranges);
     }
 
     /**
