@@ -157,6 +157,7 @@
         <jakarta.xml.bind.version>2.3.3</jakarta.xml.bind.version>
         <jungrapht-visualization.version>1.4</jungrapht-visualization.version>
         <jgrapht.version>1.5.2</jgrapht.version>
+        <apfloat.version>1.13.0</apfloat.version>
         <!-- Testing -->
         <junit.version>5.10.2</junit.version>
         <junit.platform.version>1.10.2</junit.platform.version>
@@ -605,6 +606,11 @@
                 <groupId>org.jgrapht</groupId>
                 <artifactId>jgrapht-io</artifactId>
                 <version>${jgrapht.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apfloat</groupId>
+                <artifactId>apfloat</artifactId>
+                <version>${apfloat.version}</version>
             </dependency>
             <!-- Apache commons -->
             <dependency>
