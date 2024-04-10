@@ -31,8 +31,8 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
- * A convenience class for specifying partitions. This includes methods to define a tree to be readable in a test,
- * including shorthand which would not be used with {@link PartitionFactory}.
+ * A convenience class for specifying a partition tree. This includes methods to define a tree to be readable in a test,
+ * including shorthand which would not be possible with {@link PartitionFactory}.
  */
 public class PartitionsBuilder {
 
@@ -45,14 +45,40 @@ public class PartitionsBuilder {
         factory = new PartitionFactory(schema);
     }
 
+    /**
+     * Create a tree with just one partition. This will be a root partition and the only leaf partition.
+     *
+     * @param  id unique ID for the partition
+     * @return    the builder
+     */
     public PartitionsBuilder singlePartition(String id) {
         return leavesWithSplits(Collections.singletonList(id), Collections.emptyList());
     }
 
+    /**
+     * Create partially constructed leaf partitions. Parent partitions must be defined separately that join the
+     * partitions together into a tree.
+     *
+     * @param  ids    unique IDs for the leaves
+     * @param  splits values of the first row key, for split points in between the new leaf partitions
+     * @return        the builder
+     * @see           #anyTreeJoiningAllLeaves()
+     * @see           #parentJoining
+     */
     public PartitionsBuilder leavesWithSplits(List<String> ids, List<Object> splits) {
         return leavesWithSplitsOnDimension(0, ids, splits);
     }
 
+    /**
+     * Create partially constructed leaf partitions split on a certain row key. Parent partitions must be defined
+     * separately that join the partitions together into a tree.
+     *
+     * @param  dimension index in the schema of the row key the partitions are split on
+     * @param  ids       unique IDs for the leaves
+     * @param  splits    values of the row key at the specified dimension, for split points in between the new leaf
+     *                   partitions
+     * @return           the builder
+     */
     public PartitionsBuilder leavesWithSplitsOnDimension(int dimension, List<String> ids, List<Object> splits) {
         List<Region> regions = PartitionsFromSplitPoints.leafRegionsFromDimensionSplitPoints(schema, dimension, splits);
         if (ids.size() != regions.size()) {
@@ -64,6 +90,13 @@ public class PartitionsBuilder {
         return this;
     }
 
+    /**
+     * Create parent partitions that join the previously specified leaf partitions. This will create as many layers as
+     * are required to join into a single root partition. The leaf partitions must cover the full range of the table,
+     * and must be specified in order of lowest to highest values.
+     *
+     * @return the builder
+     */
     public PartitionsBuilder anyTreeJoiningAllLeaves() {
         List<Partition.Builder> mapValues = new ArrayList<>(partitionById.values());
         if (mapValues.stream().anyMatch(p -> !p.build().isLeafPartition())) {
@@ -78,6 +111,15 @@ public class PartitionsBuilder {
         return this;
     }
 
+    /**
+     * Create a parent partition that joins two previously specified partitions. The left and right partition must
+     * share a common split point.
+     *
+     * @param  parentId unique ID for the new partition
+     * @param  leftId   the ID of the partition covering the lower range of values
+     * @param  rightId  the ID of the partition covering the higher range of values
+     * @return          the builder
+     */
     public PartitionsBuilder parentJoining(String parentId, String leftId, String rightId) {
         Partition.Builder left = partitionById(leftId);
         Partition.Builder right = partitionById(rightId);
@@ -85,26 +127,69 @@ public class PartitionsBuilder {
         return this;
     }
 
+    /**
+     * Create a root partition that can be further split into child partitions. This can be used to build a partition
+     * tree from the root down.
+     *
+     * @param  rootId unique ID for the new root partition
+     * @return        the builder
+     * @see           #splitToNewChildren
+     * @see           #splitToNewChildrenOnDimension
+     */
     public PartitionsBuilder rootFirst(String rootId) {
         put(factory.rootFirst(rootId));
         return this;
     }
 
+    /**
+     * Create a partition tree with one root and two leaf partitions. Will split on the first row key. IDs will be
+     * created for partitions based on their position in the tree.
+     *
+     * @param  splitPoint value for the row key to split on
+     * @return            the builder
+     */
     public PartitionsBuilder treeWithSingleSplitPoint(Object splitPoint) {
         return fromRoot(root -> root.split(splitPoint));
     }
 
+    /**
+     * Create a partition tree with splits specified one at a time. This lets you call methods on a {@link Splitter}
+     * to split partitions and set split points. This will start at the root partition, and generate IDs for partitions
+     * based on their position in the tree.
+     *
+     * @param  splits a function to define split points against a {@link Splitter}
+     * @return        the builder
+     */
     public PartitionsBuilder fromRoot(Consumer<Splitter> splits) {
         rootFirst("root");
         splits.accept(new Splitter("root", ""));
         return this;
     }
 
+    /**
+     * Create new partitions by splitting a previously defined partition.
+     *
+     * @param  parentId   the ID of the partition to split
+     * @param  leftId     unique ID for the new partition covering values lower than the split point
+     * @param  rightId    unique ID for the new partition covering values equal to or higher than the split point
+     * @param  splitPoint value for the first row key to split on
+     * @return            the builder
+     */
     public PartitionsBuilder splitToNewChildren(
             String parentId, String leftId, String rightId, Object splitPoint) {
         return splitToNewChildrenOnDimension(parentId, leftId, rightId, 0, splitPoint);
     }
 
+    /**
+     * Create new partitions by splitting a previously defined partition on a particular row key.
+     *
+     * @param  parentId   the ID of the partition to split
+     * @param  leftId     unique ID for the new partition covering values lower than the split point
+     * @param  rightId    unique ID for the new partition covering values equal to or higher than the split point
+     * @param  dimension  index of the row key to split on
+     * @param  splitPoint value for the row key to split on
+     * @return            the builder
+     */
     public PartitionsBuilder splitToNewChildrenOnDimension(
             String parentId, String leftId, String rightId, int dimension, Object splitPoint) {
         Partition.Builder parent = partitionById(parentId);
@@ -124,6 +209,16 @@ public class PartitionsBuilder {
                 .orElseThrow(() -> new IllegalArgumentException("Partition not specified: " + id));
     }
 
+    /**
+     * Apply a partition split to a state store, after specifying the split in this builder. You can set initial
+     * partitions in this builder, initialise the state store from {@link #buildList}, define further partitions with a
+     * method like {@link #splitToNewChildren}, then call this method to apply a split in the state store. This must be
+     * called for each partition that was split. This must be done before splitting the new child partitions further.
+     *
+     * @param  stateStore          state store to update
+     * @param  partitionId         the ID of the partition that was split
+     * @throws StateStoreException if the state store update failed
+     */
     public void applySplit(StateStore stateStore, String partitionId) throws StateStoreException {
         Partition toSplit = partitionById(partitionId).build();
         Partition left = partitionById(toSplit.getChildPartitionIds().get(0)).build();
@@ -131,18 +226,34 @@ public class PartitionsBuilder {
         stateStore.atomicallyUpdatePartitionAndCreateNewOnes(toSplit, left, right);
     }
 
+    /**
+     * Build the specified partitions in a list.
+     *
+     * @return the list of all partitions that were created
+     */
     public List<Partition> buildList() {
         return partitionById.values().stream().map(Partition.Builder::build).collect(Collectors.toList());
     }
 
+    /**
+     * Build a partition tree containing the specified partitions.
+     *
+     * @return a partition tree containing all partitions that were created
+     */
     public PartitionTree buildTree() {
-        return new PartitionTree(new ArrayList<>(partitionById.values()).stream().map(Partition.Builder::build).collect(Collectors.toList()));
+        return new PartitionTree(buildList());
     }
 
     public Schema getSchema() {
         return schema;
     }
 
+    /**
+     * Defines a split point for a pre-specified parent partition. When created with {@link PartitionsBuilder#fromRoot},
+     * this will set the split point on the root partition. Can be chained to specify further split points for non-leaf
+     * child partitions. Unique IDs for child partitions will be automatically generated based on their position in the
+     * partition tree.
+     */
     public class Splitter {
 
         private final String parentId;
@@ -157,10 +268,24 @@ public class PartitionsBuilder {
             this(nonRootParentId, nonRootParentId);
         }
 
+        /**
+         * Define the split point for the current partition when both child partitions are leaves. This means no further
+         * splits are required below this partition.
+         *
+         * @param splitPoint the value of the first row key at the split point
+         */
         public void split(Object splitPoint) {
             splitToNewChildren(parentId, leftId(), rightId(), splitPoint);
         }
 
+        /**
+         * Define the split point for the current partition when both child partitions are also parents. Split points
+         * must be defined for both child partitions.
+         *
+         * @param splitPoint the value of the first row key at the split point
+         * @param left       a function to split the left child partition covering values lower than the split point
+         * @param right      a function to split the right child partition covering values higher than the split point
+         */
         public void splitToLeftAndRight(Object splitPoint,
                 Consumer<Splitter> left,
                 Consumer<Splitter> right) {
