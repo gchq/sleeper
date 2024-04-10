@@ -29,12 +29,14 @@ import software.amazon.awscdk.services.ec2.SubnetType;
 import software.amazon.awscdk.services.ec2.UserData;
 import software.amazon.awscdk.services.ec2.Vpc;
 import software.amazon.awscdk.services.ec2.VpcLookupOptions;
-import software.amazon.awscdk.services.iam.ManagedPolicy;
+import software.amazon.awscdk.services.iam.Effect;
+import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.constructs.Construct;
 
 import sleeper.environment.cdk.config.AppContext;
 
 import java.util.Collections;
+import java.util.List;
 
 import static sleeper.environment.cdk.config.AppParameters.VPC_ID;
 
@@ -61,7 +63,13 @@ public class BuildEC2Stack extends Stack {
                 .userDataCausesReplacement(true)
                 .blockDevices(Collections.singletonList(image.rootBlockDevice()))
                 .build();
-        instance.getRole().addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("AdministratorAccess"));
+
+        // Allow running CDK by assuming roles created by cdk bootstrap
+        instance.getRole().addToPrincipalPolicy(PolicyStatement.Builder.create()
+                .effect(Effect.ALLOW)
+                .actions(List.of("sts:AssumeRole"))
+                .resources(List.of("arn:aws:iam::*:role/cdk-*"))
+                .build());
 
         CfnOutput.Builder.create(this, "LoginUser")
                 .value(image.loginUser())
