@@ -30,6 +30,8 @@ import software.amazon.awscdk.services.ec2.UserData;
 import software.amazon.awscdk.services.ec2.Vpc;
 import software.amazon.awscdk.services.ec2.VpcLookupOptions;
 import software.amazon.awscdk.services.iam.Effect;
+import software.amazon.awscdk.services.iam.InstanceProfile;
+import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.iam.Role;
 import software.amazon.awscdk.services.iam.ServicePrincipal;
@@ -55,17 +57,8 @@ public class BuildEC2Stack extends Stack {
                 .orElse(inheritVpc);
         BuildEC2Image image = params.image();
 
-        Role role = Role.Builder.create(this, "BuildEC2Role")
-                .assumedBy(new ServicePrincipal("ec2.amazonaws.com"))
-                .build();
-
-        // Allow running CDK by assuming roles created by cdk bootstrap
-        role.addToPolicy(PolicyStatement.Builder.create()
-                .effect(Effect.ALLOW)
-                .actions(List.of("sts:AssumeRole"))
-                .resources(List.of("arn:aws:iam::*:role/cdk-*"))
-                .build());
-
+        Role role = createRole();
+        InstanceProfile.Builder.create(this, getArtifactId()).build();
         Instance instance = Instance.Builder.create(this, "EC2")
                 .vpc(vpc)
                 .securityGroup(createSecurityGroup())
@@ -90,6 +83,25 @@ public class BuildEC2Stack extends Stack {
                 .value(instance.getRole().getRoleName())
                 .description("Role of the build EC2 instance")
                 .build();
+    }
+
+    private Role createRole() {
+
+        Role role = Role.Builder.create(this, "BuildEC2Role")
+                .assumedBy(new ServicePrincipal("ec2.amazonaws.com"))
+                .build();
+
+        // Allow running CDK by assuming roles created by cdk bootstrap
+        role.addToPolicy(PolicyStatement.Builder.create()
+                .effect(Effect.ALLOW)
+                .actions(List.of("sts:AssumeRole"))
+                .resources(List.of("arn:aws:iam::*:role/cdk-*"))
+                .build());
+
+        // Allow instance to register itself with SSM so we can use that for login
+        role.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("AmazonSSMManagedEC2InstanceDefaultPolicy"));
+
+        return role;
     }
 
     private SecurityGroup createSecurityGroup() {
