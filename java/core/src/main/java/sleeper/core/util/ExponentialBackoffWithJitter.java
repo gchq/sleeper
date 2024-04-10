@@ -44,6 +44,13 @@ public class ExponentialBackoffWithJitter {
         this(waitRange, Math::random, Thread::sleep);
     }
 
+    /**
+     * Waits for a time calculated from the attempt number.
+     *
+     * @param  attempt              the attempt number
+     * @return                      the number of milliseconds waited for
+     * @throws InterruptedException if the current thread was interrupted
+     */
     public long waitBeforeAttempt(int attempt) throws InterruptedException {
         if (attempt == 0) {
             return 0;
@@ -61,10 +68,16 @@ public class ExponentialBackoffWithJitter {
         return (long) (randomJitterFraction.getAsDouble() * sleepTimeInSeconds * 1000L);
     }
 
+    /**
+     * An interface for waiting for a number of milliseconds.
+     */
     interface Waiter {
         void waitForMillis(long milliseconds) throws InterruptedException;
     }
 
+    /**
+     * A data structure holding the first wait ceiling in seconds and the maximum wait ceiling in seconds.
+     */
     public static class WaitRange {
         private final double firstWaitCeilingSecs;
         private final double maxWaitCeilingSecs;
@@ -74,6 +87,13 @@ public class ExponentialBackoffWithJitter {
             this.maxWaitCeilingSecs = maxWaitCeilingSecs;
         }
 
+        /**
+         * A shorthand static constructor to instantiate this class.
+         *
+         * @param  firstWaitCeilingSecs the first wait ceiling in seconds
+         * @param  maxWaitCeilingSecs   the maximum wait ceiling in seconds
+         * @return                      an instance of this class
+         */
         public static WaitRange firstAndMaxWaitCeilingSecs(double firstWaitCeilingSecs, double maxWaitCeilingSecs) {
             return new WaitRange(firstWaitCeilingSecs, maxWaitCeilingSecs);
         }
