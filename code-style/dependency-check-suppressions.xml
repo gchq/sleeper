@@ -249,4 +249,12 @@
         <packageUrl regex="true">^pkg:maven/org\.jgrapht/jgrapht\-core@.*$</packageUrl>
         <vulnerabilityName regex="true">CVE-2024-23078|CVE-2024-23079</vulnerabilityName>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+        Apfloat is used in the build module by JUNG for visualising dependencies between Maven modules. This is not used
+        in production code, and there is not a more up to date version that does not have this problem.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apfloat/apfloat@.*$</packageUrl>
+        <vulnerabilityName regex="true">CVE-2024-23086|CVE-2024-23084|CVE-2024-23085</vulnerabilityName>
+    </suppress>
 </suppressions>
