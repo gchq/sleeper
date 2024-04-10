@@ -28,16 +28,27 @@ import com.google.gson.JsonSerializer;
 import java.lang.reflect.Type;
 import java.time.Instant;
 
+/**
+ * A helper class to create preconfigured a GSON builder.
+ */
 public class GsonConfig {
 
     private GsonConfig() {
     }
 
+    /**
+     * Creates a GSON builder preconfigured to serialise and deserialise instants.
+     *
+     * @return a {@link GsonBuilder} that supports serialising {@link Instant} objects
+     */
     public static GsonBuilder standardBuilder() {
         return new GsonBuilder().serializeSpecialFloatingPointValues()
                 .registerTypeAdapter(Instant.class, new InstantSerDe());
     }
 
+    /**
+     * A GSON plugin to serialise/deserialise an instant.
+     */
     private static class InstantSerDe implements JsonSerializer<Instant>, JsonDeserializer<Instant> {
         @Override
         public Instant deserialize(JsonElement element, Type type, JsonDeserializationContext context) throws JsonParseException {
