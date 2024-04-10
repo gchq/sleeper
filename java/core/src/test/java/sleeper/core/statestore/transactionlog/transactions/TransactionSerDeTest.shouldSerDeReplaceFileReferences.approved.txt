@@ -12,6 +12,5 @@
     "jobId": null,
     "countApproximate": false,
     "onlyContainsDataForThisPartition": true
-  },
-  "updateTime": 1679825101000
+  }
 }

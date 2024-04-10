@@ -19,6 +19,7 @@ import sleeper.core.partition.Partition;
 import sleeper.core.statestore.transactionlog.PartitionTransaction;
 import sleeper.core.statestore.transactionlog.StateStorePartitions;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 
@@ -35,7 +36,7 @@ public class InitialisePartitionsTransaction implements PartitionTransaction {
     }
 
     @Override
-    public void apply(StateStorePartitions stateStorePartitions) {
+    public void apply(StateStorePartitions stateStorePartitions, Instant updateTime) {
         stateStorePartitions.clear();
         partitions.forEach(stateStorePartitions::put);
     }

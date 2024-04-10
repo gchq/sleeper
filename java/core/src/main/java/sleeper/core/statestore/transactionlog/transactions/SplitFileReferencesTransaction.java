@@ -35,13 +35,11 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 public class SplitFileReferencesTransaction implements FileReferenceTransaction {
 
     private final List<SplitFileReferenceRequest> requests;
-    private final Instant updateTime;
 
-    public SplitFileReferencesTransaction(List<SplitFileReferenceRequest> requests, Instant updateTime) {
+    public SplitFileReferencesTransaction(List<SplitFileReferenceRequest> requests) {
         this.requests = requests.stream()
                 .map(SplitFileReferenceRequest::withNoUpdateTimes)
                 .collect(toUnmodifiableList());
-        this.updateTime = updateTime;
     }
 
     @Override
@@ -63,7 +61,7 @@ public class SplitFileReferencesTransaction implements FileReferenceTransaction 
     }
 
     @Override
-    public void apply(StateStoreFiles stateStoreFiles) {
+    public void apply(StateStoreFiles stateStoreFiles, Instant updateTime) {
         for (SplitFileReferenceRequest request : requests) {
             stateStoreFiles.updateFile(request.getFilename(),
                     file -> file.splitReferenceFromPartition(request.getFromPartitionId(), request.getNewReferences(), updateTime));
@@ -72,7 +70,7 @@ public class SplitFileReferencesTransaction implements FileReferenceTransaction 
 
     @Override
     public int hashCode() {
-        return Objects.hash(requests, updateTime);
+        return Objects.hash(requests);
     }
 
     @Override
@@ -84,11 +82,11 @@ public class SplitFileReferencesTransaction implements FileReferenceTransaction 
             return false;
         }
         SplitFileReferencesTransaction other = (SplitFileReferencesTransaction) obj;
-        return Objects.equals(requests, other.requests) && Objects.equals(updateTime, other.updateTime);
+        return Objects.equals(requests, other.requests);
     }
 
     @Override
     public String toString() {
-        return "SplitFileReferencesTransaction{requests=" + requests + ", updateTime=" + updateTime + "}";
+        return "SplitFileReferencesTransaction{requests=" + requests + "}";
     }
 }

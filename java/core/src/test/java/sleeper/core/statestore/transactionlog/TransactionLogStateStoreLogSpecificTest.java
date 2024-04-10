@@ -185,7 +185,7 @@ public class TransactionLogStateStoreLogSpecificTest {
                         fixJitterSeed(), recordWaits(retryWaits)));
         config.accept(builder);
         StateStore stateStore = builder.build();
-        stateStore.fixTime(DEFAULT_UPDATE_TIME);
+        stateStore.fixFileUpdateTime(DEFAULT_UPDATE_TIME);
         return stateStore;
     }
 

@@ -81,7 +81,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             FileReference file3 = factory.rootFile("file3", 100L);
 
             // When
-            store.fixTime(fixedUpdateTime);
+            store.fixFileUpdateTime(fixedUpdateTime);
             store.addFile(file1);
             store.addFiles(List.of(file2, file3));
 
@@ -101,7 +101,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             FileReference file = factory.rootFile("file1", 100L);
 
             // When
-            store.fixTime(updateTime);
+            store.fixFileUpdateTime(updateTime);
             store.addFile(file);
 
             // Then
@@ -116,7 +116,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             FileReference rootFile = factory.rootFile("file1", 100L);
             FileReference leftFile = splitFile(rootFile, "L");
             FileReference rightFile = splitFile(rootFile, "R");
-            store.fixTime(updateTime);
+            store.fixFileUpdateTime(updateTime);
             store.addFiles(List.of(leftFile, rightFile));
 
             // When / Then
@@ -133,7 +133,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             FileReference rootFile = factory.rootFile("file1", 100L);
             FileReference leftFile = splitFile(rootFile, "L");
             FileReference rightFile = splitFile(rootFile, "R");
-            store.fixTime(updateTime);
+            store.fixFileUpdateTime(updateTime);
             store.addFilesWithReferences(List.of(fileWithReferences(List.of(leftFile, rightFile))));
 
             // When / Then
@@ -156,7 +156,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             FileReference leftFile1 = splitFile(file1, "L");
             FileReference rightFile1 = splitFile(file1, "R");
             FileReference file2 = factory.rootFile("file2", 100L);
-            store.fixTime(updateTime);
+            store.fixFileUpdateTime(updateTime);
             store.addFilesWithReferences(List.of(
                     fileWithReferences(List.of(leftFile1, rightFile1)),
                     fileWithReferences(List.of(file2))));
@@ -177,7 +177,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
         void shouldAddFileWithNoReferencesForGC() throws Exception {
             // Given
             Instant updateTime = Instant.parse("2023-12-01T10:45:00Z");
-            store.fixTime(updateTime);
+            store.fixFileUpdateTime(updateTime);
             store.addFilesWithReferences(List.of(fileWithNoReferences("test-file")));
 
             // When / Then
@@ -194,7 +194,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             // Given
             Instant updateTime = Instant.parse("2023-12-01T10:45:00Z");
             FileReference file = factory.rootFile("file1", 100L);
-            store.fixTime(updateTime);
+            store.fixFileUpdateTime(updateTime);
             store.addFile(file);
 
             // When / Then
@@ -740,7 +740,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             // Given
             Instant updateTime = Instant.parse("2023-10-04T14:08:00Z");
             Instant latestTimeForGc = Instant.parse("2023-10-04T14:09:00Z");
-            store.fixTime(updateTime);
+            store.fixFileUpdateTime(updateTime);
             store.addFilesWithReferences(List.of(fileWithNoReferences("readyForGc")));
 
             // When / Then
@@ -753,7 +753,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             // Given
             Instant updateTime = Instant.parse("2023-10-04T14:08:00Z");
             Instant latestTimeForGc = Instant.parse("2023-10-04T14:07:00Z");
-            store.fixTime(updateTime);
+            store.fixFileUpdateTime(updateTime);
             store.addFilesWithReferences(List.of(fileWithNoReferences("readyForGc")));
 
             // When / Then
@@ -771,7 +771,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             FileReference leftFile = splitFile(rootFile, "L");
             FileReference rightFile = splitFile(rootFile, "R");
             FileReference compactionOutputFile = factory.partitionFile("L", "compactedFile", 100L);
-            store.fixTime(updateTime);
+            store.fixFileUpdateTime(updateTime);
             store.addFiles(List.of(leftFile, rightFile));
             store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "L", List.of("splitFile"))));
@@ -793,7 +793,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             FileReference rightFile = splitFile(rootFile, "R");
             FileReference leftOutputFile = factory.partitionFile("L", "leftOutput", 100L);
             FileReference rightOutputFile = factory.partitionFile("R", "rightOutput", 100L);
-            store.fixTime(updateTime);
+            store.fixFileUpdateTime(updateTime);
             store.addFiles(List.of(leftFile, rightFile));
             store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "L", List.of("readyForGc")),
@@ -823,14 +823,14 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             FileReference rightOutputFile = factory.partitionFile("R", "rightOutput", 100L);
 
             // And ingest and compactions happened at the expected times
-            store.fixTime(ingestTime);
+            store.fixFileUpdateTime(ingestTime);
             store.addFiles(List.of(leftFile, rightFile));
             store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "L", List.of("readyForGc")),
                     assignJobOnPartitionToFiles("job2", "R", List.of("readyForGc"))));
-            store.fixTime(firstCompactionTime);
+            store.fixFileUpdateTime(firstCompactionTime);
             store.atomicallyReplaceFileReferencesWithNewOne("job1", "L", List.of("readyForGc"), leftOutputFile);
-            store.fixTime(secondCompactionTime);
+            store.fixFileUpdateTime(secondCompactionTime);
             store.atomicallyReplaceFileReferencesWithNewOne("job2", "R", List.of("readyForGc"), rightOutputFile);
 
             // When / Then
