@@ -100,6 +100,11 @@
             <groupId>org.apache.arrow</groupId>
             <artifactId>arrow-algorithm</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.jgrapht</groupId>
+            <artifactId>jgrapht-core</artifactId>
+            <version>${trino.jgrapht.version}</version>
+        </dependency>
         <!-- Test Dependencies -->
         <dependency>
             <groupId>sleeper</groupId>
