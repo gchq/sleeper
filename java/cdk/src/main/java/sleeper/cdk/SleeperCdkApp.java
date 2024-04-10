@@ -212,7 +212,8 @@ public class SleeperCdkApp extends Stack {
                     topicStack.getTopic(),
                     bulkImportBucketStack,
                     coreStacks,
-                    ingestStatusStoreStack);
+                    ingestStatusStoreStack,
+                    dashboardStackOpt);
         }
 
         // Stack to garbage collect old files
