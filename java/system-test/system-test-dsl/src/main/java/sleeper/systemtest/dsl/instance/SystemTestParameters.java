@@ -45,6 +45,7 @@ public class SystemTestParameters {
     private final boolean forceRedeploySystemTest;
     private final boolean forceRedeployInstances;
     private final String forceStateStoreClassname;
+    private final String systemTestRole;
 
     private SystemTestParameters(Builder builder) {
         shortTestId = Objects.requireNonNull(builder.shortTestId, "shortTestId must not be null");
@@ -59,6 +60,7 @@ public class SystemTestParameters {
         forceRedeploySystemTest = builder.forceRedeploySystemTest;
         forceRedeployInstances = builder.forceRedeployInstances;
         forceStateStoreClassname = builder.forceStateStoreClassname;
+        systemTestRole = builder.systemTestRole;
     }
 
     public static Builder builder() {
@@ -141,6 +143,10 @@ public class SystemTestParameters {
         return forceRedeployInstances;
     }
 
+    public String getSystemTestRole() {
+        return systemTestRole;
+    }
+
     public TableProperties createTableProperties(InstanceProperties instanceProperties, Schema schema) {
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
@@ -205,6 +211,7 @@ public class SystemTestParameters {
         private boolean forceRedeploySystemTest;
         private boolean forceRedeployInstances;
         private String forceStateStoreClassname;
+        private String systemTestRole;
 
         private Builder() {
         }
@@ -269,6 +276,11 @@ public class SystemTestParameters {
             return this;
         }
 
+        public Builder systemTestRole(String systemTestRole) {
+            this.systemTestRole = systemTestRole;
+            return this;
+        }
+
         public Builder loadFromSystemProperties() {
             return shortTestId(System.getProperty("sleeper.system.test.short.id"))
                     .vpcId(System.getProperty("sleeper.system.test.vpc.id"))
@@ -280,7 +292,8 @@ public class SystemTestParameters {
                     .systemTestClusterEnabled(getBooleanProperty("sleeper.system.test.cluster.enabled", false))
                     .forceRedeploySystemTest(getBooleanProperty("sleeper.system.test.force.redeploy", false))
                     .forceRedeployInstances(getBooleanProperty("sleeper.system.test.instances.force.redeploy", false))
-                    .forceStateStoreClassname(getOptionalProperty("sleeper.system.test.force.statestore.classname").orElse(null));
+                    .forceStateStoreClassname(getOptionalProperty("sleeper.system.test.force.statestore.classname").orElse(null))
+                    .systemTestRole(System.getenv("SLEEPER_SYSTEM_TEST_ROLE"));
         }
 
         public Builder findDirectories() {

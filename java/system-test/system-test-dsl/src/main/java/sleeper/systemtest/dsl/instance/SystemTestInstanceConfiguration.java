@@ -19,10 +19,13 @@ package sleeper.systemtest.dsl.instance;
 import sleeper.configuration.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Supplier;
 
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_ROLE;
+import static sleeper.configuration.properties.instance.QueryProperty.QUERY_ROLE;
 
 public class SystemTestInstanceConfiguration {
     private final String shortName;
@@ -57,7 +60,20 @@ public class SystemTestInstanceConfiguration {
         if (shouldUseSystemTestIngestSourceBucket()) {
             properties.set(INGEST_SOURCE_BUCKET, systemTest.getSystemTestBucketName());
         }
-        properties.set(INGEST_SOURCE_ROLE, systemTest.getSystemTestWriterRoleName());
+
+        List<String> ingestRoles = new ArrayList<>();
+        List<String> queryRoles = new ArrayList<>();
+        String systemTestClusterRole = systemTest.getSystemTestWriterRoleName();
+        if (systemTestClusterRole != null) {
+            ingestRoles.add(systemTestClusterRole);
+        }
+        String systemTestRole = parameters.getSystemTestRole();
+        if (systemTestRole != null) {
+            ingestRoles.add(systemTestRole);
+            queryRoles.add(systemTestRole);
+        }
+        properties.setList(INGEST_SOURCE_ROLE, ingestRoles);
+        properties.setList(QUERY_ROLE, queryRoles);
         return configuration;
     }
 
