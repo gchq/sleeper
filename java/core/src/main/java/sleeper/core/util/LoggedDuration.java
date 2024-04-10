@@ -20,6 +20,9 @@ import java.text.DecimalFormat;
 import java.time.Duration;
 import java.time.Instant;
 
+/**
+ * A utility class for formatting durations as strings.
+ */
 public class LoggedDuration {
     private static final DecimalFormat FORMATTER = new DecimalFormat("0.###");
     private final Duration duration;
@@ -30,18 +33,48 @@ public class LoggedDuration {
         this.shortOutput = shortOutput;
     }
 
+    /**
+     * Returns an instance of this class which formats a duration with full output.
+     * E.g "1 hour 2 minutes 3 seconds"
+     *
+     * @param  start the start time to calculate the duration from
+     * @param  end   the end time to calculate the duration from
+     * @return       an instance of this class which formats the duration with full output
+     */
     public static LoggedDuration withFullOutput(Instant start, Instant end) {
         return withFullOutput(Duration.between(start, end));
     }
 
+    /**
+     * Returns an instance of this class which formats a duration with short output.
+     * E.g "1h 2m 3s"
+     *
+     * @param  start the start time to calculate the duration from
+     * @param  end   the end time to calculate the duration from
+     * @return       an instance of this class which formats the duration with short output
+     */
     public static LoggedDuration withShortOutput(Instant start, Instant end) {
         return withShortOutput(Duration.between(start, end));
     }
 
+    /**
+     * Returns an instance of this class which formats a duration with full output.
+     * E.g "1 hour 2 minutes 3 seconds"
+     *
+     * @param  duration the duration
+     * @return          an instance of this class which formats the duration with full output
+     */
     public static LoggedDuration withFullOutput(Duration duration) {
         return new LoggedDuration(duration, false);
     }
 
+    /**
+     * Returns an instance of this class which formats a duration with short output.
+     * E.g "1h 2m 3s"
+     *
+     * @param  duration the duration
+     * @return          an instance of this class which formats the duration with short output
+     */
     public static LoggedDuration withShortOutput(Duration duration) {
         return new LoggedDuration(duration, true);
     }
