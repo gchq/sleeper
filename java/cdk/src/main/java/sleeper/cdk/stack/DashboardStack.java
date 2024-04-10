@@ -15,7 +15,6 @@
  */
 package sleeper.cdk.stack;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
@@ -48,9 +47,9 @@ import java.util.stream.IntStream;
 
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.METRICS_NAMESPACE;
+import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 import static sleeper.configuration.properties.instance.DashboardProperty.DASHBOARD_TIME_WINDOW_MINUTES;
 
-@SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR")
 public class DashboardStack extends NestedStack {
     private final String instanceId;
     private final List<String> tableNames;
@@ -83,14 +82,15 @@ public class DashboardStack extends NestedStack {
         dashboard = Dashboard.Builder.create(this, "dashboard").dashboardName(instanceId).build();
 
         CfnOutput.Builder.create(this, "DashboardUrl")
-                .value(constructUrl())
+                .value(constructUrl(instanceProperties))
                 .build();
 
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
-    private String constructUrl() {
-        return "https://" + this.getRegion() + ".console.aws.amazon.com/cloudwatch/home#dashboards:name=" + instanceId + ";expand=true";
+    private static String constructUrl(InstanceProperties instanceProperties) {
+        return "https://" + instanceProperties.get(REGION) + ".console.aws.amazon.com/cloudwatch/home" +
+                "#dashboards:name=" + instanceProperties.get(ID) + ";expand=true";
     }
 
     public void addWidgets() {
