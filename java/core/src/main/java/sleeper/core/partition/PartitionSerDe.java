@@ -57,10 +57,23 @@ public class PartitionSerDe {
         this.gsonPrettyPrinting = builder.setPrettyPrinting().create();
     }
 
+    /**
+     * Serialise a partition to JSON.
+     *
+     * @param  partition the partition
+     * @return           a JSON representation of the partition
+     */
     public String toJson(Partition partition) {
         return gson.toJson(partition);
     }
 
+    /**
+     * Serialise a partition to JSON.
+     *
+     * @param  partition   the partition
+     * @param  prettyPrint true if the JSON should be formatted for readability
+     * @return             a JSON representation of the partition
+     */
     public String toJson(Partition partition, boolean prettyPrint) {
         if (prettyPrint) {
             return gsonPrettyPrinting.toJson(partition);
@@ -68,10 +81,19 @@ public class PartitionSerDe {
         return toJson(partition);
     }
 
+    /**
+     * Deserialise a partition from JSON.
+     *
+     * @param  jsonSchema the JSON
+     * @return            the partition represented by the JSON
+     */
     public Partition fromJson(String jsonSchema) {
         return gson.fromJson(jsonSchema, Partition.class);
     }
 
+    /**
+     * A GSON plugin to serialise/deserialise a partition.
+     */
     public static class PartitionJsonSerDe implements JsonSerializer<Partition>, JsonDeserializer<Partition> {
         private final RegionJsonSerDe regionJsonSerDe;
 
