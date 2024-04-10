@@ -27,6 +27,7 @@ import software.constructs.Construct;
 
 import sleeper.cdk.Utils;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperty;
 
 import javax.annotation.Nullable;
 
@@ -40,18 +41,24 @@ import static java.util.function.Predicate.not;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_ROLE;
+import static sleeper.configuration.properties.instance.QueryProperty.QUERY_ROLE;
 
 public class ManagedPoliciesStack extends NestedStack {
 
     private final ManagedPolicy ingestPolicy;
+    private final ManagedPolicy queryPolicy;
     private final ManagedPolicy readIngestSourcesPolicy;
 
     public ManagedPoliciesStack(Construct scope, String id, InstanceProperties instanceProperties) {
         super(scope, id);
 
         ingestPolicy = new ManagedPolicy(this, "IngestPolicy");
-        addIngestSourceRoleReferences(this, instanceProperties)
+        addRoleReferences(this, instanceProperties, INGEST_SOURCE_ROLE)
                 .forEach(ingestPolicy::attachToRole);
+
+        queryPolicy = new ManagedPolicy(this, "QueryPolicy");
+        addRoleReferences(this, instanceProperties, QUERY_ROLE)
+                .forEach(queryPolicy::attachToRole);
 
         List<IBucket> sourceBuckets = addIngestSourceBucketReferences(this, instanceProperties);
         if (sourceBuckets.isEmpty()) { // CDK doesn't allow a managed policy without any grants
@@ -64,6 +71,10 @@ public class ManagedPoliciesStack extends NestedStack {
 
     public ManagedPolicy getIngestPolicy() {
         return ingestPolicy;
+    }
+
+    public ManagedPolicy getQueryPolicy() {
+        return queryPolicy;
     }
 
     // The Lambda IFunction.getRole method is annotated as nullable, even though it will never return null in practice.
@@ -84,9 +95,9 @@ public class ManagedPoliciesStack extends NestedStack {
     //          we include the instance ID in the CDK logical IDs for the ingest source roles.
     //          This should not be necessary with a managed policy, but when you use the CDK's grantX methods directly,
     //          it adds separate policies against the roles. That may still be desirable in the future.
-    private static List<IRole> addIngestSourceRoleReferences(Construct scope, InstanceProperties instanceProperties) {
+    private static List<IRole> addRoleReferences(Construct scope, InstanceProperties instanceProperties, InstanceProperty property) {
         AtomicInteger index = new AtomicInteger(1);
-        return instanceProperties.getList(INGEST_SOURCE_ROLE).stream()
+        return instanceProperties.getList(property).stream()
                 .filter(not(String::isBlank))
                 .map(name -> Role.fromRoleName(scope, ingestSourceRoleReferenceId(instanceProperties, index), name))
                 .collect(Collectors.toUnmodifiableList());

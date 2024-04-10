@@ -45,9 +45,10 @@ public class QueryQueueStack extends NestedStack {
     public QueryQueueStack(Construct scope,
             String id,
             InstanceProperties instanceProperties,
-            Topic topic) {
+            Topic topic,
+            CoreStacks coreStacks) {
         super(scope, id);
-        queryQueue = setupQueryQueue(instanceProperties, topic);
+        queryQueue = setupQueryQueue(instanceProperties, topic, coreStacks);
     }
 
     /***
@@ -56,7 +57,7 @@ public class QueryQueueStack extends NestedStack {
      * @param  instanceProperties containing configuration details
      * @return                    the queue to be used for queries
      */
-    private Queue setupQueryQueue(InstanceProperties instanceProperties, Topic topic) {
+    private Queue setupQueryQueue(InstanceProperties instanceProperties, Topic topic, CoreStacks coreStacks) {
         String dlQueueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-QueryDLQ");
         Queue queryDlq = Queue.Builder
                 .create(this, "QueryDeadLetterQueue")
@@ -73,6 +74,7 @@ public class QueryQueueStack extends NestedStack {
                 .deadLetterQueue(queryDeadLetterQueue)
                 .visibilityTimeout(Duration.seconds(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS)))
                 .build();
+        queryQueue.grantSendMessages(coreStacks.getQueryPolicy());
         instanceProperties.set(CdkDefinedInstanceProperty.QUERY_QUEUE_URL, queryQueue.getQueueUrl());
         instanceProperties.set(CdkDefinedInstanceProperty.QUERY_QUEUE_ARN, queryQueue.getQueueArn());
         instanceProperties.set(CdkDefinedInstanceProperty.QUERY_DLQ_URL, queryDlq.getQueueUrl());

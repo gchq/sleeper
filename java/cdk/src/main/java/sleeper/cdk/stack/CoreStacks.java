@@ -116,4 +116,8 @@ public class CoreStacks {
     public IGrantable getIngestPolicy() {
         return policiesStack.getIngestPolicy();
     }
+
+    public IGrantable getQueryPolicy() {
+        return policiesStack.getQueryPolicy();
+    }
 }
