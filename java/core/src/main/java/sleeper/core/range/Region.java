@@ -118,6 +118,18 @@ public class Region {
         return true;
     }
 
+    /**
+     * Creates a copy of this region which also includes the provided range.
+     *
+     * @param  range the range to add to the copy
+     * @return       a copy of this region which also includes the provided range
+     */
+    public Region copyWithRange(Range range) {
+        Map<String, Range> newRanges = new HashMap<>(rowKeyFieldNameToRange);
+        newRanges.put(range.getFieldName(), range);
+        return new Region(newRanges);
+    }
+
     @Override
     public int hashCode() {
         int hash = 7;
