@@ -26,6 +26,10 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
+/**
+ * A class to assist with periodic polling and retrying. When started, this class will periodically poll until
+ * either an exit condition has been met or a maximum number of polls has been reached
+ */
 public class PollWithRetries {
     private static final Logger LOGGER = LoggerFactory.getLogger(PollWithRetries.class);
 
@@ -37,10 +41,24 @@ public class PollWithRetries {
         this.maxPolls = maxPolls;
     }
 
+    /**
+     * Creates an instance of this class.
+     *
+     * @param  pollIntervalMillis the poll interval in milliseconds
+     * @param  maxPolls           the maximum amount of polls
+     * @return                    an instance of {@link PollWithRetries}
+     */
     public static PollWithRetries intervalAndMaxPolls(long pollIntervalMillis, int maxPolls) {
         return new PollWithRetries(pollIntervalMillis, maxPolls);
     }
 
+    /**
+     * Creates an instance of this class.
+     *
+     * @param  pollInterval the poll interval
+     * @param  timeout      the timeout used to calculate the maximum amount of polls
+     * @return              an instance of {@link PollWithRetries}
+     */
     public static PollWithRetries intervalAndPollingTimeout(Duration pollInterval, Duration timeout) {
         long pollIntervalMillis = pollInterval.toMillis();
         long timeoutMillis = timeout.toMillis();
@@ -48,14 +66,31 @@ public class PollWithRetries {
                 (int) LongMath.divide(timeoutMillis, pollIntervalMillis, RoundingMode.CEILING));
     }
 
+    /**
+     * Creates an instance of this class which will only poll once and never retry.
+     *
+     * @return an instance of {@link PollWithRetries}
+     */
     public static PollWithRetries noRetries() {
         return new PollWithRetries(0, 1);
     }
 
+    /**
+     * Creates an instance of this class which retry a provided number of times with no poll interval.
+     *
+     * @return an instance of {@link PollWithRetries}
+     */
     public static PollWithRetries immediateRetries(int retries) {
         return new PollWithRetries(0, retries + 1);
     }
 
+    /**
+     * Starts polling until an exit condition is met or the maximum polls has been reached.
+     *
+     * @param  description          a short description to display when the poll fails
+     * @param  checkFinished        an exit condition
+     * @throws InterruptedException if any thread has interrupted the current thread
+     */
     public void pollUntil(String description, BooleanSupplier checkFinished) throws InterruptedException {
         int polls = 0;
         while (!checkFinished.getAsBoolean()) {
@@ -77,12 +112,27 @@ public class PollWithRetries {
         }
     }
 
+    /**
+     * Given a supplier, starts polling then return the last result from the supplier.
+     *
+     * @param  <T>                  the type of object being supplied
+     * @param  description          a short description to display when the poll fails
+     * @param  query                the supplier of {@link T}
+     * @param  condition            the exit condition applied to {@link T}
+     * @return                      the last object from the supplier
+     * @throws InterruptedException if any thread has interrupted the current thread
+     */
     public <T> T queryUntil(String description, Supplier<T> query, Predicate<T> condition) throws InterruptedException {
         QueryTracker<T> tracker = new QueryTracker<>(query, condition);
         pollUntil(description, tracker::checkFinished);
         return tracker.lastResult;
     }
 
+    /**
+     * Checks a predicate against objects from a supplier. It also holds on to the last object from the supplier.
+     *
+     * @param <T> the type of object that is supplied
+     */
     private static class QueryTracker<T> {
         private final Supplier<T> query;
         private final Predicate<T> condition;
@@ -100,12 +150,18 @@ public class PollWithRetries {
         }
     }
 
+    /**
+     * Exception thrown when the exit condition was not met and polling was configured with no retries.
+     */
     public static class CheckFailedException extends RuntimeException {
         private CheckFailedException(String message) {
             super(message);
         }
     }
 
+    /**
+     * Exception thrown when the exit condition was not met.
+     */
     public static class TimedOutException extends CheckFailedException {
         private TimedOutException(String message) {
             super(message);
