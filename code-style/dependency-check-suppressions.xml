@@ -241,4 +241,12 @@
         <packageUrl regex="true">^pkg:maven/org\.jboss\.xnio/xnio\-api@.*$</packageUrl>
         <vulnerabilityName>CVE-2023-5685</vulnerabilityName>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+        JGraphT is used in the build module to visualise the dependencies between Maven modules. This is not used in
+        production code, and there is not a more up to date version that does not have this problem.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.jgrapht/jgrapht\-core@.*$</packageUrl>
+        <vulnerabilityName regex="true">CVE-2024-23078|CVE-2024-23079</vulnerabilityName>
+    </suppress>
 </suppressions>
