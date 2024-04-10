@@ -31,6 +31,8 @@ import software.amazon.awscdk.services.ec2.Vpc;
 import software.amazon.awscdk.services.ec2.VpcLookupOptions;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.PolicyStatement;
+import software.amazon.awscdk.services.iam.Role;
+import software.amazon.awscdk.services.iam.ServicePrincipal;
 import software.constructs.Construct;
 
 import sleeper.environment.cdk.config.AppContext;
@@ -53,23 +55,28 @@ public class BuildEC2Stack extends Stack {
                 .orElse(inheritVpc);
         BuildEC2Image image = params.image();
 
+        Role role = Role.Builder.create(this, "BuildEC2Role")
+                .assumedBy(new ServicePrincipal("ec2.amazonaws.com"))
+                .build();
+
+        // Allow running CDK by assuming roles created by cdk bootstrap
+        role.addToPolicy(PolicyStatement.Builder.create()
+                .effect(Effect.ALLOW)
+                .actions(List.of("sts:AssumeRole"))
+                .resources(List.of("arn:aws:iam::*:role/cdk-*"))
+                .build());
+
         Instance instance = Instance.Builder.create(this, "EC2")
                 .vpc(vpc)
                 .securityGroup(createSecurityGroup())
                 .machineImage(image.machineImage())
                 .instanceType(InstanceType.of(InstanceClass.T3, InstanceSize.LARGE))
                 .vpcSubnets(SubnetSelection.builder().subnetType(SubnetType.PRIVATE_WITH_EGRESS).build())
-                .userData(UserData.custom(LoadUserDataUtil.userData(params)))
+                .userData(UserData.custom(LoadUserDataUtil.userData(role.getRoleName(), params)))
                 .userDataCausesReplacement(true)
                 .blockDevices(Collections.singletonList(image.rootBlockDevice()))
+                .role(role)
                 .build();
-
-        // Allow running CDK by assuming roles created by cdk bootstrap
-        instance.getRole().addToPrincipalPolicy(PolicyStatement.Builder.create()
-                .effect(Effect.ALLOW)
-                .actions(List.of("sts:AssumeRole"))
-                .resources(List.of("arn:aws:iam::*:role/cdk-*"))
-                .build());
 
         CfnOutput.Builder.create(this, "LoginUser")
                 .value(image.loginUser())

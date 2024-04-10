@@ -29,16 +29,19 @@ class LoadUserDataUtilTest {
 
     @Test
     void canLoadUserData() {
-        assertThat(LoadUserDataUtil.userData(BuildEC2Parameters.from(AppContext.of(
-                LOGIN_USER.value("test-user"),
-                REPOSITORY.value("a-repo"),
-                FORK.value("a-fork"),
-                BRANCH.value("feature/something")))))
+        String roleName = "test-role-for-ec2";
+        assertThat(LoadUserDataUtil.userData(roleName,
+                BuildEC2Parameters.from(AppContext.of(
+                        LOGIN_USER.value("test-user"),
+                        REPOSITORY.value("a-repo"),
+                        FORK.value("a-fork"),
+                        BRANCH.value("feature/something")))))
                 .startsWith("Content-Type: multipart/mixed;")
                 .contains("LOGIN_USER=test-user" + System.lineSeparator() +
                         "REPOSITORY=a-repo" + System.lineSeparator() +
                         "FORK=a-fork" + System.lineSeparator() +
-                        "BRANCH=feature/something" + System.lineSeparator());
+                        "BRANCH=feature/something" + System.lineSeparator() +
+                        "ROLE=test-role-for-ec2" + System.lineSeparator());
     }
 
 }
