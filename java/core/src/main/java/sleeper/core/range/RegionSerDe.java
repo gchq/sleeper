@@ -64,10 +64,23 @@ public class RegionSerDe {
         this.gsonPrettyPrinting = builder.setPrettyPrinting().create();
     }
 
+    /**
+     * Serialise a region to a JSON string.
+     *
+     * @param  region the region
+     * @return        a JSON representation of the region
+     */
     public String toJson(Region region) {
         return gson.toJson(region);
     }
 
+    /**
+     * Serialise a region to a JSON string.
+     *
+     * @param  region      the region
+     * @param  prettyPrint whether the JSON should be pretty-printed or not
+     * @return             a JSON representation of the region
+     */
     public String toJson(Region region, boolean prettyPrint) {
         if (prettyPrint) {
             return gsonPrettyPrinting.toJson(region);
@@ -75,18 +88,39 @@ public class RegionSerDe {
         return toJson(region);
     }
 
+    /**
+     * Serialise a region to a tree of JSON elements.
+     *
+     * @param  region the region
+     * @return        a tree of JSON elements representing the region
+     */
     public JsonElement toJsonTree(Region region) {
         return gson.toJsonTree(region);
     }
 
+    /**
+     * Deserialise a region from a JSON string.
+     *
+     * @param  jsonSchema the JSON string
+     * @return            the region represented by the JSON string
+     */
     public Region fromJson(String jsonSchema) {
         return gson.fromJson(jsonSchema, Region.class);
     }
 
+    /**
+     * Deserialise a region from a tree of JSON elements.
+     *
+     * @param  jsonElement the JSON tree
+     * @return             the region represented by the JSON tree
+     */
     public Region fromJsonTree(JsonElement jsonElement) {
         return gson.fromJson(jsonElement, Region.class);
     }
 
+    /**
+     * A GSON plugin to serialise/deserialise a region.
+     */
     public static class RegionJsonSerDe implements JsonSerializer<Region>, JsonDeserializer<Region> {
         private final Schema schema;
         private final RangeFactory rangeFactory;
@@ -238,8 +272,10 @@ public class RegionSerDe {
         }
     }
 
+    /**
+     * An exception thrown when a rowKeyField does not exist in the schema.
+     */
     public static class KeyDoesNotExistException extends JsonParseException {
-
         public KeyDoesNotExistException(String keyName) {
             super("Key \"" + keyName + "\" was not a row key field in the table schema");
         }
