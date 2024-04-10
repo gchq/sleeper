@@ -143,12 +143,13 @@ public class SleeperCdkApp extends Stack {
                 new ConfigBucketStack(this, "Configuration", instanceProperties, policiesStack),
                 new TableIndexStack(this, "TableIndex", instanceProperties, policiesStack),
                 policiesStack, stateStoreStacks, dataStack);
-        if (optionalStacks.contains(TableMetricsStack.class.getSimpleName())) {
-            new TableMetricsStack(this, "TableMetrics", instanceProperties, jars, topicStack.getTopic(), coreStacks, dashboardStackOpt);
-        }
         if (optionalStacks.contains(DashboardStack.class.getSimpleName())) {
             dashboardStackOpt = Optional.of(new DashboardStack(this, "Dashboard", instanceProperties));
         }
+        if (optionalStacks.contains(TableMetricsStack.class.getSimpleName())) {
+            new TableMetricsStack(this, "TableMetrics", instanceProperties, jars, topicStack.getTopic(), coreStacks, dashboardStackOpt);
+        }
+
         // Stack for Athena analytics
         if (optionalStacks.contains(AthenaStack.class.getSimpleName())) {
             new AthenaStack(this, "Athena", instanceProperties, jars, coreStacks);
