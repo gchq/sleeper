@@ -19,6 +19,10 @@ package sleeper.core.partition;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * The result of splitting a partition in a factory. Holds builders for the resulting partitions in case they need to
+ * be further modified.
+ */
 public class PartitionSplitResult {
     private final Partition.Builder parent;
     private final List<Partition.Builder> children;
@@ -36,6 +40,11 @@ public class PartitionSplitResult {
         return parent;
     }
 
+    /**
+     * Build the parent partition.
+     *
+     * @return the parent partition
+     */
     public Partition buildParent() {
         return parent.build();
     }
@@ -44,10 +53,18 @@ public class PartitionSplitResult {
         return children;
     }
 
+    /**
+     * Build the child partitions.
+     *
+     * @return the child partitions
+     */
     public List<Partition> buildChildren() {
         return children.stream().map(Partition.Builder::build).collect(Collectors.toList());
     }
 
+    /**
+     * A builder to create the partition splitting result.
+     */
     public static final class Builder {
         private Partition.Builder parent;
         private List<Partition.Builder> children;
@@ -55,11 +72,23 @@ public class PartitionSplitResult {
         public Builder() {
         }
 
+        /**
+         * Set the builder for the parent partition.
+         *
+         * @param  parent the parent partition builder
+         * @return        this builder
+         */
         public Builder parent(Partition.Builder parent) {
             this.parent = parent;
             return this;
         }
 
+        /**
+         * Set the builders for the child partitions.
+         *
+         * @param  children the child partition builders
+         * @return          this builder
+         */
         public Builder children(List<Partition.Builder> children) {
             this.children = children;
             return this;
