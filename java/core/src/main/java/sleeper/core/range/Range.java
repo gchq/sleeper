@@ -84,6 +84,12 @@ public class Range {
         return maxInclusive;
     }
 
+    /**
+     * Checks whether the provided object is contained within this range.
+     *
+     * @param  object the object to check
+     * @return        whether the object is contained within this range
+     */
     public boolean doesRangeContainObject(Object object) {
         Type type = field.getType();
         if (type instanceof IntType) {
@@ -110,6 +116,12 @@ public class Range {
         throw new IllegalArgumentException("Unknown type in the schema: " + type);
     }
 
+    /**
+     * Checks whether the provided range overlaps with this range.
+     *
+     * @param  otherRange the range to check
+     * @return            whether the range overlaps with this range
+     */
     public boolean doesRangeOverlap(Range otherRange) {
         // We work on the canonicalised version of the ranges as this makes the following
         // logic simpler. As an example of a counter-intuitive example, consider whether
@@ -370,6 +382,9 @@ public class Range {
         return "Range{" + "field=" + field + ", min=" + min + ", minInclusive=" + minInclusive + ", max=" + max + ", maxInclusive=" + maxInclusive + '}';
     }
 
+    /**
+     * A convenience class for specifying ranges. Used to build {@link Range} objects.
+     */
     public static class RangeFactory {
         private final Map<String, PrimitiveType> rowKeyFieldToType;
         private final Set<String> rowKeyFieldNames;
@@ -382,6 +397,16 @@ public class Range {
             this.rowKeyFieldNames = new HashSet<>(schema.getRowKeyFieldNames());
         }
 
+        /**
+         * Creates a new range.
+         *
+         * @param  field        the field which the range applies to
+         * @param  min          the minimum of the range
+         * @param  minInclusive whether the minimum is inclusive or not
+         * @param  max          the maximum of the range
+         * @param  maxInclusive whether the maximum is inclusive or not
+         * @return              the new range
+         */
         public Range createRange(Field field, Object min, boolean minInclusive, Object max, boolean maxInclusive) {
             // fieldName should be a row key
             if (!rowKeyFieldNames.contains(field.getName())) {
@@ -404,22 +429,62 @@ public class Range {
             return new Range(field, min, minInclusive, max, maxInclusive);
         }
 
+        /**
+         * Creates a new range.
+         *
+         * @param  fieldName    the name of the field which the range applies to
+         * @param  min          the minimum of the range
+         * @param  minInclusive whether the minimum is inclusive or not
+         * @param  max          the maximum of the range
+         * @param  maxInclusive whether the maximum is inclusive or not
+         * @return              the new range
+         */
         public Range createRange(String fieldName, Object min, boolean minInclusive, Object max, boolean maxInclusive) {
             return createRange(new Field(fieldName, rowKeyFieldToType.get(fieldName)), min, minInclusive, max, maxInclusive);
         }
 
+        /**
+         * Creates a new range.
+         *
+         * @param  field the field which the range applies to
+         * @param  min   the minimum of the range (inclusive)
+         * @param  max   the maximum of the range (exclusive)
+         * @return       the new range
+         */
         public Range createRange(Field field, Object min, Object max) {
             return createRange(field, min, true, max, false);
         }
 
+        /**
+         * Creates a new range.
+         *
+         * @param  fieldName the name of the field which the range applies to
+         * @param  min       the minimum of the range (inclusive)
+         * @param  max       the maximum of the range (exclusive)
+         * @return           the new range
+         */
         public Range createRange(String fieldName, Object min, Object max) {
             return createRange(fieldName, min, true, max, false);
         }
 
+        /**
+         * Creates an exact range (where the min and max values are the same).
+         *
+         * @param  field the field which the range applies to
+         * @param  value the value for the exact range
+         * @return       the new range
+         */
         public Range createExactRange(Field field, Object value) {
             return createRange(field, value, true, value, true);
         }
 
+        /**
+         * Creates an exact range (where the min and max values are the same).
+         *
+         * @param  fieldName the name of the field which the range applies to
+         * @param  value     the value for the exact range
+         * @return           the new range
+         */
         public Range createExactRange(String fieldName, Object value) {
             return createRange(fieldName, value, true, value, true);
         }
