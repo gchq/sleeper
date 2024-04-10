@@ -31,7 +31,6 @@ import software.amazon.awscdk.services.ec2.Vpc;
 import software.amazon.awscdk.services.ec2.VpcLookupOptions;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.InstanceProfile;
-import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.iam.Role;
 import software.amazon.awscdk.services.iam.ServicePrincipal;
@@ -68,6 +67,7 @@ public class BuildEC2Stack extends Stack {
                 .userData(UserData.custom(LoadUserDataUtil.userData(role.getRoleName(), params)))
                 .userDataCausesReplacement(true)
                 .blockDevices(Collections.singletonList(image.rootBlockDevice()))
+                .ssmSessionPermissions(true)
                 .role(role)
                 .build();
 
@@ -97,9 +97,6 @@ public class BuildEC2Stack extends Stack {
                 .actions(List.of("sts:AssumeRole"))
                 .resources(List.of("arn:aws:iam::*:role/cdk-*"))
                 .build());
-
-        // Allow instance to register itself with SSM so we can use that for login
-        role.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("AmazonSSMManagedEC2InstanceDefaultPolicy"));
 
         return role;
     }
