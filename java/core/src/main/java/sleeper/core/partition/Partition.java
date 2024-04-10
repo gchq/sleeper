@@ -59,6 +59,27 @@ public class Partition {
         return new Builder();
     }
 
+    /**
+     * Checks if a row key is in this partition. This depends on the ranges the partition covers.
+     *
+     * @param  schema schema of the Sleeper table
+     * @param  rowKey values of row key to check
+     * @return        true if the row key is in the partition
+     */
+    public boolean isRowKeyInPartition(Schema schema, Key rowKey) {
+        return region.isKeyInRegion(schema, rowKey);
+    }
+
+    /**
+     * Checks if a region overlaps this partition.
+     *
+     * @param  otherRegion region to check
+     * @return             true if any part of the region is in this partition
+     */
+    public boolean doesRegionOverlapPartition(Region otherRegion) {
+        return region.doesRegionOverlap(otherRegion);
+    }
+
     public Region getRegion() {
         return region;
     }
@@ -81,14 +102,6 @@ public class Partition {
 
     public int getDimension() {
         return dimension;
-    }
-
-    public boolean isRowKeyInPartition(Schema schema, Key rowKey) {
-        return region.isKeyInRegion(schema, rowKey);
-    }
-
-    public boolean doesRegionOverlapPartition(Region otherRegion) {
-        return region.doesRegionOverlap(otherRegion);
     }
 
     @Override
@@ -137,6 +150,9 @@ public class Partition {
                 .dimension(dimension);
     }
 
+    /**
+     * Builder to create a partition object.
+     */
     public static final class Builder {
         private Region region;
         private String id;
@@ -148,26 +164,58 @@ public class Partition {
         private Builder() {
         }
 
+        /**
+         * Set the region covered by the partition.
+         *
+         * @param  region the region
+         * @return        the builder
+         */
         public Builder region(Region region) {
             this.region = region;
             return this;
         }
 
+        /**
+         * Set the ID of the partition.
+         *
+         * @param  id a unique identifier
+         * @return    the builder
+         */
         public Builder id(String id) {
             this.id = id;
             return this;
         }
 
+        /**
+         * Set whether this is a leaf partition.
+         *
+         * @param  leafPartition true if the partition has no child partitions, false otherwise
+         * @return               the builder
+         */
         public Builder leafPartition(boolean leafPartition) {
             this.leafPartition = leafPartition;
             return this;
         }
 
+        /**
+         * Set the parent of the partition. This is the ID of the partition that was split to create this partition.
+         * Can be null if this is the root partition of the Sleeper table.
+         *
+         * @param  parentPartitionId the ID of the parent partition
+         * @return                   the builder
+         */
         public Builder parentPartitionId(String parentPartitionId) {
             this.parentPartitionId = parentPartitionId;
             return this;
         }
 
+        /**
+         * Set the children of the partition. This is the IDs of any partitions that were created by splitting this
+         * partition. This will default to an empty list, and must be empty for a leaf partition.
+         *
+         * @param  childPartitionIds the IDs of the child partitions
+         * @return                   the builder
+         */
         public Builder childPartitionIds(List<String> childPartitionIds) {
             this.childPartitionIds = childPartitionIds;
             return this;
@@ -177,6 +225,13 @@ public class Partition {
             return this.childPartitionIds(Arrays.asList(childPartitionIds));
         }
 
+        /**
+         * Set the dimension this partition was split on. If this partition has been split, this should be the index of
+         * the row key in the schema that this partition was split on.
+         *
+         * @param  dimension the index of the row key used as the split point
+         * @return           the builder
+         */
         public Builder dimension(int dimension) {
             this.dimension = dimension;
             return this;
