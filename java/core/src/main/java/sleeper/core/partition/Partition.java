@@ -20,7 +20,6 @@ import sleeper.core.range.Region;
 import sleeper.core.range.RegionCanonicaliser;
 import sleeper.core.schema.Schema;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -219,10 +218,6 @@ public class Partition {
         public Builder childPartitionIds(List<String> childPartitionIds) {
             this.childPartitionIds = childPartitionIds;
             return this;
-        }
-
-        public Builder childPartitionIds(String... childPartitionIds) {
-            return this.childPartitionIds(Arrays.asList(childPartitionIds));
         }
 
         /**
