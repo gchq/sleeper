@@ -79,6 +79,10 @@ public class BuildEC2Stack extends Stack {
                 .value(instance.getInstanceId())
                 .description("ID of the build EC2 instance")
                 .build();
+        CfnOutput.Builder.create(this, "InstanceRole")
+                .value(instance.getRole().getRoleName())
+                .description("Role of the build EC2 instance")
+                .build();
     }
 
     private SecurityGroup createSecurityGroup() {
