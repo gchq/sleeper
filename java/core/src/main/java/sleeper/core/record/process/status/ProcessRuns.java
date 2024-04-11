@@ -22,6 +22,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+/**
+ * Stores a list of process runs.
+ */
 public class ProcessRuns {
     private final List<ProcessRun> latestFirst;
 
@@ -29,10 +32,22 @@ public class ProcessRuns {
         this.latestFirst = Collections.unmodifiableList(Objects.requireNonNull(latestFirst, "latestFirst must not be null"));
     }
 
+    /**
+     * Creates an instance of this class using a list of process runs sorted by latest first.
+     *
+     * @param  latestFirst the list of process runs sorted by latest first
+     * @return             an instance of this class
+     */
     public static ProcessRuns latestFirst(List<ProcessRun> latestFirst) {
         return new ProcessRuns(latestFirst);
     }
 
+    /**
+     * Creates an instance of this class using a list of process status update records sorted by latest first.
+     *
+     * @param  recordList the list of process status update records sorted by latest first
+     * @return            an instance of this class
+     */
     public static ProcessRuns fromRecordsLatestFirst(List<ProcessStatusUpdateRecord> recordList) {
         ProcessRunsBuilder builder = new ProcessRunsBuilder();
         for (int i = recordList.size() - 1; i >= 0; i--) {
@@ -49,14 +64,30 @@ public class ProcessRuns {
         return !latestFirst.isEmpty() && latestFirst.stream().allMatch(ProcessRun::isFinished);
     }
 
+    /**
+     * Checks if any process run was assigned to the provided task ID.
+     *
+     * @param  taskId the task ID to check
+     * @return        whether a process run was assigned to the task ID
+     */
     public boolean isTaskIdAssigned(String taskId) {
         return latestFirst.stream().anyMatch(run -> taskId.equals(run.getTaskId()));
     }
 
+    /**
+     * Gets the latest update time from the most recent run.
+     *
+     * @return the latest update time from the most recent run, or an empty optional if there are no runs
+     */
     public Optional<Instant> lastTime() {
         return getLatestRun().map(ProcessRun::getLatestUpdateTime);
     }
 
+    /**
+     * Gets the first update time from the oldest run.
+     *
+     * @return the first update time from the oldest run, or an empty optional if there are no runs
+     */
     public Optional<Instant> firstTime() {
         return getFirstRun().map(ProcessRun::getStartUpdateTime);
     }
@@ -65,6 +96,11 @@ public class ProcessRuns {
         return latestFirst.stream().findFirst();
     }
 
+    /**
+     * Gets the oldest process run.
+     *
+     * @return the oldest process run, or an empty optional if there are no runs
+     */
     public Optional<ProcessRun> getFirstRun() {
         if (latestFirst.isEmpty()) {
             return Optional.empty();
