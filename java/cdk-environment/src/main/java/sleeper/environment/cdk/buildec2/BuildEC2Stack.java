@@ -68,6 +68,7 @@ public class BuildEC2Stack extends Stack {
                 .userDataCausesReplacement(true)
                 .blockDevices(Collections.singletonList(image.rootBlockDevice()))
                 .ssmSessionPermissions(true)
+                .requireImdsv2(true)
                 .role(role)
                 .build();
 
