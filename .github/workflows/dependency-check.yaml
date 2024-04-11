@@ -18,16 +18,16 @@ jobs:
       - name: Cache Maven dependencies & CVEs database daily
         uses: actions/cache@v4
         with:
-          path: .m2/repository
+          path: ${{ runner.temp }}/.m2/repository
           key: ${{ runner.os }}-dependency-check-${{ steps.date.outputs.date }}
       - name: Resolve dependencies
-        run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -Dmaven.repo.local=../.m2/repository
+        run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
         working-directory: ./java
       - name: Update CVEs database
-        run: mvn --batch-mode dependency-check:update-only -Dmaven.repo.local=../.m2/repository
+        run: mvn --batch-mode dependency-check:update-only -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
         working-directory: ./java
       - name: Build with Maven
-        run: mvn --batch-mode verify dependency-check:aggregate -Pquick -Dmaven.repo.local=../.m2/repository
+        run: mvn --batch-mode verify dependency-check:aggregate -Pquick -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
         working-directory: ./java
       - name: Upload dependency check report
         if: ${{ always() }}
