@@ -38,7 +38,7 @@ public class DynamoDBCompactionStatusStoreResources implements CompactionStatusS
     private final Table tasksTable;
 
     public DynamoDBCompactionStatusStoreResources(
-            Construct scope, InstanceProperties instanceProperties) {
+            Construct scope, InstanceProperties instanceProperties, CoreStacks coreStacks) {
         String instanceId = instanceProperties.get(ID);
 
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
@@ -89,6 +89,10 @@ public class DynamoDBCompactionStatusStoreResources implements CompactionStatusS
                 .timeToLiveAttribute(DynamoDBCompactionTaskStatusFormat.EXPIRY_DATE)
                 .pointInTimeRecovery(false)
                 .build();
+
+        updatesTable.grantReadData(coreStacks.getReportingPolicy());
+        jobsTable.grantReadData(coreStacks.getReportingPolicy());
+        tasksTable.grantReadData(coreStacks.getReportingPolicy());
     }
 
     @Override

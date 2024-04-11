@@ -120,4 +120,8 @@ public class CoreStacks {
     public IGrantable getQueryPolicy() {
         return policiesStack.getQueryPolicy();
     }
+
+    public IGrantable getReportingPolicy() {
+        return policiesStack.getReportingPolicy();
+    }
 }

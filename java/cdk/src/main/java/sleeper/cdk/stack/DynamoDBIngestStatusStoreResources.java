@@ -41,7 +41,8 @@ public class DynamoDBIngestStatusStoreResources implements IngestStatusStoreReso
     private final Table jobsTable;
     private final Table tasksTable;
 
-    public DynamoDBIngestStatusStoreResources(Construct scope, InstanceProperties instanceProperties) {
+    public DynamoDBIngestStatusStoreResources(
+            Construct scope, InstanceProperties instanceProperties, CoreStacks coreStacks) {
         String instanceId = instanceProperties.get(ID);
 
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
@@ -102,6 +103,10 @@ public class DynamoDBIngestStatusStoreResources implements IngestStatusStoreReso
                 .timeToLiveAttribute(DynamoDBIngestTaskStatusFormat.EXPIRY_DATE)
                 .pointInTimeRecovery(false)
                 .build();
+
+        updatesTable.grantReadData(coreStacks.getReportingPolicy());
+        jobsTable.grantReadData(coreStacks.getReportingPolicy());
+        tasksTable.grantReadData(coreStacks.getReportingPolicy());
     }
 
     @Override

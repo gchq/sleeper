@@ -40,6 +40,7 @@ import java.util.stream.Collectors;
 import static java.util.function.Predicate.not;
 import static sleeper.configuration.properties.instance.CommonProperty.EDIT_TABLES_ROLE;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.CommonProperty.REPORTING_ROLE;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_ROLE;
 import static sleeper.configuration.properties.instance.QueryProperty.QUERY_ROLE;
@@ -49,6 +50,7 @@ public class ManagedPoliciesStack extends NestedStack {
     private final ManagedPolicy ingestPolicy;
     private final ManagedPolicy queryPolicy;
     private final ManagedPolicy editTablesPolicy;
+    private final ManagedPolicy reportingPolicy;
     private final ManagedPolicy readIngestSourcesPolicy;
 
     public ManagedPoliciesStack(Construct scope, String id, InstanceProperties instanceProperties) {
@@ -65,6 +67,10 @@ public class ManagedPoliciesStack extends NestedStack {
         editTablesPolicy = new ManagedPolicy(this, "EditTablesPolicy");
         addRoleReferences(this, instanceProperties, EDIT_TABLES_ROLE, "EditTablesRole")
                 .forEach(editTablesPolicy::attachToRole);
+
+        reportingPolicy = new ManagedPolicy(this, "ReportingPolicy");
+        addRoleReferences(this, instanceProperties, REPORTING_ROLE, "ReportingRole")
+                .forEach(reportingPolicy::attachToRole);
 
         List<IBucket> sourceBuckets = addIngestSourceBucketReferences(this, instanceProperties);
         if (sourceBuckets.isEmpty()) { // CDK doesn't allow a managed policy without any grants
@@ -85,6 +91,10 @@ public class ManagedPoliciesStack extends NestedStack {
 
     public ManagedPolicy getEditTablesPolicy() {
         return editTablesPolicy;
+    }
+
+    public ManagedPolicy getReportingPolicy() {
+        return reportingPolicy;
     }
 
     // The Lambda IFunction.getRole method is annotated as nullable, even though it will never return null in practice.
