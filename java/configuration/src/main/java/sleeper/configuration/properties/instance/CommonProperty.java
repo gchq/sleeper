@@ -118,6 +118,10 @@ public interface CommonProperty {
             .validationPredicate(Utils::isValidLogRetention)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty EDIT_TABLES_ROLE = Index.propertyBuilder("sleeper.edit.tables.role")
+            .description("A comma-separated list of role names which should be able to edit tables in the Sleeper instance.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty MAXIMUM_CONNECTIONS_TO_S3 = Index.propertyBuilder("sleeper.fs.s3a.max-connections")
             .description("Used to set the value of fs.s3a.connection.maximum on the Hadoop configuration. This controls the " +
                     "maximum number of http connections to S3.\n" +

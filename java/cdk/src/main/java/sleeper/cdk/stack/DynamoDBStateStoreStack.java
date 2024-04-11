@@ -109,6 +109,7 @@ public class DynamoDBStateStoreStack extends NestedStack {
         instanceProperties.set(PARTITION_TABLENAME, partitionTable.getTableName());
         partitionTable.grantReadData(policiesStack.getIngestPolicy());
         activeFilesTable.grantReadWriteData(policiesStack.getIngestPolicy());
+        partitionTable.grantReadWriteData(policiesStack.getEditTablesPolicy());
     }
 
     public void grantReadActiveFileMetadata(IGrantable grantee) {

@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
+import static sleeper.configuration.properties.instance.CommonProperty.EDIT_TABLES_ROLE;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_ROLE;
 import static sleeper.configuration.properties.instance.QueryProperty.QUERY_ROLE;
@@ -63,6 +64,7 @@ public class SystemTestInstanceConfiguration {
 
         List<String> ingestRoles = new ArrayList<>();
         List<String> queryRoles = new ArrayList<>();
+        List<String> editTablesRoles = new ArrayList<>();
         String systemTestClusterRole = systemTest.getSystemTestWriterRoleName();
         if (systemTestClusterRole != null) {
             ingestRoles.add(systemTestClusterRole);
@@ -71,9 +73,11 @@ public class SystemTestInstanceConfiguration {
         if (systemTestRole != null) {
             ingestRoles.add(systemTestRole);
             queryRoles.add(systemTestRole);
+            editTablesRoles.add(systemTestRole);
         }
         properties.setList(INGEST_SOURCE_ROLE, ingestRoles);
         properties.setList(QUERY_ROLE, queryRoles);
+        properties.setList(EDIT_TABLES_ROLE, editTablesRoles);
         return configuration;
     }
 

@@ -38,6 +38,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static java.util.function.Predicate.not;
+import static sleeper.configuration.properties.instance.CommonProperty.EDIT_TABLES_ROLE;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_ROLE;
@@ -47,6 +48,7 @@ public class ManagedPoliciesStack extends NestedStack {
 
     private final ManagedPolicy ingestPolicy;
     private final ManagedPolicy queryPolicy;
+    private final ManagedPolicy editTablesPolicy;
     private final ManagedPolicy readIngestSourcesPolicy;
 
     public ManagedPoliciesStack(Construct scope, String id, InstanceProperties instanceProperties) {
@@ -59,6 +61,10 @@ public class ManagedPoliciesStack extends NestedStack {
         queryPolicy = new ManagedPolicy(this, "QueryPolicy");
         addRoleReferences(this, instanceProperties, QUERY_ROLE)
                 .forEach(queryPolicy::attachToRole);
+
+        editTablesPolicy = new ManagedPolicy(this, "EditTablesPolicy");
+        addRoleReferences(this, instanceProperties, EDIT_TABLES_ROLE)
+                .forEach(editTablesPolicy::attachToRole);
 
         List<IBucket> sourceBuckets = addIngestSourceBucketReferences(this, instanceProperties);
         if (sourceBuckets.isEmpty()) { // CDK doesn't allow a managed policy without any grants
@@ -75,6 +81,10 @@ public class ManagedPoliciesStack extends NestedStack {
 
     public ManagedPolicy getQueryPolicy() {
         return queryPolicy;
+    }
+
+    public ManagedPolicy getEditTablesPolicy() {
+        return editTablesPolicy;
     }
 
     // The Lambda IFunction.getRole method is annotated as nullable, even though it will never return null in practice.
