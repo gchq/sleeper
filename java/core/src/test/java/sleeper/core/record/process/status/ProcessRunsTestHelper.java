@@ -20,9 +20,9 @@ import java.util.stream.Collectors;
 
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.records;
 
-public class TestProcessRuns {
+public class ProcessRunsTestHelper {
 
-    private TestProcessRuns() {
+    private ProcessRunsTestHelper() {
     }
 
     public static ProcessRuns runsFromUpdates(ProcessStatusUpdate... updates) {
