@@ -52,10 +52,23 @@ public class Schema {
         return new Builder();
     }
 
+    /**
+     * Creates an instance of this class using a schema file.
+     *
+     * @param  schemaPath  the path to the schema file
+     * @return             an instance of this class
+     * @throws IOException if an error occurs reading from the file
+     */
     public static Schema load(Path schemaPath) throws IOException {
         return loadFromString(Files.readString(schemaPath));
     }
 
+    /**
+     * Creates an instance of this class using a JSON string.
+     *
+     * @param  schemaJson the JSON string representing a schema
+     * @return            an instance of this class
+     */
     public static Schema loadFromString(String schemaJson) {
         return new SchemaSerDe().fromJson(schemaJson);
     }
@@ -110,16 +123,33 @@ public class Schema {
         return streamAllFields().collect(Collectors.toUnmodifiableList());
     }
 
+    /**
+     * Streams all row key, sort key, and value fields.
+     *
+     * @return a stream of all fields
+     */
     public Stream<Field> streamAllFields() {
         return streamAllFields(rowKeyFields, sortKeyFields, valueFields);
     }
 
+    /**
+     * Gets a field by name.
+     *
+     * @param  fieldName the name of the field
+     * @return           a field, or an empty optional if the field does not exist
+     */
     public Optional<Field> getField(String fieldName) {
         return streamAllFields()
                 .filter(f -> f.getName().equals(fieldName))
                 .findFirst();
     }
 
+    /**
+     * Saves this schema to a file.
+     *
+     * @param  path        the path of the file
+     * @throws IOException if an error occured when writing the file
+     */
     public void save(Path path) throws IOException {
         Files.writeString(path, new SchemaSerDe().toJson(this));
     }
@@ -149,6 +179,9 @@ public class Schema {
         return Objects.hash(rowKeyFields, sortKeyFields, valueFields);
     }
 
+    /**
+     * Builder to create a schema object.
+     */
     public static final class Builder {
         private List<Field> rowKeyFields;
         private List<Field> sortKeyFields;
@@ -157,29 +190,65 @@ public class Schema {
         private Builder() {
         }
 
+        /**
+         * Sets the row key fields.
+         *
+         * @param  rowKeyFields the row key fields
+         * @return              the builder
+         */
         public Builder rowKeyFields(List<Field> rowKeyFields) {
             this.rowKeyFields = rowKeyFields;
             return this;
         }
 
+        /**
+         * Sets the row key fields.
+         *
+         * @param  rowKeyFields the row key fields
+         * @return              the builder
+         */
         public Builder rowKeyFields(Field... rowKeyFields) {
             return rowKeyFields(Arrays.asList(rowKeyFields));
         }
 
+        /**
+         * Sets the sort key fields.
+         *
+         * @param  sortKeyFields the sort key fields
+         * @return               the builder
+         */
         public Builder sortKeyFields(List<Field> sortKeyFields) {
             this.sortKeyFields = sortKeyFields;
             return this;
         }
 
+        /**
+         * Sets the sort key fields.
+         *
+         * @param  sortKeyFields the sort key fields
+         * @return               the builder
+         */
         public Builder sortKeyFields(Field... sortKeyFields) {
             return sortKeyFields(Arrays.asList(sortKeyFields));
         }
 
+        /**
+         * Sets the value fields.
+         *
+         * @param  valueFields the value fields
+         * @return             the builder
+         */
         public Builder valueFields(List<Field> valueFields) {
             this.valueFields = valueFields;
             return this;
         }
 
+        /**
+         * Sets the value fields.
+         *
+         * @param  valueFields the value fields
+         * @return             the builder
+         */
         public Builder valueFields(Field... valueFields) {
             return valueFields(Arrays.asList(valueFields));
         }
