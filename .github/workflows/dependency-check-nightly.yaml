@@ -1,5 +1,6 @@
 name: Dependency Check Nightly
 on:
+  workflow_dispatch: # Allow manual running to refresh/check cache
   schedule:
     - cron: '0 2 * * *'
 
