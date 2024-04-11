@@ -160,7 +160,7 @@ public class CompactionStack extends NestedStack {
             CoreStacks coreStacks) {
         super(scope, id);
         this.instanceProperties = instanceProperties;
-        statusStore = CompactionStatusStoreResources.from(this, instanceProperties);
+        statusStore = CompactionStatusStoreResources.from(this, instanceProperties, coreStacks);
         // The compaction stack consists of the following components:
         // - An SQS queue for the compaction jobs.
         // - A lambda to periodically check for compaction jobs that should be created.
