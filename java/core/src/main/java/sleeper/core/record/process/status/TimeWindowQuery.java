@@ -19,6 +19,9 @@ package sleeper.core.record.process.status;
 import java.time.Duration;
 import java.time.Instant;
 
+/**
+ * Helper class for checking if a time lies within a defined time window.
+ */
 public class TimeWindowQuery {
     private final Instant windowStartTime;
     private final Instant windowEndTime;
@@ -34,6 +37,12 @@ public class TimeWindowQuery {
         this.maxRuntime = maxRuntime;
     }
 
+    /**
+     * Checks if the start time lies within the time window. Also considers the maximum runtime of a job.
+     *
+     * @param  startTime the start time to check
+     * @return           whether the start time lies within the time window
+     */
     public boolean isUnfinishedProcessInWindow(Instant startTime) {
         if (maxRuntime != null && startTime.plus(maxRuntime).isBefore(windowStartTime)) {
             return false;
@@ -41,6 +50,13 @@ public class TimeWindowQuery {
         return startTime.isBefore(windowEndTime);
     }
 
+    /**
+     * Checks if the start time and the end time lie within the time window.
+     *
+     * @param  startTime the start time to check
+     * @param  endTime   the end time to check
+     * @return           whether the start and end time lie within the time window
+     */
     public boolean isFinishedProcessInWindow(Instant startTime, Instant endTime) {
         return endTime.isAfter(windowStartTime) &&
                 startTime.isBefore(windowEndTime);
