@@ -16,7 +16,7 @@ jobs:
         id: date
         run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
       - name: Cache Maven dependencies & CVEs database daily
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: .m2/repository
           key: ${{ runner.os }}-dependency-check-${{ steps.date.outputs.date }}
