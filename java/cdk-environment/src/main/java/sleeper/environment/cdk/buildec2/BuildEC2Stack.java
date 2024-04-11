@@ -99,7 +99,7 @@ public class BuildEC2Stack extends Stack {
         // Allow creating jars bucket & Docker repositories
         role.addToPolicy(PolicyStatement.Builder.create()
                 .effect(Effect.ALLOW)
-                .actions(List.of("s3:CreateBucket", "ecr:CreateRepository"))
+                .actions(List.of("s3:*", "ecr:*"))
                 .resources(List.of("*"))
                 .build());
 
