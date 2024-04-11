@@ -55,15 +55,15 @@ public class ManagedPoliciesStack extends NestedStack {
         super(scope, id);
 
         ingestPolicy = new ManagedPolicy(this, "IngestPolicy");
-        addRoleReferences(this, instanceProperties, INGEST_SOURCE_ROLE)
+        addRoleReferences(this, instanceProperties, INGEST_SOURCE_ROLE, "IngestSourceRole")
                 .forEach(ingestPolicy::attachToRole);
 
         queryPolicy = new ManagedPolicy(this, "QueryPolicy");
-        addRoleReferences(this, instanceProperties, QUERY_ROLE)
+        addRoleReferences(this, instanceProperties, QUERY_ROLE, "QueryRole")
                 .forEach(queryPolicy::attachToRole);
 
         editTablesPolicy = new ManagedPolicy(this, "EditTablesPolicy");
-        addRoleReferences(this, instanceProperties, EDIT_TABLES_ROLE)
+        addRoleReferences(this, instanceProperties, EDIT_TABLES_ROLE, "EditTablesRole")
                 .forEach(editTablesPolicy::attachToRole);
 
         List<IBucket> sourceBuckets = addIngestSourceBucketReferences(this, instanceProperties);
@@ -105,11 +105,12 @@ public class ManagedPoliciesStack extends NestedStack {
     //          we include the instance ID in the CDK logical IDs for the ingest source roles.
     //          This should not be necessary with a managed policy, but when you use the CDK's grantX methods directly,
     //          it adds separate policies against the roles. That may still be desirable in the future.
-    private static List<IRole> addRoleReferences(Construct scope, InstanceProperties instanceProperties, InstanceProperty property) {
+    private static List<IRole> addRoleReferences(
+            Construct scope, InstanceProperties instanceProperties, InstanceProperty property, String roleId) {
         AtomicInteger index = new AtomicInteger(1);
         return instanceProperties.getList(property).stream()
                 .filter(not(String::isBlank))
-                .map(name -> Role.fromRoleName(scope, ingestSourceRoleReferenceId(instanceProperties, index), name))
+                .map(name -> Role.fromRoleName(scope, roleReferenceId(instanceProperties, roleId, index), name))
                 .collect(Collectors.toUnmodifiableList());
     }
 
@@ -121,9 +122,9 @@ public class ManagedPoliciesStack extends NestedStack {
                 .collect(Collectors.toList());
     }
 
-    private static String ingestSourceRoleReferenceId(InstanceProperties instanceProperties, AtomicInteger index) {
+    private static String roleReferenceId(InstanceProperties instanceProperties, String roleId, AtomicInteger index) {
         return Utils.truncateTo64Characters(String.join("-",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT),
-                String.valueOf(index.getAndIncrement()), "IngestSourceRole"));
+                String.valueOf(index.getAndIncrement()), roleId));
     }
 }
