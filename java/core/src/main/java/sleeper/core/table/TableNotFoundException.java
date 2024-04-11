@@ -16,31 +16,73 @@
 
 package sleeper.core.table;
 
+/**
+ * An exception for when a table could not be found.
+ */
 public class TableNotFoundException extends RuntimeException {
     private TableNotFoundException(String message, Exception cause) {
         super(message, cause);
     }
 
+    /**
+     * Creates an instance of this class with a table ID.
+     *
+     * @param  tableId the table ID
+     * @return         an instance of this class
+     */
     public static TableNotFoundException withTableId(String tableId) {
         return withTableId(tableId, null);
     }
 
+    /**
+     * Creates an instance of this class with a table ID and a cause exception.
+     *
+     * @param  tableId the table ID
+     * @param  cause   a cause exception
+     * @return         an instance of this class
+     */
     public static TableNotFoundException withTableId(String tableId, Exception cause) {
         return new TableNotFoundException("Table not found with ID \"" + tableId + "\"", cause);
     }
 
+    /**
+     * Creates an instance of this class with a table name.
+     *
+     * @param  tableName the table name
+     * @return           an instance of this class
+     */
     public static TableNotFoundException withTableName(String tableName) {
         return withTableName(tableName, null);
     }
 
+    /**
+     * Creates an instance of this class with a table name and a cause exception.
+     *
+     * @param  tableName the table name
+     * @param  cause     a cause exception
+     * @return           an instance of this class
+     */
     public static TableNotFoundException withTableName(String tableName, Exception cause) {
         return new TableNotFoundException("Table not found with name \"" + tableName + "\"", cause);
     }
 
+    /**
+     * Creates an instance of this class with a table status.
+     *
+     * @param  table the table status
+     * @return       an instance of this class
+     */
     public static TableNotFoundException withTable(TableStatus table) {
         return withTable(table, null);
     }
 
+    /**
+     * Creates an instance of this class with a table status and a cause exception.
+     *
+     * @param  table the table status
+     * @param  cause a cause exception
+     * @return       an instance of this class
+     */
     public static TableNotFoundException withTable(TableStatus table, Exception cause) {
         return new TableNotFoundException("Table not found: " + table, cause);
     }
