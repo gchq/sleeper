@@ -20,6 +20,7 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.PartitionTransaction;
 import sleeper.core.statestore.transactionlog.StateStorePartitions;
 
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -65,7 +66,7 @@ public class SplitPartitionTransaction implements PartitionTransaction {
     }
 
     @Override
-    public void apply(StateStorePartitions stateStorePartitions) {
+    public void apply(StateStorePartitions stateStorePartitions, Instant updateTime) {
         stateStorePartitions.put(parent);
         newChildren.forEach(stateStorePartitions::put);
     }

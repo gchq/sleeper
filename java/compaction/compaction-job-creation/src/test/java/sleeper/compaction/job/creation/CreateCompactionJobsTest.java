@@ -458,7 +458,7 @@ public class CreateCompactionJobsTest {
         TableProperties properties = CreateJobsTestUtils.createTableProperties(schema, instanceProperties);
         tables.add(properties);
         StateStore stateStore = inMemoryStateStoreUninitialised(schema);
-        stateStore.fixTime(DEFAULT_UPDATE_TIME);
+        stateStore.fixFileUpdateTime(DEFAULT_UPDATE_TIME);
         stateStoreByTableName.put(properties.get(TABLE_NAME), stateStore);
         return properties;
     }

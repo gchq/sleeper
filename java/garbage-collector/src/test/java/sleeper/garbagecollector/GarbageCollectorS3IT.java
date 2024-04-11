@@ -87,7 +87,7 @@ public class GarbageCollectorS3IT {
 
     StateStore setupStateStoreAndFixTime(Instant fixedTime) {
         StateStore stateStore = inMemoryStateStoreWithSinglePartition(TEST_SCHEMA);
-        stateStore.fixTime(fixedTime);
+        stateStore.fixFileUpdateTime(fixedTime);
         stateStoreProvider = new FixedStateStoreProvider(tableProperties, stateStore);
         return stateStore;
     }

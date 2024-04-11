@@ -11,13 +11,7 @@ jobs:
         with:
           java-version: '17'
           distribution: 'corretto'
-      - name: Cache dependencies
-        uses: actions/cache@v3
-        with:
-          path: java/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
+          cache: 'maven'
       - name: Resolve dependencies
         run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -Dmaven.repo.local=.m2/repository
         working-directory: ./java
