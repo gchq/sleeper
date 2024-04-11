@@ -66,9 +66,9 @@ public class JSONResultsBatchSerialiser implements ResultsBatchSerialiser {
     }
 
     /**
-     * Serialises a batch of records to a JSON string.
+     * Serialises a batch of results to a JSON string.
      *
-     * @param  resultsBatch the batch of records
+     * @param  resultsBatch the batch of results
      * @param  prettyPrint  whether to pretty-print the JSON string
      * @return              a serialised JSON string
      */
