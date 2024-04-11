@@ -22,20 +22,47 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoField;
 
+/**
+ * A helper for creating process status updates in tests.
+ */
 public class ProcessStatusUpdateTestHelper {
 
     private ProcessStatusUpdateTestHelper() {
     }
 
+    /**
+     * Creates a process started status.
+     *
+     * @param  startTime the start time
+     * @return           a {@link ProcessStartedStatus}
+     */
     public static ProcessStartedStatus startedStatus(Instant startTime) {
         return ProcessStartedStatus.updateAndStartTime(defaultUpdateTime(startTime), startTime);
     }
 
+    /**
+     * Creates a process finished status.
+     *
+     * @param  startedStatus  the {@link ProcessStartedStatus}
+     * @param  runDuration    the duration
+     * @param  recordsRead    the number of records read
+     * @param  recordsWritten the number of records written
+     * @return                a {@link ProcessFinishedStatus}
+     */
     public static ProcessFinishedStatus finishedStatus(
             ProcessRunStartedUpdate startedStatus, Duration runDuration, long recordsRead, long recordsWritten) {
         return finishedStatus(startedStatus.getStartTime(), runDuration, recordsRead, recordsWritten);
     }
 
+    /**
+     * Creates a process finished status.
+     *
+     * @param  startTime      the start time
+     * @param  runDuration    the duration
+     * @param  recordsRead    the number of records read
+     * @param  recordsWritten the number of records written
+     * @return                a {@link ProcessFinishedStatus}
+     */
     public static ProcessFinishedStatus finishedStatus(
             Instant startTime, Duration runDuration, long recordsRead, long recordsWritten) {
         Instant finishTime = startTime.plus(runDuration);
@@ -44,7 +71,13 @@ public class ProcessStatusUpdateTestHelper {
         return ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(finishTime), summary);
     }
 
-    public static Instant defaultUpdateTime(Instant startTime) {
-        return startTime.with(ChronoField.MILLI_OF_SECOND, 123);
+    /**
+     * Creates a default update time based on a given time.
+     *
+     * @param  time the provided time
+     * @return      the provided time with milliseconds set to 123
+     */
+    public static Instant defaultUpdateTime(Instant time) {
+        return time.with(ChronoField.MILLI_OF_SECOND, 123);
     }
 }
