@@ -22,27 +22,57 @@ import java.util.List;
 import java.util.Random;
 import java.util.function.DoubleSupplier;
 
+/**
+ * A test helper for instantiating ExponentialBackoffWithJitter class.es.
+ */
 public class ExponentialBackoffWithJitterTestHelper {
 
     private ExponentialBackoffWithJitterTestHelper() {
     }
 
+    /**
+     * Creates a fixed seed Random.
+     *
+     * @return a reference to {@link Random#nextDouble}
+     */
     public static DoubleSupplier fixJitterSeed() {
         return new Random(0)::nextDouble;
     }
 
+    /**
+     * Creates a double supplier with no jitter.
+     *
+     * @return a {@link DoubleSupplier} that always returns the same number
+     */
     public static DoubleSupplier noJitter() {
         return () -> 1.0;
     }
 
+    /**
+     * Creates a double supplier with a fixed jitter fraction.
+     *
+     * @param  fraction the fraction
+     * @return          a {@link DoubleSupplier} that always returns the fraction
+     */
     public static DoubleSupplier constantJitterFraction(double fraction) {
         return () -> fraction;
     }
 
+    /**
+     * Creates an implementation of a waiter that records the wait times in a list.
+     *
+     * @param  recordWaits the list to store wait times
+     * @return             a {@link Waiter} that records wait times
+     */
     public static Waiter recordWaits(List<Duration> recordWaits) {
         return millis -> recordWaits.add(Duration.ofMillis(millis));
     }
 
+    /**
+     * Creates an implementation of a waiter that does nothing.
+     *
+     * @return a {@link Waiter} that does nothing
+     */
     public static Waiter noWaits() {
         return millis -> {
         };
