@@ -12,7 +12,7 @@ jobs:
           java-version: '17'
           distribution: 'corretto'
       - name: Cache dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: java/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
