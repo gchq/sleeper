@@ -20,15 +20,30 @@ import java.util.stream.Collectors;
 
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.records;
 
+/**
+ * A test helper for creating process runs objects.
+ */
 public class ProcessRunsTestHelper {
 
     private ProcessRunsTestHelper() {
     }
 
+    /**
+     * Creates a process runs object from a collection of process status updates.
+     *
+     * @param  updates the process status updates
+     * @return         a {@link ProcessRuns} object
+     */
     public static ProcessRuns runsFromUpdates(ProcessStatusUpdate... updates) {
         return runsFrom(records().fromUpdates(updates));
     }
 
+    /**
+     * Creates a process runs object from a collection of task updates.
+     *
+     * @param  taskUpdates the task updates
+     * @return             a {@link ProcessRuns} object
+     */
     public static ProcessRuns runsFromUpdates(
             TestProcessStatusUpdateRecords.TaskUpdates... taskUpdates) {
         return runsFrom(records().fromUpdates(taskUpdates));
