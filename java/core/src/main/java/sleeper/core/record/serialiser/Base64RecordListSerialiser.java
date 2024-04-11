@@ -26,6 +26,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,37 +43,45 @@ public class Base64RecordListSerialiser implements ResultsBatchSerialiser {
     }
 
     @Override
-    public String serialise(ResultsBatch resultsBatch) throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        DataOutputStream dos = new DataOutputStream(baos);
-        dos.writeUTF(resultsBatch.getQueryId());
-        int numRecords = resultsBatch.getRecords().size();
-        dos.writeInt(numRecords);
-        for (Record record : resultsBatch.getRecords()) {
-            byte[] serialisedValue = recordSerialiser.serialise(record);
-            dos.writeInt(serialisedValue.length);
-            dos.write(serialisedValue);
+    public String serialise(ResultsBatch resultsBatch) {
+        try {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            DataOutputStream dos = new DataOutputStream(baos);
+            dos.writeUTF(resultsBatch.getQueryId());
+            int numRecords = resultsBatch.getRecords().size();
+            dos.writeInt(numRecords);
+            for (Record record : resultsBatch.getRecords()) {
+                byte[] serialisedValue = recordSerialiser.serialise(record);
+                dos.writeInt(serialisedValue.length);
+                dos.write(serialisedValue);
+            }
+            dos.close();
+            byte[] bytes = baos.toByteArray();
+            return Base64.encodeBase64String(bytes);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
-        dos.close();
-        byte[] bytes = baos.toByteArray();
-        return Base64.encodeBase64String(bytes);
     }
 
     @Override
-    public ResultsBatch deserialise(String serialisedRecords) throws IOException {
-        byte[] bytes = Base64.decodeBase64(serialisedRecords);
-        ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
-        DataInputStream dis = new DataInputStream(bais);
-        String queryId = dis.readUTF();
-        int numRecords = dis.readInt();
-        List<Record> records = new ArrayList<>(numRecords);
-        for (int i = 0; i < numRecords; i++) {
-            int length = dis.readInt();
-            byte[] serialisedRecord = new byte[length];
-            dis.readFully(serialisedRecord);
-            records.add(recordSerialiser.deserialise(serialisedRecord));
+    public ResultsBatch deserialise(String serialisedRecords) {
+        try {
+            byte[] bytes = Base64.decodeBase64(serialisedRecords);
+            ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
+            DataInputStream dis = new DataInputStream(bais);
+            String queryId = dis.readUTF();
+            int numRecords = dis.readInt();
+            List<Record> records = new ArrayList<>(numRecords);
+            for (int i = 0; i < numRecords; i++) {
+                int length = dis.readInt();
+                byte[] serialisedRecord = new byte[length];
+                dis.readFully(serialisedRecord);
+                records.add(recordSerialiser.deserialise(serialisedRecord));
+            }
+            dis.close();
+            return new ResultsBatch(queryId, schema, records);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
-        dis.close();
-        return new ResultsBatch(queryId, schema, records);
     }
 }

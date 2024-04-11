@@ -17,11 +17,24 @@ package sleeper.core.record.serialiser;
 
 import sleeper.core.record.ResultsBatch;
 
-import java.io.IOException;
-
+/**
+ * Interface for serialising and deserialing results batches.
+ */
 public interface ResultsBatchSerialiser {
 
-    String serialise(ResultsBatch resultsBatch) throws IOException;
+    /**
+     * Serialise a results batch to a string.
+     *
+     * @param  resultsBatch the results batch
+     * @return              a serialised string
+     */
+    String serialise(ResultsBatch resultsBatch);
 
-    ResultsBatch deserialise(String serialisedResultsBatch) throws IOException;
+    /**
+     * Deserialise a string to a results batch.
+     *
+     * @param  serialisedResultsBatch the serialised results batch
+     * @return                        a {@link ResultsBatch} object
+     */
+    ResultsBatch deserialise(String serialisedResultsBatch);
 }
