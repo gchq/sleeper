@@ -26,6 +26,7 @@ import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.systemtest.configuration.SystemTestProperties;
+import sleeper.systemtest.configuration.SystemTestRole;
 
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
@@ -80,6 +81,7 @@ public class SystemTestApp extends SleeperCdkApp {
                 .build());
 
         SystemTestProperties systemTestProperties = Utils.loadInstanceProperties(SystemTestProperties::new, app);
+        SystemTestRole.addSystemTestRole(systemTestProperties, Utils.tryGetContext(app));
 
         String id = systemTestProperties.get(ID);
         Environment environment = Environment.builder()

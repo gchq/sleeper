@@ -249,7 +249,7 @@ public class Utils {
                 instanceProperties, Path.of(tryGetContext.apply("propertiesfile")));
     }
 
-    private static Function<String, String> tryGetContext(Construct scope) {
+    public static Function<String, String> tryGetContext(Construct scope) {
         return key -> (String) scope.getNode().tryGetContext(key);
     }
 

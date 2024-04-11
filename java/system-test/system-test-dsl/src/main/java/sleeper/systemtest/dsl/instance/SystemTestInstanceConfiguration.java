@@ -18,16 +18,13 @@ package sleeper.systemtest.dsl.instance;
 
 import sleeper.configuration.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.systemtest.configuration.SystemTestRole;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
-import static sleeper.configuration.properties.instance.CommonProperty.EDIT_TABLES_ROLE;
-import static sleeper.configuration.properties.instance.CommonProperty.REPORTING_ROLE;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_ROLE;
-import static sleeper.configuration.properties.instance.QueryProperty.QUERY_ROLE;
 
 public class SystemTestInstanceConfiguration {
     private final String shortName;
@@ -63,25 +60,11 @@ public class SystemTestInstanceConfiguration {
             properties.set(INGEST_SOURCE_BUCKET, systemTest.getSystemTestBucketName());
         }
 
-        List<String> ingestRoles = new ArrayList<>();
-        List<String> queryRoles = new ArrayList<>();
-        List<String> editTablesRoles = new ArrayList<>();
-        List<String> reportingRoles = new ArrayList<>();
         String systemTestClusterRole = systemTest.getSystemTestWriterRoleName();
         if (systemTestClusterRole != null) {
-            ingestRoles.add(systemTestClusterRole);
+            properties.addToList(INGEST_SOURCE_ROLE, List.of(systemTestClusterRole));
         }
-        String systemTestRole = parameters.getSystemTestRole();
-        if (systemTestRole != null) {
-            ingestRoles.add(systemTestRole);
-            queryRoles.add(systemTestRole);
-            editTablesRoles.add(systemTestRole);
-            reportingRoles.add(systemTestRole);
-        }
-        properties.setList(INGEST_SOURCE_ROLE, ingestRoles);
-        properties.setList(QUERY_ROLE, queryRoles);
-        properties.setList(EDIT_TABLES_ROLE, editTablesRoles);
-        properties.setList(REPORTING_ROLE, reportingRoles);
+        SystemTestRole.addSystemTestRole(properties, parameters.getSystemTestRole());
         return configuration;
     }
 
