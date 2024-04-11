@@ -17,8 +17,16 @@ package sleeper.core.record.process.status;
 
 import java.time.Instant;
 
+/**
+ * Interface representing a status update for a job.
+ */
 public interface ProcessStatusUpdate {
 
+    /**
+     * Gets the update time for this status update.
+     *
+     * @return the update time
+     */
     Instant getUpdateTime();
 
     default boolean isPartOfRun() {
