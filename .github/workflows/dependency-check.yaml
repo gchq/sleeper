@@ -12,12 +12,14 @@ jobs:
         with:
           java-version: '17'
           distribution: 'corretto'
-      - name: Cache dependencies
+      - name: Get current date
+        id: date
+        run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
+      - name: Cache Maven dependencies & CVEs database daily
         uses: actions/cache@v3
         with:
           path: .m2/repository
-          key: ${{ runner.os }}-dependency-check-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-dependency-check-
+          key: ${{ runner.os }}-dependency-check-${{ steps.date.outputs.date }}
       - name: Resolve dependencies
         run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -Dmaven.repo.local=../.m2/repository
         working-directory: ./java
