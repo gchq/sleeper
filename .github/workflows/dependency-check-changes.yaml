@@ -2,8 +2,6 @@ name: Dependency Check Changes
 on:
   pull_request:
     paths:
-      - '.github/workflows/dependency-check-changes.yaml'
-      - '.github/workflows/dependency-check.yaml'
       - 'code-style/dependency-check-suppressions.xml'
       - 'java/**/pom.xml'
 
