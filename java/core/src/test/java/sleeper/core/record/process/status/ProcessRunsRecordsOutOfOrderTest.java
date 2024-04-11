@@ -22,12 +22,12 @@ import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
+import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.finishedStatus;
+import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.startedStatus;
 import static sleeper.core.record.process.status.TestProcessRuns.runsFromUpdates;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.TASK_ID_1;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.TASK_ID_2;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.onTask;
-import static sleeper.core.record.process.status.TestRunStatusUpdates.finishedStatus;
-import static sleeper.core.record.process.status.TestRunStatusUpdates.startedStatus;
 
 public class ProcessRunsRecordsOutOfOrderTest {
 

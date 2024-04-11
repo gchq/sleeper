@@ -34,7 +34,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import static sleeper.core.record.process.status.TestRunStatusUpdates.defaultUpdateTime;
+import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 
 public class InMemoryCompactionJobStatusStore implements CompactionJobStatusStore {
     private final Map<String, TableJobs> tableIdToJobs = new HashMap<>();

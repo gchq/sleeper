@@ -19,7 +19,7 @@ package sleeper.core.record.process.status;
 import java.time.Instant;
 import java.util.Objects;
 
-import static sleeper.core.record.process.status.TestRunStatusUpdates.defaultUpdateTime;
+import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 
 public class ProcessStartedStatusWithStartOfRunFlag implements ProcessRunStartedUpdate {
 

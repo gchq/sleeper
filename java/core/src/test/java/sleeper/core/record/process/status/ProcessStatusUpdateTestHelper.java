@@ -22,9 +22,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoField;
 
-public class TestRunStatusUpdates {
+public class ProcessStatusUpdateTestHelper {
 
-    private TestRunStatusUpdates() {
+    private ProcessStatusUpdateTestHelper() {
     }
 
     public static ProcessStartedStatus startedStatus(Instant startTime) {
