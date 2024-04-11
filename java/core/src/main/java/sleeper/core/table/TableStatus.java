@@ -18,6 +18,10 @@ package sleeper.core.table;
 
 import java.util.Objects;
 
+/**
+ * A data structure for storing metadata about a Sleeper table.
+ * Stores the table name, the internal unique ID, and whether the table is online or not.
+ */
 public class TableStatus {
 
     private final String tableUniqueId;
@@ -30,6 +34,14 @@ public class TableStatus {
         this.online = online;
     }
 
+    /**
+     * Creates an instance of this class.
+     *
+     * @param  tableUniqueId the table ID
+     * @param  tableName     the table name
+     * @param  online        whether the table is online or not
+     * @return               an instance of this class
+     */
     public static TableStatus uniqueIdAndName(String tableUniqueId, String tableName, boolean online) {
         return new TableStatus(tableUniqueId, tableName, online);
     }
@@ -46,10 +58,20 @@ public class TableStatus {
         return online;
     }
 
+    /**
+     * Takes this table offline.
+     *
+     * @return a copy of this table status with the online flag set to false
+     */
     public TableStatus takeOffline() {
         return new TableStatus(this.tableUniqueId, this.tableName, false);
     }
 
+    /**
+     * Puts this table online.
+     *
+     * @return a copy of this table status with the online flag set to true
+     */
     public TableStatus putOnline() {
         return new TableStatus(this.tableUniqueId, this.tableName, true);
     }
