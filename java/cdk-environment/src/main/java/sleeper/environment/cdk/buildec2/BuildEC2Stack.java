@@ -30,7 +30,6 @@ import software.amazon.awscdk.services.ec2.UserData;
 import software.amazon.awscdk.services.ec2.Vpc;
 import software.amazon.awscdk.services.ec2.VpcLookupOptions;
 import software.amazon.awscdk.services.iam.Effect;
-import software.amazon.awscdk.services.iam.InstanceProfile;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.iam.Role;
 import software.amazon.awscdk.services.iam.ServicePrincipal;
@@ -57,7 +56,6 @@ public class BuildEC2Stack extends Stack {
         BuildEC2Image image = params.image();
 
         Role role = createRole();
-        InstanceProfile.Builder.create(this, getArtifactId()).build();
         Instance instance = Instance.Builder.create(this, "EC2")
                 .vpc(vpc)
                 .securityGroup(createSecurityGroup())
