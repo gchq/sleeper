@@ -62,10 +62,23 @@ public class SchemaSerDe {
                 .create();
     }
 
+    /**
+     * Serialises a schema to a JSON string.
+     *
+     * @param  schema the schema
+     * @return        a JSON string
+     */
     public String toJson(Schema schema) {
         return gson.toJson(schema);
     }
 
+    /**
+     * Serialises a schema to a JSON string.
+     *
+     * @param  schema      the schema
+     * @param  prettyPrint whether to pretty-print the JSON string
+     * @return             a JSON string
+     */
     public String toJson(Schema schema, boolean prettyPrint) {
         if (prettyPrint) {
             return gsonPrettyPrinting.toJson(schema);
@@ -73,30 +86,63 @@ public class SchemaSerDe {
         return toJson(schema);
     }
 
+    /**
+     * Deserialises a JSON string to a schema.
+     *
+     * @param  jsonSchema the JSON string
+     * @return            a schema
+     */
     public Schema fromJson(String jsonSchema) {
         return gson.fromJson(jsonSchema, Schema.Builder.class).build();
     }
 
+    /**
+     * Deserialises a JSON string to a schema.
+     *
+     * @param  inputStream an input stream of characters
+     * @return             a schema
+     */
     public Schema fromJson(InputStream inputStream) {
         return gson.fromJson(new InputStreamReader(inputStream, Charset.forName("UTF-8")), Schema.class);
     }
 
+    /**
+     * Serialises a schema to a Base64 encoded JSON string.
+     *
+     * @param  schema the schema
+     * @return        a Base64 encoded JSON string
+     */
     public String toBase64EncodedJson(Schema schema) {
         byte[] bytes = toJson(schema).getBytes(Charset.forName("UTF-8"));
         return Base64.encodeBase64String(bytes);
     }
 
+    /**
+     * Deserialises a Base64 encoded JSON string to a schema.
+     *
+     * @param  encodedSchema the Base64 encoded JSON string
+     * @return               a schema
+     */
     public Schema fromBase64EncodedJson(String encodedSchema) {
         byte[] bytes = Base64.decodeBase64(encodedSchema);
         String jsonSchema = new String(bytes, Charset.forName("UTF-8"));
         return fromJson(jsonSchema);
     }
 
+    /**
+     * Deserialises file containing a JSON string to a schema.
+     *
+     * @param  jsonFile the path to the file
+     * @return          a schema
+     */
     public Schema fromJsonFile(String jsonFile) throws FileNotFoundException {
         JsonReader reader = new JsonReader(new InputStreamReader(new FileInputStream(jsonFile), Charset.forName("UTF-8")));
         return gson.fromJson(reader, Schema.class);
     }
 
+    /**
+     * A GSON plugin to serialise a type.
+     */
     public static class AbstractTypeJsonSerializer implements JsonSerializer<Type> {
 
         @Override
@@ -137,6 +183,9 @@ public class SchemaSerDe {
         }
     }
 
+    /**
+     * A GSON plugin to deserialise a type.
+     */
     public static class AbstractTypeJsonDeserializer implements JsonDeserializer<Type> {
 
         @Override
