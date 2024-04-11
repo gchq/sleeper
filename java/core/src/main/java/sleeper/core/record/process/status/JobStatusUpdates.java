@@ -21,6 +21,9 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * Stores a list of status update records and process runs for a job.
+ */
 public class JobStatusUpdates {
 
     private final String jobId;
@@ -34,12 +37,25 @@ public class JobStatusUpdates {
         this.runs = runs;
     }
 
+    /**
+     * Creates an instance of this class.
+     *
+     * @param  jobId   the job ID to set
+     * @param  records the list of status update records for the job
+     * @return         an instance of this class
+     */
     public static JobStatusUpdates from(String jobId, List<ProcessStatusUpdateRecord> records) {
         List<ProcessStatusUpdateRecord> recordsLatestFirst = orderLatestFirst(records);
         ProcessRuns runs = ProcessRuns.fromRecordsLatestFirst(recordsLatestFirst);
         return new JobStatusUpdates(jobId, recordsLatestFirst, runs);
     }
 
+    /**
+     * Creates and streams instances of this class from status update records.
+     *
+     * @param  records the list of status update records
+     * @return         a stream of instances of this class, each for a different job
+     */
     public static Stream<JobStatusUpdates> streamFrom(Stream<ProcessStatusUpdateRecord> records) {
         JobStatusesBuilder builder = new JobStatusesBuilder();
         records.forEach(builder::update);
@@ -58,6 +74,13 @@ public class JobStatusUpdates {
         return recordsLatestFirst.get(0);
     }
 
+    /**
+     * Gets the first status update of the provided type.
+     *
+     * @param  <T>        the type of status update to look for
+     * @param  updateType the class to get the type from
+     * @return            the first status update casted to {@link T}
+     */
     public <T extends ProcessStatusUpdate> Optional<T> getFirstStatusUpdateOfType(Class<T> updateType) {
         for (int i = recordsLatestFirst.size() - 1; i >= 0; i--) {
             ProcessStatusUpdate update = recordsLatestFirst.get(i).getStatusUpdate();
