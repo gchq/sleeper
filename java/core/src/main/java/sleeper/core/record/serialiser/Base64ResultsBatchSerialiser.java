@@ -33,11 +33,11 @@ import java.util.List;
 /**
  * Serialises and deserialises a list of records to and from a Base64 encoded string.
  */
-public class Base64RecordListSerialiser implements ResultsBatchSerialiser {
+public class Base64ResultsBatchSerialiser implements ResultsBatchSerialiser {
     private final RecordSerialiser recordSerialiser;
     private final Schema schema;
 
-    public Base64RecordListSerialiser(Schema schema) {
+    public Base64ResultsBatchSerialiser(Schema schema) {
         this.schema = schema;
         this.recordSerialiser = new RecordSerialiser(schema);
     }
