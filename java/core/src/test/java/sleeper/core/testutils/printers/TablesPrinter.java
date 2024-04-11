@@ -24,26 +24,40 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+/**
+ * A utility class to print the frequency of printed lines generated from a table name.
+ */
 public class TablesPrinter {
 
     private TablesPrinter() {
     }
 
+    /**
+     * Given a function that generates a printed line from a table name, prints generated lines. Lines are appended with
+     * information about how frequent the generated line is among other tables.
+     *
+     * @param  tableNames   the collection of table names
+     * @param  tablePrinter the function that generates a printed line from a table name
+     * @return              a string containing the generated lines, and information about how frequent the generated
+     *                      lines are among tables.
+     */
     public static String printForAllTables(Collection<String> tableNames, Function<String, String> tablePrinter) {
         Map<String, List<String>> tableNamesByPrintedValue = tableNames.stream()
                 .collect(Collectors.groupingBy(tablePrinter));
-        List<Map.Entry<String, List<String>>> printedSortedByFrequency = tableNamesByPrintedValue.entrySet().stream()
+        // End up with a map of printed value to list of table names?
+        List<Map.Entry<String, List<String>>> printedLinesSortedByFrequency = tableNamesByPrintedValue.entrySet().stream()
                 .sorted(Comparator.comparing(entry -> entry.getValue().size()))
                 .collect(Collectors.toUnmodifiableList());
+        // printed lines sorted by how many tables they belong to
         ToStringPrintStream printer = new ToStringPrintStream();
         PrintStream out = printer.getPrintStream();
 
-        for (Map.Entry<String, List<String>> entry : printedSortedByFrequency) {
-            String printed = entry.getKey();
-            List<String> printedForTables = entry.getValue();
-            int frequency = printedForTables.size();
+        for (Map.Entry<String, List<String>> entry : printedLinesSortedByFrequency) {
+            String printedLine = entry.getKey();
+            List<String> tablesThatPrintThisLine = entry.getValue();
+            int frequency = tablesThatPrintThisLine.size();
             if (frequency == 1) {
-                if (printedSortedByFrequency.size() == 1) {
+                if (printedLinesSortedByFrequency.size() == 1) {
                     out.println("One table");
                 } else {
                     out.println("Different for one table");
@@ -51,7 +65,7 @@ public class TablesPrinter {
             } else {
                 out.println("Same for " + frequency + " tables");
             }
-            out.println(printed);
+            out.println(printedLine);
         }
         return printer.toString();
     }
