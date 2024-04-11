@@ -119,11 +119,15 @@ public interface CommonProperty {
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty EDIT_TABLES_ROLE = Index.propertyBuilder("sleeper.edit.tables.role")
-            .description("A comma-separated list of role names which should be able to edit tables in the Sleeper instance.")
+            .description("A comma-separated list of role names which should be able to edit table definitions.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty REPORTING_ROLE = Index.propertyBuilder("sleeper.reporting.role")
-            .description("A comma-separated list of role names which should be able to generate reports for the Sleeper instance.")
+            .description("A comma-separated list of role names which should be able to generate reports.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty INVOKE_SCHEDULES_ROLE = Index.propertyBuilder("sleeper.invoke.schedules.role")
+            .description("A comma-separated list of role names which should be able to manually invoke actions that usually run on a schedule.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty MAXIMUM_CONNECTIONS_TO_S3 = Index.propertyBuilder("sleeper.fs.s3a.max-connections")

@@ -16,16 +16,24 @@
 package sleeper.systemtest.configuration;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.UserDefinedInstanceProperty;
 
 import java.util.List;
 import java.util.function.Function;
 
 import static sleeper.configuration.properties.instance.CommonProperty.EDIT_TABLES_ROLE;
+import static sleeper.configuration.properties.instance.CommonProperty.INVOKE_SCHEDULES_ROLE;
 import static sleeper.configuration.properties.instance.CommonProperty.REPORTING_ROLE;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_INVOKE_ROLE;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_ROLE;
 import static sleeper.configuration.properties.instance.QueryProperty.QUERY_ROLE;
 
 public class SystemTestRole {
+
+    public static final List<UserDefinedInstanceProperty> SYSTEM_TEST_ROLE_PROPERTIES = List.of(
+            INGEST_SOURCE_ROLE, QUERY_ROLE,
+            EDIT_TABLES_ROLE, REPORTING_ROLE,
+            INVOKE_SCHEDULES_ROLE, COMPACTION_INVOKE_ROLE);
 
     private SystemTestRole() {
     }
@@ -45,10 +53,7 @@ public class SystemTestRole {
 
     public static void addSystemTestRole(InstanceProperties properties, String systemTestRole) {
         if (systemTestRole != null) {
-            properties.addToList(INGEST_SOURCE_ROLE, List.of(systemTestRole));
-            properties.addToList(QUERY_ROLE, List.of(systemTestRole));
-            properties.addToList(EDIT_TABLES_ROLE, List.of(systemTestRole));
-            properties.addToList(REPORTING_ROLE, List.of(systemTestRole));
+            SYSTEM_TEST_ROLE_PROPERTIES.forEach(property -> properties.addToList(property, List.of(systemTestRole)));
         }
     }
 

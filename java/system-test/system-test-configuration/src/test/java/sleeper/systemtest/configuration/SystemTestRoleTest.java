@@ -25,10 +25,6 @@ import java.util.Map;
 import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.instance.CommonProperty.EDIT_TABLES_ROLE;
-import static sleeper.configuration.properties.instance.CommonProperty.REPORTING_ROLE;
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_ROLE;
-import static sleeper.configuration.properties.instance.QueryProperty.QUERY_ROLE;
 
 public class SystemTestRoleTest {
 
@@ -58,10 +54,7 @@ public class SystemTestRoleTest {
 
         // Then
         InstanceProperties expected = new InstanceProperties();
-        expected.set(INGEST_SOURCE_ROLE, "test-role");
-        expected.set(QUERY_ROLE, "test-role");
-        expected.set(EDIT_TABLES_ROLE, "test-role");
-        expected.set(REPORTING_ROLE, "test-role");
+        SystemTestRole.SYSTEM_TEST_ROLE_PROPERTIES.forEach(property -> expected.set(property, "test-role"));
         assertThat(properties).isEqualTo(expected);
     }
 
@@ -76,10 +69,7 @@ public class SystemTestRoleTest {
 
         // Then
         InstanceProperties expected = new InstanceProperties();
-        expected.set(INGEST_SOURCE_ROLE, "test-role");
-        expected.set(QUERY_ROLE, "test-role");
-        expected.set(EDIT_TABLES_ROLE, "test-role");
-        expected.set(REPORTING_ROLE, "test-role");
+        SystemTestRole.SYSTEM_TEST_ROLE_PROPERTIES.forEach(property -> expected.set(property, "test-role"));
         assertThat(properties).isEqualTo(expected);
     }
 
@@ -87,10 +77,8 @@ public class SystemTestRoleTest {
     void shouldAddRoleToExistingList() {
         // Given
         InstanceProperties properties = new InstanceProperties();
-        properties.set(INGEST_SOURCE_ROLE, "before");
-        properties.set(QUERY_ROLE, "before");
-        properties.set(EDIT_TABLES_ROLE, "before");
-        properties.set(REPORTING_ROLE, "before");
+        SystemTestRole.SYSTEM_TEST_ROLE_PROPERTIES.forEach(
+                property -> properties.set(property, "before"));
         contextVariables.put("role", "add");
 
         // When
@@ -98,10 +86,8 @@ public class SystemTestRoleTest {
 
         // Then
         InstanceProperties expected = new InstanceProperties();
-        expected.setList(INGEST_SOURCE_ROLE, List.of("before", "add"));
-        expected.setList(QUERY_ROLE, List.of("before", "add"));
-        expected.setList(EDIT_TABLES_ROLE, List.of("before", "add"));
-        expected.setList(REPORTING_ROLE, List.of("before", "add"));
+        SystemTestRole.SYSTEM_TEST_ROLE_PROPERTIES.forEach(
+                property -> expected.setList(property, List.of("before", "add")));
         assertThat(properties).isEqualTo(expected);
     }
 

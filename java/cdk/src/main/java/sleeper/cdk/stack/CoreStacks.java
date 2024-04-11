@@ -124,4 +124,12 @@ public class CoreStacks {
     public IGrantable getReportingPolicy() {
         return policiesStack.getReportingPolicy();
     }
+
+    public IGrantable getInvokeSchedulesPolicy() {
+        return policiesStack.getInvokeSchedulesPolicy();
+    }
+
+    public IGrantable getInvokeCompactionPolicy() {
+        return policiesStack.getInvokeCompactionPolicy();
+    }
 }

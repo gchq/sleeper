@@ -282,6 +282,12 @@ public class CompactionStack extends NestedStack {
         jarsBucket.grantRead(handlerFunction);
         statusStore.grantWriteJobEvent(handlerFunction);
         compactionJobsQueue.grantSendMessages(handlerFunction);
+        triggerFunction.grantInvoke(coreStacks.getInvokeSchedulesPolicy());
+        jobCreationQueue.grantSendMessages(coreStacks.getInvokeSchedulesPolicy());
+        statusStore.grantWriteJobEvent(coreStacks.getInvokeCompactionPolicy());
+        coreStacks.grantReadTablesStatus(coreStacks.getInvokeCompactionPolicy());
+        coreStacks.grantCreateCompactionJobs(coreStacks.getInvokeCompactionPolicy());
+        compactionJobsQueue.grantSendMessages(coreStacks.getInvokeCompactionPolicy());
 
         // Cloudwatch rule to trigger this lambda
         Rule rule = Rule.Builder
@@ -579,8 +585,11 @@ public class CompactionStack extends NestedStack {
         coreStacks.grantReadInstanceConfig(handler);
 
         // Grant this function permission to query the queue for number of messages
-        compactionJobsQueue.grantSendMessages(handler);
         compactionJobsQueue.grant(handler, "sqs:GetQueueAttributes");
+        compactionJobsQueue.grantSendMessages(handler);
+        compactionJobsQueue.grantSendMessages(coreStacks.getInvokeCompactionPolicy());
+        handler.grantInvoke(coreStacks.getInvokeCompactionPolicy());
+        handler.grantInvoke(coreStacks.getInvokeSchedulesPolicy());
 
         // Grant this function permission to query ECS for the number of tasks, etc
         PolicyStatement policyStatement = PolicyStatement.Builder

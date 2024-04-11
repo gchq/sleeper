@@ -40,7 +40,9 @@ import java.util.stream.Collectors;
 import static java.util.function.Predicate.not;
 import static sleeper.configuration.properties.instance.CommonProperty.EDIT_TABLES_ROLE;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.CommonProperty.INVOKE_SCHEDULES_ROLE;
 import static sleeper.configuration.properties.instance.CommonProperty.REPORTING_ROLE;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_INVOKE_ROLE;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_ROLE;
 import static sleeper.configuration.properties.instance.QueryProperty.QUERY_ROLE;
@@ -51,6 +53,8 @@ public class ManagedPoliciesStack extends NestedStack {
     private final ManagedPolicy queryPolicy;
     private final ManagedPolicy editTablesPolicy;
     private final ManagedPolicy reportingPolicy;
+    private final ManagedPolicy invokeSchedulesPolicy;
+    private final ManagedPolicy invokeCompactionPolicy;
     private final ManagedPolicy readIngestSourcesPolicy;
 
     public ManagedPoliciesStack(Construct scope, String id, InstanceProperties instanceProperties) {
@@ -71,6 +75,14 @@ public class ManagedPoliciesStack extends NestedStack {
         reportingPolicy = new ManagedPolicy(this, "ReportingPolicy");
         addRoleReferences(this, instanceProperties, REPORTING_ROLE, "ReportingRole")
                 .forEach(reportingPolicy::attachToRole);
+
+        invokeSchedulesPolicy = new ManagedPolicy(this, "InvokeSchedulesPolicy");
+        addRoleReferences(this, instanceProperties, INVOKE_SCHEDULES_ROLE, "InvokeSchedulesRole")
+                .forEach(invokeSchedulesPolicy::attachToRole);
+
+        invokeCompactionPolicy = new ManagedPolicy(this, "InvokeCompactionPolicy");
+        addRoleReferences(this, instanceProperties, COMPACTION_INVOKE_ROLE, "InvokeCompactionRole")
+                .forEach(invokeCompactionPolicy::attachToRole);
 
         List<IBucket> sourceBuckets = addIngestSourceBucketReferences(this, instanceProperties);
         if (sourceBuckets.isEmpty()) { // CDK doesn't allow a managed policy without any grants
@@ -95,6 +107,14 @@ public class ManagedPoliciesStack extends NestedStack {
 
     public ManagedPolicy getReportingPolicy() {
         return reportingPolicy;
+    }
+
+    public ManagedPolicy getInvokeSchedulesPolicy() {
+        return invokeSchedulesPolicy;
+    }
+
+    public ManagedPolicy getInvokeCompactionPolicy() {
+        return invokeCompactionPolicy;
     }
 
     // The Lambda IFunction.getRole method is annotated as nullable, even though it will never return null in practice.
