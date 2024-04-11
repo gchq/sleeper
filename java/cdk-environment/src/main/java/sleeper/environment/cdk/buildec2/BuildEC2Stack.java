@@ -96,10 +96,10 @@ public class BuildEC2Stack extends Stack {
                 .resources(List.of("arn:aws:iam::*:role/cdk-*"))
                 .build());
 
-        // Allow creating jars bucket & Docker repositories
+        // Allow creating jars bucket & Docker repositories, working with CloudFormation stacks
         role.addToPolicy(PolicyStatement.Builder.create()
                 .effect(Effect.ALLOW)
-                .actions(List.of("s3:*", "ecr:*"))
+                .actions(List.of("s3:*", "ecr:*", "cloudformation:*"))
                 .resources(List.of("*"))
                 .build());
 
