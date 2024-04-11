@@ -23,6 +23,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+/**
+ * Builder for creating a process runs object.
+ */
 class ProcessRunsBuilder {
     private final Map<String, ProcessRun.Builder> builderByJobRunId = new HashMap<>();
     private final Map<String, ProcessRun.Builder> builderByTaskId = new HashMap<>();
