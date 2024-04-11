@@ -25,6 +25,8 @@ jobs:
           path: ${{ runner.temp }}/.m2/repository
           key: ${{ runner.os }}-dependency-check-${{ steps.date.outputs.date }}
           fail-on-cache-miss: ${{ inputs.failOnCacheMiss }}
+          restore-keys: |
+            ${{ runner.os }}-dependency-check-
       - name: Resolve dependencies
         run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
         working-directory: ./java
