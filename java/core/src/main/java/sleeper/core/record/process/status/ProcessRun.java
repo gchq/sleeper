@@ -25,6 +25,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+/**
+ * Stores information about a job run.
+ */
 public class ProcessRun {
     private final String taskId;
     private final ProcessRunStartedUpdate startedStatus;
@@ -42,12 +45,27 @@ public class ProcessRun {
         return new Builder();
     }
 
+    /**
+     * Creates an instance of this class with a started status.
+     *
+     * @param  taskId        the task ID to set
+     * @param  startedStatus the started status to set
+     * @return               an instance of this class
+     */
     public static ProcessRun started(String taskId, ProcessRunStartedUpdate startedStatus) {
         return builder().taskId(taskId)
                 .startedStatus(startedStatus)
                 .build();
     }
 
+    /**
+     * Creates an instance of this class with a started status and a finished status.
+     *
+     * @param  taskId         the task ID to set
+     * @param  startedStatus  the started status to set
+     * @param  finishedStatus the finished status to set
+     * @return                an instance of this class
+     */
     public static ProcessRun finished(String taskId, ProcessRunStartedUpdate startedStatus, ProcessRunFinishedUpdate finishedStatus) {
         return builder().taskId(taskId)
                 .startedStatus(startedStatus)
@@ -79,6 +97,11 @@ public class ProcessRun {
         return getStartedStatus().getUpdateTime();
     }
 
+    /**
+     * Gets the finish time for this run.
+     *
+     * @return the finish time
+     */
     public Instant getFinishTime() {
         if (isFinished()) {
             return getFinishedStatus().getSummary().getFinishTime();
@@ -87,6 +110,11 @@ public class ProcessRun {
         }
     }
 
+    /**
+     * Gets the finish update time for this run.
+     *
+     * @return the finish update time
+     */
     public Instant getFinishUpdateTime() {
         if (isFinished()) {
             return getFinishedStatus().getUpdateTime();
@@ -95,6 +123,11 @@ public class ProcessRun {
         }
     }
 
+    /**
+     * Gets the latest update time for this run.
+     *
+     * @return the latest update time
+     */
     public Instant getLatestUpdateTime() {
         if (isFinished()) {
             return getFinishedStatus().getUpdateTime();
@@ -107,6 +140,11 @@ public class ProcessRun {
         return statusUpdates.get(statusUpdates.size() - 1);
     }
 
+    /**
+     * Gets the finished summary for this run.
+     *
+     * @return the finished summary
+     */
     public RecordsProcessedSummary getFinishedSummary() {
         if (isFinished()) {
             return getFinishedStatus().getSummary();
@@ -119,6 +157,13 @@ public class ProcessRun {
         return statusUpdates;
     }
 
+    /**
+     * Gets the last status update of the provided type.
+     *
+     * @param  <T> the type of status update to look for
+     * @param  cls the class to get the type from
+     * @return     the last status update casted to {@link T}
+     */
     public <T extends ProcessStatusUpdate> Optional<T> getLastStatusOfType(Class<T> cls) {
         for (int i = statusUpdates.size() - 1; i >= 0; i--) {
             if (cls.isInstance(statusUpdates.get(i))) {
@@ -153,6 +198,9 @@ public class ProcessRun {
                 '}';
     }
 
+    /**
+     * Builder class for creating a process run.
+     */
     public static final class Builder {
         private String taskId;
         private ProcessRunStartedUpdate startedStatus;
@@ -162,11 +210,23 @@ public class ProcessRun {
         private Builder() {
         }
 
+        /**
+         * Sets the task ID.
+         *
+         * @param  taskId the task ID to set
+         * @return        the builder
+         */
         public Builder taskId(String taskId) {
             this.taskId = taskId;
             return this;
         }
 
+        /**
+         * Adds the started status.
+         *
+         * @param  startedStatus the started status to set
+         * @return               the builder
+         */
         public Builder startedStatus(ProcessRunStartedUpdate startedStatus) {
             this.startedStatus = startedStatus;
             if (startedStatus instanceof ProcessRunFinishedUpdate) {
@@ -176,12 +236,24 @@ public class ProcessRun {
             return this;
         }
 
+        /**
+         * Adds the finished status.
+         *
+         * @param  finishedStatus the finished status to set
+         * @return                the builder
+         */
         public Builder finishedStatus(ProcessRunFinishedUpdate finishedStatus) {
             this.finishedStatus = finishedStatus;
             this.statusUpdates.add(finishedStatus);
             return this;
         }
 
+        /**
+         * Adds the status update.
+         *
+         * @param  statusUpdate the status update to set
+         * @return              the builder
+         */
         public Builder statusUpdate(ProcessStatusUpdate statusUpdate) {
             this.statusUpdates.add(statusUpdate);
             return this;
