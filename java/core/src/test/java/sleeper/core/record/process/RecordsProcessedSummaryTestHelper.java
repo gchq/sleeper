@@ -18,9 +18,9 @@ package sleeper.core.record.process;
 import java.time.Duration;
 import java.time.Instant;
 
-public class RecordsProcessedSummaryTestData {
+public class RecordsProcessedSummaryTestHelper {
 
-    private RecordsProcessedSummaryTestData() {
+    private RecordsProcessedSummaryTestHelper() {
     }
 
     public static RecordsProcessedSummary summary(Instant startTime, Duration duration, long recordsRead, long recordsWritten) {
