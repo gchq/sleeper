@@ -7,3 +7,5 @@ on:
 jobs:
   build-cli:
     uses: ./.github/workflows/dependency-check.yaml
+    with:
+      failOnCacheMiss: false
