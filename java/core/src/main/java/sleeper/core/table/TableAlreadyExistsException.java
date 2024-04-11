@@ -16,6 +16,9 @@
 
 package sleeper.core.table;
 
+/**
+ * An exception to indicate that an attempt was made to create a table with a name that already exists.
+ */
 public class TableAlreadyExistsException extends RuntimeException {
     public TableAlreadyExistsException(TableStatus table) {
         this(table, null);
