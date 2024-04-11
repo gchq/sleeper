@@ -1,5 +1,8 @@
 name: Full Maven Compile
 on:
+  workflow_dispatch: # Allow manual running to refresh/check cache
+  schedule: # Cache will never be created unless this is run on develop, so run it once per day
+    - cron: '0 2 * * *'
   pull_request:
     paths:
       - '.github/workflows/maven-full.yaml'
