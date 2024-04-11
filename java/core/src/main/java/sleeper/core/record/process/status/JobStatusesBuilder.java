@@ -22,16 +22,31 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
+/**
+ * Builder for creating job status updates for different jobs.
+ */
 public class JobStatusesBuilder {
 
     private final Map<String, List<ProcessStatusUpdateRecord>> updatesByJobId = new HashMap<>();
 
+    /**
+     * Adds the update to the existing list of updates for the job.
+     *
+     * @param  update the status update to add
+     * @return        the builder
+     */
     public JobStatusesBuilder update(ProcessStatusUpdateRecord update) {
         updatesByJobId.computeIfAbsent(update.getJobId(), id -> new ArrayList<>())
                 .add(update);
         return this;
     }
 
+    /**
+     * Streams the updates by job ID and creates a job status update for each entry. The stream is then
+     * ordered using the most recent first update.
+     *
+     * @return a stream of {@link JobStatusUpdates}
+     */
     public Stream<JobStatusUpdates> stream() {
         return updatesByJobId.entrySet().stream()
                 .map(entry -> JobStatusUpdates.from(entry.getKey(), entry.getValue()))
