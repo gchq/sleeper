@@ -23,10 +23,8 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 
-import java.util.List;
 import java.util.Map;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class PartitionsPrinterTest {
@@ -88,20 +86,5 @@ public class PartitionsPrinterTest {
 
         // Then see approved output
         Approvals.verify(printed);
-    }
-
-    @Test
-    void shouldPrintExpectedForTables() {
-        // Given
-        partitions.rootFirst("A")
-                .splitToNewChildren("A", "B", "C", 10L);
-
-        // When
-        String printed = PartitionsPrinter.printExpectedPartitionsForAllTables(
-                schema, List.of("table-1", "table-2"), partitions.buildTree());
-
-        // Then
-        assertThat(printed).isEqualTo(PartitionsPrinter.printTablePartitionsExpectingIdentical(
-                schema, Map.of("table-1", partitions.buildTree(), "table-2", partitions.buildTree())));
     }
 }
