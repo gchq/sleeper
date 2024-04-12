@@ -133,13 +133,7 @@ public class ManagedPoliciesStack extends NestedStack {
     }
 
     public void grantInvokeScheduled(IFunction function) {
-        // IFunction.grantInvoke does not work with a ManagedPolicy at time of writing.
-        // It tries to set it as a Principal, which you can't do with a ManagedPolicy.
-        invokeSchedulesPolicy.addStatements(PolicyStatement.Builder.create()
-                .effect(Effect.ALLOW)
-                .actions(List.of("lambda:InvokeFunction"))
-                .resources(List.of(function.getFunctionArn()))
-                .build());
+        Utils.grantInvokeOnPolicy(function, invokeSchedulesPolicy);
     }
 
     public void grantInvokeScheduled(IFunction function, IQueue tableBatchQueue) {

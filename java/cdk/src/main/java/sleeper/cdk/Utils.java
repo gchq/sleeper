@@ -29,6 +29,10 @@ import software.amazon.awscdk.services.cloudwatch.TreatMissingData;
 import software.amazon.awscdk.services.cloudwatch.actions.SnsAction;
 import software.amazon.awscdk.services.ecs.AwsLogDriverProps;
 import software.amazon.awscdk.services.ecs.LogDriver;
+import software.amazon.awscdk.services.iam.Effect;
+import software.amazon.awscdk.services.iam.ManagedPolicy;
+import software.amazon.awscdk.services.iam.PolicyStatement;
+import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.logs.LogGroup;
 import software.amazon.awscdk.services.logs.RetentionDays;
 import software.amazon.awscdk.services.sns.Topic;
@@ -45,6 +49,7 @@ import sleeper.core.SleeperVersion;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
@@ -304,6 +309,16 @@ public class Utils {
                 .treatMissingData(TreatMissingData.IGNORE)
                 .build();
         alarm.addAlarmAction(new SnsAction(topic));
+    }
+
+    public static void grantInvokeOnPolicy(IFunction function, ManagedPolicy policy) {
+        // IFunction.grantInvoke does not work with a ManagedPolicy at time of writing.
+        // It tries to set it as a Principal, which you can't do with a ManagedPolicy.
+        policy.addStatements(PolicyStatement.Builder.create()
+                .effect(Effect.ALLOW)
+                .actions(List.of("lambda:InvokeFunction"))
+                .resources(List.of(function.getFunctionArn()))
+                .build());
     }
 
 }

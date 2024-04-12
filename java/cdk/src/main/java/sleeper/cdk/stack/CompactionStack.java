@@ -588,7 +588,7 @@ public class CompactionStack extends NestedStack {
         compactionJobsQueue.grant(handler, "sqs:GetQueueAttributes");
         compactionJobsQueue.grantSendMessages(handler);
         compactionJobsQueue.grantSendMessages(coreStacks.getInvokeCompactionPolicy());
-        handler.grantInvoke(coreStacks.getInvokeCompactionPolicy());
+        Utils.grantInvokeOnPolicy(handler, coreStacks.getInvokeCompactionPolicy());
         coreStacks.grantInvokeScheduled(handler);
 
         // Grant this function permission to query ECS for the number of tasks, etc
