@@ -100,19 +100,6 @@ sleeper.queue.visibility.timeout.seconds=900
 # Use -1 to indicate infinite retention.
 sleeper.log.retention.days=30
 
-# A comma-separated list of role names which should be able to edit table definitions.
-# sleeper.edit.tables.role=
-
-# A comma-separated list of role names which should be able to generate reports.
-# sleeper.reporting.role=
-
-# A comma-separated list of role names which should be able to manually invoke actions that usually
-# run on a schedule.
-# sleeper.invoke.schedules.role=
-
-# A comma-separated list of role names which should be able to manually purge SQS queues.
-# sleeper.purge.queues.role=
-
 # Used to set the value of fs.s3a.connection.maximum on the Hadoop configuration. This controls the
 # maximum number of http connections to S3.
 # See https://hadoop.apache.org/docs/stable/hadoop-aws/tools/hadoop-aws/performance.html
@@ -790,9 +777,6 @@ sleeper.compaction.job.creation.batch.size=5
 # The visibility timeout for the queue of compaction jobs.
 sleeper.compaction.queue.visibility.timeout.seconds=900
 
-# A comma-separated list of role names which should be able to invoke compactions.
-# sleeper.compaction.invoke.role=
-
 # The frequency, in seconds, with which change message visibility requests are sent to extend the
 # visibility of messages on the compaction job queue so that they are not processed by other
 # processes.
@@ -945,9 +929,6 @@ sleeper.default.table.compaction.strategy.sizeratio.max.concurrent.jobs.per.part
 # The maximum number of simultaneous connections to S3 from a single query runner. This is separated
 # from the main one as it's common for a query runner to need to open more files at once.
 sleeper.query.s3.max-connections=1024
-
-# A comma-separated list of role names which should be able to query data from Sleeper.
-# sleeper.query.role=
 
 # The amount of memory in MB for the lambda that executes queries.
 sleeper.query.processor.memory=2048
