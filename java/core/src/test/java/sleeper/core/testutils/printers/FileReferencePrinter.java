@@ -32,8 +32,8 @@ import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
- * A utility class to generate strings using file references in tables. This class is intended to be used in asserting
- * against the state of tables in an instance.
+ * A utility class to generate strings using file references in tables. Intended to be used for approval tests.
+ * Uses {@link TablesPrinter} to consolidate the generated output for multiple tables.
  */
 public class FileReferencePrinter {
 
@@ -59,20 +59,20 @@ public class FileReferencePrinter {
      * Generates a string with information about file references for all provided tables.
      *
      * @param  partitionsByTable a map of table name to expected {@link PartitionTree}
-     * @param  filesByTable      a map of table name to expected{@link AllReferencesToAllFiles}
+     * @param  filesByTable      a map of table name to expected {@link AllReferencesToAllFiles}
      * @return                   a generated string
      */
     public static String printTableFilesExpectingIdentical(
             Map<String, PartitionTree> partitionsByTable, Map<String, AllReferencesToAllFiles> filesByTable) {
-        return TablesPrinter.printForAllTables(filesByTable.keySet(),
+        return TablesPrinter.printForAllTablesExcludingNames(filesByTable.keySet(),
                 table -> printFiles(partitionsByTable.get(table), filesByTable.get(table)));
     }
 
     /**
      * Generates a string with information about file references.
      *
-     * @param  partitions the expected {@link PartitionTree}
-     * @param  files      the expected {@link AllReferencesToAllFiles}
+     * @param  partitions the {@link PartitionTree}
+     * @param  files      the {@link AllReferencesToAllFiles}
      * @return            a generated string
      */
     public static String printFiles(PartitionTree partitions, AllReferencesToAllFiles files) {

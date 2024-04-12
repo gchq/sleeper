@@ -29,8 +29,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * A utility class to generate strings using partitions in tables. This class is intended to be used in asserting
- * against the state of tables in an instance.
+ * A utility class to generate strings using partitions in tables. Intended to be used for approval tests.
+ * Uses {@link TablesPrinter} to consolidate the generated output for multiple tables.
  */
 public class PartitionsPrinter {
 
@@ -74,7 +74,7 @@ public class PartitionsPrinter {
      * @return                   a generated string
      */
     public static String printTablePartitionsExpectingIdentical(Schema schema, Map<String, PartitionTree> partitionsByTable) {
-        return TablesPrinter.printForAllTables(partitionsByTable.keySet(), table -> printPartitions(schema, partitionsByTable.get(table)));
+        return TablesPrinter.printForAllTablesExcludingNames(partitionsByTable.keySet(), table -> printPartitions(schema, partitionsByTable.get(table)));
     }
 
     /**
