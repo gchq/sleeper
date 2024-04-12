@@ -31,11 +31,23 @@ import java.util.stream.Collectors;
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
+/**
+ * A utility class to generate strings using file references in tables. This class is intended to be used in asserting
+ * against the state of tables in an instance.
+ */
 public class FileReferencePrinter {
 
     private FileReferencePrinter() {
     }
 
+    /**
+     * Generates a string with information about file references for all provided tables.
+     *
+     * @param  tables     the list of tables
+     * @param  partitions the expected {@link PartitionTree}
+     * @param  files      the expected {@link AllReferencesToAllFiles}
+     * @return            a generated string
+     */
     public static String printExpectedFilesForAllTables(
             List<TableStatus> tables, PartitionTree partitions, AllReferencesToAllFiles files) {
         return printTableFilesExpectingIdentical(
@@ -43,18 +55,32 @@ public class FileReferencePrinter {
                 tables.stream().collect(Collectors.toMap(TableStatus::getTableName, table -> files)));
     }
 
+    /**
+     * Generates a string with information about file references for all provided tables.
+     *
+     * @param  partitionsByTable a map of table name to expected {@link PartitionTree}
+     * @param  filesByTable      a map of table name to expected{@link AllReferencesToAllFiles}
+     * @return                   a generated string
+     */
     public static String printTableFilesExpectingIdentical(
             Map<String, PartitionTree> partitionsByTable, Map<String, AllReferencesToAllFiles> filesByTable) {
         return TablesPrinter.printForAllTables(filesByTable.keySet(),
                 table -> printFiles(partitionsByTable.get(table), filesByTable.get(table)));
     }
 
-    public static String printFiles(PartitionTree tree, AllReferencesToAllFiles files) {
+    /**
+     * Generates a string with information about file references.
+     *
+     * @param  partitions the expected {@link PartitionTree}
+     * @param  files      the expected {@link AllReferencesToAllFiles}
+     * @return            a generated string
+     */
+    public static String printFiles(PartitionTree partitions, AllReferencesToAllFiles files) {
         ToStringPrintStream printer = new ToStringPrintStream();
         PrintWriter out = printer.getPrintWriter();
         out.println("Unreferenced files: " + files.getFilesWithNoReferences().size());
         out.println("Referenced files: " + files.getFilesWithReferences().size());
-        printFiles(tree, files, out);
+        printFiles(partitions, files, out);
         out.flush();
         return printer.toString();
     }
