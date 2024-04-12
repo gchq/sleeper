@@ -16,6 +16,7 @@
 
 package sleeper.systemtest.dsl.compaction;
 
+import org.approvaltests.Approvals;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -58,14 +59,6 @@ public class CompactionTest {
     @Nested
     @DisplayName("Merge whole files together")
     class MergeFiles {
-        private PartitionTree expectedPartitions;
-        private FileReferenceFactory fileFactory;
-
-        @BeforeEach
-        void setUp(SleeperSystemTest sleeper) {
-            expectedPartitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
-            fileFactory = FileReferenceFactory.from(expectedPartitions);
-        }
 
         @Test
         void shouldCompactFilesUsingDefaultCompactionStrategy(SleeperSystemTest sleeper) {
@@ -87,10 +80,7 @@ public class CompactionTest {
             // Then
             assertThat(sleeper.directQuery().allRecordsInTable())
                     .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 46)));
-            assertThat(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().all()))
-                    .isEqualTo(printFiles(expectedPartitions, activeAndReadyForGCFiles(
-                            List.of(fileFactory.rootFile("output.parquet", 46)),
-                            List.of("file1.parquet", "file2.parquet", "file3.parquet", "file4.parquet", "file5.parquet"))));
+            Approvals.verify(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().all()));
         }
 
         @Test
@@ -112,11 +102,7 @@ public class CompactionTest {
             // Then
             assertThat(sleeper.directQuery().allRecordsInTable())
                     .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
-            assertThat(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().all()))
-                    .isEqualTo(printFiles(expectedPartitions, activeAndReadyForGCFiles(
-                            List.of(fileFactory.rootFile("output1.parquet", 50),
-                                    fileFactory.rootFile("output2.parquet", 50)),
-                            List.of("file1.parquet", "file2.parquet", "file3.parquet", "file4.parquet"))));
+            Approvals.verify(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().all()));
         }
     }
 
