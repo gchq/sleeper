@@ -33,7 +33,6 @@ import sleeper.core.table.TableStatusTestHelper;
 import java.util.List;
 import java.util.Map;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFiles;
 import static sleeper.core.statestore.FilesReportTestHelper.activeFiles;
@@ -371,23 +370,6 @@ public class FileReferencePrinterTest {
 
             // Then see approved output
             Approvals.verify(printed);
-        }
-
-        @Test
-        void shouldPrintExpectedForTables() {
-            // Given
-            partitions.rootFirst("root");
-            AllReferencesToAllFiles files = activeFiles(
-                    fileReferenceFactory().partitionFile("root", 10));
-
-            // When
-            String printed = FileReferencePrinter.printExpectedFilesForAllTables(
-                    List.of(table("table-1"), table("table-2")), partitions.buildTree(), files);
-
-            // Then
-            assertThat(printed).isEqualTo(FileReferencePrinter.printTableFilesExpectingIdentical(
-                    Map.of("table-1", partitions.buildTree(), "table-2", partitions.buildTree()),
-                    Map.of("table-1", files, "table-2", files)));
         }
     }
 

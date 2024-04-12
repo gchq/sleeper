@@ -19,7 +19,6 @@ package sleeper.core.testutils.printers;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.table.TableStatus;
 
 import java.io.PrintWriter;
 import java.util.HashMap;
@@ -34,13 +33,6 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 public class FileReferencePrinter {
 
     private FileReferencePrinter() {
-    }
-
-    public static String printExpectedFilesForAllTables(
-            List<TableStatus> tables, PartitionTree partitions, AllReferencesToAllFiles files) {
-        return printTableFilesExpectingIdentical(
-                tables.stream().collect(Collectors.toMap(TableStatus::getTableName, table -> partitions)),
-                tables.stream().collect(Collectors.toMap(TableStatus::getTableName, table -> files)));
     }
 
     public static String printTableFilesExpectingIdentical(
