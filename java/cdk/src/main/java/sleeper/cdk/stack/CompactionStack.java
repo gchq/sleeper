@@ -179,7 +179,7 @@ public class CompactionStack extends NestedStack {
         LambdaCode taskCreatorJar = jars.lambdaCode(BuiltJar.COMPACTION_TASK_CREATOR, jarsBucket);
 
         // SQS queue for the compaction jobs
-        Queue compactionJobsQueue = sqsQueueForCompactionJobs(topic);
+        Queue compactionJobsQueue = sqsQueueForCompactionJobs(coreStacks, topic);
 
         // Lambda to periodically check for compaction jobs that should be created
         lambdaToCreateCompactionJobsBatchedViaSQS(coreStacks, topic, jarsBucket, jobCreatorJar, compactionJobsQueue);
@@ -193,7 +193,7 @@ public class CompactionStack extends NestedStack {
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
-    private Queue sqsQueueForCompactionJobs(Topic topic) {
+    private Queue sqsQueueForCompactionJobs(CoreStacks coreStacks, Topic topic) {
         // Create queue for compaction job definitions
         String dlQueueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-CompactionJobDLQ");
         compactionDLQ = Queue.Builder
@@ -212,6 +212,7 @@ public class CompactionStack extends NestedStack {
                 .visibilityTimeout(
                         Duration.seconds(instanceProperties.getInt(COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS)))
                 .build();
+        compactionJobQ.grantPurge(coreStacks.getPurgeQueuesPolicy());
         instanceProperties.set(COMPACTION_JOB_QUEUE_URL, compactionJobQ.getQueueUrl());
         instanceProperties.set(COMPACTION_JOB_QUEUE_ARN, compactionJobQ.getQueueArn());
         instanceProperties.set(COMPACTION_JOB_DLQ_URL,

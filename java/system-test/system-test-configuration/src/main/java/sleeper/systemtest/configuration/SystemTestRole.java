@@ -23,6 +23,7 @@ import java.util.function.Function;
 
 import static sleeper.configuration.properties.instance.CommonProperty.EDIT_TABLES_ROLE;
 import static sleeper.configuration.properties.instance.CommonProperty.INVOKE_SCHEDULES_ROLE;
+import static sleeper.configuration.properties.instance.CommonProperty.PURGE_QUEUES_ROLE;
 import static sleeper.configuration.properties.instance.CommonProperty.REPORTING_ROLE;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_INVOKE_ROLE;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_ROLE;
@@ -33,7 +34,7 @@ public class SystemTestRole {
     public static final List<UserDefinedInstanceProperty> SYSTEM_TEST_ROLE_PROPERTIES = List.of(
             INGEST_SOURCE_ROLE, QUERY_ROLE,
             EDIT_TABLES_ROLE, REPORTING_ROLE,
-            INVOKE_SCHEDULES_ROLE, COMPACTION_INVOKE_ROLE);
+            INVOKE_SCHEDULES_ROLE, COMPACTION_INVOKE_ROLE, PURGE_QUEUES_ROLE);
 
     private SystemTestRole() {
     }

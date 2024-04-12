@@ -41,6 +41,7 @@ import static java.util.function.Predicate.not;
 import static sleeper.configuration.properties.instance.CommonProperty.EDIT_TABLES_ROLE;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.INVOKE_SCHEDULES_ROLE;
+import static sleeper.configuration.properties.instance.CommonProperty.PURGE_QUEUES_ROLE;
 import static sleeper.configuration.properties.instance.CommonProperty.REPORTING_ROLE;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_INVOKE_ROLE;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
@@ -55,6 +56,7 @@ public class ManagedPoliciesStack extends NestedStack {
     private final ManagedPolicy reportingPolicy;
     private final ManagedPolicy invokeSchedulesPolicy;
     private final ManagedPolicy invokeCompactionPolicy;
+    private final ManagedPolicy purgeQueuesPolicy;
     private final ManagedPolicy readIngestSourcesPolicy;
 
     public ManagedPoliciesStack(Construct scope, String id, InstanceProperties instanceProperties) {
@@ -83,6 +85,10 @@ public class ManagedPoliciesStack extends NestedStack {
         invokeCompactionPolicy = new ManagedPolicy(this, "InvokeCompactionPolicy");
         addRoleReferences(this, instanceProperties, COMPACTION_INVOKE_ROLE, "InvokeCompactionRole")
                 .forEach(invokeCompactionPolicy::attachToRole);
+
+        purgeQueuesPolicy = new ManagedPolicy(this, "PurgeQueuesPolicy");
+        addRoleReferences(this, instanceProperties, PURGE_QUEUES_ROLE, "PurgeQueuesRole")
+                .forEach(purgeQueuesPolicy::attachToRole);
 
         List<IBucket> sourceBuckets = addIngestSourceBucketReferences(this, instanceProperties);
         if (sourceBuckets.isEmpty()) { // CDK doesn't allow a managed policy without any grants
@@ -115,6 +121,10 @@ public class ManagedPoliciesStack extends NestedStack {
 
     public ManagedPolicy getInvokeCompactionPolicy() {
         return invokeCompactionPolicy;
+    }
+
+    public ManagedPolicy getPurgeQueuesPolicy() {
+        return purgeQueuesPolicy;
     }
 
     // The Lambda IFunction.getRole method is annotated as nullable, even though it will never return null in practice.

@@ -132,4 +132,8 @@ public class CoreStacks {
     public IGrantable getInvokeCompactionPolicy() {
         return policiesStack.getInvokeCompactionPolicy();
     }
+
+    public IGrantable getPurgeQueuesPolicy() {
+        return policiesStack.getPurgeQueuesPolicy();
+    }
 }
