@@ -17,7 +17,6 @@
 package sleeper.core.testutils.printers;
 
 import org.approvaltests.Approvals;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -124,8 +123,7 @@ public class FileReferencePrinterTest {
             Approvals.verify(printed);
         }
 
-        @Test
-        @Disabled("TODO")
+        @Test // TODO this is incorrect as the order is determined by the filenames instead of the tree position
         void shouldPrintTwoPartialFilesWithSameNumberOfRecordsWhenOneHasOtherRecordsOnADifferentPartition() {
             // Given
             partitions.rootFirst("root")
@@ -146,7 +144,7 @@ public class FileReferencePrinterTest {
             Approvals.verify(printed);
         }
 
-        @Test
+        @Test // TODO this is incorrect as the order is determined by the filenames instead of the number of records
         void shouldPrintTwoPartialFilesWithSameNumberOfRecordsWhenBothHaveADifferentNumberOfRecordsOnADifferentPartition() {
             // Given
             partitions.rootFirst("root")

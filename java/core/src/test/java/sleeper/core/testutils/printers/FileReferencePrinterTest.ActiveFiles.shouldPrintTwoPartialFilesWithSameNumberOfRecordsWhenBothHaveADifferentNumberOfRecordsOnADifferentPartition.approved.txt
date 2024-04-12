@@ -5,5 +5,5 @@ Partition at L:
 50 records (approx) in partial file 1
 50 records (approx) in partial file 2
 Partition at R:
-50 records (approx) in partial file 1
-25 records (approx) in partial file 2
+50 records (approx) in partial file 2
+25 records (approx) in partial file 1
