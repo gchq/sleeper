@@ -20,7 +20,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionTree;
-import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.systemtest.dsl.SleeperSystemTest;
@@ -70,17 +69,7 @@ public class PartitionSplittingTest {
         Schema schema = sleeper.tableProperties().getSchema();
         PartitionTree partitions = sleeper.partitioning().tree();
         AllReferencesToAllFiles files = sleeper.tableFiles().all();
-        PartitionTree expectedPartitions = new PartitionsBuilder(schema).rootFirst("root")
-                .splitToNewChildren("root", "L", "R", "row-50")
-                .splitToNewChildren("L", "LL", "LR", "row-25")
-                .splitToNewChildren("R", "RL", "RR", "row-75")
-                .splitToNewChildren("LL", "LLL", "LLR", "row-12")
-                .splitToNewChildren("LR", "LRL", "LRR", "row-37")
-                .splitToNewChildren("RL", "RLL", "RLR", "row-62")
-                .splitToNewChildren("RR", "RRL", "RRR", "row-87")
-                .buildTree();
-        assertThat(printPartitions(schema, partitions))
-                .isEqualTo(printPartitions(schema, expectedPartitions));
-        Approvals.verify(printFiles(partitions, files));
+        Approvals.verify(printPartitions(schema, partitions) + "\n" +
+                printFiles(partitions, files));
     }
 }
