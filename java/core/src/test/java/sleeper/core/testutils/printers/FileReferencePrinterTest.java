@@ -107,6 +107,23 @@ public class FileReferencePrinterTest {
         }
 
         @Test
+        void shouldPrintWholeFileBeforePartialFileWithSameNumberOfRecordsInSamePartition() {
+            // Given
+            partitions.rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", "row-50");
+            FileReference wholeFile = fileReferenceFactory().partitionFile("L", "whole.parquet", 50);
+            FileReference splitFile = fileReferenceFactory().rootFile("split.parquet", 100);
+            FileReference partialFile = referenceForChildPartition(splitFile, "L");
+
+            // When
+            String printed = FileReferencePrinter.printFiles(
+                    partitions.buildTree(), activeFiles(partialFile, wholeFile));
+
+            // Then see approved output
+            Approvals.verify(printed);
+        }
+
+        @Test
         void shouldPrintFilesOnLeaves() {
             // Given
             partitions.rootFirst("root")
