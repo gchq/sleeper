@@ -200,6 +200,8 @@ public class PartitionSplittingStack extends NestedStack {
 
         coreStacks.grantReadTablesStatus(triggerFunction);
         partitionSplittingBatchQueue.grantSendMessages(triggerFunction);
+        triggerFunction.grantInvoke(coreStacks.getInvokeSchedulesPolicy());
+        partitionSplittingBatchQueue.grantSendMessages(coreStacks.getInvokeSchedulesPolicy());
     }
 
     private void createFindPartitionsToSplitFunction(InstanceProperties instanceProperties, LambdaCode splitterJar, CoreStacks coreStacks, Map<String, String> environmentVariables) {

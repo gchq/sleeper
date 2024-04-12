@@ -170,6 +170,7 @@ public class IngestBatcherStack extends NestedStack {
         ingestStacks.ingestQueues().forEach(queue -> queue.grantSendMessages(jobCreatorLambda));
         submitQueue.grantSendMessages(coreStacks.getIngestPolicy());
         ingestRequestsTable.grantReadData(coreStacks.getIngestPolicy());
+        jobCreatorLambda.grantInvoke(coreStacks.getInvokeSchedulesPolicy());
 
         // CloudWatch rule to trigger the batcher to create jobs from file ingest requests
         Rule rule = Rule.Builder

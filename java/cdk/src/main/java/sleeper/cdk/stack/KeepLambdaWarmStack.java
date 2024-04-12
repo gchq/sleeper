@@ -96,6 +96,7 @@ public class KeepLambdaWarmStack extends NestedStack {
 
         coreStacks.grantReadInstanceConfig(handler);
         coreStacks.grantReadTablesAndData(handler);
+        handler.grantInvoke(coreStacks.getInvokeSchedulesPolicy());
 
         instanceProperties.set(QUERY_WARM_LAMBDA_CLOUDWATCH_RULE, rule.getRuleName());
         CfnOutputProps ruleArn = new CfnOutputProps.Builder()

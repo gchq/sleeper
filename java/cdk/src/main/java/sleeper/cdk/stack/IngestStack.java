@@ -267,6 +267,8 @@ public class IngestStack extends NestedStack {
         ingestJobQueue.grant(handler, "sqs:GetQueueAttributes");
         statusStore.grantWriteJobEvent(handler);
         statusStore.grantWriteTaskEvent(handler);
+        handler.grantInvoke(coreStacks.getInvokeSchedulesPolicy());
+
         // Grant this function permission to query ECS for the number of tasks, etc
         PolicyStatement policyStatement = PolicyStatement.Builder
                 .create()
