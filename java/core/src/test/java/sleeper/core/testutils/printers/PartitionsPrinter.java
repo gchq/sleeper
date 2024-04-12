@@ -28,25 +28,62 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * A utility class to generate strings using partitions in tables. This class is intended to be used in asserting
+ * against the state of tables in an instance.
+ */
 public class PartitionsPrinter {
 
     private PartitionsPrinter() {
     }
 
+    /**
+     * Generates a string with information about partitions for all provided tables. The tables must have
+     * matching {@link Schema}s in order to deserialise the partition regions correctly.
+     *
+     * @param  schema the schema for all tables
+     * @param  tables the list of tables
+     * @param  tree   the expected {@link PartitionTree}
+     * @return        a generated string
+     */
     public static String printExpectedPartitionsForAllTables(Schema schema, List<TableStatus> tables, PartitionTree tree) {
         return printExpectedPartitionsForAllTables(schema,
                 tables.stream().map(TableStatus::getTableName).collect(Collectors.toUnmodifiableList()), tree);
     }
 
+    /**
+     * Generates a string with information about partitions for all provided tables. The tables must have
+     * matching {@link Schema}s in order to deserialise the partition regions correctly.
+     *
+     * @param  schema     the schema for all tables
+     * @param  tableNames the collection of table names
+     * @param  tree       the expected {@link PartitionTree}
+     * @return            a generated string
+     */
     public static String printExpectedPartitionsForAllTables(Schema schema, Collection<String> tableNames, PartitionTree tree) {
         return printTablePartitionsExpectingIdentical(schema, tableNames.stream()
                 .collect(Collectors.toMap(table -> table, table -> tree)));
     }
 
+    /**
+     * Generates a string with information about partitions for all provided tables. The tables must have
+     * matching {@link Schema}s in order to deserialise the partition regions correctly.
+     *
+     * @param  schema            the schema for all tables
+     * @param  partitionsByTable the map of table name to {@link PartitionTree}
+     * @return                   a generated string
+     */
     public static String printTablePartitionsExpectingIdentical(Schema schema, Map<String, PartitionTree> partitionsByTable) {
         return TablesPrinter.printForAllTables(partitionsByTable.keySet(), table -> printPartitions(schema, partitionsByTable.get(table)));
     }
 
+    /**
+     * Generates a string with information about partitions.
+     *
+     * @param  schema        the schema for all tables
+     * @param  partitionTree the {@link PartitionTree}
+     * @return               a generated string
+     */
     public static String printPartitions(Schema schema, PartitionTree partitionTree) {
         ToStringPrintStream printer = new ToStringPrintStream();
         PrintStream out = printer.getPrintStream();
@@ -59,7 +96,7 @@ public class PartitionsPrinter {
         return printer.toString();
     }
 
-    public static String buildPartitionLocationName(Partition partition, PartitionTree tree) {
+    static String buildPartitionLocationName(Partition partition, PartitionTree tree) {
         String parentId = partition.getParentPartitionId();
         if (parentId == null) {
             return "root";
