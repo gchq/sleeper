@@ -18,10 +18,8 @@ package sleeper.cdk.stack;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.NestedStack;
-import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
-import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.iam.Role;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.s3.Bucket;
@@ -85,11 +83,6 @@ public class ManagedPoliciesStack extends NestedStack {
         invokeSchedulesPolicy = new ManagedPolicy(this, "InvokeSchedulesPolicy");
         addRoleReferences(this, instanceProperties, INVOKE_SCHEDULES_ROLE, "InvokeSchedulesRole")
                 .forEach(invokeSchedulesPolicy::attachToRole);
-        invokeSchedulesPolicy.addStatements(PolicyStatement.Builder.create()
-                .effect(Effect.ALLOW)
-                .actions(List.of("sts:AssumeRole"))
-                .resources(List.of("arn:aws:iam::*:role/cdk-*"))
-                .build());
 
         invokeCompactionPolicy = new ManagedPolicy(this, "InvokeCompactionPolicy");
         addRoleReferences(this, instanceProperties, COMPACTION_INVOKE_ROLE, "InvokeCompactionRole")
