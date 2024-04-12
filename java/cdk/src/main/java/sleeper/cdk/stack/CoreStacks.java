@@ -18,6 +18,8 @@ package sleeper.cdk.stack;
 
 import software.amazon.awscdk.services.iam.IGrantable;
 import software.amazon.awscdk.services.iam.IRole;
+import software.amazon.awscdk.services.lambda.IFunction;
+import software.amazon.awscdk.services.sqs.IQueue;
 
 public class CoreStacks {
 
@@ -125,8 +127,12 @@ public class CoreStacks {
         return policiesStack.getReportingPolicy();
     }
 
-    public IGrantable getInvokeSchedulesPolicy() {
-        return policiesStack.getInvokeSchedulesPolicy();
+    public void grantInvokeScheduled(IFunction function) {
+        policiesStack.grantInvokeScheduled(function);
+    }
+
+    public void grantInvokeScheduled(IFunction triggerFunction, IQueue tableBatchQueue) {
+        policiesStack.grantInvokeScheduled(triggerFunction, tableBatchQueue);
     }
 
     public IGrantable getInvokeCompactionPolicy() {

@@ -18,11 +18,15 @@ package sleeper.cdk.stack;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.NestedStack;
+import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
+import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.iam.Role;
+import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
+import software.amazon.awscdk.services.sqs.IQueue;
 import software.constructs.Construct;
 
 import sleeper.cdk.Utils;
@@ -81,6 +85,11 @@ public class ManagedPoliciesStack extends NestedStack {
         invokeSchedulesPolicy = new ManagedPolicy(this, "InvokeSchedulesPolicy");
         addRoleReferences(this, instanceProperties, INVOKE_SCHEDULES_ROLE, "InvokeSchedulesRole")
                 .forEach(invokeSchedulesPolicy::attachToRole);
+        invokeSchedulesPolicy.addStatements(PolicyStatement.Builder.create()
+                .effect(Effect.ALLOW)
+                .actions(List.of("sts:AssumeRole"))
+                .resources(List.of("arn:aws:iam::*:role/cdk-*"))
+                .build());
 
         invokeCompactionPolicy = new ManagedPolicy(this, "InvokeCompactionPolicy");
         addRoleReferences(this, instanceProperties, COMPACTION_INVOKE_ROLE, "InvokeCompactionRole")
@@ -115,16 +124,27 @@ public class ManagedPoliciesStack extends NestedStack {
         return reportingPolicy;
     }
 
-    public ManagedPolicy getInvokeSchedulesPolicy() {
-        return invokeSchedulesPolicy;
-    }
-
     public ManagedPolicy getInvokeCompactionPolicy() {
         return invokeCompactionPolicy;
     }
 
     public ManagedPolicy getPurgeQueuesPolicy() {
         return purgeQueuesPolicy;
+    }
+
+    public void grantInvokeScheduled(IFunction function) {
+        // IFunction.grantInvoke does not work with a ManagedPolicy at time of writing.
+        // It tries to set it as a Principal, which you can't do with a ManagedPolicy.
+        invokeSchedulesPolicy.addStatements(PolicyStatement.Builder.create()
+                .effect(Effect.ALLOW)
+                .actions(List.of("lambda:InvokeFunction"))
+                .resources(List.of(function.getFunctionArn()))
+                .build());
+    }
+
+    public void grantInvokeScheduled(IFunction function, IQueue tableBatchQueue) {
+        grantInvokeScheduled(function);
+        tableBatchQueue.grantSendMessages(invokeSchedulesPolicy);
     }
 
     // The Lambda IFunction.getRole method is annotated as nullable, even though it will never return null in practice.

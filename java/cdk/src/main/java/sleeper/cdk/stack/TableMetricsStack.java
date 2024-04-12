@@ -89,7 +89,6 @@ public class TableMetricsStack extends NestedStack {
 
         coreStacks.grantReadTablesStatus(tableMetricsTrigger);
         coreStacks.grantReadTablesMetadata(tableMetricsPublisher);
-        tableMetricsTrigger.grantInvoke(coreStacks.getInvokeSchedulesPolicy());
         instanceProperties.set(TABLE_METRICS_LAMBDA_FUNCTION, tableMetricsTrigger.getFunctionName());
 
         Rule rule = Rule.Builder.create(this, "MetricsPublishSchedule")
@@ -123,7 +122,7 @@ public class TableMetricsStack extends NestedStack {
                 "Alarms if there are any messages on the dead letter queue for the table metrics queue",
                 deadLetterQueue, topic);
         queue.grantSendMessages(tableMetricsTrigger);
-        queue.grantSendMessages(coreStacks.getInvokeSchedulesPolicy());
+        coreStacks.grantInvokeScheduled(tableMetricsTrigger, queue);
         tableMetricsPublisher.addEventSource(new SqsEventSource(queue,
                 SqsEventSourceProps.builder().batchSize(1).build()));
 
