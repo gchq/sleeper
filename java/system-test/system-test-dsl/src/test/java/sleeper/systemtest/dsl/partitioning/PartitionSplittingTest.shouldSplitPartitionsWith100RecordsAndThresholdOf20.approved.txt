@@ -1,0 +1,11 @@
+Unreferenced files: 7
+Referenced files: 8
+File references: 8
+Partition at LLL: 12 records in file 1
+Partition at LLR: 13 records in file 2
+Partition at LRL: 12 records in file 3
+Partition at LRR: 13 records in file 4
+Partition at RLL: 12 records in file 5
+Partition at RLR: 13 records in file 6
+Partition at RRL: 12 records in file 7
+Partition at RRR: 13 records in file 8
