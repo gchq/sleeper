@@ -38,17 +38,13 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.function.Predicate.not;
-import static sleeper.configuration.properties.instance.CommonProperty.EDIT_TABLES_ROLE;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.ADMIN_ROLE;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.CommonProperty.INVOKE_SCHEDULES_ROLE;
-import static sleeper.configuration.properties.instance.CommonProperty.PURGE_QUEUES_ROLE;
-import static sleeper.configuration.properties.instance.CommonProperty.REPORTING_ROLE;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_INVOKE_ROLE;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_ROLE;
-import static sleeper.configuration.properties.instance.QueryProperty.QUERY_ROLE;
 
 public class ManagedPoliciesStack extends NestedStack {
 
@@ -69,28 +65,11 @@ public class ManagedPoliciesStack extends NestedStack {
                 .forEach(ingestPolicy::attachToRole);
 
         queryPolicy = new ManagedPolicy(this, "QueryPolicy");
-        addRoleReferences(this, instanceProperties, QUERY_ROLE, "QueryRole")
-                .forEach(queryPolicy::attachToRole);
-
         editTablesPolicy = new ManagedPolicy(this, "EditTablesPolicy");
-        addRoleReferences(this, instanceProperties, EDIT_TABLES_ROLE, "EditTablesRole")
-                .forEach(editTablesPolicy::attachToRole);
-
         reportingPolicy = new ManagedPolicy(this, "ReportingPolicy");
-        addRoleReferences(this, instanceProperties, REPORTING_ROLE, "ReportingRole")
-                .forEach(reportingPolicy::attachToRole);
-
         invokeSchedulesPolicy = new ManagedPolicy(this, "InvokeSchedulesPolicy");
-        addRoleReferences(this, instanceProperties, INVOKE_SCHEDULES_ROLE, "InvokeSchedulesRole")
-                .forEach(invokeSchedulesPolicy::attachToRole);
-
         invokeCompactionPolicy = new ManagedPolicy(this, "InvokeCompactionPolicy");
-        addRoleReferences(this, instanceProperties, COMPACTION_INVOKE_ROLE, "InvokeCompactionRole")
-                .forEach(invokeCompactionPolicy::attachToRole);
-
         purgeQueuesPolicy = new ManagedPolicy(this, "PurgeQueuesPolicy");
-        addRoleReferences(this, instanceProperties, PURGE_QUEUES_ROLE, "PurgeQueuesRole")
-                .forEach(purgeQueuesPolicy::attachToRole);
 
         List<IBucket> sourceBuckets = addIngestSourceBucketReferences(this, instanceProperties);
         if (sourceBuckets.isEmpty()) { // CDK doesn't allow a managed policy without any grants
@@ -99,6 +78,13 @@ public class ManagedPoliciesStack extends NestedStack {
             readIngestSourcesPolicy = new ManagedPolicy(this, "ReadIngestSourcesPolicy");
             sourceBuckets.forEach(bucket -> bucket.grantRead(readIngestSourcesPolicy));
         }
+
+        Role adminRole = Role.Builder.create(this, "AdminRole")
+                .roleName("sleeper-admin-" + instanceProperties.get(ID).toLowerCase(Locale.ROOT))
+                .build();
+        Stream.of(ingestPolicy, queryPolicy, editTablesPolicy, reportingPolicy, invokeSchedulesPolicy, invokeCompactionPolicy, purgeQueuesPolicy)
+                .forEach(policy -> policy.attachToRole(adminRole));
+        instanceProperties.set(ADMIN_ROLE, adminRole.getRoleName());
     }
 
     public ManagedPolicy getIngestPolicy() {

@@ -18,7 +18,6 @@ package sleeper.systemtest.dsl.instance;
 
 import sleeper.configuration.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.systemtest.configuration.SystemTestRole;
 
 import java.util.List;
 import java.util.function.Supplier;
@@ -64,7 +63,6 @@ public class SystemTestInstanceConfiguration {
         if (systemTestClusterRole != null) {
             properties.addToList(INGEST_SOURCE_ROLE, List.of(systemTestClusterRole));
         }
-        SystemTestRole.addSystemTestRole(properties, parameters.getSystemTestRole());
         return configuration;
     }
 

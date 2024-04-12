@@ -40,10 +40,6 @@ public interface CompactionProperty {
             .defaultValue("900")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty COMPACTION_INVOKE_ROLE = Index.propertyBuilder("sleeper.compaction.invoke.role")
-            .description("A comma-separated list of role names which should be able to invoke compactions.")
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.keepalive.period.seconds")
             .description("The frequency, in seconds, with which change message visibility requests are sent to " +
                     "extend the visibility of messages on the compaction job queue so that they are not processed by " +

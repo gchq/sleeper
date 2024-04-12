@@ -28,10 +28,6 @@ public interface QueryProperty {
             .defaultValue("1024")
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.QUERY).build();
-    UserDefinedInstanceProperty QUERY_ROLE = Index.propertyBuilder("sleeper.query.role")
-            .description("A comma-separated list of role names which should be able to query data from Sleeper.")
-            .propertyGroup(InstancePropertyGroup.QUERY)
-            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty QUERY_PROCESSOR_LAMBDA_MEMORY_IN_MB = Index.propertyBuilder("sleeper.query.processor.memory")
             .description("The amount of memory in MB for the lambda that executes queries.")
             .defaultValue("2048")

@@ -90,10 +90,13 @@ public class BuildEC2Stack extends Stack {
                 .build();
 
         // Allow running CDK by assuming roles created by cdk bootstrap
+        // Allow interacting with Sleeper by assuming admin role
         role.addToPolicy(PolicyStatement.Builder.create()
                 .effect(Effect.ALLOW)
                 .actions(List.of("sts:AssumeRole"))
-                .resources(List.of("arn:aws:iam::*:role/cdk-*"))
+                .resources(List.of(
+                        "arn:aws:iam::*:role/cdk-*",
+                        "arn:aws:iam::*:role/sleeper-admin-*"))
                 .build());
 
         // Allow creating jars bucket & Docker repositories, working with CloudFormation stacks
