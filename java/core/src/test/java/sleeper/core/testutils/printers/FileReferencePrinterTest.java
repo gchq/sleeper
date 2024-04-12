@@ -147,6 +147,26 @@ public class FileReferencePrinterTest {
         }
 
         @Test
+        void shouldPrintTwoPartialFilesWithSameNumberOfRecordsWhenBothHaveADifferentNumberOfRecordsOnADifferentPartition() {
+            // Given
+            partitions.rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", "row-50");
+            FileReference splitFile1 = fileReferenceFactory().rootFile("split1.parquet", 100);
+            FileReference splitFile2 = fileReferenceFactory().rootFile("split2.parquet", 100);
+
+            // When
+            String printed = FileReferencePrinter.printFiles(
+                    partitions.buildTree(), activeFiles(
+                            referenceForChildPartition(splitFile1, "L", 50),
+                            referenceForChildPartition(splitFile2, "L", 50),
+                            referenceForChildPartition(splitFile2, "R", 50),
+                            referenceForChildPartition(splitFile1, "R", 25)));
+
+            // Then see approved output
+            Approvals.verify(printed);
+        }
+
+        @Test
         void shouldPrintFilesOnLeaves() {
             // Given
             partitions.rootFirst("root")
