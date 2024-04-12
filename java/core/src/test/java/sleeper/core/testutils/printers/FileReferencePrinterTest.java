@@ -17,6 +17,7 @@
 package sleeper.core.testutils.printers;
 
 import org.approvaltests.Approvals;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -118,6 +119,28 @@ public class FileReferencePrinterTest {
             // When
             String printed = FileReferencePrinter.printFiles(
                     partitions.buildTree(), activeFiles(partialFile, wholeFile));
+
+            // Then see approved output
+            Approvals.verify(printed);
+        }
+
+        @Test
+        @Disabled("TODO")
+        void shouldPrintTwoPartialFilesWithSameNumberOfRecordsWhenOneHasOtherRecordsOnADifferentPartition() {
+            // Given
+            partitions.rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", "row-50")
+                    .splitToNewChildren("R", "RL", "RR", "row-75");
+            FileReference splitFile1 = fileReferenceFactory().rootFile("split1.parquet", 100);
+            FileReference splitFile2 = fileReferenceFactory().rootFile("split2.parquet", 100);
+
+            // When
+            String printed = FileReferencePrinter.printFiles(
+                    partitions.buildTree(), activeFiles(
+                            referenceForChildPartition(splitFile1, "L"),
+                            referenceForChildPartition(splitFile2, "L"),
+                            referenceForChildPartition(splitFile2, "RL"),
+                            referenceForChildPartition(splitFile1, "RR")));
 
             // Then see approved output
             Approvals.verify(printed);
