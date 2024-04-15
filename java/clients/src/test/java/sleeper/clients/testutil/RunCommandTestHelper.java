@@ -67,10 +67,6 @@ public class RunCommandTestHelper {
         return commands.get(0).toArray();
     }
 
-    public static Command command(String... command) {
-        return new Command(command);
-    }
-
     public interface CommandInvoker {
         void run(CommandRunner runCommand) throws IOException, InterruptedException;
     }
