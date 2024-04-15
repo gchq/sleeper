@@ -112,7 +112,7 @@ public class SystemTestInstanceContext {
     }
 
     public void redeployCurrentInstance() {
-        currentInstance.redeploy(instanceDriver, tablesDriver);
+        currentInstance.redeploy(instanceDriver, parameters);
     }
 
     public InstanceProperties getInstanceProperties() {

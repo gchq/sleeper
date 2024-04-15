@@ -60,8 +60,7 @@ public class DeployedSleeperInstances {
         String instanceId = parameters.buildInstanceId(identifier);
         OutputInstanceIds.addInstanceIdToOutput(instanceId, parameters);
         DeployInstanceConfiguration deployConfig = configuration.buildDeployConfig(parameters, systemTest);
-        DeployedSleeperInstance instance = new DeployedSleeperInstance(instanceId, deployConfig);
-        instance.loadOrDeployIfNeeded(parameters, systemTest, instanceDriver, assumeRoleDriver);
-        return instance;
+        return DeployedSleeperInstance.loadOrDeployIfNeeded(
+                instanceId, deployConfig, parameters, systemTest, instanceDriver, assumeRoleDriver);
     }
 }

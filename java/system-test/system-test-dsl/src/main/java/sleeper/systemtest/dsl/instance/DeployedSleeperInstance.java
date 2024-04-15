@@ -41,14 +41,35 @@ import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SO
 public final class DeployedSleeperInstance {
     private static final Logger LOGGER = LoggerFactory.getLogger(DeployedSleeperInstance.class);
 
-    private final String instanceId;
     private final DeployInstanceConfiguration configuration;
-    private final InstanceProperties instanceProperties = new InstanceProperties();
-    private SystemTestDrivers instanceAdminDrivers;
+    private final InstanceProperties instanceProperties;
+    private final SystemTestDrivers instanceAdminDrivers;
 
-    public DeployedSleeperInstance(String instanceId, DeployInstanceConfiguration configuration) {
-        this.instanceId = instanceId;
+    private DeployedSleeperInstance(
+            DeployInstanceConfiguration configuration, InstanceProperties instanceProperties,
+            SystemTestDrivers instanceAdminDrivers) {
         this.configuration = configuration;
+        this.instanceProperties = instanceProperties;
+        this.instanceAdminDrivers = instanceAdminDrivers;
+    }
+
+    public static DeployedSleeperInstance loadOrDeployIfNeeded(
+            String instanceId, DeployInstanceConfiguration configuration,
+            SystemTestParameters parameters, DeployedSystemTestResources systemTest,
+            SleeperInstanceDriver driver, AssumeAdminRoleDriver assumeRoleDriver) {
+
+        boolean newInstance = driver.deployInstanceIfNotPresent(instanceId, configuration);
+
+        InstanceProperties instanceProperties = new InstanceProperties();
+        driver.loadInstanceProperties(instanceProperties, instanceId);
+        SystemTestDrivers instanceAdminDrivers = assumeRoleDriver.assumeAdminRole(instanceProperties);
+
+        DeployedSleeperInstance instance = new DeployedSleeperInstance(
+                configuration, instanceProperties, instanceAdminDrivers);
+        if (!newInstance && instance.isRedeployNeeded(parameters, systemTest)) {
+            instance.redeploy(driver, parameters);
+        }
+        return instance;
     }
 
     public InstanceProperties getInstanceProperties() {
@@ -59,21 +80,10 @@ public final class DeployedSleeperInstance {
         return instanceAdminDrivers;
     }
 
-    public void loadOrDeployIfNeeded(
-            SystemTestParameters parameters, DeployedSystemTestResources systemTest,
-            SleeperInstanceDriver driver, AssumeAdminRoleDriver assumeRoleDriver) {
-        boolean newInstance = driver.deployInstanceIfNotPresent(instanceId, configuration);
-        driver.loadInstanceProperties(instanceProperties, instanceId);
-        instanceAdminDrivers = assumeRoleDriver.assumeAdminRole(instanceProperties);
-        SleeperTablesDriver tablesDriver = instanceAdminDrivers.tables(parameters);
-        if (!newInstance && isRedeployNeeded(parameters, systemTest)) {
-            redeploy(driver, tablesDriver);
-        }
-    }
-
-    public void redeploy(SleeperInstanceDriver driver, SleeperTablesDriver tablesDriver) {
-        driver.redeploy(instanceProperties, tablesDriver.createTablePropertiesProvider(instanceProperties)
-                .streamAllTables().collect(toUnmodifiableList()));
+    public void redeploy(SleeperInstanceDriver driver, SystemTestParameters parameters) {
+        driver.redeploy(instanceProperties,
+                instanceAdminDrivers.tables(parameters).createTablePropertiesProvider(instanceProperties)
+                        .streamAllTables().collect(toUnmodifiableList()));
     }
 
     public void resetInstanceProperties(SleeperInstanceDriver driver) {
