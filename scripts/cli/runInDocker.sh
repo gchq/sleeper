@@ -45,7 +45,6 @@ run_in_docker() {
     -e INSTANCE_ID
     -e VPC
     -e SUBNET
-    -e SLEEPER_SYSTEM_TEST_ROLE
     "$@"
   )
   docker run "${RUN_PARAMS[@]}"
