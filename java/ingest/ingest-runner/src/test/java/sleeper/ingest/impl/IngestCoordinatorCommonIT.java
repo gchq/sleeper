@@ -143,7 +143,7 @@ public class IngestCoordinatorCommonIT {
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
-        stateStore.fixTime(stateStoreUpdateTime);
+        stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("rootFile"))
@@ -190,7 +190,7 @@ public class IngestCoordinatorCommonIT {
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
-        stateStore.fixTime(stateStoreUpdateTime);
+        stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile", "rightFile"))
@@ -243,7 +243,7 @@ public class IngestCoordinatorCommonIT {
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
-        stateStore.fixTime(stateStoreUpdateTime);
+        stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile", "rightFile"))
@@ -297,7 +297,7 @@ public class IngestCoordinatorCommonIT {
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
-        stateStore.fixTime(stateStoreUpdateTime);
+        stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile", "rightFile"))
@@ -353,7 +353,7 @@ public class IngestCoordinatorCommonIT {
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
-        stateStore.fixTime(stateStoreUpdateTime);
+        stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile", "rightFile"))
@@ -416,7 +416,7 @@ public class IngestCoordinatorCommonIT {
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
-        stateStore.fixTime(stateStoreUpdateTime);
+        stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile", "rightFile"))
@@ -474,7 +474,7 @@ public class IngestCoordinatorCommonIT {
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
-        stateStore.fixTime(stateStoreUpdateTime);
+        stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile", "rightFile"))
@@ -542,7 +542,7 @@ public class IngestCoordinatorCommonIT {
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
-        stateStore.fixTime(stateStoreUpdateTime);
+        stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile", "rightFile"))
@@ -604,7 +604,7 @@ public class IngestCoordinatorCommonIT {
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
-        stateStore.fixTime(stateStoreUpdateTime);
+        stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile", "rightFile"))
@@ -671,7 +671,7 @@ public class IngestCoordinatorCommonIT {
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
-        stateStore.fixTime(stateStoreUpdateTime);
+        stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile", "rightFile"))
@@ -721,7 +721,7 @@ public class IngestCoordinatorCommonIT {
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
-        stateStore.fixTime(stateStoreUpdateTime);
+        stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile", "rightFile"))
@@ -807,7 +807,7 @@ public class IngestCoordinatorCommonIT {
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
-        stateStore.fixTime(stateStoreUpdateTime);
+        stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("rootFile"))

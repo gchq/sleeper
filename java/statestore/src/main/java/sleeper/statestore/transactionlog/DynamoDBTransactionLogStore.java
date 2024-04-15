@@ -34,9 +34,11 @@ import sleeper.core.statestore.transactionlog.transactions.TransactionSerDe;
 import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
+import java.time.Instant;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import static sleeper.dynamodb.tools.DynamoDBAttributes.getInstantAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getLongAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getNumberAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getStringAttribute;
@@ -47,6 +49,7 @@ class DynamoDBTransactionLogStore implements TransactionLogStore {
 
     private static final String TABLE_ID = DynamoDBTransactionLogStateStore.TABLE_ID;
     private static final String TRANSACTION_NUMBER = DynamoDBTransactionLogStateStore.TRANSACTION_NUMBER;
+    private static final String UPDATE_TIME = "UPDATE_TIME";
     private static final String TYPE = "TYPE";
     private static final String BODY = "BODY";
 
@@ -73,6 +76,7 @@ class DynamoDBTransactionLogStore implements TransactionLogStore {
                     .withItem(new DynamoDBRecordBuilder()
                             .string(TABLE_ID, sleeperTableId)
                             .number(TRANSACTION_NUMBER, transactionNumber)
+                            .number(UPDATE_TIME, entry.getUpdateTime().toEpochMilli())
                             .string(TYPE, TransactionType.getType(transaction).name())
                             .string(BODY, serDe.toJson(transaction))
                             .build())
@@ -100,9 +104,10 @@ class DynamoDBTransactionLogStore implements TransactionLogStore {
 
     private TransactionLogEntry readTransaction(Map<String, AttributeValue> item) {
         long number = getLongAttribute(item, TRANSACTION_NUMBER, -1);
+        Instant updateTime = getInstantAttribute(item, UPDATE_TIME);
         TransactionType type = readType(item);
         StateStoreTransaction<?> transaction = serDe.toTransaction(type, getStringAttribute(item, BODY));
-        return new TransactionLogEntry(number, transaction);
+        return new TransactionLogEntry(number, updateTime, transaction);
     }
 
     private TransactionType readType(Map<String, AttributeValue> item) {

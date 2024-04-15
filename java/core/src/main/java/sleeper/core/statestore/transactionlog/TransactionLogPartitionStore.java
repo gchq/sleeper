@@ -23,6 +23,9 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.transactions.InitialisePartitionsTransaction;
 import sleeper.core.statestore.transactionlog.transactions.SplitPartitionTransaction;
 
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
@@ -33,6 +36,7 @@ class TransactionLogPartitionStore implements PartitionStore {
 
     private final Schema schema;
     private final TransactionLogHead<StateStorePartitions> head;
+    private Clock clock = Clock.systemUTC();
 
     TransactionLogPartitionStore(Schema schema, TransactionLogHead<StateStorePartitions> head) {
         this.schema = schema;
@@ -41,12 +45,12 @@ class TransactionLogPartitionStore implements PartitionStore {
 
     @Override
     public void atomicallyUpdatePartitionAndCreateNewOnes(Partition splitPartition, Partition newPartition1, Partition newPartition2) throws StateStoreException {
-        head.addTransaction(new SplitPartitionTransaction(splitPartition, List.of(newPartition1, newPartition2)));
+        head.addTransaction(clock.instant(), new SplitPartitionTransaction(splitPartition, List.of(newPartition1, newPartition2)));
     }
 
     @Override
     public void clearPartitionData() throws StateStoreException {
-        head.addTransaction(new InitialisePartitionsTransaction(List.of()));
+        head.addTransaction(clock.instant(), new InitialisePartitionsTransaction(List.of()));
     }
 
     @Override
@@ -66,7 +70,12 @@ class TransactionLogPartitionStore implements PartitionStore {
 
     @Override
     public void initialise(List<Partition> partitions) throws StateStoreException {
-        head.addTransaction(new InitialisePartitionsTransaction(partitions));
+        head.addTransaction(clock.instant(), new InitialisePartitionsTransaction(partitions));
+    }
+
+    @Override
+    public void fixPartitionUpdateTime(Instant time) {
+        clock = Clock.fixed(time, ZoneId.of("UTC"));
     }
 
     private Stream<Partition> partitions() throws StateStoreException {

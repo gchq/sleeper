@@ -22,6 +22,7 @@ import sleeper.core.statestore.exception.FileNotFoundException;
 import sleeper.core.statestore.transactionlog.FileReferenceTransaction;
 import sleeper.core.statestore.transactionlog.StateStoreFiles;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 
@@ -45,7 +46,7 @@ public class DeleteFilesTransaction implements FileReferenceTransaction {
     }
 
     @Override
-    public void apply(StateStoreFiles stateStoreFiles) {
+    public void apply(StateStoreFiles stateStoreFiles, Instant updateTime) {
         filenames.forEach(stateStoreFiles::remove);
     }
 

@@ -44,7 +44,7 @@ public class FilesStatusReportTestBase {
 
     @BeforeEach
     void setUp() {
-        stateStore.fixTime(lastStateStoreUpdate);
+        stateStore.fixFileUpdateTime(lastStateStoreUpdate);
     }
 
     protected static String example(String path) throws IOException {

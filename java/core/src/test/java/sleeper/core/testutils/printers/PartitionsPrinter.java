@@ -20,13 +20,9 @@ import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.range.RegionSerDe;
 import sleeper.core.schema.Schema;
-import sleeper.core.table.TableStatus;
 
 import java.io.PrintStream;
-import java.util.Collection;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * A utility class to generate strings using partitions in tables. Intended to be used for approval tests.
@@ -35,34 +31,6 @@ import java.util.stream.Collectors;
 public class PartitionsPrinter {
 
     private PartitionsPrinter() {
-    }
-
-    /**
-     * Generates a string with information about partitions for all provided tables. The tables must have
-     * matching {@link Schema}s in order to deserialise the partition regions correctly.
-     *
-     * @param  schema the schema for all tables
-     * @param  tables the list of tables
-     * @param  tree   the expected {@link PartitionTree}
-     * @return        a generated string
-     */
-    public static String printExpectedPartitionsForAllTables(Schema schema, List<TableStatus> tables, PartitionTree tree) {
-        return printExpectedPartitionsForAllTables(schema,
-                tables.stream().map(TableStatus::getTableName).collect(Collectors.toUnmodifiableList()), tree);
-    }
-
-    /**
-     * Generates a string with information about partitions for all provided tables. The tables must have
-     * matching {@link Schema}s in order to deserialise the partition regions correctly.
-     *
-     * @param  schema     the schema for all tables
-     * @param  tableNames the collection of table names
-     * @param  tree       the expected {@link PartitionTree}
-     * @return            a generated string
-     */
-    public static String printExpectedPartitionsForAllTables(Schema schema, Collection<String> tableNames, PartitionTree tree) {
-        return printTablePartitionsExpectingIdentical(schema, tableNames.stream()
-                .collect(Collectors.toMap(table -> table, table -> tree)));
     }
 
     /**
