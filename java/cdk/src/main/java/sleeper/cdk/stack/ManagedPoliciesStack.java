@@ -82,12 +82,6 @@ public class ManagedPoliciesStack extends NestedStack {
             sourceBuckets.forEach(bucket -> bucket.grantRead(readIngestSourcesPolicy));
         }
 
-        reportingPolicy.addStatements(PolicyStatement.Builder.create()
-                .effect(Effect.ALLOW)
-                .actions(List.of("cloudwatch:GetMetricData"))
-                .resources(List.of("*"))
-                .build());
-
         Role adminRole = Role.Builder.create(this, "AdminRole")
                 .assumedBy(new AccountRootPrincipal())
                 .roleName("sleeper-admin-" + instanceProperties.get(ID).toLowerCase(Locale.ROOT))
@@ -95,6 +89,22 @@ public class ManagedPoliciesStack extends NestedStack {
         Stream.of(ingestPolicy, queryPolicy, editTablesPolicy, reportingPolicy, invokeSchedulesPolicy, invokeCompactionPolicy, purgeQueuesPolicy)
                 .forEach(policy -> policy.attachToRole(adminRole));
         instanceProperties.set(ADMIN_ROLE_ARN, adminRole.getRoleArn());
+
+        reportingPolicy.addStatements(PolicyStatement.Builder.create()
+                .effect(Effect.ALLOW)
+                .actions(List.of("cloudwatch:GetMetricData"))
+                .resources(List.of("*"))
+                .build());
+
+        // Allow running compaction tasks
+        invokeCompactionPolicy.addStatements(PolicyStatement.Builder.create()
+                .effect(Effect.ALLOW)
+                .actions(List.of("ecs:DescribeClusters", "ecs:RunTask", "iam:PassRole",
+                        "ecs:DescribeContainerInstances", "ecs:DescribeTasks", "ecs:ListContainerInstances",
+                        "autoscaling:SetDesiredCapacity", "autoscaling:DescribeAutoScalingGroups"))
+                .resources(List.of("*"))
+                .build());
+        adminRole.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonECSTaskExecutionRolePolicy"));
     }
 
     public ManagedPolicy getIngestPolicy() {
