@@ -25,25 +25,31 @@ import com.amazonaws.services.securitytoken.model.Credentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.regions.Region;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.UUID;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.ADMIN_ROLE_ARN;
+import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 
 public class AssumeSleeperRole {
 
     private final AWSCredentialsProvider credentialsV1;
     private final AwsCredentialsProvider credentialsV2;
+    private final String region;
 
-    private AssumeSleeperRole(AWSCredentialsProvider credentialsV1, AwsCredentialsProvider credentialsV2) {
+    private AssumeSleeperRole(
+            AWSCredentialsProvider credentialsV1, AwsCredentialsProvider credentialsV2, String region) {
         this.credentialsV1 = credentialsV1;
         this.credentialsV2 = credentialsV2;
+        this.region = region;
     }
 
     public static AssumeSleeperRole instanceAdmin(
             AWSSecurityTokenService sts, InstanceProperties instanceProperties) {
+        String region = instanceProperties.get(REGION);
         String adminRoleArn = instanceProperties.get(ADMIN_ROLE_ARN);
         AssumeRoleResult result = sts.assumeRole(new AssumeRoleRequest()
                 .withRoleArn(adminRoleArn)
@@ -54,15 +60,15 @@ public class AssumeSleeperRole {
                 credentials.getAccessKeyId(), credentials.getSecretAccessKey(), credentials.getSessionToken()));
         AwsCredentialsProvider credentialsV2 = StaticCredentialsProvider.create(AwsSessionCredentials.create(
                 credentials.getAccessKeyId(), credentials.getSecretAccessKey(), credentials.getSessionToken()));
-        return new AssumeSleeperRole(credentialsV1, credentialsV2);
+        return new AssumeSleeperRole(credentialsV1, credentialsV2, region);
     }
 
     public <T, B extends com.amazonaws.client.builder.AwsClientBuilder<B, T>> T v1Client(B builder) {
-        return builder.withCredentials(credentialsV1).build();
+        return builder.withCredentials(credentialsV1).withRegion(region).build();
     }
 
     public <T, B extends software.amazon.awssdk.awscore.client.builder.AwsClientBuilder<B, T>> T v2Client(B builder) {
-        return builder.credentialsProvider(credentialsV2).build();
+        return builder.credentialsProvider(credentialsV2).region(Region.of(region)).build();
     }
 
 }
