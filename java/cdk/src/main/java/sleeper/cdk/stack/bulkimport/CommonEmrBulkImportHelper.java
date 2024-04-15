@@ -17,6 +17,7 @@ package sleeper.cdk.stack.bulkimport;
 
 import com.google.common.collect.Lists;
 import software.amazon.awscdk.Duration;
+import software.amazon.awscdk.services.cloudwatch.IMetric;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.PolicyStatement;
@@ -34,7 +35,6 @@ import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.stack.CoreStacks;
-import sleeper.cdk.stack.DashboardStack;
 import sleeper.cdk.stack.IngestStatusStoreResources;
 import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -42,7 +42,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static sleeper.cdk.Utils.createAlarmForDlq;
@@ -57,17 +57,17 @@ public class CommonEmrBulkImportHelper {
     private final InstanceProperties instanceProperties;
     private final IngestStatusStoreResources statusStoreResources;
     private final CoreStacks coreStacks;
-    private final Optional<DashboardStack> dashboardStackOpt;
+    private final Consumer<IMetric> errorMetricsConsumer;
 
     public CommonEmrBulkImportHelper(
             Construct scope, String shortId, InstanceProperties instanceProperties,
-            CoreStacks coreStacks, IngestStatusStoreResources ingestStatusStoreResources, Optional<DashboardStack> dashboardStackOpt) {
+            CoreStacks coreStacks, IngestStatusStoreResources ingestStatusStoreResources, Consumer<IMetric> errorMetricsConsumer) {
         this.scope = scope;
         this.shortId = shortId;
         this.instanceProperties = instanceProperties;
         this.coreStacks = coreStacks;
         this.statusStoreResources = ingestStatusStoreResources;
-        this.dashboardStackOpt = dashboardStackOpt;
+        this.errorMetricsConsumer = errorMetricsConsumer;
     }
 
     // Queue for messages to trigger jobs - note that each concrete substack
@@ -87,7 +87,7 @@ public class CommonEmrBulkImportHelper {
         createAlarmForDlq(scope, "BulkImport" + shortId + "UndeliveredJobsAlarm",
                 "Alarms if there are any messages that have failed validation or failed to start a " + shortId + " Spark job",
                 queueForDLs, errorsTopic);
-        dashboardStackOpt.ifPresent(dashboardStack -> dashboardStack.addErrorMetric("Bulk Import " + shortId + " Errors", queueForDLs));
+        errorMetricsConsumer.accept(Utils.createErrorMetric("Bulk Import " + shortId + " Errors", queueForDLs, instanceProperties));
         Queue emrBulkImportJobQueue = Queue.Builder
                 .create(scope, "BulkImport" + shortId + "JobQueue")
                 .deadLetterQueue(deadLetterQueue)

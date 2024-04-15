@@ -22,6 +22,7 @@ import org.apache.commons.io.IOUtils;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.cdk.lambdalayer.kubectl.v24.KubectlV24Layer;
+import software.amazon.awscdk.services.cloudwatch.IMetric;
 import software.amazon.awscdk.services.ec2.ISubnet;
 import software.amazon.awscdk.services.ec2.IVpc;
 import software.amazon.awscdk.services.ec2.Subnet;
@@ -65,7 +66,6 @@ import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.stack.CoreStacks;
-import sleeper.cdk.stack.DashboardStack;
 import sleeper.cdk.stack.IngestStatusStoreStack;
 import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -77,7 +77,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static sleeper.cdk.Utils.createAlarmForDlq;
@@ -103,7 +103,7 @@ public final class EksBulkImportStack extends NestedStack {
     public EksBulkImportStack(
             Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars,
             Topic errorsTopic, BulkImportBucketStack importBucketStack, CoreStacks coreStacks, IngestStatusStoreStack statusStoreStack,
-            Optional<DashboardStack> dashboardStackOpt) {
+            Consumer<IMetric> errorMetricsConsumer) {
         super(scope, id);
 
         String instanceId = instanceProperties.get(ID);
@@ -121,7 +121,7 @@ public final class EksBulkImportStack extends NestedStack {
         createAlarmForDlq(this, "BulkImportEKSUndeliveredJobsAlarm",
                 "Alarms if there are any messages that have failed validation or failed to be passed to the statemachine",
                 queueForDLs, errorsTopic);
-        dashboardStackOpt.ifPresent(dashboardStack -> dashboardStack.addErrorMetric("Bulk Import EKS Errors", queueForDLs));
+        errorMetricsConsumer.accept(Utils.createErrorMetric("Bulk Import EKS Errors", queueForDLs, instanceProperties));
 
         bulkImportJobQueue = Queue.Builder
                 .create(this, "BulkImportEKSJobQueue")

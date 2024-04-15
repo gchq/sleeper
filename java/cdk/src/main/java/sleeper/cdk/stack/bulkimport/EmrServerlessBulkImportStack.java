@@ -17,6 +17,7 @@ package sleeper.cdk.stack.bulkimport;
 
 import com.google.common.collect.Lists;
 import software.amazon.awscdk.NestedStack;
+import software.amazon.awscdk.services.cloudwatch.IMetric;
 import software.amazon.awscdk.services.ec2.IVpc;
 import software.amazon.awscdk.services.ec2.SecurityGroup;
 import software.amazon.awscdk.services.ec2.Vpc;
@@ -48,7 +49,6 @@ import software.constructs.Construct;
 import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.stack.CoreStacks;
-import sleeper.cdk.stack.DashboardStack;
 import sleeper.cdk.stack.IngestStatusStoreResources;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
@@ -56,7 +56,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.function.Consumer;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_APPLICATION_ID;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CLUSTER_NAME;
@@ -102,13 +102,13 @@ public class EmrServerlessBulkImportStack extends NestedStack {
             BulkImportBucketStack importBucketStack,
             CoreStacks coreStacks,
             IngestStatusStoreResources statusStoreResources,
-            Optional<DashboardStack> dashboardStackOpt) {
+            Consumer<IMetric> errorMetricsConsumer) {
         super(scope, id);
         createEmrServerlessApplication(instanceProperties);
         IRole emrRole = createEmrServerlessRole(
                 instanceProperties, importBucketStack, statusStoreResources, coreStacks);
         CommonEmrBulkImportHelper commonHelper = new CommonEmrBulkImportHelper(this,
-                "EMRServerless", instanceProperties, coreStacks, statusStoreResources, dashboardStackOpt);
+                "EMRServerless", instanceProperties, coreStacks, statusStoreResources, errorMetricsConsumer);
         bulkImportJobQueue = commonHelper.createJobQueue(
                 BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL, BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_ARN,
                 errorsTopic);

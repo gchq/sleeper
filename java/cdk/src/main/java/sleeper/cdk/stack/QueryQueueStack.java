@@ -19,6 +19,7 @@ import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.CfnOutputProps;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
+import software.amazon.awscdk.services.cloudwatch.IMetric;
 import software.amazon.awscdk.services.iam.IGrantable;
 import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
@@ -29,7 +30,7 @@ import sleeper.cdk.Utils;
 import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
-import java.util.Optional;
+import java.util.function.Consumer;
 
 import static sleeper.cdk.Utils.createAlarmForDlq;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
@@ -48,9 +49,9 @@ public class QueryQueueStack extends NestedStack {
             String id,
             InstanceProperties instanceProperties,
             Topic topic,
-            Optional<DashboardStack> dashboardStackOpt) {
+            Consumer<IMetric> errorMetricsConsumer) {
         super(scope, id);
-        queryQueue = setupQueryQueue(instanceProperties, topic, dashboardStackOpt);
+        queryQueue = setupQueryQueue(instanceProperties, topic, errorMetricsConsumer);
     }
 
     /***
@@ -59,7 +60,7 @@ public class QueryQueueStack extends NestedStack {
      * @param  instanceProperties containing configuration details
      * @return                    the queue to be used for queries
      */
-    private Queue setupQueryQueue(InstanceProperties instanceProperties, Topic topic, Optional<DashboardStack> dashboardStackOpt) {
+    private Queue setupQueryQueue(InstanceProperties instanceProperties, Topic topic, Consumer<IMetric> errorMetricsConsumer) {
         String dlQueueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-QueryDLQ");
         Queue queryDlq = Queue.Builder
                 .create(this, "QueryDeadLetterQueue")
@@ -83,7 +84,7 @@ public class QueryQueueStack extends NestedStack {
         createAlarmForDlq(this, "QueryAlarm",
                 "Alarms if there are any messages on the dead letter queue for the query queue",
                 queryDlq, topic);
-        dashboardStackOpt.ifPresent(dashboardStack -> dashboardStack.addErrorMetric("Query Errors", queryDlq));
+        errorMetricsConsumer.accept(Utils.createErrorMetric("Query Errors", queryDlq, instanceProperties));
         CfnOutputProps queryQueueOutputNameProps = new CfnOutputProps.Builder()
                 .value(queryQueue.getQueueName())
                 .exportName(instanceProperties.get(ID) + "-" + QUERY_QUEUE_NAME)

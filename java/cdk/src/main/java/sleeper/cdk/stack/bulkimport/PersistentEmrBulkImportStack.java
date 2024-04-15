@@ -18,6 +18,7 @@ package sleeper.cdk.stack.bulkimport;
 import com.google.common.collect.Lists;
 import software.amazon.awscdk.CfnTag;
 import software.amazon.awscdk.NestedStack;
+import software.amazon.awscdk.services.cloudwatch.IMetric;
 import software.amazon.awscdk.services.emr.CfnCluster;
 import software.amazon.awscdk.services.emr.CfnCluster.EbsBlockDeviceConfigProperty;
 import software.amazon.awscdk.services.emr.CfnCluster.EbsConfigurationProperty;
@@ -37,7 +38,6 @@ import sleeper.bulkimport.configuration.ConfigurationUtils;
 import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.stack.CoreStacks;
-import sleeper.cdk.stack.DashboardStack;
 import sleeper.cdk.stack.IngestStatusStoreResources;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
@@ -46,7 +46,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME;
@@ -89,10 +89,10 @@ public class PersistentEmrBulkImportStack extends NestedStack {
             CommonEmrBulkImportStack commonEmrStack,
             CoreStacks coreStacks,
             IngestStatusStoreResources statusStoreResources,
-            Optional<DashboardStack> dashboardStackOpt) {
+            Consumer<IMetric> errorMetricsConsumer) {
         super(scope, id);
         CommonEmrBulkImportHelper commonHelper = new CommonEmrBulkImportHelper(
-                this, "PersistentEMR", instanceProperties, coreStacks, statusStoreResources, dashboardStackOpt);
+                this, "PersistentEMR", instanceProperties, coreStacks, statusStoreResources, errorMetricsConsumer);
         bulkImportJobQueue = commonHelper.createJobQueue(
                 BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL, BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_ARN,
                 errorsTopic);

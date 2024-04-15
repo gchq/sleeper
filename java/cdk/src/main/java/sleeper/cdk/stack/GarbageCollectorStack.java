@@ -17,6 +17,7 @@ package sleeper.cdk.stack;
 
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
+import software.amazon.awscdk.services.cloudwatch.IMetric;
 import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
@@ -40,7 +41,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.List;
 import java.util.Locale;
-import java.util.Optional;
+import java.util.function.Consumer;
 
 import static sleeper.cdk.Utils.createAlarmForDlq;
 import static sleeper.cdk.Utils.createLambdaLogGroup;
@@ -66,7 +67,7 @@ public class GarbageCollectorStack extends NestedStack {
 
     public GarbageCollectorStack(
             Construct scope, String id, InstanceProperties instanceProperties,
-            BuiltJars jars, Topic topic, CoreStacks coreStacks, Optional<DashboardStack> dashboardStackOpt) {
+            BuiltJars jars, Topic topic, CoreStacks coreStacks, Consumer<IMetric> errorMetricsConsumer) {
         super(scope, id);
 
         // Jars bucket
@@ -146,7 +147,7 @@ public class GarbageCollectorStack extends NestedStack {
         createAlarmForDlq(this, "GarbageCollectorAlarm",
                 "Alarms if there are any messages on the dead letter queue for the garbage collector queue",
                 deadLetterQueue, topic);
-        dashboardStackOpt.ifPresent(dashboardStack -> dashboardStack.addErrorMetric("Garbage Collection Errors", deadLetterQueue));
+        errorMetricsConsumer.accept(Utils.createErrorMetric("Garbage Collection Errors", deadLetterQueue, instanceProperties));
         queue.grantSendMessages(triggerFunction);
         handlerFunction.addEventSource(new SqsEventSource(queue,
                 SqsEventSourceProps.builder().batchSize(1).build()));

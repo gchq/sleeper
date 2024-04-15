@@ -18,6 +18,7 @@ package sleeper.cdk.stack;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.RemovalPolicy;
+import software.amazon.awscdk.services.cloudwatch.IMetric;
 import software.amazon.awscdk.services.dynamodb.Attribute;
 import software.amazon.awscdk.services.dynamodb.AttributeType;
 import software.amazon.awscdk.services.dynamodb.BillingMode;
@@ -48,7 +49,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
+import java.util.function.Consumer;
 
 import static sleeper.cdk.Utils.createAlarmForDlq;
 import static sleeper.cdk.Utils.createLambdaLogGroup;
@@ -81,7 +82,7 @@ public class IngestBatcherStack extends NestedStack {
             Topic topic,
             CoreStacks coreStacks,
             IngestStacks ingestStacks,
-            Optional<DashboardStack> dashboardStackOpt) {
+            Consumer<IMetric> errorMetricsConsumer) {
         super(scope, id);
 
         // Queue to submit files to the batcher
@@ -107,7 +108,7 @@ public class IngestBatcherStack extends NestedStack {
         createAlarmForDlq(this, "IngestBatcherAlarm",
                 "Alarms if there are any messages on the dead letter queue for the ingest batcher queue",
                 submitDLQ, topic);
-        dashboardStackOpt.ifPresent(dashboardStack -> dashboardStack.addErrorMetric("Ingest Batcher Errors", submitDLQ));
+        errorMetricsConsumer.accept(Utils.createErrorMetric("Ingest Batcher Errors", submitDLQ, instanceProperties));
         // DynamoDB table to track submitted files
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
         Table ingestRequestsTable = Table.Builder

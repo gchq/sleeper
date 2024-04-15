@@ -29,7 +29,6 @@ import software.amazon.awscdk.services.cloudwatch.SingleValueWidget;
 import software.amazon.awscdk.services.cloudwatch.TextWidget;
 import software.amazon.awscdk.services.cloudwatch.Unit;
 import software.amazon.awscdk.services.cloudwatch.YAxisProps;
-import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.cdk.Utils;
@@ -56,18 +55,24 @@ public class DashboardStack extends NestedStack {
     private final String metricsNamespace;
     private final Duration window;
     private final Dashboard dashboard;
-    private final List<IMetric> errorMetrics = new ArrayList<>();
-    private final List<Metric> compactionAndSplittingJobsSubmitted = new ArrayList<>();
-    private final List<Metric> compactionAndSplittingJobsWaiting = new ArrayList<>();
-    private final List<Metric> oldestCompactionAndSplittingJobs = new ArrayList<>();
-    private Metric ingestJobsSubmitted;
-    private Metric ingestJobsWaiting;
-    private Metric oldestIngestJob;
-    private boolean compactionStacksDeployed = false;
-    private boolean ingestStackDeployed = false;
+    private final List<IMetric> errorMetrics;
+    private final IngestStack ingestStack;
+    private final CompactionStack compactionStack;
+    private final PartitionSplittingStack partitionSplittingStack;
 
-    public DashboardStack(Construct scope, String id, InstanceProperties instanceProperties) {
+    public DashboardStack(
+            Construct scope,
+            String id,
+            IngestStack ingestStack,
+            CompactionStack compactionStack,
+            PartitionSplittingStack partitionSplittingStack,
+            InstanceProperties instanceProperties,
+            List<IMetric> errorMetrics) {
         super(scope, id);
+
+        this.ingestStack = ingestStack;
+        this.compactionStack = compactionStack;
+        this.partitionSplittingStack = partitionSplittingStack;
 
         instanceId = instanceProperties.get(ID);
         tableNames = Utils.getAllTableProperties(instanceProperties, this)
@@ -80,6 +85,12 @@ public class DashboardStack extends NestedStack {
         int timeWindowInMinutes = instanceProperties.getInt(DASHBOARD_TIME_WINDOW_MINUTES);
         window = Duration.minutes(timeWindowInMinutes);
         dashboard = Dashboard.Builder.create(this, "dashboard").dashboardName(instanceId).build();
+        this.errorMetrics = errorMetrics;
+
+        addErrorMetricsWidgets();
+        addIngestWidgets();
+        addTableWidgets();
+        addCompactionWidgets();
 
         CfnOutput.Builder.create(this, "DashboardUrl")
                 .value(constructUrl(instanceProperties))
@@ -93,18 +104,6 @@ public class DashboardStack extends NestedStack {
                 "#dashboards:name=" + instanceProperties.get(ID) + ";expand=true";
     }
 
-    public void addWidgets() {
-        addErrorMetricsWidgets();
-        addIngestWidgets();
-        addTableWidgets();
-        addCompactionWidgets();
-    }
-
-    public void addErrorMetric(String label, Queue errorQueue) {
-        errorMetrics.add(errorQueue.metricApproximateNumberOfMessagesVisible(
-                MetricOptions.builder().label(label).period(window).statistic("Sum").build()));
-    }
-
     public void addErrorMetricsWidgets() {
         if (!errorMetrics.isEmpty()) {
             dashboard.addWidgets(
@@ -116,29 +115,11 @@ public class DashboardStack extends NestedStack {
         }
     }
 
-    public void addIngestMetrics(Queue jobQueue) {
-        ingestStackDeployed = true;
-        ingestJobsSubmitted = jobQueue.metricNumberOfMessagesSent(MetricOptions.builder()
-                .unit(Unit.COUNT)
-                .period(window)
-                .statistic("Sum")
-                .build());
-        ingestJobsWaiting = jobQueue.metricApproximateNumberOfMessagesVisible(MetricOptions.builder()
-                .unit(Unit.COUNT)
-                .period(window)
-                .statistic("Average")
-                .build());
-        oldestIngestJob = jobQueue.metricApproximateAgeOfOldestMessage(MetricOptions.builder()
-                .unit(Unit.SECONDS)
-                .period(window)
-                .statistic("Maximum")
-                .build());
-    }
-
     public void addIngestWidgets() {
-        if (!ingestStackDeployed) {
+        if (ingestStack == null) {
             return;
         }
+
         dashboard.addWidgets(
                 TextWidget.Builder.create()
                         .markdown("## Standard Ingest")
@@ -148,19 +129,31 @@ public class DashboardStack extends NestedStack {
                 GraphWidget.Builder.create()
                         .view(GraphWidgetView.TIME_SERIES)
                         .title("NumberOfJobsSubmitted")
-                        .left(List.of(ingestJobsSubmitted))
+                        .left(Collections.singletonList(ingestStack.getIngestJobQueue().metricNumberOfMessagesSent(MetricOptions.builder()
+                                .unit(Unit.COUNT)
+                                .period(window)
+                                .statistic("Sum")
+                                .build())))
                         .width(6)
                         .build(),
                 GraphWidget.Builder.create()
                         .view(GraphWidgetView.TIME_SERIES)
                         .title("NumberOfJobsWaiting")
-                        .left(List.of(ingestJobsWaiting))
+                        .left(Collections.singletonList(ingestStack.getIngestJobQueue().metricApproximateNumberOfMessagesVisible(MetricOptions.builder()
+                                .unit(Unit.COUNT)
+                                .period(window)
+                                .statistic("Average")
+                                .build())))
                         .width(6)
                         .build(),
                 GraphWidget.Builder.create()
                         .view(GraphWidgetView.TIME_SERIES)
                         .title("AgeOfOldestWaitingJob")
-                        .left(List.of(oldestIngestJob))
+                        .left(Collections.singletonList(ingestStack.getIngestJobQueue().metricApproximateAgeOfOldestMessage(MetricOptions.builder()
+                                .unit(Unit.SECONDS)
+                                .period(window)
+                                .statistic("Maximum")
+                                .build())))
                         .width(6)
                         .build(),
                 GraphWidget.Builder.create()
@@ -275,44 +268,62 @@ public class DashboardStack extends NestedStack {
         });
     }
 
-    public void addCompactionMetrics(Queue jobQueue) {
-        compactionStacksDeployed = true;
-        addCompactionAndSplittingMetrics("Compaction", jobQueue);
-    }
-
-    public void addPartitionSplittingMetrics(Queue jobQueue) {
-        compactionStacksDeployed = true;
-        addCompactionAndSplittingMetrics("Partition Splits", jobQueue);
-    }
-
-    private void addCompactionAndSplittingMetrics(String label, Queue jobQueue) {
-        compactionAndSplittingJobsSubmitted.add(
-                jobQueue.metricNumberOfMessagesSent(MetricOptions.builder()
-                        .label(label)
-                        .unit(Unit.COUNT)
-                        .period(window)
-                        .statistic("Sum")
-                        .build()));
-        compactionAndSplittingJobsWaiting.add(
-                jobQueue.metricApproximateNumberOfMessagesVisible(MetricOptions.builder()
-                        .label(label)
-                        .unit(Unit.COUNT)
-                        .period(window)
-                        .statistic("Average")
-                        .build()));
-        oldestCompactionAndSplittingJobs.add(
-                jobQueue.metricApproximateAgeOfOldestMessage(MetricOptions.builder()
-                        .label(label)
-                        .unit(Unit.COUNT)
-                        .period(window)
-                        .statistic("Maximum")
-                        .build()));
-    }
-
-    public void addCompactionWidgets() {
-        if (!compactionStacksDeployed) {
+    private void addCompactionWidgets() {
+        if (compactionStack == null && partitionSplittingStack == null) {
             return;
         }
+        List<Metric> jobsSubmittedMetrics = new ArrayList<>();
+        List<Metric> jobsWaitingMetrics = new ArrayList<>();
+        List<Metric> oldestJobMetrics = new ArrayList<>();
+
+        if (null != compactionStack) {
+            jobsSubmittedMetrics.add(
+                    compactionStack.getCompactionJobsQueue().metricNumberOfMessagesSent(MetricOptions.builder()
+                            .label("Compaction")
+                            .unit(Unit.COUNT)
+                            .period(window)
+                            .statistic("Sum")
+                            .build()));
+            jobsWaitingMetrics.add(
+                    compactionStack.getCompactionJobsQueue().metricApproximateNumberOfMessagesVisible(MetricOptions.builder()
+                            .label("Compaction")
+                            .unit(Unit.COUNT)
+                            .period(window)
+                            .statistic("Average")
+                            .build()));
+            oldestJobMetrics.add(
+                    compactionStack.getCompactionJobsQueue().metricApproximateAgeOfOldestMessage(MetricOptions.builder()
+                            .label("Compaction")
+                            .unit(Unit.COUNT)
+                            .period(window)
+                            .statistic("Maximum")
+                            .build()));
+        }
+
+        if (null != partitionSplittingStack) {
+            jobsSubmittedMetrics.add(
+                    partitionSplittingStack.getJobQueue().metricNumberOfMessagesSent(MetricOptions.builder()
+                            .label("Partition Splits")
+                            .unit(Unit.COUNT)
+                            .period(window)
+                            .statistic("Sum")
+                            .build()));
+            jobsWaitingMetrics.add(
+                    partitionSplittingStack.getJobQueue().metricApproximateNumberOfMessagesVisible(MetricOptions.builder()
+                            .label("Partition Splits")
+                            .unit(Unit.COUNT)
+                            .period(window)
+                            .statistic("Average")
+                            .build()));
+            oldestJobMetrics.add(
+                    partitionSplittingStack.getJobQueue().metricApproximateAgeOfOldestMessage(MetricOptions.builder()
+                            .label("Partition Splits")
+                            .unit(Unit.COUNT)
+                            .period(window)
+                            .statistic("Maximum")
+                            .build()));
+        }
+
         dashboard.addWidgets(
                 TextWidget.Builder.create()
                         .markdown("## Compactions and Splits")
@@ -322,19 +333,19 @@ public class DashboardStack extends NestedStack {
                 GraphWidget.Builder.create()
                         .view(GraphWidgetView.TIME_SERIES)
                         .title("NumberOfJobsSubmitted")
-                        .left(compactionAndSplittingJobsSubmitted)
+                        .left(jobsSubmittedMetrics)
                         .width(6)
                         .build(),
                 GraphWidget.Builder.create()
                         .view(GraphWidgetView.TIME_SERIES)
                         .title("NumberOfJobsWaiting")
-                        .left(compactionAndSplittingJobsWaiting)
+                        .left(jobsWaitingMetrics)
                         .width(6)
                         .build(),
                 GraphWidget.Builder.create()
                         .view(GraphWidgetView.TIME_SERIES)
                         .title("AgeOfOldestWaitingJob")
-                        .left(oldestCompactionAndSplittingJobs)
+                        .left(oldestJobMetrics)
                         .width(6)
                         .build());
     }
