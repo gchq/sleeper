@@ -21,6 +21,9 @@ import sleeper.ingest.job.IngestJob;
 import java.time.Instant;
 import java.util.Objects;
 
+/**
+ * A event class for when an ingest job was started. Used in the ingest job status store.
+ */
 public class IngestJobStartedEvent {
     private final String jobId;
     private final String tableId;
@@ -44,10 +47,25 @@ public class IngestJobStartedEvent {
         return new Builder();
     }
 
+    /**
+     * Creates an instance of this class.
+     *
+     * @param  taskId    the task ID
+     * @param  job       the ingest job
+     * @param  startTime the start time
+     * @return           an instance of this class
+     */
     public static IngestJobStartedEvent ingestJobStarted(String taskId, IngestJob job, Instant startTime) {
         return ingestJobStarted(job, startTime).taskId(taskId).build();
     }
 
+    /**
+     * Creates an instance of this class.
+     *
+     * @param  job       the ingest job
+     * @param  startTime the start time
+     * @return           an instance of this class
+     */
     public static Builder ingestJobStarted(IngestJob job, Instant startTime) {
         return builder()
                 .job(job)
@@ -55,6 +73,13 @@ public class IngestJobStartedEvent {
                 .startOfRun(true);
     }
 
+    /**
+     * Creates an instance of this class for an ingest job that has been validated.
+     *
+     * @param  job       the ingest job
+     * @param  startTime the start time
+     * @return           an instance of this class
+     */
     public static Builder validatedIngestJobStarted(IngestJob job, Instant startTime) {
         return builder()
                 .job(job)
@@ -123,6 +148,9 @@ public class IngestJobStartedEvent {
                 '}';
     }
 
+    /**
+     * Builder class for ingest job started event objects.
+     */
     public static final class Builder {
         private String jobId;
         private String tableId;
@@ -135,42 +163,90 @@ public class IngestJobStartedEvent {
         private Builder() {
         }
 
+        /**
+         * Sets the ingest job.
+         *
+         * @param  job the ingest job
+         * @return     the builder
+         */
         public Builder job(IngestJob job) {
             return jobId(job.getId())
                     .tableId(job.getTableId())
                     .fileCount(job.getFileCount());
         }
 
+        /**
+         * Sets the ingest job ID.
+         *
+         * @param  jobId the ingest job ID
+         * @return       the builder
+         */
         public Builder jobId(String jobId) {
             this.jobId = jobId;
             return this;
         }
 
+        /**
+         * Sets the table ID.
+         *
+         * @param  tableId the table ID
+         * @return         the builder
+         */
         public Builder tableId(String tableId) {
             this.tableId = tableId;
             return this;
         }
 
+        /**
+         * Sets the input file count.
+         *
+         * @param  fileCount the input file count
+         * @return           the builder
+         */
         public Builder fileCount(int fileCount) {
             this.fileCount = fileCount;
             return this;
         }
 
+        /**
+         * Sets the job run ID.
+         *
+         * @param  jobRunId the job run ID
+         * @return          the builder
+         */
         public Builder jobRunId(String jobRunId) {
             this.jobRunId = jobRunId;
             return this;
         }
 
+        /**
+         * Sets the task ID.
+         *
+         * @param  taskId the task ID
+         * @return        the builder
+         */
         public Builder taskId(String taskId) {
             this.taskId = taskId;
             return this;
         }
 
+        /**
+         * Sets the start time.
+         *
+         * @param  startTime the start time
+         * @return           the builder
+         */
         public Builder startTime(Instant startTime) {
             this.startTime = startTime;
             return this;
         }
 
+        /**
+         * Sets whether this event marks the start of a job run.
+         *
+         * @param  startOfRun whether this event marks the start of a job run
+         * @return            the builder
+         */
         public Builder startOfRun(boolean startOfRun) {
             this.startOfRun = startOfRun;
             return this;
