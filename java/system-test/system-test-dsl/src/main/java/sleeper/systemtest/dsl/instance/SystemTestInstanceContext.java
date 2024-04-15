@@ -26,6 +26,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatus;
 import sleeper.statestore.StateStoreProvider;
+import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.sourcedata.GenerateNumberedRecords;
 import sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides;
 
@@ -49,27 +50,31 @@ public class SystemTestInstanceContext {
     private final SystemTestParameters parameters;
     private final DeployedSleeperInstances deployedInstances;
     private final SleeperInstanceDriver instanceDriver;
-    private final SleeperTablesDriver tablesDriver;
     private final Map<String, DeployedSleeperTablesForTest> tablesByInstanceShortName = new HashMap<>();
     private final Map<String, TableProperties> tablesByTestName = new TreeMap<>();
     private final Map<String, String> testNameByTableId = new HashMap<>();
     private DeployedSleeperInstance currentInstance = null;
+    private SleeperTablesDriver tablesDriver = null;
     private DeployedSleeperTablesForTest currentTables = null;
     private GenerateNumberedValueOverrides generatorOverrides = GenerateNumberedValueOverrides.none();
 
     public SystemTestInstanceContext(
             SystemTestParameters parameters, DeployedSleeperInstances deployedInstances,
-            SleeperInstanceDriver instanceDriver, SleeperTablesDriver tablesDriver) {
+            SleeperInstanceDriver instanceDriver) {
         this.parameters = parameters;
         this.deployedInstances = deployedInstances;
         this.instanceDriver = instanceDriver;
-        this.tablesDriver = tablesDriver;
     }
 
     public void connectTo(SystemTestInstanceConfiguration configuration) {
         currentInstance = deployedInstances.connectToAndReset(configuration);
+        tablesDriver = currentInstance.getInstanceAdminDrivers().tables(parameters);
         currentTables = tablesByInstanceShortName.computeIfAbsent(configuration.getShortName(),
                 name -> new DeployedSleeperTablesForTest(currentInstance.getInstanceProperties(), tablesDriver));
+    }
+
+    public SystemTestDrivers adminDrivers() {
+        return currentInstance.getInstanceAdminDrivers();
     }
 
     public void addDefaultTables() {

@@ -25,6 +25,7 @@ import sleeper.systemtest.dsl.ingest.DirectIngestDriver;
 import sleeper.systemtest.dsl.ingest.IngestBatcherDriver;
 import sleeper.systemtest.dsl.ingest.IngestByQueue;
 import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
+import sleeper.systemtest.dsl.instance.AssumeRoleDriver;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
 import sleeper.systemtest.dsl.instance.SleeperTablesDriver;
@@ -76,6 +77,11 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
     @Override
     public SleeperInstanceDriver instance(SystemTestParameters parameters) {
         return instanceDriver;
+    }
+
+    @Override
+    public AssumeRoleDriver assumeRole() {
+        return role -> this;
     }
 
     @Override

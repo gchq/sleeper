@@ -28,9 +28,9 @@ public class SystemTestQuery {
     private final SystemTestDrivers drivers;
     private QueryAllTablesDriver driver = null;
 
-    public SystemTestQuery(SystemTestContext context, SystemTestDrivers drivers) {
+    public SystemTestQuery(SystemTestContext context) {
         this.context = context;
-        this.drivers = drivers;
+        this.drivers = context.instance().adminDrivers();
     }
 
     public SystemTestQuery byQueue() {

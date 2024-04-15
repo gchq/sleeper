@@ -26,6 +26,7 @@ import sleeper.configuration.properties.instance.SleeperProperty;
 import sleeper.configuration.properties.instance.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.SleeperVersion;
+import sleeper.systemtest.dsl.SystemTestDrivers;
 
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -33,6 +34,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.ADMIN_ROLE_ARN;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.instance.CommonProperty.TAGS;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_ROLE;
@@ -43,6 +45,7 @@ public final class DeployedSleeperInstance {
     private final String instanceId;
     private final DeployInstanceConfiguration configuration;
     private final InstanceProperties instanceProperties = new InstanceProperties();
+    private SystemTestDrivers instanceAdminDrivers;
 
     public DeployedSleeperInstance(String instanceId, DeployInstanceConfiguration configuration) {
         this.instanceId = instanceId;
@@ -53,11 +56,17 @@ public final class DeployedSleeperInstance {
         return instanceProperties;
     }
 
+    public SystemTestDrivers getInstanceAdminDrivers() {
+        return instanceAdminDrivers;
+    }
+
     public void loadOrDeployIfNeeded(
             SystemTestParameters parameters, DeployedSystemTestResources systemTest,
-            SleeperInstanceDriver driver, SleeperTablesDriver tablesDriver) {
+            SleeperInstanceDriver driver, AssumeRoleDriver assumeRoleDriver) {
         boolean newInstance = driver.deployInstanceIfNotPresent(instanceId, configuration);
         driver.loadInstanceProperties(instanceProperties, instanceId);
+        instanceAdminDrivers = assumeRoleDriver.assumeRole(instanceProperties.get(ADMIN_ROLE_ARN));
+        SleeperTablesDriver tablesDriver = instanceAdminDrivers.tables(parameters);
         if (!newInstance && isRedeployNeeded(parameters, systemTest)) {
             redeploy(driver, tablesDriver);
         }

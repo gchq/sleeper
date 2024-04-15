@@ -33,8 +33,8 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .description("The version of Sleeper that is being used. This property is used to identify the correct " +
                     "jars in the S3 jars bucket and to select the correct tag in the ECR repositories.")
             .propertyGroup(InstancePropertyGroup.COMMON).build();
-    CdkDefinedInstanceProperty ADMIN_ROLE = Index.propertyBuilder("sleeper.admin.role")
-            .description("A role that has permissions to administer the instance.")
+    CdkDefinedInstanceProperty ADMIN_ROLE_ARN = Index.propertyBuilder("sleeper.admin.role.arn")
+            .description("The ARN of a role that has permissions to administer the instance.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
 

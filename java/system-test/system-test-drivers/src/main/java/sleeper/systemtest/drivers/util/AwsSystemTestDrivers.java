@@ -54,6 +54,7 @@ import sleeper.systemtest.dsl.ingest.IngestByAnyQueueDriver;
 import sleeper.systemtest.dsl.ingest.IngestByQueue;
 import sleeper.systemtest.dsl.ingest.IngestLocalFileByAnyQueueDriver;
 import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
+import sleeper.systemtest.dsl.instance.AssumeRoleDriver;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
 import sleeper.systemtest.dsl.instance.SleeperTablesDriver;
@@ -74,7 +75,15 @@ import sleeper.systemtest.dsl.util.PurgeQueueDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
 public class AwsSystemTestDrivers implements SystemTestDrivers {
-    private final SystemTestClients clients = new SystemTestClients();
+    private final SystemTestClients clients;
+
+    public AwsSystemTestDrivers() {
+        this(new SystemTestClients());
+    }
+
+    private AwsSystemTestDrivers(SystemTestClients clients) {
+        this.clients = clients;
+    }
 
     @Override
     public SystemTestDeploymentDriver systemTestDeployment(SystemTestParameters parameters) {
@@ -84,6 +93,10 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
     @Override
     public SleeperInstanceDriver instance(SystemTestParameters parameters) {
         return new AwsSleeperInstanceDriver(parameters, clients);
+    }
+
+    public AssumeRoleDriver assumeRole() {
+        return role -> new AwsSystemTestDrivers(clients.assumeRole(role));
     }
 
     @Override

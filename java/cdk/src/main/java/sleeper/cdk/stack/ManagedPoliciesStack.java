@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.function.Predicate.not;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.ADMIN_ROLE;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.ADMIN_ROLE_ARN;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_ROLE;
@@ -84,7 +84,7 @@ public class ManagedPoliciesStack extends NestedStack {
                 .build();
         Stream.of(ingestPolicy, queryPolicy, editTablesPolicy, reportingPolicy, invokeSchedulesPolicy, invokeCompactionPolicy, purgeQueuesPolicy)
                 .forEach(policy -> policy.attachToRole(adminRole));
-        instanceProperties.set(ADMIN_ROLE, adminRole.getRoleName());
+        instanceProperties.set(ADMIN_ROLE_ARN, adminRole.getRoleArn());
     }
 
     public ManagedPolicy getIngestPolicy() {

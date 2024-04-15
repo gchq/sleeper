@@ -28,9 +28,9 @@ public class SystemTestIngest {
     private final SystemTestContext context;
     private final SystemTestDrivers drivers;
 
-    public SystemTestIngest(SystemTestContext context, SystemTestDrivers drivers) {
+    public SystemTestIngest(SystemTestContext context) {
         this.context = context;
-        this.drivers = drivers;
+        this.drivers = context.instance().adminDrivers();
     }
 
     public SystemTestIngest setType(SystemTestIngestType type) {
