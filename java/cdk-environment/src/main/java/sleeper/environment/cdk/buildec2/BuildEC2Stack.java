@@ -107,12 +107,12 @@ public class BuildEC2Stack extends Stack {
                 .build());
 
         // Allow running ECS tasks
-        role.addToPolicy(PolicyStatement.Builder
-                .create()
-                .resources(Collections.singletonList("*"))
+        role.addToPolicy(PolicyStatement.Builder.create()
+                .effect(Effect.ALLOW)
                 .actions(List.of("ecs:DescribeClusters", "ecs:RunTask", "iam:PassRole",
                         "ecs:DescribeContainerInstances", "ecs:DescribeTasks", "ecs:ListContainerInstances",
                         "autoscaling:SetDesiredCapacity", "autoscaling:DescribeAutoScalingGroups"))
+                .resources(List.of("*"))
                 .build());
         role.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonECSTaskExecutionRolePolicy"));
 
