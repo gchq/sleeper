@@ -104,7 +104,7 @@ public class DashboardStack extends NestedStack {
                 "#dashboards:name=" + instanceProperties.get(ID) + ";expand=true";
     }
 
-    public void addErrorMetricsWidgets() {
+    private void addErrorMetricsWidgets() {
         if (!errorMetrics.isEmpty()) {
             dashboard.addWidgets(
                     SingleValueWidget.Builder.create()
@@ -115,7 +115,7 @@ public class DashboardStack extends NestedStack {
         }
     }
 
-    public void addIngestWidgets() {
+    private void addIngestWidgets() {
         if (ingestStack == null) {
             return;
         }
