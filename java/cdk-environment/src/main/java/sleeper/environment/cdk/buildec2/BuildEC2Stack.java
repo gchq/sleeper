@@ -88,10 +88,11 @@ public class BuildEC2Stack extends Stack {
         Role role = Role.Builder.create(this, "BuildEC2Role")
                 .assumedBy(new ServicePrincipal("ec2.amazonaws.com"))
                 .build();
+        ManagedPolicy policy = new ManagedPolicy(this, "BuildEC2Policy");
 
         // Allow running CDK by assuming roles created by cdk bootstrap
         // Allow interacting with Sleeper by assuming admin role
-        role.addToPolicy(PolicyStatement.Builder.create()
+        policy.addStatements(PolicyStatement.Builder.create()
                 .effect(Effect.ALLOW)
                 .actions(List.of("sts:AssumeRole"))
                 .resources(List.of(
@@ -100,14 +101,14 @@ public class BuildEC2Stack extends Stack {
                 .build());
 
         // Allow creating jars bucket & Docker repositories, working with CloudFormation stacks
-        role.addToPolicy(PolicyStatement.Builder.create()
+        policy.addStatements(PolicyStatement.Builder.create()
                 .effect(Effect.ALLOW)
                 .actions(List.of("s3:*", "ecr:*", "cloudformation:*"))
                 .resources(List.of("*"))
                 .build());
 
         // Allow running ECS tasks
-        role.addToPolicy(PolicyStatement.Builder.create()
+        policy.addStatements(PolicyStatement.Builder.create()
                 .effect(Effect.ALLOW)
                 .actions(List.of("ecs:DescribeClusters", "ecs:RunTask", "iam:PassRole",
                         "ecs:DescribeContainerInstances", "ecs:DescribeTasks", "ecs:ListContainerInstances",
@@ -116,6 +117,7 @@ public class BuildEC2Stack extends Stack {
                 .build());
         role.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonECSTaskExecutionRolePolicy"));
 
+        role.addManagedPolicy(policy);
         return role;
     }
 
