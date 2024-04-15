@@ -18,6 +18,8 @@ package sleeper.core.statestore.transactionlog;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 
+import java.time.Instant;
+
 class TransactionLogHead<T> {
 
     private final TransactionLogStore logStore;
@@ -47,7 +49,7 @@ class TransactionLogHead<T> {
                 PartitionTransaction.class, new StateStorePartitions());
     }
 
-    void addTransaction(StateStoreTransaction<T> transaction) throws StateStoreException {
+    void addTransaction(Instant updateTime, StateStoreTransaction<T> transaction) throws StateStoreException {
         Exception failure = new IllegalArgumentException("No attempts made");
         for (int attempt = 0; attempt < maxAddTransactionAttempts; attempt++) {
             try {
@@ -60,12 +62,12 @@ class TransactionLogHead<T> {
             transaction.validate(state);
             long transactionNumber = lastTransactionNumber + 1;
             try {
-                logStore.addTransaction(new TransactionLogEntry(transactionNumber, transaction));
+                logStore.addTransaction(new TransactionLogEntry(transactionNumber, updateTime, transaction));
             } catch (Exception e) {
                 failure = e;
                 continue;
             }
-            transaction.apply(state);
+            transaction.apply(state, updateTime);
             lastTransactionNumber = transactionNumber;
             failure = null;
             break;
@@ -89,7 +91,7 @@ class TransactionLogHead<T> {
             return;
         }
         transactionType.cast(entry.getTransaction())
-                .apply(state);
+                .apply(state, entry.getUpdateTime());
         lastTransactionNumber = entry.getTransactionNumber();
     }
 

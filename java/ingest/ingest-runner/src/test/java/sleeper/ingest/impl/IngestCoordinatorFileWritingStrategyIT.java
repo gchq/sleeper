@@ -126,7 +126,7 @@ public class IngestCoordinatorFileWritingStrategyIT {
             PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                     .singlePartition("root").buildTree();
             stateStore.initialise(tree.getAllPartitions());
-            stateStore.fixTime(stateStoreUpdateTime);
+            stateStore.fixFileUpdateTime(stateStoreUpdateTime);
             String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
             IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                     .fileNames(List.of("rootFile"))
@@ -167,7 +167,7 @@ public class IngestCoordinatorFileWritingStrategyIT {
                     .splitToNewChildren("root", "L", "R", "000000050")
                     .buildTree();
             stateStore.initialise(tree.getAllPartitions());
-            stateStore.fixTime(stateStoreUpdateTime);
+            stateStore.fixFileUpdateTime(stateStoreUpdateTime);
             String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
             IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                     .fileNames(List.of("lFile"))
@@ -210,7 +210,7 @@ public class IngestCoordinatorFileWritingStrategyIT {
                     .splitToNewChildren("R", "RL", "RR", "000000080")
                     .buildTree();
             stateStore.initialise(tree.getAllPartitions());
-            stateStore.fixTime(stateStoreUpdateTime);
+            stateStore.fixFileUpdateTime(stateStoreUpdateTime);
             String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
             IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                     .fileNames(List.of("llFile", "lrFile", "rlFile", "rrFile"))
@@ -258,7 +258,7 @@ public class IngestCoordinatorFileWritingStrategyIT {
                     .splitToNewChildren("root", "L", "R", "000000010")
                     .buildTree();
             stateStore.initialise(tree.getAllPartitions());
-            stateStore.fixTime(stateStoreUpdateTime);
+            stateStore.fixFileUpdateTime(stateStoreUpdateTime);
             String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
             IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                     .fileNames(List.of("leftFile1", "rightFile1", "leftFile2", "rightFile2"))
@@ -321,7 +321,7 @@ public class IngestCoordinatorFileWritingStrategyIT {
             PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                     .singlePartition("root").buildTree();
             stateStore.initialise(tree.getAllPartitions());
-            stateStore.fixTime(stateStoreUpdateTime);
+            stateStore.fixFileUpdateTime(stateStoreUpdateTime);
             String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
             IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                     .fileNames(List.of("rootFile"))
@@ -363,7 +363,7 @@ public class IngestCoordinatorFileWritingStrategyIT {
                     .splitToNewChildren("root", "L", "R", "000000050")
                     .buildTree();
             stateStore.initialise(tree.getAllPartitions());
-            stateStore.fixTime(stateStoreUpdateTime);
+            stateStore.fixFileUpdateTime(stateStoreUpdateTime);
             String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
             IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                     .fileNames(List.of("rootFile"))
@@ -407,7 +407,7 @@ public class IngestCoordinatorFileWritingStrategyIT {
                     .splitToNewChildren("R", "RL", "RR", "000000080")
                     .buildTree();
             stateStore.initialise(tree.getAllPartitions());
-            stateStore.fixTime(stateStoreUpdateTime);
+            stateStore.fixFileUpdateTime(stateStoreUpdateTime);
             String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
             IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                     .fileNames(List.of("rootFile"))
@@ -453,7 +453,7 @@ public class IngestCoordinatorFileWritingStrategyIT {
                     .splitToNewChildren("root", "L", "R", "000000010")
                     .buildTree();
             stateStore.initialise(tree.getAllPartitions());
-            stateStore.fixTime(stateStoreUpdateTime);
+            stateStore.fixFileUpdateTime(stateStoreUpdateTime);
             String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
             IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                     .fileNames(List.of("rootFile1", "rootFile2"))
