@@ -21,6 +21,9 @@ import sleeper.core.record.process.status.ProcessStatusUpdate;
 
 import java.util.stream.Stream;
 
+/**
+ * An enum for all the states an ingest job can be in.
+ */
 public enum IngestJobStatusType {
     REJECTED(IngestJobRejectedStatus.class, 1),
     ACCEPTED(IngestJobAcceptedStatus.class, 2),
@@ -39,6 +42,12 @@ public enum IngestJobStatusType {
         return order;
     }
 
+    /**
+     * Gets the status type for the provided process status update.
+     *
+     * @param  update the process status update
+     * @return        the ingest job status type of the update
+     */
     public static IngestJobStatusType of(ProcessStatusUpdate update) {
         return Stream.of(values())
                 .filter(type -> type.statusUpdateClass.isInstance(update))
