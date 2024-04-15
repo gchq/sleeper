@@ -104,16 +104,6 @@ public class SystemTestClients {
         cloudWatch = v2Client(CloudWatchClient.builder(), credentialsV2);
     }
 
-    private static <T, B extends com.amazonaws.client.builder.AwsClientBuilder<B, T>> T v1Client(
-            B builder, AWSCredentialsProvider credentials) {
-        return builder.withCredentials(credentials).build();
-    }
-
-    private static <T, B extends software.amazon.awssdk.awscore.client.builder.AwsClientBuilder<B, T>> T v2Client(
-            B builder, AwsCredentialsProvider credentials) {
-        return builder.credentialsProvider(credentials).build();
-    }
-
     public SystemTestClients assumeRole(String roleArn) {
         AssumeRoleResult result = sts.assumeRole(new AssumeRoleRequest()
                 .withRoleArn(roleArn)
@@ -182,6 +172,16 @@ public class SystemTestClients {
 
     public CloudWatchClient getCloudWatch() {
         return cloudWatch;
+    }
+
+    private static <T, B extends com.amazonaws.client.builder.AwsClientBuilder<B, T>> T v1Client(
+            B builder, AWSCredentialsProvider credentials) {
+        return builder.withCredentials(credentials).build();
+    }
+
+    private static <T, B extends software.amazon.awssdk.awscore.client.builder.AwsClientBuilder<B, T>> T v2Client(
+            B builder, AwsCredentialsProvider credentials) {
+        return builder.credentialsProvider(credentials).build();
     }
 
     private static LambdaClientBuilder systemTestLambdaClientBuilder() {
