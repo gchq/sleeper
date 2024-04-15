@@ -25,13 +25,13 @@ public class DeployedSleeperInstances {
     private final SystemTestParameters parameters;
     private final DeployedSystemTestResources systemTest;
     private final SleeperInstanceDriver instanceDriver;
-    private final AssumeRoleDriver assumeRoleDriver;
+    private final AssumeAdminRoleDriver assumeRoleDriver;
     private final Map<String, Exception> failureById = new HashMap<>();
     private final Map<String, DeployedSleeperInstance> instanceByShortName = new HashMap<>();
 
     public DeployedSleeperInstances(
             SystemTestParameters parameters, DeployedSystemTestResources systemTest,
-            SleeperInstanceDriver instanceDriver, AssumeRoleDriver assumeRoleDriver) {
+            SleeperInstanceDriver instanceDriver, AssumeAdminRoleDriver assumeRoleDriver) {
         this.parameters = parameters;
         this.systemTest = systemTest;
         this.instanceDriver = instanceDriver;

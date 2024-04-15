@@ -54,7 +54,7 @@ import sleeper.systemtest.dsl.ingest.IngestByAnyQueueDriver;
 import sleeper.systemtest.dsl.ingest.IngestByQueue;
 import sleeper.systemtest.dsl.ingest.IngestLocalFileByAnyQueueDriver;
 import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
-import sleeper.systemtest.dsl.instance.AssumeRoleDriver;
+import sleeper.systemtest.dsl.instance.AssumeAdminRoleDriver;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
 import sleeper.systemtest.dsl.instance.SleeperTablesDriver;
@@ -73,6 +73,8 @@ import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
 import sleeper.systemtest.dsl.util.PurgeQueueDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
+
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.ADMIN_ROLE_ARN;
 
 public class AwsSystemTestDrivers implements SystemTestDrivers {
     private final SystemTestClients clients;
@@ -95,8 +97,9 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
         return new AwsSleeperInstanceDriver(parameters, clients);
     }
 
-    public AssumeRoleDriver assumeRole() {
-        return role -> new AwsSystemTestDrivers(clients.assumeRole(role));
+    public AssumeAdminRoleDriver assumeAdminRole() {
+        return properties -> new AwsSystemTestDrivers(
+                clients.assumeRole(properties.get(ADMIN_ROLE_ARN)));
     }
 
     @Override

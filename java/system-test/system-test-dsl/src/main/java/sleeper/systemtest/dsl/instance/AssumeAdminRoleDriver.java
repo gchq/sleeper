@@ -15,10 +15,11 @@
  */
 package sleeper.systemtest.dsl.instance;
 
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 
-public interface AssumeRoleDriver {
+public interface AssumeAdminRoleDriver {
 
-    SystemTestDrivers assumeRole(String role);
+    SystemTestDrivers assumeAdminRole(InstanceProperties instanceProperties);
 
 }

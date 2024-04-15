@@ -34,7 +34,6 @@ import java.util.Objects;
 import java.util.Set;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.ADMIN_ROLE_ARN;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.instance.CommonProperty.TAGS;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_ROLE;
@@ -62,10 +61,10 @@ public final class DeployedSleeperInstance {
 
     public void loadOrDeployIfNeeded(
             SystemTestParameters parameters, DeployedSystemTestResources systemTest,
-            SleeperInstanceDriver driver, AssumeRoleDriver assumeRoleDriver) {
+            SleeperInstanceDriver driver, AssumeAdminRoleDriver assumeRoleDriver) {
         boolean newInstance = driver.deployInstanceIfNotPresent(instanceId, configuration);
         driver.loadInstanceProperties(instanceProperties, instanceId);
-        instanceAdminDrivers = assumeRoleDriver.assumeRole(instanceProperties.get(ADMIN_ROLE_ARN));
+        instanceAdminDrivers = assumeRoleDriver.assumeAdminRole(instanceProperties);
         SleeperTablesDriver tablesDriver = instanceAdminDrivers.tables(parameters);
         if (!newInstance && isRedeployNeeded(parameters, systemTest)) {
             redeploy(driver, tablesDriver);
