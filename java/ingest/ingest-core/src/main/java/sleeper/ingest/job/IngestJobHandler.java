@@ -21,6 +21,18 @@ import sleeper.ingest.IngestResult;
 
 import java.io.IOException;
 
+/**
+ * An interface for processing an ingest job.
+ */
 public interface IngestJobHandler {
+    /**
+     * Processes an ingest job.
+     *
+     * @param  job                 the ingest job to process
+     * @return                     an {@link IngestResult} object
+     * @throws IteratorException   -
+     * @throws StateStoreException -
+     * @throws IOException         -
+     */
     IngestResult ingest(IngestJob job) throws IteratorException, StateStoreException, IOException;
 }
