@@ -247,6 +247,10 @@ Apfloat (org.apfloat:apfloat:1.13.0):
 
 - MIT License
 
+Joda Time (joda-time:joda-time:2.12.7):
+
+- Apache License, Version 2.0
+
 Go Offline Maven Plugin (de.qaware.maven:go-offline-maven-plugin:1.2.8):
 
 - Apache License, Version 2.0
