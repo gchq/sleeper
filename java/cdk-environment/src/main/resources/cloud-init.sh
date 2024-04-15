@@ -23,11 +23,8 @@ LOGIN_USER=${loginUser}
 REPOSITORY=${repository}
 FORK=${fork}
 BRANCH=${branch}
-ROLE=${role}
 
 LOGIN_HOME=/home/$LOGIN_USER
-
-echo "SLEEPER_SYSTEM_TEST_ROLE=$ROLE" >> /etc/environment
 
 # Get Updates
 export DEBIAN_FRONTEND=noninteractive

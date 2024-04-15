@@ -27,9 +27,8 @@ class LoadUserDataUtil {
         // Prevent instantiation
     }
 
-    static String userData(String roleName, BuildEC2Parameters params) {
-        return params.fillUserDataTemplate(
-                templateString().replace("${role}", roleName));
+    static String userData(BuildEC2Parameters params) {
+        return params.fillUserDataTemplate(templateString());
     }
 
     private static String templateString() {

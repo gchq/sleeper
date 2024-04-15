@@ -55,18 +55,17 @@ public class BuildEC2Stack extends Stack {
                 .orElse(inheritVpc);
         BuildEC2Image image = params.image();
 
-        Role role = createRole();
         Instance instance = Instance.Builder.create(this, "EC2")
                 .vpc(vpc)
                 .securityGroup(createSecurityGroup())
                 .machineImage(image.machineImage())
                 .instanceType(InstanceType.of(InstanceClass.T3, InstanceSize.LARGE))
                 .vpcSubnets(SubnetSelection.builder().subnetType(SubnetType.PRIVATE_WITH_EGRESS).build())
-                .userData(UserData.custom(LoadUserDataUtil.userData(role.getRoleName(), params)))
+                .userData(UserData.custom(LoadUserDataUtil.userData(params)))
                 .userDataCausesReplacement(true)
                 .blockDevices(Collections.singletonList(image.rootBlockDevice()))
                 .ssmSessionPermissions(true)
-                .role(role)
+                .role(createRole())
                 .build();
 
         CfnOutput.Builder.create(this, "LoginUser")
