@@ -217,22 +217,22 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
 
     @Override
     public IngestByAnyQueueDriver pythonIngest(SystemTestContext context) {
-        return new PythonIngestDriver(context);
+        return new PythonIngestDriver(context, clients);
     }
 
     @Override
     public IngestLocalFileByAnyQueueDriver pythonIngestLocalFile(SystemTestContext context) {
-        return new PythonIngestLocalFileDriver(context.instance(), context.parameters().getPythonDirectory());
+        return new PythonIngestLocalFileDriver(context.instance(), context.parameters().getPythonDirectory(), clients);
     }
 
     @Override
     public IngestByAnyQueueDriver pythonBulkImport(SystemTestContext context) {
-        return new PythonBulkImportDriver(context);
+        return new PythonBulkImportDriver(context, clients);
     }
 
     @Override
     public PythonQueryTypesDriver pythonQuery(SystemTestContext context) {
-        return new PythonQueryDriver(context.instance(), context.parameters().getPythonDirectory());
+        return new PythonQueryDriver(context.instance(), context.parameters().getPythonDirectory(), clients);
     }
 
     @Override

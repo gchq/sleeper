@@ -17,20 +17,27 @@
 package sleeper.clients.util;
 
 import java.util.Arrays;
+import java.util.Map;
 
 import static java.lang.ProcessBuilder.Redirect.INHERIT;
 import static java.util.Objects.requireNonNull;
 
 public class Command {
 
+    private final Map<String, String> envVars;
     private final String[] command;
 
-    public Command(String[] command) {
+    private Command(Map<String, String> envVars, String[] command) {
+        this.envVars = requireNonNull(envVars, "envVars must not be null");
         this.command = requireNonNull(command, "command must not be null");
     }
 
+    public static Command envAndCommand(Map<String, String> envVars, String... command) {
+        return new Command(envVars, command);
+    }
+
     public static Command command(String... command) {
-        return new Command(command);
+        return new Command(Map.of(), command);
     }
 
     @Override
@@ -60,7 +67,9 @@ public class Command {
     }
 
     public ProcessBuilder toProcessBuilder() {
-        return new ProcessBuilder(command);
+        ProcessBuilder builder = new ProcessBuilder(command);
+        builder.environment().putAll(envVars);
+        return builder;
     }
 
     public ProcessBuilder toProcessBuilderInheritIO(int index, int pipelineSize) {

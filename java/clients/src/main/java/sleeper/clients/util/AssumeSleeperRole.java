@@ -29,6 +29,7 @@ import software.amazon.awssdk.regions.Region;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 
+import java.util.Map;
 import java.util.UUID;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.ADMIN_ROLE_ARN;
@@ -36,15 +37,18 @@ import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 
 public class AssumeSleeperRole {
 
+    private final Credentials credentials;
+    private final String region;
     private final AWSCredentialsProvider credentialsV1;
     private final AwsCredentialsProvider credentialsV2;
-    private final String region;
 
     private AssumeSleeperRole(
-            AWSCredentialsProvider credentialsV1, AwsCredentialsProvider credentialsV2, String region) {
+            Credentials credentials, String region,
+            AWSCredentialsProvider credentialsV1, AwsCredentialsProvider credentialsV2) {
+        this.credentials = credentials;
+        this.region = region;
         this.credentialsV1 = credentialsV1;
         this.credentialsV2 = credentialsV2;
-        this.region = region;
     }
 
     public static AssumeSleeperRole instanceAdmin(
@@ -60,7 +64,7 @@ public class AssumeSleeperRole {
                 credentials.getAccessKeyId(), credentials.getSecretAccessKey(), credentials.getSessionToken()));
         AwsCredentialsProvider credentialsV2 = StaticCredentialsProvider.create(AwsSessionCredentials.create(
                 credentials.getAccessKeyId(), credentials.getSecretAccessKey(), credentials.getSessionToken()));
-        return new AssumeSleeperRole(credentialsV1, credentialsV2, region);
+        return new AssumeSleeperRole(credentials, region, credentialsV1, credentialsV2);
     }
 
     public <T, B extends com.amazonaws.client.builder.AwsClientBuilder<B, T>> T v1Client(B builder) {
@@ -69,6 +73,15 @@ public class AssumeSleeperRole {
 
     public <T, B extends software.amazon.awssdk.awscore.client.builder.AwsClientBuilder<B, T>> T v2Client(B builder) {
         return builder.credentialsProvider(credentialsV2).region(Region.of(region)).build();
+    }
+
+    public Map<String, String> authEnvVars() {
+        return Map.of(
+                "AWS_ACCESS_KEY_ID", credentials.getAccessKeyId(),
+                "AWS_SECRET_ACCESS_KEY", credentials.getSecretAccessKey(),
+                "AWS_SESSION_TOKEN", credentials.getSessionToken(),
+                "AWS_REGION", region,
+                "AWS_DEFAULT_REGION", region);
     }
 
 }

@@ -46,6 +46,7 @@ import sleeper.clients.util.AssumeSleeperRole;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.time.Duration;
+import java.util.Map;
 
 public class SystemTestClients {
     private final AmazonS3 s3;
@@ -62,6 +63,7 @@ public class SystemTestClients {
     private final AmazonAutoScaling autoScaling;
     private final AmazonECR ecr;
     private final CloudWatchClient cloudWatch;
+    private final Map<String, String> authEnvVars;
 
     public SystemTestClients() {
         s3 = AmazonS3ClientBuilder.defaultClient();
@@ -78,6 +80,7 @@ public class SystemTestClients {
         autoScaling = AmazonAutoScalingClientBuilder.defaultClient();
         ecr = AmazonECRClientBuilder.defaultClient();
         cloudWatch = CloudWatchClient.create();
+        authEnvVars = Map.of();
     }
 
     private SystemTestClients(AssumeSleeperRole assumeRole, AwsRegionProvider regionProvider) {
@@ -95,6 +98,7 @@ public class SystemTestClients {
         autoScaling = assumeRole.v1Client(AmazonAutoScalingClientBuilder.standard());
         ecr = assumeRole.v1Client(AmazonECRClientBuilder.standard());
         cloudWatch = assumeRole.v2Client(CloudWatchClient.builder());
+        authEnvVars = assumeRole.authEnvVars();
     }
 
     public SystemTestClients assumeAdminRole(InstanceProperties instanceProperties) {
@@ -155,6 +159,10 @@ public class SystemTestClients {
 
     public CloudWatchClient getCloudWatch() {
         return cloudWatch;
+    }
+
+    public Map<String, String> getAuthEnvVars() {
+        return authEnvVars;
     }
 
     private static LambdaClientBuilder systemTestLambdaClientBuilder() {
