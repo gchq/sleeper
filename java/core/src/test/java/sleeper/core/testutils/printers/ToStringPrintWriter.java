@@ -21,7 +21,7 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 
-public class ToStringPrintStream {
+public class ToStringPrintWriter {
 
     private final OutputStream outputStream = new ByteArrayOutputStream();
 

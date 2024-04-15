@@ -85,7 +85,7 @@ public class PartitionsPrinter {
      * @return               a generated string
      */
     public static String printPartitions(Schema schema, PartitionTree partitionTree) {
-        ToStringPrintStream printer = new ToStringPrintStream();
+        ToStringPrintWriter printer = new ToStringPrintWriter();
         PrintStream out = printer.getPrintStream();
         RegionSerDe regionSerDe = new RegionSerDe(schema);
         partitionTree.traverseLeavesFirst().forEach(partition -> {

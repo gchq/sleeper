@@ -50,7 +50,7 @@ public class TablesPrinter {
         List<Map.Entry<String, List<String>>> printedSortedByFrequency = tableNamesByPrintedValue.entrySet().stream()
                 .sorted(Comparator.comparing(entry -> entry.getValue().size()))
                 .collect(Collectors.toUnmodifiableList());
-        ToStringPrintStream printer = new ToStringPrintStream();
+        ToStringPrintWriter printer = new ToStringPrintWriter();
         PrintStream out = printer.getPrintStream();
 
         for (Map.Entry<String, List<String>> entry : printedSortedByFrequency) {

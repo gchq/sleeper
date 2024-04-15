@@ -76,7 +76,7 @@ public class FileReferencePrinter {
      * @return            a generated string
      */
     public static String printFiles(PartitionTree partitions, AllReferencesToAllFiles files) {
-        ToStringPrintStream printer = new ToStringPrintStream();
+        ToStringPrintWriter printer = new ToStringPrintWriter();
         PrintWriter out = printer.getPrintWriter();
         out.println("Unreferenced files: " + files.getFilesWithNoReferences().size());
         out.println("Referenced files: " + files.getFilesWithReferences().size());
