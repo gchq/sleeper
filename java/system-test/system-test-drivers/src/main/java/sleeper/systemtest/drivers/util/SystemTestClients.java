@@ -43,7 +43,6 @@ import software.amazon.awssdk.services.lambda.LambdaClientBuilder;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.util.AssumeSleeperRole;
-import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.time.Duration;
 import java.util.Map;
@@ -83,7 +82,7 @@ public class SystemTestClients {
         authEnvVars = Map.of();
     }
 
-    private SystemTestClients(AssumeSleeperRole assumeRole) {
+    public SystemTestClients(AssumeSleeperRole assumeRole) {
         s3 = assumeRole.v1Client(AmazonS3ClientBuilder.standard());
         s3V2 = assumeRole.v2Client(S3Client.builder());
         dynamoDB = assumeRole.v1Client(AmazonDynamoDBClientBuilder.standard());
@@ -99,10 +98,6 @@ public class SystemTestClients {
         ecr = assumeRole.v1Client(AmazonECRClientBuilder.standard());
         cloudWatch = assumeRole.v2Client(CloudWatchClient.builder());
         authEnvVars = assumeRole.authEnvVars();
-    }
-
-    public SystemTestClients assumeAdminRole(InstanceProperties instanceProperties) {
-        return new SystemTestClients(AssumeSleeperRole.instanceAdmin(sts, instanceProperties));
     }
 
     public AmazonS3 getS3() {

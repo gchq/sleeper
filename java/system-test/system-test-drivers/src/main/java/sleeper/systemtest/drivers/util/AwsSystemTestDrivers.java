@@ -16,6 +16,7 @@
 
 package sleeper.systemtest.drivers.util;
 
+import sleeper.clients.util.AssumeSleeperRole;
 import sleeper.systemtest.drivers.compaction.AwsCompactionDriver;
 import sleeper.systemtest.drivers.compaction.AwsCompactionReportsDriver;
 import sleeper.systemtest.drivers.gc.AwsGarbageCollectionDriver;
@@ -96,8 +97,8 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
     }
 
     public AssumeAdminRoleDriver assumeAdminRole() {
-        return properties -> new AwsSystemTestDrivers(
-                clients.assumeAdminRole(properties));
+        return properties -> new AwsSystemTestDrivers(new SystemTestClients(
+                AssumeSleeperRole.instanceAdmin(clients.getSts(), properties)));
     }
 
     @Override
