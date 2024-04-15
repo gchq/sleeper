@@ -29,6 +29,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+/**
+ * A class for storing the status of an ingest job.
+ */
 public class IngestJobStatus {
     private final String jobId;
     private final ProcessRuns jobRuns;
@@ -44,6 +47,12 @@ public class IngestJobStatus {
         return new Builder();
     }
 
+    /**
+     * Creates a stream of ingest job statuses from a stream of process status update records.
+     *
+     * @param  records the stream of {@link ProcessStatusUpdateRecord}s
+     * @return         a stream of ingest job statuses
+     */
     public static Stream<IngestJobStatus> streamFrom(Stream<ProcessStatusUpdateRecord> records) {
         return JobStatusUpdates.streamFrom(records)
                 .map(IngestJobStatus::from)
@@ -80,6 +89,12 @@ public class IngestJobStatus {
         return expiryDate;
     }
 
+    /**
+     * Checks whether the task ID is assigned to one or more job runs.
+     *
+     * @param  taskId the task ID to check
+     * @return        whether the task ID is assigned to one or more job runs
+     */
     public boolean isTaskIdAssigned(String taskId) {
         return jobRuns.isTaskIdAssigned(taskId);
     }
@@ -100,6 +115,13 @@ public class IngestJobStatus {
                 .orElseThrow();
     }
 
+    /**
+     * Checks whether one or more job runs were performed in the time window.
+     *
+     * @param  windowStartTime the start of the time window
+     * @param  windowEndTime   the end of the time window
+     * @return                 whether one or more job runs were performed in the time window
+     */
     public boolean isInPeriod(Instant windowStartTime, Instant windowEndTime) {
         TimeWindowQuery timeWindowQuery = new TimeWindowQuery(windowStartTime, windowEndTime);
         if (isFinished()) {
@@ -138,6 +160,9 @@ public class IngestJobStatus {
                 '}';
     }
 
+    /**
+     * Builder class for ingest job status objects.
+     */
     public static final class Builder {
         private String jobId;
         private ProcessRuns jobRuns;
@@ -146,16 +171,34 @@ public class IngestJobStatus {
         private Builder() {
         }
 
+        /**
+         * Sets the ingest job ID.
+         *
+         * @param  jobId the ingest job ID
+         * @return       the builder
+         */
         public Builder jobId(String jobId) {
             this.jobId = jobId;
             return this;
         }
 
+        /**
+         * Sets the job runs.
+         *
+         * @param  jobRuns the job runs
+         * @return         the builder
+         */
         public Builder jobRuns(ProcessRuns jobRuns) {
             this.jobRuns = jobRuns;
             return this;
         }
 
+        /**
+         * Sets the expiry date.
+         *
+         * @param  expiryDate the expiry date
+         * @return            the builder
+         */
         public Builder expiryDate(Instant expiryDate) {
             this.expiryDate = expiryDate;
             return this;
