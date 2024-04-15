@@ -18,6 +18,7 @@ package sleeper.cdk.stack;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.NestedStack;
+import software.amazon.awscdk.services.iam.AccountRootPrincipal;
 import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.iam.Role;
@@ -80,6 +81,7 @@ public class ManagedPoliciesStack extends NestedStack {
         }
 
         Role adminRole = Role.Builder.create(this, "AdminRole")
+                .assumedBy(new AccountRootPrincipal())
                 .roleName("sleeper-admin-" + instanceProperties.get(ID).toLowerCase(Locale.ROOT))
                 .build();
         Stream.of(ingestPolicy, queryPolicy, editTablesPolicy, reportingPolicy, invokeSchedulesPolicy, invokeCompactionPolicy, purgeQueuesPolicy)
