@@ -18,6 +18,7 @@ package sleeper.clients.util;
 
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Objects;
 
 import static java.lang.ProcessBuilder.Redirect.INHERIT;
 import static java.util.Objects.requireNonNull;
@@ -41,25 +42,33 @@ public class Command {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
+    public boolean equals(Object obj) {
+        if (this == obj) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(obj instanceof Command)) {
             return false;
         }
-        Command command1 = (Command) o;
-        return Arrays.equals(command, command1.command);
+        Command other = (Command) obj;
+        return Objects.equals(envVars, other.envVars) && Arrays.equals(command, other.command);
     }
 
     @Override
     public int hashCode() {
-        return Arrays.hashCode(command);
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + Arrays.hashCode(command);
+        result = prime * result + Objects.hash(envVars);
+        return result;
     }
 
     @Override
     public String toString() {
-        return Arrays.toString(command);
+        if (envVars.isEmpty()) {
+            return Arrays.toString(command);
+        } else {
+            return Arrays.toString(command) + envVars.toString();
+        }
     }
 
     public String[] toArray() {
