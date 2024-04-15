@@ -21,6 +21,10 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 
+/**
+ * A helper class which wraps an output stream. Provides methods for creating a {@link PrintWriter} and calling toString
+ * on the output stream.
+ */
 public class ToStringPrintWriter {
 
     private final OutputStream outputStream = new ByteArrayOutputStream();
@@ -33,6 +37,7 @@ public class ToStringPrintWriter {
         return new PrintWriter(getPrintStream());
     }
 
+    @Override
     public String toString() {
         return outputStream.toString();
     }
