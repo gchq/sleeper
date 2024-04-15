@@ -18,7 +18,7 @@ package sleeper.clients.status.report.ingest.task;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.status.report.IngestTaskStatusReport;
-import sleeper.clients.testutil.ToStringPrintStream;
+import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.ingest.task.IngestTaskStatus;
 import sleeper.ingest.task.IngestTaskStatusStore;
 
@@ -110,7 +110,7 @@ public class IngestTaskStatusReportTest {
     }
 
     private String getReport(IngestTaskQuery query, Function<PrintStream, IngestTaskStatusReporter> getReporter) {
-        ToStringPrintStream output = new ToStringPrintStream();
+        ToStringConsoleOutput output = new ToStringConsoleOutput();
         new IngestTaskStatusReport(store,
                 getReporter.apply(output.getPrintStream()), query).run();
         return output.toString();

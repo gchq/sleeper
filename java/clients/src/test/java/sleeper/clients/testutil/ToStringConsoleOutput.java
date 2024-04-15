@@ -22,7 +22,7 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 
-public class ToStringPrintStream {
+public class ToStringConsoleOutput {
 
     private final OutputStream outputStream = new ByteArrayOutputStream();
 

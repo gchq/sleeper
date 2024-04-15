@@ -20,7 +20,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.clients.testutil.ToStringPrintStream;
+import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.task.common.InMemoryQueueMessageCounts;
 import sleeper.task.common.QueueMessageCount;
@@ -119,7 +119,7 @@ class IngestQueueMessagesTest {
             IngestQueueMessages messages = ingestMessageCount(10);
 
             // When
-            ToStringPrintStream out = new ToStringPrintStream();
+            ToStringConsoleOutput out = new ToStringConsoleOutput();
             messages.print(out.getPrintStream());
 
             // Then
@@ -134,7 +134,7 @@ class IngestQueueMessagesTest {
             IngestQueueMessages messages = IngestQueueMessages.builder().emrMessages(10).build();
 
             // When
-            ToStringPrintStream out = new ToStringPrintStream();
+            ToStringConsoleOutput out = new ToStringConsoleOutput();
             messages.print(out.getPrintStream());
 
             // Then
@@ -149,7 +149,7 @@ class IngestQueueMessagesTest {
             IngestQueueMessages messages = IngestQueueMessages.builder().persistentEmrMessages(10).build();
 
             // When
-            ToStringPrintStream out = new ToStringPrintStream();
+            ToStringConsoleOutput out = new ToStringConsoleOutput();
             messages.print(out.getPrintStream());
 
             // Then
@@ -164,7 +164,7 @@ class IngestQueueMessagesTest {
             IngestQueueMessages messages = IngestQueueMessages.builder().eksMessages(10).build();
 
             // When
-            ToStringPrintStream out = new ToStringPrintStream();
+            ToStringConsoleOutput out = new ToStringConsoleOutput();
             messages.print(out.getPrintStream());
 
             // Then
@@ -184,7 +184,7 @@ class IngestQueueMessagesTest {
                     .build();
 
             // When
-            ToStringPrintStream out = new ToStringPrintStream();
+            ToStringConsoleOutput out = new ToStringConsoleOutput();
             messages.print(out.getPrintStream());
 
             // Then
@@ -202,7 +202,7 @@ class IngestQueueMessagesTest {
             IngestQueueMessages messages = IngestQueueMessages.builder().build();
 
             // When
-            ToStringPrintStream out = new ToStringPrintStream();
+            ToStringConsoleOutput out = new ToStringConsoleOutput();
             messages.print(out.getPrintStream());
 
             // Then
