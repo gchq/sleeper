@@ -32,17 +32,17 @@ import java.util.UUID;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.ADMIN_ROLE_ARN;
 
-public class AssumeAdminRole {
+public class AssumeSleeperRole {
 
     private final AWSCredentialsProvider credentialsV1;
     private final AwsCredentialsProvider credentialsV2;
 
-    private AssumeAdminRole(AWSCredentialsProvider credentialsV1, AwsCredentialsProvider credentialsV2) {
+    private AssumeSleeperRole(AWSCredentialsProvider credentialsV1, AwsCredentialsProvider credentialsV2) {
         this.credentialsV1 = credentialsV1;
         this.credentialsV2 = credentialsV2;
     }
 
-    public static AssumeAdminRole authForInstance(
+    public static AssumeSleeperRole instanceAdmin(
             AWSSecurityTokenService sts, InstanceProperties instanceProperties) {
         String adminRoleArn = instanceProperties.get(ADMIN_ROLE_ARN);
         AssumeRoleResult result = sts.assumeRole(new AssumeRoleRequest()
@@ -54,15 +54,15 @@ public class AssumeAdminRole {
                 credentials.getAccessKeyId(), credentials.getSecretAccessKey(), credentials.getSessionToken()));
         AwsCredentialsProvider credentialsV2 = StaticCredentialsProvider.create(AwsSessionCredentials.create(
                 credentials.getAccessKeyId(), credentials.getSecretAccessKey(), credentials.getSessionToken()));
-        return new AssumeAdminRole(credentialsV1, credentialsV2);
+        return new AssumeSleeperRole(credentialsV1, credentialsV2);
     }
 
-    public AWSCredentialsProvider credentialsV1() {
-        return credentialsV1;
+    public <T, B extends com.amazonaws.client.builder.AwsClientBuilder<B, T>> T v1Client(B builder) {
+        return builder.withCredentials(credentialsV1).build();
     }
 
-    public AwsCredentialsProvider credentialsV2() {
-        return credentialsV2;
+    public <T, B extends software.amazon.awssdk.awscore.client.builder.AwsClientBuilder<B, T>> T v2Client(B builder) {
+        return builder.credentialsProvider(credentialsV2).build();
     }
 
 }
