@@ -20,6 +20,9 @@ import sleeper.ingest.job.IngestJob;
 import java.time.Instant;
 import java.util.Objects;
 
+/**
+ * A status for ingest jobs that have started.
+ */
 public class IngestJobStartedStatus implements IngestJobInfoStatus {
 
     private final int inputFileCount;
@@ -38,10 +41,24 @@ public class IngestJobStartedStatus implements IngestJobInfoStatus {
         return new Builder();
     }
 
+    /**
+     * Creates a builder for this class, setting the start of run flag.
+     *
+     * @param  startOfRun whether this status marks the start of a job run
+     * @return            the builder
+     */
     public static Builder withStartOfRun(boolean startOfRun) {
         return builder().isStartOfRun(startOfRun);
     }
 
+    /**
+     * Creates an instance of this class.
+     *
+     * @param  job        the ingest job
+     * @param  startTime  the start time
+     * @param  updateTime the update time
+     * @return            an instance of this class
+     */
     public static IngestJobStartedStatus startAndUpdateTime(IngestJob job, Instant startTime, Instant updateTime) {
         return withStartOfRun(true).job(job)
                 .startTime(startTime).updateTime(updateTime)
@@ -97,6 +114,9 @@ public class IngestJobStartedStatus implements IngestJobInfoStatus {
                 '}';
     }
 
+    /**
+     * Builder class for ingest job started status objects.
+     */
     public static final class Builder {
         private int inputFileCount;
         private Instant startTime;
@@ -106,27 +126,57 @@ public class IngestJobStartedStatus implements IngestJobInfoStatus {
         public Builder() {
         }
 
+        /**
+         * Sets the ingest job.
+         *
+         * @param  job the ingest job
+         * @return     the builder
+         */
         public Builder job(IngestJob job) {
             return inputFileCount(job.getFiles().size());
         }
 
+        /**
+         * Sets the input file count.
+         *
+         * @param  inputFileCount the input file count
+         * @return                the builder
+         */
         public Builder inputFileCount(int inputFileCount) {
             this.inputFileCount = inputFileCount;
             return this;
         }
 
+        /**
+         * Sets the start time.
+         *
+         * @param  startTime the start time
+         * @return           the builder
+         */
         public Builder startTime(Instant startTime) {
             this.startTime = startTime;
             return this;
         }
 
+        /**
+         * Sets the update time.
+         *
+         * @param  updateTime the update time
+         * @return            the builder
+         */
         public Builder updateTime(Instant updateTime) {
             this.updateTime = updateTime;
             return this;
         }
 
-        public Builder isStartOfRun(boolean isStandardIngest) {
-            this.isStartOfRun = isStandardIngest;
+        /**
+         * Sets whether this status represents the start of a job run.
+         *
+         * @param  isStartOfRun whether this status represents the start of a job run
+         * @return              the builder
+         */
+        public Builder isStartOfRun(boolean isStartOfRun) {
+            this.isStartOfRun = isStartOfRun;
             return this;
         }
 
