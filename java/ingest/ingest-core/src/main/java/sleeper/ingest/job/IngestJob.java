@@ -20,6 +20,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+/**
+ * Defines a job that will ingest data from one or more files to a Sleeper table.
+ */
 public class IngestJob {
     private final String id;
     private final String tableName;
@@ -89,6 +92,9 @@ public class IngestJob {
                 '}';
     }
 
+    /**
+     * Builder for creating ingest job objects.
+     */
     public static final class Builder {
         private String id;
         private String tableName;
@@ -98,26 +104,56 @@ public class IngestJob {
         private Builder() {
         }
 
+        /**
+         * Sets the ingest job ID.
+         *
+         * @param  id the ingest job ID
+         * @return    the builder
+         */
         public Builder id(String id) {
             this.id = id;
             return this;
         }
 
+        /**
+         * Sets the table name.
+         *
+         * @param  tableName the table name
+         * @return           the builder
+         */
         public Builder tableName(String tableName) {
             this.tableName = tableName;
             return this;
         }
 
+        /**
+         * Sets the table ID.
+         *
+         * @param  tableId the table ID
+         * @return         the builder
+         */
         public Builder tableId(String tableId) {
             this.tableId = tableId;
             return this;
         }
 
+        /**
+         * Sets the list of input files.
+         *
+         * @param  files the list of input files
+         * @return       the builder
+         */
         public Builder files(List<String> files) {
             this.files = files;
             return this;
         }
 
+        /**
+         * Sets the input files.
+         *
+         * @param  files the input files
+         * @return       the builder
+         */
         public Builder files(String... files) {
             return files(Arrays.asList(files));
         }
