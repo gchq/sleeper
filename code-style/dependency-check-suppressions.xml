@@ -257,4 +257,13 @@
         <packageUrl regex="true">^pkg:maven/org\.apfloat/apfloat@.*$</packageUrl>
         <vulnerabilityName regex="true">CVE-2024-23086|CVE-2024-23084|CVE-2024-23085</vulnerabilityName>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+        Joda Time is used by most of the AWS SDK v1 dependencies, by the Trino Plugin Toolkit, and by the AWS Lambda
+        API. There is currently no version of the library without this vulnerability, and the vulnerability itself is
+        disputed.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/joda\-time/joda\-time@.*$</packageUrl>
+        <vulnerabilityName>CVE-2024-23080</vulnerabilityName>
+    </suppress>
 </suppressions>
