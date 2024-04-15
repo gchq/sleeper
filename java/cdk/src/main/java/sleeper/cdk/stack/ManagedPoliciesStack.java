@@ -90,6 +90,7 @@ public class ManagedPoliciesStack extends NestedStack {
                 .forEach(policy -> policy.attachToRole(adminRole));
         instanceProperties.set(ADMIN_ROLE_ARN, adminRole.getRoleArn());
 
+        // Allow access to table metrics
         reportingPolicy.addStatements(PolicyStatement.Builder.create()
                 .effect(Effect.ALLOW)
                 .actions(List.of("cloudwatch:GetMetricData"))
