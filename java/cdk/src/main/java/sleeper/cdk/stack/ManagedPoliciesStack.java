@@ -19,8 +19,10 @@ package sleeper.cdk.stack;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.iam.AccountRootPrincipal;
+import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
+import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.iam.Role;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.s3.Bucket;
@@ -79,6 +81,12 @@ public class ManagedPoliciesStack extends NestedStack {
             readIngestSourcesPolicy = new ManagedPolicy(this, "ReadIngestSourcesPolicy");
             sourceBuckets.forEach(bucket -> bucket.grantRead(readIngestSourcesPolicy));
         }
+
+        reportingPolicy.addStatements(PolicyStatement.Builder.create()
+                .effect(Effect.ALLOW)
+                .actions(List.of("cloudwatch:GetMetricData"))
+                .resources(List.of("*"))
+                .build());
 
         Role adminRole = Role.Builder.create(this, "AdminRole")
                 .assumedBy(new AccountRootPrincipal())
