@@ -26,6 +26,7 @@ import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.regions.providers.AwsRegionProvider;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 
@@ -73,6 +74,10 @@ public class AssumeSleeperRole {
 
     public <T, B extends software.amazon.awssdk.awscore.client.builder.AwsClientBuilder<B, T>> T v2Client(B builder) {
         return builder.credentialsProvider(credentialsV2).region(Region.of(region)).build();
+    }
+
+    public AwsRegionProvider v2RegionProvider() {
+        return () -> Region.of(region);
     }
 
     public Map<String, String> authEnvVars() {

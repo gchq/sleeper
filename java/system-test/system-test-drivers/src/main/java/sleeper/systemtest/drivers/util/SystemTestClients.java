@@ -83,12 +83,12 @@ public class SystemTestClients {
         authEnvVars = Map.of();
     }
 
-    private SystemTestClients(AssumeSleeperRole assumeRole, AwsRegionProvider regionProvider) {
+    private SystemTestClients(AssumeSleeperRole assumeRole) {
         s3 = assumeRole.v1Client(AmazonS3ClientBuilder.standard());
         s3V2 = assumeRole.v2Client(S3Client.builder());
         dynamoDB = assumeRole.v1Client(AmazonDynamoDBClientBuilder.standard());
         sts = assumeRole.v1Client(AWSSecurityTokenServiceClientBuilder.standard());
-        this.regionProvider = regionProvider;
+        regionProvider = assumeRole.v2RegionProvider();
         sqs = assumeRole.v1Client(AmazonSQSClientBuilder.standard());
         lambda = assumeRole.v2Client(systemTestLambdaClientBuilder());
         cloudFormation = assumeRole.v2Client(CloudFormationClient.builder());
@@ -102,7 +102,7 @@ public class SystemTestClients {
     }
 
     public SystemTestClients assumeAdminRole(InstanceProperties instanceProperties) {
-        return new SystemTestClients(AssumeSleeperRole.instanceAdmin(sts, instanceProperties), regionProvider);
+        return new SystemTestClients(AssumeSleeperRole.instanceAdmin(sts, instanceProperties));
     }
 
     public AmazonS3 getS3() {
