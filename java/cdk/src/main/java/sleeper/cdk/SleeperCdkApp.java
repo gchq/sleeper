@@ -158,7 +158,7 @@ public class SleeperCdkApp extends Stack {
             ingestStatusStoreStack = new IngestStatusStoreStack(this, "IngestStatusStore", instanceProperties, coreStacks);
         }
         if (BULK_IMPORT_STACK_NAMES.stream().anyMatch(optionalStacks::contains)) {
-            bulkImportBucketStack = new BulkImportBucketStack(this, "BulkImportBucket", instanceProperties);
+            bulkImportBucketStack = new BulkImportBucketStack(this, "BulkImportBucket", instanceProperties, coreStacks);
         }
         if (EMR_BULK_IMPORT_STACK_NAMES.stream().anyMatch(optionalStacks::contains)) {
             emrBulkImportCommonStack = new CommonEmrBulkImportStack(this, "BulkImportEMRCommon",
