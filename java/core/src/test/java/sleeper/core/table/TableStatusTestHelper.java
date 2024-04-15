@@ -15,9 +15,20 @@
  */
 package sleeper.core.table;
 
+/**
+ * A helper class for creating a table status.
+ */
 public class TableStatusTestHelper {
     private TableStatusTestHelper() {
     }
+
+    /**
+     * Creates a table status object.
+     *
+     * @param  tableUniqueId the table ID
+     * @param  tableName     the table name
+     * @return               a {@link TableStatus} object
+     */
 
     public static TableStatus uniqueIdAndName(String tableUniqueId, String tableName) {
         return TableStatus.uniqueIdAndName(tableUniqueId, tableName, true);
