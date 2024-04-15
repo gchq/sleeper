@@ -74,8 +74,6 @@ import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
 import sleeper.systemtest.dsl.util.PurgeQueueDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.ADMIN_ROLE_ARN;
-
 public class AwsSystemTestDrivers implements SystemTestDrivers {
     private final SystemTestClients clients;
 
@@ -99,7 +97,7 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
 
     public AssumeAdminRoleDriver assumeAdminRole() {
         return properties -> new AwsSystemTestDrivers(
-                clients.assumeRole(properties.get(ADMIN_ROLE_ARN)));
+                clients.assumeAdminRole(properties));
     }
 
     @Override

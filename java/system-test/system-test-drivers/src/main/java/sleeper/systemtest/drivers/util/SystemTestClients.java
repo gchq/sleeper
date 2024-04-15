@@ -17,8 +17,6 @@
 package sleeper.systemtest.drivers.util;
 
 import com.amazonaws.auth.AWSCredentialsProvider;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicSessionCredentials;
 import com.amazonaws.services.autoscaling.AmazonAutoScaling;
 import com.amazonaws.services.autoscaling.AmazonAutoScalingClientBuilder;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
@@ -33,14 +31,9 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
-import com.amazonaws.services.securitytoken.model.AssumeRoleRequest;
-import com.amazonaws.services.securitytoken.model.AssumeRoleResult;
-import com.amazonaws.services.securitytoken.model.Credentials;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
-import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.http.apache.ApacheHttpClient;
 import software.amazon.awssdk.regions.providers.AwsRegionProvider;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
@@ -51,8 +44,10 @@ import software.amazon.awssdk.services.lambda.LambdaClient;
 import software.amazon.awssdk.services.lambda.LambdaClientBuilder;
 import software.amazon.awssdk.services.s3.S3Client;
 
+import sleeper.clients.util.AssumeAdminRole;
+import sleeper.configuration.properties.instance.InstanceProperties;
+
 import java.time.Duration;
-import java.util.UUID;
 
 public class SystemTestClients {
     private final AmazonS3 s3;
@@ -104,18 +99,9 @@ public class SystemTestClients {
         cloudWatch = v2Client(CloudWatchClient.builder(), credentialsV2);
     }
 
-    public SystemTestClients assumeRole(String roleArn) {
-        AssumeRoleResult result = sts.assumeRole(new AssumeRoleRequest()
-                .withRoleArn(roleArn)
-                .withRoleSessionName(UUID.randomUUID().toString()));
-        Credentials credentials = result.getCredentials();
-
-        AWSCredentialsProvider credentialsV1 = new AWSStaticCredentialsProvider(new BasicSessionCredentials(
-                credentials.getAccessKeyId(), credentials.getSecretAccessKey(), credentials.getSessionToken()));
-        AwsCredentialsProvider credentialsV2 = StaticCredentialsProvider.create(AwsSessionCredentials.create(
-                credentials.getAccessKeyId(), credentials.getSecretAccessKey(), credentials.getSessionToken()));
-
-        return new SystemTestClients(credentialsV1, credentialsV2, regionProvider);
+    public SystemTestClients assumeAdminRole(InstanceProperties instanceProperties) {
+        AssumeAdminRole assumeRole = AssumeAdminRole.authForInstance(sts, instanceProperties);
+        return new SystemTestClients(assumeRole.credentialsV1(), assumeRole.credentialsV2(), regionProvider);
     }
 
     public AmazonS3 getS3() {
