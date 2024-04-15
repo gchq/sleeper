@@ -31,7 +31,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import static sleeper.cdk.Utils.removalPolicy;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
-public class DynamoDBCompactionStatusStoreResources implements CompactionStatusStoreResources {
+public final class DynamoDBCompactionStatusStoreResources implements CompactionStatusStoreResources {
 
     private final Table updatesTable;
     private final Table jobsTable;
@@ -90,6 +90,7 @@ public class DynamoDBCompactionStatusStoreResources implements CompactionStatusS
                 .pointInTimeRecovery(false)
                 .build();
 
+        grantWriteJobEvent(coreStacks.getInvokeCompactionPolicy());
         updatesTable.grantReadData(coreStacks.getReportingPolicy());
         jobsTable.grantReadData(coreStacks.getReportingPolicy());
         tasksTable.grantReadData(coreStacks.getReportingPolicy());

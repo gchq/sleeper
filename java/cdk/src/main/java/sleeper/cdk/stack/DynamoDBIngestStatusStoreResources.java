@@ -36,7 +36,7 @@ import java.util.List;
 import static sleeper.cdk.Utils.removalPolicy;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
-public class DynamoDBIngestStatusStoreResources implements IngestStatusStoreResources {
+public final class DynamoDBIngestStatusStoreResources implements IngestStatusStoreResources {
     private final Table updatesTable;
     private final Table jobsTable;
     private final Table tasksTable;
@@ -104,6 +104,7 @@ public class DynamoDBIngestStatusStoreResources implements IngestStatusStoreReso
                 .pointInTimeRecovery(false)
                 .build();
 
+        grantWriteJobEvent(coreStacks.getIngestPolicy());
         updatesTable.grantReadData(coreStacks.getReportingPolicy());
         jobsTable.grantReadData(coreStacks.getReportingPolicy());
         tasksTable.grantReadData(coreStacks.getReportingPolicy());
