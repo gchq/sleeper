@@ -22,6 +22,8 @@ import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.model.AssumeRoleRequest;
 import com.amazonaws.services.securitytoken.model.AssumeRoleResult;
 import com.amazonaws.services.securitytoken.model.Credentials;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
@@ -37,6 +39,8 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 
 public class AssumeSleeperRole {
+
+    public static final Logger LOGGER = LoggerFactory.getLogger(AssumeSleeperRole.class);
 
     private final Credentials credentials;
     private final String region;
@@ -56,6 +60,7 @@ public class AssumeSleeperRole {
             AWSSecurityTokenService sts, InstanceProperties instanceProperties) {
         String region = instanceProperties.get(REGION);
         String adminRoleArn = instanceProperties.get(ADMIN_ROLE_ARN);
+        LOGGER.info("Assuming instance admin role: {}", adminRoleArn);
         AssumeRoleResult result = sts.assumeRole(new AssumeRoleRequest()
                 .withRoleArn(adminRoleArn)
                 .withRoleSessionName(UUID.randomUUID().toString()));
