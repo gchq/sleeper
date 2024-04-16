@@ -117,8 +117,7 @@ public class Range {
     }
 
     /**
-     * Checks whether the provided range overlaps with this range. To check if ranges overlap they both need
-     * to be canonicalised (where the minimum is inclusive and the maximum is exclusive).
+     * Checks whether the provided range overlaps with this range.
      *
      * @param  otherRange the range to check
      * @return            whether the range overlaps with this range
