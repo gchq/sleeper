@@ -25,11 +25,13 @@ import java.util.Map;
 
 public class SystemTestQuery {
     private final SystemTestContext context;
+    private final SystemTestDrivers baseDrivers;
     private final SystemTestDrivers drivers;
     private QueryAllTablesDriver driver = null;
 
-    public SystemTestQuery(SystemTestContext context) {
+    public SystemTestQuery(SystemTestContext context, SystemTestDrivers baseDrivers) {
         this.context = context;
+        this.baseDrivers = baseDrivers;
         this.drivers = context.instance().adminDrivers();
     }
 
@@ -44,7 +46,10 @@ public class SystemTestQuery {
     }
 
     public SystemTestQuery webSocket() {
-        driver = drivers.queryByWebSocket(context);
+        // Note that this relies on permissions of the base credentials,
+        // as the instance admin does not currently have working permissions for the web socket.
+        // TODO add the correct permissions to the instance admin role
+        driver = baseDrivers.queryByWebSocket(context);
         return this;
     }
 

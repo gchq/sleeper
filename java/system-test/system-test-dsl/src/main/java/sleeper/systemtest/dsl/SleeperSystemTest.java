@@ -113,7 +113,7 @@ public class SleeperSystemTest {
     }
 
     public SystemTestQuery query() {
-        return new SystemTestQuery(context);
+        return new SystemTestQuery(context, baseDrivers);
     }
 
     public SystemTestQuery directQuery() {
