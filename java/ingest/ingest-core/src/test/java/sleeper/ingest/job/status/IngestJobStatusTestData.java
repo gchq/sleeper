@@ -29,15 +29,32 @@ import java.util.stream.Collectors;
 
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 
+/**
+ * A helper for creating ingest job statuses for tests.
+ */
 public class IngestJobStatusTestData {
 
     private IngestJobStatusTestData() {
     }
 
+    /**
+     * Creates an ingest job status.
+     *
+     * @param  jobId the ingest job ID
+     * @param  runs  the process runs
+     * @return       an {@link IngestJobStatus}
+     */
     public static IngestJobStatus jobStatus(String jobId, ProcessRun... runs) {
         return jobStatus(IngestJob.builder().id(jobId).build(), runs);
     }
 
+    /**
+     * Creates an ingest job status.
+     *
+     * @param  job  the ingest job
+     * @param  runs the process runs
+     * @return      an {@link IngestJobStatus}
+     */
     public static IngestJobStatus jobStatus(IngestJob job, ProcessRun... runs) {
         return IngestJobStatus.builder()
                 .jobId(job.getId())
@@ -45,18 +62,52 @@ public class IngestJobStatusTestData {
                 .build();
     }
 
+    /**
+     * Creates an ingest job status for a job that has started.
+     *
+     * @param  job       the ingest job
+     * @param  taskId    the ingest task ID
+     * @param  startTime the start time
+     * @return           an {@link IngestJobStatus}
+     */
     public static IngestJobStatus startedIngestJob(IngestJob job, String taskId, Instant startTime) {
         return jobStatus(job, startedIngestRun(job, taskId, startTime));
     }
 
+    /**
+     * Creates an ingest job status for a job that has finished.
+     *
+     * @param  job     the ingest job
+     * @param  taskId  the ingest task ID
+     * @param  summary the records processed summary
+     * @return         an {@link IngestJobStatus}
+     */
     public static IngestJobStatus finishedIngestJob(IngestJob job, String taskId, RecordsProcessedSummary summary) {
         return jobStatus(job, finishedIngestRun(job, taskId, summary));
     }
 
+    /**
+     * Creates an ingest job status for a job that was validated and finished.
+     *
+     * @param  job            the ingest job
+     * @param  taskId         the ingest task ID
+     * @param  validationTime the validation time
+     * @param  summary        the records processed summary
+     * @return                an {@link IngestJobStatus}
+     */
     public static IngestJobStatus finishedIngestJobWithValidation(IngestJob job, String taskId, Instant validationTime, RecordsProcessedSummary summary) {
         return jobStatus(job, acceptedRunWhichFinished(job, taskId, validationTime, summary));
     }
 
+    /**
+     * Creates a process run for an ingest job that was validated and started.
+     *
+     * @param  job            the ingest job
+     * @param  taskId         the ingest task ID
+     * @param  validationTime the validation time
+     * @param  startTime      the start time
+     * @return                a {@link ProcessRun}
+     */
     public static ProcessRun acceptedRunWhichStarted(
             IngestJob job, String taskId, Instant validationTime, Instant startTime) {
         return ProcessRun.builder()
@@ -70,6 +121,15 @@ public class IngestJobStatusTestData {
                 .build();
     }
 
+    /**
+     * Creates a process run for an ingest job that was validated and finished.
+     *
+     * @param  job            the ingest job
+     * @param  taskId         the ingest task ID
+     * @param  validationTime the validation time
+     * @param  summary        the records processed summary
+     * @return                a {@link ProcessRun}
+     */
     public static ProcessRun acceptedRunWhichFinished(
             IngestJob job, String taskId, Instant validationTime, RecordsProcessedSummary summary) {
         return ProcessRun.builder()
@@ -86,6 +146,13 @@ public class IngestJobStatusTestData {
                 .build();
     }
 
+    /**
+     * Creates a process run for an ingest job that was validated.
+     *
+     * @param  job            the ingest job
+     * @param  validationTime the validation time
+     * @return                a {@link ProcessRun}
+     */
     public static ProcessRun acceptedRun(IngestJob job, Instant validationTime) {
         return ProcessRun.builder()
                 .startedStatus(IngestJobAcceptedStatus.from(job,
@@ -93,6 +160,15 @@ public class IngestJobStatusTestData {
                 .build();
     }
 
+    /**
+     * Creates a process run for an ingest job that was validated and picked up by an ingest task, but has not started
+     * yet.
+     *
+     * @param  job            the ingest job
+     * @param  taskId         the ingest task ID
+     * @param  validationTime the validation time
+     * @return                a {@link ProcessRun}
+     */
     public static ProcessRun acceptedRunOnTask(IngestJob job, String taskId, Instant validationTime) {
         return ProcessRun.builder()
                 .taskId(taskId)
@@ -101,18 +177,52 @@ public class IngestJobStatusTestData {
                 .build();
     }
 
+    /**
+     * Creates a process run for an ingest job that failed to validate.
+     *
+     * @param  job            the ingest job
+     * @param  validationTime the validation time
+     * @param  reasons        the reasons
+     * @return                a {@link ProcessRun}
+     */
     public static ProcessRun rejectedRun(IngestJob job, Instant validationTime, String... reasons) {
         return rejectedRun(job, null, validationTime, List.of(reasons));
     }
 
+    /**
+     * Creates a process run for an ingest job that failed to validate.
+     *
+     * @param  jobId          the ingest job ID
+     * @param  jsonMessage    the JSON string used in ingest job deserialisation
+     * @param  validationTime the validation time
+     * @param  reasons        the reasons
+     * @return                a {@link ProcessRun}
+     */
     public static ProcessRun rejectedRun(String jobId, String jsonMessage, Instant validationTime, String... reasons) {
         return rejectedRun(IngestJob.builder().id(jobId).build(), jsonMessage, validationTime, List.of(reasons));
     }
 
+    /**
+     * Creates a process run for an ingest job that failed to validate.
+     *
+     * @param  job            the ingest job
+     * @param  validationTime the validation time
+     * @param  reasons        the list of reasons
+     * @return                a {@link ProcessRun}
+     */
     public static ProcessRun rejectedRun(IngestJob job, Instant validationTime, List<String> reasons) {
         return rejectedRun(job, null, validationTime, reasons);
     }
 
+    /**
+     * Creates a process run for an ingest job that failed to validate.
+     *
+     * @param  job            the ingest job
+     * @param  jsonMessage    the JSON string used in ingest job deserialisation
+     * @param  validationTime the validation time
+     * @param  reasons        the list of reasons
+     * @return                a {@link ProcessRun}
+     */
     public static ProcessRun rejectedRun(IngestJob job, String jsonMessage, Instant validationTime, List<String> reasons) {
         return ProcessRun.builder()
                 .startedStatus(IngestJobRejectedStatus.builder()
@@ -125,11 +235,27 @@ public class IngestJobStatusTestData {
                 .build();
     }
 
+    /**
+     * Creates a process run for an ingest job that started.
+     *
+     * @param  job       the ingest job
+     * @param  taskId    the ingest task ID
+     * @param  startTime the start time
+     * @return           a {@link ProcessRun}
+     */
     public static ProcessRun startedIngestRun(IngestJob job, String taskId, Instant startTime) {
         return ProcessRun.started(taskId,
                 IngestJobStartedStatus.startAndUpdateTime(job, startTime, defaultUpdateTime(startTime)));
     }
 
+    /**
+     * Creates a process run for an ingest job that finished.
+     *
+     * @param  job     the ingest job
+     * @param  taskId  the ingest task ID
+     * @param  summary the records processed summary
+     * @return         a {@link ProcessRun}
+     */
     public static ProcessRun finishedIngestRun(
             IngestJob job, String taskId, RecordsProcessedSummary summary) {
         return ProcessRun.finished(taskId,
@@ -137,10 +263,23 @@ public class IngestJobStatusTestData {
                 ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary));
     }
 
+    /**
+     * Creates a list of ingest job statuses from a stream of process update records.
+     *
+     * @param  records the {@link TestProcessStatusUpdateRecords} object
+     * @return         a list of ingest job statuses
+     */
     public static List<IngestJobStatus> jobStatusListFrom(TestProcessStatusUpdateRecords records) {
         return IngestJobStatus.streamFrom(records.stream()).collect(Collectors.toList());
     }
 
+    /**
+     * Creates one ingest job status from a stream of process update records.
+     *
+     * @param  records               the {@link TestProcessStatusUpdateRecords} object
+     * @return                       an ingest job status
+     * @throws IllegalStateException if there was not exactly 1 job
+     */
     public static IngestJobStatus singleJobStatusFrom(TestProcessStatusUpdateRecords records) {
         List<IngestJobStatus> jobs = jobStatusListFrom(records);
         if (jobs.size() != 1) {
