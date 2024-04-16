@@ -124,7 +124,7 @@ public class Schema {
     }
 
     /**
-     * Streams all row key, sort key, and value fields.
+     * Streams all fields in the schema. This includes row key, sort key, and value fields.
      *
      * @return a stream of all fields
      */
