@@ -20,7 +20,7 @@ You will need the following software:
 * [Java 11/17](https://openjdk.java.net/install/)
 * [Maven](https://maven.apache.org/): Tested with v3.8.6
 * [NodeJS / NPM](https://github.com/nvm-sh/nvm#installing-and-updating): Tested with NodeJS v16.16.0 and npm v8.11.0
-* [Rust](https://rustup.rs/): Tested with Rust v1.71
+* [Rust](https://rustup.rs/): Tested with Rust v1.77
 * [Cross-rs](https://github.com/cross-rs/cross)
 
 You can use the [Nix package manager](https://nixos.org/download.html) to get up to date versions of all of these. When

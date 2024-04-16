@@ -16,7 +16,7 @@ name = "compaction"
 version = "0.1.0"
 edition = "2021"
 authors = ["GCHQ"]
-rust-version = "1.71"
+rust-version = "1.77"
 description = "This is the compaction library that implements all the core data compaction and sketches writing functionality that will be needed in Sleeper."
 license = "Apache-2.0"
 keywords = ["sleeper", "compaction"]
@@ -35,25 +35,25 @@ crate-type = ["cdylib", "rlib"]
 cxx = { version = "1.0.104" } # Exception handling for Rust
 libc = { version = "0.2.147" } # FFI type support
 log = { version = "0.4.19" } # Logging support
-itertools = { version = "0.11.0" } # kmerge
-arrow = { version = "48.0.0" } # Batch of reading from Parquet files
+itertools = { version = "0.12.1" } # kmerge
+arrow = { version = "51.0.0" } # Batch of reading from Parquet files
 futures = { version = "0.3.28" } # Async processing
-parquet = { version = "48.0.0", features = [
+parquet = { version = "51.0.0", features = [
     "arrow",
     "async",
     "object_store",
 ] } # Parquet processing
-object_store = { version = "0.7.1", features = [
+object_store = { version = "0.9.1", features = [
     "aws",
 ] } # Remote cloud storage access
 rust_sketch = { path = "../rust_sketch" } # DataSketches wrapper
 tokio = { version = "1.31.0", features = ["full"] }
-aws-config = { version = "0.57.1" } # Credential loading
-aws-credential-types = { version = "0.57.1" } # Credential provider types
-aws-types = { version = "0.57.1" } # for Region
+aws-config = { version = "1.2.0" } # Credential loading
+aws-credential-types = { version = "1.2.0" } # Credential provider types
+aws-types = { version = "1.2.0" } # for Region
 url = { version = "2.4.0" } # URL processing for S3
 bytes = { version = "1.4.0" } # Byte buffer for S3 uploading
 num-format = { version = "0.4.4" } # Nicely formatted numbers
 tokio-test = { version = "0.4.2" } # Doc tests
-env_logger = { version = "0.10.0" }
+env_logger = { version = "0.11.3" }
 chrono = { version = "0.4.26" } # Log helper

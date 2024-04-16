@@ -33,6 +33,8 @@ run_in_docker() {
   # See scripts/cli/builder/Dockerfile for why
   RUN_PARAMS+=(
     --rm
+    --cidfile /tmp/container.id
+    -v /tmp/container.id:/tmp/container.id
     --add-host=host.docker.internal:host-gateway
     -v /var/run/docker.sock:/var/run/docker.sock
     -v "$HOME/.aws:$HOME_IN_IMAGE/.aws"
