@@ -78,8 +78,8 @@ public class BuildEC2Stack extends Stack {
                 .value(instance.getInstanceId())
                 .description("ID of the build EC2 instance")
                 .build();
-        CfnOutput.Builder.create(this, "RestrictedRole")
-                .value(restrictedRole.getRoleName())
+        CfnOutput.Builder.create(this, "RestrictedRoleArn")
+                .value(restrictedRole.getRoleArn())
                 .description("Role with restricted access to deploy Sleeper instances. " +
                         "This can be assumed to test deploying a Sleeper instance with fewer permissions. " +
                         "We can aim to reduce the permissions for this role in the future.")
