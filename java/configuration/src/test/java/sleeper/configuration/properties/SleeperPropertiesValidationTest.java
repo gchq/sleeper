@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,11 +66,11 @@ public class SleeperPropertiesValidationTest {
         @Test
         void shouldThrowExceptionOnLoadIfInstancePropertiesValidationFails() {
             // Given
-            String serialised = invalidInstanceProperties().saveAsString();
+            Properties invalid = invalidInstanceProperties().getProperties();
 
             // When / Then
             InstanceProperties properties = new InstanceProperties();
-            assertThatThrownBy(() -> properties.loadFromString(serialised))
+            assertThatThrownBy(() -> properties.resetAndValidate(invalid))
                     .isInstanceOf(SleeperPropertiesInvalidException.class);
         }
 
@@ -78,11 +78,11 @@ public class SleeperPropertiesValidationTest {
         void shouldThrowExceptionOnLoadIfTablePropertiesValidationFails() {
             // Given
             InstanceProperties instanceProperties = createTestInstanceProperties();
-            String serialised = invalidTableProperties(instanceProperties).saveAsString();
+            Properties invalid = invalidTableProperties(instanceProperties).getProperties();
 
             // When / Then
             TableProperties properties = new TableProperties(instanceProperties);
-            assertThatThrownBy(() -> properties.loadFromString(serialised))
+            assertThatThrownBy(() -> properties.resetAndValidate(invalid))
                     .isInstanceOf(SleeperPropertiesInvalidException.class);
         }
 
@@ -170,13 +170,13 @@ public class SleeperPropertiesValidationTest {
             InstanceProperties instanceProperties = createTestInstanceProperties();
             TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
             tableProperties.set(STATESTORE_CLASSNAME, "sleeper.statestore.dynamodb.DynamoDBStateStore");
-            tableProperties.setNumber(COMPACTION_FILES_BATCH_SIZE, 49);
+            tableProperties.setNumber(COMPACTION_FILES_BATCH_SIZE, 50);
 
             // When/Then
             assertThatThrownBy(tableProperties::validate)
                     .isInstanceOf(SleeperPropertiesInvalidException.class)
                     .hasMessage("Property sleeper.table.compaction.files.batch.size was invalid. " +
-                            "It was \"49\".");
+                            "It was \"50\".");
         }
 
         @Test
@@ -185,7 +185,7 @@ public class SleeperPropertiesValidationTest {
             InstanceProperties instanceProperties = createTestInstanceProperties();
             TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
             tableProperties.set(STATESTORE_CLASSNAME, "sleeper.statestore.s3.S3StateStore");
-            tableProperties.setNumber(COMPACTION_FILES_BATCH_SIZE, 49);
+            tableProperties.setNumber(COMPACTION_FILES_BATCH_SIZE, 50);
 
             // When/Then
             assertThatCode(tableProperties::validate).doesNotThrowAnyException();
@@ -218,7 +218,7 @@ public class SleeperPropertiesValidationTest {
             InstanceProperties instanceProperties = createTestInstanceProperties();
             TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
             tableProperties.set(STATESTORE_CLASSNAME, "sleeper.statestore.dynamodb.DynamoDBStateStore");
-            tableProperties.setNumber(COMPACTION_FILES_BATCH_SIZE, 49);
+            tableProperties.setNumber(COMPACTION_FILES_BATCH_SIZE, 50);
             tableProperties.set(COMPRESSION_CODEC, "madeUp");
 
             // When/Then
@@ -228,7 +228,7 @@ public class SleeperPropertiesValidationTest {
                     .extracting("invalidValues")
                     .isEqualTo(Map.of(
                             COMPRESSION_CODEC, "madeUp",
-                            COMPACTION_FILES_BATCH_SIZE, "49"));
+                            COMPACTION_FILES_BATCH_SIZE, "50"));
         }
     }
 }

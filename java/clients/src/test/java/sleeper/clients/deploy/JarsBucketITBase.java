@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,8 +46,7 @@ public abstract class JarsBucketITBase {
     protected final S3Client s3 = S3Client.builder()
             .endpointOverride(localStackContainer.getEndpointOverride(LocalStackContainer.Service.S3))
             .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(
-                    localStackContainer.getAccessKey(), localStackContainer.getSecretKey()
-            )))
+                    localStackContainer.getAccessKey(), localStackContainer.getSecretKey())))
             .region(Region.of(localStackContainer.getRegion()))
             .build();
 

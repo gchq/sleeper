@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ import sleeper.core.range.Range;
 import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.PrimitiveType;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -27,7 +26,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * A convenience class for specifying partitions.
+ * A convenience class for specifying partitions. Used to build {@link Partition} objects.
  * <p>
  * Note that a shorthand is used for cases where we have a schema with only one row key field.
  * This will not be useful in the general case.
@@ -36,12 +35,10 @@ public class PartitionFactory {
 
     private final Schema schema;
     private final Range.RangeFactory rangeFactory;
-    private final List<PrimitiveType> rowKeyTypes;
 
     public PartitionFactory(Schema schema) {
         this.schema = schema;
-        rangeFactory = new Range.RangeFactory(schema);
-        rowKeyTypes = schema.getRowKeyTypes();
+        this.rangeFactory = new Range.RangeFactory(schema);
     }
 
     public Partition.Builder partition(String id, Object min, Object max) {
@@ -50,7 +47,6 @@ public class PartitionFactory {
 
     public Partition.Builder partition(String id, Region region) {
         return Partition.builder()
-                .rowKeyTypes(rowKeyTypes)
                 .region(region)
                 .id(id)
                 .leafPartition(true)

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,9 +28,7 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * Given an {@link Iterator} of {@link Row}s, this class returns an {@link Iterator}
- * of {@link Row}s where each {@link Row} has a field added containing the id
- * of the partition that the key from the {@link Row} belongs to.
+ * Adds an ID to each row identifying which Sleeper partition it belongs to. Uses {@link AddPartitionIterator}.
  */
 public class AddPartitionFunction implements MapPartitionsFunction<Row, Row> {
     private static final long serialVersionUID = 4871009858051824361L;
@@ -47,7 +45,7 @@ public class AddPartitionFunction implements MapPartitionsFunction<Row, Row> {
     public Iterator<Row> call(Iterator<Row> input) {
         Schema schema = new SchemaSerDe().fromJson(schemaAsString);
         List<Partition> partitions = broadcastPartitions.getValue();
-        PartitionTree partitionTree = new PartitionTree(schema, partitions);
+        PartitionTree partitionTree = new PartitionTree(partitions);
         return new AddPartitionIterator(input, schema, partitionTree);
     }
 }

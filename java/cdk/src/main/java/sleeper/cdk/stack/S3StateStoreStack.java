@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,8 +39,9 @@ public class S3StateStoreStack extends NestedStack {
     private final Table revisionTable;
     private final TableDataStack dataStack;
 
-    public S3StateStoreStack(Construct scope, String id, InstanceProperties instanceProperties,
-                             TableDataStack dataStack, ManagedPoliciesStack policiesStack) {
+    public S3StateStoreStack(
+            Construct scope, String id, InstanceProperties instanceProperties,
+            TableDataStack dataStack, ManagedPoliciesStack policiesStack) {
         super(scope, id);
         this.dataStack = dataStack;
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);

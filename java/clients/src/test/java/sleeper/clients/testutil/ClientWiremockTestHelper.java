@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,10 +34,10 @@ import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-import static sleeper.job.common.WiremockTestHelper.WIREMOCK_ACCESS_KEY;
-import static sleeper.job.common.WiremockTestHelper.WIREMOCK_SECRET_KEY;
-import static sleeper.job.common.WiremockTestHelper.wiremockCredentialsProvider;
-import static sleeper.job.common.WiremockTestHelper.wiremockEndpointConfiguration;
+import static sleeper.task.common.WiremockTestHelper.WIREMOCK_ACCESS_KEY;
+import static sleeper.task.common.WiremockTestHelper.WIREMOCK_SECRET_KEY;
+import static sleeper.task.common.WiremockTestHelper.wiremockCredentialsProvider;
+import static sleeper.task.common.WiremockTestHelper.wiremockEndpointConfiguration;
 
 public class ClientWiremockTestHelper {
 

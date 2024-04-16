@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,16 +52,15 @@ public class PropertyGroupSelectHelper {
         choices.addAll(choiceToGroup.keySet());
 
         return chooseOne.chooseWithMessageFrom(
-                        "Please select a group from the below options and hit return:",
-                        choices)
+                "Please select a group from the below options and hit return:",
+                choices)
                 .getChoice().map(choiceToGroup::get);
     }
 
     private static void addToChoiceMap(
             PropertyGroupWithCategory.Category category, List<PropertyGroup> groups,
             Map<ConsoleChoice, PropertyGroupWithCategory> choices) {
-        groups.forEach(group ->
-                choices.put(ConsoleChoice.describedAs(category.getName() + " - " + group.getName()),
-                        new PropertyGroupWithCategory(group, category)));
+        groups.forEach(group -> choices.put(ConsoleChoice.describedAs(category.getName() + " - " + group.getName()),
+                new PropertyGroupWithCategory(group, category)));
     }
 }

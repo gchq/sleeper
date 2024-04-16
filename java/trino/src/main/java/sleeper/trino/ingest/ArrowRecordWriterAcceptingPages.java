@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,30 +35,27 @@ import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordWriter;
 import java.util.List;
 
 /**
- * This class implements {@link ArrowRecordWriter} so that it accepts data as {@link Page} objects.
+ * A record writer to accept data as Trino pages. Implements {@link ArrowRecordWriter}.
  */
 public class ArrowRecordWriterAcceptingPages implements ArrowRecordWriter<Page> {
 
     /**
-     * Add a single Page to a VectorSchemaRoot, starting at a specified row.
-     * <p>
-     * Note that the field order in the supplied Sleeper Schema must match the field order in the Arrow Schema within
-     * the {@link VectorSchemaRoot} argument.
+     * Add a single Page to a VectorSchemaRoot, starting at a specified row. Note that the field order in the supplied
+     * Sleeper schema must match the field order in the Arrow schema within the {@link VectorSchemaRoot} argument.
      *
-     * @param allFields          The result of {@link Schema#getAllFields()} of the record that is being written. This is
-     *                           used instead of the raw {@link Schema} as the {@link Schema#getAllFields()} is a bit too
-     *                           expensive to call on every record
-     * @param vectorSchemaRoot   The Arrow store to write into
-     * @param page               The {@link Page} of data to write
-     * @param startInsertAtRowNo The index of the first row to write
-     * @return The row number to use when this method is next called
-     * @throws OutOfMemoryException When the {@link BufferAllocator} associated with the {@link VectorSchemaRoot} cannot
+     * @param  allFields            The result of {@link Schema#getAllFields()} of the record that is being written.
+     *                              This is used instead of the raw {@link Schema} as the {@link Schema#getAllFields()}
+     *                              is a bit too expensive to call on every record.
+     * @param  vectorSchemaRoot     the Arrow store to write into
+     * @param  page                 the {@link Page} of data to write
+     * @param  startInsertAtRowNo   the index of the first row to write
+     * @return                      the row number to use when this method is next called
+     * @throws OutOfMemoryException when the {@link BufferAllocator} associated with the {@link VectorSchemaRoot} cannot
      *                              provide enough memory
      */
-    public int insert(List<Field> allFields,
-                       VectorSchemaRoot vectorSchemaRoot,
-                       Page page,
-                       int startInsertAtRowNo) throws OutOfMemoryException {
+    public int insert(
+            List<Field> allFields, VectorSchemaRoot vectorSchemaRoot,
+            Page page, int startInsertAtRowNo) throws OutOfMemoryException {
         // Follow the Arrow pattern of create > allocate > mutate > set value count > access > clear
         // Here we do the mutate
         // Note that setSafe() is used throughout so that more memory will be requested if required.

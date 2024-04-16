@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,7 +52,6 @@ public class PartitionsFromSplitPointsTest {
         void shouldCreateTreeWithOneRootNodeIfNoSplitPoints() {
             // Given
             Schema schema = Schema.builder().rowKeyFields(new Field("id", new LongType())).build();
-            RangeFactory rangeFactory = new RangeFactory(schema);
             PartitionsFromSplitPoints partitionsFromSplitPoints = new PartitionsFromSplitPoints(schema, Collections.emptyList());
 
             // When / Then
@@ -66,7 +65,6 @@ public class PartitionsFromSplitPointsTest {
         void shouldCreateTreeWithOneRootAndTwoChildrenFromOneSplitPoint() {
             // Given
             Schema schema = Schema.builder().rowKeyFields(new Field("id", new LongType())).build();
-            RangeFactory rangeFactory = new RangeFactory(schema);
             List<Object> splitPoints = List.of(0L);
             PartitionsFromSplitPoints partitionsFromSplitPoints = new PartitionsFromSplitPoints(schema, splitPoints);
 
@@ -83,7 +81,6 @@ public class PartitionsFromSplitPointsTest {
         void shouldCreateTreeWithThreeLayersIfTwoSplitPoints() {
             // Given
             Schema schema = Schema.builder().rowKeyFields(new Field("id", new LongType())).build();
-            RangeFactory rangeFactory = new RangeFactory(schema);
             List<Object> splitPoints = List.of(0L, 100L);
             PartitionsFromSplitPoints partitionsFromSplitPoints = new PartitionsFromSplitPoints(schema, splitPoints);
 
@@ -161,7 +158,6 @@ public class PartitionsFromSplitPointsTest {
                     .id(rootPartition.getId())
                     .parentPartitionId(null)
                     .childPartitionIds(levelToPartitions.get(5).get(0).getId(), levelToPartitions.get(5).get(1).getId())
-                    .rowKeyTypes(schema.getRowKeyTypes())
                     .dimension(0)
                     .leafPartition(false)
                     .region(expectedRootRegion)
@@ -189,7 +185,6 @@ public class PartitionsFromSplitPointsTest {
         void shouldCreateTreeWithOneRootNodeIfNoSplitPoints() {
             // Given
             Schema schema = Schema.builder().rowKeyFields(new Field("id", new IntType())).build();
-            RangeFactory rangeFactory = new RangeFactory(schema);
             List<Object> splitPoints = List.of();
             PartitionsFromSplitPoints partitionsFromSplitPoints = new PartitionsFromSplitPoints(schema, splitPoints);
 
@@ -267,7 +262,6 @@ public class PartitionsFromSplitPointsTest {
         void shouldCreateTreeWithOneRootNodeIfNoSplitPoints() {
             // Given
             Schema schema = Schema.builder().rowKeyFields(new Field("id", new StringType())).build();
-            RangeFactory rangeFactory = new RangeFactory(schema);
             List<Object> splitPoints = List.of();
             PartitionsFromSplitPoints partitionsFromSplitPoints = new PartitionsFromSplitPoints(schema, splitPoints);
 
@@ -345,7 +339,6 @@ public class PartitionsFromSplitPointsTest {
         void shouldCreateTreeWithOneRootNodeIfNoSplitPoints() {
             // Given
             Schema schema = Schema.builder().rowKeyFields(new Field("id", new ByteArrayType())).build();
-            RangeFactory rangeFactory = new RangeFactory(schema);
             List<Object> splitPoints = List.of();
             PartitionsFromSplitPoints partitionsFromSplitPoints = new PartitionsFromSplitPoints(schema, splitPoints);
 

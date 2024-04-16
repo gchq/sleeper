@@ -1,4 +1,4 @@
-#  Copyright 2022-2023 Crown Copyright
+#  Copyright 2022-2024 Crown Copyright
 # 
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 import argparse
 
 from pq.parquet_deserial import ParquetDeserialiser
+from pyarrow.parquet import ParquetFile
 from sleeper.sleeper import SleeperClient
 
 
@@ -22,9 +23,9 @@ def read_files(filename: str):
     parq = ParquetDeserialiser()
     file_records = []
     with open(filename, "rb") as file:
-        reader = parq.read(file)
-        for r in reader:
-            file_records.append(r)
+        with ParquetFile(file) as po:
+            for record in parq.read(po):
+                file_records.append(record)
     return file_records
 
 

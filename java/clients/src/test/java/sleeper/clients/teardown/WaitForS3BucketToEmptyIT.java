@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,12 +34,12 @@ public class WaitForS3BucketToEmptyIT extends JarsBucketITBase {
         uploadJarsToBucket(bucketName);
 
         // When
-        WaitForS3BucketToEmpty waitForS3BucketToEmpty = new WaitForS3BucketToEmpty(s3, bucketName,
-                PollWithRetries.intervalAndMaxPolls(0, 1));
+        WaitForS3BucketToEmpty waitForS3BucketToEmpty = new WaitForS3BucketToEmpty(
+                s3, bucketName, PollWithRetries.noRetries());
 
         // Then
         assertThatThrownBy(waitForS3BucketToEmpty::pollUntilFinished)
-                .isInstanceOf(PollWithRetries.TimedOutException.class);
+                .isInstanceOf(PollWithRetries.CheckFailedException.class);
     }
 
     @Test

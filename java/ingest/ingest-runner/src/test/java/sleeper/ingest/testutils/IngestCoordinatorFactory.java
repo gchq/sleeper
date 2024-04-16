@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -94,15 +94,23 @@ public class IngestCoordinatorFactory {
 
     public static IngestCoordinator<Record> ingestCoordinatorDirectWriteBackedByArrayList(
             IngestCoordinatorTestParameters parameters, String filePathPrefix) {
+        return ingestCoordinatorDirectWriteBackedByArrayList(parameters, filePathPrefix, arrayList -> {
+        });
+    }
+
+    public static IngestCoordinator<Record> ingestCoordinatorDirectWriteBackedByArrayList(
+            IngestCoordinatorTestParameters parameters, String filePathPrefix,
+            Consumer<ArrayListRecordBatchFactory.Builder<Record>> arrowConfig) {
         try {
             ParquetConfiguration parquetConfiguration = parquetConfiguration(parameters);
+            ArrayListRecordBatchFactory.Builder<Record> arrayListRecordBatch = (ArrayListRecordBatchFactory.Builder<Record>) ArrayListRecordBatchFactory.builder()
+                    .parquetConfiguration(parquetConfiguration)
+                    .maxNoOfRecordsInLocalStore(1000)
+                    .maxNoOfRecordsInMemory(100000)
+                    .localWorkingDirectory(parameters.getWorkingDir());
+            arrowConfig.accept(arrayListRecordBatch);
             return standardIngestCoordinatorBuilder(parameters,
-                    ArrayListRecordBatchFactory.builder()
-                            .parquetConfiguration(parquetConfiguration)
-                            .maxNoOfRecordsInLocalStore(1000)
-                            .maxNoOfRecordsInMemory(100000)
-                            .localWorkingDirectory(parameters.getWorkingDir())
-                            .buildAcceptingRecords(),
+                    arrayListRecordBatch.buildAcceptingRecords(),
                     DirectPartitionFileWriterFactory.from(
                             parquetConfiguration, filePathPrefix,
                             parameters.getFileNameGenerator()))

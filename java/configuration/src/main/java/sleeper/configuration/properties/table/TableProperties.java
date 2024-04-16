@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package sleeper.configuration.properties.table;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,7 +29,7 @@ import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.configuration.properties.instance.SleeperProperty;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
-import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableStatus;
 
 import java.io.PrintWriter;
 import java.util.Optional;
@@ -42,6 +41,7 @@ import static sleeper.configuration.properties.table.TableProperty.SCHEMA;
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ONLINE;
 
 public class TableProperties extends SleeperProperties<TableProperty> {
     private static final Logger LOGGER = LoggerFactory.getLogger(TableProperties.class);
@@ -94,13 +94,13 @@ public class TableProperties extends SleeperProperties<TableProperty> {
     public void validate(SleeperPropertiesValidationReporter reporter) {
         super.validate(reporter);
 
-        // This limit is based on calls to WriteTransactItems in DynamoDBFileInfoStore.atomicallyUpdateX.
+        // This limit is based on calls to WriteTransactItems in DynamoDBFileReferenceStore.atomicallyUpdateX.
         // Also see the DynamoDB documentation:
         // https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/transaction-apis.html
         if ("sleeper.statestore.dynamodb.DynamoDBStateStore".equals(get(STATESTORE_CLASSNAME))
-                && getInt(COMPACTION_FILES_BATCH_SIZE) > 48) {
+                && getInt(COMPACTION_FILES_BATCH_SIZE) > 49) {
             LOGGER.warn("Detected a compaction batch size for this table which would be incompatible with the " +
-                    "chosen statestore. Maximum value is 48.");
+                    "chosen statestore. Maximum value is 49.");
             reporter.invalidProperty(COMPACTION_FILES_BATCH_SIZE, get(COMPACTION_FILES_BATCH_SIZE));
         }
     }
@@ -139,8 +139,8 @@ public class TableProperties extends SleeperProperties<TableProperty> {
         return SleeperPropertiesPrettyPrinter.forTableProperties(writer);
     }
 
-    public TableIdentity getId() {
-        return TableIdentity.uniqueIdAndName(get(TABLE_ID), get(TABLE_NAME));
+    public TableStatus getStatus() {
+        return TableStatus.uniqueIdAndName(get(TABLE_ID), get(TABLE_NAME), getBoolean(TABLE_ONLINE));
     }
 
     @Override
@@ -166,13 +166,5 @@ public class TableProperties extends SleeperProperties<TableProperty> {
                 .appendSuper(super.hashCode())
                 .append(instanceProperties)
                 .toHashCode();
-    }
-
-    @Override
-    public String toString() {
-        return new ToStringBuilder(this)
-                .appendSuper(super.toString())
-                .append("instanceProperties", instanceProperties)
-                .toString();
     }
 }

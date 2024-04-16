@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import sleeper.core.partition.Partition;
 import sleeper.core.range.RegionSerDe;
 import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.PrimitiveType;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -42,12 +41,10 @@ class DynamoDBPartitionFormat {
     private static final String REGION = "Region";
 
     private final String sleeperTableId;
-    private final List<PrimitiveType> rowKeyTypes;
     private final RegionSerDe regionSerDe;
 
     DynamoDBPartitionFormat(String sleeperTableId, Schema schema) {
         this.sleeperTableId = sleeperTableId;
-        rowKeyTypes = schema.getRowKeyTypes();
         regionSerDe = new RegionSerDe(schema);
     }
 
@@ -83,7 +80,6 @@ class DynamoDBPartitionFormat {
 
     Partition getPartitionFromAttributeValues(Map<String, AttributeValue> item) {
         Partition.Builder partitionBuilder = Partition.builder()
-                .rowKeyTypes(rowKeyTypes)
                 .id(item.get(ID).getS())
                 .leafPartition(Boolean.parseBoolean(item.get(IS_LEAF).getS()))
                 .region(regionSerDe.fromJson(item.get(REGION).getS()));

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package sleeper.clients;
 
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
@@ -23,22 +22,29 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 
 import sleeper.clients.util.ClientUtils;
+import sleeper.clients.util.console.ConsoleInput;
+import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.partition.Partition;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.query.QueryException;
-import sleeper.query.executor.QueryExecutor;
+import sleeper.core.table.TableIndex;
+import sleeper.core.util.LoggedDuration;
+import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.query.model.Query;
+import sleeper.query.model.QueryException;
+import sleeper.query.runner.recordretrieval.QueryExecutor;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.utils.HadoopConfigurationProvider;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,33 +53,49 @@ import java.util.concurrent.Executors;
 
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.io.parquet.utils.HadoopConfigurationProvider.getConfigurationForClient;
 
 /**
- * Allows a user to run a query from the command line.
+ * Allows a user to run a query from the command line. An instance of this class cannot be used concurrently in multiple
+ * threads, due to how query executors and state store objects are cached. This may be changed in a future version.
  */
 public class QueryClient extends QueryCommandLineClient {
+
     private final ObjectFactory objectFactory;
     private final StateStoreProvider stateStoreProvider;
     private final ExecutorService executorService;
     private final Map<String, QueryExecutor> cachedQueryExecutors = new HashMap<>();
 
-    public QueryClient(AmazonS3 s3Client, InstanceProperties instanceProperties, AmazonDynamoDB dynamoDBClient, Configuration conf) throws ObjectFactoryException {
-        super(s3Client, dynamoDBClient, instanceProperties);
-        this.objectFactory = new ObjectFactory(instanceProperties, s3Client, "/tmp");
-        this.stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, conf);
+    public QueryClient(AmazonS3 s3Client, InstanceProperties instanceProperties, AmazonDynamoDB dynamoDBClient, Configuration conf,
+            ConsoleInput in, ConsoleOutput out) throws ObjectFactoryException {
+        this(s3Client, instanceProperties, dynamoDBClient, in, out,
+                new ObjectFactory(instanceProperties, s3Client, "/tmp"),
+                new StateStoreProvider(dynamoDBClient, instanceProperties, conf));
+    }
+
+    public QueryClient(AmazonS3 s3Client, InstanceProperties instanceProperties, AmazonDynamoDB dynamoDBClient,
+            ConsoleInput in, ConsoleOutput out, ObjectFactory objectFactory, StateStoreProvider stateStoreProvider) {
+        this(instanceProperties, new DynamoDBTableIndex(instanceProperties, dynamoDBClient),
+                new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient),
+                in, out, objectFactory, stateStoreProvider);
+    }
+
+    public QueryClient(InstanceProperties instanceProperties, TableIndex tableIndex, TablePropertiesProvider tablePropertiesProvider,
+            ConsoleInput in, ConsoleOutput out, ObjectFactory objectFactory, StateStoreProvider stateStoreProvider) {
+        super(instanceProperties, tableIndex, tablePropertiesProvider, in, out);
+        this.objectFactory = objectFactory;
+        this.stateStoreProvider = stateStoreProvider;
         this.executorService = Executors.newFixedThreadPool(30);
     }
 
     @Override
     protected void init(TableProperties tableProperties) throws StateStoreException {
         String tableName = tableProperties.get(TABLE_NAME);
-        Configuration conf = HadoopConfigurationProvider.getConfigurationForQueryLambdas(getInstanceProperties(), tableProperties);
-        conf.setIfUnset("fs.s3a.aws.credentials.provider", DefaultAWSCredentialsProviderChain.class.getName());
-
+        Configuration conf = HadoopConfigurationProvider.getConfigurationForClient(getInstanceProperties(), tableProperties);
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         List<Partition> partitions = stateStore.getAllPartitions();
-        Map<String, List<String>> partitionToFileMapping = stateStore.getPartitionToActiveFilesMap();
-        System.out.println("Retrieved " + partitions.size() + " partitions from StateStore");
+        Map<String, List<String>> partitionToFileMapping = stateStore.getPartitionToReferencedFilesMap();
+        out.println("Retrieved " + partitions.size() + " partitions from StateStore");
 
         if (!cachedQueryExecutors.containsKey(tableName)) {
             QueryExecutor queryExecutor = new QueryExecutor(objectFactory, tableProperties, stateStoreProvider.getStateStore(tableProperties),
@@ -88,23 +110,22 @@ public class QueryClient extends QueryCommandLineClient {
         Schema schema = tableProperties.getSchema();
 
         CloseableIterator<Record> records;
-        long startTime = System.currentTimeMillis();
+        Instant startTime = Instant.now();
         try {
             records = runQuery(query);
         } catch (QueryException e) {
-            System.out.println("Encountered an error while running query " + query.getQueryId());
-            e.printStackTrace();
+            out.println("Encountered an error while running query " + query.getQueryId());
+            e.printStackTrace(out.printStream());
             return;
         }
-        System.out.println("Returned Records:");
+        out.println("Returned Records:");
         long count = 0L;
         while (records.hasNext()) {
-            System.out.println(records.next().toString(schema));
+            out.println(records.next().toString(schema));
             count++;
         }
 
-        double delta = (System.currentTimeMillis() - startTime) / 1000.0;
-        System.out.println("Query took " + delta + " seconds to return " + count + " records");
+        out.println("Query took " + LoggedDuration.withFullOutput(startTime, Instant.now()) + " to return " + count + " records");
     }
 
     private CloseableIterator<Record> runQuery(Query query) throws QueryException {
@@ -112,7 +133,7 @@ public class QueryClient extends QueryCommandLineClient {
         return queryExecutor.execute(query);
     }
 
-    public static void main(String[] args) throws StateStoreException, ObjectFactoryException {
+    public static void main(String[] args) throws StateStoreException, ObjectFactoryException, InterruptedException {
         if (1 != args.length) {
             throw new IllegalArgumentException("Usage: <instance-id>");
         }
@@ -121,7 +142,8 @@ public class QueryClient extends QueryCommandLineClient {
         AmazonDynamoDB dynamoDB = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, args[0]);
 
-        QueryClient queryClient = new QueryClient(amazonS3, instanceProperties, dynamoDB, new Configuration());
+        QueryClient queryClient = new QueryClient(amazonS3, instanceProperties, dynamoDB, getConfigurationForClient(instanceProperties),
+                new ConsoleInput(System.console()), new ConsoleOutput(System.out));
         queryClient.run();
     }
 }

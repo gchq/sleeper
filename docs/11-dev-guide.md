@@ -98,6 +98,8 @@ For Eclipse, these settings are available to import:
 - Code style at [code-style/eclipse-style.xml](/code-style/eclipse-style.xml)
 - Import order at [code-style/eclipse-import-order.importorder](/code-style/eclipse-import-order.importorder)
 - License header at [code-style/licenseHeader.txt](/code-style/licenseHeader.txt)
+- Code templates at [code-style/eclipse-codetemplates.xml](/code-style/eclipse-codetemplates.xml)
+- Editor templates at [code-style/eclipse-templates.xml](/code-style/eclipse-templates.xml)
 
 ### Linting
 
@@ -109,6 +111,34 @@ You can run both plugins together:
 ```bash
 cd java
 mvn clean compile checkstyle:check spotbugs:check
+```
+
+### Javadoc
+
+We try to ensure that all classes have Javadoc. Most methods should also have Javadoc. Private methods, as well as
+getters and setters can be skipped unless there's something important to know.
+
+See Oracle's standards for Javadoc:
+https://www.oracle.com/technical-resources/articles/java/javadoc-tool.html
+
+Note that the first sentence in a Javadoc comment will be used as a summary fragment in generated documentation. This
+should not contain any links or formatting, to read normally as an item in a list.
+
+Checkstyle checks for most of our criteria.
+
+A notable omission from the Checkstyle checks is capitalisation of descriptions under tags, eg. parameter tags for
+methods. Following the Oracle standards, these should be either a short phrase in all lower case, or a full sentence
+with the first word capitalised and a full stop. For example:
+
+```java
+/**
+ * Processes a foo and a bar.
+ * 
+ * @param foo the foo
+ * @param bar This is the bar. It must not be null or an empty string.
+ */
+public void process(String foo, String bar) {
+}
 ```
 
 ### Testing

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static sleeper.clients.testutil.ClientWiremockTestHelper.OPERATION_HEADER;
-
 
 public class WiremockEmrTestHelper {
     private WiremockEmrTestHelper() {
@@ -98,7 +97,6 @@ public class WiremockEmrTestHelper {
                         equalTo(jobIdsCount + "")))
                 .willReturn(aResponse().withStatus(200));
     }
-
 
     public static RequestPatternBuilder terminateJobFlowsRequested() {
         return postRequestedFor(urlEqualTo("/"))

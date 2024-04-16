@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,18 +56,18 @@ public class SleeperRecordCursor implements RecordCursor {
     private long totalNoOfRowsReturned = 0L;
 
     /**
-     * This {@link RecordCursor} is supplied with a {@link Stream} of result rows, which will be returned by this cursor
-     * one by one. Each result row is specified as a list of objects: the type of each object is provided as a separate
-     * argument.
+     * Creates a cursor from a stream of result rows. The rows will be returned by this cursor one by one. Each result
+     * row is specified as a list of objects: the type of each object is provided as a separate argument.
      *
-     * @param queryId                 The query ID, which is used to tag debug messages.
-     * @param columnTrinoTypesInOrder The types of the rows that are returned by this cursor, in the same order as the
-     *                                fields that are returned.
-     * @param resultRowStream         The stream of rows for this cursor to return.
+     * @param queryId                 the query ID, which is used to tag debug messages
+     * @param columnTrinoTypesInOrder the types of the rows that are returned by this cursor, in the same order as the
+     *                                fields that are returned
+     * @param resultRowStream         the stream of rows for this cursor to return
      */
-    public SleeperRecordCursor(String queryId,
-                               List<Type> columnTrinoTypesInOrder,
-                               Stream<List<Object>> resultRowStream) {
+    public SleeperRecordCursor(
+            String queryId,
+            List<Type> columnTrinoTypesInOrder,
+            Stream<List<Object>> resultRowStream) {
         this.queryId = requireNonNull(queryId);
         this.columnTrinoTypesInOrder = requireNonNull(columnTrinoTypesInOrder);
         this.resultRowStream = requireNonNull(resultRowStream);
@@ -138,8 +138,8 @@ public class SleeperRecordCursor implements RecordCursor {
     /**
      * This method returns complex objects, such as arrays and maps. Support for these is currently experimental.
      *
-     * @param fieldIndex The index of the field to return.
-     * @return The contents of the field.
+     * @param  fieldIndex The index of the field to return.
+     * @return            The contents of the field.
      */
     @Override
     public Object getObject(int fieldIndex) {
@@ -147,10 +147,9 @@ public class SleeperRecordCursor implements RecordCursor {
         Object value = currentRow.get(fieldIndex);
         // This feels like problematic code and so watch for unexpected errors
         if (fieldType instanceof ArrayType) {
-            Type elementType = ((ArrayType) fieldType).getElementType();
             List<?> valueAsList = (List<?>) value;
             VariableWidthBlockBuilder blockBuilder = new VariableWidthBlockBuilder(null, 100, 10000);
-            valueAsList.forEach(val -> SleeperPageBlockUtils.writeElementToBuilder(blockBuilder, elementType, val));
+            valueAsList.forEach(val -> SleeperPageBlockUtils.writeElementToBuilder(blockBuilder, (ArrayType) fieldType, val));
             return blockBuilder.build();
         } else {
             throw new UnsupportedOperationException(String.format("Complex objects of type %s are not supported", fieldType));

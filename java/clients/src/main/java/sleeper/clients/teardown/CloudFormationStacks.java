@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ public class CloudFormationStacks {
 
     public CloudFormationStacks(CloudFormationClient cloudFormation) {
         this(cloudFormation.listStacksPaginator(b -> b.stackStatusFilters(
-                        StackStatus.CREATE_COMPLETE, StackStatus.UPDATE_COMPLETE)).stackSummaries()
+                StackStatus.CREATE_COMPLETE, StackStatus.UPDATE_COMPLETE)).stackSummaries()
                 .stream()
                 .filter(stack -> stack.parentId() == null)
                 .map(StackSummary::stackName).collect(Collectors.toList()));

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -134,8 +134,7 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
                     s3BucketName, filePathPrefix,
                     s3TransferManager,
                     localWorkingDirectory,
-                    fileNameGenerator.get()
-            );
+                    fileNameGenerator.get());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,17 +38,18 @@ public class BespokeIngestCoordinator {
     private BespokeIngestCoordinator() {
     }
 
-    public static IngestCoordinator<Page> asyncFromPage(ObjectFactory objectFactory,
-                                                        StateStore sleeperStateStore,
-                                                        InstanceProperties instanceProperties,
-                                                        TableProperties tableProperties,
-                                                        SleeperConfig sleeperConfig,
-                                                        Configuration hadoopConfiguration,
-                                                        String sleeperIteratorClassName,
-                                                        String sleeperIteratorConfig,
-                                                        int ingestPartitionRefreshFrequencyInSeconds,
-                                                        S3AsyncClient s3AsyncClient,
-                                                        BufferAllocator arrowBufferAllocator) {
+    public static IngestCoordinator<Page> asyncFromPage(
+            ObjectFactory objectFactory,
+            StateStore sleeperStateStore,
+            InstanceProperties instanceProperties,
+            TableProperties tableProperties,
+            SleeperConfig sleeperConfig,
+            Configuration hadoopConfiguration,
+            String sleeperIteratorClassName,
+            String sleeperIteratorConfig,
+            int ingestPartitionRefreshFrequencyInSeconds,
+            S3AsyncClient s3AsyncClient,
+            BufferAllocator arrowBufferAllocator) {
         String localWorkingDirectory = sleeperConfig.getLocalWorkingDirectory();
         long maxBytesToWriteLocally = sleeperConfig.getMaxBytesToWriteLocallyPerWriter();
         long maxBatchArrowBufferAllocatorBytes = sleeperConfig.getMaxArrowRootAllocatorBytes();

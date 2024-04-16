@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,12 +57,12 @@ public class ExpectedAdminConsoleValues {
             IntStream.range(0, INSTANCE_PROPERTY_GROUPS.size())
                     .mapToObj(index -> String.format("[%d] %s - %s%n", index + 2, "Instance Properties",
                             INSTANCE_PROPERTY_GROUPS.get(index).getName()))
-                    .collect(Collectors.joining()) +
-            IntStream.range(0, TABLE_PROPERTY_GROUPS.size())
+                    .collect(Collectors.joining())
+            + IntStream.range(0, TABLE_PROPERTY_GROUPS.size())
                     .mapToObj(index -> String.format("[%d] %s - %s%n", index + TABLE_START_INDEX, "Table Properties",
                             TABLE_PROPERTY_GROUPS.get(index).getName()))
-                    .collect(Collectors.joining()) +
-            "\n" +
+                    .collect(Collectors.joining())
+            + "\n" +
             "Input: \n";
 
     public static String instancePropertyGroupOption(PropertyGroup group) {

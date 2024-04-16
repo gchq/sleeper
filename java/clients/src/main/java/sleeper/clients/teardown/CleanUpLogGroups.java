@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,9 +43,9 @@ public class CleanUpLogGroups {
     }
 
     public static void run(CloudWatchLogsClient logs, CloudFormationClient cloudFormation) {
-        run(logs, cloudFormation, Instant.now(), () ->
+        run(logs, cloudFormation, Instant.now(),
                 // See https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/cloudwatch_limits_cwl.html
-                sleepForSustainedRatePerSecond(4));
+                () -> sleepForSustainedRatePerSecond(4));
     }
 
     public static void run(CloudWatchLogsClient logsClient, CloudFormationClient cloudFormation, Instant queryTime, Runnable sleepForRateLimit) {

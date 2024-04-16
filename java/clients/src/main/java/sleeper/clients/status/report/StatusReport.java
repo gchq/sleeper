@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,14 +56,11 @@ public class StatusReport {
     private final AmazonSQS sqsClient;
     private final TablePropertiesProvider tablePropertiesProvider;
 
-    public StatusReport(InstanceProperties instanceProperties,
-                        TableProperties tableProperties,
-                        boolean verbose,
-                        StateStore stateStore,
-                        CompactionJobStatusStore compactionStatusStore,
-                        CompactionTaskStatusStore compactionTaskStatusStore,
-                        AmazonSQS sqsClient,
-                        TablePropertiesProvider tablePropertiesProvider) {
+    public StatusReport(
+            InstanceProperties instanceProperties, TableProperties tableProperties,
+            boolean verbose, StateStore stateStore,
+            CompactionJobStatusStore compactionStatusStore, CompactionTaskStatusStore compactionTaskStatusStore,
+            AmazonSQS sqsClient, TablePropertiesProvider tablePropertiesProvider) {
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
         this.verbose = verbose;
@@ -85,7 +82,7 @@ public class StatusReport {
         // Jobs
         new CompactionJobStatusReport(compactionStatusStore,
                 new StandardCompactionJobStatusReporter(),
-                tableProperties.getId(),
+                tableProperties.getStatus(),
                 JobQuery.Type.UNFINISHED).run();
 
         // Tasks

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,30 +20,30 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.systemtest.suite.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.fixtures.SystemTestSchema;
+import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.nio.file.Path;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.systemtest.datageneration.GenerateNumberedValue.stringFromPrefixAndPadToSize;
-import static sleeper.systemtest.datageneration.GenerateNumberedValueOverrides.overrideField;
-import static sleeper.systemtest.drivers.query.QueryRange.range;
+import static sleeper.systemtest.dsl.query.QueryRange.range;
+import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
+import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStringAndZeroPadTo;
+import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides.overrideField;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 
-@Tag("SystemTest")
+@SystemTest
 public class QueryIT {
     @TempDir
     private Path tempDir;
-    private final SleeperSystemTest sleeper = SleeperSystemTest.getInstance();
 
     @BeforeEach
-    void setup() {
+    void setup(SleeperSystemTest sleeper) {
         sleeper.connectToInstance(MAIN);
     }
 
@@ -51,7 +51,7 @@ public class QueryIT {
     @DisplayName("Direct query")
     class DirectQuery {
         @Test
-        void shouldRunQueryForAllRecords() throws InterruptedException {
+        void shouldRunQueryForAllRecords(SleeperSystemTest sleeper) {
             // Given
             sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
 
@@ -62,11 +62,11 @@ public class QueryIT {
         }
 
         @Test
-        void shouldRunQueryWithOneRange() throws InterruptedException {
+        void shouldRunQueryWithOneRange(SleeperSystemTest sleeper) {
             // Given
             sleeper.setGeneratorOverrides(
                     overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
-                            stringFromPrefixAndPadToSize("row-", 2)));
+                            numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
             sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
 
             // When/Then
@@ -77,11 +77,11 @@ public class QueryIT {
         }
 
         @Test
-        void shouldRunQueryWithTwoRangesThatOverlap() throws InterruptedException {
+        void shouldRunQueryWithTwoRangesThatOverlap(SleeperSystemTest sleeper) {
             // Given
             sleeper.setGeneratorOverrides(
                     overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
-                            stringFromPrefixAndPadToSize("row-", 2)));
+                            numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
             sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
 
             // When/Then
@@ -93,11 +93,11 @@ public class QueryIT {
         }
 
         @Test
-        void shouldRunQueryWithTwoRangesThatDoNotOverlap() throws InterruptedException {
+        void shouldRunQueryWithTwoRangesThatDoNotOverlap(SleeperSystemTest sleeper) {
             // Given
             sleeper.setGeneratorOverrides(
                     overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
-                            stringFromPrefixAndPadToSize("row-", 2)));
+                            numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
             sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
 
             // When/Then
@@ -114,12 +114,12 @@ public class QueryIT {
     @DisplayName("SQS Query")
     class SQSQuery {
         @AfterEach
-        void tearDown() {
+        void tearDown(SleeperSystemTest sleeper) {
             sleeper.query().emptyResultsBucket();
         }
 
         @Test
-        void shouldRunQueryForAllRecords() throws InterruptedException {
+        void shouldRunQueryForAllRecords(SleeperSystemTest sleeper) {
             // Given
             sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
 
@@ -130,11 +130,11 @@ public class QueryIT {
         }
 
         @Test
-        void shouldRunQueryWithOneRange() throws InterruptedException {
+        void shouldRunQueryWithOneRange(SleeperSystemTest sleeper) {
             // Given
             sleeper.setGeneratorOverrides(
                     overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
-                            stringFromPrefixAndPadToSize("row-", 2)));
+                            numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
             sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
 
             // When/Then
@@ -145,11 +145,11 @@ public class QueryIT {
         }
 
         @Test
-        void shouldRunQueryWithTwoRangesThatOverlap() throws InterruptedException {
+        void shouldRunQueryWithTwoRangesThatOverlap(SleeperSystemTest sleeper) {
             // Given
             sleeper.setGeneratorOverrides(
                     overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
-                            stringFromPrefixAndPadToSize("row-", 2)));
+                            numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
             sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
 
             // When/Then
@@ -161,11 +161,11 @@ public class QueryIT {
         }
 
         @Test
-        void shouldRunQueryWithTwoRangesThatDoNotOverlap() throws InterruptedException {
+        void shouldRunQueryWithTwoRangesThatDoNotOverlap(SleeperSystemTest sleeper) {
             // Given
             sleeper.setGeneratorOverrides(
                     overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
-                            stringFromPrefixAndPadToSize("row-", 2)));
+                            numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
             sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
 
             // When/Then
@@ -175,6 +175,77 @@ public class QueryIT {
                             range("row-30", "row-40")))
                     .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.concat(
                             LongStream.range(10, 20), LongStream.range(30, 40))));
+        }
+    }
+
+    @Nested
+    @DisplayName("WebSocket query")
+    class WebSocketQuery {
+        @Test
+        void shouldRunQueryForAllRecords(SleeperSystemTest sleeper) {
+            // Given
+            sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
+
+            // When/Then
+            assertThat(sleeper.query().webSocket()
+                    .allRecordsInTable())
+                    .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
+        }
+
+        @Test
+        void shouldRunQueryWithOneRange(SleeperSystemTest sleeper) {
+            // Given
+            sleeper.setGeneratorOverrides(
+                    overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
+                            numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
+            sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
+
+            // When/Then
+            assertThat(sleeper.query().webSocket()
+                    .byRowKey(SystemTestSchema.ROW_KEY_FIELD_NAME,
+                            range("row-10", "row-20")))
+                    .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(10, 20)));
+        }
+
+        @Test
+        void shouldRunQueryWithTwoRangesThatOverlap(SleeperSystemTest sleeper) {
+            // Given
+            sleeper.setGeneratorOverrides(
+                    overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
+                            numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
+            sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
+
+            // When/Then
+            assertThat(sleeper.query().webSocket()
+                    .byRowKey(SystemTestSchema.ROW_KEY_FIELD_NAME,
+                            range("row-10", "row-30"),
+                            range("row-20", "row-40")))
+                    .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(10, 40)));
+        }
+
+        @Test
+        void shouldRunQueryWithTwoRangesThatDoNotOverlap(SleeperSystemTest sleeper) {
+            // Given
+            sleeper.setGeneratorOverrides(
+                    overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
+                            numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
+            sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
+
+            // When/Then
+            assertThat(sleeper.query().webSocket()
+                    .byRowKey(SystemTestSchema.ROW_KEY_FIELD_NAME,
+                            range("row-10", "row-20"),
+                            range("row-30", "row-40")))
+                    .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.concat(
+                            LongStream.range(10, 20), LongStream.range(30, 40))));
+        }
+
+        @Test
+        void shouldRunQueryReturningNoRecords(SleeperSystemTest sleeper) {
+            // When/Then
+            assertThat(sleeper.query().webSocket()
+                    .allRecordsInTable())
+                    .isEmpty();
         }
     }
 }

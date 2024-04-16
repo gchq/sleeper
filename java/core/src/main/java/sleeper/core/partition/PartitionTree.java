@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,17 +29,14 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * This represents a tree of {@link Partition}s. It can be used to find all
- * ancestors of a partition, i.e. all partitions that are either parents of the
- * partition, or grandparents, or great-grandparents.
+ * Represents a tree of partitions. It can be used to traverse or query the tree, e.g. to find all ancestors of a
+ * partition, partitions that are either parents of the partition, or grandparents, or great-grandparents.
  */
 public class PartitionTree {
-    private final Schema schema;
     private final Map<String, Partition> idToPartition;
     private final Partition rootPartition;
 
-    public PartitionTree(Schema schema, List<Partition> partitions) {
-        this.schema = schema;
+    public PartitionTree(List<Partition> partitions) {
         this.idToPartition = new HashMap<>();
         partitions.forEach(p -> this.idToPartition.put(p.getId(), p));
         List<Partition> rootPartitions = partitions.stream().filter(p -> null == p.getParentPartitionId()).collect(Collectors.toList());
@@ -93,7 +90,7 @@ public class PartitionTree {
         return List.copyOf(idToPartition.values());
     }
 
-    public Partition getLeafPartition(Key key) {
+    public Partition getLeafPartition(Schema schema, Key key) {
         // Sanity check key is of the correct length
         if (key.size() != schema.getRowKeyFields().size()) {
             throw new IllegalArgumentException("Key must match the row key fields from the schema (key was "
@@ -104,10 +101,10 @@ public class PartitionTree {
             return rootPartition;
         }
 
-        return descend(rootPartition, key);
+        return descend(schema, rootPartition, key);
     }
 
-    private Partition descend(Partition currentNode, Key key) {
+    private Partition descend(Schema schema, Partition currentNode, Key key) {
         // Get child partitions
         List<String> childPartitionIds = currentNode.getChildPartitionIds();
         List<Partition> childPartitions = new ArrayList<>();
@@ -128,15 +125,15 @@ public class PartitionTree {
         if (child.isLeafPartition()) {
             return child;
         }
-        return descend(child, key);
+        return descend(schema, child, key);
     }
 
     public Partition getRootPartition() {
         return rootPartition;
     }
 
-    public Partition getNearestCommonAncestor(Key a, Key b) {
-        return getNearestCommonAncestor(getLeafPartition(a), getLeafPartition(b));
+    public Partition getNearestCommonAncestor(Schema schema, Key a, Key b) {
+        return getNearestCommonAncestor(getLeafPartition(schema, a), getLeafPartition(schema, b));
     }
 
     public Partition getNearestCommonAncestor(Partition a, Partition b) {
@@ -153,7 +150,7 @@ public class PartitionTree {
     }
 
     /**
-     * Traverse the partition tree visiting the leaves first, then proceed in steps where you remove the current leaf
+     * Traverse the partition tree visiting the leaves first. Proceeds in steps where you remove the current leaf
      * partitions and visit the new leaves.
      * <p>
      * The partitions are also ordered by the min and max of their ranges. Each time the tree is split, the partition
@@ -222,13 +219,12 @@ public class PartitionTree {
             return false;
         }
         PartitionTree that = (PartitionTree) o;
-        return schema.equals(that.schema)
-                && idToPartition.equals(that.idToPartition);
+        return idToPartition.equals(that.idToPartition);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(schema, idToPartition);
+        return Objects.hash(idToPartition);
     }
 
     @Override

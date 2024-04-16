@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,9 +31,6 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
-/**
- *
- */
 public class PersistentEmrPlatformExecutor implements PlatformExecutor {
     private static final Logger LOGGER = LoggerFactory.getLogger(PersistentEmrPlatformExecutor.class);
 
@@ -57,7 +54,7 @@ public class PersistentEmrPlatformExecutor implements PlatformExecutor {
                 .withName("Bulk Load (job id " + arguments.getBulkImportJob().getId() + ")")
                 .withActionOnFailure(ActionOnFailure.CONTINUE)
                 .withHadoopJarStep(new HadoopJarStepConfig().withJar("command-runner.jar")
-                        .withArgs(arguments.sparkSubmitCommandForCluster(
+                        .withArgs(arguments.sparkSubmitCommandForEMRCluster(
                                 clusterName, EmrJarLocation.getJarLocation(instanceProperties))));
         AddJobFlowStepsRequest addJobFlowStepsRequest = new AddJobFlowStepsRequest()
                 .withJobFlowId(clusterId)

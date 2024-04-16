@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ import sleeper.core.key.Key;
 import sleeper.core.schema.Schema;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,17 +34,17 @@ public class Region {
     private final Map<String, Range> rowKeyFieldNameToRange;
 
     public Region(List<Range> ranges) {
-        this.rowKeyFieldNameToRange = new HashMap<>();
+        rowKeyFieldNameToRange = new HashMap<>();
         for (Range range : ranges) {
-            if (this.rowKeyFieldNameToRange.containsKey(range.getFieldName())) {
+            if (rowKeyFieldNameToRange.containsKey(range.getFieldName())) {
                 throw new IllegalArgumentException("Should only provide one range per row key field");
             }
-            this.rowKeyFieldNameToRange.put(range.getFieldName(), range);
+            rowKeyFieldNameToRange.put(range.getFieldName(), range);
         }
     }
 
     public Region(Range range) {
-        this(Collections.singletonList(range));
+        this(Map.of(range.getFieldName(), range));
     }
 
     private Region(Map<String, Range> rowKeyFieldNameToRange) {

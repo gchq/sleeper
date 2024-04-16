@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
 import sleeper.configuration.properties.instance.SleeperProperty;
+import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
+import sleeper.configuration.properties.validation.IngestQueue;
 
 import java.io.PrintWriter;
 import java.util.List;
@@ -32,7 +34,13 @@ import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.instance.CommonProperty.USER_JARS;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ENDPOINT_CHECK;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_BATCHER_INGEST_QUEUE;
+import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
+import static sleeper.configuration.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE;
 import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
+import static sleeper.configuration.properties.validation.EmrInstanceArchitecture.ARM64;
+import static sleeper.configuration.properties.validation.EmrInstanceArchitecture.X86_64;
+import static sleeper.configuration.properties.validation.IngestQueue.BULK_IMPORT_PERSISTENT_EMR;
 
 class SleeperPropertiesTest {
 
@@ -141,29 +149,134 @@ class SleeperPropertiesTest {
         assertThat(duplicate).isNotEqualTo(testSleeperProperties);
     }
 
-    @Test
-    void shouldParsePropertyAsList() {
-        // Given
-        TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
-        testSleeperProperties.set(OPTIONAL_STACKS, "a,b,c");
+    @Nested
+    @DisplayName("Handle list properties")
+    class HandleListProperties {
 
-        // When
-        List<String> list = testSleeperProperties.getList(OPTIONAL_STACKS);
+        @Test
+        void shouldParsePropertyAsList() {
+            // Given
+            TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
+            testSleeperProperties.set(OPTIONAL_STACKS, "a,b,c");
 
-        // Then
-        assertThat(list).containsExactly("a", "b", "c");
+            // When
+            List<String> list = testSleeperProperties.getList(OPTIONAL_STACKS);
+
+            // Then
+            assertThat(list).containsExactly("a", "b", "c");
+        }
+
+        @Test
+        void shouldSetList() {
+            // Given
+            TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
+
+            // When
+            testSleeperProperties.setList(OPTIONAL_STACKS, List.of("a", "b", "c"));
+
+            // Then
+            assertThat(testSleeperProperties.get(OPTIONAL_STACKS)).isEqualTo("a,b,c");
+        }
+
+        @Test
+        void shouldAddToList() {
+            // Given
+            TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
+            testSleeperProperties.setList(OPTIONAL_STACKS, List.of("a", "b"));
+
+            // When
+            testSleeperProperties.addToList(OPTIONAL_STACKS, List.of("c", "d"));
+
+            // Then
+            assertThat(testSleeperProperties.get(OPTIONAL_STACKS)).isEqualTo("a,b,c,d");
+        }
+
+        @Test
+        void shouldAddToUnsetListWhenPropertyHasDefaultValue() {
+            // Given
+            TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
+
+            // When
+            testSleeperProperties.addToList(OPTIONAL_STACKS, List.of("a", "b"));
+
+            // Then
+            assertThat(testSleeperProperties.get(OPTIONAL_STACKS))
+                    .isEqualTo(OPTIONAL_STACKS.getDefaultValue() + ",a,b");
+        }
+
+        @Test
+        void shouldAddToUnsetListWhenPropertyHasNoDefaultValue() {
+            // Given
+            TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
+
+            // When
+            testSleeperProperties.addToList(INGEST_SOURCE_BUCKET, List.of("a", "b"));
+
+            // Then
+            assertThat(testSleeperProperties.get(INGEST_SOURCE_BUCKET))
+                    .isEqualTo("a,b");
+        }
+
+        @Test
+        void shouldReturnEmptyListIfListIsNullOrUnset() {
+            // Given
+            TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
+
+            // When
+            List<String> list = testSleeperProperties.getList(USER_JARS);
+
+            // Then
+            assertThat(list).isEmpty();
+        }
     }
 
-    @Test
-    void shouldReturnEmptyListIfListIsNullOrUnset() {
-        // Given
-        TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
+    @Nested
+    @DisplayName("Handle enum properties")
+    class HandleEnumProperties {
+        @Test
+        void shouldReadEnumPropertyAsList() {
+            // Given
+            TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
+            testSleeperProperties.set(BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE, "x86_64,arm64");
 
-        // When
-        List<String> list = testSleeperProperties.getList(USER_JARS);
+            // When / Then
+            assertThat(testSleeperProperties.streamEnumList(
+                    BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE, EmrInstanceArchitecture.class))
+                    .containsExactly(X86_64, ARM64);
+        }
 
-        // Then
-        assertThat(list).isEmpty();
+        @Test
+        void shouldReadEnumPropertyAsSingleValue() {
+            // Given
+            TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
+            testSleeperProperties.set(DEFAULT_INGEST_BATCHER_INGEST_QUEUE, "bulk_import_persistent_emr");
+
+            // When / Then
+            assertThat(testSleeperProperties.getEnumValue(DEFAULT_INGEST_BATCHER_INGEST_QUEUE, IngestQueue.class))
+                    .isEqualTo(BULK_IMPORT_PERSISTENT_EMR);
+        }
+
+        @Test
+        void shouldSetEnumPropertyAsSingleValue() {
+            // Given
+            TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
+            testSleeperProperties.setEnum(DEFAULT_INGEST_BATCHER_INGEST_QUEUE, BULK_IMPORT_PERSISTENT_EMR);
+
+            // When / Then
+            assertThat(testSleeperProperties.get(DEFAULT_INGEST_BATCHER_INGEST_QUEUE))
+                    .isEqualTo("bulk_import_persistent_emr");
+        }
+
+        @Test
+        void shouldSetEnumPropertyAsList() {
+            // Given
+            TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
+            testSleeperProperties.setEnumList(BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE, List.of(X86_64, ARM64));
+
+            // When / Then
+            assertThat(testSleeperProperties.get(BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE))
+                    .isEqualTo("x86_64,arm64");
+        }
     }
 
     @Nested

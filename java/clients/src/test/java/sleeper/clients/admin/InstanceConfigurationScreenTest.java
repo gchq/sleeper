@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,8 @@ import org.mockito.Mockito;
 import sleeper.clients.admin.properties.AdminClientPropertiesStore;
 import sleeper.clients.admin.properties.PropertiesDiff;
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
+import sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.SaveChangesScreen;
+import sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.ValidateChangesScreen;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.InstancePropertyGroup;
 import sleeper.configuration.properties.table.TableProperties;
@@ -42,9 +44,7 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.GROUP_S
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROPERTY_SAVE_CHANGES_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROPERTY_VALIDATION_SCREEN;
-import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.SaveChangesScreen;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_SELECT_SCREEN;
-import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.ValidateChangesScreen;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.instancePropertyGroupOption;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.tablePropertyGroupOption;
 import static sleeper.clients.testutil.TestConsoleInput.CONFIRM_PROMPT;
@@ -222,7 +222,7 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
             // Given
             InstanceProperties before = createValidInstanceProperties();
             InstanceProperties after = InstanceProperties.copyOf(before);
-            after.loadFromString("unknown.property=abc");
+            after.getProperties().setProperty("unknown.property", "abc");
 
             // When
             String output = editConfigurationDiscardChangesGetOutput(before, after);
@@ -286,9 +286,8 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
             InstanceProperties before = createValidInstanceProperties();
             InstanceProperties after = InstanceProperties.copyOf(before);
             after.set(OPTIONAL_STACKS, "CompactionStack");
-            after.loadFromString("" +
-                    "some.unknown.property=a-value\n" +
-                    "an.unknown.property=other-value");
+            after.getProperties().setProperty("some.unknown.property", "a-value");
+            after.getProperties().setProperty("an.unknown.property", "other-value");
 
             // When
             String output = editConfigurationDiscardChangesGetOutput(before, after);
@@ -706,7 +705,7 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
 
             // Then
             assertThat(output).startsWith(DISPLAY_MAIN_SCREEN +
-                            CLEAR_CONSOLE + GROUP_SELECT_SCREEN + CLEAR_CONSOLE + TABLE_SELECT_SCREEN)
+                    CLEAR_CONSOLE + GROUP_SELECT_SCREEN + CLEAR_CONSOLE + TABLE_SELECT_SCREEN)
                     .endsWith(PROPERTY_SAVE_CHANGES_SCREEN +
                             PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN +
                             DISPLAY_MAIN_SCREEN);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,8 +33,8 @@ import sleeper.ingest.impl.partitionfilewriter.PartitionFileWriterFactory;
 import sleeper.ingest.impl.recordbatch.RecordBatchFactory;
 import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
+import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.utils.HadoopConfigurationProvider;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -42,8 +42,8 @@ import java.util.Locale;
 import java.util.Objects;
 
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_RECORD_BATCH_TYPE;
+import static sleeper.configuration.properties.table.TableProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
+import static sleeper.configuration.properties.table.TableProperty.INGEST_RECORD_BATCH_TYPE;
 
 public class IngestFactory {
 
@@ -69,15 +69,13 @@ public class IngestFactory {
         return new Builder();
     }
 
-    public IngestResult ingestFromRecordIteratorAndClose(TableProperties tableProperties, CloseableIterator<Record> recordIterator)
-            throws StateStoreException, IteratorException, IOException {
+    public IngestResult ingestFromRecordIteratorAndClose(TableProperties tableProperties, CloseableIterator<Record> recordIterator) throws StateStoreException, IteratorException, IOException {
         try (recordIterator) {
             return ingestFromRecordIterator(tableProperties, recordIterator);
         }
     }
 
-    public IngestResult ingestFromRecordIterator(TableProperties tableProperties, Iterator<Record> recordIterator)
-            throws StateStoreException, IteratorException, IOException {
+    public IngestResult ingestFromRecordIterator(TableProperties tableProperties, Iterator<Record> recordIterator) throws StateStoreException, IteratorException, IOException {
         try (IngestCoordinator<Record> ingestCoordinator = createIngestCoordinator(tableProperties)) {
             return new IngestRecordsFromIterator(ingestCoordinator, recordIterator).write();
         }
@@ -92,13 +90,14 @@ public class IngestFactory {
         return IngestCoordinator.builderWith(instanceProperties, tableProperties)
                 .objectFactory(objectFactory)
                 .stateStore(stateStoreProvider.getStateStore(tableProperties))
-                .recordBatchFactory(standardRecordBatchFactory(parquetConfiguration))
+                .recordBatchFactory(standardRecordBatchFactory(tableProperties, parquetConfiguration))
                 .partitionFileWriterFactory(standardPartitionFileWriterFactory(tableProperties, parquetConfiguration))
                 .build();
     }
 
-    private RecordBatchFactory<Record> standardRecordBatchFactory(ParquetConfiguration parquetConfiguration) {
-        String recordBatchType = instanceProperties.get(INGEST_RECORD_BATCH_TYPE).toLowerCase(Locale.ROOT);
+    private RecordBatchFactory<Record> standardRecordBatchFactory(
+            TableProperties tableProperties, ParquetConfiguration parquetConfiguration) {
+        String recordBatchType = tableProperties.get(INGEST_RECORD_BATCH_TYPE).toLowerCase(Locale.ROOT);
         if (recordBatchType.equals("arraylist")) {
             return ArrayListRecordBatchFactory.builderWith(instanceProperties)
                     .parquetConfiguration(parquetConfiguration)
@@ -116,7 +115,7 @@ public class IngestFactory {
 
     private PartitionFileWriterFactory standardPartitionFileWriterFactory(
             TableProperties tableProperties, ParquetConfiguration parquetConfiguration) {
-        String fileWriterType = instanceProperties.get(INGEST_PARTITION_FILE_WRITER_TYPE).toLowerCase(Locale.ROOT);
+        String fileWriterType = tableProperties.get(INGEST_PARTITION_FILE_WRITER_TYPE).toLowerCase(Locale.ROOT);
         if (fileWriterType.equals("direct")) {
             return DirectPartitionFileWriterFactory.from(parquetConfiguration, instanceProperties, tableProperties);
         } else if (fileWriterType.equals("async")) {
@@ -169,13 +168,13 @@ public class IngestFactory {
         }
 
         /**
-         * The configuration to use for interacting with files through a Hadoop file system,
+         * Configuration for Hadoop integrations. Used for interacting with files through a Hadoop file system,
          * and any other needed operations.
          * <p>
          * This is not required. If it is not set, a default configuration will be created.
          *
-         * @param hadoopConfiguration The configuration to use
-         * @return The builder for chaining calls
+         * @param  hadoopConfiguration The configuration to use
+         * @return                     The builder for chaining calls
          */
         public Builder hadoopConfiguration(Configuration hadoopConfiguration) {
             this.hadoopConfiguration = hadoopConfiguration;
@@ -183,13 +182,12 @@ public class IngestFactory {
         }
 
         /**
-         * The client to use for asynchronous S3 operations.
-         * This may or may not be used depending on the settings for an ingest.
+         * Client for asynchronous S3 operations. This may or may not be used depending on the settings for ingest.
          * <p>
          * This is not required. If it is not set, a default client will be created if it is needed.
          *
-         * @param s3AsyncClient The client to use
-         * @return The builder for chaining calls
+         * @param  s3AsyncClient The client to use
+         * @return               The builder for chaining calls
          */
         public Builder s3AsyncClient(S3AsyncClient s3AsyncClient) {
             this.s3AsyncClient = s3AsyncClient;

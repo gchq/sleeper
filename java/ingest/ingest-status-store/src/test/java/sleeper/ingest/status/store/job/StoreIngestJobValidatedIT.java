@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ public class StoreIngestJobValidatedIT extends DynamoDBIngestJobStatusStoreTestB
     void shouldReportUnstartedJobWithNoValidationFailures() {
         // Given
         String taskId = "some-task";
-        IngestJob job = createJobWithTableAndFiles("test-job-1", tableId, "test-file-1.parquet");
+        IngestJob job = createJobWithTableAndFiles("test-job-1", table, "test-file-1.parquet");
         Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
 
         // When
@@ -55,7 +55,7 @@ public class StoreIngestJobValidatedIT extends DynamoDBIngestJobStatusStoreTestB
     void shouldReportStartedJobWithNoValidationFailures() {
         // Given
         String taskId = "some-task";
-        IngestJob job = createJobWithTableAndFiles("test-job-1", tableId, "test-file-1.parquet");
+        IngestJob job = createJobWithTableAndFiles("test-job-1", table, "test-file-1.parquet");
         Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
         Instant startTime = Instant.parse("2022-09-22T12:00:15.000Z");
 
@@ -73,7 +73,7 @@ public class StoreIngestJobValidatedIT extends DynamoDBIngestJobStatusStoreTestB
     @Test
     void shouldReportJobWithOneValidationFailure() {
         // Given
-        IngestJob job = createJobWithTableAndFiles("test-job-1", tableId, "test-file-1.parquet");
+        IngestJob job = createJobWithTableAndFiles("test-job-1", table, "test-file-1.parquet");
         Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
 
         // When
@@ -89,7 +89,7 @@ public class StoreIngestJobValidatedIT extends DynamoDBIngestJobStatusStoreTestB
     @Test
     void shouldReportJobWithMultipleValidationFailures() {
         // Given
-        IngestJob job = createJobWithTableAndFiles("test-job-1", tableId, "test-file-1.parquet");
+        IngestJob job = createJobWithTableAndFiles("test-job-1", table, "test-file-1.parquet");
         Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
 
         // When

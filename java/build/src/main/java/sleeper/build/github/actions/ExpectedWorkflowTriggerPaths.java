@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,8 +35,7 @@ public class ExpectedWorkflowTriggerPaths {
         List<String> paths = new ArrayList<>(Arrays.asList(
                 project.workflowPathInRepository(chunk).toString(),
                 actualWorkflow.getUsesWorkflowPath().normalize().toString(),
-                project.getChunksYamlRelative().toString()
-        ));
+                project.getChunksYamlRelative().toString()));
         maven.ancestorsForModules(chunk.getModules())
                 .map(module -> module.pomPathInRepository(project).toString())
                 .forEach(paths::add);
@@ -46,6 +45,5 @@ public class ExpectedWorkflowTriggerPaths {
                 .forEach(paths::add);
         return paths;
     }
-
 
 }

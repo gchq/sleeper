@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -222,7 +222,6 @@ public class Schema {
 
     private static Stream<Field> streamAllFields(
             List<Field> rowKeyFields, List<Field> sortKeyFields, List<Field> valueFields) {
-
         return Stream.of(rowKeyFields, sortKeyFields, valueFields)
                 .flatMap(List::stream);
     }

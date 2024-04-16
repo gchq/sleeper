@@ -17,7 +17,20 @@ The Sleeper CLI has the following dependencies:
 ### Installation
 
 The Sleeper CLI contains Docker images with the necessary dependencies and scripts to work with Sleeper. Run the
-following commands to install the CLI. The version can be `main` or a release in the format `v0.16.0`.
+following commands to install the latest nightly build of the CLI.
+
+```bash
+curl "https://raw.githubusercontent.com/gchq/sleeper/main/scripts/cli/install.sh" -o ./sleeper-install.sh
+chmod +x ./sleeper-install.sh
+./sleeper-install.sh
+```
+
+You can also specify a version to install. This can be `main` for the latest nightly build, or a release in the
+format `v0.20.0`. These correspond to a branch or tag in the GitHub repository. You can find a list of released
+versions [here](https://github.com/gchq/sleeper/tags), and the change log [here](../CHANGELOG.md).
+
+If you're a developer you can get the latest development version as `develop`. This is an untested version and may not
+work. When all the tests pass this is published to `main` as a nightly build.
 
 ```bash
 curl "https://raw.githubusercontent.com/gchq/sleeper/[version]/scripts/cli/install.sh" -o ./sleeper-install.sh
@@ -51,6 +64,8 @@ be uploaded to AWS.
 To use the Sleeper CLI against AWS, you need to authenticate against your AWS account. You can do this by running
 `sleeper aws configure`, or other `sleeper aws` commands according to your AWS setup. AWS Environment variables
 will also be propagated to the Sleeper CLI.
+
+Most Sleeper clients also require you to set the default region.
 
 ### Deployment environment
 
@@ -179,8 +194,8 @@ Be careful that if you specify SQS as the output, and query for a range containi
 large number of results could be posted to SQS, and this could result in significant charges.
 
 Over time you will see the number of active files (as reported by the `filesStatusReport.sh` script) decrease. This is
-due to compaction tasks merging files together. These are executed in ECS clusters (named
-`sleeper-${ID}-merge-compaction-cluster` and `sleeper-${ID}-splitting-merge-compaction-cluster`).
+due to compaction tasks merging files together. These are executed in an ECS cluster (named
+`sleeper-${ID}-compaction-cluster`).
 
 You will also see the number of leaf partitions increase. This functionality is performed using lambdas called
 `sleeper-${ID}-find-partitions-to-split` and `sleeper-${ID}-split-partition`.
@@ -196,9 +211,6 @@ To tear all the infrastructure down, run
 ```bash
 sleeper deployment test/tearDown.sh
 ```
-
-Note that this will sometimes fail if there are ECS tasks running. Ensure that there are no compaction tasks running
-before doing this.
 
 It is possible to run variations on this system-test by editing the system test properties, like this:
 

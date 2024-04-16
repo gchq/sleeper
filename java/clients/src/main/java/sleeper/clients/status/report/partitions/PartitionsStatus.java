@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package sleeper.clients.status.report.partitions;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 
@@ -44,14 +44,14 @@ public class PartitionsStatus {
         if (partitions.isEmpty()) {
             return new PartitionsStatus(Collections.emptyList(), splitThreshold);
         }
-        List<PartitionStatus> statuses = statusesFrom(tableProperties, partitions, store.getActiveFiles());
+        List<PartitionStatus> statuses = statusesFrom(tableProperties, partitions, store.getFileReferences());
         return new PartitionsStatus(statuses, splitThreshold);
     }
 
     private static List<PartitionStatus> statusesFrom(
-            TableProperties tableProperties, List<Partition> partitions, List<FileInfo> activeFiles) {
+            TableProperties tableProperties, List<Partition> partitions, List<FileReference> activeFiles) {
 
-        PartitionTree tree = new PartitionTree(tableProperties.getSchema(), partitions);
+        PartitionTree tree = new PartitionTree(partitions);
         return tree.traverseLeavesFirst()
                 .map(partition -> PartitionStatus.from(tableProperties, tree, partition, activeFiles))
                 .collect(Collectors.toList());
@@ -65,8 +65,11 @@ public class PartitionsStatus {
         return partitions.stream().filter(PartitionStatus::isLeafPartition).count();
     }
 
-    public long getNumSplittingPartitions() {
-        return partitions.stream().filter(PartitionStatus::isNeedsSplitting).count();
+    public long getNumLeafPartitionsThatNeedSplitting() {
+        return partitions.stream()
+                .filter(PartitionStatus::isLeafPartition)
+                .filter(PartitionStatus::isNeedsSplitting)
+                .count();
     }
 
     public long getSplitThreshold() {

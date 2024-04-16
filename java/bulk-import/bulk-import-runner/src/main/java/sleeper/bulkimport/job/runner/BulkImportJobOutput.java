@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,30 +15,30 @@
  */
 package sleeper.bulkimport.job.runner;
 
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 
 import java.util.List;
 
 public class BulkImportJobOutput {
 
-    private final List<FileInfo> fileInfos;
+    private final List<FileReference> fileReferences;
     private final Runnable stopSparkContext;
     private final long numRecords;
 
-    public BulkImportJobOutput(List<FileInfo> fileInfos, Runnable stopSparkContext) {
-        this.fileInfos = fileInfos;
+    public BulkImportJobOutput(List<FileReference> fileReferences, Runnable stopSparkContext) {
+        this.fileReferences = fileReferences;
         this.stopSparkContext = stopSparkContext;
-        this.numRecords = fileInfos.stream()
-                .mapToLong(FileInfo::getNumberOfRecords)
+        this.numRecords = fileReferences.stream()
+                .mapToLong(FileReference::getNumberOfRecords)
                 .sum();
     }
 
-    public List<FileInfo> fileInfos() {
-        return fileInfos;
+    public List<FileReference> fileReferences() {
+        return fileReferences;
     }
 
     public int numFiles() {
-        return fileInfos.size();
+        return fileReferences.size();
     }
 
     public long numRecords() {

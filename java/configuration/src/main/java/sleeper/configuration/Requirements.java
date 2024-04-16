@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,12 +33,11 @@ public final class Requirements {
      * Retrieves architecture specific CPU and memory requirements. This returns a triple containing
      * the CPU requirement in the left element and memory requirement in the right element.
      *
-     * @param architecture       CPU architecture
-     * @param launchType         the container launch type
-     * @param instanceProperties Sleeper instance properties
-     * @return CPU and memory requirements as per the CPU architecture
+     * @param  architecture       CPU architecture
+     * @param  instanceProperties Sleeper instance properties
+     * @return                    CPU and memory requirements as per the CPU architecture
      */
-    public static Pair<Integer, Integer> getArchRequirements(String architecture, String launchType, InstanceProperties instanceProperties) {
+    public static Pair<Integer, Integer> getArchRequirements(String architecture, InstanceProperties instanceProperties) {
         int cpu;
         int memoryLimitMiB;
         if (architecture.startsWith("ARM")) {

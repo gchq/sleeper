@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,8 +27,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.EMAIL_ADD
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
 /**
- * The {@link NestedStack} that creates an SNS {@link Topic} that emails alerts if
- * messages arrive on a dead-letter queue.
+ * Creates an SNS topic for alerts. This will email alerts if messages arrive on a dead-letter queue.
  */
 public class TopicStack extends NestedStack {
     private final Topic topic;

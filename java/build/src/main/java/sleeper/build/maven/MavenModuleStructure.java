@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ public class MavenModuleStructure {
     private final String groupId;
     private final String packaging;
     private final String moduleRef;
-    private final boolean hasSrcTestFolder;
+    private final boolean hasSrcMainJavaFolder;
     private final List<MavenModuleStructure> modules;
     private final List<DependencyReference> dependencies;
 
@@ -46,7 +46,7 @@ public class MavenModuleStructure {
         groupId = Objects.requireNonNull(builder.groupId, "groupId must not be null");
         packaging = builder.packaging;
         moduleRef = builder.moduleRef;
-        hasSrcTestFolder = builder.hasSrcTestFolder;
+        hasSrcMainJavaFolder = builder.hasSrcMainJavaFolder;
         modules = Objects.requireNonNull(builder.modules, "modules must not be null");
         dependencies = Objects.requireNonNull(builder.dependencies, "dependencies must not be null");
     }
@@ -60,8 +60,8 @@ public class MavenModuleStructure {
         return builderFromPath(mapper, path).build();
     }
 
-    public Stream<MavenModuleAndPath> allTestedModules() {
-        return allTestedModules(MavenModuleAndPath.root(this));
+    public Stream<MavenModuleAndPath> allJavaModules() {
+        return allJavaModules(MavenModuleAndPath.root(this));
     }
 
     public Stream<MavenModuleAndPath> allModules() {
@@ -78,8 +78,8 @@ public class MavenModuleStructure {
         return ArtifactReference.groupAndArtifact(groupId, artifactId);
     }
 
-    private Stream<MavenModuleAndPath> allTestedModules(MavenModuleAndPath parent) {
-        return allModules(parent).filter(module -> module.getStructure().hasSrcTestFolder);
+    private Stream<MavenModuleAndPath> allJavaModules(MavenModuleAndPath parent) {
+        return allModules(parent).filter(module -> module.getStructure().hasSrcMainJavaFolder);
     }
 
     private Stream<MavenModuleAndPath> allModules(MavenModuleAndPath parent) {
@@ -108,7 +108,7 @@ public class MavenModuleStructure {
         MavenPom pom = MavenPom.from(mapper, path.resolve("pom.xml"));
         return builder()
                 .artifactId(pom.getArtifactId()).groupId(pom.getGroupId()).packaging(pom.getPackaging())
-                .hasSrcTestFolder(Files.isDirectory(path.resolve("src/test")))
+                .hasSrcMainJavaFolder(Files.isDirectory(path.resolve("src/main/java")))
                 .dependencies(pom.getDependencies())
                 .modules(readChildModules(mapper, path, pom));
     }
@@ -135,7 +135,7 @@ public class MavenModuleStructure {
             return false;
         }
         MavenModuleStructure that = (MavenModuleStructure) o;
-        return hasSrcTestFolder == that.hasSrcTestFolder
+        return hasSrcMainJavaFolder == that.hasSrcMainJavaFolder
                 && artifactId.equals(that.artifactId)
                 && groupId.equals(that.groupId)
                 && Objects.equals(packaging, that.packaging)
@@ -146,7 +146,7 @@ public class MavenModuleStructure {
 
     @Override
     public int hashCode() {
-        return Objects.hash(artifactId, groupId, packaging, moduleRef, hasSrcTestFolder, modules, dependencies);
+        return Objects.hash(artifactId, groupId, packaging, moduleRef, hasSrcMainJavaFolder, modules, dependencies);
     }
 
     @Override
@@ -156,7 +156,7 @@ public class MavenModuleStructure {
                 ", groupId='" + groupId + '\'' +
                 ", packaging='" + packaging + '\'' +
                 ", moduleRef='" + moduleRef + '\'' +
-                ", hasSrcTestFolder=" + hasSrcTestFolder +
+                ", hasSrcMainJavaFolder=" + hasSrcMainJavaFolder +
                 ", modules=" + modules +
                 ", dependencies=" + dependencies +
                 '}';
@@ -167,7 +167,7 @@ public class MavenModuleStructure {
         private String groupId;
         private String packaging;
         private String moduleRef;
-        private boolean hasSrcTestFolder;
+        private boolean hasSrcMainJavaFolder;
         private List<MavenModuleStructure> modules = Collections.emptyList();
         private List<DependencyReference> dependencies = Collections.emptyList();
 
@@ -194,8 +194,8 @@ public class MavenModuleStructure {
             return this;
         }
 
-        public Builder hasSrcTestFolder(boolean hasSrcTestFolder) {
-            this.hasSrcTestFolder = hasSrcTestFolder;
+        public Builder hasSrcMainJavaFolder(boolean hasSrcMainJavaFolder) {
+            this.hasSrcMainJavaFolder = hasSrcMainJavaFolder;
             return this;
         }
 

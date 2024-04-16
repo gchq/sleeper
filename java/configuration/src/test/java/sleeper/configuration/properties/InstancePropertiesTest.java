@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,16 +40,12 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_CLUSTER;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_DLQ_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_DLQ_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_JOB_DLQ_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_DLQ_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_LAMBDA_ROLE;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_QUEUE_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_AUTO_SCALING_GROUP;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_CLUSTER;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_DLQ_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.configuration.properties.instance.CommonProperty.EMAIL_ADDRESS_FOR_ERROR_NOTIFICATION;
@@ -110,8 +106,7 @@ class InstancePropertiesTest {
         // When
         File file = new File(createTempDirectory(folder, null).toString() + "/props");
         instanceProperties.save(file);
-        InstanceProperties loaded = new InstanceProperties();
-        loaded.load(file);
+        InstanceProperties loaded = new InstanceProperties(loadProperties(file));
 
         // Then
         assertThat(loaded).isEqualTo(instanceProperties);
@@ -124,8 +119,7 @@ class InstancePropertiesTest {
 
         // When
         String string = instanceProperties.saveAsString();
-        InstanceProperties loaded = new InstanceProperties();
-        loaded.loadFromString(string);
+        InstanceProperties loaded = new InstanceProperties(loadProperties(string));
 
         // Then
         assertThat(loaded).isEqualTo(instanceProperties);
@@ -254,16 +248,12 @@ class InstancePropertiesTest {
         instanceProperties.set(JARS_BUCKET, "bucket");
         instanceProperties.set(ECR_COMPACTION_REPO, "sleeper-compaction");
         instanceProperties.set(ECR_INGEST_REPO, "sleeper-ingest");
-        instanceProperties.set(PARTITION_SPLITTING_QUEUE_URL, "url");
-        instanceProperties.set(PARTITION_SPLITTING_DLQ_URL, "url2");
+        instanceProperties.set(PARTITION_SPLITTING_JOB_QUEUE_URL, "url");
+        instanceProperties.set(PARTITION_SPLITTING_JOB_DLQ_URL, "url2");
         instanceProperties.set(COMPACTION_JOB_QUEUE_URL, "url3");
         instanceProperties.set(COMPACTION_JOB_DLQ_URL, "url4");
-        instanceProperties.set(SPLITTING_COMPACTION_JOB_QUEUE_URL, "url5");
-        instanceProperties.set(SPLITTING_COMPACTION_JOB_DLQ_URL, "url6");
         instanceProperties.set(COMPACTION_CLUSTER, "ecsCluster1");
         instanceProperties.set(COMPACTION_AUTO_SCALING_GROUP, "autoScalingGroup1");
-        instanceProperties.set(SPLITTING_COMPACTION_AUTO_SCALING_GROUP, "autoScalingGroup2");
-        instanceProperties.set(SPLITTING_COMPACTION_CLUSTER, "ecsCluster2");
         instanceProperties.set(EMAIL_ADDRESS_FOR_ERROR_NOTIFICATION, "user@domain");
         instanceProperties.set(QUERY_QUEUE_URL, "url7");
         instanceProperties.set(QUERY_DLQ_URL, "url8");

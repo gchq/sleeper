@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ public class BulkImportArgumentsTest {
                 .build();
 
         // When / Then
-        assertThat(arguments.sparkSubmitCommandForCluster("test-task", "s3a://jarsBucket/bulk-import-runner-1.2.3.jar"))
+        assertThat(arguments.sparkSubmitCommandForEMRCluster("test-task", "s3a://jarsBucket/bulk-import-runner-1.2.3.jar"))
                 .containsExactly("spark-submit",
                         "--deploy-mode",
                         "cluster",
@@ -60,6 +60,7 @@ public class BulkImportArgumentsTest {
                         "configBucket",
                         "my-job",
                         "test-task",
-                        "test-run");
+                        "test-run",
+                        "EMR");
     }
 }

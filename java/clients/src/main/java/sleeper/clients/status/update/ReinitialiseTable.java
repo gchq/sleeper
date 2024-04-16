@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,11 +20,6 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.DeleteObjectsRequest;
-import com.amazonaws.services.s3.model.DeleteObjectsResult;
-import com.amazonaws.services.s3.model.ListObjectsV2Request;
-import com.amazonaws.services.s3.model.ListObjectsV2Result;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,11 +33,11 @@ import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.s3.S3StateStore;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 
+import static sleeper.clients.util.BucketUtils.deleteObjectsInBucketWithPrefix;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
 /**
  * A utility class to reinitialise a table by first deleting the table's contents
@@ -77,8 +72,7 @@ public class ReinitialiseTable {
     public void run() throws IOException, StateStoreException {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
-        TablePropertiesProvider tablePropertiesProvider =
-                new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
+        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
         TableProperties tableProperties = tablePropertiesProvider.getByName(tableName);
 
         Configuration conf = new Configuration();
@@ -90,64 +84,24 @@ public class ReinitialiseTable {
         LOGGER.info("State store type: {}", stateStore.getClass().getName());
 
         if (deletePartitions) {
-            stateStore.clearTable();
+            stateStore.clearSleeperTable();
         } else {
-            stateStore.clearFiles();
+            stateStore.clearFileData();
         }
-        deleteObjectsInTableBucket(instanceProperties);
+        deleteObjectsInBucketWithPrefix(s3Client, instanceProperties.get(DATA_BUCKET), tableProperties.get(TABLE_ID),
+                key -> key.matches(tableProperties.get(TABLE_ID) + "/partition.*/.*"));
         if (deletePartitions) {
             LOGGER.info("Fully reinitialising table");
             initialiseStateStore(tableProperties, stateStore);
         } else if (stateStore instanceof S3StateStore) {
             LOGGER.info("Recreating files information file and adding it into the revisions table");
             S3StateStore s3StateStore = (S3StateStore) stateStore;
-            s3StateStore.setInitialFileInfos();
+            s3StateStore.setInitialFileReferences();
         }
     }
 
     protected void initialiseStateStore(TableProperties tableProperties, StateStore stateStore) throws IOException, StateStoreException {
         stateStore.initialise();
-    }
-
-    private void deleteObjectsInTableBucket(InstanceProperties instanceProperties) {
-        List<String> objectKeysForDeletion = new ArrayList<>();
-        String dataBucketName = instanceProperties.get(DATA_BUCKET);
-        ListObjectsV2Request req = new ListObjectsV2Request()
-                .withBucketName(dataBucketName)
-                .withPrefix(tableName + "/")
-                .withMaxKeys(100);
-        ListObjectsV2Result result;
-
-        LOGGER.info("Deleting all objects for table {} in the data bucket", tableName);
-        int totalObjectsDeleted = 0;
-        do {
-
-            objectKeysForDeletion.clear();
-            result = s3Client.listObjectsV2(req);
-            for (S3ObjectSummary objectSummary : result.getObjectSummaries()) {
-                String objectKey = objectSummary.getKey();
-                if (objectKey.matches(tableName + "/partition.*/.*")) {
-                    objectKeysForDeletion.add(objectSummary.getKey());
-                }
-            }
-            String token = result.getNextContinuationToken();
-            req.setContinuationToken(token);
-            totalObjectsDeleted += deleteObjects(dataBucketName, objectKeysForDeletion);
-        } while (result.isTruncated());
-        LOGGER.info("A total of {} objects were deleted", totalObjectsDeleted);
-    }
-
-    private int deleteObjects(String bucketName, List<String> keys) {
-        int successfulDeletes = 0;
-        if (!keys.isEmpty()) {
-            DeleteObjectsRequest multiObjectDeleteRequest = new DeleteObjectsRequest(bucketName)
-                    .withKeys(keys.toArray(new String[0]))
-                    .withQuiet(false);
-            DeleteObjectsResult delObjRes = s3Client.deleteObjects(multiObjectDeleteRequest);
-            successfulDeletes = delObjRes.getDeletedObjects().size();
-            LOGGER.info("{} objects successfully deleted from S3 bucket: {}", successfulDeletes, bucketName);
-        }
-        return successfulDeletes;
     }
 
     public static void main(String[] args) {

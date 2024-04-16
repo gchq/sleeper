@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,9 +44,10 @@ class ArrowIngestSupport {
     }
 
     /**
-     * Generate an {@link IntVector} which contains the indices of the rows of the {@link VectorSchemaRoot}, once the
-     * rows have been sorted according to the row keys and sort keys specified in the supplied {@link
-     * sleeper.core.schema.Schema}. The {@link VectorSchemaRoot} is unchanged on return.
+     * Create a vector of row indices, sorted according to a Sleeper schema. Generates an {@link IntVector} which
+     * contains the indices of the rows of the {@link VectorSchemaRoot}. The indices will be sorted according to the row
+     * keys and sort keys specified in the supplied {@link sleeper.core.schema.Schema}. The {@link VectorSchemaRoot} is
+     * unchanged on return.
      * <p>
      * In order to sort a {@link VectorSchemaRoot}, use this method to generate a sort order and then read the sorted
      * data out of the {@link VectorSchemaRoot} by reading vectorschemaroot(intvector(0)), then
@@ -54,21 +55,20 @@ class ArrowIngestSupport {
      * <p>
      * The caller must close the returned vector once it is no longer needed.
      *
-     * @param bufferAllocator  allocator for the sort order vector
-     * @param sleeperSchema    schema to use to sort by its keys
-     * @param vectorSchemaRoot vector to sort
-     * @return the sort order
+     * @param  bufferAllocator  allocator for the sort order vector
+     * @param  sleeperSchema    schema to use to sort by its keys
+     * @param  vectorSchemaRoot vector to sort
+     * @return                  the sort order
      */
     public static IntVector createSortOrderVector(BufferAllocator bufferAllocator,
-                                                  sleeper.core.schema.Schema sleeperSchema,
-                                                  VectorSchemaRoot vectorSchemaRoot) {
+            sleeper.core.schema.Schema sleeperSchema,
+            VectorSchemaRoot vectorSchemaRoot) {
         // Work out which field is to be used for the sort, where it is in the fields, and what type it is
         int vectorSize = vectorSchemaRoot.getRowCount();
         List<sleeper.core.schema.Field> allSleeperFields = sleeperSchema.getAllFields();
-        List<sleeper.core.schema.Field> sleeperSortOrderFieldsInOrder =
-                Stream.of(sleeperSchema.getRowKeyFields(), sleeperSchema.getSortKeyFields())
-                        .flatMap(List::stream)
-                        .collect(Collectors.toList());
+        List<sleeper.core.schema.Field> sleeperSortOrderFieldsInOrder = Stream.of(sleeperSchema.getRowKeyFields(), sleeperSchema.getSortKeyFields())
+                .flatMap(List::stream)
+                .collect(Collectors.toList());
         List<VectorValueComparator<?>> vectorValueComparatorsInOrder = sleeperSortOrderFieldsInOrder.stream()
                 .map(field -> {
                     Type fieldType = field.getType();

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,13 +33,13 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 /**
- * A {@link SleeperPartitioner} is a custom {@link Partitioner} which uses the
- * Sleeper partitions to split the data into different partitions.
+ * A custom Spark partitioner to split the data into different Sleeper partitions.
  */
 public class SleeperPartitioner extends Partitioner {
     private static final long serialVersionUID = -4686777638868174263L;
 
     private final Broadcast<List<Partition>> broadcastPartitions;
+    private transient Schema schema;
     private final String schemaAsString;
     private transient int numRowKeyFields;
     private transient PartitionTree partitionTree;
@@ -52,10 +52,10 @@ public class SleeperPartitioner extends Partitioner {
     }
 
     private void init() {
-        Schema schema = new SchemaSerDe().fromJson(schemaAsString);
+        schema = new SchemaSerDe().fromJson(schemaAsString);
         numRowKeyFields = schema.getRowKeyFields().size();
         List<Partition> partitions = broadcastPartitions.getValue();
-        partitionTree = new PartitionTree(schema, partitions);
+        partitionTree = new PartitionTree(partitions);
         numLeafPartitions = (int) partitions.stream().filter(Partition::isLeafPartition).count();
         partitionIdToInt = new HashMap<>();
         List<String> leafPartitions = partitions.stream()
@@ -89,7 +89,7 @@ public class SleeperPartitioner extends Partitioner {
             rowKeys.add(key.get(i));
         }
         Key rowKey = Key.create(rowKeys);
-        String partitionId = partitionTree.getLeafPartition(rowKey).getId();
+        String partitionId = partitionTree.getLeafPartition(schema, rowKey).getId();
         int partitionAsInt = partitionIdToInt.get(partitionId);
         return partitionAsInt;
     }

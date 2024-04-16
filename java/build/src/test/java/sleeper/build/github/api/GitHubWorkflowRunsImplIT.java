@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,6 @@ class GitHubWorkflowRunsImplIT {
 
     private static final GitHubHead GITHUB_EXAMPLE_HEAD = TestGitHubHead.exampleBuilder()
             .sha("acb5820ced9479c074f688cc328bf03f341a511d").build();
-
 
     private Optional<GitHubWorkflowRun> getLatestRun(
             WireMockRuntimeInfo runtimeInfo, GitHubHead head, String workflow) {

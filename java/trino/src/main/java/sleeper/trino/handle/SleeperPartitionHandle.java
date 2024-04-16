@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,9 +22,8 @@ import sleeper.core.key.Key;
 import java.util.Objects;
 
 /**
- * This class holds the details about a single Trino partition.
- * <p>
- * In this implementation, a Trino partition is described by its lower-bound.
+ * This class holds the details about a single Trino partition. In this implementation, a Trino partition is described
+ * by its lower bound.
  */
 public class SleeperPartitionHandle extends ConnectorPartitionHandle {
     private final Key trinoPartitionMin; // Inclusive

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,12 +28,15 @@ import sleeper.core.iterator.MergingIterator;
 import sleeper.core.record.Record;
 import sleeper.core.record.RecordComparator;
 import sleeper.core.schema.Schema;
+import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.impl.ParquetConfiguration;
 import sleeper.ingest.impl.recordbatch.RecordBatch;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 
 import java.io.IOException;
+import java.text.DecimalFormat;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -41,7 +44,7 @@ import java.util.UUID;
 import static java.util.Objects.requireNonNull;
 
 /**
- * This class implements a {@link RecordBatch} where the batch of records is stored in an ArrayList in memory,
+ * Stores a batch of records in an array in memory. This class implements a {@link RecordBatch} backed by an ArrayList,
  * and spilled to local disk as Parquet files when the ArrayList contains a set number of records. Each time the records
  * are spilled to disk, they are sorted.
  * <p>
@@ -57,6 +60,7 @@ import static java.util.Objects.requireNonNull;
  */
 public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGDATATYPE> {
     private static final Logger LOGGER = LoggerFactory.getLogger(ArrayListRecordBatch.class);
+    private static final DecimalFormat FORMATTER = new DecimalFormat("0.#");
     private final ParquetConfiguration parquetConfiguration;
     private final Schema sleeperSchema;
     private final ArrayListRecordMapper<INCOMINGDATATYPE> recordMapper;
@@ -73,7 +77,7 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
     private int batchNo;
 
     /**
-     * Construct the ArrayList-based batch of records.
+     * Create an instance. Should be called by an {@link ArrayListRecordBatchFactory}.
      *
      * @param parquetConfiguration       Hadoop, schema and Parquet configuration for writing files.
      *                                   The Hadoop configuration is used during read and write of the Parquet files.
@@ -84,10 +88,10 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
      * @param maxNoOfRecordsInLocalStore The maximum number of records to store on the local disk
      */
     public ArrayListRecordBatch(ParquetConfiguration parquetConfiguration,
-                                ArrayListRecordMapper<INCOMINGDATATYPE> recordMapper,
-                                String localWorkingDirectory,
-                                int maxNoOfRecordsInMemory,
-                                long maxNoOfRecordsInLocalStore) {
+            ArrayListRecordMapper<INCOMINGDATATYPE> recordMapper,
+            String localWorkingDirectory,
+            int maxNoOfRecordsInMemory,
+            long maxNoOfRecordsInLocalStore) {
         this.parquetConfiguration = requireNonNull(parquetConfiguration);
         this.sleeperSchema = parquetConfiguration.getTableProperties().getSchema();
         this.recordMapper = recordMapper;
@@ -107,7 +111,7 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
     /**
      * Internal method to add a record to the internal batch, flushing to local disk first if necessary.
      *
-     * @param record The record to add to the batch
+     * @param  record      The record to add to the batch
      * @throws IOException -
      */
     protected void addRecordToBatch(Record record) throws IOException {
@@ -129,13 +133,13 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
         if (inMemoryBatch.isEmpty()) {
             LOGGER.info("There are no records to flush");
         } else {
-            long time1 = System.currentTimeMillis();
+            Instant startTime = Instant.now();
             String outputFileName = String.format("%s/localfile-batch-%s-file-%09d.parquet",
                     localWorkingDirectory,
                     uniqueIdentifier,
                     batchNo);
             inMemoryBatch.sort(new RecordComparator(sleeperSchema));
-            long time2 = System.currentTimeMillis();
+            Instant writeTime = Instant.now();
             // Write the records to a local Parquet file. The try-with-resources block ensures that the writer
             // is closed in both success and failure.
             try (ParquetWriter<Record> parquetWriter = parquetConfiguration.createParquetWriter(outputFileName)) {
@@ -143,16 +147,20 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
                     parquetWriter.write(record);
                 }
             }
-            long time3 = System.currentTimeMillis();
-            LOGGER.info(String.format("Wrote %d records to local file in %.1fs (%.1f/s) [sorting %.1fs (%.1f/s), writing %.1fs (%.1f/s)] - filename: %s",
+            Instant finishTime = Instant.now();
+            LoggedDuration wholeDuration = LoggedDuration.withShortOutput(startTime, finishTime);
+            LoggedDuration sortDuration = LoggedDuration.withShortOutput(startTime, writeTime);
+            LoggedDuration writeDuration = LoggedDuration.withShortOutput(writeTime, finishTime);
+            LOGGER.info("Wrote {} records to local file in {} ({}/s) " +
+                    "[sorting {} ({}/s), writing {} ({}/s)] - filename: {}",
                     inMemoryBatch.size(),
-                    (time3 - time1) / 1000.0,
-                    inMemoryBatch.size() / ((time3 - time1) / 1000.0),
-                    (time2 - time1) / 1000.0,
-                    inMemoryBatch.size() / ((time2 - time1) / 1000.0),
-                    (time3 - time2) / 1000.0,
-                    inMemoryBatch.size() / ((time3 - time2) / 1000.0),
-                    outputFileName));
+                    wholeDuration,
+                    FORMATTER.format(inMemoryBatch.size() / (double) wholeDuration.getSeconds()),
+                    sortDuration,
+                    FORMATTER.format(inMemoryBatch.size() / (double) sortDuration.getSeconds()),
+                    writeDuration,
+                    FORMATTER.format(inMemoryBatch.size() / (double) writeDuration.getSeconds()),
+                    outputFileName);
             localFileNames.add(outputFileName);
             noOfRecordsInLocalStore += inMemoryBatch.size();
         }
@@ -166,8 +174,8 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
     }
 
     /**
-     * This batch is considered full when the in-memory batch is full and when, if it were written to disk, the total
-     * number of records on disk would exceed the limit specified during construction.
+     * Indicates whether the batch is full. This is considered full when the in-memory batch is full and when, if it
+     * were written to disk, the total number of records on disk would exceed the limit specified during construction.
      *
      * @return A flag indicating whether or not the batch is full.
      */
@@ -178,11 +186,10 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
     }
 
     /**
-     * Use a merge-sort to merge together all of the sorted files on the local disk and the (sorted) in-memory batch.
-     * <p>
-     * Note that this method may only be called once.
+     * Merge-sort the sorted files on the local disk and records in memory into one iterator. Note that this method may
+     * only be called once.
      *
-     * @return An iterator of the sorted records.
+     * @return             An iterator of the sorted records.
      * @throws IOException -
      */
     @Override
@@ -220,7 +227,7 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
     }
 
     /**
-     * Close this batch, remove all local files and free resources
+     * Close this batch, remove all local files and free resources.
      */
     @Override
     public void close() {
@@ -233,10 +240,10 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
     }
 
     /**
-     * Create a {@link ParquetReader} using the parameters specified during construction.
+     * Create a reader for a local Parquet file. Uses the parameters specified during construction.
      *
-     * @param inputFile The Parquet file to read
-     * @return The {@link ParquetReader}
+     * @param  inputFile   The Parquet file to read
+     * @return             The {@link ParquetReader}
      * @throws IOException Thrown when the reader cannot be created
      */
     private ParquetReader<Record> createParquetReader(String inputFile) throws IOException {
@@ -249,7 +256,7 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
      * Delete all of the local files. Errors are logged but are not propagated.
      */
     private void deleteAllLocalFiles() {
-        if (localFileNames.size() > 0) {
+        if (!localFileNames.isEmpty()) {
             LOGGER.info("Deleting {} local batch files, first: {} last: {}",
                     localFileNames.size(),
                     localFileNames.get(0),

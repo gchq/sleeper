@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.ingest.IngestFactory;
 import sleeper.ingest.IngestResult;
 import sleeper.io.parquet.record.ParquetRecordReader;
@@ -48,9 +48,9 @@ import static sleeper.configuration.properties.instance.ArrayListIngestProperty.
 import static sleeper.configuration.properties.instance.ArrayListIngestProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_RECORD_BATCH_TYPE;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_RECORD_BATCH_TYPE;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
@@ -73,8 +73,8 @@ public class IngestRecordsTestDataHelper {
         InstanceProperties instanceProperties = createTestInstanceProperties();
         instanceProperties.set(FILE_SYSTEM, "file://");
         instanceProperties.set(DATA_BUCKET, dataBucket);
-        instanceProperties.set(INGEST_RECORD_BATCH_TYPE, "arraylist");
-        instanceProperties.set(INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
+        instanceProperties.set(DEFAULT_INGEST_RECORD_BATCH_TYPE, "arraylist");
+        instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
         instanceProperties.setNumber(MAX_RECORDS_TO_WRITE_LOCALLY, 10L);
         instanceProperties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, 1000);
         instanceProperties.setNumber(INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS, 120);
@@ -274,8 +274,8 @@ public class IngestRecordsTestDataHelper {
     }
 
     public static List<Record> readIngestedRecords(IngestResult result, Schema schema) {
-        return result.getFileInfoList().stream()
-                .map(FileInfo::getFilename)
+        return result.getFileReferenceList().stream()
+                .map(FileReference::getFilename)
                 .flatMap(filename -> readRecordsFromParquetFileOrThrow(filename, schema).stream())
                 .collect(Collectors.toList());
     }
@@ -304,5 +304,9 @@ public class IngestRecordsTestDataHelper {
     public static Sketches getSketches(Schema schema, String filename) throws IOException {
         String sketchFile = filename.replace(".parquet", ".sketches");
         return new SketchesSerDeToS3(schema).loadFromHadoopFS(new Path(sketchFile), new Configuration());
+    }
+
+    public static Sketches getSketches(Schema schema, FileReference fileReference) throws IOException {
+        return getSketches(schema, fileReference.getFilename());
     }
 }

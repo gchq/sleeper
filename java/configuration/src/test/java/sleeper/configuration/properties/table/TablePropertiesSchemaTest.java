@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,23 +34,23 @@ class TablePropertiesSchemaTest {
     @Test
     void shouldFailToLoadFromStringIfTableSchemaIsAbsent() {
         // Given
-        String input = "" +
-                "sleeper.table.name=myTable\n";
+        Properties input = loadProperties(
+                "sleeper.table.name=myTable\n");
         TableProperties tableProperties = new TableProperties(new InstanceProperties());
         // When / Then
-        assertThatThrownBy(() -> tableProperties.loadFromString(input))
+        assertThatThrownBy(() -> tableProperties.resetAndValidate(input))
                 .hasMessage("Property sleeper.table.schema was invalid. It was unset.");
     }
 
     @Test
     void shouldFailToLoadFromStringIfTableSchemaIsInvalid() {
         // Given
-        String input = "" +
+        Properties input = loadProperties("" +
                 "sleeper.table.name=myTable\n" +
-                "sleeper.table.schema={}\n";
+                "sleeper.table.schema={}\n");
         TableProperties tableProperties = new TableProperties(new InstanceProperties());
         // When / Then
-        assertThatThrownBy(() -> tableProperties.loadFromString(input))
+        assertThatThrownBy(() -> tableProperties.resetAndValidate(input))
                 .hasMessage("Must have at least one row key field");
     }
 
@@ -89,16 +89,15 @@ class TablePropertiesSchemaTest {
     }
 
     @Test
-    void shouldLoadFromStringSuccessfullyIfTableSchemaIsSetBeforeLoad() {
+    void shouldLoadFromStringAndSetSchemaSeparately() {
         // Given
         String input = "" +
                 "sleeper.table.name=myTable\n";
         Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
 
         // When
-        TableProperties tableProperties = new TableProperties(new InstanceProperties());
+        TableProperties tableProperties = new TableProperties(new InstanceProperties(), loadProperties(input));
         tableProperties.setSchema(schema);
-        tableProperties.loadFromString(input);
 
         // Then
         assertThat(tableProperties.get(TABLE_NAME)).isEqualTo("myTable");

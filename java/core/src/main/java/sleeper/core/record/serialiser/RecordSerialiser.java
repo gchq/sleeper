@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Serialises and deserialises a {@link Record} to and from a <code>byte[]</code>.
+ * Serialises and deserialises a record to and from a byte array.
  */
 public class RecordSerialiser {
     private final Schema schema;

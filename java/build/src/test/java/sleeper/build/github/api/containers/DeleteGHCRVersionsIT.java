@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -180,8 +180,7 @@ class DeleteGHCRVersionsIT {
     private void deleteVersions(WireMockRuntimeInfo runtimeInfo, String propertiesStr) {
         Properties properties = loadProperties(propertiesStr);
         properties.setProperty("organization", "test-org");
-        doWithGitHubApi(runtimeInfo, api ->
-                withApi(api).properties(properties).build().deleteVersions());
+        doWithGitHubApi(runtimeInfo, api -> withApi(api).properties(properties).build().deleteVersions());
     }
 
     private void packageVersionListReturns(String packageName, TestGHCRVersion... versions) {

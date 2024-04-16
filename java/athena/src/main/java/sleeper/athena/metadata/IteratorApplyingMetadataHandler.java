@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,12 +46,9 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
- * An {@link IteratorApplyingMetadataHandler} is an implementation of the
- * {@link SleeperMetadataHandler} which sends the relevant files in a batch,
- * grouped by partition so that the compaction time iterators can be applied to
- * them. To assist with this, the row keys are written to properties in the
- * split so the record handler doesn't have to query the statestore again to
- * find out what they are.
+ * Sends requested files in a batch grouped by partition. Allows compaction time iterators to be applied.
+ * To assist with this, the row keys are written to properties in the split so the record handler doesn't have to query
+ * the statestore again to find out what they are.
  */
 public class IteratorApplyingMetadataHandler extends SleeperMetadataHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(IteratorApplyingMetadataHandler.class);
@@ -65,14 +62,9 @@ public class IteratorApplyingMetadataHandler extends SleeperMetadataHandler {
     }
 
     public IteratorApplyingMetadataHandler(
-            AmazonS3 s3Client,
-            AmazonDynamoDB dynamoDBClient,
-            String configBucket,
-            EncryptionKeyFactory encryptionKeyFactory,
-            AWSSecretsManager secretsManager,
-            AmazonAthena athena,
-            String spillBucket,
-            String spillPrefix) {
+            AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, String configBucket,
+            EncryptionKeyFactory encryptionKeyFactory, AWSSecretsManager secretsManager,
+            AmazonAthena athena, String spillBucket, String spillPrefix) {
         super(s3Client, dynamoDBClient, configBucket, encryptionKeyFactory, secretsManager, athena, spillBucket, spillPrefix);
     }
 
@@ -99,17 +91,17 @@ public class IteratorApplyingMetadataHandler extends SleeperMetadataHandler {
      * Used to create splits from partitions. The partitionId is added to the
      * split.
      *
-     * @param blockAllocator   Tool for creating and managing Apache Arrow Blocks.
-     * @param getSplitsRequest Provides details of the catalog, database, table,
-     *                         and partition(s) being queried as well as any filter predicate.
-     * @return A GetSplitsResponse which primarily contains: 1. A Set of Splits
-     * which represent read operations Amazon Athena must perform by calling
-     * your read function. 2. (Optional) A continuation token which allows you
-     * to paginate the generation of splits for large queries.
-     * @note A Split is a mostly opaque object to Amazon Athena. Amazon Athena
-     * will use the optional SpillLocation and optional EncryptionKey for
-     * pipelined reads but all properties you set on the Split are passed to
-     * your read function to help you perform the read.
+     * @param  blockAllocator   Tool for creating and managing Apache Arrow Blocks.
+     * @param  getSplitsRequest Provides details of the catalog, database, table,
+     *                          and partition(s) being queried as well as any filter predicate.
+     * @return                  A GetSplitsResponse which primarily contains: 1. A Set of Splits
+     *                          which represent read operations Amazon Athena must perform by calling
+     *                          your read function. 2. (Optional) A continuation token which allows you
+     *                          to paginate the generation of splits for large queries.
+     * @note                    A Split is a mostly opaque object to Amazon Athena. Amazon Athena
+     *                          will use the optional SpillLocation and optional EncryptionKey for
+     *                          pipelined reads but all properties you set on the Split are passed to
+     *                          your read function to help you perform the read.
      */
     @Override
     public GetSplitsResponse doGetSplits(BlockAllocator blockAllocator, GetSplitsRequest getSplitsRequest) {

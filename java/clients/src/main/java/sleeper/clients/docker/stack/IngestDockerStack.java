@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,8 +45,9 @@ public class IngestDockerStack implements DockerStack {
         return new Builder();
     }
 
-    public static IngestDockerStack from(InstanceProperties instanceProperties,
-                                         AmazonS3 s3Client, AmazonDynamoDB dynamoDB, AmazonSQS sqsClient) {
+    public static IngestDockerStack from(
+            InstanceProperties instanceProperties,
+            AmazonS3 s3Client, AmazonDynamoDB dynamoDB, AmazonSQS sqsClient) {
         return builder().instanceProperties(instanceProperties)
                 .s3Client(s3Client).dynamoDB(dynamoDB).sqsClient(sqsClient)
                 .build();

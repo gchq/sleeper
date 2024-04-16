@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
 import sleeper.core.schema.type.LongType;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
 import sleeper.ingest.testutils.IngestCoordinatorTestParameters;
@@ -58,7 +58,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
         StateStore stateStore = inMemoryStateStoreWithFixedPartitions(tree.getAllPartitions());
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString();
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
-        stateStore.fixTime(stateStoreUpdateTime);
+        stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile", "rightFile"))
                 .stateStore(stateStore)
@@ -76,7 +76,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
         TestFilesAndRecords actualActiveData = TestFilesAndRecords.loadActiveFiles(stateStore, recordListAndSchema.sleeperSchema, configuration);
 
         assertThat(actualActiveData.getFiles())
-                .extracting(FileInfo::getPartitionId, FileInfo::getFilename)
+                .extracting(FileReference::getPartitionId, FileReference::getFilename)
                 .containsExactlyInAnyOrder(
                         tuple("left", parameters.getLocalFilePrefix() + "/partition_left/leftFile.parquet"),
                         tuple("right", parameters.getLocalFilePrefix() + "/partition_right/rightFile.parquet"));
@@ -96,8 +96,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
                 actualActiveData.getFiles(),
-                configuration
-        );
+                configuration);
     }
 
     @Test
@@ -113,7 +112,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
         StateStore stateStore = inMemoryStateStoreWithFixedPartitions(tree.getAllPartitions());
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString();
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
-        stateStore.fixTime(stateStoreUpdateTime);
+        stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile1", "rightFile1", "leftFile2", "rightFile2"))
                 .stateStore(stateStore)
@@ -131,7 +130,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
         TestFilesAndRecords actualActiveData = TestFilesAndRecords.loadActiveFiles(stateStore, recordListAndSchema.sleeperSchema, configuration);
 
         assertThat(actualActiveData.getFiles())
-                .extracting(FileInfo::getPartitionId, FileInfo::getFilename)
+                .extracting(FileReference::getPartitionId, FileReference::getFilename)
                 .containsExactlyInAnyOrder(
                         tuple("left", parameters.getLocalFilePrefix() + "/partition_left/leftFile1.parquet"),
                         tuple("left", parameters.getLocalFilePrefix() + "/partition_left/leftFile2.parquet"),
@@ -140,14 +139,14 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
         assertThat(actualActiveData.getSetOfAllRecords())
                 .isEqualTo(new HashSet<>(recordListAndSchema.recordList));
         assertThat(actualActiveData.getPartitionData("left"))
-                .satisfies(data -> assertThat(data.getFiles()).allSatisfy(file ->
-                        assertThatRecordsHaveFieldValuesThatAllAppearInRangeInSameOrder(
+                .satisfies(data -> assertThat(data.getFiles()).allSatisfy(
+                        file -> assertThatRecordsHaveFieldValuesThatAllAppearInRangeInSameOrder(
                                 data.getRecordsInFile(file),
                                 "key0", LongStream.range(-10_000, 0))))
                 .satisfies(data -> assertThat(data.getNumRecords()).isEqualTo(10_000));
         assertThat(actualActiveData.getPartitionData("right"))
-                .satisfies(data -> assertThat(data.getFiles()).allSatisfy(file ->
-                        assertThatRecordsHaveFieldValuesThatAllAppearInRangeInSameOrder(
+                .satisfies(data -> assertThat(data.getFiles()).allSatisfy(
+                        file -> assertThatRecordsHaveFieldValuesThatAllAppearInRangeInSameOrder(
                                 data.getRecordsInFile(file),
                                 "key0", LongStream.range(0, 10_000))))
                 .satisfies(data -> assertThat(data.getNumRecords()).isEqualTo(10_000));
@@ -156,8 +155,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
                 actualActiveData.getFiles(),
-                configuration
-        );
+                configuration);
     }
 
     @Test
@@ -172,7 +170,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
                         .splitToNewChildren("root", "left", "right", 0L).buildList());
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString();
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
-        stateStore.fixTime(stateStoreUpdateTime);
+        stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile", "rightFile"))
                 .stateStore(stateStore)
@@ -189,9 +187,9 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
                 .hasNoSuppressedExceptions();
     }
 
-    private static void ingestRecords(RecordGenerator.RecordListAndSchema recordListAndSchema,
-                                      IngestCoordinatorTestParameters parameters,
-                                      Consumer<ArrowRecordBatchFactory.Builder<Record>> arrowConfig) throws Exception {
+    private static void ingestRecords(
+            RecordGenerator.RecordListAndSchema recordListAndSchema, IngestCoordinatorTestParameters parameters,
+            Consumer<ArrowRecordBatchFactory.Builder<Record>> arrowConfig) throws Exception {
         TestIngestType ingestType = directWriteBackedByArrowWriteToLocalFile(arrowConfig);
         try (IngestCoordinator<Record> ingestCoordinator = ingestType.createIngestCoordinator(parameters)) {
             for (Record record : recordListAndSchema.recordList) {

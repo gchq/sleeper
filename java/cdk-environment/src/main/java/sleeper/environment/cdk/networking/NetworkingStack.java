@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ public class NetworkingStack extends Stack {
         vpc = Vpc.Builder.create(this, "Vpc")
                 .ipAddresses(IpAddresses.cidr("10.0.0.0/16"))
                 .maxAzs(3)
+                .natGateways(1)
                 .subnetConfiguration(Arrays.asList(
                         SubnetConfiguration.builder().name("public")
                                 .subnetType(SubnetType.PUBLIC)

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,8 +32,8 @@ import org.testcontainers.utility.DockerImageName;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.table.InMemoryTableIndex;
-import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIndex;
+import sleeper.core.table.TableStatusTestHelper;
 import sleeper.ingest.batcher.FileIngestRequest;
 import sleeper.ingest.batcher.IngestBatcherStore;
 import sleeper.ingest.batcher.testutil.InMemoryIngestBatcherStore;
@@ -63,14 +63,13 @@ public class IngestBatcherSubmitterLambdaIT {
 
     @BeforeEach
     void setup() {
-        tableIndex.create(TableIdentity.uniqueIdAndName(TEST_TABLE_ID, "test-table"));
+        tableIndex.create(TableStatusTestHelper.uniqueIdAndName(TEST_TABLE_ID, "test-table"));
         s3.createBucket(TEST_BUCKET);
     }
 
     @AfterEach
     void tearDown() {
-        s3.listObjects(TEST_BUCKET).getObjectSummaries().forEach(s3ObjectSummary ->
-                s3.deleteObject(TEST_BUCKET, s3ObjectSummary.getKey()));
+        s3.listObjects(TEST_BUCKET).getObjectSummaries().forEach(s3ObjectSummary -> s3.deleteObject(TEST_BUCKET, s3ObjectSummary.getKey()));
         s3.deleteBucket(TEST_BUCKET);
     }
 

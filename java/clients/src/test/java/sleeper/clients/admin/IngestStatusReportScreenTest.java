@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ import sleeper.ingest.job.status.IngestJobStatus;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.task.IngestTaskStatus;
 import sleeper.ingest.task.IngestTaskStatusStore;
-import sleeper.job.common.QueueMessageCount;
+import sleeper.task.common.QueueMessageCount;
 
 import java.time.Instant;
 import java.util.List;
@@ -57,10 +57,11 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TASK_QU
 import static sleeper.clients.testutil.TestConsoleInput.CONFIRM_PROMPT;
 import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_STATUS_STORE_ENABLED;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.rejectedRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestJob;
-import static sleeper.job.common.QueueMessageCountsInMemory.visibleMessages;
+import static sleeper.task.common.InMemoryQueueMessageCounts.visibleMessages;
 
 class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
     @DisplayName("Ingest job status report")
@@ -75,7 +76,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
         @Test
         void shouldRunReportWithQueryTypeAll() throws Exception {
             // Given
-            when(ingestJobStatusStore.getAllJobs(tableProperties.getId()))
+            when(ingestJobStatusStore.getAllJobs(tableProperties.get(TABLE_ID)))
                     .thenReturn(oneStartedJobStatus());
 
             // When/Then
@@ -99,7 +100,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
         @Test
         void shouldRunReportWithQueryTypeUnfinished() throws Exception {
             // Given
-            when(ingestJobStatusStore.getUnfinishedJobs(tableProperties.getId()))
+            when(ingestJobStatusStore.getUnfinishedJobs(tableProperties.get(TABLE_ID)))
                     .thenReturn(oneStartedJobStatus());
 
             // When/Then
@@ -144,7 +145,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
         @Test
         void shouldRunReportWithQueryTypeRange() throws Exception {
             // Given
-            when(ingestJobStatusStore.getJobsInTimePeriod(tableProperties.getId(),
+            when(ingestJobStatusStore.getJobsInTimePeriod(tableProperties.get(TABLE_ID),
                     Instant.parse("2023-03-15T14:00:00Z"), Instant.parse("2023-03-15T18:00:00Z")))
                     .thenReturn(oneStartedJobStatus());
 
@@ -192,7 +193,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
         private RunAdminClient runIngestJobStatusReport() {
             setInstanceProperties(instanceProperties, tableProperties);
             return runClient().enterPrompts(INGEST_STATUS_REPORT_OPTION,
-                            INGEST_JOB_STATUS_REPORT_OPTION, "test-table")
+                    INGEST_JOB_STATUS_REPORT_OPTION, "test-table")
                     .queueClient(queueCounts).statusStore(ingestJobStatusStore);
         }
 
@@ -275,7 +276,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
         private RunAdminClient runIngestTaskStatusReport() {
             setInstanceProperties(createValidInstanceProperties());
             return runClient().enterPrompts(INGEST_STATUS_REPORT_OPTION,
-                            INGEST_TASK_STATUS_REPORT_OPTION)
+                    INGEST_TASK_STATUS_REPORT_OPTION)
                     .statusStore(ingestTaskStatusStore);
         }
     }

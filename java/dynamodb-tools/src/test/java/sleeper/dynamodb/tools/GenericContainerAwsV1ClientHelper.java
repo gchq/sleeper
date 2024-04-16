@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,9 +27,8 @@ public class GenericContainerAwsV1ClientHelper {
     }
 
     public static <B extends AwsClientBuilder<B, T>, T> T buildAwsV1Client(GenericContainer<?> container, int port, B builder) {
-        AwsClientBuilder.EndpointConfiguration endpointConfiguration =
-                new AwsClientBuilder.EndpointConfiguration("http://" + container.getHost() + ":"
-                        + container.getMappedPort(port), "us-west-2");
+        AwsClientBuilder.EndpointConfiguration endpointConfiguration = new AwsClientBuilder.EndpointConfiguration(
+                "http://" + container.getHost() + ":" + container.getMappedPort(port), "us-west-2");
         return builder
                 .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials("12345", "6789")))
                 .withEndpointConfiguration(endpointConfiguration)

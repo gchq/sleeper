@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.SleeperPropertiesInvalidException;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.validation.BatchIngestMode;
 import sleeper.ingest.job.IngestJob;
 
 import java.util.List;
@@ -31,7 +30,11 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_INGEST_MODE;
+import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_INGEST_QUEUE;
+import static sleeper.configuration.properties.validation.IngestQueue.BULK_IMPORT_EKS;
+import static sleeper.configuration.properties.validation.IngestQueue.BULK_IMPORT_EMR;
+import static sleeper.configuration.properties.validation.IngestQueue.BULK_IMPORT_PERSISTENT_EMR;
+import static sleeper.configuration.properties.validation.IngestQueue.STANDARD_INGEST;
 
 class IngestBatcherIngestModesTest extends IngestBatcherTestBase {
 
@@ -39,7 +42,7 @@ class IngestBatcherIngestModesTest extends IngestBatcherTestBase {
     void shouldCreateJobOnStandardIngestQueue() {
         // Given
         instanceProperties.set(INGEST_JOB_QUEUE_URL, "ingest-url");
-        tableProperties.set(INGEST_BATCHER_INGEST_MODE, BatchIngestMode.STANDARD_INGEST.toString());
+        tableProperties.setEnum(INGEST_BATCHER_INGEST_QUEUE, STANDARD_INGEST);
         addFileToStore("test-bucket/ingest.parquet");
 
         // When
@@ -54,7 +57,7 @@ class IngestBatcherIngestModesTest extends IngestBatcherTestBase {
     void shouldCreateJobOnEmrQueue() {
         // Given
         instanceProperties.set(BULK_IMPORT_EMR_JOB_QUEUE_URL, "emr-url");
-        tableProperties.set(INGEST_BATCHER_INGEST_MODE, BatchIngestMode.BULK_IMPORT_EMR.toString());
+        tableProperties.setEnum(INGEST_BATCHER_INGEST_QUEUE, BULK_IMPORT_EMR);
         addFileToStore("test-bucket/bulk-import.parquet");
 
         // When
@@ -69,7 +72,7 @@ class IngestBatcherIngestModesTest extends IngestBatcherTestBase {
     void shouldCreateJobOnPersistentEmrQueue() {
         // Given
         instanceProperties.set(BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL, "persistent-emr-url");
-        tableProperties.set(INGEST_BATCHER_INGEST_MODE, BatchIngestMode.BULK_IMPORT_PERSISTENT_EMR.toString());
+        tableProperties.setEnum(INGEST_BATCHER_INGEST_QUEUE, BULK_IMPORT_PERSISTENT_EMR);
         addFileToStore("test-bucket/bulk-import.parquet");
 
         // When
@@ -84,7 +87,7 @@ class IngestBatcherIngestModesTest extends IngestBatcherTestBase {
     void shouldCreateJobOnEksQueue() {
         // Given
         instanceProperties.set(BULK_IMPORT_EKS_JOB_QUEUE_URL, "eks-url");
-        tableProperties.set(INGEST_BATCHER_INGEST_MODE, BatchIngestMode.BULK_IMPORT_EKS.toString());
+        tableProperties.setEnum(INGEST_BATCHER_INGEST_QUEUE, BULK_IMPORT_EKS);
         addFileToStore("test-bucket/bulk-import.parquet");
 
         // When
@@ -102,8 +105,8 @@ class IngestBatcherIngestModesTest extends IngestBatcherTestBase {
         instanceProperties.set(BULK_IMPORT_EMR_JOB_QUEUE_URL, "bulk-import-url");
         TableProperties ingestTable = createTableProperties("ingest-table");
         TableProperties bulkImportTable = createTableProperties("bulk-import-table");
-        ingestTable.set(INGEST_BATCHER_INGEST_MODE, BatchIngestMode.STANDARD_INGEST.toString());
-        bulkImportTable.set(INGEST_BATCHER_INGEST_MODE, BatchIngestMode.BULK_IMPORT_EMR.toString());
+        ingestTable.setEnum(INGEST_BATCHER_INGEST_QUEUE, STANDARD_INGEST);
+        bulkImportTable.setEnum(INGEST_BATCHER_INGEST_QUEUE, BULK_IMPORT_EMR);
         addFileToStore(builder -> builder.file("test-bucket/ingest.parquet").tableId("ingest-table"));
         addFileToStore(builder -> builder.file("test-bucket/bulk-import.parquet").tableId("bulk-import-table"));
 
@@ -127,7 +130,7 @@ class IngestBatcherIngestModesTest extends IngestBatcherTestBase {
     @Test
     void shouldConsumeFilesAndRequireResubmissionIfQueueIsNotConfigured() {
         instanceProperties.unset(INGEST_JOB_QUEUE_URL);
-        tableProperties.set(INGEST_BATCHER_INGEST_MODE, BatchIngestMode.STANDARD_INGEST.toString());
+        tableProperties.setEnum(INGEST_BATCHER_INGEST_QUEUE, STANDARD_INGEST);
         addFileToStore("test-bucket/ingest.parquet");
 
         // When
@@ -140,7 +143,7 @@ class IngestBatcherIngestModesTest extends IngestBatcherTestBase {
 
     @Test
     void shouldFailBatchingIfIngestModeIsNotValid() {
-        tableProperties.set(INGEST_BATCHER_INGEST_MODE, "invalid");
+        tableProperties.set(INGEST_BATCHER_INGEST_QUEUE, "invalid");
         addFileToStore("test-bucket/ingest.parquet");
 
         // When / Then

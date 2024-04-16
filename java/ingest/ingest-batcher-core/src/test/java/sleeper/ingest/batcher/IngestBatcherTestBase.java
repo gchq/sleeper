@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,9 @@ import org.junit.jupiter.api.BeforeEach;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.validation.BatchIngestMode;
 import sleeper.ingest.batcher.testutil.FileIngestRequestTestHelper;
+import sleeper.ingest.batcher.testutil.InMemoryIngestBatcherQueues;
 import sleeper.ingest.batcher.testutil.InMemoryIngestBatcherStore;
-import sleeper.ingest.batcher.testutil.IngestBatcherQueuesInMemory;
 import sleeper.ingest.job.IngestJob;
 
 import java.time.Duration;
@@ -34,10 +33,11 @@ import java.util.function.Consumer;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_INGEST_MODE;
+import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_INGEST_QUEUE;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_FILES;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
+import static sleeper.configuration.properties.validation.IngestQueue.STANDARD_INGEST;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.ingest.batcher.testutil.FileIngestRequestTestHelper.DEFAULT_TABLE_ID;
 import static sleeper.ingest.batcher.testutil.FileIngestRequestTestHelper.FIRST_REQUEST_TIME;
@@ -48,7 +48,7 @@ public class IngestBatcherTestBase {
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
     protected final TableProperties tableProperties = createTableProperties(DEFAULT_TABLE_ID);
     protected final IngestBatcherStore store = new InMemoryIngestBatcherStore();
-    protected final IngestBatcherQueuesInMemory queues = new IngestBatcherQueuesInMemory();
+    protected final InMemoryIngestBatcherQueues queues = new InMemoryIngestBatcherQueues();
     private final FileIngestRequestTestHelper requests = new FileIngestRequestTestHelper();
 
     @BeforeEach
@@ -62,9 +62,9 @@ public class IngestBatcherTestBase {
 
     protected TableProperties createTableProperties(String tableId) {
         TableProperties properties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
-        properties.set(INGEST_BATCHER_INGEST_MODE, BatchIngestMode.STANDARD_INGEST.toString());
-        properties.set(INGEST_BATCHER_MIN_JOB_SIZE, "0");
-        properties.set(INGEST_BATCHER_MIN_JOB_FILES, "1");
+        properties.setEnum(INGEST_BATCHER_INGEST_QUEUE, STANDARD_INGEST);
+        properties.setNumber(INGEST_BATCHER_MIN_JOB_SIZE, 0);
+        properties.setNumber(INGEST_BATCHER_MIN_JOB_FILES, 1);
         properties.set(TABLE_ID, tableId);
         return properties;
     }
@@ -103,8 +103,7 @@ public class IngestBatcherTestBase {
     }
 
     protected void batchFilesWithTablesAndJobIds(List<TableProperties> tables, List<String> jobIds) {
-        batchFilesWithJobIds(jobIds, builder ->
-                builder.tablePropertiesProvider(new FixedTablePropertiesProvider(tables)));
+        batchFilesWithJobIds(jobIds, builder -> builder.tablePropertiesProvider(new FixedTablePropertiesProvider(tables)));
     }
 
     protected void batchFilesWithJobIds(List<String> jobIds, Consumer<IngestBatcher.Builder> config) {

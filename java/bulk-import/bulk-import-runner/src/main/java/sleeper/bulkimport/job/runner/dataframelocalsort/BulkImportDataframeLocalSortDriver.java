@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,8 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.bulkimport.job.runner.BulkImportJobDriver;
 import sleeper.bulkimport.job.runner.BulkImportJobInput;
-import sleeper.bulkimport.job.runner.BulkImportJobRunner;
-import sleeper.bulkimport.job.runner.SparkFileInfoRow;
+import sleeper.bulkimport.job.runner.SparkFileReferenceRow;
 import sleeper.bulkimport.job.runner.StructTypeFactory;
 import sleeper.bulkimport.job.runner.rdd.WriteParquetFile;
 import sleeper.core.partition.Partition;
@@ -41,9 +40,8 @@ import java.util.Collection;
 import java.util.stream.Collectors;
 
 /**
- * This class runs {@link BulkImportJobDriver} with a {@link BulkImportJobRunner} which
- * uses Spark's Dataframe API to efficiently sort and write out the data split by
- * Sleeper partition.
+ * Runs a bulk import job using Spark's Dataframe API, sorting locally in each partition. Sorts and writes out the data
+ * split by Sleeper partition.
  */
 public class BulkImportDataframeLocalSortDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportDataframeLocalSortDriver.class);
@@ -53,10 +51,10 @@ public class BulkImportDataframeLocalSortDriver {
     }
 
     public static void main(String[] args) throws Exception {
-        BulkImportJobDriver.start(args, BulkImportDataframeLocalSortDriver::createFileInfos);
+        BulkImportJobDriver.start(args, BulkImportDataframeLocalSortDriver::createFileReferences);
     }
 
-    public static Dataset<Row> createFileInfos(BulkImportJobInput input) {
+    public static Dataset<Row> createFileReferences(BulkImportJobInput input) {
         Schema schema = input.schema();
         String schemaAsString = new SchemaSerDe().toJson(schema);
         StructType convertedSchema = new StructTypeFactory().getStructType(schema);
@@ -92,7 +90,7 @@ public class BulkImportDataframeLocalSortDriver {
                         input.instanceProperties().saveAsString(),
                         input.tableProperties().saveAsString(),
                         input.conf(), input.broadcastedPartitions()),
-                RowEncoder.apply(SparkFileInfoRow.createFileInfoSchema()));
+                RowEncoder.apply(SparkFileReferenceRow.createFileReferenceSchema()));
     }
 
     private static StructType createEnhancedSchema(StructType convertedSchema) {

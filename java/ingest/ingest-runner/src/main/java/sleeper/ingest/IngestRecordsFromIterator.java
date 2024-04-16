@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,9 +27,8 @@ import java.io.IOException;
 import java.util.Iterator;
 
 /**
- * Writes an {@link Iterator} of {@link Record} objects to the storage system, partitioned and sorted.
- * <p>
- * This class is an adaptor to {@link sleeper.ingest.impl.IngestCoordinator}.
+ * Writes records to the storage system from an iterator, partitioned and sorted. This class is an adapter to
+ * {@link IngestCoordinator}.
  */
 public class IngestRecordsFromIterator {
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestRecordsFromIterator.class);

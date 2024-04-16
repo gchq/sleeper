@@ -1,0 +1,91 @@
+{
+  "moreThanMax": false,
+  "leafPartitionCount": 2,
+  "nonLeafPartitionCount": 1,
+  "statistics": {
+    "records": {
+      "allPartitions": {
+        "totalRecords": 5000,
+        "totalRecordsApprox": 2000,
+        "totalRecordsKnown": 3000
+      },
+      "leafPartitions": {
+        "totalRecords": 4000,
+        "totalRecordsApprox": 2000,
+        "totalRecordsKnown": 2000
+      },
+      "nonLeafPartitions": {
+        "totalRecords": 1000,
+        "totalRecordsApprox": 0,
+        "totalRecordsKnown": 1000
+      }
+    },
+    "fileReferences": {
+      "totalFiles": 3,
+      "totalReferences": 4,
+      "leafPartitions": {
+        "minReferences": 1,
+        "maxReferences": 2,
+        "averageReferences": 1.5,
+        "totalReferences": 3
+      },
+      "nonLeafPartitions": {
+        "minReferences": 1,
+        "maxReferences": 1,
+        "averageReferences": 1.0,
+        "totalReferences": 1
+      }
+    }
+  },
+  "files": [
+    {
+      "filename": "not-split.parquet",
+      "lastUpdateTime": "2022-08-22T14:20:00.001Z",
+      "totalReferenceCount": 1,
+      "internalReferences": [
+        {
+          "partitionId": "A",
+          "numberOfRecords": 1000,
+          "lastUpdateTime": "2022-08-22T14:20:00.001Z",
+          "countApproximate": false,
+          "onlyContainsDataForThisPartition": true
+        }
+      ]
+    },
+    {
+      "filename": "pending-split.parquet",
+      "lastUpdateTime": "2022-08-22T14:20:00.001Z",
+      "totalReferenceCount": 1,
+      "internalReferences": [
+        {
+          "partitionId": "B",
+          "numberOfRecords": 2000,
+          "lastUpdateTime": "2022-08-22T14:20:00.001Z",
+          "countApproximate": false,
+          "onlyContainsDataForThisPartition": true
+        }
+      ]
+    },
+    {
+      "filename": "split.parquet",
+      "lastUpdateTime": "2022-08-22T14:20:00.001Z",
+      "totalReferenceCount": 2,
+      "internalReferences": [
+        {
+          "partitionId": "B",
+          "numberOfRecords": 1000,
+          "lastUpdateTime": "2022-08-22T14:20:00.001Z",
+          "countApproximate": true,
+          "onlyContainsDataForThisPartition": false
+        },
+        {
+          "partitionId": "C",
+          "numberOfRecords": 1000,
+          "lastUpdateTime": "2022-08-22T14:20:00.001Z",
+          "countApproximate": true,
+          "onlyContainsDataForThisPartition": false
+        }
+      ]
+    }
+  ]
+}

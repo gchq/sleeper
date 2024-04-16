@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,9 +22,8 @@ import java.util.List;
 import java.util.function.Function;
 
 /**
- * A {@link Function} that transforms a sorted {@link CloseableIterator} of
- * {@link Record}s into another sorted {@link CloseableIterator} of
- * {@link Record}s.
+ * A function to transform an iterator of records. For example, this may exclude some records, perform an aggregation,
+ * or perform some computation on the values to produce or remove fields.
  */
 public interface SortedRecordIterator extends Function<CloseableIterator<Record>, CloseableIterator<Record>> {
 

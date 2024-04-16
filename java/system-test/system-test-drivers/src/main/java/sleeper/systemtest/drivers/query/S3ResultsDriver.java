@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,20 +18,21 @@ package sleeper.systemtest.drivers.query;
 
 import com.amazonaws.services.s3.AmazonS3;
 
-import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
+import sleeper.systemtest.dsl.query.ClearQueryResultsDriver;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 
-public class S3ResultsDriver {
-    private final SleeperInstanceContext instance;
+public class S3ResultsDriver implements ClearQueryResultsDriver {
+    private final SystemTestInstanceContext instance;
     private final AmazonS3 s3;
 
-    public S3ResultsDriver(SleeperInstanceContext instance, AmazonS3 s3) {
+    public S3ResultsDriver(SystemTestInstanceContext instance, AmazonS3 s3) {
         this.instance = instance;
         this.s3 = s3;
     }
 
-    public void emptyBucket() {
+    public void deleteAllQueryResults() {
         s3.listObjects(instance.getInstanceProperties().get(QUERY_RESULTS_BUCKET)).getObjectSummaries()
                 .forEach(summary -> s3.deleteObject(summary.getBucketName(), summary.getKey()));
     }

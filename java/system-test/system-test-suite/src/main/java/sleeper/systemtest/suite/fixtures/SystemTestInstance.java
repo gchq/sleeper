@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,14 @@
 
 package sleeper.systemtest.suite.fixtures;
 
-import sleeper.clients.deploy.DeployInstanceConfiguration;
+import sleeper.configuration.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
-import sleeper.systemtest.drivers.instance.SystemTestParameters;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Function;
 
 import static sleeper.configuration.properties.instance.ArrowIngestProperty.ARROW_INGEST_BATCH_BUFFER_BYTES;
 import static sleeper.configuration.properties.instance.ArrowIngestProperty.ARROW_INGEST_MAX_LOCAL_STORE_BYTES;
@@ -35,14 +34,19 @@ import static sleeper.configuration.properties.instance.AsyncIngestPartitionFile
 import static sleeper.configuration.properties.instance.AsyncIngestPartitionFileWriterProperty.ASYNC_INGEST_CRT_TARGET_THROUGHPUT_GBPS;
 import static sleeper.configuration.properties.instance.CommonProperty.FORCE_RELOAD_PROPERTIES;
 import static sleeper.configuration.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
+import static sleeper.configuration.properties.instance.CommonProperty.METRICS_TABLE_BATCH_SIZE;
 import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.configuration.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_CPU_ARCHITECTURE;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_X86_CPU;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_X86_MEMORY;
 import static sleeper.configuration.properties.instance.CompactionProperty.MAXIMUM_CONCURRENT_COMPACTION_TASKS;
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_RECORD_BATCH_TYPE;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_RECORD_BATCH_TYPE;
 import static sleeper.configuration.properties.instance.IngestProperty.MAXIMUM_CONCURRENT_INGEST_TASKS;
 import static sleeper.configuration.properties.instance.LoggingLevelsProperty.LOGGING_LEVEL;
 import static sleeper.configuration.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES;
@@ -57,52 +61,45 @@ import static sleeper.configuration.properties.instance.PersistentEMRProperty.BU
 import static sleeper.configuration.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration.noSourceBucket;
+import static sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration.usingSystemTestDefaults;
 
-public enum SystemTestInstance {
+public class SystemTestInstance {
+    private SystemTestInstance() {
+    }
 
-    MAIN("main", SystemTestInstance::buildMainConfiguration),
-    INGEST_PERFORMANCE("ingest", SystemTestInstance::buildIngestPerformanceConfiguration),
-    COMPACTION_PERFORMANCE("compact", SystemTestInstance::buildCompactionPerformanceConfiguration),
-    BULK_IMPORT_PERFORMANCE("emr", SystemTestInstance::buildBulkImportPerformanceConfiguration);
+    public static final SystemTestInstanceConfiguration MAIN = usingSystemTestDefaults("main", SystemTestInstance::buildMainConfiguration);
+    public static final SystemTestInstanceConfiguration INGEST_PERFORMANCE = usingSystemTestDefaults("ingest", SystemTestInstance::buildIngestPerformanceConfiguration);
+    public static final SystemTestInstanceConfiguration COMPACTION_PERFORMANCE = usingSystemTestDefaults("compact", SystemTestInstance::buildCompactionPerformanceConfiguration);
+    public static final SystemTestInstanceConfiguration BULK_IMPORT_PERFORMANCE = usingSystemTestDefaults("emr", SystemTestInstance::buildBulkImportPerformanceConfiguration);
+    public static final SystemTestInstanceConfiguration INGEST_NO_SOURCE_BUCKET = noSourceBucket("no-src", SystemTestInstance::buildMainConfiguration);
+    public static final SystemTestInstanceConfiguration COMPACTION_ON_EC2 = usingSystemTestDefaults("cpt-ec2", SystemTestInstance::buildCompactionOnEC2Configuration);
 
     private static final String MAIN_EMR_MASTER_TYPES = "m6i.xlarge,m6a.xlarge,m5.xlarge,m5a.xlarge";
     private static final String MAIN_EMR_EXECUTOR_TYPES = "m6i.4xlarge,m6a.4xlarge,m5.4xlarge,m5a.4xlarge";
 
-    private final String identifier;
-    private final Function<SystemTestParameters, DeployInstanceConfiguration> instanceConfiguration;
-
-    SystemTestInstance(String identifier, Function<SystemTestParameters, DeployInstanceConfiguration> instanceConfiguration) {
-        this.identifier = identifier;
-        this.instanceConfiguration = instanceConfiguration;
-    }
-
-    public String getIdentifier() {
-        return identifier;
-    }
-
-    public DeployInstanceConfiguration getInstanceConfiguration(SystemTestParameters parameters) {
-        return instanceConfiguration.apply(parameters);
-    }
-
-    private static DeployInstanceConfiguration buildMainConfiguration(SystemTestParameters parameters) {
+    private static DeployInstanceConfiguration buildMainConfiguration() {
         InstanceProperties properties = new InstanceProperties();
         properties.set(LOGGING_LEVEL, "debug");
-        properties.set(OPTIONAL_STACKS, "" +
-                "IngestStack,EmrBulkImportStack,EmrServerlessBulkImportStack,IngestBatcherStack," +
-                "CompactionStack,GarbageCollectorStack,PartitionSplittingStack,QueryStack");
+        properties.set(OPTIONAL_STACKS, "IngestStack,EmrBulkImportStack,EmrServerlessBulkImportStack,IngestBatcherStack," +
+                "CompactionStack,GarbageCollectorStack,PartitionSplittingStack,QueryStack,WebSocketQueryStack,TableMetricsStack");
         properties.set(RETAIN_INFRA_AFTER_DESTROY, "false");
         properties.set(FORCE_RELOAD_PROPERTIES, "true");
+        properties.set(DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS, "true");
         properties.set(DEFAULT_BULK_IMPORT_EMR_INSTANCE_ARCHITECTURE, EmrInstanceArchitecture.X86_64.toString());
         properties.set(DEFAULT_BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES, MAIN_EMR_MASTER_TYPES);
         properties.set(DEFAULT_BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES, MAIN_EMR_EXECUTOR_TYPES);
         properties.set(MAXIMUM_CONCURRENT_INGEST_TASKS, "1");
         properties.set(MAXIMUM_CONCURRENT_COMPACTION_TASKS, "1");
+        properties.set(COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS, "5");
+        properties.set(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS, "300");
         properties.set(BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE, EmrInstanceArchitecture.X86_64.toString());
         properties.set(BULK_IMPORT_PERSISTENT_EMR_MASTER_X86_INSTANCE_TYPES, MAIN_EMR_MASTER_TYPES);
         properties.set(BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_X86_INSTANCE_TYPES, MAIN_EMR_EXECUTOR_TYPES);
         properties.set(BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING, "false");
         properties.set(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY, "1");
         properties.set(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY, "1");
+        properties.set(METRICS_TABLE_BATCH_SIZE, "2");
         properties.setTags(Map.of(
                 "Description", "Sleeper Maven system test main instance",
                 "Environment", "DEV",
@@ -112,23 +109,22 @@ public enum SystemTestInstance {
                 "SystemTestInstance", "main"));
 
         TableProperties tableProperties = new TableProperties(properties);
-        tableProperties.set(TABLE_NAME, "system-test");
         tableProperties.setSchema(SystemTestSchema.DEFAULT_SCHEMA);
-
+        tableProperties.set(TABLE_NAME, "system-test");
         return DeployInstanceConfiguration.builder()
                 .instanceProperties(properties)
                 .tableProperties(tableProperties)
                 .build();
     }
 
-    private static DeployInstanceConfiguration buildIngestPerformanceConfiguration(SystemTestParameters parameters) {
-        DeployInstanceConfiguration configuration = buildMainConfiguration(parameters);
+    private static DeployInstanceConfiguration buildIngestPerformanceConfiguration() {
+        DeployInstanceConfiguration configuration = buildMainConfiguration();
         InstanceProperties properties = configuration.getInstanceProperties();
         properties.set(OPTIONAL_STACKS, "IngestStack");
         properties.set(MAXIMUM_CONCURRENT_INGEST_TASKS, "11");
         properties.set(MAXIMUM_CONNECTIONS_TO_S3, "25");
-        properties.set(INGEST_RECORD_BATCH_TYPE, "arrow");
-        properties.set(INGEST_PARTITION_FILE_WRITER_TYPE, "async");
+        properties.set(DEFAULT_INGEST_RECORD_BATCH_TYPE, "arrow");
+        properties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "async");
         properties.set(ARROW_INGEST_WORKING_BUFFER_BYTES, "268435456"); // 256MB
         properties.set(ARROW_INGEST_BATCH_BUFFER_BYTES, "1073741824"); // 1GB
         properties.set(ARROW_INGEST_MAX_LOCAL_STORE_BYTES, "2147483648"); // 2GB
@@ -143,8 +139,8 @@ public enum SystemTestInstance {
         return configuration;
     }
 
-    private static DeployInstanceConfiguration buildCompactionPerformanceConfiguration(SystemTestParameters parameters) {
-        DeployInstanceConfiguration configuration = buildMainConfiguration(parameters);
+    private static DeployInstanceConfiguration buildCompactionPerformanceConfiguration() {
+        DeployInstanceConfiguration configuration = buildMainConfiguration();
         InstanceProperties properties = configuration.getInstanceProperties();
         properties.set(OPTIONAL_STACKS, "CompactionStack");
         properties.set(COMPACTION_TASK_CPU_ARCHITECTURE, "X86_64");
@@ -163,8 +159,8 @@ public enum SystemTestInstance {
         return configuration;
     }
 
-    private static DeployInstanceConfiguration buildBulkImportPerformanceConfiguration(SystemTestParameters parameters) {
-        DeployInstanceConfiguration configuration = buildMainConfiguration(parameters);
+    private static DeployInstanceConfiguration buildBulkImportPerformanceConfiguration() {
+        DeployInstanceConfiguration configuration = buildMainConfiguration();
         InstanceProperties properties = configuration.getInstanceProperties();
         properties.set(OPTIONAL_STACKS, "EmrBulkImportStack");
         properties.set(DEFAULT_BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY, "5");
@@ -172,6 +168,18 @@ public enum SystemTestInstance {
         Map<String, String> tags = new HashMap<>(properties.getTags());
         tags.put("SystemTestInstance", "bulkImportPerformance");
         tags.put("Description", "Sleeper Maven system test bulk import performance instance");
+        properties.setTags(tags);
+        return configuration;
+    }
+
+    private static DeployInstanceConfiguration buildCompactionOnEC2Configuration() {
+        DeployInstanceConfiguration configuration = buildMainConfiguration();
+        InstanceProperties properties = configuration.getInstanceProperties();
+        properties.set(COMPACTION_ECS_LAUNCHTYPE, "EC2");
+
+        Map<String, String> tags = new HashMap<>(properties.getTags());
+        tags.put("SystemTestInstance", "compactionOnEc2");
+        tags.put("Description", "Sleeper Maven system test compaction on EC2 instance");
         properties.setTags(tags);
         return configuration;
     }

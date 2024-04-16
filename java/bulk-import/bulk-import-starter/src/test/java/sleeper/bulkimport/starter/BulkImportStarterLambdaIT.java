@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,19 +37,19 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.table.InMemoryTableIndex;
-import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIndex;
+import sleeper.core.table.TableStatusTestHelper;
 import sleeper.ingest.job.IngestJobMessageHandler;
+import sleeper.ingest.job.status.InMemoryIngestJobStatusStore;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.job.status.IngestJobStatusTestData;
-import sleeper.ingest.job.status.WriteToMemoryIngestJobStatusStore;
-import sleeper.utils.HadoopPathUtils;
+import sleeper.io.parquet.utils.HadoopPathUtils;
 
 import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -68,14 +68,14 @@ public class BulkImportStarterLambdaIT {
     private final AmazonS3 s3Client = createS3Client();
     private final BulkImportExecutor executor = mock(BulkImportExecutor.class);
     private final TableIndex tableIndex = new InMemoryTableIndex();
-    private final IngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
+    private final IngestJobStatusStore ingestJobStatusStore = new InMemoryIngestJobStatusStore();
     private final Instant validationTime = Instant.parse("2023-10-17T14:53:00Z");
     private final Configuration hadoopConfig = createHadoopConfiguration();
     private final BulkImportStarterLambda bulkImportStarter = new BulkImportStarterLambda(
             executor, messageHandlerBuilder()
-            .jobIdSupplier(() -> "invalid-id")
-            .timeSupplier(() -> validationTime)
-            .build());
+                    .jobIdSupplier(() -> "invalid-id")
+                    .timeSupplier(() -> validationTime)
+                    .build());
 
     private AmazonS3 createS3Client() {
         return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
@@ -84,13 +84,12 @@ public class BulkImportStarterLambdaIT {
     @BeforeEach
     void setup() {
         s3Client.createBucket(TEST_BUCKET);
-        tableIndex.create(TableIdentity.uniqueIdAndName(TEST_TABLE_ID, TEST_TABLE));
+        tableIndex.create(TableStatusTestHelper.uniqueIdAndName(TEST_TABLE_ID, TEST_TABLE));
     }
 
     @AfterEach
     void tearDown() {
-        s3Client.listObjects(TEST_BUCKET).getObjectSummaries().forEach(s3ObjectSummary ->
-                s3Client.deleteObject(TEST_BUCKET, s3ObjectSummary.getKey()));
+        s3Client.listObjects(TEST_BUCKET).getObjectSummaries().forEach(s3ObjectSummary -> s3Client.deleteObject(TEST_BUCKET, s3ObjectSummary.getKey()));
         s3Client.deleteBucket(TEST_BUCKET);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,8 +44,8 @@ class PartitionsStatusReportScreenTest extends AdminClientMockStoreBase {
     void shouldRunPartitionStatusReport() throws Exception {
         // Given
         StateStore stateStore = StateStoreTestBuilder.from(createPartitionsBuilder()
-                        .leavesWithSplits(Arrays.asList("A", "B"), List.of("aaa"))
-                        .parentJoining("parent", "A", "B"))
+                .leavesWithSplits(Arrays.asList("A", "B"), List.of("aaa"))
+                .parentJoining("parent", "A", "B"))
                 .singleFileInEachLeafPartitionWithRecords(5)
                 .buildStateStore();
         setStateStoreForTable("test-table", stateStore);

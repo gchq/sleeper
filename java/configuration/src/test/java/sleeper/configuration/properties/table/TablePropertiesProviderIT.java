@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,10 @@
 
 package sleeper.configuration.properties.table;
 
-import com.amazonaws.services.s3.model.AmazonS3Exception;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.table.index.DynamoDBTableIndex;
+import sleeper.core.table.TableNotFoundException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -40,12 +40,12 @@ class TablePropertiesProviderIT extends TablePropertiesITBase {
     }
 
     @Test
-    void shouldLoadByFullIdentifier() {
+    void shouldLoadById() {
         // Given
         store.save(tableProperties);
 
         // When / Then
-        assertThat(provider.get(tableProperties.getId()))
+        assertThat(provider.getById(tableId))
                 .isEqualTo(tableProperties);
     }
 
@@ -68,29 +68,29 @@ class TablePropertiesProviderIT extends TablePropertiesITBase {
     void shouldThrowExceptionWhenTableDoesNotExist() {
         // When / Then
         assertThatThrownBy(() -> provider.getByName(tableName))
-                .isInstanceOf(TablePropertiesProvider.TableNotFoundException.class);
+                .isInstanceOf(TableNotFoundException.class);
     }
 
     @Test
     void shouldThrowExceptionWhenTableExistsInIndexButNotConfigBucket() {
         // Given
         new DynamoDBTableIndex(instanceProperties, dynamoDBClient)
-                .create(tableProperties.getId());
+                .create(tableProperties.getStatus());
 
         // When / Then
         assertThatThrownBy(() -> provider.getByName(tableName))
-                .isInstanceOf(AmazonS3Exception.class);
+                .isInstanceOf(TableNotFoundException.class);
     }
 
     @Test
-    void shouldLoadByFullIdentifierWhenNotInIndex() {
+    void shouldNotLoadByIdWhenNotInIndex() {
         // Given
         store.save(tableProperties);
         new DynamoDBTableIndex(instanceProperties, dynamoDBClient)
-                .delete(tableProperties.getId());
+                .delete(tableProperties.getStatus());
 
         // When / Then
-        assertThat(provider.get(tableProperties.getId()))
-                .isEqualTo(tableProperties);
+        assertThatThrownBy(() -> provider.getById(tableId))
+                .isInstanceOf(TableNotFoundException.class);
     }
 }

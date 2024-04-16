@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,9 +25,8 @@ public class CompactionTaskStatusReportArguments {
     private final CompactionTaskStatusReporter reporter;
     private final CompactionTaskQuery query;
 
-    private CompactionTaskStatusReportArguments(String instanceId,
-                                                CompactionTaskStatusReporter reporter,
-                                                CompactionTaskQuery query) {
+    private CompactionTaskStatusReportArguments(
+            String instanceId, CompactionTaskStatusReporter reporter, CompactionTaskQuery query) {
         this.instanceId = instanceId;
         this.reporter = reporter;
         this.query = query;

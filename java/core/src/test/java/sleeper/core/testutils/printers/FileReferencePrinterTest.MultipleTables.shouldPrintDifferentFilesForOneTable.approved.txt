@@ -1,0 +1,12 @@
+Different for one table
+Unreferenced files: 0
+Referenced files: 1
+File references: 1
+Partition at root: 20 records in file
+
+Same for 2 tables
+Unreferenced files: 0
+Referenced files: 1
+File references: 1
+Partition at root: 10 records in file
+

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -194,7 +194,7 @@ public class GeneratePropertiesTemplates {
         writer.println("# Template Values #");
         writer.println("###################");
         SleeperPropertiesPrettyPrinter.forPropertiesTemplate(
-                        templateProperties, InstancePropertyGroup.getAll(), writer)
+                templateProperties, InstancePropertyGroup.getAll(), writer)
                 .print(properties);
         writer.println();
         writer.println();
@@ -202,7 +202,7 @@ public class GeneratePropertiesTemplates {
         writer.println("# Default Values #");
         writer.println("##################");
         SleeperPropertiesPrettyPrinter.forPropertiesTemplate(
-                        defaultProperties, InstancePropertyGroup.getAll(), writer)
+                defaultProperties, InstancePropertyGroup.getAll(), writer)
                 .print(properties);
     }
 
@@ -222,7 +222,7 @@ public class GeneratePropertiesTemplates {
         writer.println("# Template Values #");
         writer.println("###################");
         SleeperPropertiesPrettyPrinter.forPropertiesTemplate(
-                        templateProperties, TablePropertyGroup.getAll(), writer)
+                templateProperties, TablePropertyGroup.getAll(), writer)
                 .print(properties);
     }
 
@@ -247,9 +247,9 @@ public class GeneratePropertiesTemplates {
             List<PropertyGroup> propertyGroups,
             Stream<T> propertyDefinitions) {
         SleeperPropertiesPrettyPrinter.forPropertiesTemplate(
-                        propertyDefinitions.filter(SleeperProperty::isIncludedInTemplate)
-                                .collect(Collectors.toList()),
-                        propertyGroups, new PrintWriter(writer))
+                propertyDefinitions.filter(SleeperProperty::isIncludedInTemplate)
+                        .collect(Collectors.toList()),
+                propertyGroups, new PrintWriter(writer))
                 .print(properties);
     }
 

@@ -70,23 +70,60 @@ These tests run in JUnit, and use the class `SleeperSystemTest` as the entry poi
 specific language (DSL) for working with a deployed instance of Sleeper in JUnit. Please review the comment at the top
 of that class, and look at the tests in that module for examples.
 
-This test suite contains both feature tests, and performance tests which work with a larger bulk of data. By default,
-the suite skips the performance tests. You can run the default test suite, with just the feature tests, like this:
+This test module contains several JUnit test suites:
+- QuickSystemTestSuite (the default)
+- NightlyFunctionalSystemTestSuite
+- NightlyPerformanceSystemTestSuite
+
+Tests that are tagged as Slow or Expensive will not be included in the quick suite. The quick suite is intended to run
+in around 40 minutes. The nightly functional suite includes tests tagged as Slow, and will take a bit longer. The
+nightly performance suite includes all tests, including ones tagged as Expensive. The performance tests work with a
+larger bulk of data. They take time to run and can be costly to run frequently.
+
+### Running tests
+
+This command will build the system and run the default, quick system test suite:
 
 ```bash
 ./scripts/test/maven/buildDeployTest.sh <short-id> <vpc> <subnets>
 ```
 
-The short ID will be used to generate the instance IDs of Sleeper instances deployed for the tests. The feature tests
-will run on one Sleeper instance, but the performance tests will deploy more. A separate system test CDK stack will also
+The short ID will be used to generate the instance IDs of Sleeper instances deployed for the tests. The quick test suite
+will run on one Sleeper instance, but other test suites will deploy more. A separate system test CDK stack will also
 be deployed with `SystemTestStandaloneApp`, for resources shared between tests. The system test stack will use the short
 ID as its stack name.
 
+You can avoid rebuilding the whole system by using `deployTest.sh` instead of `buildDeployTest.sh`. This is useful if
+you've only changed test code and just want to re-run tests against the same instance.
+
+There's also `performanceTest.sh` which acts like `deployTest.sh` but takes an argument for which tests you want to run,
+and it enables resources required for performance tests. These have no additional cost but do take some time to deploy.
+
+You can run specific tests like this:
+
+```bash
+./scripts/build/buildForTest.sh # This is not necessary if you used buildDeployTest.sh or have already built the system
+./scripts/test/maven/performanceTest.sh <short-id> <vpc> <subnets> CompactionPerformanceIT,IngestPerformanceIT
+```
+
+You can run a specific test suite like this:
+
+```bash
+./scripts/build/buildForTest.sh # This is not necessary if you used buildDeployTest.sh or have already built the system
+./scripts/test/maven/performanceTest.sh <short-id> <vpc> <subnets> NightlyPerformanceSystemTestSuite
+```
+
+This can also be used with NightlyFunctionalSystemTestSuite.
+
+### Reusing resources
+
 After the tests, the instances will remain deployed. If you run again with the same short ID, the same instances will
 be used. Usually they will not be redeployed, but if configuration has changed which requires it, they will be updated
-automatically. If you've rebuilt the system, this will not automatically cause redeployment. You can force redeployment
-by setting the Maven property `sleeper.system.test.force.redeploy` for the system test stack,
-and `sleeper.system.test.instances.force.redeploy` for the Sleeper instances, like this:
+automatically. If you've rebuilt the system, this will not automatically cause redeployment.
+
+You can force redeployment by setting the Maven property `sleeper.system.test.force.redeploy` to redeploy the system
+test stack, and `sleeper.system.test.instances.force.redeploy` to redeploy Sleeper instances used in the tests you run.
+You can add Maven arguments to a system test script like this:
 
 ```bash
 ./scripts/test/maven/buildDeployTest.sh <short-id> <vpc> <subnets> \
@@ -94,8 +131,7 @@ and `sleeper.system.test.instances.force.redeploy` for the Sleeper instances, li
   -Dsleeper.system.test.instances.force.redeploy=true
 ```
 
-If you've only changed test code and just want to re-run the tests against the same instance, you can avoid rebuilding
-the whole system by using `deployTest.sh` instead of `buildDeployTest.sh`.
+### Tear down
 
 You can tear down all resources associated with a short ID like this:
 
@@ -103,38 +139,31 @@ You can tear down all resources associated with a short ID like this:
 ./scripts/test/maven/tearDown.sh <short-id> <instance-ids>
 ```
 
-This requires you to know which instance IDs are deployed. These will be in the form `<short-id>-<test-id>`. You can
-find the different test IDs in the SystemTestInstance class. These are the identifiers associated with each enum value,
-and you can find references to those enum values to find the tests that use them. When a test runs, it deploys an
-instance with the associated instance ID if one does not exist.
+This requires you to know which instance IDs are deployed. These will be in the form `<short-id>-<short-instance-name>`.
+The easiest way to find these is by checking the CloudFormation stacks in the AWS console. An instance uses its instance
+ID as the stack name.
+
+You can also find the different short instance names used in the SystemTestInstance class. When a test runs, it deploys
+an instance with the associated instance ID if one does not exist.
 
 ### Performance tests
 
-You can run specific performance tests like this:
-
-```bash
-./scripts/build/buildForTest.sh # This is not necessary if you used buildDeployTest.sh or have already built the system
-./scripts/test/maven/performanceTest.sh <short-id> <vpc> <subnets> CompactionPerformanceIT,IngestPerformanceIT
-```
-
-Performance tests use an ECS cluster for generating data, which we call the system test cluster. This is deployed in the
+Performance tests use an ECS cluster to generate data, which we call the system test cluster. This is deployed in the
 system test CDK stack with `SystemTestStandaloneApp`. This is a CloudFormation stack with the short ID as its name. For
 non-performance tests, the system test stack is still deployed, but the system test cluster is not.
 
-When a system test has already deployed with the same short ID, the test suite will add the system test cluster to the
-stack if it's needed. This will also redeploy all instances to give the system test cluster access to them.
+When you use `performanceTest.sh` this will enable the system test cluster. Note that this does not come with any
+additional costs, as data generation is done in AWS Fargate in tasks started for the specific test. You can also enable
+the system test cluster by adding a Maven argument to one of the other scripts like
+`-Dsleeper.system.test.cluster.enabled=true`.
 
-The test suite decides whether to run performance tests or not by whether the system test cluster is enabled.
-The `performanceTest.sh` script enables the system test cluster. You can also run all tests in one execution, including
-performance tests, like this:
+If you enable the system test cluster when you previously deployed with the same short ID without the cluster, this
+will also redeploy all Sleeper instances that you test against, to give the system test cluster access to them.
 
-```bash
-./scripts/test/maven/buildDeployTest.sh <short-id> <vpc> <subnets> -Dsleeper.system.test.cluster.enabled=true
-```
+### Output
 
-### Results
-
-Performance tests will output reports of jobs and tasks that were run, and statistics about their performance.
+You'll get a lot of output and logs from Maven. Performance tests will also output reports of jobs and tasks that were
+run, and statistics about their performance. Other tests may also output similar reports if they fail.
 
 By default you'll get results on the command line, but there might be too much output to find what you're interested in.
 You could redirect the output to a file to make it a bit easier to navigate, or you can set an output directory where
@@ -154,44 +183,13 @@ less -R test.log # The -R option presents colours correctly. When it opens, use 
 ### Nightly test scripts
 
 We run the acceptance test suite nightly. The scripts and crontab we use for this are available
-in `scripts/test/nightly`. This uploads the output to an S3 bucket, including an HTML site with Maven Failsafe reports
+in `scripts/test/nightly`. See the documentation for this [here](../scripts/test/nightly/README.md).
+
+This uploads the output to an S3 bucket, including an HTML site with Maven Failsafe reports
 on which tests were run, including information about failures. This will deploy fresh instances, and tear them down
 afterwards.
 
-If you want to run this manually you can use the Sleeper CLI. Once you've checked out Sleeper in a
-builder as documented in the [developer guide](11-dev-guide.md#install-prerequisite-software), you can run this from the
-host machine:
-
-```bash
-sleeper cli upgrade main && sleeper builder ./sleeper/scripts/test/nightly/updateAndRunTests.sh "<vpc>" "<subnet>" <output-bucket-name> "performance" &> /tmp/sleeperTests.log
-```
-
-This will take 4 hours or so. You can check output in `/tmp/sleeperTests.log`, but once the suite starts that file will
-only update once the suite finishes. If you connect to the Docker container that's running the tests you can find the
-output of the test suite:
-
-```bash
-docker images # Find the image ID of the sleeper-builder image with the 'current' tag
-docker ps # Find the container ID running the updateAndRunTests command with that image
-docker exec -it <container ID> bash
-cd /tmp/sleeper/performanceTests
-ls # Find the directory named by the start time of the test suite
-less -R <directory>/performance.log # Once this opens, use shift+F to follow the output of the test
-```
-
-Once the tests have finished, you can get the performance figures from the results S3 bucket. First, check the tests
-passed in the summary with this S3 key:
-
-```
-<results-bucket>/summary.txt
-```
-
-The performance reports can be found here:
-
-```
-<results-bucket>/<date>/CompactionPerformanceIT.shouldMeetCompactionPerformanceStandards.report.log
-<results-bucket>/<date>/IngestPerformanceIT.shouldMeetIngestPerformanceStandardsAcrossManyPartitions.report.log
-```
+You can use the results from these tests to update the performance results table below.
 
 ## Performance benchmarks
 
@@ -212,3 +210,6 @@ otherwise not have been noticed.
 | 0.17.0         | 09/06/2023 | 308000                      | 163000                           |
 | 0.18.0         | 09/08/2023 | 326000                      | 147000                           |
 | 0.19.0         | 19/09/2023 | 326700                      | 143500                           |
+| 0.20.0         | 20/11/2023 | 318902                      | 137402                           |
+| 0.21.0         | 08/02/2024 | 330460                      | 145683                           |
+| 0.22.0         | 22/03/2024 | 350177                      | 155302                           |

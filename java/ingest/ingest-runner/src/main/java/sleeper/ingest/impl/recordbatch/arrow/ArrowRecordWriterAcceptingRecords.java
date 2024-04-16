@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,41 +46,37 @@ import static sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatch.MAP_KEY_FIE
 import static sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatch.MAP_VALUE_FIELD_NAME;
 
 /**
- * This class extends {@link ArrowRecordBatch} so that it accepts data as {@link Record} objects.
+ * Accepts data for an Arrow record batch as Sleeper records. Used by {@link ArrowRecordBatch}.
  */
 public class ArrowRecordWriterAcceptingRecords implements ArrowRecordWriter<Record> {
 
     /**
-     * Add a single Record to a VectorSchemaRoot at a specified row.
-     * <p>
-     * Note that the field order in the supplied Sleeper Schema must match the field order in the Arrow Schema within
-     * the {@link VectorSchemaRoot} argument.
+     * Add a single Record to a VectorSchemaRoot at a specified row. Note that the field order in the supplied Sleeper
+     * Schema must match the field order in the Arrow Schema within the {@link VectorSchemaRoot} argument.
      *
-     * @param allFields        The result of {@link Schema#getAllFields()} of the record that is being written. This is
-     *                         used instead of the raw {@link Schema} as the {@link Schema#getAllFields()} is a bit too
-     *                         expensive to call on every record
-     * @param vectorSchemaRoot The Arrow store to write into
-     * @param record           The {@link Record} to write
-     * @param insertAtRowNo    The row number to write to
-     * @return The row number to use when this method is next called
-     * @throws OutOfMemoryException When the {@link BufferAllocator} associated with the {@link VectorSchemaRoot} cannot
+     * @param  allFields            The result of {@link Schema#getAllFields()} of the record that is being written.
+     *                              This is used instead of the raw {@link Schema} as the {@link Schema#getAllFields()}
+     *                              is a bit too expensive to call on every record.
+     * @param  vectorSchemaRoot     the Arrow store to write into
+     * @param  record               the {@link Record} to write
+     * @param  insertAtRowNo        the row number to write to
+     * @return                      the row number to use when this method is next called
+     * @throws OutOfMemoryException when the {@link BufferAllocator} associated with the {@link VectorSchemaRoot} cannot
      *                              provide enough memory
      */
     @Override
     public int insert(List<Field> allFields,
-                      VectorSchemaRoot vectorSchemaRoot,
-                      Record record,
-                      int insertAtRowNo) throws OutOfMemoryException {
+            VectorSchemaRoot vectorSchemaRoot,
+            Record record,
+            int insertAtRowNo) throws OutOfMemoryException {
         writeRecord(allFields, vectorSchemaRoot, record, insertAtRowNo);
         int finalRowCount = insertAtRowNo + 1;
         vectorSchemaRoot.setRowCount(finalRowCount);
         return finalRowCount;
     }
 
-    public static void writeRecord(List<Field> allFields,
-                                   VectorSchemaRoot vectorSchemaRoot,
-                                   Record record,
-                                   int insertAtRowNo) {
+    public static void writeRecord(
+            List<Field> allFields, VectorSchemaRoot vectorSchemaRoot, Record record, int insertAtRowNo) {
         // Follow the Arrow pattern of create > allocate > mutate > set value count > access > clear
         // Here we do the mutate
         // Note that setSafe() is used throughout so that more memory will be requested if required.
@@ -124,10 +120,8 @@ public class ArrowRecordWriterAcceptingRecords implements ArrowRecordWriter<Reco
         }
     }
 
-    private static void writeList(Type sleeperElementType,
-                                  List<?> listOfValues,
-                                  ListVector listVector,
-                                  int insertAtRowNo) {
+    private static void writeList(
+            Type sleeperElementType, List<?> listOfValues, ListVector listVector, int insertAtRowNo) {
         BufferAllocator bufferAllocator = listVector.getAllocator();
         UnionListWriter unionListWriter = listVector.getWriter();
         unionListWriter.setPosition(insertAtRowNo);
@@ -147,11 +141,9 @@ public class ArrowRecordWriterAcceptingRecords implements ArrowRecordWriter<Reco
         }
     }
 
-    private static void writeMap(Type sleeperKeyType,
-                                 Type sleeperValueType,
-                                 Map<?, ?> mapOfValues,
-                                 ListVector listOfMapEntryStructs,
-                                 int insertAtRowNo) {
+    private static void writeMap(
+            Type sleeperKeyType, Type sleeperValueType,
+            Map<?, ?> mapOfValues, ListVector listOfMapEntryStructs, int insertAtRowNo) {
         // Maps are written to Arrow as a list of structs, where each struct has two fields: key and value.
         // The Arrow Map type is not used because we could not get it to work in our experiments.
         BufferAllocator bufferAllocator = listOfMapEntryStructs.getAllocator();
@@ -179,10 +171,9 @@ public class ArrowRecordWriterAcceptingRecords implements ArrowRecordWriter<Reco
         }
     }
 
-    private static void writeListElement(BufferAllocator bufferAllocator,
-                                         UnionListWriter unionListWriter,
-                                         Type sleeperElementType,
-                                         Object objectToWrite) {
+    private static void writeListElement(
+            BufferAllocator bufferAllocator, UnionListWriter unionListWriter,
+            Type sleeperElementType, Object objectToWrite) {
         if (sleeperElementType instanceof IntType) {
             unionListWriter.writeInt((int) objectToWrite);
         } else if (sleeperElementType instanceof LongType) {
@@ -204,11 +195,9 @@ public class ArrowRecordWriterAcceptingRecords implements ArrowRecordWriter<Reco
         }
     }
 
-    private static void writeStructElement(BufferAllocator bufferAllocator,
-                                           BaseWriter.StructWriter structWriter,
-                                           Type sleeperElementType,
-                                           Object objectToWrite,
-                                           String structFieldName) {
+    private static void writeStructElement(
+            BufferAllocator bufferAllocator, BaseWriter.StructWriter structWriter, Type sleeperElementType,
+            Object objectToWrite, String structFieldName) {
         if (sleeperElementType instanceof IntType) {
             structWriter.integer(structFieldName).writeInt((int) objectToWrite);
         } else if (sleeperElementType instanceof LongType) {

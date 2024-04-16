@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package sleeper.systemtest.cdk;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import software.amazon.awscdk.App;
+import software.amazon.awscdk.AppProps;
 import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
@@ -36,8 +37,8 @@ import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_RE
 
 public class SystemTestStandaloneApp extends Stack {
 
-    public SystemTestStandaloneApp(App app, String id, StackProps props,
-                                   SystemTestStandaloneProperties properties, BuiltJars jars) {
+    public SystemTestStandaloneApp(
+            App app, String id, StackProps props, SystemTestStandaloneProperties properties, BuiltJars jars) {
         super(app, id, props);
 
         SystemTestBucketStack bucketStack = new SystemTestBucketStack(this, "SystemTestBucket", properties);
@@ -48,7 +49,9 @@ public class SystemTestStandaloneApp extends Stack {
     }
 
     public static void main(String[] args) {
-        App app = new App();
+        App app = new App(AppProps.builder()
+                .analyticsReporting(false)
+                .build());
 
         Path propertiesFile = Path.of((String) app.getNode().tryGetContext("propertiesfile"));
         SystemTestStandaloneProperties systemTestProperties = SystemTestStandaloneProperties.fromFile(propertiesFile);

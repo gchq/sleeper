@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,11 +81,9 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_CLUSTER;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_CLOUDWATCH_RULE;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_CLUSTER;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_RULES;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_RULE;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.job.common.WiremockTestHelper.wiremockEcsClient;
+import static sleeper.task.common.WiremockTestHelper.wiremockEcsClient;
 
 @WireMockTest
 class ShutdownSystemProcessesIT {
@@ -141,11 +139,10 @@ class ShutdownSystemProcessesIT {
             // Given
             properties.set(COMPACTION_JOB_CREATION_CLOUDWATCH_RULE, "test-compaction-job-creation-rule");
             properties.set(COMPACTION_TASK_CREATION_CLOUDWATCH_RULE, "test-compaction-task-creation-rule");
-            properties.set(SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE, "test-splitting-compaction-task-creation-rule");
             properties.set(PARTITION_SPLITTING_CLOUDWATCH_RULE, "test-partition-splitting-rule");
             properties.set(GARBAGE_COLLECTOR_CLOUDWATCH_RULE, "test-garbage-collector-rule");
             properties.set(INGEST_CLOUDWATCH_RULE, "test-ingest-task-creation-rule");
-            properties.set(TABLE_METRICS_RULES, "test-table-metrics-rule-1,test-table-metrics-rule-2");
+            properties.set(TABLE_METRICS_RULE, "test-table-metrics-rule-1,test-table-metrics-rule-2");
 
             stubFor(disableRuleRequest()
                     .willReturn(aResponse().withStatus(200)));
@@ -154,10 +151,9 @@ class ShutdownSystemProcessesIT {
             shutdown();
 
             // Then
-            verify(8, anyRequestedForCloudWatchEvents());
+            verify(7, anyRequestedForCloudWatchEvents());
             verify(1, disableRuleRequestedFor("test-compaction-job-creation-rule"));
             verify(1, disableRuleRequestedFor("test-compaction-task-creation-rule"));
-            verify(1, disableRuleRequestedFor("test-splitting-compaction-task-creation-rule"));
             verify(1, disableRuleRequestedFor("test-partition-splitting-rule"));
             verify(1, disableRuleRequestedFor("test-garbage-collector-rule"));
             verify(1, disableRuleRequestedFor("test-ingest-task-creation-rule"));
@@ -183,7 +179,6 @@ class ShutdownSystemProcessesIT {
         void shouldLookForECSTasksWhenClustersSet() throws Exception {
             // Given
             properties.set(COMPACTION_CLUSTER, "test-compaction-cluster");
-            properties.set(SPLITTING_COMPACTION_CLUSTER, "test-splitting-compaction-cluster");
             List<String> extraECSClusters = List.of("test-system-test-cluster");
 
             stubFor(post("/")
@@ -194,10 +189,9 @@ class ShutdownSystemProcessesIT {
             shutdownWithExtraEcsClusters(extraECSClusters);
 
             // Then
-            verify(4, anyRequestedForEcs());
+            verify(3, anyRequestedForEcs());
             verify(1, listTasksRequestedFor("test-ingest-cluster"));
             verify(1, listTasksRequestedFor("test-compaction-cluster"));
-            verify(1, listTasksRequestedFor("test-splitting-compaction-cluster"));
             verify(1, listTasksRequestedFor("test-system-test-cluster"));
         }
 
@@ -303,7 +297,6 @@ class ShutdownSystemProcessesIT {
             verify(1, listActiveClustersRequested());
         }
     }
-
 
     @Nested
     @DisplayName("Terminate running EMR Serverless Applications")

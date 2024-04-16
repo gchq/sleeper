@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,8 +39,7 @@ public class KeySerDeTest {
                 new Field("rowkey1", new IntType()),
                 new Field("rowkey2", new LongType()),
                 new Field("rowkey3", new StringType()),
-                new Field("rowkey4", new ByteArrayType())
-        ).build();
+                new Field("rowkey4", new ByteArrayType())).build();
         KeySerDe keySerDe = new KeySerDe(schema);
         List<Object> keys = new ArrayList<>();
         keys.add(1);
@@ -132,8 +131,7 @@ public class KeySerDeTest {
                 new Field("rowkey1", new IntType()),
                 new Field("rowkey2", new LongType()),
                 new Field("rowkey3", new StringType()),
-                new Field("rowkey4", new ByteArrayType())
-        ).build();
+                new Field("rowkey4", new ByteArrayType())).build();
         KeySerDe keySerDe = new KeySerDe(schema);
         List<Object> keys1 = new ArrayList<>();
         keys1.add(1);

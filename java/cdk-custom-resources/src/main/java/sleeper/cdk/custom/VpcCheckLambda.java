@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,8 +59,7 @@ public class VpcCheckLambda {
     private void validateVpc(String vpcId, String region) {
         DescribeVpcEndpointsResult s3Endpoints = vpcClient.describeVpcEndpoints(new DescribeVpcEndpointsRequest()
                 .withFilters(new Filter("vpc-id", Lists.newArrayList(vpcId)),
-                        new Filter("service-name", Lists.newArrayList("com.amazonaws." + region + ".s3")))
-        );
+                        new Filter("service-name", Lists.newArrayList("com.amazonaws." + region + ".s3"))));
         List<VpcEndpoint> vpcEndpoints = s3Endpoints.getVpcEndpoints();
 
         if (vpcEndpoints.size() != 1) {

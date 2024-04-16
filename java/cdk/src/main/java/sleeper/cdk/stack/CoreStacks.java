@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,22 +17,20 @@
 package sleeper.cdk.stack;
 
 import software.amazon.awscdk.services.iam.IGrantable;
+import software.amazon.awscdk.services.iam.IRole;
 
 public class CoreStacks {
 
     private final ConfigBucketStack configBucketStack;
     private final TableIndexStack tableIndexStack;
-    private final IngestSourceBucketsStack.GrantBuckets sourceBucketsStack;
     private final ManagedPoliciesStack policiesStack;
     private final StateStoreStacks stateStoreStacks;
     private final TableDataStack dataStack;
 
     public CoreStacks(ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack,
-                      IngestSourceBucketsStack.GrantBuckets sourceBucketsStack, ManagedPoliciesStack policiesStack,
-                      StateStoreStacks stateStoreStacks, TableDataStack dataStack) {
+            ManagedPoliciesStack policiesStack, StateStoreStacks stateStoreStacks, TableDataStack dataStack) {
         this.configBucketStack = configBucketStack;
         this.tableIndexStack = tableIndexStack;
-        this.sourceBucketsStack = sourceBucketsStack;
         this.policiesStack = policiesStack;
         this.stateStoreStacks = stateStoreStacks;
         this.dataStack = dataStack;
@@ -64,18 +62,23 @@ public class CoreStacks {
         stateStoreStacks.grantReadActiveFilesAndPartitions(grantee);
     }
 
+    public void grantReadTablesStatus(IGrantable grantee) {
+        configBucketStack.grantRead(grantee);
+        tableIndexStack.grantRead(grantee);
+    }
+
     public void grantReadConfigAndPartitions(IGrantable grantee) {
         configBucketStack.grantRead(grantee);
         tableIndexStack.grantRead(grantee);
         stateStoreStacks.grantReadPartitions(grantee);
     }
 
-    public void grantIngest(IGrantable grantee) {
+    public void grantIngest(IRole grantee) {
         configBucketStack.grantRead(grantee);
         tableIndexStack.grantRead(grantee);
         stateStoreStacks.grantReadPartitionsReadWriteActiveFiles(grantee);
         dataStack.grantReadWrite(grantee);
-        sourceBucketsStack.grantReadIngestSources(grantee);
+        policiesStack.grantReadIngestSources(grantee);
     }
 
     public void grantGarbageCollection(IGrantable grantee) {
@@ -95,6 +98,7 @@ public class CoreStacks {
         configBucketStack.grantRead(grantee);
         tableIndexStack.grantRead(grantee);
         stateStoreStacks.grantReadWriteActiveAndReadyForGCFiles(grantee);
+        stateStoreStacks.grantReadPartitions(grantee);
         dataStack.grantReadWrite(grantee);
     }
 
@@ -105,8 +109,8 @@ public class CoreStacks {
         dataStack.grantRead(grantee);
     }
 
-    public void grantReadIngestSources(IGrantable grantee) {
-        sourceBucketsStack.grantReadIngestSources(grantee);
+    public void grantReadIngestSources(IRole grantee) {
+        policiesStack.grantReadIngestSources(grantee);
     }
 
     public IGrantable getIngestPolicy() {

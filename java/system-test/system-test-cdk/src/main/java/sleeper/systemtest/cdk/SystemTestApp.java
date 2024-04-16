@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package sleeper.systemtest.cdk;
 
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import software.amazon.awscdk.App;
+import software.amazon.awscdk.AppProps;
 import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.StackProps;
 
@@ -33,8 +34,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_ENABLED;
 
 /**
- * An {@link App} to deploy the {@link SleeperCdkApp} and the additional stacks
- * needed for the system tests.
+ * Deploys Sleeper and additional stacks used for large-scale system tests.
  */
 public class SystemTestApp extends SleeperCdkApp {
     private boolean readyToGenerateProperties = false;
@@ -46,12 +46,12 @@ public class SystemTestApp extends SleeperCdkApp {
     @Override
     public void create() {
         SystemTestProperties properties = getInstanceProperties();
-        new SystemTestBucketStack(this, "SystemTestIngestBucket", properties);
+        SystemTestBucketStack bucketStack = new SystemTestBucketStack(this, "SystemTestIngestBucket", properties);
         super.create();
         // Stack for writing random data
         if (properties.getBoolean(SYSTEM_TEST_CLUSTER_ENABLED)) {
-            new SystemTestClusterStack(this, "SystemTest", properties,
-                    getCoreStacks(), getIngestStack(), getEmrBulkImportStack());
+            new SystemTestClusterStack(this, "SystemTest", properties, bucketStack,
+                    getCoreStacks(), getIngestStacks(), getIngestBatcherStack());
         }
 
         readyToGenerateProperties = true;
@@ -75,7 +75,9 @@ public class SystemTestApp extends SleeperCdkApp {
     }
 
     public static void main(String[] args) {
-        App app = new App();
+        App app = new App(AppProps.builder()
+                .analyticsReporting(false)
+                .build());
 
         SystemTestProperties systemTestProperties = Utils.loadInstanceProperties(SystemTestProperties::new, app);
 

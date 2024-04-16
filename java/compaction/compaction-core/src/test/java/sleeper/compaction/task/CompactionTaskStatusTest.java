@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,9 +66,9 @@ public class CompactionTaskStatusTest {
         assertThat(status).extracting("finishedStatus.totalJobRuns", "finishedStatus.timeSpentOnJobs")
                 .containsExactly(3, Duration.ofSeconds(30));
         assertThat(status.asProcessRun()).extracting("taskId",
-                        "startTime", "finishTime", "finishedSummary.duration",
-                        "finishedSummary.recordsRead", "finishedSummary.recordsWritten",
-                        "finishedSummary.recordsReadPerSecond", "finishedSummary.recordsWrittenPerSecond")
+                "startTime", "finishTime", "finishedSummary.duration",
+                "finishedSummary.recordsRead", "finishedSummary.recordsWritten",
+                "finishedSummary.recordsReadPerSecond", "finishedSummary.recordsWrittenPerSecond")
                 .containsExactly("test-task-id",
                         taskStartedTime, taskFinishedTime, Duration.ofSeconds(50),
                         3000L, 1500L, 100.0, 50.0);

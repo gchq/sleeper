@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,8 +63,9 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
                 new DynamoDBTableIndex(instanceProperties, dynamoDBClient));
     }
 
-    public IngestBatcherSubmitterLambda(IngestBatcherStore store, InstanceProperties instanceProperties,
-                                        TableIndex tableIndex, Configuration conf) {
+    public IngestBatcherSubmitterLambda(
+            IngestBatcherStore store, InstanceProperties instanceProperties,
+            TableIndex tableIndex, Configuration conf) {
         this.store = store;
         this.propertiesReloader = PropertiesReloader.neverReload();
         this.fileIngestRequestSerDe = new FileIngestRequestSerDe(instanceProperties, conf, tableIndex);
@@ -73,8 +74,7 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
     @Override
     public Void handleRequest(SQSEvent input, Context context) {
         propertiesReloader.reloadIfNeeded();
-        input.getRecords().forEach(message ->
-                handleMessage(message.getBody(), Instant.now()));
+        input.getRecords().forEach(message -> handleMessage(message.getBody(), Instant.now()));
         return null;
     }
 

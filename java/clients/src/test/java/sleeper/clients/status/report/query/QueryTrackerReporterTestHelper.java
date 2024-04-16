@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,12 +22,12 @@ import sleeper.query.tracker.TrackedQuery;
 import java.time.Instant;
 import java.util.List;
 
-import static sleeper.query.tracker.TrackedQueryTestHelper.queryCompleted;
-import static sleeper.query.tracker.TrackedQueryTestHelper.queryFailed;
-import static sleeper.query.tracker.TrackedQueryTestHelper.queryInProgress;
-import static sleeper.query.tracker.TrackedQueryTestHelper.queryPartiallyFailed;
-import static sleeper.query.tracker.TrackedQueryTestHelper.queryQueued;
-import static sleeper.query.tracker.TrackedQueryTestHelper.subQueryInProgress;
+import static sleeper.query.runner.tracker.TrackedQueryTestHelper.queryCompleted;
+import static sleeper.query.runner.tracker.TrackedQueryTestHelper.queryFailed;
+import static sleeper.query.runner.tracker.TrackedQueryTestHelper.queryInProgress;
+import static sleeper.query.runner.tracker.TrackedQueryTestHelper.queryPartiallyFailed;
+import static sleeper.query.runner.tracker.TrackedQueryTestHelper.queryQueued;
+import static sleeper.query.runner.tracker.TrackedQueryTestHelper.subQueryInProgress;
 
 public class QueryTrackerReporterTestHelper {
     private QueryTrackerReporterTestHelper() {
@@ -39,16 +39,14 @@ public class QueryTrackerReporterTestHelper {
                 queryInProgress("test-query-2", Instant.parse("2023-09-28T18:52:00Z")),
                 queryCompleted("test-query-3", Instant.parse("2023-09-28T18:54:00Z"), 456L),
                 queryPartiallyFailed("test-query-4", Instant.parse("2023-09-28T18:56:00Z"), 123L, "Error: Query partially failed"),
-                queryFailed("test-query-5", Instant.parse("2023-09-28T18:58:00Z"), "Error: Query failed")
-        );
+                queryFailed("test-query-5", Instant.parse("2023-09-28T18:58:00Z"), "Error: Query failed"));
     }
 
     public static List<TrackedQuery> queryWithSubqueries() {
         return List.of(
                 queryInProgress("parent-query-1", Instant.parse("2023-09-28T19:15:00Z")),
                 subQueryInProgress("parent-query-1", "sub-query-1", Instant.parse("2023-09-28T19:16:00Z")),
-                subQueryInProgress("parent-query-1", "sub-query-2", Instant.parse("2023-09-28T19:17:00Z"))
-        );
+                subQueryInProgress("parent-query-1", "sub-query-2", Instant.parse("2023-09-28T19:17:00Z")));
     }
 
     public static String getStandardReport(TrackerQuery query, List<TrackedQuery> trackedQueries) {

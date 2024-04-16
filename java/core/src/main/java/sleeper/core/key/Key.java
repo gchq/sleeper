@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * A wrapper for a {@link List} of {@link Object}s used as a key.
+ * Wraps a list of values for a record's key fields.
  */
 public class Key {
     private List<Object> key;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 package sleeper.core.schema.type;
 
 /**
- * A marker interface used to identify {@link Type}s that are primitives (i.e. can be used for row and sort keys).
+ * A marker interface used to identify types that are primitives. These can be used for row and sort keys.
  */
 public class PrimitiveType implements Type {
 }

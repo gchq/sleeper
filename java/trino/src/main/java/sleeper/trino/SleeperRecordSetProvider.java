@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,9 +37,9 @@ import java.util.List;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Provides a {@link SleeperRecordSet} which will scan an entire {@link SleeperSplit} and return the records in that
- * split.
+ * Provides a record set to scan a split and return its records. A split is defined in {@link SleeperSplit}.
  */
+@SuppressWarnings("checkstyle:summaryJavadoc") // Checkstyle fails on the method getRecordSet, seemingly mistaking a param tag for a continuation of the summary fragment.
 public class SleeperRecordSetProvider implements ConnectorRecordSetProvider {
     private final SleeperConnectionAsTrino sleeperConnectionAsTrino;
 
@@ -51,23 +51,23 @@ public class SleeperRecordSetProvider implements ConnectorRecordSetProvider {
     /**
      * Provide a record set according to the supplied parameters.
      *
-     * @param transactionHandle          The transaction that the record set is to run under.
-     * @param session                    The session that the record set is to run under.
-     * @param split                      The split that the record set is to read. The split contains tne details of the
-     *                                   Sleeper partition, and the rowkey ranges within that partition, that are to be
-     *                                   read.
-     * @param tableHandle                The table that the record set is to read. Note that the tupledomain returned by
-     *                                   {@link SleeperTableHandle#getTupleDomain()} is ignored and the ranges retrieved
-     *                                   from the split are used instead.
-     * @param outputColumnHandlesInOrder The column handles to be returned by the record set.
-     * @return The record set which corresponds to the supplied parameters.
+     * @param  transactionHandle          the transaction that the record set is to run under
+     * @param  session                    the session that the record set is to run under
+     * @param  split                      The split that the record set is to read. The split contains tne details of
+     *                                    the Sleeper partition, and the rowkey ranges within that partition, that are
+     *                                    to be read.
+     * @param  tableHandle                The table that the record set is to read. Note that the tupledomain returned
+     *                                    by {@link SleeperTableHandle#getTupleDomain()} is ignored and the ranges
+     *                                    retrieved from the split are used instead.
+     * @param  outputColumnHandlesInOrder the column handles to be returned by the record set
+     * @return                            the record set which corresponds to the supplied parameters
      */
     @Override
     public RecordSet getRecordSet(ConnectorTransactionHandle transactionHandle,
-                                  ConnectorSession session,
-                                  ConnectorSplit split,
-                                  ConnectorTableHandle tableHandle,
-                                  List<? extends ColumnHandle> outputColumnHandlesInOrder) {
+            ConnectorSession session,
+            ConnectorSplit split,
+            ConnectorTableHandle tableHandle,
+            List<? extends ColumnHandle> outputColumnHandlesInOrder) {
         List<SleeperColumnHandle> sleeperColumnHandles = outputColumnHandlesInOrder.stream()
                 .map(SleeperColumnHandle.class::cast)
                 .collect(ImmutableList.toImmutableList());

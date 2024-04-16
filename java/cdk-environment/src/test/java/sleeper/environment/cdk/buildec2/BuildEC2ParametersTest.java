@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ public class BuildEC2ParametersTest {
     @Test
     public void fillGitClone() {
         assertThat(BuildEC2Parameters.from(AppContext.of(
-                        BRANCH.value("feature/test"), FORK.value("test-fork"), REPOSITORY.value("test-project")))
+                BRANCH.value("feature/test"), FORK.value("test-fork"), REPOSITORY.value("test-project")))
                 .fillUserDataTemplate("git clone -b ${branch} https://github.com/${fork}/${repository}.git"))
                 .isEqualTo("git clone -b feature/test https://github.com/test-fork/test-project.git");
     }

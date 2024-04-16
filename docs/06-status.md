@@ -46,7 +46,7 @@ The available reports are as follows, with the corresponding commands in the Sle
 |----------------------------|---------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------|
 | Full Status Report         | Prints all of the below reports in one go         | ```sleeper deployment utility/fullStatusReport.sh ${INSTANCE_ID} ${TABLE_NAME} ${OPTIONAL_VERBOSE_OUTPUT}```                                                        | VERBOSE = false                                                    |
 | Dead Letters Status Report | Prints out any messages on the dead letter queues | ```sleeper deployment utility/deadLettersStatusReport.sh ${INSTANCE_ID}```                                                                                          |                                                                    |
-| ECS Tasks Status Report    | Lists the compaction / splitting tasks            | ```sleeper deployment utility/ecsTasksStatusReport.sh ${INSTANCE_ID}```                                                                                             |                                                                    |
+| ECS Tasks Status Report    | Lists the compaction tasks                        | ```sleeper deployment utility/ecsTasksStatusReport.sh ${INSTANCE_ID}```                                                                                             |                                                                    |
 | Files Status Report        | Lists all the files managed by the state store    | ```sleeper deployment utility/filesStatusReport.sh ${INSTANCE_ID} ${TABLE_NAME} ${OPTIONAL_MAXREADY_GC_FILES} ${OPTIONAL_VERBOSE_OUTPUT} ${OPTIONAL_REPORT_TYPE}``` | MAXREADY_GC_FILES = 1000, VERBOSE = false , REPORT_TYPE = standard |
 | Jobs Status Report         | Prints the number of messages on job queues       | ```sleeper deployment utility/jobsStatusReport.sh ${INSTANCE_ID}```                                                                                                 |                                                                    |
 | Partitions Status Report   | Summarises the partitions within the system       | ```sleeper deployment utility/partitionsStatusReport.sh ${INSTANCE_ID} ${TABLE_NAME}```                                                                             |                                                                    |
@@ -60,7 +60,6 @@ The queue must be one of:
 
 * `query`
 * `compaction`
-* `splittingcompaction`
 * `ingest`
 
 Here's an example:
@@ -74,8 +73,8 @@ sleeper.clients.status.report.RetryMessages ${INSTANCE_ID} ingest 1000
 ## Pausing and Restarting the System
 
 If there is no ingest in progress, and all compactions have completed, then Sleeper
-will go to sleep, i.e. the only significant on-going charges are for data storage.
-However there are several lambda functions that are scheduled to run periodically
+will go to sleep, i.e. the only significant ongoing charges are for data storage.
+However, there are several lambda functions that are scheduled to run periodically
 using EventBridge rules. These lambda functions look for work to do, such as compactions
 to run. The execution of these should have very small cost, but it is best practice
 to pause the system, i.e. turn these rules off, if you will not be using it for a
@@ -125,4 +124,14 @@ To run this client you can run the following command:
 
 ```bash
 sleeper deployment utility/adminClient.sh ${INSTANCE_ID}
+```
+
+## Compact all files
+
+If you want to fully compact all files in leaf partitions, but the compaction strategy is not compacting files in a 
+partition, you can run the following script to force compactions to be created for files in leaf partitions that were 
+skipped by the compaction strategy:
+
+```bash
+sleeper deployment utility/compactAllFiles.sh ${NSTANCE_ID}
 ```

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,8 +30,10 @@ import sleeper.core.partition.PartitionTree;
 import java.util.Iterator;
 import java.util.List;
 
+import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
+
 /**
- * A {@link WriteParquetFile} writes sorted Rows to a Parquet file.
+ * Writes sorted rows to a Parquet file.
  */
 public class WriteParquetFile implements FlatMapFunction<Iterator<Row>, Row>, MapPartitionsFunction<Row, Row> {
     private static final long serialVersionUID = 1873341639622053831L;
@@ -50,13 +52,10 @@ public class WriteParquetFile implements FlatMapFunction<Iterator<Row>, Row>, Ma
 
     @Override
     public Iterator<Row> call(Iterator<Row> rowIter) {
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.loadFromString(instancePropertiesStr);
+        InstanceProperties instanceProperties = new InstanceProperties(loadProperties(instancePropertiesStr));
+        TableProperties tableProperties = new TableProperties(instanceProperties, loadProperties(tablePropertiesStr));
 
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.loadFromString(tablePropertiesStr);
-
-        PartitionTree partitionTree = new PartitionTree(tableProperties.getSchema(), broadcastPartitions.getValue());
+        PartitionTree partitionTree = new PartitionTree(broadcastPartitions.getValue());
 
         return new SingleFileWritingIterator(rowIter, instanceProperties, tableProperties, serializableConf.value(), partitionTree);
     }

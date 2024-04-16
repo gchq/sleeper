@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,14 +41,12 @@ public class ConcatenatingIteratorTest {
         testSupplier1 = new TestSupplier(Lists.newArrayList(
                 new Record(Maps.toMap(Lists.newArrayList("1", "2", "3"), Integer::valueOf)),
                 new Record(Maps.toMap(Lists.newArrayList("4", "5", "6"), Integer::valueOf)),
-                new Record(Maps.toMap(Lists.newArrayList("7", "8", "9"), Integer::valueOf))
-        ));
+                new Record(Maps.toMap(Lists.newArrayList("7", "8", "9"), Integer::valueOf))));
 
         testSupplier2 = new TestSupplier(Lists.newArrayList(
                 new Record(Maps.toMap(Lists.newArrayList("10", "11", "12"), Integer::valueOf)),
                 new Record(Maps.toMap(Lists.newArrayList("13", "14", "15"), Integer::valueOf)),
-                new Record(Maps.toMap(Lists.newArrayList("16", "17", "18"), Integer::valueOf))
-        ));
+                new Record(Maps.toMap(Lists.newArrayList("16", "17", "18"), Integer::valueOf))));
     }
 
     @Test
@@ -210,7 +208,6 @@ public class ConcatenatingIteratorTest {
                 .hasMessage("Failed to close iterator")
                 .hasCauseInstanceOf(IOException.class);
     }
-
 
     private static class FailingIterator extends TestIterator {
         @Override

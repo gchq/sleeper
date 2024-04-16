@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,22 @@ package sleeper.cdk;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.internal.BucketNameUtils;
+import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.Tags;
+import software.amazon.awscdk.services.cloudwatch.Alarm;
+import software.amazon.awscdk.services.cloudwatch.ComparisonOperator;
+import software.amazon.awscdk.services.cloudwatch.MetricOptions;
+import software.amazon.awscdk.services.cloudwatch.TreatMissingData;
+import software.amazon.awscdk.services.cloudwatch.actions.SnsAction;
 import software.amazon.awscdk.services.ecs.AwsLogDriverProps;
 import software.amazon.awscdk.services.ecs.LogDriver;
 import software.amazon.awscdk.services.logs.LogGroup;
 import software.amazon.awscdk.services.logs.RetentionDays;
+import software.amazon.awscdk.services.sns.Topic;
+import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
@@ -58,7 +67,7 @@ import static sleeper.configuration.properties.instance.LoggingLevelsProperty.PA
 import static sleeper.configuration.properties.instance.LoggingLevelsProperty.ROOT_LOGGING_LEVEL;
 
 /**
- * Collection of utility methods related to the CDK deployment
+ * Collection of utility methods related to the CDK deployment.
  */
 public class Utils {
 
@@ -110,13 +119,48 @@ public class Utils {
     }
 
     /**
-     * Valid values are taken from <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-logs-loggroup.html">here</a>
+     * Configures a log group with the specified number of days. Valid values are taken from
+     * <a href=
+     * "https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-logs-loggroup.html">here</a>.
      * A value of -1 represents an infinite number of days.
      *
-     * @param numberOfDays number of days you want to retain the logs
-     * @return The RetentionDays equivalent
+     * @param  numberOfDays number of days you want to retain the logs
+     * @return              The RetentionDays equivalent
      */
-    public static RetentionDays getRetentionDays(int numberOfDays) {
+    public static LogGroup createLogGroupWithRetentionDays(Construct scope, String id, int numberOfDays) {
+        return LogGroup.Builder.create(scope, id)
+                .retention(getRetentionDays(numberOfDays))
+                .build();
+    }
+
+    public static LogGroup createLambdaLogGroup(
+            Construct scope, String id, String functionName, InstanceProperties instanceProperties) {
+        return LogGroup.Builder.create(scope, id)
+                .logGroupName(functionName)
+                .retention(getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
+                .build();
+    }
+
+    public static LogGroup createCustomResourceProviderLogGroup(
+            Construct scope, String id, String functionName, InstanceProperties instanceProperties) {
+        return LogGroup.Builder.create(scope, id)
+                .logGroupName(functionName + "-provider")
+                .retention(getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
+                .build();
+    }
+
+    public static LogDriver createECSContainerLogDriver(Construct scope, InstanceProperties instanceProperties, String id) {
+        AwsLogDriverProps logDriverProps = AwsLogDriverProps.builder()
+                .streamPrefix(instanceProperties.get(ID) + "-" + id)
+                .logGroup(LogGroup.Builder.create(scope, id)
+                        .logGroupName(instanceProperties.get(ID) + "-" + id)
+                        .retention(getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
+                        .build())
+                .build();
+        return LogDriver.awsLogs(logDriverProps);
+    }
+
+    private static RetentionDays getRetentionDays(int numberOfDays) {
         switch (numberOfDays) {
             case -1:
                 return RetentionDays.INFINITE;
@@ -159,17 +203,6 @@ public class Utils {
         }
     }
 
-    public static LogDriver createECSContainerLogDriver(Construct scope, InstanceProperties instanceProperties, String id) {
-        AwsLogDriverProps logDriverProps = AwsLogDriverProps.builder()
-                .streamPrefix(instanceProperties.get(ID) + "-" + id)
-                .logGroup(LogGroup.Builder.create(scope, id)
-                        .logGroupName(instanceProperties.get(ID) + "-" + id)
-                        .retention(getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
-                        .build())
-                .build();
-        return LogDriver.awsLogs(logDriverProps);
-    }
-
     public static <T extends InstanceProperties> T loadInstanceProperties(Function<Properties, T> properties, Construct scope) {
         return loadInstanceProperties(properties, tryGetContext(scope));
     }
@@ -177,14 +210,16 @@ public class Utils {
     public static <T extends InstanceProperties> T loadInstanceProperties(
             Function<Properties, T> constructor, Function<String, String> tryGetContext) {
         Path propertiesFile = Path.of(tryGetContext.apply("propertiesfile"));
-        T properties = LoadLocalProperties.loadInstanceProperties(constructor, propertiesFile);
+        T properties = LoadLocalProperties.loadInstancePropertiesNoValidation(constructor, propertiesFile);
 
-        String validate = tryGetContext.apply("validate");
-        String newinstance = tryGetContext.apply("newinstance");
-        if (!"false".equalsIgnoreCase(validate)) {
-            new ConfigValidator().validate(properties, propertiesFile);
+        if (!"false".equalsIgnoreCase(tryGetContext.apply("validate"))) {
+            properties.validate();
+            if (!BucketNameUtils.isValidV2BucketName(properties.get(ID))) {
+                throw new IllegalArgumentException(
+                        "Sleeper instance ID is not valid as part of an S3 bucket name: " + properties.get(ID));
+            }
         }
-        if ("true".equalsIgnoreCase(newinstance)) {
+        if ("true".equalsIgnoreCase(tryGetContext.apply("newinstance"))) {
             new NewInstanceValidator(AmazonS3ClientBuilder.defaultClient(),
                     AmazonDynamoDBClientBuilder.defaultClient()).validate(properties, propertiesFile);
         }
@@ -196,7 +231,7 @@ public class Utils {
                 && deployedVersion != null
                 && !localVersion.equals(deployedVersion)) {
             throw new MismatchedVersionException(format("Local version %s does not match deployed version %s. " +
-                            "Please upgrade/downgrade to make these match",
+                    "Please upgrade/downgrade to make these match",
                     localVersion, deployedVersion));
         }
         properties.set(VERSION, localVersion);
@@ -236,12 +271,12 @@ public class Utils {
     }
 
     /**
-     * Normalises EC2 instance size strings so they can be looked up in the
-     * {@link software.amazon.awscdk.services.ec2.InstanceSize} enum.
-     * Java identifiers can't start with a number, so "2xlarge" becomes "xlarge2".
+     * Normalises EC2 instance size strings to match enum identifiers. They can then be looked up in the
+     * {@link software.amazon.awscdk.services.ec2.InstanceSize} enum. Java identifiers can't start with a number, so
+     * "2xlarge" becomes "xlarge2".
      *
-     * @param size the human readable size
-     * @return the internal enum name
+     * @param  size the human readable size
+     * @return      the internal enum name
      */
     public static String normaliseSize(String size) {
         if (size == null) {
@@ -254,6 +289,21 @@ public class Utils {
         } else {
             return size;
         }
+    }
+
+    public static void createAlarmForDlq(Construct scope, String name, String description, Queue dlq, Topic topic) {
+        Alarm alarm = Alarm.Builder
+                .create(scope, name)
+                .alarmDescription(description)
+                .metric(dlq.metricApproximateNumberOfMessagesVisible()
+                        .with(MetricOptions.builder().statistic("Sum").period(Duration.seconds(60)).build()))
+                .comparisonOperator(ComparisonOperator.GREATER_THAN_THRESHOLD)
+                .threshold(0)
+                .evaluationPeriods(1)
+                .datapointsToAlarm(1)
+                .treatMissingData(TreatMissingData.IGNORE)
+                .build();
+        alarm.addAlarmAction(new SnsAction(topic));
     }
 
 }

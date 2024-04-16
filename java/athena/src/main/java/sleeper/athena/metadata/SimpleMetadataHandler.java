@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,10 +38,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * The {@link SimpleMetadataHandler} implementation of the {@link SleeperMetadataHandler} just passes on the default
- * information without enhancing it. Instead of grouping the data by leaf partition, this handler will unique all the
- * files from all the partitions and pass each one to a separate Record handler - thereby achieving a higher degree of
- * parallelism of one handler per file.
+ * A handler that just passes on the default information without enhancing it. Instead of grouping the data by leaf
+ * partition, this handler will find all distinct files from all the partitions and pass each one to a separate Record
+ * handler - thereby achieving a higher degree of parallelism of one handler per file.
  */
 public class SimpleMetadataHandler extends SleeperMetadataHandler {
 
@@ -49,14 +48,10 @@ public class SimpleMetadataHandler extends SleeperMetadataHandler {
         super();
     }
 
-    public SimpleMetadataHandler(AmazonS3 s3Client,
-                                 AmazonDynamoDB dynamoDBClient,
-                                 String configBucket,
-                                 EncryptionKeyFactory encryptionKeyFactory,
-                                 AWSSecretsManager secretsManager,
-                                 AmazonAthena athena,
-                                 String spillBucket,
-                                 String spillPrefix) {
+    public SimpleMetadataHandler(
+            AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, String configBucket,
+            EncryptionKeyFactory encryptionKeyFactory, AWSSecretsManager secretsManager,
+            AmazonAthena athena, String spillBucket, String spillPrefix) {
         super(s3Client, dynamoDBClient, configBucket, encryptionKeyFactory, secretsManager, athena, spillBucket, spillPrefix);
     }
 

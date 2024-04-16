@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,7 @@ import sleeper.core.schema.type.Type;
 import java.util.Objects;
 
 /**
- * Describes a field in the {@link Schema}. It contains a {@link String} name
- * and a {@link Type}.
+ * Describes a field in a Sleeper schema. It contains a name and a {@link Type}.
  */
 public class Field {
     private final String name;

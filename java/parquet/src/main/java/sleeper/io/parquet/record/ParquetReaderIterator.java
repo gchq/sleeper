@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import java.io.IOException;
 import java.util.NoSuchElementException;
 
 /**
- * A {@link CloseableIterator} of {@link Record}s generated from a {@link ParquetReader}.
+ * Iterates through records read from a Parquet file. Wraps a {@link ParquetReader}.
  */
 public class ParquetReaderIterator implements CloseableIterator<Record> {
     private final ParquetReader<Record> reader;

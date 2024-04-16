@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,9 +28,8 @@ public class SleeperTablePartitionStructure {
     private final List<Partition> allPartitions;
     private final Map<String, List<String>> partitionToFileMapping;
 
-    SleeperTablePartitionStructure(Instant asOfInstant,
-                                   List<Partition> allPartitions,
-                                   Map<String, List<String>> partitionToFileMapping) {
+    SleeperTablePartitionStructure(
+            Instant asOfInstant, List<Partition> allPartitions, Map<String, List<String>> partitionToFileMapping) {
         this.asOfInstant = asOfInstant;
         this.allPartitions = allPartitions;
         this.partitionToFileMapping = partitionToFileMapping;

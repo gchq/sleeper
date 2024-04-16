@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@ package sleeper.core.partition;
 
 import sleeper.core.range.Region;
 import sleeper.core.schema.Schema;
+import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -29,10 +31,8 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
- * A convenience class for specifying partitions.
- * <p>
- * Note that a shorthand is used for cases where we have a schema with only one row key field.
- * This will not be useful in the general case.
+ * A convenience class for specifying partitions. This includes methods to define a tree to be readable in a test,
+ * including shorthand which would not be used with {@link PartitionFactory}.
  */
 public class PartitionsBuilder {
 
@@ -124,12 +124,23 @@ public class PartitionsBuilder {
                 .orElseThrow(() -> new IllegalArgumentException("Partition not specified: " + id));
     }
 
+    public void applySplit(StateStore stateStore, String partitionId) throws StateStoreException {
+        Partition toSplit = partitionById(partitionId).build();
+        Partition left = partitionById(toSplit.getChildPartitionIds().get(0)).build();
+        Partition right = partitionById(toSplit.getChildPartitionIds().get(1)).build();
+        stateStore.atomicallyUpdatePartitionAndCreateNewOnes(toSplit, left, right);
+    }
+
     public List<Partition> buildList() {
         return partitionById.values().stream().map(Partition.Builder::build).collect(Collectors.toList());
     }
 
     public PartitionTree buildTree() {
-        return new PartitionTree(schema, new ArrayList<>(partitionById.values()).stream().map(Partition.Builder::build).collect(Collectors.toList()));
+        return new PartitionTree(new ArrayList<>(partitionById.values()).stream().map(Partition.Builder::build).collect(Collectors.toList()));
+    }
+
+    public Schema getSchema() {
+        return schema;
     }
 
     public class Splitter {
@@ -151,8 +162,8 @@ public class PartitionsBuilder {
         }
 
         public void splitToLeftAndRight(Object splitPoint,
-                                        Consumer<Splitter> left,
-                                        Consumer<Splitter> right) {
+                Consumer<Splitter> left,
+                Consumer<Splitter> right) {
             split(splitPoint);
             left.accept(new Splitter(leftId()));
             right.accept(new Splitter(rightId()));

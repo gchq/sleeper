@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import software.amazon.awssdk.services.emrserverless.model.JobRunSummary;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.util.PollWithRetries;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -37,15 +38,13 @@ import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_
 
 public class TerminateEMRServerlessApplications {
     private static final Logger LOGGER = LoggerFactory.getLogger(TerminateEMRServerlessApplications.class);
-    private static final long POLL_INTERVAL_MILLIS = 30000;
-    private static final int MAX_POLLS = 30;
 
-    private final PollWithRetries poll = PollWithRetries.intervalAndMaxPolls(POLL_INTERVAL_MILLIS, MAX_POLLS);
+    private final PollWithRetries poll = PollWithRetries
+            .intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(15));
     private final EmrServerlessClient emrServerlessClient;
     private final String applicationPrefix;
 
-    public TerminateEMRServerlessApplications(EmrServerlessClient emrServerlessClient,
-                                              InstanceProperties properties) {
+    public TerminateEMRServerlessApplications(EmrServerlessClient emrServerlessClient, InstanceProperties properties) {
         this.emrServerlessClient = emrServerlessClient;
         this.applicationPrefix = "sleeper-" + properties.get(ID);
     }
@@ -65,12 +64,11 @@ public class TerminateEMRServerlessApplications {
     private void stopApplications(List<ApplicationSummary> applications) throws InterruptedException {
         for (ApplicationSummary application : applications) {
             List<JobRunSummary> jobRuns = emrServerlessClient.listJobRuns(request -> request.applicationId(application.id())
-                            .states(JobRunState.RUNNING, JobRunState.SCHEDULED, JobRunState.PENDING, JobRunState.SUBMITTED))
+                    .states(JobRunState.RUNNING, JobRunState.SCHEDULED, JobRunState.PENDING, JobRunState.SUBMITTED))
                     .jobRuns();
 
-            jobRuns.forEach(jobRun ->
-                    emrServerlessClient.cancelJobRun(request -> request
-                            .applicationId(application.id()).jobRunId(jobRun.id())));
+            jobRuns.forEach(jobRun -> emrServerlessClient.cancelJobRun(request -> request
+                    .applicationId(application.id()).jobRunId(jobRun.id())));
 
             if (!jobRuns.isEmpty()) {
                 poll.pollUntil("all EMR Serverless jobs finished", () -> allJobsFinished(application.id()));
@@ -100,10 +98,9 @@ public class TerminateEMRServerlessApplications {
         }
     }
 
-
     private List<ApplicationSummary> listActiveApplications() {
         return emrServerlessClient.listApplications(request -> request.states(
-                        ApplicationState.STARTING, ApplicationState.STARTED, ApplicationState.STOPPING))
+                ApplicationState.STARTING, ApplicationState.STARTED, ApplicationState.STOPPING))
                 .applications().stream()
                 .filter(summary -> summary.name().startsWith(applicationPrefix))
                 .collect(Collectors.toUnmodifiableList());

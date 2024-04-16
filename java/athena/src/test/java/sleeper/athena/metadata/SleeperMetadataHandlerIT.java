@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,11 +82,11 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
         SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
 
         StateStore stateStore = new StateStoreFactory(dynamoClient, instance, configuration).getStateStore(table);
-        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
+        Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
         List<String> relevantFiles = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() >= 2020)
                 .map(Partition::getId)
-                .map(partitionToActiveFilesMap::get)
+                .map(partitionToFiles::get)
                 .filter(Objects::nonNull)
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
@@ -108,8 +108,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
                 tableName,
                 new Constraints(predicate),
                 getTableResponse.getSchema(),
-                getTableResponse.getPartitionColumns()
-        );
+                getTableResponse.getPartitionColumns());
 
         GetTableLayoutResponse getTableLayoutResponse = sleeperMetadataHandler.doGetTableLayout(blockAllocator, request);
 
@@ -132,11 +131,11 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
         // Make query
         SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
         StateStore stateStore = new StateStoreFactory(dynamoClient, instance, configuration).getStateStore(table);
-        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
+        Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
         List<List<String>> relevantFiles = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() <= 2018)
                 .map(Partition::getId)
-                .map(partitionToActiveFilesMap::get)
+                .map(partitionToFiles::get)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
@@ -156,8 +155,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
                 tableName,
                 new Constraints(predicate),
                 getTableResponse.getSchema(),
-                getTableResponse.getPartitionColumns()
-        );
+                getTableResponse.getPartitionColumns());
 
         GetTableLayoutResponse getTableLayoutResponse = sleeperMetadataHandler.doGetTableLayout(blockAllocator, request);
 
@@ -184,11 +182,11 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
         SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
 
         StateStore stateStore = new StateStoreFactory(dynamoClient, instance, configuration).getStateStore(table);
-        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
+        Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
         List<List<String>> relevantFiles = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)
                 .map(Partition::getId)
-                .map(partitionToActiveFilesMap::get)
+                .map(partitionToFiles::get)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
@@ -211,8 +209,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
                 tableName,
                 new Constraints(predicate),
                 getTableResponse.getSchema(),
-                getTableResponse.getPartitionColumns()
-        );
+                getTableResponse.getPartitionColumns());
 
         GetTableLayoutResponse getTableLayoutResponse = sleeperMetadataHandler.doGetTableLayout(new BlockAllocatorImpl(),
                 request);
@@ -237,10 +234,10 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
         SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
 
         StateStore stateStore = new StateStoreFactory(dynamoClient, instance, configuration).getStateStore(table);
-        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
+        Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
         List<List<String>> relevantFiles = stateStore.getLeafPartitions().stream()
                 .map(Partition::getId)
-                .map(partitionToActiveFilesMap::get)
+                .map(partitionToFiles::get)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
@@ -259,8 +256,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
                 tableName,
                 new Constraints(predicate),
                 getTableResponse.getSchema(),
-                getTableResponse.getPartitionColumns()
-        );
+                getTableResponse.getPartitionColumns());
 
         GetTableLayoutResponse getTableLayoutResponse = sleeperMetadataHandler.doGetTableLayout(new BlockAllocatorImpl(),
                 request);
@@ -287,10 +283,10 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
         SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
 
         StateStore stateStore = new StateStoreFactory(dynamoClient, instance, configuration).getStateStore(table);
-        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
+        Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
         List<List<String>> relevantFiles = stateStore.getLeafPartitions().stream()
                 .map(Partition::getId)
-                .map(partitionToActiveFilesMap::get)
+                .map(partitionToFiles::get)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
@@ -308,8 +304,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
                 tableName,
                 new Constraints(predicate),
                 getTableResponse.getSchema(),
-                getTableResponse.getPartitionColumns()
-        );
+                getTableResponse.getPartitionColumns());
 
         GetTableLayoutResponse getTableLayoutResponse = sleeperMetadataHandler.doGetTableLayout(new BlockAllocatorImpl(),
                 request);
@@ -361,11 +356,11 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
         SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
 
         StateStore stateStore = new StateStoreFactory(dynamoClient, instance, configuration).getStateStore(table);
-        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
+        Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
         List<List<String>> relevantFiles = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == Integer.MIN_VALUE || (Integer) p.getRegion().getRange("year").getMin() == 2019)
                 .map(Partition::getId)
-                .map(partitionToActiveFilesMap::get)
+                .map(partitionToFiles::get)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
@@ -384,8 +379,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
                 tableName,
                 new Constraints(predicate),
                 getTableResponse.getSchema(),
-                getTableResponse.getPartitionColumns()
-        );
+                getTableResponse.getPartitionColumns());
 
         GetTableLayoutResponse getTableLayoutResponse = sleeperMetadataHandler.doGetTableLayout(new BlockAllocatorImpl(),
                 request);
@@ -494,9 +488,9 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
                 .stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)
                 .collect(Collectors.toList()).get(0);
-        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
+        Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
         SplitPartition splitPartition = new SplitPartition(stateStore, table.getSchema(), new Configuration());
-        splitPartition.splitPartition(partition2018, partitionToActiveFilesMap.get(partition2018.getId()));
+        splitPartition.splitPartition(partition2018, partitionToFiles.get(partition2018.getId()));
         Partition firstHalfOf2018 = stateStore.getLeafPartitions()
                 .stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)
@@ -518,8 +512,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
                 "abc", "cde",
                 tableName,
                 queryConstraints, getTableResponse.getSchema(),
-                getTableResponse.getPartitionColumns()
-        ));
+                getTableResponse.getPartitionColumns()));
 
         // Then
         Block partitions = getTableLayoutResponse.getPartitions();

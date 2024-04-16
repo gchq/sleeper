@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import sleeper.configuration.TableUtils;
 import sleeper.core.partition.Partition;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.ingest.impl.ParquetConfiguration;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
@@ -38,8 +38,8 @@ import java.util.concurrent.CompletableFuture;
 import static java.util.Objects.requireNonNull;
 
 /**
- * This class writes a single Parquet partition file (and its associated quantile sketches file) directly to the final
- * file store in a synchronous manner using a {@link ParquetWriter}.
+ * Writes a Parquet partition file synchronously. The Parquet file and its associated quantile sketches file are written
+ * directly to the final file store using a {@link ParquetWriter}.
  */
 public class DirectPartitionFileWriter implements PartitionFileWriter {
     private static final Logger LOGGER = LoggerFactory.getLogger(DirectPartitionFileWriter.class);
@@ -54,24 +54,22 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
     private long recordsWrittenToCurrentPartition;
 
     /**
-     * Construct a {@link DirectPartitionFileWriter}.
-     * <p>
-     * The final file store is specified as the prefix to the filePathPrefix argument.
+     * Create an instance. The final file store is specified as the prefix to the filePathPrefix argument.
      * <p>
      * Warning: this constructor allows a bespoke Hadoop configuration to be specified, but it will not always be used
-     * due an underlying cache in the underlying {@link org.apache.hadoop.fs.FileSystem} object. This {@link org.apache.hadoop.fs.FileSystem} object maintains a
-     * cache of file systems and the first time that it creates a {@link org.apache.hadoop.fs.s3a.S3AFileSystem} object,
-     * the provided Hadoop configuration will be used. Thereafter, the Hadoop configuration will be ignored until {@link
-     * org.apache.hadoop.fs.FileSystem#closeAll()} is called. This is strange behaviour and can cause errors which are difficult to
-     * diagnose.
+     * due to a cache in the underlying {@link org.apache.hadoop.fs.FileSystem} object. This
+     * {@link org.apache.hadoop.fs.FileSystem} object maintains a cache of file systems and the first time that it
+     * creates a {@link org.apache.hadoop.fs.s3a.S3AFileSystem} object, the provided Hadoop configuration will be used.
+     * Thereafter, the Hadoop configuration will be ignored until {@link org.apache.hadoop.fs.FileSystem#closeAll()} is
+     * called. This is strange behaviour and can cause errors which are difficult to diagnose.
      *
-     * @param partition            The {@link Partition} that is to be written by this writer
-     * @param parquetConfiguration Hadoop, schema and Parquet configuration for writing files. The Hadoop
-     *                             configuration is used to find the classes required to support the file system
-     *                             specified in the filePathPrefix.
-     * @param filePathPrefix       The prefix to apply to the partition files, such as 's3a://mybucket' or
-     *                             'file://mydirectory'
-     * @throws IOException -
+     * @param  partition            the {@link Partition} that is to be written by this writer
+     * @param  parquetConfiguration Hadoop, schema and Parquet configuration for writing files. The Hadoop
+     *                              configuration is used to find the classes required to support the file system
+     *                              specified in the filePathPrefix.
+     * @param  filePathPrefix       the prefix to apply to the partition files, such as 's3a://mybucket' or
+     *                              'file://mydirectory'
+     * @throws IOException          -
      */
     public DirectPartitionFileWriter(
             Partition partition,
@@ -89,11 +87,10 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
         this.recordsWrittenToCurrentPartition = 0L;
     }
 
-
     /**
      * Append a record to the partition file.
      *
-     * @param record The record to append
+     * @param  record      The record to append
      * @throws IOException -
      */
     @Override
@@ -113,11 +110,11 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
      * Close the partition file. In this implementation, the file is closed synchronously and a completed future is
      * returned.
      *
-     * @return A completed future containing the details of the file that was written
+     * @return             a completed future containing the details of the file that was written
      * @throws IOException -
      */
     @Override
-    public CompletableFuture<FileInfo> close() throws IOException {
+    public CompletableFuture<FileReference> close() throws IOException {
         parquetWriter.close();
         LOGGER.info("Closed writer for partition {} after writing {} rows", partition.getId(), recordsWrittenToCurrentPartition);
         // Write sketches to an Hadoop file system, which could be s3a:// or file://
@@ -126,11 +123,11 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
                 new Sketches(keyFieldToSketchMap),
                 hadoopConfiguration);
         LOGGER.info("Wrote sketches for partition {} to file {}", partition.getId(), quantileSketchesFileName);
-        FileInfo fileInfo = PartitionFileWriterUtils.createFileInfo(
+        FileReference fileReference = PartitionFileWriterUtils.createFileReference(
                 partitionParquetFileName,
                 partition.getId(),
                 recordsWrittenToCurrentPartition);
-        return CompletableFuture.completedFuture(fileInfo);
+        return CompletableFuture.completedFuture(fileReference);
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import java.util.function.Supplier;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
- * A lambda function to create jobs with the {@link IngestBatcher}.
+ * Lambda function to invoke the batcher to create ingest jobs from files in its store.
  */
 @SuppressWarnings("unused")
 public class IngestBatcherJobCreatorLambda {
@@ -57,9 +57,9 @@ public class IngestBatcherJobCreatorLambda {
                 Instant::now, () -> UUID.randomUUID().toString());
     }
 
-    public IngestBatcherJobCreatorLambda(AmazonS3 s3, String configBucket,
-                                         AmazonSQS sqs, AmazonDynamoDB dynamoDB,
-                                         Supplier<Instant> timeSupplier, Supplier<String> jobIdSupplier) {
+    public IngestBatcherJobCreatorLambda(
+            AmazonS3 s3, String configBucket, AmazonSQS sqs, AmazonDynamoDB dynamoDB,
+            Supplier<Instant> timeSupplier, Supplier<String> jobIdSupplier) {
         this.s3Client = s3;
         this.configBucket = configBucket;
         this.sqs = sqs;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package sleeper.ingest;
 
-import sleeper.core.statestore.FileInfoTestData;
+import sleeper.core.statestore.FileReferenceTestData;
 
 import java.util.Collections;
 
@@ -26,12 +26,12 @@ public class IngestResultTestData {
 
     public static IngestResult defaultFileIngestResult(String filename) {
         return IngestResult.allReadWereWritten(Collections.singletonList(
-                FileInfoTestData.defaultFileOnRootPartition(filename)));
+                FileReferenceTestData.defaultFileOnRootPartition(filename)));
     }
 
     public static IngestResult defaultFileIngestResultReadAndWritten(
             String filename, long recordsRead, long recordsWritten) {
         return IngestResult.fromReadAndWritten(recordsRead, Collections.singletonList(
-                FileInfoTestData.defaultFileOnRootPartitionWithRecords(filename, recordsWritten)));
+                FileReferenceTestData.defaultFileOnRootPartitionWithRecords(filename, recordsWritten)));
     }
 }

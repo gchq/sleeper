@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,25 +23,22 @@ import org.apache.spark.sql.catalyst.encoders.RowEncoder;
 
 import sleeper.bulkimport.job.runner.BulkImportJobDriver;
 import sleeper.bulkimport.job.runner.BulkImportJobInput;
-import sleeper.bulkimport.job.runner.BulkImportJobRunner;
-import sleeper.bulkimport.job.runner.SparkFileInfoRow;
+import sleeper.bulkimport.job.runner.SparkFileReferenceRow;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 
 /**
- * This class runs {@link BulkImportJobDriver} with a {@link BulkImportJobRunner} which
- * uses the Spark RDD API to partition the data according to the Sleeper
- * partitions and for each partition, write a single sorted Parquet file.
+ * Runs a bulk import job using Spark's RDD API. Sorts and writes out the data split by Sleeper partition.
  */
 public class BulkImportJobRDDDriver {
     private BulkImportJobRDDDriver() {
     }
 
     public static void main(String[] args) throws Exception {
-        BulkImportJobDriver.start(args, BulkImportJobRDDDriver::createFileInfos);
+        BulkImportJobDriver.start(args, BulkImportJobRDDDriver::createFileReferences);
     }
 
-    public static Dataset<Row> createFileInfos(BulkImportJobInput input) {
+    public static Dataset<Row> createFileReferences(BulkImportJobInput input) {
         Schema schema = input.tableProperties().getSchema();
         String schemaAsString = new SchemaSerDe().toJson(schema);
         JavaRDD<Row> rdd = input.rows().javaRDD()
@@ -57,6 +54,6 @@ public class BulkImportJobRDDDriver {
                         input.conf(), input.broadcastedPartitions()));
 
         SparkSession session = SparkSession.builder().getOrCreate();
-        return session.createDataset(rdd.rdd(), RowEncoder.apply(SparkFileInfoRow.createFileInfoSchema()));
+        return session.createDataset(rdd.rdd(), RowEncoder.apply(SparkFileReferenceRow.createFileReferenceSchema()));
     }
 }

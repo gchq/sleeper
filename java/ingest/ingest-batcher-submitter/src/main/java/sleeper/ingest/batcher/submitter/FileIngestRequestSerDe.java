@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableNotFoundException;
+import sleeper.core.table.TableStatus;
 import sleeper.ingest.batcher.FileIngestRequest;
 
 import java.time.Instant;
@@ -34,8 +34,8 @@ import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.util.NumberFormatUtils.formatBytes;
-import static sleeper.utils.HadoopPathUtils.getRequestPath;
-import static sleeper.utils.HadoopPathUtils.streamFiles;
+import static sleeper.io.parquet.utils.HadoopPathUtils.getRequestPath;
+import static sleeper.io.parquet.utils.HadoopPathUtils.streamFiles;
 
 public class FileIngestRequestSerDe {
     private static final Logger LOGGER = LoggerFactory.getLogger(FileIngestRequestSerDe.class);
@@ -59,28 +59,36 @@ public class FileIngestRequestSerDe {
         return GSON.toJson(new Request(bucketName, keys, tableName));
     }
 
+    public static String toJson(List<String> files, String tableName) {
+        return GSON.toJson(new Request(files, tableName));
+    }
+
     private static class Request {
         private final List<String> files;
         private final String tableName;
 
         Request(String bucketName, List<String> keys, String tableName) {
-            this.files = keys.stream().map(key -> bucketName + "/" + key).collect(Collectors.toList());
+            this(keys.stream().map(key -> bucketName + "/" + key).collect(Collectors.toList()), tableName);
+        }
+
+        Request(List<String> files, String tableName) {
+            this.files = files;
             this.tableName = tableName;
         }
 
         List<FileIngestRequest> toFileIngestRequests(
                 InstanceProperties properties, Configuration conf, Instant receivedTime, TableIndex tableIndex) {
-            TableIdentity tableId = tableIndex.getTableByName(tableName)
+            TableStatus table = tableIndex.getTableByName(tableName)
                     .orElseThrow(() -> TableNotFoundException.withTableName(tableName));
             return streamFiles(files, conf, properties.get(FILE_SYSTEM))
                     .map(file -> {
                         String filePath = getRequestPath(file);
                         LOGGER.info("Deserialised ingest request for file {} with size {} to table {}",
-                                filePath, formatBytes(file.getLen()), tableId);
+                                filePath, formatBytes(file.getLen()), table);
                         return FileIngestRequest.builder()
                                 .file(filePath)
                                 .fileSizeBytes(file.getLen())
-                                .tableId(tableId.getTableUniqueId())
+                                .tableId(table.getTableUniqueId())
                                 .receivedTime(receivedTime)
                                 .build();
                     })

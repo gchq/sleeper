@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,6 @@ import static sleeper.cdk.UtilsTestHelper.createUserDefinedTableProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.SleeperVersion.getVersion;
 
 class UtilsPropertiesIT {
@@ -117,23 +116,7 @@ class UtilsPropertiesIT {
             Function<String, String> context = cdkContextWithPropertiesFile();
             assertThatThrownBy(() -> loadInstanceProperties(context))
                     .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("Sleeper instance id is illegal: aa$$aa");
-        }
-
-        @Test
-        void shouldFailWhenTableNameCannotBePartOfAValidBucketName() throws IOException {
-            // Given
-            InstanceProperties instanceProperties = createUserDefinedInstanceProperties();
-            TableProperties properties = createUserDefinedTableProperties(instanceProperties);
-            instanceProperties.set(ID, "valid-id");
-            properties.set(TABLE_NAME, "example--invalid-name-tab$$-le");
-            SaveLocalProperties.saveToDirectory(tempDir, instanceProperties, Stream.of(properties));
-
-            // When / Then
-            Function<String, String> context = cdkContextWithPropertiesFile();
-            assertThatThrownBy(() -> loadInstanceProperties(context))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("Sleeper table bucket name is illegal: sleeper-valid-id-table-example--invalid-name-tab$$-le");
+                    .hasMessage("Sleeper instance ID is not valid as part of an S3 bucket name: aa$$aa");
         }
     }
 

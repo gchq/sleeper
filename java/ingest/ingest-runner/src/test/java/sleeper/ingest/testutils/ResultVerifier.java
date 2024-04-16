@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.PrimitiveType;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.sketches.Sketches;
@@ -41,6 +41,7 @@ import java.io.UncheckedIOException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -57,12 +58,12 @@ public class ResultVerifier {
     }
 
     public static Map<Field, ItemsSketch> readFieldToItemSketchMap(Schema sleeperSchema,
-                                                                   List<FileInfo> partitionFileInfoList,
-                                                                   Configuration hadoopConfiguration) {
-        List<Sketches> readSketchesList = partitionFileInfoList.stream()
-                .map(fileInfo -> {
+            List<FileReference> partitionFileReferenceList,
+            Configuration hadoopConfiguration) {
+        List<Sketches> readSketchesList = partitionFileReferenceList.stream()
+                .map(fileReference -> {
                     try {
-                        String sketchFileName = fileInfo.getFilename().replace(".parquet", ".sketches");
+                        String sketchFileName = fileReference.getFilename().replace(".parquet", ".sketches");
                         return new SketchesSerDeToS3(sleeperSchema).loadFromHadoopFS(new Path(sketchFileName), hadoopConfiguration);
                     } catch (Exception e) {
                         throw new RuntimeException(e);
@@ -102,12 +103,17 @@ public class ResultVerifier {
     }
 
     public static List<Record> readMergedRecordsFromPartitionDataFiles(Schema sleeperSchema,
-                                                                       List<FileInfo> fileInfoList,
-                                                                       Configuration hadoopConfiguration) {
+            List<FileReference> fileReferenceList,
+            Configuration hadoopConfiguration) {
         List<Record> recordsRead = new ArrayList<>();
-        for (FileInfo fileInfo : fileInfoList) {
+        Set<String> filenames = new HashSet<>();
+        for (FileReference fileReference : fileReferenceList) {
+            if (filenames.contains(fileReference.getFilename())) {
+                continue;
+            }
+            filenames.add(fileReference.getFilename());
             try (CloseableIterator<Record> iterator = createParquetReaderIterator(
-                    sleeperSchema, new Path(fileInfo.getFilename()), hadoopConfiguration)) {
+                    sleeperSchema, new Path(fileReference.getFilename()), hadoopConfiguration)) {
                 iterator.forEachRemaining(recordsRead::add);
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
@@ -117,11 +123,11 @@ public class ResultVerifier {
     }
 
     public static List<Record> readRecordsFromPartitionDataFile(Schema sleeperSchema,
-                                                                FileInfo fileInfo,
-                                                                Configuration hadoopConfiguration) {
+            FileReference fileReference,
+            Configuration hadoopConfiguration) {
 
         try (CloseableIterator<Record> iterator = createParquetReaderIterator(
-                sleeperSchema, new Path(fileInfo.getFilename()), hadoopConfiguration)) {
+                sleeperSchema, new Path(fileReference.getFilename()), hadoopConfiguration)) {
             List<Record> recordsRead = new ArrayList<>();
             iterator.forEachRemaining(recordsRead::add);
             return recordsRead;
@@ -131,8 +137,8 @@ public class ResultVerifier {
     }
 
     private static ParquetReaderIterator createParquetReaderIterator(Schema sleeperSchema,
-                                                                     Path filePath,
-                                                                     Configuration hadoopConfiguration) {
+            Path filePath,
+            Configuration hadoopConfiguration) {
         try {
             ParquetReader<Record> recordParquetReader = new ParquetRecordReader.Builder(filePath, sleeperSchema)
                     .withConf(hadoopConfiguration)
@@ -144,7 +150,7 @@ public class ResultVerifier {
     }
 
     public static void assertOnSketch(Field field, RecordGenerator.RecordListAndSchema recordListAndSchema,
-                                      List<FileInfo> actualFiles, Configuration hadoopConfiguration) {
+            List<FileReference> actualFiles, Configuration hadoopConfiguration) {
         ItemsSketch expectedSketch = createItemSketch(field, recordListAndSchema.recordList);
         ItemsSketch savedSketch = readFieldToItemSketchMap(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration).get(field);
         assertOnSketch(field, expectedSketch, savedSketch);

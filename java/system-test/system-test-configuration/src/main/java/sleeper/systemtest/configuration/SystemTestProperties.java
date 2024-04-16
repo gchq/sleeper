@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,7 @@ import sleeper.configuration.properties.instance.InstanceProperty;
 import java.util.Properties;
 
 /**
- * A class that extends {@link InstanceProperties} adding properties needed to
- * run the system tests that add random data to Sleeper.
+ * Holds properties for a Sleeper instance as well as properties needed to run system test data generation tasks.
  */
 public class SystemTestProperties extends InstanceProperties {
 

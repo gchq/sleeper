@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,21 +31,21 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.properties.table.TablePropertiesStore;
+import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.partition.Partition;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.table.TableStatus;
 import sleeper.ingest.impl.IngestCoordinator;
-import sleeper.query.QueryException;
-import sleeper.query.executor.QueryExecutor;
 import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
+import sleeper.query.model.QueryException;
+import sleeper.query.runner.recordretrieval.QueryExecutor;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.trino.SleeperConfig;
@@ -69,8 +69,8 @@ import static java.util.Objects.requireNonNull;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
 /**
- * This class manages the basic connection to a Sleeper instance, such as retrieving configuration from S3 and
- * performing queries. It uses Sleeper concepts throughout and does not attempt to convert these into Trino concepts.
+ * Manages the basic connection to a Sleeper instance. This includes retrieving configuration from S3 and performing
+ * queries. It uses Sleeper concepts throughout and does not attempt to convert these into Trino concepts.
  * <p>
  * Some of the code in this class has been copied directly from the official Sleeper command-line Client class (@link
  * sleeper.client.utils.Client}. It was necessary to do this because of various method-scope issues in the official
@@ -99,7 +99,6 @@ public class SleeperRawAwsConnection implements AutoCloseable {
     private final AmazonDynamoDB dynamoDbClient;
     private final HadoopConfigurationProvider hadoopConfigurationProvider;
     private final InstanceProperties instanceProperties;
-    private final TablePropertiesStore tablePropertiesStore;
     private final StateStoreProvider stateStoreProvider;
     private final StateStoreFactory stateStoreFactory;
     private final List<String> tableNames;
@@ -109,10 +108,10 @@ public class SleeperRawAwsConnection implements AutoCloseable {
     private final LoadingCache<Pair<String, Instant>, SleeperTablePartitionStructure> sleeperTablePartitionStructureCache;
 
     SleeperRawAwsConnection(SleeperConfig sleeperConfig,
-                            AmazonS3 s3Client,
-                            S3AsyncClient s3AsyncClient,
-                            AmazonDynamoDB dynamoDbClient,
-                            HadoopConfigurationProvider hadoopConfigurationProvider) throws ObjectFactoryException {
+            AmazonS3 s3Client,
+            S3AsyncClient s3AsyncClient,
+            AmazonDynamoDB dynamoDbClient,
+            HadoopConfigurationProvider hadoopConfigurationProvider) throws ObjectFactoryException {
         requireNonNull(sleeperConfig);
         this.sleeperConfig = sleeperConfig;
         this.s3Client = requireNonNull(s3Client);
@@ -126,7 +125,6 @@ public class SleeperRawAwsConnection implements AutoCloseable {
         // will be used to create a new state store for each thread.
         this.instanceProperties = new InstanceProperties();
         this.instanceProperties.loadFromS3(this.s3Client, sleeperConfig.getConfigBucket());
-        this.tablePropertiesStore = S3TableProperties.getStore(instanceProperties, s3Client, dynamoDbClient);
         this.stateStoreProvider = new StateStoreProvider(this.dynamoDbClient, this.instanceProperties,
                 this.hadoopConfigurationProvider.getHadoopConfiguration(instanceProperties));
         this.stateStoreFactory = new StateStoreFactory(this.dynamoDbClient, this.instanceProperties,
@@ -134,7 +132,8 @@ public class SleeperRawAwsConnection implements AutoCloseable {
 
         // Member variables related to table properties
         // Note that the table-properties provider is NOT thread-safe.
-        tableNames = pullAllSleeperTableNames();
+        tableNames = new DynamoDBTableIndex(instanceProperties, dynamoDbClient).streamAllTables()
+                .map(TableStatus::getTableName).toList();
         tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDbClient);
         LOGGER.info(String.format("Number of Sleeper tables: %d", tableNames.size()));
         for (String tableName : tableNames) {
@@ -197,32 +196,23 @@ public class SleeperRawAwsConnection implements AutoCloseable {
     }
 
     /**
-     * The Sleeper {@link Schema} for a specified table. The Sleeper schema defines the columns of the table.
+     * The Sleeper schema for a specified table. The Sleeper schema defines the columns of the table.
      *
-     * @param tableName The name of the table.
-     * @return The Sleeper schema.
+     * @param  tableName The name of the table.
+     * @return           The Sleeper schema.
      */
     public Schema getSleeperSchema(String tableName) {
         return tablePropertiesProvider.getByName(tableName).getSchema();
     }
 
     /**
-     * Interrogate the S3 Sleeper configuration bucket and retrieve a list of all of the Sleeper table names.
-     *
-     * @return A list of Sleeper table names.
-     */
-    private List<String> pullAllSleeperTableNames() {
-        return tablePropertiesStore.listTableNames();
-    }
-
-    /**
      * Retrieve the table partition structure for a single table.
      *
-     * @param tableName   The name of the table.
-     * @param asOfInstant This argument is currently ignored because there is no mechanism to retrieve the structure
-     *                    as-of a specified time from the state store.
-     * @return The partition structure.
-     * @throws StateStoreException When an error occurs accessing the state store.
+     * @param  tableName           the name of the table
+     * @param  asOfInstant         this argument is currently ignored because there is no mechanism to retrieve the
+     *                             structure as-of a specified time from the state store
+     * @return                     the partition structure
+     * @throws StateStoreException when an error occurs accessing the state store
      */
     public SleeperTablePartitionStructure getSleeperTablePartitionStructure(
             String tableName, Instant asOfInstant) throws StateStoreException {
@@ -235,23 +225,22 @@ public class SleeperRawAwsConnection implements AutoCloseable {
         // The state store which is returned may not be thread-safe either.
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         List<Partition> partitions = stateStore.getAllPartitions();
-        Map<String, List<String>> partitionToFileMapping = stateStore.getPartitionToActiveFilesMap();
+        Map<String, List<String>> partitionToFileMapping = stateStore.getPartitionToReferencedFilesMap();
         LOGGER.debug("Retrieved " + partitions.size() + " partitions from StateStore");
         return new SleeperTablePartitionStructure(asOfInstant, partitions, partitionToFileMapping);
     }
 
     /**
-     * Create a stream of {@link Record} objects returned by a single query.
+     * Creates a stream of records returned by a single query.
      *
-     * @param asOfInstant The instant to use when obtaining the list of files to query from the underlying state store.
-     *                    Currently ignored.
-     * @param query       The query to run.
-     * @return A stream of records containing the results of the query.
-     * @throws QueryException     If something goes wrong.
-     * @throws ExecutionException If something goes wrong.
+     * @param  asOfInstant        the instant to use when obtaining the list of files to query from the underlying state
+     *                            store (currently ignored)
+     * @param  query              the query to run
+     * @return                    a stream of records containing the results of the query
+     * @throws QueryException     if something goes wrong
+     * @throws ExecutionException if something goes wrong
      */
-    public Stream<Record> createResultRecordStream(Instant asOfInstant, LeafPartitionQuery query)
-            throws QueryException, ExecutionException {
+    public Stream<Record> createResultRecordStream(Instant asOfInstant, LeafPartitionQuery query) throws QueryException, ExecutionException {
         CloseableIterator<Record> resultRecordIterator = createResultRecordIterator(asOfInstant, query);
         Spliterator<Record> resultRecordSpliterator = Spliterators.spliteratorUnknownSize(
                 resultRecordIterator,
@@ -267,22 +256,22 @@ public class SleeperRawAwsConnection implements AutoCloseable {
     }
 
     /**
-     * Split a {@link Query} into one or more {@link LeafPartitionQuery} objects, each representing a scan of a leaf
-     * partition, which combine to cover the entire original query. The leaf partition queries are genersated using the
-     * core Sleeper method {@link QueryExecutor#splitIntoLeafPartitionQueries}.
+     * Split a query into one or more sub-queries. Each will represent a scan of a leaf partition, which combine to
+     * cover the entire original query. The leaf partition queries are generated using the core Sleeper method
+     * {@link QueryExecutor#splitIntoLeafPartitionQueries}.
      *
-     * @param asOfInstant The instant to use when obtaining the list of files to query from the underlying state store.
-     *                    Currently ignored.
-     * @param query       The {@link Query} to split into {@link LeafPartitionQuery} objects.
-     * @return The list of {@link LeafPartitionQuery} objects.
+     * @param  asOfInstant        The instant to use when obtaining the list of files to query from the underlying state
+     *                            store.
+     *                            Currently ignored.
+     * @param  query              The {@link Query} to split into {@link LeafPartitionQuery} objects.
+     * @return                    The list of {@link LeafPartitionQuery} objects.
      * @throws ExecutionException If something goes wrong.
      */
     public List<LeafPartitionQuery> splitIntoLeafPartitionQueries(
             Instant asOfInstant,
             Query query) throws ExecutionException {
         TableProperties tableProperties = tablePropertiesProvider.getByName(query.getTableName());
-        SleeperTablePartitionStructure sleeperTablePartitionStructure =
-                sleeperTablePartitionStructureCache.get(Pair.of(tableProperties.get(TABLE_ID), asOfInstant));
+        SleeperTablePartitionStructure sleeperTablePartitionStructure = sleeperTablePartitionStructureCache.get(Pair.of(tableProperties.get(TABLE_ID), asOfInstant));
 
         // This seems like a lot of effort to go to in order to identify partitions
         QueryExecutor queryExecutor = new QueryExecutor(
@@ -299,17 +288,15 @@ public class SleeperRawAwsConnection implements AutoCloseable {
     /**
      * Start running a query and return an iterator to use to scroll through the results.
      *
-     * @param asOfInstant The instant to use when obtaining the list of files to query from the underlying state store.
-     *                    Currently ignored.
-     * @param query       The query to run.
-     * @return A Closeableterator which iterates through the result records. Make sure that it is closed when it is
-     * finished with.
-     * @throws QueryException              If something goes wrong.
-     * @throws ExecutionException          If something goes wrong.
-     * @throws UncheckedExecutionException If something goes wrong.
+     * @param  asOfInstant                 the instant to use when obtaining the list of files to query from the
+     *                                     underlying state store (currently ignored)
+     * @param  query                       the query to run
+     * @return                             an iterator through the result records (make sure this is closed)
+     * @throws QueryException              if something goes wrong
+     * @throws ExecutionException          if something goes wrong
+     * @throws UncheckedExecutionException if something goes wrong
      */
-    private CloseableIterator<Record> createResultRecordIterator(Instant asOfInstant, LeafPartitionQuery query)
-            throws QueryException, ExecutionException, UncheckedExecutionException {
+    private CloseableIterator<Record> createResultRecordIterator(Instant asOfInstant, LeafPartitionQuery query) throws QueryException, ExecutionException, UncheckedExecutionException {
         TableProperties tableProperties = tablePropertiesProvider.getById(query.getTableId());
         StateStore stateStore = this.stateStoreFactory.getStateStore(tableProperties);
         SleeperTablePartitionStructure sleeperTablePartitionStructure = sleeperTablePartitionStructureCache.get(Pair.of(query.getTableId(), asOfInstant));
@@ -326,12 +313,10 @@ public class SleeperRawAwsConnection implements AutoCloseable {
     }
 
     /**
-     * Create a new {@link IngestCoordinator} object to add rows to a table.
-     * <p>
-     * Make sure to initialise the returned object and close it after use.
+     * Create a new ingest coordinator to add rows to a table. Make sure to close it after use.
      *
-     * @param tableName The table to add the rows to.
-     * @return The new {@link IngestCoordinator} object.
+     * @param  tableName The table to add the rows to.
+     * @return           The new {@link IngestCoordinator} object.
      */
     public IngestCoordinator<Page> createIngestRecordsAsync(String tableName) {
         TableProperties tableProperties = tablePropertiesProvider.getByName(tableName);

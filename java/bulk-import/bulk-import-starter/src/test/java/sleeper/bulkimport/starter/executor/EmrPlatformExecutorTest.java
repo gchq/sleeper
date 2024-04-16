@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,8 +43,7 @@ import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
-import sleeper.core.table.TableIdentity;
-import sleeper.ingest.job.status.WriteToMemoryIngestJobStatusStore;
+import sleeper.ingest.job.status.InMemoryIngestJobStatusStore;
 import sleeper.statestore.FixedStateStoreProvider;
 
 import java.time.Instant;
@@ -72,6 +71,8 @@ import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_E
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRun;
@@ -84,8 +85,8 @@ class EmrPlatformExecutorTest {
     private final AmazonS3 amazonS3 = mock(AmazonS3.class);
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
-    private final TableIdentity tableId = tableProperties.getId();
-    private final WriteToMemoryIngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
+    private final String tableId = tableProperties.get(TABLE_ID);
+    private final InMemoryIngestJobStatusStore ingestJobStatusStore = new InMemoryIngestJobStatusStore();
 
     @BeforeEach
     public void setUpEmr() {
@@ -489,6 +490,7 @@ class EmrPlatformExecutorTest {
     private BulkImportJob.Builder singleFileJobBuilder() {
         return new BulkImportJob.Builder()
                 .tableId(tableId)
+                .tableName(tableProperties.get(TABLE_NAME))
                 .id("my-job")
                 .files(Lists.newArrayList("file1.parquet"));
     }

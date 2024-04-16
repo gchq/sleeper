@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package sleeper.bulkimport.job;
 
-import sleeper.core.table.TableIdentity;
 import sleeper.ingest.job.IngestJob;
 
 import java.util.HashMap;
@@ -153,11 +152,6 @@ public class BulkImportJob {
         public Builder tableId(String tableId) {
             this.tableId = tableId;
             return this;
-        }
-
-        public Builder tableId(TableIdentity tableId) {
-            return tableName(tableId.getTableName())
-                    .tableId(tableId.getTableUniqueId());
         }
 
         public Builder files(List<String> files) {

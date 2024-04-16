@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,18 +29,17 @@ import sleeper.clients.util.ClientUtils;
 import sleeper.compaction.job.CompactionJobSerDe;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.job.common.QueueMessageCount;
 import sleeper.query.model.QuerySerDe;
 import sleeper.splitter.SplitPartitionJobDefinitionSerDe;
+import sleeper.task.common.QueueMessageCount;
 
 import java.io.IOException;
 import java.util.function.Function;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_DLQ_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_DLQ_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_JOB_DLQ_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_DLQ_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_DLQ_URL;
 
 /**
  * A utility class to report information about messages on the various dead-letter
@@ -52,8 +51,8 @@ public class DeadLettersStatusReport {
     private final TablePropertiesProvider tablePropertiesProvider;
 
     public DeadLettersStatusReport(AmazonSQS sqsClient,
-                                   InstanceProperties instanceProperties,
-                                   TablePropertiesProvider tablePropertiesProvider) {
+            InstanceProperties instanceProperties,
+            TablePropertiesProvider tablePropertiesProvider) {
         this.sqsClient = sqsClient;
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
@@ -63,24 +62,16 @@ public class DeadLettersStatusReport {
         System.out.println("\nDead Letters Status Report:\n--------------------------");
         printStats(instanceProperties.get(COMPACTION_JOB_DLQ_URL), "compaction jobs dead-letter", s -> {
             try {
-                return new CompactionJobSerDe(tablePropertiesProvider).deserialiseFromString(s).toString();
-            } catch (IOException e) {
-                return e.getMessage();
-            }
-        });
-        printStats(instanceProperties.get(SPLITTING_COMPACTION_JOB_DLQ_URL), "splitting compaction jobs dead-letter", s -> {
-            try {
-                return new CompactionJobSerDe(tablePropertiesProvider).deserialiseFromString(s).toString();
+                return CompactionJobSerDe.deserialiseFromString(s).toString();
             } catch (IOException e) {
                 return e.getMessage();
             }
         });
         printStats(instanceProperties.get(INGEST_JOB_DLQ_URL), "ingest jobs dead-letter", s -> s);
-        printStats(instanceProperties.get(PARTITION_SPLITTING_DLQ_URL), "partition splitting jobs dead-letter", s ->
-                new SplitPartitionJobDefinitionSerDe(tablePropertiesProvider).fromJson(s).toString());
+        printStats(instanceProperties.get(PARTITION_SPLITTING_JOB_DLQ_URL), "partition splitting jobs dead-letter",
+                s -> new SplitPartitionJobDefinitionSerDe(tablePropertiesProvider).fromJson(s).toString());
 
-        printStats(instanceProperties.get(QUERY_DLQ_URL), "queries dead-letter", s ->
-                new QuerySerDe(tablePropertiesProvider).fromJsonOrLeafQuery(s).toString());
+        printStats(instanceProperties.get(QUERY_DLQ_URL), "queries dead-letter", s -> new QuerySerDe(tablePropertiesProvider).fromJsonOrLeafQuery(s).toString());
     }
 
     private void printStats(String queueUrl, String description, Function<String, String> decoder) {

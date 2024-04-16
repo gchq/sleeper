@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -100,14 +100,14 @@ public class DynamoDBCompactionTaskStatusStore implements CompactionTaskStatusSt
     @Override
     public List<CompactionTaskStatus> getAllTasks() {
         return DynamoDBCompactionTaskStatusFormat.streamTaskStatuses(
-                        streamPagedItems(dynamoDB, new ScanRequest().withTableName(statusTableName)))
+                streamPagedItems(dynamoDB, new ScanRequest().withTableName(statusTableName)))
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<CompactionTaskStatus> getTasksInTimePeriod(Instant startTime, Instant endTime) {
         return DynamoDBCompactionTaskStatusFormat.streamTaskStatuses(
-                        streamPagedItems(dynamoDB, new ScanRequest().withTableName(statusTableName)))
+                streamPagedItems(dynamoDB, new ScanRequest().withTableName(statusTableName)))
                 .filter(task -> task.isInPeriod(startTime, endTime))
                 .collect(Collectors.toList());
     }
@@ -115,7 +115,7 @@ public class DynamoDBCompactionTaskStatusStore implements CompactionTaskStatusSt
     @Override
     public List<CompactionTaskStatus> getTasksInProgress() {
         return DynamoDBCompactionTaskStatusFormat.streamTaskStatuses(
-                        streamPagedItems(dynamoDB, new ScanRequest().withTableName(statusTableName)))
+                streamPagedItems(dynamoDB, new ScanRequest().withTableName(statusTableName)))
                 .filter(task -> !task.isFinished())
                 .collect(Collectors.toList());
     }

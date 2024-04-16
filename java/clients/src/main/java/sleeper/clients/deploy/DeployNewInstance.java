@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,8 @@ import sleeper.clients.util.CommandPipelineRunner;
 import sleeper.clients.util.EcrRepositoryCreator;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
+import sleeper.configuration.deploy.DeployInstanceConfiguration;
+import sleeper.configuration.deploy.DeployInstanceConfigurationFromTemplates;
 import sleeper.configuration.properties.SleeperPropertiesValidationReporter;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.local.SaveLocalProperties;
@@ -47,6 +49,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import static sleeper.clients.util.ClientUtils.optionalArgument;
+import static sleeper.io.parquet.utils.HadoopConfigurationProvider.getConfigurationForClient;
 
 public class DeployNewInstance {
     private static final Logger LOGGER = LoggerFactory.getLogger(DeployNewInstance.class);
@@ -63,6 +66,7 @@ public class DeployNewInstance {
     private final String subnetIds;
     private final DeployInstanceConfiguration deployInstanceConfiguration;
     private final Consumer<InstanceProperties> extraInstanceProperties;
+    private final List<StackDockerImage> extraDockerImages;
     private final InvokeCdkForInstance.Type instanceType;
     private final CommandPipelineRunner runCommand;
     private final boolean deployPaused;
@@ -80,6 +84,7 @@ public class DeployNewInstance {
         subnetIds = builder.subnetIds;
         deployInstanceConfiguration = builder.deployInstanceConfiguration;
         extraInstanceProperties = builder.extraInstanceProperties;
+        extraDockerImages = builder.extraDockerImages;
         instanceType = builder.instanceType;
         runCommand = builder.runCommand;
         deployPaused = builder.deployPaused;
@@ -143,7 +148,9 @@ public class DeployNewInstance {
         UploadDockerImages.builder()
                 .baseDockerDirectory(scriptsDirectory.resolve("docker"))
                 .ecrClient(EcrRepositoryCreator.withEcrClient(ecr))
-                .build().upload(runCommand, StacksForDockerUpload.from(instanceProperties, sleeperVersion));
+                .build().upload(runCommand,
+                        StacksForDockerUpload.from(instanceProperties, sleeperVersion),
+                        extraDockerImages);
 
         Files.createDirectories(generatedDirectory);
         ClientUtils.clearDirectory(generatedDirectory);
@@ -160,8 +167,8 @@ public class DeployNewInstance {
                 .build().invoke(instanceType, cdkCommand, runCommand);
         instanceProperties.loadFromS3GivenInstanceId(s3, instanceId);
         for (TableProperties tableProperties : deployInstanceConfiguration.getTableProperties()) {
-            LOGGER.info("Adding table " + tableProperties.getId());
-            new AddTable(s3, dynamoDB, instanceProperties, tableProperties).run();
+            LOGGER.info("Adding table " + tableProperties.getStatus());
+            new AddTable(s3, dynamoDB, instanceProperties, tableProperties, getConfigurationForClient(instanceProperties, tableProperties)).run();
         }
         LOGGER.info("Finished deployment of new instance");
     }
@@ -187,6 +194,7 @@ public class DeployNewInstance {
         private DeployInstanceConfiguration deployInstanceConfiguration;
         private Consumer<InstanceProperties> extraInstanceProperties = properties -> {
         };
+        private List<StackDockerImage> extraDockerImages = List.of();
         private InvokeCdkForInstance.Type instanceType;
         private CommandPipelineRunner runCommand = ClientUtils::runCommandInheritIO;
         private boolean deployPaused;
@@ -254,6 +262,11 @@ public class DeployNewInstance {
             return this;
         }
 
+        public Builder extraDockerImages(List<StackDockerImage> extraDockerImages) {
+            this.extraDockerImages = extraDockerImages;
+            return this;
+        }
+
         public Builder instanceType(InvokeCdkForInstance.Type instanceType) {
             this.instanceType = instanceType;
             return this;
@@ -284,8 +297,9 @@ public class DeployNewInstance {
             }
         }
 
-        public void deployWithClients(AWSSecurityTokenService sts, AwsRegionProvider regionProvider,
-                                      AmazonS3 s3, S3Client s3v2, AmazonECR ecr, AmazonDynamoDB dynamoDB) throws IOException, InterruptedException {
+        public void deployWithClients(
+                AWSSecurityTokenService sts, AwsRegionProvider regionProvider,
+                AmazonS3 s3, S3Client s3v2, AmazonECR ecr, AmazonDynamoDB dynamoDB) throws IOException, InterruptedException {
             sts(sts).regionProvider(regionProvider)
                     .s3(s3).s3v2(s3v2).ecr(ecr)
                     .dynamoDB(dynamoDB)

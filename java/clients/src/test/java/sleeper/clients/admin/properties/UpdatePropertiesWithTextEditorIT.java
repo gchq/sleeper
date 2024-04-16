@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -168,8 +168,7 @@ class UpdatePropertiesWithTextEditorIT {
             properties.set(LOGGING_LEVEL, "ERROR");
 
             // When / Then
-            assertThat(helper.openFileGetPropertiesWritten(updater ->
-                    updater.openPropertiesFile(properties, InstancePropertyGroup.LOGGING)))
+            assertThat(helper.openFileGetPropertiesWritten(updater -> updater.openPropertiesFile(properties, InstancePropertyGroup.LOGGING)))
                     .isEqualTo(loadProperties("" +
                             "sleeper.logging.level=ERROR"));
         }
@@ -181,13 +180,12 @@ class UpdatePropertiesWithTextEditorIT {
             properties.set(LOGGING_LEVEL, "ERROR");
 
             // When
-            String tempFileString = Files.readString(helper.openFileGetPathToFile(updater ->
-                    updater.openPropertiesFile(properties, InstancePropertyGroup.LOGGING)));
+            String tempFileString = Files.readString(helper.openFileGetPathToFile(updater -> updater.openPropertiesFile(properties, InstancePropertyGroup.LOGGING)));
 
             // Then
             StringWriter writer = new StringWriter();
             SleeperPropertiesPrettyPrinter.forInstancePropertiesWithGroup(
-                            new PrintWriter(writer), InstancePropertyGroup.LOGGING)
+                    new PrintWriter(writer), InstancePropertyGroup.LOGGING)
                     .print(properties);
             assertThat(tempFileString).isEqualTo(writer.toString());
         }
@@ -253,11 +251,10 @@ class UpdatePropertiesWithTextEditorIT {
         void shouldNotShowUnknownProperties() throws Exception {
             // Given
             InstanceProperties properties = generateTestInstanceProperties();
-            properties.loadFromString("unknown.property=some-value");
+            properties.getProperties().setProperty("unknown.property", "some-value");
 
             // When
-            assertThat(helper.openFileGetPropertiesWritten(updater ->
-                    updater.openPropertiesFile(properties, InstancePropertyGroup.LOGGING)))
+            assertThat(helper.openFileGetPropertiesWritten(updater -> updater.openPropertiesFile(properties, InstancePropertyGroup.LOGGING)))
                     .isEmpty();
         }
 
@@ -265,9 +262,9 @@ class UpdatePropertiesWithTextEditorIT {
         void shouldUpdateAnUnknownProperty() throws Exception {
             // Given
             InstanceProperties before = generateTestInstanceProperties();
-            before.loadFromString("unknown.property=value-before");
+            before.getProperties().setProperty("unknown.property", "value-before");
             InstanceProperties after = generateTestInstanceProperties();
-            after.loadFromString("unknown.property=value-after");
+            after.getProperties().setProperty("unknown.property", "value-after");
 
             // When
             UpdatePropertiesRequest<InstanceProperties> updatePropertiesRequest = helper.updatePropertiesWithGroup(
@@ -303,9 +300,9 @@ class UpdatePropertiesWithTextEditorIT {
         void shouldLeaveUnknownPropertyUnchangedWhenEditingAnotherProperty() throws Exception {
             // Given
             InstanceProperties before = generateTestInstanceProperties();
-            before.loadFromString("unknown.property=test-value");
+            before.getProperties().setProperty("unknown.property", "test-value");
             InstanceProperties after = generateTestInstanceProperties();
-            after.loadFromString("unknown.property=test-value");
+            after.getProperties().setProperty("unknown.property", "test-value");
             after.set(LOGGING_LEVEL, "TRACE");
 
             // When

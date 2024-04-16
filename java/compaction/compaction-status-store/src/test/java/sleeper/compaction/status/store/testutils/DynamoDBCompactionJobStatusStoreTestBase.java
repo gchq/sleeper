@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,8 +35,7 @@ import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.statestore.FileInfoFactory;
-import sleeper.core.table.TableIdentity;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.dynamodb.tools.DynamoDBTestBase;
 
 import java.time.Duration;
@@ -53,6 +52,7 @@ import static sleeper.configuration.properties.InstancePropertiesTestHelper.crea
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_STATUS_TTL_IN_SECONDS;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
@@ -67,7 +67,7 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
     private final Schema schema = schemaWithKey("key", new StringType());
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
 
-    protected final TableIdentity tableId = tableProperties.getId();
+    protected final String tableId = tableProperties.get(TABLE_ID);
     protected final CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
     protected final CompactionJobStatusStore store = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
 
@@ -84,25 +84,25 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
     protected CompactionJobStatusStore storeWithTimeToLiveAndUpdateTimes(Duration timeToLive, Instant... updateTimes) {
         instanceProperties.set(COMPACTION_JOB_STATUS_TTL_IN_SECONDS, "" + timeToLive.getSeconds());
         return new DynamoDBCompactionJobStatusStore(dynamoDBClient, instanceProperties,
-                Arrays.stream(updateTimes).iterator()::next);
+                true, Arrays.stream(updateTimes).iterator()::next);
     }
 
     protected Partition singlePartition() {
         return new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct().get(0);
     }
 
-    protected FileInfoFactory fileFactory(Partition singlePartition) {
+    protected FileReferenceFactory fileFactory(Partition singlePartition) {
         return fileFactory(Collections.singletonList(singlePartition));
     }
 
-    protected FileInfoFactory fileFactoryWithPartitions(Consumer<PartitionsBuilder> partitionConfig) {
+    protected FileReferenceFactory fileFactoryWithPartitions(Consumer<PartitionsBuilder> partitionConfig) {
         PartitionsBuilder builder = new PartitionsBuilder(schema);
         partitionConfig.accept(builder);
         return fileFactory(builder.buildList());
     }
 
-    private FileInfoFactory fileFactory(List<Partition> partitions) {
-        return new FileInfoFactory(schema, partitions, Instant.now());
+    private FileReferenceFactory fileFactory(List<Partition> partitions) {
+        return FileReferenceFactory.from(partitions);
     }
 
     protected CompactionJobFactory jobFactoryForOtherTable() {

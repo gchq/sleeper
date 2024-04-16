@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,7 +64,7 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
 
         // When
         StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
-        String file = stateStore.getActiveFiles().get(0).getFilename();
+        String file = stateStore.getFileReferences().get(0).getFilename();
 
         SimpleRecordHandler sleeperRecordHandler = new SimpleRecordHandler(
                 s3Client, dynamoClient,
@@ -79,12 +79,10 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
         Map<String, ValueSet> predicates = new HashMap<>();
         predicates.put("month", EquatableValueSet
                 .newBuilder(new BlockAllocatorImpl(), Types.MinorType.INT.getType(), true, false)
-                .add(2).build()
-        );
+                .add(2).build());
         predicates.put("day", EquatableValueSet
                 .newBuilder(new BlockAllocatorImpl(), Types.MinorType.INT.getType(), true, false)
-                .add(30).build()
-        );
+                .add(30).build());
 
         RecordResponse response = sleeperRecordHandler.doReadRecords(new BlockAllocatorImpl(), new ReadRecordsRequest(
                 TestUtils.createIdentity(),
@@ -97,8 +95,7 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
                         .build(),
                 new Constraints(predicates),
                 1_000_000L,
-                1_000L
-        ));
+                1_000L));
 
         // Then
         assertThat(response).isInstanceOf(ReadRecordsResponse.class);
@@ -112,7 +109,7 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
 
         // When
         StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
-        String file = stateStore.getActiveFiles().get(0).getFilename();
+        String file = stateStore.getFileReferences().get(0).getFilename();
 
         SimpleRecordHandler sleeperRecordHandler = new SimpleRecordHandler(
                 s3Client, dynamoClient,
@@ -126,8 +123,7 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
 
         Map<String, ValueSet> predicates = new HashMap<>();
         predicates.put("year", SortedRangeSet.of(Range.range(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
-                2022, true, 2024, false))
-        );
+                2022, true, 2024, false)));
 
         RecordResponse response = sleeperRecordHandler.doReadRecords(new BlockAllocatorImpl(), new ReadRecordsRequest(
                 TestUtils.createIdentity(),
@@ -140,8 +136,7 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
                         .build(),
                 new Constraints(predicates),
                 1_000_000L,
-                1_000L
-        ));
+                1_000L));
 
         // Then
         assertThat(response).isInstanceOf(ReadRecordsResponse.class);
@@ -155,11 +150,11 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
 
         // When
         StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
-        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
+        Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
         String file2018 = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)
                 .map(Partition::getId)
-                .map(partitionToActiveFilesMap::get)
+                .map(partitionToFiles::get)
                 .flatMap(List::stream)
                 .findAny()
                 .orElseThrow(RuntimeException::new);
@@ -176,12 +171,9 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
 
         Map<String, ValueSet> predicates = new HashMap<>();
         predicates.put("year", SortedRangeSet.of(Range.range(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
-                2018, true, 2020, false))
-        );
+                2018, true, 2020, false)));
         predicates.put("month", SortedRangeSet.of(Range.range(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
-                6, true, 8, false))
-        );
-
+                6, true, 8, false)));
 
         RecordResponse response = sleeperRecordHandler.doReadRecords(new BlockAllocatorImpl(), new ReadRecordsRequest(
                 TestUtils.createIdentity(),
@@ -194,8 +186,7 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
                         .build(),
                 new Constraints(predicates),
                 1_000_000L,
-                1_000_000L
-        ));
+                1_000_000L));
 
         // Then
         assertThat(response).isInstanceOf(ReadRecordsResponse.class);
@@ -209,11 +200,11 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
 
         // When
         StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
-        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
+        Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
         String file = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)
                 .map(Partition::getId)
-                .map(partitionToActiveFilesMap::get)
+                .map(partitionToFiles::get)
                 .flatMap(List::stream)
                 .findAny()
                 .orElseThrow(RuntimeException::new);
@@ -230,8 +221,7 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
 
         Map<String, ValueSet> predicates = new HashMap<>();
         predicates.put("str", SortedRangeSet.of(Range.range(new BlockAllocatorImpl(), Types.MinorType.VARCHAR.getType(),
-                "2018-01-05", true, "2018-01-10", true))
-        );
+                "2018-01-05", true, "2018-01-10", true)));
 
         RecordResponse response = sleeperRecordHandler.doReadRecords(new BlockAllocatorImpl(), new ReadRecordsRequest(
                 TestUtils.createIdentity(),
@@ -244,8 +234,7 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
                         .build(),
                 new Constraints(predicates),
                 1_000_000L,
-                1_000L
-        ));
+                1_000L));
 
         // Then
         assertThat(response).isInstanceOf(ReadRecordsResponse.class);
@@ -262,7 +251,7 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
 
         // When
         StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
-        String file = stateStore.getActiveFiles().get(0).getFilename();
+        String file = stateStore.getFileReferences().get(0).getFilename();
 
         SimpleRecordHandler sleeperRecordHandler = new SimpleRecordHandler(
                 s3Client, dynamoClient,
@@ -285,8 +274,7 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
                         .build(),
                 new Constraints(new HashMap<>()),
                 1_000_000L,
-                1_000_000L
-        ));
+                1_000_000L));
 
         // Then
         ParquetReaderIterator parquetReaderIterator = new ParquetReaderIterator(new ParquetRecordReader(new Path(file), SCHEMA));
@@ -307,11 +295,11 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
 
         // When
         StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
-        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
+        Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
         String file = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)
                 .map(Partition::getId)
-                .map(partitionToActiveFilesMap::get)
+                .map(partitionToFiles::get)
                 // Ensure the partition has a single file, otherwise the file might not contain the entirety of Feb
                 .filter(list -> list.size() == 1)
                 .flatMap(List::stream)
@@ -331,16 +319,13 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
         Map<String, ValueSet> predicates = new HashMap<>();
         predicates.put("month", EquatableValueSet
                 .newBuilder(new BlockAllocatorImpl(), Types.MinorType.INT.getType(), true, false)
-                .add(2).build()
-        );
-
+                .add(2).build());
 
         org.apache.arrow.vector.types.pojo.Schema schemaWithoutDay = new org.apache.arrow.vector.types.pojo.Schema(
                 createArrowSchema().getFields()
                         .stream()
                         .filter(field -> !field.getName().equals("day"))
                         .collect(Collectors.toList()));
-
 
         RecordResponse response = sleeperRecordHandler.doReadRecords(new BlockAllocatorImpl(), new ReadRecordsRequest(
                 TestUtils.createIdentity(),
@@ -353,8 +338,7 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
                         .build(),
                 new Constraints(predicates),
                 1_000_000L,
-                1_000_000L
-        ));
+                1_000_000L));
 
         // Then
         assertThat(response).isInstanceOf(ReadRecordsResponse.class);

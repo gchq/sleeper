@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
-import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableStatus;
 
 import java.time.Clock;
 import java.util.HashMap;
@@ -40,6 +40,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import static sleeper.clients.util.ClientUtils.optionalArgument;
+import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 public class CompactionJobStatusReport {
     private static final String DEFAULT_REPORTER = "STANDARD";
@@ -58,16 +59,16 @@ public class CompactionJobStatusReport {
     public CompactionJobStatusReport(
             CompactionJobStatusStore compactionJobStatusStore,
             CompactionJobStatusReporter reporter,
-            TableIdentity tableId, JobQuery.Type queryType) {
-        this(compactionJobStatusStore, reporter, tableId, queryType, "");
+            TableStatus table, JobQuery.Type queryType) {
+        this(compactionJobStatusStore, reporter, table, queryType, "");
     }
 
     public CompactionJobStatusReport(
             CompactionJobStatusStore compactionJobStatusStore,
             CompactionJobStatusReporter reporter,
-            TableIdentity tableId, JobQuery.Type queryType, String queryParameters) {
+            TableStatus table, JobQuery.Type queryType, String queryParameters) {
         this(compactionJobStatusStore, reporter,
-                JobQuery.fromParametersOrPrompt(tableId, queryType, queryParameters,
+                JobQuery.fromParametersOrPrompt(table, queryType, queryParameters,
                         Clock.systemUTC(), new ConsoleInput(System.console())));
     }
 
@@ -99,15 +100,15 @@ public class CompactionJobStatusReport {
             JobQuery.Type queryType = JobQueryArgument.readTypeArgument(args, 3);
             String queryParameters = optionalArgument(args, 4).orElse(null);
 
-            AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
-            InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, instanceId);
+            AmazonS3 amazonS3 = buildAwsV1Client(AmazonS3ClientBuilder.standard());
+            AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
 
-            AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
+            InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, instanceId);
             DynamoDBTableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDBClient);
-            TableIdentity tableId = tableIndex.getTableByName(tableName)
+            TableStatus table = tableIndex.getTableByName(tableName)
                     .orElseThrow(() -> new IllegalArgumentException("Table does not exist: " + tableName));
             CompactionJobStatusStore statusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
-            new CompactionJobStatusReport(statusStore, reporter, tableId, queryType, queryParameters).run();
+            new CompactionJobStatusReport(statusStore, reporter, table, queryType, queryParameters).run();
         } catch (IllegalArgumentException e) {
             System.err.println(e.getMessage());
             printUsage();
@@ -116,8 +117,7 @@ public class CompactionJobStatusReport {
     }
 
     private static void printUsage() {
-        System.err.println("" +
-                "Usage: <instance-id> <table-name> <report-type-standard-or-json> <optional-query-type> <optional-query-parameters> \n" +
+        System.err.println("Usage: <instance-id> <table-name> <report-type-standard-or-json> <optional-query-type> <optional-query-parameters> \n" +
                 "Query types are:\n" +
                 "-a (Return all jobs)\n" +
                 "-d (Detailed, provide a jobId)\n" +

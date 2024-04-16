@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,20 +33,24 @@ import sleeper.statestore.StateStoreProvider;
 import java.io.IOException;
 import java.nio.file.Path;
 
+import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.io.parquet.utils.HadoopConfigurationProvider.getConfigurationForClient;
 
 public class AddTable {
     private final TableProperties tableProperties;
     private final TablePropertiesStore tablePropertiesStore;
     private final StateStoreProvider stateStoreProvider;
 
-    public AddTable(AmazonS3 s3Client, AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties,
-                    TableProperties tableProperties) {
-        this(s3Client, dynamoDB, instanceProperties, tableProperties, new Configuration());
+    public AddTable(
+            AmazonS3 s3Client, AmazonDynamoDB dynamoDB,
+            InstanceProperties instanceProperties, TableProperties tableProperties) {
+        this(s3Client, dynamoDB, instanceProperties, tableProperties, getConfigurationForClient(instanceProperties));
     }
 
-    public AddTable(AmazonS3 s3Client, AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties,
-                    TableProperties tableProperties, Configuration configuration) {
+    public AddTable(
+            AmazonS3 s3Client, AmazonDynamoDB dynamoDB,
+            InstanceProperties instanceProperties, TableProperties tableProperties, Configuration configuration) {
         this.tableProperties = tableProperties;
         this.tablePropertiesStore = S3TableProperties.getStore(instanceProperties, s3Client, dynamoDB);
         this.stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties, configuration);
@@ -69,9 +73,9 @@ public class AddTable {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3GivenInstanceId(s3Client, args[0]);
 
-        TableProperties tableProperties = new TableProperties(instanceProperties);
+        TableProperties tableProperties = new TableProperties(instanceProperties, loadProperties(Path.of(args[1])));
         tableProperties.setSchema(Schema.load(Path.of(args[2])));
-        tableProperties.load(Path.of(args[1]));
+        tableProperties.validate();
 
         new AddTable(s3Client, dynamoDBClient, instanceProperties, tableProperties).run();
         dynamoDBClient.shutdown();

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -152,9 +152,8 @@ public class PropertiesReloaderIT {
         propertiesAfter.saveToS3(s3Client);
     }
 
-    private void updatePropertiesInS3(String tableName,
-                                      Consumer<TableProperties> extraProperties) {
-        TableProperties propertiesAfter = tablePropertiesStore.loadByName(tableName).orElseThrow();
+    private void updatePropertiesInS3(String tableName, Consumer<TableProperties> extraProperties) {
+        TableProperties propertiesAfter = tablePropertiesStore.loadByName(tableName);
         extraProperties.accept(propertiesAfter);
         tablePropertiesStore.save(propertiesAfter);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package sleeper.clients.status.report.compaction.task;
 
 import sleeper.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.compaction.task.CompactionTaskStatus;
-import sleeper.compaction.task.CompactionTaskType;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 
@@ -33,45 +32,26 @@ public class CompactionTaskStatusReportTestHelper {
         return startedTaskBuilder(taskId, startTime).build();
     }
 
-    public static CompactionTaskStatus startedSplittingTask(String taskId, String startTime) {
-        return startedTaskBuilder(taskId, startTime).type(CompactionTaskType.SPLITTING)
-                .build();
-    }
-
     private static CompactionTaskStatus.Builder startedTaskBuilder(String taskId, String startTime) {
         return CompactionTaskStatus.builder()
                 .startTime(Instant.parse(startTime))
                 .taskId(taskId);
     }
 
-    public static CompactionTaskStatus finishedTask(String taskId, String startTime, String finishTime,
-                                                    long recordsRead, long recordsWritten) {
+    public static CompactionTaskStatus finishedTask(
+            String taskId, String startTime, String finishTime, long recordsRead, long recordsWritten) {
         return finishedTaskBuilder(taskId, startTime, finishTime, recordsRead, recordsWritten).build();
     }
 
-    public static CompactionTaskStatus finishedTask(String taskId, String startTime, String finishTime,
-                                                    RecordsProcessedSummary... summaries) {
+    public static CompactionTaskStatus finishedTask(
+            String taskId, String startTime, String finishTime, RecordsProcessedSummary... summaries) {
         return startedTaskBuilder(taskId, startTime)
                 .finished(Instant.parse(finishTime), CompactionTaskFinishedStatus.builder().jobSummaries(Stream.of(summaries)))
                 .build();
     }
 
-    public static CompactionTaskStatus finishedSplittingTask(String taskId, String startTime, String finishTime,
-                                                             long recordsRead, long recordsWritten) {
-        return finishedTaskBuilder(taskId, startTime, finishTime, recordsRead, recordsWritten)
-                .type(CompactionTaskType.SPLITTING).build();
-    }
-
-    public static CompactionTaskStatus finishedSplittingTask(String taskId, String startTime, String finishTime,
-                                                             RecordsProcessedSummary... summaries) {
-        return startedTaskBuilder(taskId, startTime)
-                .type(CompactionTaskType.SPLITTING)
-                .finished(Instant.parse(finishTime), CompactionTaskFinishedStatus.builder().jobSummaries(Stream.of(summaries)))
-                .build();
-    }
-
-    private static CompactionTaskStatus.Builder finishedTaskBuilder(String taskId, String startTime,
-                                                                    String finishTime, long recordsRead, long recordsWritten) {
+    private static CompactionTaskStatus.Builder finishedTaskBuilder(
+            String taskId, String startTime, String finishTime, long recordsRead, long recordsWritten) {
         return startedTaskBuilder(taskId, startTime)
                 .finished(Instant.parse(finishTime),
                         taskFinishedStatus(startTime, finishTime, recordsRead, recordsWritten));

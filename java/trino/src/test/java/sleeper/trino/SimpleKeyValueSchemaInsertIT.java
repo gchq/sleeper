@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,17 +38,15 @@ public class SimpleKeyValueSchemaInsertIT {
     private static final String TEST_TABLE_NAME = "mytable";
     private static final int NO_OF_RECORDS = 100;
 
-    private static final List<PopulatedSleeperExternalResource.TableDefinition> TABLE_DEFINITIONS =
-            ImmutableList.of(
-                    new PopulatedSleeperExternalResource.TableDefinition(
-                            TEST_TABLE_NAME,
-                            generateSimpleSchema(),
-                            List.of(),
-                            Stream.empty()));
+    private static final List<PopulatedSleeperExternalResource.TableDefinition> TABLE_DEFINITIONS = ImmutableList.of(
+            new PopulatedSleeperExternalResource.TableDefinition(
+                    TEST_TABLE_NAME,
+                    generateSimpleSchema(),
+                    List.of(),
+                    Stream.empty()));
 
     @RegisterExtension
-    public static final PopulatedSleeperExternalResource POPULATED_SLEEPER_EXTERNAL_RESOURCE =
-            new PopulatedSleeperExternalResource(TABLE_DEFINITIONS);
+    public static final PopulatedSleeperExternalResource POPULATED_SLEEPER_EXTERNAL_RESOURCE = new PopulatedSleeperExternalResource(TABLE_DEFINITIONS);
     private static QueryAssertions assertions;
 
     private static Schema generateSimpleSchema() {
@@ -88,13 +86,14 @@ public class SimpleKeyValueSchemaInsertIT {
     public void testCountMinMax() {
         assertThat(assertions.query(String.format(
                 "SELECT MIN(key), MAX(key), MIN(value), MAX(value), COUNT(*) " +
-                        "FROM sleeper.default.%s WHERE key LIKE 'key-%%'", TEST_TABLE_NAME)))
+                        "FROM sleeper.default.%s WHERE key LIKE 'key-%%'",
+                TEST_TABLE_NAME)))
                 .matches(String.format("VALUES (" +
-                                "CAST ('key-%09d' AS VARCHAR), " +
-                                "CAST ('key-%09d' AS VARCHAR), " +
-                                "CAST ('val-%09d' AS VARCHAR), " +
-                                "CAST ('val-%09d' AS VARCHAR), " +
-                                "CAST (%d AS BIGINT))",
+                        "CAST ('key-%09d' AS VARCHAR), " +
+                        "CAST ('key-%09d' AS VARCHAR), " +
+                        "CAST ('val-%09d' AS VARCHAR), " +
+                        "CAST ('val-%09d' AS VARCHAR), " +
+                        "CAST (%d AS BIGINT))",
                         0, NO_OF_RECORDS - 1, 0, NO_OF_RECORDS - 1, NO_OF_RECORDS));
     }
 }

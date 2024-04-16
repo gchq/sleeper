@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,9 +40,9 @@ public class RemoveECRRepositories {
 
     public static void remove(AmazonECR ecr, InstanceProperties properties, List<String> extraRepositories) {
         Stream.concat(Stream.of(ECR_COMPACTION_REPO, ECR_INGEST_REPO, BULK_IMPORT_REPO, BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO)
-                                .filter(properties::isSet)
-                                .map(properties::get),
-                        extraRepositories.stream())
+                .filter(properties::isSet)
+                .map(properties::get),
+                extraRepositories.stream())
                 .parallel().forEach(repositoryName -> deleteRepository(ecr, repositoryName));
     }
 

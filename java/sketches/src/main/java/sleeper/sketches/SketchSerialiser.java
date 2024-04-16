@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,17 +48,17 @@ public class SketchSerialiser {
     public void serialise(Sketches sketches, DataOutputStream dos) throws IOException {
         for (Field field : schema.getRowKeyFields()) {
             if (field.getType() instanceof IntType || field.getType() instanceof LongType) {
-                ItemsSketch<Number> sketch = (ItemsSketch) sketches.getQuantilesSketch(field.getName());
+                ItemsSketch<Number> sketch = sketches.getQuantilesSketch(field.getName());
                 byte[] b = sketch.toByteArray(new ArrayOfNumbersSerDe());
                 dos.writeInt(b.length);
                 dos.write(b);
             } else if (field.getType() instanceof StringType) {
-                ItemsSketch<String> sketch = (ItemsSketch) sketches.getQuantilesSketch(field.getName());
+                ItemsSketch<String> sketch = sketches.getQuantilesSketch(field.getName());
                 byte[] b = sketch.toByteArray(new ArrayOfStringsSerDe());
                 dos.writeInt(b.length);
                 dos.write(b);
             } else if (field.getType() instanceof ByteArrayType) {
-                ItemsSketch<ByteArray> sketch = (ItemsSketch) sketches.getQuantilesSketch(field.getName());
+                ItemsSketch<ByteArray> sketch = sketches.getQuantilesSketch(field.getName());
                 byte[] b = sketch.toByteArray(new ArrayOfByteArraysSerSe());
                 dos.writeInt(b.length);
                 dos.write(b);

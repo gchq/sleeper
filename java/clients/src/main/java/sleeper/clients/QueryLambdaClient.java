@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,12 +29,12 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.query.model.Query;
 import sleeper.query.model.QuerySerDe;
-import sleeper.query.model.output.ResultsOutputConstants;
-import sleeper.query.model.output.SQSResultsOutput;
-import sleeper.query.tracker.DynamoDBQueryTracker;
+import sleeper.query.output.ResultsOutputConstants;
+import sleeper.query.runner.output.SQSResultsOutput;
+import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 import sleeper.query.tracker.QueryState;
+import sleeper.query.tracker.QueryTrackerException;
 import sleeper.query.tracker.TrackedQuery;
-import sleeper.query.tracker.exception.QueryTrackerException;
 
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -103,7 +103,7 @@ public class QueryLambdaClient extends QueryCommandLineClient {
     }
 
     @Override
-    protected void runQueries(TableProperties tableProperties) {
+    protected void runQueries(TableProperties tableProperties) throws InterruptedException {
         Scanner scanner = new Scanner(System.in, StandardCharsets.UTF_8.displayName());
         resultsPublisherConfig = new HashMap<>();
         while (true) {
@@ -133,7 +133,7 @@ public class QueryLambdaClient extends QueryCommandLineClient {
                 query.withResultsPublisherConfig(resultsPublisherConfig)));
     }
 
-    public static void main(String[] args) throws StateStoreException {
+    public static void main(String[] args) throws StateStoreException, InterruptedException {
         if (1 != args.length) {
             throw new IllegalArgumentException("Usage: <instance-id>");
         }

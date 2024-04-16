@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,27 @@
 package sleeper.clients.status.report.filestatus;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonSerializer;
+
+import sleeper.clients.util.ClientsGsonConfig;
+import sleeper.core.statestore.AllReferencesToAFile;
+import sleeper.core.statestore.AllReferencesToAllFiles;
+import sleeper.core.statestore.FileReference;
 
 import java.io.PrintStream;
 
 /**
- * An implementation that returns {@link FileStatus} information in JSON format
- * to a user via the console.
+ * Returns file status information in JSON format to the user on the console.
  */
 public class JsonFileStatusReporter implements FileStatusReporter {
 
-    private final Gson gson = new GsonBuilder().serializeSpecialFloatingPointValues()
-            .setExclusionStrategies(new JsonFileStatusExcludes())
+    private final Gson gson = ClientsGsonConfig.standardBuilder()
+            .serializeSpecialFloatingPointValues()
+            .registerTypeAdapter(AllReferencesToAllFiles.class, allFileReferencesJsonSerializer())
             .create();
     private final PrintStream out;
 
@@ -40,7 +49,43 @@ public class JsonFileStatusReporter implements FileStatusReporter {
     }
 
     @Override
-    public void report(FileStatus fileStatusReport, boolean verbose) {
-        out.println(gson.toJson(fileStatusReport));
+    public void report(TableFilesStatus status, boolean verbose) {
+        out.println(gson.toJson(status));
+    }
+
+    public static JsonSerializer<AllReferencesToAllFiles> allFileReferencesJsonSerializer() {
+        return ((files, type, context) -> createAllFileReferencesJson(files, context));
+    }
+
+    private static JsonElement createAllFileReferencesJson(AllReferencesToAllFiles files, JsonSerializationContext context) {
+        JsonArray filesArray = new JsonArray();
+        for (AllReferencesToAFile file : files.getFiles()) {
+            filesArray.add(createFileJson(file, context));
+        }
+        return filesArray;
+    }
+
+    private static JsonElement createFileJson(AllReferencesToAFile file, JsonSerializationContext context) {
+        JsonObject fileObj = new JsonObject();
+        fileObj.addProperty("filename", file.getFilename());
+        fileObj.add("lastUpdateTime", context.serialize(file.getLastStateStoreUpdateTime()));
+        fileObj.addProperty("totalReferenceCount", file.getTotalReferenceCount());
+        JsonArray referencesArr = new JsonArray();
+        for (FileReference reference : file.getInternalReferences()) {
+            referencesArr.add(createFileReferenceJson(reference, context));
+        }
+        fileObj.add("internalReferences", referencesArr);
+        return fileObj;
+    }
+
+    private static JsonElement createFileReferenceJson(FileReference file, JsonSerializationContext context) {
+        JsonObject fileObj = new JsonObject();
+        fileObj.addProperty("partitionId", file.getPartitionId());
+        fileObj.addProperty("numberOfRecords", file.getNumberOfRecords());
+        fileObj.addProperty("jobId", file.getJobId());
+        fileObj.add("lastUpdateTime", context.serialize(file.getLastStateStoreUpdateTime()));
+        fileObj.addProperty("countApproximate", file.isCountApproximate());
+        fileObj.addProperty("onlyContainsDataForThisPartition", file.onlyContainsDataForThisPartition());
+        return fileObj;
     }
 }

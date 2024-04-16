@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,9 +31,9 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.ingest.IngestFactory;
+import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.systemtest.configuration.SystemTestProperties;
-import sleeper.utils.HadoopConfigurationProvider;
 
 import java.io.IOException;
 import java.net.URI;
@@ -47,8 +47,9 @@ public class IngestRandomDataToDocker {
     private final AmazonDynamoDB dynamoDB;
     private final long numberOfRecords;
 
-    public IngestRandomDataToDocker(InstanceProperties instanceProperties, TableProperties tableProperties,
-                                    AmazonDynamoDB dynamoDB, long numberOfRecords) {
+    public IngestRandomDataToDocker(
+            InstanceProperties instanceProperties, TableProperties tableProperties,
+            AmazonDynamoDB dynamoDB, long numberOfRecords) {
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
         this.dynamoDB = dynamoDB;
@@ -104,7 +105,7 @@ public class IngestRandomDataToDocker {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3GivenInstanceId(s3Client, args[0]);
         TableProperties tableProperties = S3TableProperties.getStore(instanceProperties, s3Client, dynamoClient)
-                .loadByName(args[1]).orElseThrow();
+                .loadByName(args[1]);
         long numberOfRecords = 100000;
         if (args.length > 2) {
             numberOfRecords = Long.parseLong(args[2]);

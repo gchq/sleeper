@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,8 +74,7 @@ class SingleFileWritingIteratorIT {
                 RowFactory.create("a", 1, 2),
                 RowFactory.create("b", 1, 2),
                 RowFactory.create("c", 1, 2),
-                RowFactory.create("d", 1, 2)
-        ).iterator();
+                RowFactory.create("d", 1, 2)).iterator();
 
         @Test
         void shouldWriteAllRecordsToAParquetFile() {
@@ -125,8 +124,7 @@ class SingleFileWritingIteratorIT {
                     RowFactory.create("a", 1, 2),
                     RowFactory.create("b", 1, 2),
                     RowFactory.create("d", 1, 2),
-                    RowFactory.create("e", 1, 2)
-            ).iterator();
+                    RowFactory.create("e", 1, 2)).iterator();
             PartitionTree partitionTree = createPartitionsBuilder()
                     .leavesWithSplits(List.of("left", "right"), List.of("c"))
                     .parentJoining("root", "left", "right")

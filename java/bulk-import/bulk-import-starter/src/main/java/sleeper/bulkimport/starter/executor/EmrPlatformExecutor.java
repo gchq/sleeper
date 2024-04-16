@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,7 +53,7 @@ import static sleeper.configuration.properties.instance.EMRProperty.BULK_IMPORT_
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_RELEASE_LABEL;
 
 /**
- * An {@link PlatformExecutor} which runs a bulk import job on an EMR cluster.
+ * Starts an EMR cluster to run a single bulk import job and then terminate.
  */
 public class EmrPlatformExecutor implements PlatformExecutor {
     private static final Logger LOGGER = LoggerFactory.getLogger(EmrPlatformExecutor.class);
@@ -63,15 +63,13 @@ public class EmrPlatformExecutor implements PlatformExecutor {
     private final TablePropertiesProvider tablePropertiesProvider;
 
     public EmrPlatformExecutor(AmazonElasticMapReduce emrClient,
-                               InstanceProperties instanceProperties,
-                               TablePropertiesProvider tablePropertiesProvider) {
+            InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider) {
         this(emrClient, instanceProperties, tablePropertiesProvider, new EmrInstanceFleets(instanceProperties));
     }
 
     public EmrPlatformExecutor(AmazonElasticMapReduce emrClient,
-                               InstanceProperties instanceProperties,
-                               TablePropertiesProvider tablePropertiesProvider,
-                               EmrInstanceConfiguration instanceConfiguration) {
+            InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
+            EmrInstanceConfiguration instanceConfiguration) {
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.emrClient = emrClient;
@@ -110,7 +108,7 @@ public class EmrPlatformExecutor implements PlatformExecutor {
                 .withSteps(new StepConfig()
                         .withName("Bulk Load (job id " + bulkImportJob.getId() + ")")
                         .withHadoopJarStep(new HadoopJarStepConfig().withJar("command-runner.jar")
-                                .withArgs(arguments.sparkSubmitCommandForCluster(
+                                .withArgs(arguments.sparkSubmitCommandForEMRCluster(
                                         clusterName + "-EMR",
                                         EmrJarLocation.getJarLocation(instanceProperties)))))
                 .withTags(instanceProperties.getTags().entrySet().stream()
@@ -123,7 +121,7 @@ public class EmrPlatformExecutor implements PlatformExecutor {
     private JobFlowInstancesConfig createJobFlowInstancesConfig(BulkImportPlatformSpec platformSpec) {
 
         VolumeSpecification volumeSpecification = new VolumeSpecification()
-//                .withIops(null) // TODO Add property to control this
+                // We could add a property to control the Iops setting here
                 .withSizeInGB(instanceProperties.getInt(BULK_IMPORT_EMR_EBS_VOLUME_SIZE_IN_GB))
                 .withVolumeType(instanceProperties.get(BULK_IMPORT_EMR_EBS_VOLUME_TYPE));
         EbsBlockDeviceConfig ebsBlockDeviceConfig = new EbsBlockDeviceConfig()

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ import java.util.stream.Stream;
 
 import static java.util.regex.Pattern.DOTALL;
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
@@ -49,7 +50,6 @@ import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.configuration.properties.table.TableProperty.SCHEMA;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 class GeneratePropertiesTemplatesTest {
 
@@ -70,8 +70,7 @@ class GeneratePropertiesTemplatesTest {
                     Arguments.of(ACCOUNT, "1234567890"),
                     Arguments.of(REGION, "eu-west-2"),
                     Arguments.of(VPC_ID, "1234567890"),
-                    Arguments.of(SUBNETS, "subnet-abcdefgh")
-            );
+                    Arguments.of(SUBNETS, "subnet-abcdefgh"));
         }
     }
 
@@ -233,16 +232,10 @@ class GeneratePropertiesTemplatesTest {
     }
 
     private InstanceProperties instancePropertiesFromString(String propertiesString) {
-        InstanceProperties properties = new InstanceProperties();
-        properties.loadFromString(propertiesString);
-        return properties;
+        return new InstanceProperties(loadProperties(propertiesString));
     }
 
     private TableProperties tablePropertiesFromString(String propertiesString) {
-        InstanceProperties instanceProperties = new InstanceProperties();
-        TableProperties properties = new TableProperties(instanceProperties);
-        properties.setSchema(schemaWithKey("key"));
-        properties.loadFromString(propertiesString);
-        return properties;
+        return new TableProperties(new InstanceProperties(), loadProperties(propertiesString));
     }
 }

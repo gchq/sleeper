@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,13 +27,14 @@ import sleeper.statestore.s3.S3StateStoreCreator;
 import java.util.Locale;
 
 import static sleeper.clients.docker.Utils.tearDownBucket;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.ACTIVE_FILEINFO_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.ACTIVE_FILES_TABLELENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.FILE_REFERENCE_COUNT_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_TABLENAME;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.REVISION_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_ID_INDEX_DYNAMO_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_NAME_INDEX_DYNAMO_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_ONLINE_INDEX_DYNAMO_TABLENAME;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
 public class TableDockerStack implements DockerStack {
@@ -51,8 +52,9 @@ public class TableDockerStack implements DockerStack {
         return new Builder();
     }
 
-    public static TableDockerStack from(InstanceProperties instanceProperties,
-                                        AmazonS3 s3Client, AmazonDynamoDB dynamoDB) {
+    public static TableDockerStack from(
+            InstanceProperties instanceProperties,
+            AmazonS3 s3Client, AmazonDynamoDB dynamoDB) {
         return builder().instanceProperties(instanceProperties)
                 .s3Client(s3Client).dynamoDB(dynamoDB)
                 .build();
@@ -64,10 +66,11 @@ public class TableDockerStack implements DockerStack {
         instanceProperties.set(DATA_BUCKET, dataBucket);
         s3Client.createBucket(dataBucket);
         instanceProperties.set(TABLE_NAME_INDEX_DYNAMO_TABLENAME, String.join("-", "sleeper", instanceId, "table-index-by-name"));
+        instanceProperties.set(TABLE_ONLINE_INDEX_DYNAMO_TABLENAME, String.join("-", "sleeper", instanceId, "table-index-online-by-name"));
         instanceProperties.set(TABLE_ID_INDEX_DYNAMO_TABLENAME, String.join("-", "sleeper", instanceId, "table-index-by-id"));
         DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
-        instanceProperties.set(ACTIVE_FILEINFO_TABLENAME, String.join("-", "sleeper", instanceId, "active-files"));
-        instanceProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, String.join("-", "sleeper", instanceId, "gc-files"));
+        instanceProperties.set(ACTIVE_FILES_TABLELENAME, String.join("-", "sleeper", instanceId, "active-files"));
+        instanceProperties.set(FILE_REFERENCE_COUNT_TABLENAME, String.join("-", "sleeper", instanceId, "file-refs"));
         instanceProperties.set(PARTITION_TABLENAME, String.join("-", "sleeper", instanceId, "partitions"));
         new DynamoDBStateStoreCreator(instanceProperties, dynamoDB).create();
         instanceProperties.set(REVISION_TABLENAME, String.join("-", "sleeper", instanceId, "rv"));
@@ -75,8 +78,7 @@ public class TableDockerStack implements DockerStack {
     }
 
     public void tearDown() {
-        dynamoDB.deleteTable(instanceProperties.get(ACTIVE_FILEINFO_TABLENAME));
-        dynamoDB.deleteTable(instanceProperties.get(READY_FOR_GC_FILEINFO_TABLENAME));
+        dynamoDB.deleteTable(instanceProperties.get(ACTIVE_FILES_TABLELENAME));
         dynamoDB.deleteTable(instanceProperties.get(PARTITION_TABLENAME));
         dynamoDB.deleteTable(instanceProperties.get(REVISION_TABLENAME));
         tearDownBucket(s3Client, instanceProperties.get(DATA_BUCKET));

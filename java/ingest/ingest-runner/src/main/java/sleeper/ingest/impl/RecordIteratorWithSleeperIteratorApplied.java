@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,11 +31,8 @@ import java.io.IOException;
 import static java.util.Objects.requireNonNull;
 
 /**
- * This class is an iterator of Records, taken from a stream of {@link Record} objects obtained from another iterator
- * and then having a Sleeper iterator applied, such as a compaction iterator.
- * <p>
- * If the Sleeper iterator requires the records to be in a specific order then the source iterator must supply them in
- * that order.
+ * Iterates over a source of records with a Sleeper iterator applied to it. If the Sleeper iterator requires the records
+ * to be in a specific order then the source iterator must supply them in that order.
  */
 class RecordIteratorWithSleeperIteratorApplied implements CloseableIterator<Record> {
     private static final Logger LOGGER = LoggerFactory.getLogger(RecordIteratorWithSleeperIteratorApplied.class);
@@ -44,14 +41,14 @@ class RecordIteratorWithSleeperIteratorApplied implements CloseableIterator<Reco
     private final CloseableIterator<Record> outputIterator;
 
     /**
-     * Construct a RecordIteratorWithSleeperIteratorApplied.
+     * Create an instance.
      *
-     * @param objectFactory            The {@link ObjectFactory} to use to create the Sleeper iterator
-     * @param sleeperSchema            The Sleeper {@link Schema} of the {@link Record} objects
-     * @param sleeperIteratorClassName The Sleeper iterator to apply
-     * @param sleeperIteratorConfig    The configuration for the Sleeper iterator
-     * @param sourceIterator           The {@link CloseableIterator} to provide the source {@link Record} objects
-     * @throws IteratorException Thrown when there is an error in the Sleeper iterator
+     * @param  objectFactory            the {@link ObjectFactory} to use to create the Sleeper iterator
+     * @param  sleeperSchema            the Sleeper {@link Schema} of the {@link Record} objects
+     * @param  sleeperIteratorClassName the Sleeper iterator to apply
+     * @param  sleeperIteratorConfig    the configuration for the Sleeper iterator
+     * @param  sourceIterator           the {@link CloseableIterator} to provide the source {@link Record} objects
+     * @throws IteratorException        thrown when there is an error in the Sleeper iterator
      */
     RecordIteratorWithSleeperIteratorApplied(
             ObjectFactory objectFactory,
@@ -71,13 +68,13 @@ class RecordIteratorWithSleeperIteratorApplied implements CloseableIterator<Reco
     /**
      * Apply the Sleeper iterator.
      *
-     * @param objectFactory            The {@link ObjectFactory} to use to create the Sleeper iterator
-     * @param sleeperSchema            The Sleeper {@link Schema} of the {@link Record} objects
-     * @param sleeperIteratorClassName The Sleeper iterator to apply
-     * @param sleeperIteratorConfig    The configuration for the Sleeper iterator
-     * @param sourceIterator           The {@link CloseableIterator} to provide the source {@link Record} objects
-     * @return The record iterator, with the Sleeper iterator applied
-     * @throws IteratorException Thrown when there is an error in the Sleeper iterator
+     * @param  objectFactory            the {@link ObjectFactory} to use to create the Sleeper iterator
+     * @param  sleeperSchema            the Sleeper {@link Schema} of the {@link Record} objects
+     * @param  sleeperIteratorClassName the Sleeper iterator to apply
+     * @param  sleeperIteratorConfig    the configuration for the Sleeper iterator
+     * @param  sourceIterator           the {@link CloseableIterator} to provide the source {@link Record} objects
+     * @return                          the record iterator, with the Sleeper iterator applied
+     * @throws IteratorException        thrown when there is an error in the Sleeper iterator
      */
     private static CloseableIterator<Record> applyIterator(
             ObjectFactory objectFactory,

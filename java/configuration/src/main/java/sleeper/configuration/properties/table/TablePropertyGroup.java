@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,11 +39,16 @@ public class TablePropertyGroup {
             .description("The following table properties relate to compactions.").build();
     public static final PropertyGroup METADATA = tableGroup("Metadata")
             .description("The following table properties relate to storing and retrieving metadata for tables.").build();
+    public static final PropertyGroup INGEST = tableGroup("Ingest")
+            .description("The following table properties relate to ingest.").build();
     public static final PropertyGroup BULK_IMPORT = tableGroup("Bulk Import")
             .description("The following table properties relate to bulk import, " +
-                    "i.e. ingesting data using Spark jobs running on EMR or EKS.").build();
+                    "i.e. ingesting data using Spark jobs running on EMR or EKS.")
+            .build();
     public static final PropertyGroup INGEST_BATCHER = tableGroup("Ingest Batcher")
             .description("The following table properties relate to the ingest batcher.").build();
+    public static final PropertyGroup QUERY_EXECUTION = tableGroup("Query Execution")
+            .description("The following table properties relate to query execution").build();
 
     private static PropertyGroup.Builder tableGroup(String name) {
         return group(name).afterBuild(ALL::add);

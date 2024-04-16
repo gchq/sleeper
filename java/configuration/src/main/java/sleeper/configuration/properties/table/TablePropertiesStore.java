@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,17 +18,17 @@ package sleeper.configuration.properties.table;
 
 import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.core.table.TableIdGenerator;
-import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIndex;
+import sleeper.core.table.TableNotFoundException;
+import sleeper.core.table.TableStatus;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ONLINE;
 
 public class TablePropertiesStore {
 
@@ -42,45 +42,40 @@ public class TablePropertiesStore {
         this.client = client;
     }
 
-    public TableProperties loadProperties(TableIdentity tableId) {
-        TableProperties tableProperties = client.loadProperties(tableId);
+    TableProperties loadProperties(TableStatus table) {
+        TableProperties tableProperties = client.loadProperties(table);
         tableProperties.validate();
         return tableProperties;
     }
 
-    public Optional<TableProperties> loadByName(String tableName) {
+    public TableProperties loadByName(String tableName) {
         return tableIndex.getTableByName(tableName)
-                .map(this::loadProperties);
+                .map(this::loadProperties)
+                .orElseThrow(() -> TableNotFoundException.withTableName(tableName));
     }
 
-    public Optional<TableProperties> loadById(String tableId) {
+    public TableProperties loadById(String tableId) {
         return tableIndex.getTableByUniqueId(tableId)
-                .map(this::loadProperties);
+                .map(this::loadProperties)
+                .orElseThrow(() -> TableNotFoundException.withTableId(tableId));
     }
 
-    public Optional<TableProperties> loadByNameNoValidation(String tableName) {
+    public TableProperties loadByNameNoValidation(String tableName) {
         return tableIndex.getTableByName(tableName)
-                .map(client::loadProperties);
+                .map(client::loadProperties)
+                .orElseThrow(() -> TableNotFoundException.withTableName(tableName));
     }
 
     public Stream<TableProperties> streamAllTables() {
-        return streamAllTableIds().map(this::loadProperties);
+        return streamAllTableStatuses().map(this::loadProperties);
     }
 
-    public Stream<TableIdentity> streamAllTableIds() {
+    public Stream<TableStatus> streamAllTableStatuses() {
         return tableIndex.streamAllTables();
     }
 
-    public List<String> listTableNames() {
-        return streamAllTableIds().map(TableIdentity::getTableName).collect(Collectors.toUnmodifiableList());
-    }
-
-    public List<TableIdentity> listTableIds() {
-        return streamAllTableIds().collect(Collectors.toUnmodifiableList());
-    }
-
-    public Optional<TableIdentity> lookupByName(String tableName) {
-        return tableIndex.getTableByName(tableName);
+    public Stream<TableStatus> streamOnlineTableIds() {
+        return tableIndex.streamOnlineTables();
     }
 
     public void createTable(TableProperties tableProperties) {
@@ -92,21 +87,23 @@ public class TablePropertiesStore {
     }
 
     public void save(TableProperties tableProperties) {
-        Optional<TableIdentity> existingId = getExistingId(tableProperties);
-        if (existingId.isPresent()) {
-            TableIdentity id = existingId.get();
+        Optional<TableStatus> existingOpt = getExistingStatus(tableProperties);
+        if (existingOpt.isPresent()) {
+            TableStatus existing = existingOpt.get();
             String tableName = tableProperties.get(TABLE_NAME);
-            if (!Objects.equals(id.getTableName(), tableName)) {
-                tableIndex.update(TableIdentity.uniqueIdAndName(id.getTableUniqueId(), tableName));
+            boolean isOnline = tableProperties.getBoolean(TABLE_ONLINE);
+            if (!Objects.equals(existing.getTableName(), tableName) || !(existing.isOnline() == isOnline)) {
+                tableIndex.update(TableStatus.uniqueIdAndName(existing.getTableUniqueId(),
+                        tableName, isOnline));
             }
-            tableProperties.set(TABLE_ID, id.getTableUniqueId());
+            tableProperties.set(TABLE_ID, existing.getTableUniqueId());
             client.saveProperties(tableProperties);
         } else {
             createWhenNotInIndex(tableProperties);
         }
     }
 
-    private Optional<TableIdentity> getExistingId(TableProperties tableProperties) {
+    private Optional<TableStatus> getExistingStatus(TableProperties tableProperties) {
         if (tableProperties.isSet(TABLE_ID)) {
             return tableIndex.getTableByUniqueId(tableProperties.get(TABLE_ID));
         } else {
@@ -119,22 +116,24 @@ public class TablePropertiesStore {
             tableProperties.set(TABLE_ID, ID_GENERATOR.generateString());
         }
         client.saveProperties(tableProperties);
-        tableIndex.create(tableProperties.getId());
+        tableIndex.create(tableProperties.getStatus());
     }
 
     public void deleteByName(String tableName) {
         tableIndex.getTableByName(tableName)
-                .ifPresent(tableId -> {
-                    tableIndex.delete(tableId);
-                    client.deleteProperties(tableId);
-                });
+                .ifPresent(this::delete);
+    }
+
+    public void delete(TableStatus table) {
+        tableIndex.delete(table);
+        client.deleteProperties(table);
     }
 
     public interface Client {
-        TableProperties loadProperties(TableIdentity tableId);
+        TableProperties loadProperties(TableStatus table);
 
         void saveProperties(TableProperties tableProperties);
 
-        void deleteProperties(TableIdentity tableId);
+        void deleteProperties(TableStatus table);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,21 +20,19 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.clients.deploy.StackDockerImage.dockerBuildImage;
 import static sleeper.clients.deploy.StackDockerImage.dockerBuildxImage;
 import static sleeper.clients.deploy.StackDockerImage.emrServerlessImage;
 
 public class DockerImageConfiguration {
-    private static final Map<String, StackDockerImage> DEFAULT_DOCKER_IMAGE_BY_STACK = Stream.of(
-            dockerBuildImage("IngestStack", "ingest"),
-            dockerBuildImage("EksBulkImportStack", "bulk-import-runner"),
-            dockerBuildxImage("CompactionStack", "compaction-job-execution"),
-            dockerBuildImage("SystemTestStack", "system-test"),
-            emrServerlessImage("EmrServerlessBulkImportStack", "bulk-import-runner-emr-serverless")
-    ).collect(Collectors.toMap(StackDockerImage::getStackName, image -> image));
+    private static final Map<String, StackDockerImage> DEFAULT_DOCKER_IMAGE_BY_STACK = Map.of(
+            "IngestStack", dockerBuildImage("ingest"),
+            "EksBulkImportStack", dockerBuildImage("bulk-import-runner"),
+            "CompactionStack", dockerBuildxImage("compaction-job-execution"),
+            "EmrServerlessBulkImportStack", emrServerlessImage("bulk-import-runner-emr-serverless"));
 
     private final Map<String, StackDockerImage> imageByStack;
 
@@ -46,16 +44,17 @@ public class DockerImageConfiguration {
         this.imageByStack = imageByStack;
     }
 
-    public static DockerImageConfiguration from(List<StackDockerImage> images) {
-        return new DockerImageConfiguration(images.stream()
-                .collect(Collectors.toMap(StackDockerImage::getStackName, image -> image)));
+    public List<StackDockerImage> getStacksToDeploy(Collection<String> stacks) {
+        return getStacksToDeploy(stacks, List.of());
     }
 
-    public List<StackDockerImage> getStacksToDeploy(Collection<String> stacks) {
-        return stacks.stream()
-                .map(this::getStackImage)
-                .flatMap(Optional::stream)
-                .collect(Collectors.toList());
+    public List<StackDockerImage> getStacksToDeploy(Collection<String> stacks, List<StackDockerImage> extraDockerImages) {
+        return Stream.concat(
+                stacks.stream()
+                        .map(this::getStackImage)
+                        .flatMap(Optional::stream),
+                extraDockerImages.stream())
+                .collect(toUnmodifiableList());
     }
 
     public Optional<StackDockerImage> getStackImage(String stack) {

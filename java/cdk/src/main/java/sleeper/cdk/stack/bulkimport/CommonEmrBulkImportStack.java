@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,12 +66,9 @@ public class CommonEmrBulkImportStack extends NestedStack {
     private final IRole emrRole;
     private final CfnSecurityConfiguration securityConfiguration;
 
-    public CommonEmrBulkImportStack(Construct scope,
-                                    String id,
-                                    InstanceProperties instanceProperties,
-                                    CoreStacks coreStacks,
-                                    BulkImportBucketStack importBucketStack,
-                                    IngestStatusStoreStack statusStoreStack) {
+    public CommonEmrBulkImportStack(
+            Construct scope, String id, InstanceProperties instanceProperties,
+            CoreStacks coreStacks, BulkImportBucketStack importBucketStack, IngestStatusStoreStack statusStoreStack) {
         super(scope, id);
         ec2Role = createEc2Role(this, instanceProperties,
                 importBucketStack.getImportBucket(), coreStacks);
@@ -145,40 +142,39 @@ public class CommonEmrBulkImportStack extends NestedStack {
 
         // Use the policy which is derived from the AmazonEMRServicePolicy_v2 policy.
         PolicyDocument policyDoc = PolicyDocument.fromJson(new Gson().fromJson(new JsonReader(
-                        new InputStreamReader(CommonEmrBulkImportStack.class.getResourceAsStream("/iam/SleeperEMRPolicy.json"), StandardCharsets.UTF_8)),
+                new InputStreamReader(CommonEmrBulkImportStack.class.getResourceAsStream("/iam/SleeperEMRPolicy.json"), StandardCharsets.UTF_8)),
                 Map.class));
 
         ManagedPolicy customEmrManagedPolicy = new ManagedPolicy(scope, "CustomEMRManagedPolicy", ManagedPolicyProps.builder()
                 .description("Custom policy for EMR bulk import to operate in VPC")
                 .managedPolicyName("sleeper-" + instanceId + "-VPCPolicy")
                 .document(PolicyDocument.Builder.create().statements(Lists.newArrayList(
-                                new PolicyStatement(PolicyStatementProps.builder()
-                                        .sid("CreateSecurityGroupInVPC")
-                                        .actions(Lists.newArrayList("ec2:CreateSecurityGroup"))
-                                        .effect(Effect.ALLOW)
-                                        .resources(Lists.newArrayList("arn:aws:ec2:" + region + ":" + account + ":vpc/" + vpc))
-                                        .build()),
-                                new PolicyStatement(PolicyStatementProps.builder()
-                                        .sid("ManageResourcesInSubnet")
-                                        .actions(Lists.newArrayList(
-                                                "ec2:CreateNetworkInterface",
-                                                "ec2:RunInstances",
-                                                "ec2:CreateFleet",
-                                                "ec2:CreateLaunchTemplate",
-                                                "ec2:CreateLaunchTemplateVersion"))
-                                        .effect(Effect.ALLOW)
-                                        .resources(subnets.stream()
-                                                .map(subnet -> "arn:aws:ec2:" + region + ":" + account + ":subnet/" + subnet)
-                                                .collect(Collectors.toList()))
-                                        .build()),
-                                new PolicyStatement(PolicyStatementProps.builder()
-                                        .sid("PassEc2Role")
-                                        .effect(Effect.ALLOW)
-                                        .actions(Lists.newArrayList("iam:PassRole"))
-                                        .resources(Lists.newArrayList(ec2Role.getRoleArn()))
-                                        .conditions(Map.of("StringLike", Map.of("iam:PassedToService", "ec2.amazonaws.com*")))
-                                        .build()
-                                )))
+                        new PolicyStatement(PolicyStatementProps.builder()
+                                .sid("CreateSecurityGroupInVPC")
+                                .actions(Lists.newArrayList("ec2:CreateSecurityGroup"))
+                                .effect(Effect.ALLOW)
+                                .resources(Lists.newArrayList("arn:aws:ec2:" + region + ":" + account + ":vpc/" + vpc))
+                                .build()),
+                        new PolicyStatement(PolicyStatementProps.builder()
+                                .sid("ManageResourcesInSubnet")
+                                .actions(Lists.newArrayList(
+                                        "ec2:CreateNetworkInterface",
+                                        "ec2:RunInstances",
+                                        "ec2:CreateFleet",
+                                        "ec2:CreateLaunchTemplate",
+                                        "ec2:CreateLaunchTemplateVersion"))
+                                .effect(Effect.ALLOW)
+                                .resources(subnets.stream()
+                                        .map(subnet -> "arn:aws:ec2:" + region + ":" + account + ":subnet/" + subnet)
+                                        .collect(Collectors.toList()))
+                                .build()),
+                        new PolicyStatement(PolicyStatementProps.builder()
+                                .sid("PassEc2Role")
+                                .effect(Effect.ALLOW)
+                                .actions(Lists.newArrayList("iam:PassRole"))
+                                .resources(Lists.newArrayList(ec2Role.getRoleArn()))
+                                .conditions(Map.of("StringLike", Map.of("iam:PassedToService", "ec2.amazonaws.com*")))
+                                .build())))
                         .build())
                 .build());
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,104 +15,149 @@
  */
 package sleeper.clients.status.report.filestatus;
 
-import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.partition.Partition;
+import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.schema.Field;
-import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.StringType;
-import sleeper.core.statestore.FileInfo;
-import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceFactory;
 
-import java.io.IOException;
-import java.net.URL;
-import java.nio.charset.Charset;
-import java.time.Instant;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
+import static sleeper.core.statestore.SplitFileReferenceRequest.splitFileToChildPartitions;
 
-public class FilesStatusReportTest {
+public class FilesStatusReportTest extends FilesStatusReportTestBase {
 
     @Test
     public void shouldReportFilesStatusGivenOneActiveFilePerLeafPartition() throws Exception {
         // Given
-        Instant lastStateStoreUpdate = Instant.parse("2022-08-22T14:20:00.001Z");
-        Schema schema = Schema.builder().rowKeyFields(new Field("key1", new StringType())).build();
-        List<Partition> partitions = new PartitionsBuilder(schema)
-                .leavesWithSplits(
-                        Arrays.asList("A", "B", "C", "D", "E", "F", "G", "H"),
-                        Arrays.asList("aaa", "bbb", "ccc", "ddd", "eee", "fff", "ggg"))
-                .parentJoining("I", "A", "B")
-                .parentJoining("J", "I", "C")
-                .parentJoining("K", "J", "D")
-                .parentJoining("L", "K", "E")
-                .parentJoining("M", "L", "F")
-                .parentJoining("N", "M", "G")
-                .parentJoining("O", "N", "H")
-                .buildList();
-        FileInfoFactory fileInfoFactory = new FileInfoFactory(schema, partitions, lastStateStoreUpdate);
-        List<FileInfo> activeFiles = Arrays.asList(
-                fileInfoFactory.leafFile(50000001, "123", "456"),
-                fileInfoFactory.leafFile(50000002, "abc", "az"),
-                fileInfoFactory.leafFile(50000003, "bcd", "bz"),
-                fileInfoFactory.leafFile(50000004, "cde", "cz"),
-                fileInfoFactory.leafFile(50000005, "def", "dz"),
-                fileInfoFactory.leafFile(50000006, "efg", "ez"),
-                fileInfoFactory.leafFile(50000007, "fgh", "fz"),
-                fileInfoFactory.leafFile(50000008, "ghi", "gz"));
+        PartitionTree partitions = new PartitionsBuilder(schema)
+                .rootFirst("0")
+                .splitToNewChildren("0", "1", "H", "ggg")
+                .splitToNewChildren("1", "2", "G", "fff")
+                .splitToNewChildren("2", "3", "F", "eee")
+                .splitToNewChildren("3", "4", "E", "ddd")
+                .splitToNewChildren("4", "5", "D", "ccc")
+                .splitToNewChildren("5", "6", "C", "bbb")
+                .splitToNewChildren("6", "A", "B", "aaa")
+                .buildTree();
+        stateStore.initialise(partitions.getAllPartitions());
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(partitions);
+        stateStore.addFiles(List.of(
+                fileReferenceFactory.partitionFile("A", 50000001),
+                fileReferenceFactory.partitionFile("B", 50000002),
+                fileReferenceFactory.partitionFile("C", 50000003),
+                fileReferenceFactory.partitionFile("D", 50000004),
+                fileReferenceFactory.partitionFile("E", 50000005),
+                fileReferenceFactory.partitionFile("F", 50000006),
+                fileReferenceFactory.partitionFile("G", 50000007),
+                fileReferenceFactory.partitionFile("H", 50000008)));
 
-        // When
-        FileStatus status = FileStatusCollector.run(StateStoreSnapshot.builder()
-                .partitions(partitions).active(activeFiles)
-                .readyForGC(StateStoreReadyForGC.none())
-                .build());
-
-        // Then
-        assertThat(status.verboseReportString(StandardFileStatusReporter::new))
+        // When / Then
+        assertThat(verboseReportString(StandardFileStatusReporter::new))
                 .isEqualTo(example("reports/filestatus/standard/oneActiveFilePerLeaf.txt"));
-        assertThatJson(status.verboseReportString(JsonFileStatusReporter::new))
+        assertThatJson(verboseReportString(JsonFileStatusReporter::new))
                 .isEqualTo(example("reports/filestatus/json/oneActiveFilePerLeaf.json"));
     }
 
     @Test
     public void shouldReportFilesStatusGivenActiveFileInLeafAndMiddlePartition() throws Exception {
         // Given
-        Instant lastStateStoreUpdate = Instant.parse("2022-08-22T14:20:00.001Z");
-        Schema schema = Schema.builder().rowKeyFields(new Field("key1", new StringType())).build();
-        List<Partition> partitions = new PartitionsBuilder(schema)
-                .leavesWithSplits(
-                        Arrays.asList("A", "B", "C"),
-                        Arrays.asList("ggg", "mmm"))
-                .parentJoining("D", "A", "B")
-                .parentJoining("E", "D", "C")
-                .buildList();
-        FileInfoFactory fileInfoFactory = new FileInfoFactory(schema, partitions, lastStateStoreUpdate);
-        List<FileInfo> activeFiles = Arrays.asList(
-                fileInfoFactory.leafFile(50000001, "abc", "def"),
-                fileInfoFactory.middleFile(50000002, "cde", "lmn"));
+        PartitionTree partitions = new PartitionsBuilder(schema)
+                .rootFirst("A")
+                .splitToNewChildren("A", "B", "C", "mmm")
+                .splitToNewChildren("B", "D", "E", "ggg")
+                .buildTree();
+        stateStore.initialise(partitions.getAllPartitions());
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(partitions);
+        stateStore.addFiles(List.of(
+                fileReferenceFactory.partitionFile("D", 50000001),
+                fileReferenceFactory.partitionFile("B", 50000002)));
 
-        // When
-        FileStatus status = FileStatusCollector.run(StateStoreSnapshot.builder()
-                .partitions(partitions).active(activeFiles)
-                .readyForGC(StateStoreReadyForGC.none())
-                .build());
-
-        // Then
-        assertThat(status.verboseReportString(StandardFileStatusReporter::new))
+        // When / Then
+        assertThat(verboseReportString(StandardFileStatusReporter::new))
                 .isEqualTo(example("reports/filestatus/standard/leafAndMiddleFile.txt"));
-        assertThatJson(status.verboseReportString(JsonFileStatusReporter::new))
+        assertThatJson(verboseReportString(JsonFileStatusReporter::new))
                 .isEqualTo(example("reports/filestatus/json/leafAndMiddleFile.json"));
     }
 
-    private static String example(String path) throws IOException {
-        URL url = FilesStatusReportTest.class.getClassLoader().getResource(path);
-        return IOUtils.toString(Objects.requireNonNull(url), Charset.defaultCharset());
+    @Test
+    public void shouldReportFilesStatusGivenFilesWithNoReferencesBelowMaxCount() throws Exception {
+        // Given
+        PartitionTree partitions = new PartitionsBuilder(schema)
+                .rootFirst("A")
+                .splitToNewChildren("A", "B", "C", "mmm")
+                .buildTree();
+        stateStore.initialise(partitions.getAllPartitions());
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(partitions);
+        stateStore.addFiles(List.of(
+                fileReferenceFactory.partitionFile("B", "file1.parquet", 100),
+                fileReferenceFactory.partitionFile("B", "file2.parquet", 100)));
+        stateStore.assignJobIds(List.of(
+                assignJobOnPartitionToFiles("job1", "B", List.of("file1.parquet", "file2.parquet"))));
+        stateStore.atomicallyReplaceFileReferencesWithNewOne(
+                "job1", "B", List.of("file1.parquet", "file2.parquet"),
+                fileReferenceFactory.partitionFile("B", "file3.parquet", 200));
+
+        // When / Then
+        assertThat(verboseReportString(StandardFileStatusReporter::new))
+                .isEqualTo(example("reports/filestatus/standard/filesWithNoReferencesBelowMaxCount.txt"));
+        assertThatJson(verboseReportString(JsonFileStatusReporter::new))
+                .isEqualTo(example("reports/filestatus/json/filesWithNoReferencesBelowMaxCount.json"));
+    }
+
+    @Test
+    public void shouldReportFilesStatusGivenFilesWithNoReferencesAboveMaxCount() throws Exception {
+        // Given
+        PartitionTree partitions = new PartitionsBuilder(schema)
+                .rootFirst("A")
+                .splitToNewChildren("A", "B", "C", "mmm")
+                .buildTree();
+        stateStore.initialise(partitions.getAllPartitions());
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(partitions);
+        stateStore.addFiles(List.of(
+                fileReferenceFactory.partitionFile("B", "file1.parquet", 100),
+                fileReferenceFactory.partitionFile("B", "file2.parquet", 100),
+                fileReferenceFactory.partitionFile("B", "file3.parquet", 100),
+                fileReferenceFactory.partitionFile("B", "file4.parquet", 100)));
+        stateStore.assignJobIds(List.of(
+                assignJobOnPartitionToFiles("job1", "B",
+                        List.of("file1.parquet", "file2.parquet", "file3.parquet", "file4.parquet"))));
+        stateStore.atomicallyReplaceFileReferencesWithNewOne("job1", "B",
+                List.of("file1.parquet", "file2.parquet", "file3.parquet", "file4.parquet"),
+                fileReferenceFactory.partitionFile("B", "file5.parquet", 400));
+        int maxFilesWithNoReferences = 3;
+
+        // When / Then
+        assertThat(verboseReportStringWithMaxFilesWithNoReferences(StandardFileStatusReporter::new, maxFilesWithNoReferences))
+                .isEqualTo(example("reports/filestatus/standard/filesWithNoReferencesAboveMaxCount.txt"));
+        assertThatJson(verboseReportStringWithMaxFilesWithNoReferences(JsonFileStatusReporter::new, maxFilesWithNoReferences))
+                .isEqualTo(example("reports/filestatus/json/filesWithNoReferencesAboveMaxCount.json"));
+    }
+
+    @Test
+    public void shouldReportFilesStatusWhenSomeFilesHaveBeenSplit() throws Exception {
+        // Given
+        PartitionTree partitions = new PartitionsBuilder(schema)
+                .rootFirst("A")
+                .splitToNewChildren("A", "B", "C", "mmm")
+                .buildTree();
+        stateStore.initialise(partitions.getAllPartitions());
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(partitions, lastStateStoreUpdate);
+        FileReference rootFile = fileReferenceFactory.partitionFile("A", "not-split.parquet", 1000);
+        FileReference pendingSplit = fileReferenceFactory.partitionFile("B", "pending-split.parquet", 2000);
+        FileReference oldFile = fileReferenceFactory.partitionFile("A", "split.parquet", 2000L);
+        stateStore.addFiles(List.of(rootFile, pendingSplit, oldFile));
+        stateStore.splitFileReferences(List.of(splitFileToChildPartitions(oldFile, "B", "C")));
+
+        // When / Then
+        assertThat(verboseReportString(StandardFileStatusReporter::new))
+                .isEqualTo(example("reports/filestatus/standard/splitFile.txt"));
+        assertThatJson(verboseReportString(JsonFileStatusReporter::new))
+                .isEqualTo(example("reports/filestatus/json/splitFile.json"));
     }
 
 }

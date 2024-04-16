@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 
 package sleeper.configuration.properties.instance;
-
 
 import sleeper.configuration.Utils;
 import sleeper.configuration.properties.SleeperPropertyIndex;
@@ -54,6 +53,11 @@ public interface QueryProperty {
             .defaultValue("10")
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.QUERY).build();
+    UserDefinedInstanceProperty DEFAULT_QUERY_PROCESSOR_CACHE_TIMEOUT = Index.propertyBuilder("sleeper.query.processor.cache.timeout")
+            .description("The default value for the amount of time in minutes the query executor cache is valid for before it times out and needs refreshing.")
+            .defaultValue("60")
+            .validationPredicate(Utils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.QUERY).build();
     UserDefinedInstanceProperty QUERY_TRACKER_ITEM_TTL_IN_DAYS = Index.propertyBuilder("sleeper.query.tracker.ttl.days")
             .description("This value is used to set the time-to-live on the tracking of the queries in the DynamoDB-based query tracker.")
             .defaultValue("1")
@@ -75,6 +79,14 @@ public interface QueryProperty {
                     "value given below is 128KiB. This value can be overridden using the query config.")
             .defaultValue("" + (128 * 1024)) // 128 KiB
             .propertyGroup(InstancePropertyGroup.QUERY).build();
+    UserDefinedInstanceProperty QUERY_WARM_LAMBDA_EXECUTION_PERIOD_IN_MINUTES = Index
+            .propertyBuilder("sleeper.query.warm.lambda.period.minutes")
+            .description("The rate at which the query lambda runs to keep it warm (in minutes, must be >=1). " +
+                    " This only applies when the KeepLambdaWarmStack is enabled")
+            .defaultValue("5")
+            .validationPredicate(Utils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.QUERY)
+            .runCdkDeployWhenChanged(true).build();
 
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,34 +22,36 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
-import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.SleeperProperty;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.function.Predicate.not;
+import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 
 /**
- * Abstract class which backs both {@link InstanceProperties} and
+ * Holds values for Sleeper configuration properties. Abstract class which backs both
+ * {@link sleeper.configuration.properties.instance.InstanceProperties} and
  * {@link sleeper.configuration.properties.table.TableProperties}.
+ *
+ * @param <T> the type of properties held, to ensure only relevant properties are added or retrieved
  */
 public abstract class SleeperProperties<T extends SleeperProperty> implements SleeperPropertyValues<T> {
     private static final Logger LOGGER = LoggerFactory.getLogger(SleeperProperties.class);
@@ -74,8 +76,7 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
     }
 
     public void validate(SleeperPropertiesValidationReporter reporter) {
-        getPropertiesIndex().getUserDefined().forEach(property ->
-                property.validate(get(property), reporter));
+        getPropertiesIndex().getUserDefined().forEach(property -> property.validate(get(property), reporter));
     }
 
     public abstract SleeperPropertyIndex<T> getPropertiesIndex();
@@ -94,15 +95,40 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
         return value;
     }
 
+    public void set(T property, String value) {
+        if (value != null) {
+            properties.setProperty(property.getPropertyName(), value);
+        }
+    }
+
     public void setNumber(T property, Number number) {
         if (number != null) {
             set(property, number.toString());
         }
     }
 
-    public void set(T property, String value) {
+    public void setList(T property, List<String> list) {
+        set(property, String.join(",", list));
+    }
+
+    public void addToList(T property, List<String> list) {
+        List<String> before = getList(property);
+        setList(property, Stream.of(before, list)
+                .flatMap(List::stream)
+                .collect(Collectors.toUnmodifiableList()));
+    }
+
+    public <E extends Enum<E>> void setEnum(T property, E value) {
         if (value != null) {
-            properties.setProperty(property.getPropertyName(), value);
+            set(property, value.name().toLowerCase(Locale.ROOT));
+        }
+    }
+
+    public <E extends Enum<E>> void setEnumList(T property, List<E> list) {
+        if (list != null) {
+            set(property, list.stream()
+                    .map(value -> value.toString().toLowerCase(Locale.ROOT))
+                    .collect(Collectors.joining(",")));
         }
     }
 
@@ -121,31 +147,6 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
 
     public Properties getProperties() {
         return properties;
-    }
-
-    public void load(InputStream inputStream) {
-        try (inputStream) {
-            properties.load(inputStream);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-        this.init();
-    }
-
-    public void load(File file) {
-        try (InputStream inputStream = new BufferedInputStream(new FileInputStream(file))) {
-            load(inputStream);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    public void load(Path file) {
-        try (InputStream inputStream = new BufferedInputStream(Files.newInputStream(file))) {
-            load(inputStream);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
     }
 
     public void save(OutputStream outputStream) {
@@ -184,14 +185,10 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
         return stringWriter.toString();
     }
 
-    public void loadFromString(String propertiesAsString) {
-        StringReader stringReader = new StringReader(propertiesAsString);
-        try {
-            properties.load(stringReader);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-        this.init();
+    public void resetAndValidate(Properties newProperties) {
+        properties.clear();
+        properties.putAll(newProperties);
+        init();
     }
 
     protected void saveToS3(AmazonS3 s3Client, String bucket, String key) {
@@ -201,7 +198,7 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
 
     protected void loadFromS3(AmazonS3 s3Client, String bucket, String key) {
         String propertiesString = s3Client.getObjectAsString(bucket, key);
-        loadFromString(propertiesString);
+        resetAndValidate(loadProperties(propertiesString));
     }
 
     public Stream<Map.Entry<String, String>> getUnknownProperties() {

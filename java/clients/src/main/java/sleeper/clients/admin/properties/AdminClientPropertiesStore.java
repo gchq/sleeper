@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,9 +35,8 @@ import sleeper.configuration.properties.local.SaveLocalProperties;
 import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.table.TableIdentityProvider;
+import sleeper.core.table.TableNotFoundException;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
@@ -45,7 +44,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -66,8 +64,9 @@ public class AdminClientPropertiesStore {
     private final UploadDockerImages uploadDockerImages;
     private final Path generatedDirectory;
 
-    public AdminClientPropertiesStore(AmazonS3 s3, AmazonDynamoDB dynamoDB,
-                                      InvokeCdkForInstance cdk, Path generatedDirectory, UploadDockerImages uploadDockerImages) {
+    public AdminClientPropertiesStore(
+            AmazonS3 s3, AmazonDynamoDB dynamoDB, InvokeCdkForInstance cdk,
+            Path generatedDirectory, UploadDockerImages uploadDockerImages) {
         this.s3 = s3;
         this.dynamoDB = dynamoDB;
         this.dockerImageConfiguration = new DockerImageConfiguration();
@@ -85,18 +84,12 @@ public class AdminClientPropertiesStore {
     }
 
     public TableProperties loadTableProperties(InstanceProperties instanceProperties, String tableName) {
-        return S3TableProperties.getStore(instanceProperties, s3, dynamoDB)
-                .loadByNameNoValidation(tableName)
-                .orElseThrow(() -> new CouldNotLoadTableProperties(instanceProperties.get(ID), tableName,
-                        new NoSuchElementException("Table not found")));
-    }
-
-    public List<String> listTables(String instanceId) {
-        return listTables(loadInstanceProperties(instanceId));
-    }
-
-    private List<String> listTables(InstanceProperties instanceProperties) {
-        return S3TableProperties.getStore(instanceProperties, s3, dynamoDB).listTableNames();
+        try {
+            return S3TableProperties.getStore(instanceProperties, s3, dynamoDB)
+                    .loadByNameNoValidation(tableName);
+        } catch (TableNotFoundException e) {
+            throw new CouldNotLoadTableProperties(instanceProperties.get(ID), tableName, e);
+        }
     }
 
     private Stream<TableProperties> streamTableProperties(InstanceProperties instanceProperties) {
@@ -163,8 +156,7 @@ public class AdminClientPropertiesStore {
             ClientUtils.clearDirectory(generatedDirectory);
             SaveLocalProperties.saveToDirectory(generatedDirectory, instanceProperties,
                     streamTableProperties(instanceProperties)
-                            .map(table -> tableName.equals(table.get(TABLE_NAME))
-                                    ? properties : table));
+                            .map(table -> tableName.equals(table.get(TABLE_NAME)) ? properties : table));
             LOGGER.info("Saving to AWS");
             S3TableProperties.getStore(instanceProperties, s3, dynamoDB).save(properties);
         } catch (IOException | AmazonS3Exception e) {
@@ -186,10 +178,6 @@ public class AdminClientPropertiesStore {
 
     public TablePropertiesProvider createTablePropertiesProvider(InstanceProperties properties) {
         return new TablePropertiesProvider(properties, s3, dynamoDB);
-    }
-
-    public TableIdentityProvider createTableIdentityProvider(InstanceProperties properties) {
-        return new TableIdentityProvider(new DynamoDBTableIndex(properties, dynamoDB));
     }
 
     public static class CouldNotLoadInstanceProperties extends CouldNotLoadProperties {

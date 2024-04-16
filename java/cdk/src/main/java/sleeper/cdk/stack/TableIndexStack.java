@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import sleeper.configuration.table.index.DynamoDBTableIndex;
 import static sleeper.cdk.Utils.removalPolicy;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_ID_INDEX_DYNAMO_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_NAME_INDEX_DYNAMO_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_ONLINE_INDEX_DYNAMO_TABLENAME;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.TABLE_INDEX_DYNAMO_POINT_IN_TIME_RECOVERY;
 
@@ -39,9 +40,10 @@ public class TableIndexStack extends NestedStack {
 
     private final ITable indexByNameDynamoTable;
     private final ITable indexByIdDynamoTable;
+    private final ITable indexByOnlineDynamoTable;
 
     public TableIndexStack(Construct scope, String id, InstanceProperties instanceProperties,
-                           ManagedPoliciesStack policiesStack) {
+            ManagedPoliciesStack policiesStack) {
         super(scope, id);
         String instanceId = instanceProperties.get(ID);
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
@@ -72,12 +74,31 @@ public class TableIndexStack extends NestedStack {
                 .build();
         instanceProperties.set(TABLE_ID_INDEX_DYNAMO_TABLENAME, indexByIdDynamoTable.getTableName());
 
+        indexByOnlineDynamoTable = Table.Builder
+                .create(this, "IndexByOnlineDynamoDBTable")
+                .tableName(String.join("-", "sleeper", instanceId, "table-index-by-online"))
+                .removalPolicy(removalPolicy)
+                .billingMode(BillingMode.PAY_PER_REQUEST)
+                .partitionKey(Attribute.builder()
+                        .name(DynamoDBTableIndex.TABLE_ONLINE_FIELD)
+                        .type(AttributeType.STRING)
+                        .build())
+                .sortKey(Attribute.builder()
+                        .name(DynamoDBTableIndex.TABLE_NAME_FIELD)
+                        .type(AttributeType.STRING)
+                        .build())
+                .pointInTimeRecovery(instanceProperties.getBoolean(TABLE_INDEX_DYNAMO_POINT_IN_TIME_RECOVERY))
+                .build();
+        instanceProperties.set(TABLE_ONLINE_INDEX_DYNAMO_TABLENAME, indexByOnlineDynamoTable.getTableName());
+
         indexByNameDynamoTable.grantReadData(policiesStack.getIngestPolicy());
         indexByIdDynamoTable.grantReadData(policiesStack.getIngestPolicy());
+        indexByOnlineDynamoTable.grantReadData(policiesStack.getIngestPolicy());
     }
 
     public void grantRead(IGrantable grantee) {
         indexByNameDynamoTable.grantReadData(grantee);
         indexByIdDynamoTable.grantReadData(grantee);
+        indexByOnlineDynamoTable.grantReadData(grantee);
     }
 }

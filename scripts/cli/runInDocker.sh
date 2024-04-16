@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright 2022-2023 Crown Copyright
+# Copyright 2022-2024 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -33,8 +33,7 @@ run_in_docker() {
   # See scripts/cli/builder/Dockerfile for why
   RUN_PARAMS+=(
     --rm
-    --cidfile /tmp/container.id
-    -v /tmp/container.id:/tmp/container.id
+    --add-host=host.docker.internal:host-gateway
     -v /var/run/docker.sock:/var/run/docker.sock
     -v "$HOME/.aws:$HOME_IN_IMAGE/.aws"
     -e IN_CLI_CONTAINER=true \
@@ -118,13 +117,13 @@ upgrade_cli() {
   parse_version "$@"
   echo "Updating CLI command"
   EXECUTABLE_PATH="${BASH_SOURCE[0]}"
-  TEMP_DIR="/tmp/sleeper/upgrade-cli"
-  mkdir -p "$TEMP_DIR"
+  TEMP_DIR=$(mktemp -d)
   TEMP_PATH="$TEMP_DIR/sleeper"
   curl "https://raw.githubusercontent.com/gchq/sleeper/$GIT_REF/scripts/cli/runInDocker.sh" --output "$TEMP_PATH"
   chmod a+x "$TEMP_PATH"
   "$TEMP_PATH" cli pull-images "$VERSION"
   mv "$TEMP_PATH" "$EXECUTABLE_PATH"
+  rmdir "$TEMP_DIR"
   echo "Updated"
 
   # If we didn't exit here, bash would carry on where it left off before the function call, but in the new version.

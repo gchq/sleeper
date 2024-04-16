@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 package sleeper.core.iterator;
 
 /**
- * An {@link Exception} for issues using a {@link SortedRecordIterator}.
+ * An exception for failures relating to Sleeper iterators.
  */
 public class IteratorException extends Exception {
 

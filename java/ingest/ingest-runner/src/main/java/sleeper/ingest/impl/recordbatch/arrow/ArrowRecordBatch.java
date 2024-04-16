@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
+import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.impl.recordbatch.RecordBatch;
 
 import java.io.File;
@@ -48,6 +49,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.text.DecimalFormat;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -59,15 +62,19 @@ import java.util.stream.Stream;
 import static java.util.Objects.requireNonNull;
 
 /**
- * This class stores data in Arrow format, in-memory where possible and then spilling to disk once the memory is full.
+ * Stores a batch of records in Arrow format. These are held in-memory where possible, then spilled to disk once the
+ * memory is full.
  * <p>
  * The ingest process works as follows:
  * <ul>
- *     <li>Data is provided to this class through the {@link #append} methods. These are stored in a {@link VectorSchemaRoot}</li>
- *     <li>When an {@link org.apache.arrow.memory.OutOfMemoryException} occurs, the Arrow data is sorted and written to a local file in Arrow format, and the {@link VectorSchemaRoot} is cleared to receive new data</li>
- *     <li>The batch is deemed to be full when the total amount of data on the local disk exceeds a threshold</li>
- *     <li>To retrieve the data, a {@link MergingIterator} is used to create one iterator of records from those local Arrow files. No more data may be appended at this stage</li>
- *     <li>The record batch cannot be reused and {@link #close} will delete all of the local files and free the memory</li>
+ * <li>Data is provided to this class through the {@link #append} methods. These are stored in a
+ * {@link VectorSchemaRoot}</li>
+ * <li>When an {@link org.apache.arrow.memory.OutOfMemoryException} occurs, the Arrow data is sorted and written to a
+ * local file in Arrow format, and the {@link VectorSchemaRoot} is cleared to receive new data</li>
+ * <li>The batch is deemed to be full when the total amount of data on the local disk exceeds a threshold</li>
+ * <li>To retrieve the data, a {@link MergingIterator} is used to create one iterator of records from those local Arrow
+ * files. No more data may be appended at this stage</li>
+ * <li>The record batch cannot be reused and {@link #close} will delete all of the local files and free the memory</li>
  * </ul>
  * <p>
  * Subclasses of this class are responsible for implementing the {@link #append} method to take objects of type
@@ -84,6 +91,7 @@ import static java.util.Objects.requireNonNull;
  */
 public class ArrowRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGDATATYPE> {
     private static final Logger LOGGER = LoggerFactory.getLogger(ArrowRecordBatch.class);
+    private static final DecimalFormat FORMATTER = new DecimalFormat("0.#");
     public static final String MAP_KEY_FIELD_NAME = "key";
     public static final String MAP_VALUE_FIELD_NAME = "value";
     private static final int INITIAL_ARROW_VECTOR_CAPACITY = 1024;
@@ -106,9 +114,9 @@ public class ArrowRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGD
     protected boolean isWriteable;
 
     /**
-     * Construct an {@link ArrowRecordBatch} object.
+     * Construct an instance. Should be called by an {@link ArrowRecordBatchFactory}.
      *
-     * @param arrowBufferAllocator                   The {@link BufferAllocator} to use to allocate memory for this
+     * @param arrowBufferAllocator                   the {@link BufferAllocator} to use to allocate memory for this
      *                                               buffer
      * @param sleeperSchema                          The Sleeper {@link Schema} of the records to be stored
      * @param localWorkingDirectory                  The local directory to use to store the spilled Arrow files
@@ -128,14 +136,14 @@ public class ArrowRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGD
      */
     @SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR")
     public ArrowRecordBatch(BufferAllocator arrowBufferAllocator,
-                            Schema sleeperSchema,
-                            ArrowRecordWriter<INCOMINGDATATYPE> recordMapper,
-                            String localWorkingDirectory,
-                            long workingArrowBufferAllocatorBytes,
-                            long minBatchArrowBufferAllocatorBytes,
-                            long maxBatchArrowBufferAllocatorBytes,
-                            long maxNoOfBytesToWriteLocally,
-                            int maxNoOfRecordsToWriteToArrowFileAtOnce) {
+            Schema sleeperSchema,
+            ArrowRecordWriter<INCOMINGDATATYPE> recordMapper,
+            String localWorkingDirectory,
+            long workingArrowBufferAllocatorBytes,
+            long minBatchArrowBufferAllocatorBytes,
+            long maxBatchArrowBufferAllocatorBytes,
+            long maxNoOfBytesToWriteLocally,
+            int maxNoOfRecordsToWriteToArrowFileAtOnce) {
         requireNonNull(arrowBufferAllocator);
         this.sleeperSchema = requireNonNull(sleeperSchema);
         this.recordMapper = requireNonNull(recordMapper);
@@ -185,35 +193,34 @@ public class ArrowRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGD
             throw e1;
         }
         LOGGER.info("Created ArrowRecordBatchBase with:\n"
-                        + "\tschema of {}\n\tlocalWorkingDirectory of {}\n\tworkingArrowBufferAllocatorBytes of {}\n"
-                        + "\tminBatchArrowBufferAllocatorBytes of {}\n\tmaxBatchArrowBufferAllocatorBytes of {}\n"
-                        + "\tmaxNoOfBytesToWriteLocally of {}\n\tmaxNoOfRecordsToWriteToArrowFileAtOnce of {}",
+                + "\tschema of {}\n\tlocalWorkingDirectory of {}\n\tworkingArrowBufferAllocatorBytes of {}\n"
+                + "\tminBatchArrowBufferAllocatorBytes of {}\n\tmaxBatchArrowBufferAllocatorBytes of {}\n"
+                + "\tmaxNoOfBytesToWriteLocally of {}\n\tmaxNoOfRecordsToWriteToArrowFileAtOnce of {}",
                 this.sleeperSchema, this.localWorkingDirectory, workingArrowBufferAllocatorBytes,
                 minBatchArrowBufferAllocatorBytes, maxBatchArrowBufferAllocatorBytes,
                 this.maxNoOfBytesToWriteLocally, this.maxNoOfRecordsToWriteToArrowFileAtOnce);
     }
 
     /**
-     * Sort a {@link VectorSchemaRoot} according to the single row key specified in the {@link Schema} and then write
-     * the sorted rows out to an Arrow file. The rows are written out in small batches to minimise the amount of
-     * additional memory that is required.
+     * Sort a set of Arrow vectors according to a Sleeper schema and write to a local Arrow file. The rows are written
+     * out in small batches to minimise the amount of additional memory that is required.
      *
-     * @param temporaryBufferAllocator               The buffer allocator to use for working memory
-     * @param sleeperSchema                          The Sleeper {@link Schema} of the rows to be sorted
-     * @param sourceVectorSchemaRoot                 The {@link VectorSchemaRoot} containing the rows to be written
-     * @param localArrowFileName                     The name of the file to write the Arrow data to
-     * @param maxNoOfRecordsToWriteToArrowFileAtOnce The Arrow file writing process writes multiple small batches of
-     *                                               data of this size into a single file, to reduce the memory
-     *                                               footprint
-     * @return Number of bytes written
-     * @throws IOException -
+     * @param  temporaryBufferAllocator               the buffer allocator to use for working memory
+     * @param  sleeperSchema                          the Sleeper {@link Schema} of the rows to be sorted
+     * @param  sourceVectorSchemaRoot                 the {@link VectorSchemaRoot} containing the rows to be written
+     * @param  localArrowFileName                     the name of the file to write the Arrow data to
+     * @param  maxNoOfRecordsToWriteToArrowFileAtOnce the Arrow file writing process writes multiple small batches of
+     *                                                data of this size into a single file, to reduce the memory
+     *                                                footprint
+     * @return                                        number of bytes written
+     * @throws IOException                            -
      */
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     private static long sortArrowAndWriteToLocalFile(BufferAllocator temporaryBufferAllocator,
-                                                     Schema sleeperSchema,
-                                                     VectorSchemaRoot sourceVectorSchemaRoot,
-                                                     String localArrowFileName,
-                                                     int maxNoOfRecordsToWriteToArrowFileAtOnce) throws IOException {
+            Schema sleeperSchema,
+            VectorSchemaRoot sourceVectorSchemaRoot,
+            String localArrowFileName,
+            int maxNoOfRecordsToWriteToArrowFileAtOnce) throws IOException {
         int sourceVectorSize = sourceVectorSchemaRoot.getRowCount();
         List<Field> allSleeperFields = sleeperSchema.getAllFields();
         // Determine the order in which the rows are to be written to the Arrow file
@@ -226,9 +233,9 @@ public class ArrowRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGD
         Files.createDirectories(arrowFileParent);
         LOGGER.debug("Determining sort order and opening local arrow file");
         try (IntVector wholeFileSortOrderVector = ArrowIngestSupport.createSortOrderVector(temporaryBufferAllocator, sleeperSchema, sourceVectorSchemaRoot);
-             VectorSchemaRoot smallBatchVectorSchemaRoot = VectorSchemaRoot.create(sourceVectorSchemaRoot.getSchema(), temporaryBufferAllocator);
-             FileChannel outputFileChannel = FileChannel.open(arrowFilePath, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
-             ArrowStreamWriter arrowStreamWriter = new ArrowStreamWriter(smallBatchVectorSchemaRoot, null, outputFileChannel)) {
+                VectorSchemaRoot smallBatchVectorSchemaRoot = VectorSchemaRoot.create(sourceVectorSchemaRoot.getSchema(), temporaryBufferAllocator);
+                FileChannel outputFileChannel = FileChannel.open(arrowFilePath, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
+                ArrowStreamWriter arrowStreamWriter = new ArrowStreamWriter(smallBatchVectorSchemaRoot, null, outputFileChannel)) {
             // Allocate memory in the vectors underlying the VectorSchemaRoot and start the writer
             smallBatchVectorSchemaRoot.getFieldVectors().forEach(fieldVector -> fieldVector.setInitialCapacity(maxNoOfRecordsToWriteToArrowFileAtOnce));
             smallBatchVectorSchemaRoot.allocateNew();
@@ -272,18 +279,16 @@ public class ArrowRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGD
     }
 
     /**
-     * Create a {@link CloseableIterator} of {@link Record} objects which reads the rows from the named Arrow file.
-     * <p>
-     * The {@link CloseableIterator} should be closed by the caller when it is no longer needed.
+     * Open an iterator of records reading from a named Arrow file. The iterator should be closed by the caller when it
+     * is no longer needed.
      *
-     * @param bufferAllocator    The Arrow {@link BufferAllocator} to use as a working buffer during file-reading
-     * @param localArrowFileName The Arrow file to read
-     * @return An iterator of records read from the Arrow file
-     * @throws IOException -
+     * @param  bufferAllocator    the Arrow {@link BufferAllocator} to use as a working buffer during file-reading
+     * @param  localArrowFileName the Arrow file to read
+     * @return                    an iterator of records read from the Arrow file
+     * @throws IOException        -
      */
     private static CloseableIterator<Record> createCloseableRecordIteratorForArrowFile(BufferAllocator bufferAllocator,
-                                                                                       String localArrowFileName)
-            throws IOException {
+            String localArrowFileName) throws IOException {
         FileChannel inputFileChannel = FileChannel.open(Paths.get(localArrowFileName), StandardOpenOption.READ);
         ArrowStreamReader arrowStreamReader = new ArrowStreamReader(inputFileChannel, bufferAllocator);
         return new RecordIteratorFromArrowStreamReader(arrowStreamReader);
@@ -292,14 +297,13 @@ public class ArrowRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGD
     /**
      * Create an Arrow Schema from a Sleeper Schema. The order of the fields in each Schema is retained.
      *
-     * @param sleeperSchema The Sleeper {@link Schema}
-     * @return The Arrow {@link org.apache.arrow.vector.types.pojo.Schema}
+     * @param  sleeperSchema The Sleeper {@link Schema}
+     * @return               The Arrow {@link org.apache.arrow.vector.types.pojo.Schema}
      */
     private static org.apache.arrow.vector.types.pojo.Schema convertSleeperSchemaToArrowSchema(Schema sleeperSchema) {
-        List<org.apache.arrow.vector.types.pojo.Field> arrowFields =
-                sleeperSchema.getAllFields().stream()
-                        .map(ArrowRecordBatch::convertSleeperFieldToArrowField)
-                        .collect(Collectors.toList());
+        List<org.apache.arrow.vector.types.pojo.Field> arrowFields = sleeperSchema.getAllFields().stream()
+                .map(ArrowRecordBatch::convertSleeperFieldToArrowField)
+                .collect(Collectors.toList());
         return new org.apache.arrow.vector.types.pojo.Schema(arrowFields);
     }
 
@@ -350,8 +354,8 @@ public class ArrowRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGD
     /**
      * Convert a primitive Sleeper field into an Arrow field.
      *
-     * @param sleeperField The Sleeper field to be converted
-     * @return The corresponding Arrow field
+     * @param  sleeperField The Sleeper field to be converted
+     * @return              The corresponding Arrow field
      */
     private static org.apache.arrow.vector.types.pojo.Field convertSleeperPrimitiveFieldToArrowField(Field sleeperField) {
         String fieldName = sleeperField.getName();
@@ -390,12 +394,11 @@ public class ArrowRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGD
         deleteAllLocalArrowFiles();
     }
 
-
     /**
      * Delete all of the local Arrow files.
      */
     private void deleteAllLocalArrowFiles() {
-        if (localArrowFileNames.size() > 0) {
+        if (!localArrowFileNames.isEmpty()) {
             LOGGER.debug("Deleting {} local batch files, first: {} last: {}",
                     localArrowFileNames.size(),
                     localArrowFileNames.get(0),
@@ -420,14 +423,14 @@ public class ArrowRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGD
     protected void flushToLocalArrowFileThenClear() throws IOException {
         if (currentInsertIndex <= 0) {
             throw new AssertionError("A request was made to flush to disk when there were no records in memory. "
-                + "The most likely reason for this is that the contents of the incoming data type are too big "
-                + "to fit within the in memory buffer. Either increase the size of the memory buffer or reduce "
-                + "the number of records in the incoming data type.");
+                    + "The most likely reason for this is that the contents of the incoming data type are too big "
+                    + "to fit within the in memory buffer. Either increase the size of the memory buffer or reduce "
+                    + "the number of records in the incoming data type.");
         }
         String localFileName = constructLocalFileNameForBatch(currentBatchNo);
         // Follow the Arrow pattern of create > allocate > mutate > set value count > access > clear
         // Here we do the set value count > access > clear
-        long time1 = System.currentTimeMillis();
+        Instant startTime = Instant.now();
         LOGGER.debug("Writing {} records to local Arrow file {}", currentInsertIndex, localFileName);
         long bytesWrittenToLocalFile;
         try {
@@ -441,13 +444,13 @@ public class ArrowRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGD
             LOGGER.warn("An exception occurred during sortArrowAndWriteToLocalFile", e);
             throw e;
         }
-        long time2 = System.currentTimeMillis();
-        LOGGER.info(String.format("Wrote %d records (%d bytes) to local Arrow file in %.1fs (%.1f/s) - filename: %s",
+        LoggedDuration duration = LoggedDuration.withShortOutput(startTime, Instant.now());
+        LOGGER.info("Wrote {} records ({} bytes) to local Arrow file in {} ({}/s) - filename: {}",
                 currentInsertIndex,
                 bytesWrittenToLocalFile,
-                (time2 - time1) / 1000.0,
-                currentInsertIndex / ((time2 - time1) / 1000.0),
-                localFileName));
+                duration,
+                FORMATTER.format(currentInsertIndex / (double) duration.getSeconds()),
+                localFileName);
         vectorSchemaRoot.clear();
         currentInsertIndex = 0;
         // Record the local file name for later, and update the counters
@@ -494,7 +497,7 @@ public class ArrowRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGD
      * in-memory batch to disk and clears the memory, then performs a merge-sort of every local Arrow file (each of
      * which were sorted as it was written).
      *
-     * @return An iterator to iterate through all of the records in sorted order.
+     * @return             An iterator to iterate through all of the records in sorted order.
      * @throws IOException -
      */
     private CloseableIterator<Record> createSortedRecordIterator() throws IOException {
@@ -504,7 +507,7 @@ public class ArrowRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGD
         }
         // Log this action
         LOGGER.info("Starting merge-sort of {} local files", localArrowFileNames.size());
-        if (localArrowFileNames.size() > 0) {
+        if (!localArrowFileNames.isEmpty()) {
             LOGGER.debug("First file: {} last file: {}",
                     localArrowFileNames.get(0),
                     localArrowFileNames.get(localArrowFileNames.size() - 1));

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,8 +42,9 @@ public class IngestJobStatusReporterTestHelper {
         return getStandardReport(query, statusList, numberInQueue, Collections.emptyMap());
     }
 
-    public static String getStandardReport(JobQuery.Type query, List<IngestJobStatus> statusList, int numberInQueue,
-                                           Map<String, Integer> persistentEmrStepCount) {
+    public static String getStandardReport(
+            JobQuery.Type query, List<IngestJobStatus> statusList, int numberInQueue,
+            Map<String, Integer> persistentEmrStepCount) {
         ToStringPrintStream output = new ToStringPrintStream();
         new StandardIngestJobStatusReporter(output.getPrintStream()).report(statusList, query,
                 ingestMessageCount(numberInQueue), persistentEmrStepCount);
@@ -54,8 +55,9 @@ public class IngestJobStatusReporterTestHelper {
         return getJsonReport(query, statusList, numberInQueue, Collections.emptyMap());
     }
 
-    public static String getJsonReport(JobQuery.Type query, List<IngestJobStatus> statusList, int numberInQueue,
-                                       Map<String, Integer> persistentEmrStepCount) {
+    public static String getJsonReport(
+            JobQuery.Type query, List<IngestJobStatus> statusList, int numberInQueue,
+            Map<String, Integer> persistentEmrStepCount) {
         ToStringPrintStream output = new ToStringPrintStream();
         new JsonIngestJobStatusReporter(output.getPrintStream()).report(statusList, query,
                 ingestMessageCount(numberInQueue), persistentEmrStepCount);

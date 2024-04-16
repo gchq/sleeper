@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package sleeper.ingest.impl;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.io.TempDir;
 
+import sleeper.configuration.properties.validation.IngestFileWritingStrategy;
 import sleeper.core.record.Record;
 import sleeper.ingest.testutils.IngestCoordinatorTestParameters;
 
@@ -38,7 +39,8 @@ public abstract class DirectWriteBackedByArrowTestBase {
         return IngestCoordinatorTestParameters
                 .builder()
                 .temporaryFolder(temporaryFolder)
-                .hadoopConfiguration(configuration);
+                .hadoopConfiguration(configuration)
+                .ingestFileWritingStrategy(IngestFileWritingStrategy.ONE_FILE_PER_LEAF);
     }
 
     static void assertThatRecordsHaveFieldValuesThatAllAppearInRangeInSameOrder(List<Record> records, String fieldName, LongStream range) {

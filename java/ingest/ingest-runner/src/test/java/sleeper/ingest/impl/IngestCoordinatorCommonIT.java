@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.validation.IngestFileWritingStrategy;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.iterator.impl.AdditionIterator;
@@ -46,8 +47,8 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.statestore.FileInfo;
-import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.testutils.IngestCoordinatorTestParameters;
@@ -77,13 +78,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
+import static sleeper.configuration.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
+import static sleeper.configuration.properties.validation.IngestFileWritingStrategy.ONE_FILE_PER_LEAF;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.ingest.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.ingest.testutils.RecordGenerator.genericKey1D;
 import static sleeper.ingest.testutils.ResultVerifier.readMergedRecordsFromPartitionDataFiles;
 import static sleeper.ingest.testutils.ResultVerifier.readRecordsFromPartitionDataFile;
-import static sleeper.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
+import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
 @Testcontainers
 public class IngestCoordinatorCommonIT {
@@ -112,14 +115,14 @@ public class IngestCoordinatorCommonIT {
                 Arguments.of(Named.of("Direct write, backed by ArrayList, no S3",
                         TestIngestType.directWriteBackedByArrayListWriteToLocalFile())),
                 Arguments.of(Named.of("Direct write, backed by ArrayList, using S3",
-                        TestIngestType.directWriteBackedByArrayListWriteToS3()))
-        );
+                        TestIngestType.directWriteBackedByArrayListWriteToS3())));
     }
 
     @BeforeEach
     public void before() {
         s3.createBucket(dataBucketName);
         new S3StateStoreCreator(instanceProperties, dynamoDB).create();
+        tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
     }
 
     private StateStore createStateStore(Schema schema) {
@@ -129,8 +132,7 @@ public class IngestCoordinatorCommonIT {
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
-    public void shouldWriteRecordsCorrectly(TestIngestType ingestType)
-            throws StateStoreException, IOException, IteratorException {
+    public void shouldWriteRecordsCorrectly(TestIngestType ingestType) throws StateStoreException, IOException, IteratorException {
         // Given
         RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(
                 new LongType(),
@@ -141,7 +143,7 @@ public class IngestCoordinatorCommonIT {
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
-        stateStore.fixTime(stateStoreUpdateTime);
+        stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("rootFile"))
@@ -154,17 +156,13 @@ public class IngestCoordinatorCommonIT {
         ingestRecords(recordListAndSchema, parameters, ingestType);
 
         // Then
-        List<FileInfo> actualFiles = stateStore.getActiveFiles();
+        List<FileReference> actualFiles = stateStore.getFileReferences();
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
-        FileInfo fileInfo = FileInfoFactory.builder()
-                .partitionTree(tree)
-                .lastStateStoreUpdate(stateStoreUpdateTime)
-                .schema(recordListAndSchema.sleeperSchema)
-                .build()
+        FileReference fileReference = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime)
                 .rootFile(ingestType.getFilePrefix(parameters) + "/partition_root/rootFile.parquet", 200);
 
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
-        assertThat(actualFiles).containsExactly(fileInfo);
+        assertThat(actualFiles).containsExactly(fileReference);
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
         assertThat(actualRecords).extracting(record -> record.getValues(List.of("key0")))
                 .containsExactlyElementsOf(LongStream.range(-100, 100).boxed()
@@ -175,14 +173,13 @@ public class IngestCoordinatorCommonIT {
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
                 actualFiles,
-                hadoopConfiguration
-        );
+                hadoopConfiguration);
     }
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
-    public void shouldWriteRecordsSplitByPartitionIntKey(TestIngestType ingestType)
-            throws StateStoreException, IOException, IteratorException {
+    public void shouldWriteRecordsSplitByPartitionIntKey(TestIngestType ingestType) throws StateStoreException, IOException, IteratorException {
+        // Given
         RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(
                 new IntType(),
                 IntStream.range(-100, 100).boxed().collect(Collectors.toList()));
@@ -193,7 +190,7 @@ public class IngestCoordinatorCommonIT {
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
-        stateStore.fixTime(stateStoreUpdateTime);
+        stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile", "rightFile"))
@@ -206,14 +203,12 @@ public class IngestCoordinatorCommonIT {
         ingestRecords(recordListAndSchema, parameters, ingestType);
 
         // Then
-        List<FileInfo> actualFiles = stateStore.getActiveFiles();
-        FileInfoFactory fileInfoFactory = FileInfoFactory.builder()
-                .partitionTree(tree)
-                .lastStateStoreUpdate(stateStoreUpdateTime)
-                .schema(recordListAndSchema.sleeperSchema)
-                .build();
-        FileInfo leftFile = fileInfoFactory.leafFile(ingestType.getFilePrefix(parameters) + "/partition_left/leftFile.parquet", 102, -100, 1);
-        FileInfo rightFile = fileInfoFactory.leafFile(ingestType.getFilePrefix(parameters) + "/partition_right/rightFile.parquet", 98, 2, 99);
+        List<FileReference> actualFiles = stateStore.getFileReferences();
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
+        FileReference leftFile = fileReferenceFactory.partitionFile("left",
+                ingestType.getFilePrefix(parameters) + "/partition_left/leftFile.parquet", 102);
+        FileReference rightFile = fileReferenceFactory.partitionFile("right",
+                ingestType.getFilePrefix(parameters) + "/partition_right/rightFile.parquet", 98);
         List<Record> leftRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, leftFile, hadoopConfiguration);
         List<Record> rightRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rightFile, hadoopConfiguration);
         List<Record> allRecords = Stream.of(leftRecords, rightRecords)
@@ -231,14 +226,13 @@ public class IngestCoordinatorCommonIT {
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
                 actualFiles,
-                hadoopConfiguration
-        );
+                hadoopConfiguration);
     }
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
-    public void shouldWriteRecordsSplitByPartitionLongKey(TestIngestType ingestType)
-            throws StateStoreException, IOException, IteratorException {
+    public void shouldWriteRecordsSplitByPartitionLongKey(TestIngestType ingestType) throws StateStoreException, IOException, IteratorException {
+        // Given
         RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(
                 new LongType(),
                 LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
@@ -249,7 +243,7 @@ public class IngestCoordinatorCommonIT {
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
-        stateStore.fixTime(stateStoreUpdateTime);
+        stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile", "rightFile"))
@@ -262,14 +256,10 @@ public class IngestCoordinatorCommonIT {
         ingestRecords(recordListAndSchema, parameters, ingestType);
 
         // Then
-        List<FileInfo> actualFiles = stateStore.getActiveFiles();
-        FileInfoFactory fileInfoFactory = FileInfoFactory.builder()
-                .partitionTree(tree)
-                .lastStateStoreUpdate(stateStoreUpdateTime)
-                .schema(recordListAndSchema.sleeperSchema)
-                .build();
-        FileInfo leftFile = fileInfoFactory.leafFile(ingestType.getFilePrefix(parameters) + "/partition_left/leftFile.parquet", 102, -100L, 1L);
-        FileInfo rightFile = fileInfoFactory.leafFile(ingestType.getFilePrefix(parameters) + "/partition_right/rightFile.parquet", 98, 2L, 99L);
+        List<FileReference> actualFiles = stateStore.getFileReferences();
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
+        FileReference leftFile = fileReferenceFactory.partitionFile("left", ingestType.getFilePrefix(parameters) + "/partition_left/leftFile.parquet", 102);
+        FileReference rightFile = fileReferenceFactory.partitionFile("right", ingestType.getFilePrefix(parameters) + "/partition_right/rightFile.parquet", 98);
         List<Record> leftRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, leftFile, hadoopConfiguration);
         List<Record> rightRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rightFile, hadoopConfiguration);
         List<Record> allRecords = Stream.of(leftRecords, rightRecords)
@@ -287,14 +277,13 @@ public class IngestCoordinatorCommonIT {
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
                 actualFiles,
-                hadoopConfiguration
-        );
+                hadoopConfiguration);
     }
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
-    public void shouldWriteRecordsSplitByPartitionStringKey(TestIngestType ingestType)
-            throws Exception {
+    public void shouldWriteRecordsSplitByPartitionStringKey(TestIngestType ingestType) throws Exception {
+        // Given
         // RandomStringGenerator generates random unicode strings to test both standard and unusual character sets
         Supplier<String> randomString = randomStringGeneratorWithMaxLength(25);
         List<String> keys = LongStream.range(0, 200)
@@ -308,7 +297,7 @@ public class IngestCoordinatorCommonIT {
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
-        stateStore.fixTime(stateStoreUpdateTime);
+        stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile", "rightFile"))
@@ -320,16 +309,13 @@ public class IngestCoordinatorCommonIT {
         // When
         ingestRecords(recordListAndSchema, parameters, ingestType);
 
-
         // Then
-        List<FileInfo> actualFiles = stateStore.getActiveFiles();
-        FileInfoFactory fileInfoFactory = FileInfoFactory.builder()
-                .partitionTree(tree)
-                .lastStateStoreUpdate(stateStoreUpdateTime)
-                .schema(recordListAndSchema.sleeperSchema)
-                .build();
-        FileInfo leftFile = fileInfoFactory.leafFile(ingestType.getFilePrefix(parameters) + "/partition_left/leftFile.parquet", 102, keys.get(0), keys.get(101));
-        FileInfo rightFile = fileInfoFactory.leafFile(ingestType.getFilePrefix(parameters) + "/partition_right/rightFile.parquet", 98, keys.get(102), keys.get(199));
+        List<FileReference> actualFiles = stateStore.getFileReferences();
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
+        FileReference leftFile = fileReferenceFactory.partitionFile("left",
+                ingestType.getFilePrefix(parameters) + "/partition_left/leftFile.parquet", 102);
+        FileReference rightFile = fileReferenceFactory.partitionFile("right",
+                ingestType.getFilePrefix(parameters) + "/partition_right/rightFile.parquet", 98);
         List<Record> leftRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, leftFile, hadoopConfiguration);
         List<Record> rightRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rightFile, hadoopConfiguration);
         List<Record> allRecords = Stream.of(leftRecords, rightRecords)
@@ -347,14 +333,13 @@ public class IngestCoordinatorCommonIT {
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
                 actualFiles,
-                hadoopConfiguration
-        );
+                hadoopConfiguration);
     }
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
-    public void shouldWriteRecordsSplitByPartitionByteArrayKey(TestIngestType ingestType)
-            throws StateStoreException, IOException, IteratorException {
+    public void shouldWriteRecordsSplitByPartitionByteArrayKey(TestIngestType ingestType) throws StateStoreException, IOException, IteratorException {
+        // Given
         RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(
                 new ByteArrayType(),
                 Arrays.asList(
@@ -368,7 +353,7 @@ public class IngestCoordinatorCommonIT {
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
-        stateStore.fixTime(stateStoreUpdateTime);
+        stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile", "rightFile"))
@@ -381,14 +366,12 @@ public class IngestCoordinatorCommonIT {
         ingestRecords(recordListAndSchema, parameters, ingestType);
 
         // Then
-        List<FileInfo> actualFiles = stateStore.getActiveFiles();
-        FileInfoFactory fileInfoFactory = FileInfoFactory.builder()
-                .partitionTree(tree)
-                .lastStateStoreUpdate(stateStoreUpdateTime)
-                .schema(recordListAndSchema.sleeperSchema)
-                .build();
-        FileInfo leftFile = fileInfoFactory.leafFile(ingestType.getFilePrefix(parameters) + "/partition_left/leftFile.parquet", 2, new byte[]{1, 1}, new byte[]{2, 2});
-        FileInfo rightFile = fileInfoFactory.leafFile(ingestType.getFilePrefix(parameters) + "/partition_right/rightFile.parquet", 1, new byte[]{64, 65}, new byte[]{64, 65});
+        List<FileReference> actualFiles = stateStore.getFileReferences();
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
+        FileReference leftFile = fileReferenceFactory.partitionFile("left",
+                ingestType.getFilePrefix(parameters) + "/partition_left/leftFile.parquet", 2);
+        FileReference rightFile = fileReferenceFactory.partitionFile("right",
+                ingestType.getFilePrefix(parameters) + "/partition_right/rightFile.parquet", 1);
         List<Record> leftRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, leftFile, hadoopConfiguration);
         List<Record> rightRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rightFile, hadoopConfiguration);
         List<Record> allRecords = Stream.of(leftRecords, rightRecords)
@@ -406,14 +389,13 @@ public class IngestCoordinatorCommonIT {
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
                 actualFiles,
-                hadoopConfiguration
-        );
+                hadoopConfiguration);
     }
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
-    public void shouldWriteRecordsSplitByPartitionStringKeyLongSortKey(TestIngestType ingestType)
-            throws Exception {
+    public void shouldWriteRecordsSplitByPartitionStringKeyLongSortKey(TestIngestType ingestType) throws Exception {
+        // Given
         // RandomStringGenerator generates random unicode strings to test both standard and unusual character sets
         Supplier<String> randomString = randomStringGeneratorWithMaxLength(25);
         List<String> stringKeys = LongStream.range(0, 200)
@@ -434,7 +416,7 @@ public class IngestCoordinatorCommonIT {
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
-        stateStore.fixTime(stateStoreUpdateTime);
+        stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile", "rightFile"))
@@ -447,14 +429,12 @@ public class IngestCoordinatorCommonIT {
         ingestRecords(recordListAndSchema, parameters, ingestType);
 
         // Then
-        List<FileInfo> actualFiles = stateStore.getActiveFiles();
-        FileInfoFactory fileInfoFactory = FileInfoFactory.builder()
-                .partitionTree(tree)
-                .lastStateStoreUpdate(stateStoreUpdateTime)
-                .schema(recordListAndSchema.sleeperSchema)
-                .build();
-        FileInfo leftFile = fileInfoFactory.leafFile(ingestType.getFilePrefix(parameters) + "/partition_left/leftFile.parquet", 306, stringKeys.get(0), stringKeys.get(303));
-        FileInfo rightFile = fileInfoFactory.leafFile(ingestType.getFilePrefix(parameters) + "/partition_right/rightFile.parquet", 294, stringKeys.get(306), stringKeys.get(597));
+        List<FileReference> actualFiles = stateStore.getFileReferences();
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
+        FileReference leftFile = fileReferenceFactory.partitionFile("left",
+                ingestType.getFilePrefix(parameters) + "/partition_left/leftFile.parquet", 306);
+        FileReference rightFile = fileReferenceFactory.partitionFile("right",
+                ingestType.getFilePrefix(parameters) + "/partition_right/rightFile.parquet", 294);
         List<Record> leftRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, leftFile, hadoopConfiguration);
         List<Record> rightRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rightFile, hadoopConfiguration);
         List<Record> allRecords = Stream.of(leftRecords, rightRecords)
@@ -476,14 +456,13 @@ public class IngestCoordinatorCommonIT {
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
                 actualFiles,
-                hadoopConfiguration
-        );
+                hadoopConfiguration);
     }
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
-    public void shouldWriteRecordsSplitByPartition2DimensionalByteArrayKey(TestIngestType ingestType)
-            throws StateStoreException, IOException, IteratorException {
+    public void shouldWriteRecordsSplitByPartition2DimensionalByteArrayKey(TestIngestType ingestType) throws StateStoreException, IOException, IteratorException {
+        // Given
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey2D(
                 new ByteArrayType(), new ByteArrayType(),
                 Arrays.asList(new byte[]{1, 1}, new byte[]{11, 2}, new byte[]{64, 65}, new byte[]{5}),
@@ -495,7 +474,7 @@ public class IngestCoordinatorCommonIT {
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
-        stateStore.fixTime(stateStoreUpdateTime);
+        stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile", "rightFile"))
@@ -508,16 +487,12 @@ public class IngestCoordinatorCommonIT {
         ingestRecords(recordListAndSchema, parameters, ingestType);
 
         // Then
-        List<FileInfo> actualFiles = stateStore.getActiveFiles();
-        FileInfoFactory fileInfoFactory = FileInfoFactory.builder()
-                .partitionTree(tree)
-                .lastStateStoreUpdate(stateStoreUpdateTime)
-                .schema(recordListAndSchema.sleeperSchema)
-                .build();
-        FileInfo leftFile = fileInfoFactory.partitionFile("left", ingestType.getFilePrefix(parameters) +
-                "/partition_left/leftFile.parquet", 2);
-        FileInfo rightFile = fileInfoFactory.partitionFile("right", ingestType.getFilePrefix(parameters) +
-                "/partition_right/rightFile.parquet", 2);
+        List<FileReference> actualFiles = stateStore.getFileReferences();
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
+        FileReference leftFile = fileReferenceFactory.partitionFile("left",
+                ingestType.getFilePrefix(parameters) + "/partition_left/leftFile.parquet", 2);
+        FileReference rightFile = fileReferenceFactory.partitionFile("right",
+                ingestType.getFilePrefix(parameters) + "/partition_right/rightFile.parquet", 2);
         List<Record> leftRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, leftFile, hadoopConfiguration);
         List<Record> rightRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rightFile, hadoopConfiguration);
         List<Record> allRecords = Stream.of(leftRecords, rightRecords)
@@ -543,21 +518,19 @@ public class IngestCoordinatorCommonIT {
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
                 actualFiles,
-                hadoopConfiguration
-        );
+                hadoopConfiguration);
         ResultVerifier.assertOnSketch(
                 recordListAndSchema.sleeperSchema.getField("key1").orElseThrow(),
                 recordListAndSchema,
                 actualFiles,
-                hadoopConfiguration
-        );
+                hadoopConfiguration);
     }
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
     public void shouldWriteRecordsSplitByPartition2DimensionalIntLongKeyWhenSplitOnDim1(
-            TestIngestType ingestType)
-            throws StateStoreException, IOException, IteratorException {
+            TestIngestType ingestType) throws StateStoreException, IOException, IteratorException {
+        // Given
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey2D(
                 new IntType(), new LongType(),
                 Arrays.asList(0, 0, 100, 100),
@@ -569,7 +542,7 @@ public class IngestCoordinatorCommonIT {
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
-        stateStore.fixTime(stateStoreUpdateTime);
+        stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile", "rightFile"))
@@ -582,15 +555,11 @@ public class IngestCoordinatorCommonIT {
         ingestRecords(recordListAndSchema, parameters, ingestType);
 
         // Then
-        List<FileInfo> actualFiles = stateStore.getActiveFiles();
-        FileInfoFactory fileInfoFactory = FileInfoFactory.builder()
-                .partitionTree(tree)
-                .lastStateStoreUpdate(stateStoreUpdateTime)
-                .schema(recordListAndSchema.sleeperSchema)
-                .build();
-        FileInfo rightFile = fileInfoFactory.partitionFile("right", ingestType.getFilePrefix(parameters) +
+        List<FileReference> actualFiles = stateStore.getFileReferences();
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
+        FileReference rightFile = fileReferenceFactory.partitionFile("right", ingestType.getFilePrefix(parameters) +
                 "/partition_right/rightFile.parquet", 2);
-        FileInfo leftFile = fileInfoFactory.partitionFile("left", ingestType.getFilePrefix(parameters) +
+        FileReference leftFile = fileReferenceFactory.partitionFile("left", ingestType.getFilePrefix(parameters) +
                 "/partition_left/leftFile.parquet", 2);
         List<Record> leftRecords = ResultVerifier.readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, leftFile, hadoopConfiguration);
         List<Record> rightRecords = ResultVerifier.readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rightFile, hadoopConfiguration);
@@ -611,21 +580,19 @@ public class IngestCoordinatorCommonIT {
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
                 actualFiles,
-                hadoopConfiguration
-        );
+                hadoopConfiguration);
         ResultVerifier.assertOnSketch(
                 recordListAndSchema.sleeperSchema.getField("key1").orElseThrow(),
                 recordListAndSchema,
                 actualFiles,
-                hadoopConfiguration
-        );
+                hadoopConfiguration);
     }
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
     public void shouldWriteRecordsSplitByPartition2DimensionalLongStringKeyWhenSplitOnDim1(
-            TestIngestType ingestType)
-            throws StateStoreException, IOException, IteratorException {
+            TestIngestType ingestType) throws StateStoreException, IOException, IteratorException {
+        // Given
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey2D(
                 new LongType(), new StringType(),
                 LongStream.range(-100L, 100L).boxed().collect(Collectors.toList()),
@@ -637,7 +604,7 @@ public class IngestCoordinatorCommonIT {
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
-        stateStore.fixTime(stateStoreUpdateTime);
+        stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile", "rightFile"))
@@ -650,15 +617,11 @@ public class IngestCoordinatorCommonIT {
         ingestRecords(recordListAndSchema, parameters, ingestType);
 
         // Then
-        List<FileInfo> actualFiles = stateStore.getActiveFiles();
-        FileInfoFactory fileInfoFactory = FileInfoFactory.builder()
-                .partitionTree(tree)
-                .lastStateStoreUpdate(stateStoreUpdateTime)
-                .schema(recordListAndSchema.sleeperSchema)
-                .build();
-        FileInfo leftFile = fileInfoFactory.partitionFile("left", ingestType.getFilePrefix(parameters) +
+        List<FileReference> actualFiles = stateStore.getFileReferences();
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
+        FileReference leftFile = fileReferenceFactory.partitionFile("left", ingestType.getFilePrefix(parameters) +
                 "/partition_left/leftFile.parquet", 112);
-        FileInfo rightFile = fileInfoFactory.partitionFile("right", ingestType.getFilePrefix(parameters) +
+        FileReference rightFile = fileReferenceFactory.partitionFile("right", ingestType.getFilePrefix(parameters) +
                 "/partition_right/rightFile.parquet", 88);
         List<Record> leftRecords = ResultVerifier.readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, leftFile, hadoopConfiguration);
         List<Record> rightRecords = ResultVerifier.readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rightFile, hadoopConfiguration);
@@ -673,35 +636,31 @@ public class IngestCoordinatorCommonIT {
                 .containsExactlyElementsOf(LongStream.concat(LongStream.range(-100L, 2L), LongStream.range(10L, 20L))
                         .boxed()
                         .map(x -> List.<Object>of(x, String.valueOf(x)))
-                        .collect(Collectors.toList())
-                );
+                        .collect(Collectors.toList()));
         assertThat(rightRecords)
                 .extracting(record -> record.getValues(List.of("key0", "key1")))
                 .containsExactlyElementsOf(LongStream.concat(LongStream.range(2L, 10L), LongStream.range(20L, 100L))
                         .boxed()
                         .map(x -> List.<Object>of(x, String.valueOf(x)))
-                        .collect(Collectors.toList())
-                );
+                        .collect(Collectors.toList()));
 
         ResultVerifier.assertOnSketch(
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
                 actualFiles,
-                hadoopConfiguration
-        );
+                hadoopConfiguration);
         ResultVerifier.assertOnSketch(
                 recordListAndSchema.sleeperSchema.getField("key1").orElseThrow(),
                 recordListAndSchema,
                 actualFiles,
-                hadoopConfiguration
-        );
+                hadoopConfiguration);
     }
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
     public void shouldWriteRecordsSplitByPartitionWhenThereIsOnlyDataInOnePartition(
-            TestIngestType ingestType)
-            throws StateStoreException, IOException, IteratorException {
+            TestIngestType ingestType) throws StateStoreException, IOException, IteratorException {
+        // Given
         RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(
                 new LongType(),
                 Arrays.asList(1L, 0L));
@@ -712,7 +671,7 @@ public class IngestCoordinatorCommonIT {
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
-        stateStore.fixTime(stateStoreUpdateTime);
+        stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile", "rightFile"))
@@ -725,14 +684,11 @@ public class IngestCoordinatorCommonIT {
         ingestRecords(recordListAndSchema, parameters, ingestType);
 
         // Then
-        List<FileInfo> actualFiles = stateStore.getActiveFiles();
+        List<FileReference> actualFiles = stateStore.getFileReferences();
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
-        FileInfoFactory fileInfoFactory = FileInfoFactory.builder()
-                .partitionTree(tree)
-                .lastStateStoreUpdate(stateStoreUpdateTime)
-                .schema(recordListAndSchema.sleeperSchema)
-                .build();
-        FileInfo expectedFile = fileInfoFactory.leafFile(ingestType.getFilePrefix(parameters) + "/partition_left/leftFile.parquet", 2, 0L, 1L);
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
+        FileReference expectedFile = fileReferenceFactory.partitionFile("left",
+                ingestType.getFilePrefix(parameters) + "/partition_left/leftFile.parquet", 2);
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
         assertThat(actualFiles).containsExactly(expectedFile);
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
@@ -743,15 +699,14 @@ public class IngestCoordinatorCommonIT {
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
                 actualFiles,
-                hadoopConfiguration
-        );
+                hadoopConfiguration);
     }
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
     public void shouldWriteDuplicateRecords(
-            TestIngestType ingestType)
-            throws StateStoreException, IOException, IteratorException {
+            TestIngestType ingestType) throws StateStoreException, IOException, IteratorException {
+        // Given
         RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(
                 new LongType(),
                 LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
@@ -766,7 +721,7 @@ public class IngestCoordinatorCommonIT {
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
-        stateStore.fixTime(stateStoreUpdateTime);
+        stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile", "rightFile"))
@@ -779,14 +734,10 @@ public class IngestCoordinatorCommonIT {
         ingestRecords(duplicatedRecordListAndSchema, parameters, ingestType);
 
         // Then
-        List<FileInfo> actualFiles = stateStore.getActiveFiles();
+        List<FileReference> actualFiles = stateStore.getFileReferences();
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(duplicatedRecordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
-        FileInfoFactory fileInfoFactory = FileInfoFactory.builder()
-                .partitionTree(tree)
-                .lastStateStoreUpdate(stateStoreUpdateTime)
-                .schema(duplicatedRecordListAndSchema.sleeperSchema)
-                .build();
-        FileInfo expectedFile = fileInfoFactory.leafFile(ingestType.getFilePrefix(parameters) + "/partition_root/leftFile.parquet", 400, -100L, 99L);
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
+        FileReference expectedFile = fileReferenceFactory.rootFile(ingestType.getFilePrefix(parameters) + "/partition_root/leftFile.parquet", 400);
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
         assertThat(actualFiles).containsExactly(expectedFile);
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(duplicatedRecordListAndSchema.recordList);
@@ -799,14 +750,13 @@ public class IngestCoordinatorCommonIT {
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 duplicatedRecordListAndSchema,
                 actualFiles,
-                hadoopConfiguration
-        );
+                hadoopConfiguration);
     }
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
-    public void shouldWriteNoRecordsSuccessfully(TestIngestType ingestType)
-            throws StateStoreException, IOException, IteratorException {
+    public void shouldWriteNoRecordsSuccessfully(TestIngestType ingestType) throws StateStoreException, IOException, IteratorException {
+        // Given
         RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(
                 new LongType(),
                 Collections.emptyList());
@@ -827,7 +777,7 @@ public class IngestCoordinatorCommonIT {
         ingestRecords(recordListAndSchema, parameters, ingestType);
 
         // Then
-        List<FileInfo> actualFiles = stateStore.getActiveFiles();
+        List<FileReference> actualFiles = stateStore.getFileReferences();
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
         assertThat(actualFiles).isEmpty();
         assertThat(actualRecords).isEmpty();
@@ -836,8 +786,8 @@ public class IngestCoordinatorCommonIT {
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
     public void shouldApplyIterator(
-            TestIngestType ingestType)
-            throws StateStoreException, IOException, IteratorException {
+            TestIngestType ingestType) throws StateStoreException, IOException, IteratorException {
+        // Given
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.byteArrayRowKeyLongSortKey(
                 Arrays.asList(new byte[]{1, 1}, new byte[]{1, 1}, new byte[]{11, 12}, new byte[]{11, 12}),
                 Arrays.asList(1L, 1L, 2L, 2L),
@@ -846,19 +796,18 @@ public class IngestCoordinatorCommonIT {
                 new Record(Map.of(
                         "key", new byte[]{1, 1},
                         "sort", 1L,
-                        "value", 3L
-                )), new Record(Map.of(
+                        "value", 3L)),
+                new Record(Map.of(
                         "key", new byte[]{11, 12},
                         "sort", 2L,
-                        "value", 7L
-                )));
+                        "value", 7L)));
         StateStore stateStore = createStateStore(recordListAndSchema.sleeperSchema);
         PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
-        stateStore.fixTime(stateStoreUpdateTime);
+        stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("rootFile"))
@@ -872,14 +821,10 @@ public class IngestCoordinatorCommonIT {
         ingestRecords(recordListAndSchema, parameters, ingestType);
 
         // Then
-        List<FileInfo> actualFiles = stateStore.getActiveFiles();
+        List<FileReference> actualFiles = stateStore.getFileReferences();
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
-        FileInfoFactory fileInfoFactory = FileInfoFactory.builder()
-                .partitionTree(tree)
-                .lastStateStoreUpdate(stateStoreUpdateTime)
-                .schema(recordListAndSchema.sleeperSchema)
-                .build();
-        FileInfo expectedFile = fileInfoFactory.leafFile(ingestType.getFilePrefix(parameters) + "/partition_root/rootFile.parquet", 2, new byte[]{1, 1}, new byte[]{11, 12});
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
+        FileReference expectedFile = fileReferenceFactory.rootFile(ingestType.getFilePrefix(parameters) + "/partition_root/rootFile.parquet", 2);
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
         assertThat(actualFiles).containsExactly(expectedFile);
         assertThat(actualRecords).containsExactlyElementsOf(expectedRecords);
@@ -888,11 +833,10 @@ public class IngestCoordinatorCommonIT {
                 recordListAndSchema.sleeperSchema.getField("key").orElseThrow(),
                 new RecordGenerator.RecordListAndSchema(expectedRecords, recordListAndSchema.sleeperSchema),
                 actualFiles,
-                hadoopConfiguration
-        );
+                hadoopConfiguration);
     }
 
-    private Supplier<String> randomStringGeneratorWithMaxLength(Integer maxLength) {
+    private static Supplier<String> randomStringGeneratorWithMaxLength(Integer maxLength) {
         Random random = new Random(0);
         RandomStringGenerator randomStringGenerator = new RandomStringGenerator.Builder()
                 .usingRandom(random::nextInt)
@@ -900,21 +844,17 @@ public class IngestCoordinatorCommonIT {
         return () -> randomStringGenerator.generate(random.nextInt(maxLength));
     }
 
-
-    private void ingestRecords(
+    private static void ingestRecords(
             RecordGenerator.RecordListAndSchema recordListAndSchema,
             IngestCoordinatorTestParameters ingestCoordinatorTestParameters,
-            TestIngestType ingestType
-    ) throws StateStoreException, IteratorException, IOException {
-        try (IngestCoordinator<Record> ingestCoordinator =
-                     ingestType.createIngestCoordinator(
-                             ingestCoordinatorTestParameters)) {
+            TestIngestType ingestType) throws StateStoreException, IteratorException, IOException {
+        try (IngestCoordinator<Record> ingestCoordinator = ingestType.createIngestCoordinator(
+                ingestCoordinatorTestParameters)) {
             for (Record record : recordListAndSchema.recordList) {
                 ingestCoordinator.write(record);
             }
         }
     }
-
 
     private IngestCoordinatorTestParameters.Builder createTestParameterBuilder() {
         return IngestCoordinatorTestParameters
@@ -923,6 +863,7 @@ public class IngestCoordinatorCommonIT {
                 .hadoopConfiguration(hadoopConfiguration)
                 .s3AsyncClient(s3Async)
                 .dataBucketName(dataBucketName)
-                .tableId(tableProperties.get(TABLE_ID));
+                .tableId(tableProperties.get(TABLE_ID))
+                .ingestFileWritingStrategy(tableProperties.getEnumValue(INGEST_FILE_WRITING_STRATEGY, IngestFileWritingStrategy.class));
     }
 }

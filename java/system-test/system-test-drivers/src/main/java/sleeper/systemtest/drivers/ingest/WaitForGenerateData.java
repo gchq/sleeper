@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,8 +46,7 @@ import static sleeper.clients.util.ClientUtils.optionalArgument;
 public class WaitForGenerateData {
     private static final Logger LOGGER = LoggerFactory.getLogger(WaitForGenerateData.class);
     private static final Set<String> FINISHED_STATUSES = Stream.of("STOPPED", "DELETED").collect(Collectors.toSet());
-    private static final PollWithRetries DEFAULT_POLL =
-            PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(15));
+    private static final PollWithRetries DEFAULT_POLL = PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(15));
 
     private final AmazonECS ecsClient;
     private final List<Task> generateDataTasks;

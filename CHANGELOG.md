@@ -4,6 +4,185 @@ Releases
 This page documents the releases of Sleeper. Performance figures for each release
 are available [here](docs/13-system-tests.md#performance-benchmarks)
 
+## Version 0.22.1
+
+This is a bug-fix release. It contains a fix of the following bug:
+
+- Fixed bug in compaction task starter logic that was introduced in 0.22.0.
+
+## Version 0.22.0
+
+*Note: this release contains breaking changes. It is not possible to upgrade from a previous version of Sleeper
+to version 0.22.0*
+
+This contains the following improvements:
+
+Tables:
+
+- Increased scalability of creating and running compaction jobs when using multiple tables.
+- Increased scalability of partition splitting when using multiple tables.
+- Increased scalability of garbage collection when using multiple tables.
+- Increased scalability of table metrics when using multiple tables.
+- Added ability to delete a table using the script `scripts/deploy/deleteTable.sh`.
+- Added ability to rename a table using the script `scripts/deploy/renameTable.sh`.
+- Added ability to take a table offline and put a table online using the scripts `scripts/utility/takeTableOffline.sh`
+and `scripts/utility/putTableOnline.sh` respectively. Partition splitting and compactions will not be performed on
+offline tables, but you will still be able to perform ingests and queries against them.
+See the documentation [here](docs/12-design.md#tables) for more information.
+
+Compaction:
+
+- Added new properties to configure how long compaction tasks will wait for compaction jobs before they terminate.
+- Added script to allow you to create compaction tasks manually, even if there are no compaction jobs on the queue
+using the script `scripts/utility/startCompactionTasks.sh`.
+- Added ability to create compaction jobs for a specific table using the script `scripts/utility/compactAllFiles.sh`.
+
+Ingest:
+
+- Added a new property `INGEST_FILE_WRITING_STRATEGY` to specify how files are created when performing an ingest.
+
+Query:
+
+- Moved the WebSocket API into a new optional stack called `WebSocketQueryStack`.
+
+System tests:
+
+- Added tests for running compactions in parallel, in preparation for the next milestone.
+
+## Version 0.21.0
+
+*Note: this release contains breaking changes. It is not possible to upgrade from a previous version of Sleeper
+to version 0.21.0*
+
+This contains the following improvements:
+
+Compactions:
+
+- The concept of splitting compactions has been removed. More information about how splits are now done can be
+  found [here](docs/12-design.md#compactions).
+- Compactions now use references and the partitions they exist in to only read and compact data within that partition.
+- File splitting now happens in the compaction job creation lambda, before compaction jobs are created.
+- Updated javadoc for `CompactionStrategy` and `LeafStrategy` classes.
+- Added script to force creation of compaction jobs, ignoring batch size and strategy - `scripts/utility/compactAllFiles.sh`.
+
+State store:
+
+- Files are now split by storing references to them in the state store. More information about how file references are
+  stored can be found [here](docs/12-design.md#state-store).
+- `FileInfo` has been renamed to `FileReference`.
+- Renamed several state store methods to reflect new file reference changes.
+- Improved logging in the `S3StateStore` update process.
+- Improved detail of `FilesStatusReport` record counts.
+- New exceptions have been created to reflect specific failures in the state store.
+
+Query:
+
+- The query execution lambda has been split into 2. One lambda is for running the base query, the other handles
+  sub-queries.
+- Updated `SqsQueryProcessor` to periodically refresh the cache of `QueryExecutor`s.
+
+Tests:
+
+- Realigned `FileReferenceStoreIT` tests with different implementations.
+- Improve speed of `DynamoDBStateStoreIT` tests.
+- Tidy file assertions in `IngestRecords*IT` tests.
+
+System tests:
+
+- Separated functional system test suite into slow tests to be run nightly, and faster tests to be run any time.
+- Added system test for EKS bulk import.
+- Added system test for compactions.
+- Improved logging in `SQSQueryDriver`.
+- Improved file assertion output in partition splitting tests.
+
+Bugfixes:
+
+- Fixed an issue where `QueryCommandLineClient` set the wrong minimum if the user required no minimum.
+- Fixed an issue where if the state store update failed after finishing a compaction, files will never be compacted.
+- Fixed an issue where the persistent EMR bulk import system test failed because the instance properties were not fully
+  reloaded.
+- Fixed an issue where system tests could not tear down an empty instance with `instance.properties` file deployed.
+- Fixed an issue where system tests would sometimes see old DynamoDB states after clearing table data.
+- Fixed an issue where `ManagedPoliciesStack` failed to deploy if no ingest source buckets were set.
+- Fixed an issue where `AddTable` would sometimes fail if credentials provider was not set.
+- Fixed an issue where compaction jobs could be picked up by a task and finished before the state store assigns the
+  input files to the job.
+- Fixed an issue where `GarbageCollector` would stop processing files if an` IOException` is thrown when trying to
+  delete a file.
+- Fixed an issue where the `TableDataStack` failed to deploy if no ingest source buckets were set.
+- Fixed an issue where the EMR bulk import performance test failed because it was expecting a running ingest task.
+- Fixed an issue where the `S3StateStore` did not throw an exception if all update attempts fail.
+- Fixed an issue where running compaction jobs with large numbers of input files could time out.
+- Fixed an issue where running the `deployAll` system test would throw an `AccessDeniedException` when trying to access
+  the system test bucket.
+- Fixed an issue where running the `deployAll` system test would throw an `AccessDeniedException` when trying to access
+  the ingest source bucket.
+
+## Version 0.20.0
+
+*Note: this release contains breaking changes. It is not possible to upgrade from a previous version of Sleeper
+to version 0.20.0*
+
+This contains the following improvements:
+
+Tables:
+
+- Tables are now internally referenced by a unique ID assigned upon creation. This is in preparation for
+  adding the ability to rename tables in the future.
+- Improved support for lots of tables in compaction and ingest status stores by updating the hash key of
+  the DynamoDB tables.
+- Table related infrastructure is now shared between all tables. The following resources are now only deployed once:
+    - Table data bucket.
+    - Table metrics lambda.
+    - State store.
+- Table initialisation is no longer performed by CDK.
+    - A new client class `AddTable` is now responsible for initialising tables.
+- Added configurable timeout property for `TablePropertiesProvider`.
+
+State store:
+
+- The default state store has been updated to the `S3StateStore`.
+- The `minRowKey`, `maxRowKey`, and `rowKeyTypes` fields have been removed from the `FileInfo` class.
+
+Ingest:
+
+- Added instance property to allow setting the S3 upload block size.
+
+Bulk import:
+
+- Added support for overriding spark configuration and platform specification in EMR serverless jobs.
+- Added support for setting the initial capacity of the EMR serverless application.
+- Added support for enabling EMR Studio by using the optional stack `EmrStudioStack`.
+
+Clients:
+
+- The admin client now respects the `EDITOR` environment variable when updating properties.
+- Adding an optional stack in the admin client now uploads docker images if the new stack requires one.
+
+Query:
+
+- Validation failures for queries are now recorded in the `DynamoDBQueryTracker`.
+- Added client to view status of query tracker in `scripts/utility/queryTrackerReport.sh`.
+- Removed inheritance relationship between `Query` and `LeafPartitionQuery`.
+
+Tests:
+
+- Added system tests for using the `S3StateStore`.
+- System tests now purge relevant SQS queues if a test fails.
+- Improved performance of `ingest-runner` module tests.
+- Added system tests with many tables in one instance.
+
+Bugfixes:
+
+- Fixed an issue where the python API would not generate unique IDs for each query.
+- Fixed an issue where the instance ID length was not being validated correctly.
+- Fixed an issue where trying to bulk import using EMR serverless to a table using `S3StateStore` would
+  throw a `NullPointerException`.
+- Fixed an issue where sending an ingest job with a null file would not report the job as invalid.
+- Fixed an issue where the role assumed by tasks in the system test data generation cluster exceeded the maximum size.
+- Fixed an issue where the CDK deployment would fail if an ingest source bucket was not set.
+- Fixed a conflict between temporary directory paths used by the CLI.
+
 ## Version 0.19.0
 
 This contains the following improvements:

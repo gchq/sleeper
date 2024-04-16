@@ -1,4 +1,4 @@
-#  Copyright 2022-2023 Crown Copyright
+#  Copyright 2022-2024 Crown Copyright
 # 
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import s3fs
 from boto3.dynamodb.conditions import Key
 from pq.parquet_deserial import ParquetDeserialiser
 from pq.parquet_serial import ParquetSerialiser
+from pyarrow.parquet import ParquetFile
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -50,7 +51,7 @@ DEFAULT_MAX_WAIT_TIME = 120
 
 class SleeperClient:
 
-    def __init__(self, basename):
+    def __init__(self, basename, use_threads=False):
         self._basename = basename
         resources = _get_resource_names("sleeper-" + self._basename + "-config")
         self._ingest_queue = resources[0]
@@ -63,6 +64,7 @@ class SleeperClient:
         self._dynamodb_query_tracker_table = resources[7]
         logger.debug("Loaded properties from config bucket sleeper-" + self._basename + "-config")
         self._s3fs = s3fs.S3FileSystem(anon=False)  # uses default credentials
+        self._deserialiser = ParquetDeserialiser(use_threads=use_threads)
 
     def write_single_batch(self, table_name: str, records_to_write: list, job_id: str = None):
         """
@@ -226,7 +228,7 @@ class SleeperClient:
             'regions': json_regions_list
         }
 
-        print(query_message)
+        logger.debug(query_message)
 
         # Convert query message to json and send to query queue
         query_message_json = json.dumps(query_message)
@@ -307,7 +309,7 @@ def _get_resource_names(configbucket: str) -> Tuple[str, str, str, str, str, str
 
     :return: tuple with the names of the queues
     """
-    config_obj = _s3_resource.Object(configbucket, 'config')
+    config_obj = _s3_resource.Object(configbucket, 'instance.properties')
     config_str = config_obj.get()['Body'].read().decode('utf-8')
     config_str = '[asection]\n' + config_str
     config = configparser.ConfigParser(allow_no_value=True)
@@ -511,11 +513,10 @@ def _receive_messages(self, query_id: str, timeout: int = DEFAULT_MAX_WAIT_TIME)
             results = []
             for file in results_files:
                 logger.debug(f"Opening file {self._query_results_bucket}/{file}")
-                f = self._s3fs.open(f"{self._query_results_bucket}/{file}", 'rb')
-                parq = ParquetDeserialiser()
-                reader = parq.read(f)
-                for r in reader:
-                    results.append(r)
+                with self._s3fs.open(f"{self._query_results_bucket}/{file}", 'rb') as f:
+                    with ParquetFile(f) as po:
+                        for record in self._deserialiser.read(po):
+                            results.append(record)
 
             logger.debug("Query has finished")
             return results

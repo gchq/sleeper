@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,18 @@
 package sleeper.core.statestore;
 
 /**
- * Stores information about the data files and their status (i.e. {@link FileInfo}s,
+ * Stores information about the data files and their status (i.e. {@link FileReference}s,
  * and the {@link sleeper.core.partition.Partition}s).
  */
-public interface StateStore extends FileInfoStore, PartitionStore {
-
-    void clearFiles();
+public interface StateStore extends FileReferenceStore, PartitionStore {
+    /**
+     * Clears all file data and partition data from the state store. Note that this does not delete any of the actual
+     * files, and after calling this method the store must be initialised before the Sleeper table can be used again.
+     *
+     * @throws StateStoreException if the update fails
+     */
+    default void clearSleeperTable() throws StateStoreException {
+        clearFileData();
+        clearPartitionData();
+    }
 }

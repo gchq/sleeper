@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,9 @@ import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
+import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
+import software.amazon.awscdk.services.sqs.IQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
@@ -37,10 +39,6 @@ import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
-import sleeper.cdk.stack.bulkimport.EksBulkImportStack;
-import sleeper.cdk.stack.bulkimport.EmrBulkImportStack;
-import sleeper.cdk.stack.bulkimport.EmrServerlessBulkImportStack;
-import sleeper.cdk.stack.bulkimport.PersistentEmrBulkImportStack;
 import sleeper.configuration.properties.SleeperScheduleRule;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
@@ -50,10 +48,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
-import java.util.function.Function;
-import java.util.stream.Stream;
 
+import static sleeper.cdk.Utils.createAlarmForDlq;
+import static sleeper.cdk.Utils.createLambdaLogGroup;
 import static sleeper.cdk.Utils.removalPolicy;
 import static sleeper.cdk.Utils.shouldDeployPaused;
 import static sleeper.configuration.properties.instance.BatcherProperty.INGEST_BATCHER_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES;
@@ -69,22 +66,20 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_REQUEST_FUNCTION;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.configuration.properties.instance.CommonProperty.QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 
 public class IngestBatcherStack extends NestedStack {
+
+    private final IQueue submitQueue;
 
     public IngestBatcherStack(
             Construct scope,
             String id,
             InstanceProperties instanceProperties,
             BuiltJars jars,
+            Topic topic,
             CoreStacks coreStacks,
-            IngestStack ingestStack,
-            EmrBulkImportStack emrBulkImportStack,
-            PersistentEmrBulkImportStack persistentEmrBulkImportStack,
-            EksBulkImportStack eksBulkImportStack,
-            EmrServerlessBulkImportStack emrServerlessBulkImportStack) {
+            IngestStacks ingestStacks) {
         super(scope, id);
 
         // Queue to submit files to the batcher
@@ -96,7 +91,7 @@ public class IngestBatcherStack extends NestedStack {
                 .maxReceiveCount(1)
                 .queue(submitDLQ)
                 .build();
-        Queue submitQueue = Queue.Builder
+        submitQueue = Queue.Builder
                 .create(this, "IngestBatcherSubmitQueue")
                 .queueName(Utils.truncateTo64Characters(instanceProperties.get(ID) + "-IngestBatcherSubmitQ"))
                 .deadLetterQueue(ingestJobDeadLetterQueue)
@@ -107,6 +102,9 @@ public class IngestBatcherStack extends NestedStack {
         instanceProperties.set(INGEST_BATCHER_SUBMIT_DLQ_URL, submitDLQ.getQueueUrl());
         instanceProperties.set(INGEST_BATCHER_SUBMIT_DLQ_ARN, submitDLQ.getQueueArn());
 
+        createAlarmForDlq(this, "IngestBatcherAlarm",
+                "Alarms if there are any messages on the dead letter queue for the ingest batcher queue",
+                submitDLQ, topic);
         // DynamoDB table to track submitted files
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
         Table ingestRequestsTable = Table.Builder
@@ -146,14 +144,14 @@ public class IngestBatcherStack extends NestedStack {
                 .timeout(Duration.seconds(instanceProperties.getInt(INGEST_BATCHER_SUBMITTER_TIMEOUT_IN_SECONDS)))
                 .handler("sleeper.ingest.batcher.submitter.IngestBatcherSubmitterLambda::handleRequest")
                 .environment(environmentVariables)
-                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
+                .logGroup(createLambdaLogGroup(this, "SubmitToIngestBatcherLogGroup", submitterName, instanceProperties))
                 .events(List.of(new SqsEventSource(submitQueue))));
         instanceProperties.set(INGEST_BATCHER_SUBMIT_REQUEST_FUNCTION, submitterLambda.getFunctionName());
 
         ingestRequestsTable.grantReadWriteData(submitterLambda);
         submitQueue.grantConsumeMessages(submitterLambda);
         coreStacks.grantReadTablesConfig(submitterLambda);
-        coreStacks.grantReadIngestSources(submitterLambda);
+        coreStacks.grantReadIngestSources(submitterLambda.getRole());
 
         IFunction jobCreatorLambda = jobCreatorJar.buildFunction(this, "IngestBatcherJobCreationLambda", builder -> builder
                 .functionName(jobCreatorName)
@@ -164,13 +162,12 @@ public class IngestBatcherStack extends NestedStack {
                 .handler("sleeper.ingest.batcher.job.creator.IngestBatcherJobCreatorLambda::eventHandler")
                 .environment(environmentVariables)
                 .reservedConcurrentExecutions(1)
-                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS))));
+                .logGroup(createLambdaLogGroup(this, "IngestBatcherJobCreationLogGroup", jobCreatorName, instanceProperties)));
         instanceProperties.set(INGEST_BATCHER_JOB_CREATION_FUNCTION, jobCreatorLambda.getFunctionName());
 
         ingestRequestsTable.grantReadWriteData(jobCreatorLambda);
         coreStacks.grantReadTablesConfig(jobCreatorLambda);
-        ingestQueues(ingestStack, emrBulkImportStack, persistentEmrBulkImportStack, eksBulkImportStack, emrServerlessBulkImportStack)
-                .forEach(queue -> queue.grantSendMessages(jobCreatorLambda));
+        ingestStacks.ingestQueues().forEach(queue -> queue.grantSendMessages(jobCreatorLambda));
 
         // CloudWatch rule to trigger the batcher to create jobs from file ingest requests
         Rule rule = Rule.Builder
@@ -184,21 +181,7 @@ public class IngestBatcherStack extends NestedStack {
         instanceProperties.set(INGEST_BATCHER_JOB_CREATION_CLOUDWATCH_RULE, rule.getRuleName());
     }
 
-    private static Stream<Queue> ingestQueues(IngestStack ingestStack,
-                                              EmrBulkImportStack emrBulkImportStack,
-                                              PersistentEmrBulkImportStack persistentEmrBulkImportStack,
-                                              EksBulkImportStack eksBulkImportStack,
-                                              EmrServerlessBulkImportStack emrServerlessBulkImportStack) {
-        return Stream.of(
-                        ingestQueue(ingestStack, IngestStack::getIngestJobQueue),
-                        ingestQueue(emrBulkImportStack, EmrBulkImportStack::getBulkImportJobQueue),
-                        ingestQueue(persistentEmrBulkImportStack, PersistentEmrBulkImportStack::getBulkImportJobQueue),
-                        ingestQueue(eksBulkImportStack, EksBulkImportStack::getBulkImportJobQueue),
-                        ingestQueue(emrServerlessBulkImportStack, EmrServerlessBulkImportStack::getBulkImportJobQueue))
-                .flatMap(Optional::stream);
-    }
-
-    private static <T> Optional<Queue> ingestQueue(T stack, Function<T, Queue> getter) {
-        return Optional.ofNullable(stack).map(getter);
+    public IQueue getSubmitQueue() {
+        return submitQueue;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,6 @@ import java.util.function.Consumer;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_CLUSTER;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_CLUSTER;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_CLUSTER;
 import static sleeper.core.util.RateLimitUtils.sleepForSustainedRatePerSecond;
 
 public class ShutdownSystemProcesses {
@@ -46,16 +45,16 @@ public class ShutdownSystemProcesses {
     private final AmazonElasticMapReduce emrClient;
     private final EmrServerlessClient emrServerlessClient;
 
-    public ShutdownSystemProcesses(AmazonCloudWatchEvents cloudWatch, AmazonECS ecs,
-                                   AmazonElasticMapReduce emrClient, EmrServerlessClient emrServerlessClient) {
+    public ShutdownSystemProcesses(
+            AmazonCloudWatchEvents cloudWatch, AmazonECS ecs,
+            AmazonElasticMapReduce emrClient, EmrServerlessClient emrServerlessClient) {
         this.cloudWatch = cloudWatch;
         this.ecs = ecs;
         this.emrClient = emrClient;
         this.emrServerlessClient = emrServerlessClient;
     }
 
-    public void shutdown(InstanceProperties instanceProperties, List<String> extraECSClusters)
-            throws InterruptedException {
+    public void shutdown(InstanceProperties instanceProperties, List<String> extraECSClusters) throws InterruptedException {
         LOGGER.info("Pausing the system");
         PauseSystem.pause(cloudWatch, instanceProperties);
         stopECSTasks(instanceProperties, extraECSClusters);
@@ -66,7 +65,6 @@ public class ShutdownSystemProcesses {
     private void stopECSTasks(InstanceProperties instanceProperties, List<String> extraClusters) {
         stopTasks(ecs, instanceProperties, INGEST_CLUSTER);
         stopTasks(ecs, instanceProperties, COMPACTION_CLUSTER);
-        stopTasks(ecs, instanceProperties, SPLITTING_COMPACTION_CLUSTER);
         extraClusters.forEach(clusterName -> stopTasks(ecs, clusterName));
     }
 
@@ -74,13 +72,11 @@ public class ShutdownSystemProcesses {
         new TerminateEMRClusters(emrClient, properties).run();
     }
 
-    private void stopEMRServerlessApplication(InstanceProperties properties)
-            throws InterruptedException {
+    private void stopEMRServerlessApplication(InstanceProperties properties) throws InterruptedException {
         new TerminateEMRServerlessApplications(emrServerlessClient, properties).run();
     }
 
-    private static void stopTasks(AmazonECS ecs, InstanceProperties properties,
-                                  InstanceProperty property) {
+    private static void stopTasks(AmazonECS ecs, InstanceProperties properties, InstanceProperty property) {
         if (!properties.isSet(property)) {
             return;
         }
@@ -98,8 +94,7 @@ public class ShutdownSystemProcesses {
         });
     }
 
-    private static void forEachTaskArn(AmazonECS ecs, String clusterName,
-                                       Consumer<String> consumer) {
+    private static void forEachTaskArn(AmazonECS ecs, String clusterName, Consumer<String> consumer) {
         String nextToken = null;
         do {
             ListTasksResult result = ecs.listTasks(

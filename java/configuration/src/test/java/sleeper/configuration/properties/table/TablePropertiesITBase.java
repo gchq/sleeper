@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import sleeper.core.schema.type.StringType;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
@@ -57,6 +58,7 @@ public abstract class TablePropertiesITBase {
     protected final TableProperties tableProperties = createValidTableProperties();
     protected final TablePropertiesStore store = S3TableProperties.getStore(instanceProperties, s3Client, dynamoDBClient);
     protected final String tableName = tableProperties.get(TABLE_NAME);
+    protected final String tableId = tableProperties.get(TABLE_ID);
 
     @BeforeEach
     void setUp() {

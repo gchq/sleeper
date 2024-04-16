@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.clients.deploy.DockerImageConfiguration;
 
-import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -45,9 +45,9 @@ public class CleanUpDeletedSleeperInstancesTest {
     @Test
     void shouldGetInstanceIdsFromEcrRepositories() {
         assertThat(instanceIdsByEcrRepositories(
-                DockerImageConfiguration.from(List.of(
-                        dockerBuildImage("IngestStack", "ingest"),
-                        dockerBuildxImage("CompactionStack", "compaction-job-execution"))),
+                new DockerImageConfiguration(Map.of(
+                        "IngestStack", dockerBuildImage("ingest"),
+                        "CompactionStack", dockerBuildxImage("compaction-job-execution"))),
                 Stream.of("an-instance/ingest",
                         "not-sleeper/something",
                         "not-an-instance",

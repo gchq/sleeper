@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,8 +40,8 @@ public class ConfigBucketStack extends NestedStack {
 
     private final IBucket configBucket;
 
-    public ConfigBucketStack(Construct scope, String id, InstanceProperties instanceProperties,
-                             ManagedPoliciesStack policiesStack) {
+    public ConfigBucketStack(
+            Construct scope, String id, InstanceProperties instanceProperties, ManagedPoliciesStack policiesStack) {
         super(scope, id);
 
         configBucket = Bucket.Builder.create(this, "ConfigBucket")

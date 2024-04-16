@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -93,8 +93,7 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
                 tableName,
                 new Constraints(new HashMap<>()),
                 getTableResponse.getSchema(),
-                getTableResponse.getPartitionColumns()
-        );
+                getTableResponse.getPartitionColumns());
         GetTableLayoutResponse getTableLayoutResponse = sleeperMetadataHandler.doGetTableLayout(new BlockAllocatorImpl(),
                 request);
 
@@ -121,7 +120,7 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
     }
 
     @Test
-    public void shouldPassOnTheListofFilesAndRowKeysWhenCallingGetSplits() throws Exception {
+    public void shouldPassOnTheListOfFilesAndRowKeysWhenCallingGetSplits() throws Exception {
         // Given
         InstanceProperties instance = createInstance();
 
@@ -176,9 +175,9 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
                 .stream()
                 .filter(p -> p.getRegion().getRange("year").getMin().equals(2018))
                 .collect(Collectors.toList()).get(0);
-        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
+        Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
         SplitPartition splitPartition = new SplitPartition(stateStore, table.getSchema(), new Configuration());
-        splitPartition.splitPartition(partition2018, partitionToActiveFilesMap.get(partition2018.getId()));
+        splitPartition.splitPartition(partition2018, partitionToFiles.get(partition2018.getId()));
 
         Map<String, ValueSet> valueSets = new HashMap<>();
         valueSets.put("year", EquatableValueSet.newBuilder(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
@@ -195,8 +194,7 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
                         "abc", "cde",
                         tableName,
                         queryConstraints, getTableResponse.getSchema(),
-                        getTableResponse.getPartitionColumns()
-                ));
+                        getTableResponse.getPartitionColumns()));
 
         // Then
         Block partitions = getTableLayoutResponse.getPartitions();
@@ -221,9 +219,9 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
                 .filter(p -> p.getRegion().getRange("year").getMin().equals(2018))
                 .collect(Collectors.toList()).get(0);
 
-        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
+        Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
         SplitPartition splitPartition = new SplitPartition(stateStore, table.getSchema(), new Configuration());
-        splitPartition.splitPartition(partition2018, partitionToActiveFilesMap.get(partition2018.getId()));
+        splitPartition.splitPartition(partition2018, partitionToFiles.get(partition2018.getId()));
 
         Partition firstHalfOf2018 = stateStore.getLeafPartitions()
                 .stream()
@@ -246,8 +244,7 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
                 "abc", "cde",
                 tableName,
                 queryConstraints, getTableResponse.getSchema(),
-                getTableResponse.getPartitionColumns()
-        ));
+                getTableResponse.getPartitionColumns()));
 
         // Then
         Block partitions = getTableLayoutResponse.getPartitions();
@@ -277,9 +274,9 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
                 .stream()
                 .filter(p -> p.getRegion().getRange("year").getMin().equals(2018))
                 .collect(Collectors.toList()).get(0);
-        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
+        Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
         SplitPartition splitPartition = new SplitPartition(stateStore, table.getSchema(), new Configuration());
-        splitPartition.splitPartition(partition2018, partitionToActiveFilesMap.get(partition2018.getId()));
+        splitPartition.splitPartition(partition2018, partitionToFiles.get(partition2018.getId()));
 
         Partition firstHalfOf2018 = stateStore.getLeafPartitions()
                 .stream()
@@ -302,8 +299,7 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
                 "abc", "cde",
                 tableName,
                 queryConstraints, getTableResponse.getSchema(),
-                getTableResponse.getPartitionColumns()
-        ));
+                getTableResponse.getPartitionColumns()));
 
         // Then
         Block partitions = getTableLayoutResponse.getPartitions();
@@ -319,13 +315,12 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
     private void validateSplit(Set<Split> splits, Integer expectedValue) {
         long matched = splits.stream()
                 .filter(split -> split.getProperty("_MinRowKey-year").equals(expectedValue.toString()))
-                .map(split -> {
+                .peek(split -> {
                     assertThat(split.getProperty("_MaxRowKey-year")).isEqualTo(Integer.toString(expectedValue + 1));
                     assertThat(split.getProperty("_MinRowKey-month")).isEmpty();
                     assertThat(split.getProperty("_MaxRowKey-month")).isNull();
                     assertThat(split.getProperty(RELEVANT_FILES_FIELD)).isEqualTo("[\"s3a://table/partition-" + expectedValue + "/file1.parquet\"," +
                             "\"s3a://table/partition-" + expectedValue + "/file2.parquet\"]");
-                    return split;
                 })
                 .count();
 

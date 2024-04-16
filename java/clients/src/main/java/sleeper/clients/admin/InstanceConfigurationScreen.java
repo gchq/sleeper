@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -174,8 +174,7 @@ public class InstanceConfigurationScreen {
                     chooseFromOptions(updatedProperties, changes, valid);
                 }
             });
-            MenuOption returnToEditor = new MenuOption("Return to editor", () ->
-                    withProperties(updatedProperties).viewAndEditProperties(changes));
+            MenuOption returnToEditor = new MenuOption("Return to editor", () -> withProperties(updatedProperties).viewAndEditProperties(changes));
             MenuOption discardChanges = new MenuOption("Discard changes and return to main menu", () -> {
             });
             if (valid) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@ package sleeper.ingest;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.record.Record;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.ingest.testutils.AssertQuantiles;
+import sleeper.sketches.testutils.AssertQuantiles;
 
 import java.nio.file.Paths;
 import java.util.List;
@@ -28,7 +28,6 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getSketches;
-import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.readRecordsFromParquetFile;
 
 public class IngestRecordsFromIteratorLocalStackIT extends IngestRecordsLocalStackITBase {
     @Test
@@ -43,18 +42,19 @@ public class IngestRecordsFromIteratorLocalStackIT extends IngestRecordsLocalSta
         //  - Check the correct number of records were written
         assertThat(numWritten).isEqualTo(getRecords().size());
         //  - Check StateStore has correct information
-        List<FileInfo> activeFiles = stateStore.getActiveFiles();
-        assertThat(activeFiles).hasSize(1);
-        FileInfo fileInfo = activeFiles.get(0);
-        assertThat(fileInfo.getNumberOfRecords().longValue()).isEqualTo(2L);
-        assertThat(fileInfo.getPartitionId()).isEqualTo(stateStore.getAllPartitions().get(0).getId());
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
+        List<FileReference> fileReferences = stateStore.getFileReferences();
+        assertThat(fileReferences)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
+                .containsExactly(
+                        fileReferenceFactory.rootFile(2L));
         //  - Read file and check it has correct records
-        List<Record> readRecords = readRecordsFromParquetFile(fileInfo.getFilename(), schema);
-        assertThat(readRecords).containsExactly(getRecords().get(0), getRecords().get(1));
+        assertThat(readRecords(fileReferences.get(0)))
+                .containsExactlyElementsOf(getRecords());
         //  - Local files should have been deleted
         assertThat(Paths.get(inputFolderName)).isEmptyDirectory();
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        AssertQuantiles.forSketch(getSketches(schema, activeFiles.get(0).getFilename()).getQuantilesSketch("key"))
+        AssertQuantiles.forSketch(getSketches(schema, fileReferences.get(0).getFilename()).getQuantilesSketch("key"))
                 .min(1L).max(3L)
                 .quantile(0.0, 1L).quantile(0.1, 1L)
                 .quantile(0.2, 1L).quantile(0.3, 1L)

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -178,7 +178,8 @@ public interface EMRServerlessProperty {
                     "See https://spark.apache.org/docs/latest/configuration.html.")
             .defaultValue("0.75")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
-    UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_SPARK_SHUFFLE_MAPSTATUS_COMPRESSION_CODEC = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.spark.shuffle.mapStatus.compression.codec")
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_SPARK_SHUFFLE_MAPSTATUS_COMPRESSION_CODEC = Index
+            .propertyBuilder("sleeper.bulk.import.emr.serverless.spark.shuffle.mapStatus.compression.codec")
             .description("The compression codec for map status results. Used to set spark.shuffle.mapStatus.compression.codec.\n" +
                     "Stops \"Decompression error: Version not supported\" errors - only a value of \"lz4\" has been tested.")
             .defaultValue("lz4")

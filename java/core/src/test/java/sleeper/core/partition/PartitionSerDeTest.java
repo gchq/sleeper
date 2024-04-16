@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,6 @@ public class PartitionSerDeTest {
         Region region = new Region(rangeFactory.createRange(field, 0, true, 10, false));
         Partition partition = Partition.builder()
                 .id("id")
-                .rowKeyTypes(schema.getRowKeyTypes())
                 .leafPartition(true)
                 .region(region)
                 .parentPartitionId(null)
@@ -64,7 +63,6 @@ public class PartitionSerDeTest {
         Region region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
         Partition partition = Partition.builder()
                 .id("id")
-                .rowKeyTypes(schema.getRowKeyTypes())
                 .leafPartition(true)
                 .region(region)
                 .parentPartitionId(null)
@@ -89,7 +87,6 @@ public class PartitionSerDeTest {
         Region region = new Region(rangeFactory.createRange(field, "A", true, "Z", false));
         Partition partition = Partition.builder()
                 .id("id")
-                .rowKeyTypes(schema.getRowKeyTypes())
                 .leafPartition(true)
                 .region(region)
                 .parentPartitionId(null)
@@ -114,7 +111,6 @@ public class PartitionSerDeTest {
         Region region = new Region(rangeFactory.createRange(field, "", true, null, false));
         Partition partition = Partition.builder()
                 .id("id")
-                .rowKeyTypes(schema.getRowKeyTypes())
                 .leafPartition(true)
                 .region(region)
                 .parentPartitionId(null)
@@ -139,7 +135,6 @@ public class PartitionSerDeTest {
         Region region = new Region(rangeFactory.createRange(field, new byte[]{0}, true, new byte[]{64, 64}, false));
         Partition partition = Partition.builder()
                 .id("id")
-                .rowKeyTypes(schema.getRowKeyTypes())
                 .leafPartition(true)
                 .region(region)
                 .parentPartitionId(null)
@@ -164,7 +159,6 @@ public class PartitionSerDeTest {
         Region region = new Region(rangeFactory.createRange(field, new byte[]{}, true, null, false));
         Partition partition = Partition.builder()
                 .id("id")
-                .rowKeyTypes(schema.getRowKeyTypes())
                 .leafPartition(true)
                 .region(region)
                 .parentPartitionId(null)

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,9 +66,9 @@ public class TableStructure {
     private String paddedLine(IntFunction<String> getValue, List<TableFieldSummary> fieldSummaries) {
         return paddingBeforeRow
                 + fieldSummaries.stream()
-                .filter(TableFieldSummary::isVisible)
-                .map(field -> paddedValue(getValue.apply(field.getIndex()), field))
-                .collect(Collectors.joining(paddingBetweenColumns))
+                        .filter(TableFieldSummary::isVisible)
+                        .map(field -> paddedValue(getValue.apply(field.getIndex()), field))
+                        .collect(Collectors.joining(paddingBetweenColumns))
                 + paddingAfterRow;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ public class TearDownClients {
 
     public static void withDefaults(TearDownOperation operation) throws IOException, InterruptedException {
         try (S3Client s3v2Client = S3Client.create();
-             CloudFormationClient cloudFormationClient = CloudFormationClient.create()) {
+                CloudFormationClient cloudFormationClient = CloudFormationClient.create()) {
             TearDownClients clients = builder()
                     .s3(AmazonS3ClientBuilder.defaultClient())
                     .s3v2(s3v2Client)

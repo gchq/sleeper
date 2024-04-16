@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,34 +36,29 @@ public class UploadDockerImages {
     private static final Logger LOGGER = LoggerFactory.getLogger(UploadDockerImages.class);
     private final Path baseDockerDirectory;
     private final EcrRepositoryCreator.Client ecrClient;
+    private final DockerImageConfiguration dockerImageConfig;
 
     private UploadDockerImages(Builder builder) {
         baseDockerDirectory = requireNonNull(builder.baseDockerDirectory, "baseDockerDirectory must not be null");
         ecrClient = requireNonNull(builder.ecrClient, "ecrClient must not be null");
+        dockerImageConfig = requireNonNull(builder.dockerImageConfig, "dockerImageConfig must not be null");
     }
-
 
     public static Builder builder() {
         return new Builder();
     }
 
     public void upload(StacksForDockerUpload data) throws IOException, InterruptedException {
-        upload(ClientUtils::runCommandInheritIO, data);
+        upload(ClientUtils::runCommandInheritIO, data, List.of());
     }
 
-    public void upload(CommandPipelineRunner runCommand, StacksForDockerUpload data)
-            throws IOException, InterruptedException {
-        upload(runCommand, data, new DockerImageConfiguration());
+    public void upload(CommandPipelineRunner runCommand, StacksForDockerUpload data) throws IOException, InterruptedException {
+        upload(runCommand, data, List.of());
     }
 
-    public void upload(CommandPipelineRunner runCommand, StacksForDockerUpload data, DockerImageConfiguration dockerImageConfig)
-            throws IOException, InterruptedException {
-        upload(runCommand, data, dockerImageConfig.getStacksToDeploy(data.getStacks()));
-    }
-
-    private void upload(CommandPipelineRunner runCommand, StacksForDockerUpload data, List<StackDockerImage> stacksToUpload)
-            throws IOException, InterruptedException {
+    public void upload(CommandPipelineRunner runCommand, StacksForDockerUpload data, List<StackDockerImage> extraDockerImages) throws IOException, InterruptedException {
         String repositoryHost = String.format("%s.dkr.ecr.%s.amazonaws.com", data.getAccount(), data.getRegion());
+        List<StackDockerImage> stacksToUpload = dockerImageConfig.getStacksToDeploy(data.getStacks(), extraDockerImages);
         List<StackDockerImage> stacksToBuild = stacksToUpload.stream()
                 .filter(stackDockerImage -> imageDoesNotExistInRepositoryWithVersion(stackDockerImage, data))
                 .collect(Collectors.toUnmodifiableList());
@@ -125,6 +120,7 @@ public class UploadDockerImages {
     public static final class Builder {
         private Path baseDockerDirectory;
         private EcrRepositoryCreator.Client ecrClient;
+        private DockerImageConfiguration dockerImageConfig = new DockerImageConfiguration();
 
         private Builder() {
         }
@@ -136,6 +132,11 @@ public class UploadDockerImages {
 
         public Builder ecrClient(EcrRepositoryCreator.Client ecrClient) {
             this.ecrClient = ecrClient;
+            return this;
+        }
+
+        public Builder dockerImageConfig(DockerImageConfiguration dockerImageConfig) {
+            this.dockerImageConfig = dockerImageConfig;
             return this;
         }
 

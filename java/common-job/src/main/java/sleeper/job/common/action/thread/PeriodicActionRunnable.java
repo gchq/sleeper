@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,7 @@ import sleeper.job.common.action.Action;
 import sleeper.job.common.action.ActionException;
 
 /**
- * A {@link Runnable} that calls an {@link Action} every N seconds, sleeping
- * in between calls.
+ * Calls an action every N seconds, sleeping in between calls. Used for keep-alive calls to SQS.
  */
 public class PeriodicActionRunnable implements Runnable {
     private static final Logger LOGGER = LoggerFactory.getLogger(PeriodicActionRunnable.class);

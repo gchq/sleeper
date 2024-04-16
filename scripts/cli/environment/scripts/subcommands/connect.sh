@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright 2022-2023 Crown Copyright
+# Copyright 2022-2024 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -33,12 +33,9 @@ ENVIRONMENT_DIR="$ENVIRONMENTS_DIR/$ENVIRONMENT_ID"
 OUTPUTS_FILE="$ENVIRONMENT_DIR/outputs.json"
 KNOWN_HOSTS_FILE="$ENVIRONMENT_DIR/known_hosts"
 
-EC2_IP=$(jq ".[\"$ENVIRONMENT_ID-BuildEC2\"].PublicIP" "$OUTPUTS_FILE" --raw-output)
 INSTANCE_ID=$(jq ".[\"$ENVIRONMENT_ID-BuildEC2\"].InstanceId" "$OUTPUTS_FILE" --raw-output)
-TEMP_KEY_DIR=/tmp/sleeper/temp_keys
-TEMP_KEY_PATH="$TEMP_KEY_DIR/$RANDOM"
-mkdir -p "$TEMP_KEY_DIR"
-rm -f "$TEMP_KEY_DIR/*"
+TEMP_KEY_DIR=$(mktemp -d)
+TEMP_KEY_PATH="$TEMP_KEY_DIR/sleeper-environment-connect-key"
 
 print_time() {
   date -u +"%T UTC"
@@ -59,4 +56,5 @@ ssh -o "UserKnownHostsFile=$KNOWN_HOSTS_FILE" -o "IdentitiesOnly=yes" -i "$TEMP_
   -o "ProxyCommand=sh -c \"aws ssm start-session --target %h --document-name AWS-StartSSHSession --parameters 'portNumber=%p'\"" \
   "$USERNAME@$INSTANCE_ID" "${SSH_PARAMS[@]}"
 
-rm -f "$TEMP_KEY_DIR/*"
+rm -f "$TEMP_KEY_DIR"/*
+rmdir "$TEMP_KEY_DIR"

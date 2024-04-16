@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import sleeper.configuration.properties.table.TablePropertyGroup;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
+import sleeper.core.testutils.printers.ToStringPrintStream;
 
 import java.io.PrintWriter;
 import java.util.Map;
@@ -45,7 +46,6 @@ import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter.forInstancePropertiesWithGroup;
 import static sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter.forTablePropertiesWithGroup;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.configuration.properties.table.TableProperty.SCHEMA;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
@@ -82,13 +82,13 @@ class SleeperPropertiesPrettyPrinterTest {
         @Test
         void shouldPrintPropertyDescriptionWithCustomLineBreaks() {
             // When / Then
-            assertThat(printInstanceProperties("sleeper.ingest.partition.file.writer.type=direct"))
+            assertThat(printInstanceProperties("sleeper.default.ingest.partition.file.writer.type=direct"))
                     .contains("# The way in which partition files are written to the main Sleeper store.\n" +
                             "# Valid values are 'direct' (which writes using the s3a Hadoop file system) and 'async' (which writes\n" +
                             "# locally and then copies the completed Parquet file asynchronously into S3).\n" +
                             "# The direct method is simpler but the async method should provide better performance when the number\n" +
                             "# of partitions is large.\n" +
-                            "sleeper.ingest.partition.file.writer.type");
+                            "sleeper.default.ingest.partition.file.writer.type");
         }
 
         @Test
@@ -217,16 +217,16 @@ class SleeperPropertiesPrettyPrinterTest {
         @Test
         void shouldEscapeSpecialCharactersInSchemaPropertyValue() {
             // Given
-            String schemaWithNewlines = "{\"rowKeyFields\":[{\\n" +
+            String propertiesStr = "sleeper.table.schema={\"rowKeyFields\":[{\\n" +
                     "\"name\":\"key\",\"type\":\"LongType\"\\n" +
                     "}],\\n" +
                     "\"sortKeyFields\":[],\\n" +
                     "\"valueFields\":[]}";
-            TableProperties tableProperties = createTablePropertiesWithSchemaInString("" +
-                    "sleeper.table.schema=" + schemaWithNewlines);
+            TableProperties tableProperties = new TableProperties(new InstanceProperties(), loadProperties(propertiesStr));
+
             // When / Then
             assertThat(printTableProperties(tableProperties))
-                    .contains("\nsleeper.table.schema=" + schemaWithNewlines + "\n");
+                    .contains("\n" + propertiesStr + "\n");
             assertThat(tableProperties.getSchema()).isEqualTo(Schema.builder()
                     .rowKeyFields(new Field("key", new LongType()))
                     .build());
@@ -379,12 +379,6 @@ class SleeperPropertiesPrettyPrinterTest {
     private static String printTableProperties(Schema schema) {
         TableProperties tableProperties = createTestTableProperties(new InstanceProperties(), schema);
         return printTableProperties(tableProperties);
-    }
-
-    private static TableProperties createTablePropertiesWithSchemaInString(String properties) {
-        TableProperties tableProperties = createTestTablePropertiesWithNoSchema(new InstanceProperties());
-        tableProperties.loadFromString(properties);
-        return tableProperties;
     }
 
     private static String printTableProperties(TableProperties tableProperties) {

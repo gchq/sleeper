@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import sleeper.clients.util.CommandPipeline;
 import sleeper.clients.util.CommandPipelineRunner;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 
@@ -35,14 +36,21 @@ public class PythonRunner {
         this.pythonDir = pythonDir;
     }
 
-    public void run(String... arguments) throws IOException, InterruptedException {
-        pipelineRunner.runOrThrow(pythonPipeline(pythonDir, arguments));
+    public void run(String... arguments) {
+        try {
+            pipelineRunner.runOrThrow(pythonPipeline(pythonDir, arguments));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
     }
 
     private static CommandPipeline pythonPipeline(Path pythonDir, String... arguments) {
         return pipeline(command(Stream.concat(
-                        Stream.of(pythonDir.resolve("env/bin/python").toString()),
-                        Stream.of(arguments))
+                Stream.of(pythonDir.resolve("env/bin/python").toString()),
+                Stream.of(arguments))
                 .toArray(String[]::new)));
     }
 }

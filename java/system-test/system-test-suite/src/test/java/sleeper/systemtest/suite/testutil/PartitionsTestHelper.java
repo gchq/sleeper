@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.schema.Schema;
-import sleeper.systemtest.suite.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperSystemTest;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -50,8 +50,7 @@ public class PartitionsTestHelper {
     }
 
     private static PartitionTree createPartitionsFromSplitPoints(Schema schema, List<Object> splitPoints) {
-        return new PartitionTree(schema,
-                new PartitionsFromSplitPoints(schema, splitPoints).construct());
+        return new PartitionTree(new PartitionsFromSplitPoints(schema, splitPoints).construct());
     }
 
     private static List<Object> readStringSplitPoints(Path file) {
@@ -64,5 +63,13 @@ public class PartitionsTestHelper {
 
     public static PartitionsBuilder partitionsBuilder(SleeperSystemTest sleeper) {
         return new PartitionsBuilder(sleeper.tableProperties().getSchema());
+    }
+
+    public static PartitionsBuilder partitionsBuilder(Schema schema) {
+        return new PartitionsBuilder(schema);
+    }
+
+    public static PartitionTree singleRootPartition(Schema schema) {
+        return partitionsBuilder(schema).singlePartition("root").buildTree();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,23 +45,21 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
+import static sleeper.cdk.Utils.createLambdaLogGroup;
 import static sleeper.configuration.properties.instance.AthenaProperty.ATHENA_COMPOSITE_HANDLER_CLASSES;
 import static sleeper.configuration.properties.instance.AthenaProperty.ATHENA_COMPOSITE_HANDLER_MEMORY;
 import static sleeper.configuration.properties.instance.AthenaProperty.ATHENA_COMPOSITE_HANDLER_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.instance.AthenaProperty.SPILL_BUCKET_AGE_OFF_IN_DAYS;
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 
 @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
 public class AthenaStack extends NestedStack {
-    public AthenaStack(Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars,
-                       CoreStacks coreStacks) {
+    public AthenaStack(
+            Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars, CoreStacks coreStacks) {
         super(scope, id);
 
-        String instanceId = instanceProperties.get(ID);
-        int logRetentionDays = instanceProperties.getInt(LOG_RETENTION_IN_DAYS);
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
         LambdaCode jarCode = jars.lambdaCode(BuiltJar.ATHENA, jarsBucket);
 
@@ -80,8 +78,8 @@ public class AthenaStack extends NestedStack {
                 .build();
 
         Key spillMasterKey = Key.Builder.create(this, "SpillMasterKey")
-                .description("Master key used by Sleeper instance " + instanceId + " to generate data keys. The data" +
-                        " keys created are used to encrypt spilled data to S3 when communicating with Amazon Athena.")
+                .description("Master key used by Sleeper to generate data keys. The data keys created are used to " +
+                        "encrypt spilled data to S3 when communicating with Amazon Athena.")
                 .enableKeyRotation(true)
                 .removalPolicy(RemovalPolicy.DESTROY)
                 .pendingWindow(Duration.days(7))
@@ -118,7 +116,7 @@ public class AthenaStack extends NestedStack {
                 .build();
 
         for (String className : handlerClasses) {
-            IFunction handler = createConnector(className, instanceId, logRetentionDays, jarCode, env, memory, timeout);
+            IFunction handler = createConnector(className, instanceProperties, jarCode, env, memory, timeout);
 
             jarsBucket.grantRead(handler);
 
@@ -142,11 +140,9 @@ public class AthenaStack extends NestedStack {
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
-    private IFunction createConnector(String className, String instanceId, int logRetentionDays, LambdaCode jar, Map<String, String> env, Integer memory, Integer timeout) {
-        String simpleClassName = className.substring(className.lastIndexOf(".") + 1);
-        if (simpleClassName.endsWith("CompositeHandler")) {
-            simpleClassName = simpleClassName.substring(0, simpleClassName.indexOf("CompositeHandler"));
-        }
+    private IFunction createConnector(String className, InstanceProperties instanceProperties, LambdaCode jar, Map<String, String> env, Integer memory, Integer timeout) {
+        String instanceId = instanceProperties.get(ID);
+        String simpleClassName = getSimpleClassName(className);
 
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceId.toLowerCase(Locale.ROOT), simpleClassName, "athena-composite-handler"));
@@ -156,17 +152,25 @@ public class AthenaStack extends NestedStack {
                 .memorySize(memory)
                 .timeout(Duration.seconds(timeout))
                 .runtime(Runtime.JAVA_11)
-                .logRetention(Utils.getRetentionDays(logRetentionDays))
+                .logGroup(createLambdaLogGroup(this, simpleClassName + "AthenaCompositeHandlerLogGroup", functionName, instanceProperties))
                 .handler(className)
                 .environment(env));
 
         CfnDataCatalog.Builder.create(this, simpleClassName + "AthenaDataCatalog")
                 .name(instanceId + simpleClassName + "SleeperConnector")
-                .description("Athena Connector for " + instanceId)
+                .description("Athena Connector for Sleeper")
                 .type("LAMBDA")
                 .parameters(Map.of("function", athenaCompositeHandler.getFunctionArn()))
                 .build();
 
         return athenaCompositeHandler;
+    }
+
+    private static String getSimpleClassName(String className) {
+        String simpleClassName = className.substring(className.lastIndexOf(".") + 1);
+        if (simpleClassName.endsWith("CompositeHandler")) {
+            return simpleClassName.substring(0, simpleClassName.indexOf("CompositeHandler"));
+        }
+        return simpleClassName;
     }
 }

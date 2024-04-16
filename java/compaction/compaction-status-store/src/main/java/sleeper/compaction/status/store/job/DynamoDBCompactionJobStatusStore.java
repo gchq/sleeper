@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,6 @@ import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.store.CompactionStatusStoreException;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.table.TableIdentity;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
 import java.time.Instant;
@@ -72,19 +71,31 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
     private final String updatesTableName;
     private final String jobsTableName;
     private final int timeToLiveInSeconds;
+    private final boolean stronglyConsistentReads;
     private final Supplier<Instant> getTimeNow;
 
-    public DynamoDBCompactionJobStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
-        this(dynamoDB, properties, Instant::now);
+    private DynamoDBCompactionJobStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties, boolean stronglyConsistentReads) {
+        this(dynamoDB, properties, stronglyConsistentReads, Instant::now);
     }
 
     public DynamoDBCompactionJobStatusStore(
-            AmazonDynamoDB dynamoDB, InstanceProperties properties, Supplier<Instant> getTimeNow) {
+            AmazonDynamoDB dynamoDB, InstanceProperties properties, boolean stronglyConsistentReads, Supplier<Instant> getTimeNow) {
         this.dynamoDB = dynamoDB;
         this.updatesTableName = jobUpdatesTableName(properties.get(ID));
         this.jobsTableName = jobLookupTableName(properties.get(ID));
         this.timeToLiveInSeconds = properties.getInt(COMPACTION_JOB_STATUS_TTL_IN_SECONDS);
+        this.stronglyConsistentReads = stronglyConsistentReads;
         this.getTimeNow = getTimeNow;
+    }
+
+    public static DynamoDBCompactionJobStatusStore stronglyConsistentReads(
+            AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties) {
+        return new DynamoDBCompactionJobStatusStore(dynamoDB, instanceProperties, true);
+    }
+
+    public static DynamoDBCompactionJobStatusStore eventuallyConsistentReads(
+            AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties) {
+        return new DynamoDBCompactionJobStatusStore(dynamoDB, instanceProperties, false);
     }
 
     public static String jobUpdatesTableName(String instanceId) {
@@ -148,8 +159,7 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
                                         ":table", update.get(TABLE_ID),
                                         ":update_time", update.get(UPDATE_TIME),
                                         ":update_type", update.get(UPDATE_TYPE),
-                                        ":expiry", update.get(EXPIRY_DATE))))
-                ));
+                                        ":expiry", update.get(EXPIRY_DATE))))));
         List<ConsumedCapacity> consumedCapacity = result.getConsumedCapacity();
         double totalCapacity = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
         LOGGER.debug("Added {} for job {}, capacity consumed = {}",
@@ -163,20 +173,20 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
     }
 
     @Override
-    public Stream<CompactionJobStatus> streamAllJobs(TableIdentity tableId) {
+    public Stream<CompactionJobStatus> streamAllJobs(String tableId) {
         return DynamoDBCompactionJobStatusFormat.streamJobStatuses(streamPagedItems(dynamoDB, new QueryRequest()
                 .withTableName(updatesTableName)
                 .withKeyConditionExpression("#TableId = :table_id")
                 .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID))
                 .withExpressionAttributeValues(
-                        Map.of(":table_id", createStringAttribute(tableId.getTableUniqueId())))
-        ));
+                        Map.of(":table_id", createStringAttribute(tableId)))
+                .withConsistentRead(stronglyConsistentReads)));
     }
 
     @Override
     public Optional<CompactionJobStatus> getJob(String jobId) {
-        return lookupJobTableId(jobId)
-                .flatMap(tableId -> DynamoDBCompactionJobStatusFormat.streamJobStatuses(streamPagedItems(dynamoDB, new QueryRequest()
+        return lookupJobTableId(jobId).flatMap(tableId -> DynamoDBCompactionJobStatusFormat
+                .streamJobStatuses(streamPagedItems(dynamoDB, new QueryRequest()
                         .withTableName(updatesTableName)
                         .withKeyConditionExpression("#TableId = :table_id AND begins_with(#JobAndUpdate, :job_id)")
                         .withExpressionAttributeNames(Map.of(
@@ -185,7 +195,8 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
                         .withExpressionAttributeValues(Map.of(
                                 ":table_id", createStringAttribute(tableId),
                                 ":job_id", createStringAttribute(jobId + "|")))
-                )).findFirst());
+                        .withConsistentRead(stronglyConsistentReads)))
+                .findFirst());
     }
 
     private Optional<String> lookupJobTableId(String jobId) {
@@ -193,7 +204,8 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
                 .withTableName(jobsTableName)
                 .withKeyConditionExpression("#JobId = :job_id")
                 .withExpressionAttributeNames(Map.of("#JobId", JOB_ID))
-                .withExpressionAttributeValues(Map.of(":job_id", createStringAttribute(jobId))));
+                .withExpressionAttributeValues(Map.of(":job_id", createStringAttribute(jobId)))
+                .withConsistentRead(stronglyConsistentReads));
         return result.getItems().stream()
                 .map(item -> getStringAttribute(item, TABLE_ID))
                 .findFirst();

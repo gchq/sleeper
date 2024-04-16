@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,12 +24,12 @@ import sleeper.compaction.status.store.testutils.DynamoDBCompactionJobStatusStor
 import sleeper.core.partition.Partition;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.statestore.FileReferenceFactory;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoField;
-import java.util.Collections;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.record.process.status.TestRunStatusUpdates.defaultUpdateTime;
@@ -111,9 +111,9 @@ public class StoreCompactionJobExpiryIT extends DynamoDBCompactionJobStatusStore
 
     private CompactionJob createCompactionJob() {
         Partition partition = singlePartition();
-        FileInfoFactory fileFactory = fileFactory(partition);
+        FileReferenceFactory fileFactory = fileFactory(partition);
         return jobFactory.createCompactionJob(
-                Collections.singletonList(fileFactory.leafFile("file1", 123L, "a", "c")),
+                List.of(fileFactory.rootFile("file1", 123L)),
                 partition.getId());
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,8 +30,6 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_CLUSTER;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_LAMBDA_FUNCTION;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_CLUSTER;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
 
 public class RestartTasks {
 
@@ -59,7 +57,6 @@ public class RestartTasks {
         }
         restartTasks(INGEST_CLUSTER, INGEST_LAMBDA_FUNCTION);
         restartTasks(COMPACTION_CLUSTER, COMPACTION_TASK_CREATION_LAMBDA_FUNCTION);
-        restartTasks(SPLITTING_COMPACTION_CLUSTER, SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION);
     }
 
     private void restartTasks(InstanceProperty clusterProperty, InstanceProperty lambdaFunctionProperty) {
@@ -73,9 +70,8 @@ public class RestartTasks {
     }
 
     private void stopTasksInCluster(String cluster) {
-        ecs.listTasks(new ListTasksRequest().withCluster(cluster)).getTaskArns().forEach(task ->
-                ecs.stopTask(new StopTaskRequest().withTask(task).withCluster(cluster))
-        );
+        ecs.listTasks(new ListTasksRequest().withCluster(cluster)).getTaskArns()
+                .forEach(task -> ecs.stopTask(new StopTaskRequest().withTask(task).withCluster(cluster)));
     }
 
     public static final class Builder {

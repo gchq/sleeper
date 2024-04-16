@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,8 @@ import io.trino.spi.connector.ConnectorFactory;
 import static java.util.Objects.requireNonNull;
 
 /**
- * The entry point for this plugin. It provides the Trino framework with a {@link sleeper.trino.SleeperConnectorFactory}.
+ * The entry point for this plugin. It provides the Trino framework with a
+ * {@link sleeper.trino.SleeperConnectorFactory}.
  * It allows a Guice module to be provided during construction, if desired, to allow a different set of Guice injections
  * during testing. A {@link SleeperModule} is used by default.
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.partition.Partition;
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
@@ -59,10 +59,9 @@ public class BulkImportSparkSessionRunner implements BulkImportJobDriver.Session
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
 
-    public BulkImportSparkSessionRunner(BulkImportJobRunner jobRunner,
-                                        InstanceProperties instanceProperties,
-                                        TablePropertiesProvider tablePropertiesProvider,
-                                        StateStoreProvider stateStoreProvider) {
+    public BulkImportSparkSessionRunner(
+            BulkImportJobRunner jobRunner, InstanceProperties instanceProperties,
+            TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider) {
         this.jobRunner = jobRunner;
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
@@ -74,7 +73,8 @@ public class BulkImportSparkSessionRunner implements BulkImportJobDriver.Session
         // Initialise Spark
         LOGGER.info("Initialising Spark");
         SparkSession session = new SparkSession.Builder().config(createSparkConf()).getOrCreate();
-        scala.collection.immutable.List<SparkStrategy> strategies = JavaConverters.collectionAsScalaIterable(Collections.singletonList((org.apache.spark.sql.execution.SparkStrategy) ExplicitRepartitionStrategy$.MODULE$)).toList();
+        scala.collection.immutable.List<SparkStrategy> strategies = JavaConverters
+                .collectionAsScalaIterable(Collections.singletonList((org.apache.spark.sql.execution.SparkStrategy) ExplicitRepartitionStrategy$.MODULE$)).toList();
         session.experimental().extraStrategies_$eq(strategies);
         SparkContext sparkContext = session.sparkContext();
         JavaSparkContext javaSparkContext = JavaSparkContext.fromSparkContext(sparkContext);
@@ -94,7 +94,7 @@ public class BulkImportSparkSessionRunner implements BulkImportJobDriver.Session
             allPartitions = stateStore.getAllPartitions();
         } catch (StateStoreException e) {
             LOGGER.error("Could not load partitions", e);
-            throw new RuntimeException("Failed to load statestore. Are permissions correct for this service account?");
+            throw new RuntimeException("Failed to load statestore. Are permissions correct for this service account?", e);
         }
 
         Configuration conf = sparkContext.hadoopConfiguration();
@@ -116,15 +116,15 @@ public class BulkImportSparkSessionRunner implements BulkImportJobDriver.Session
                 .parquet(pathsWithFs.toArray(new String[0]));
 
         LOGGER.info("Running bulk import job with id {}", job.getId());
-        List<FileInfo> fileInfos = jobRunner.createFileInfos(
-                        BulkImportJobInput.builder().rows(dataWithPartition)
-                                .instanceProperties(instanceProperties).tableProperties(tableProperties)
-                                .broadcastedPartitions(broadcastedPartitions).conf(conf).build())
+        List<FileReference> fileReferences = jobRunner.createFileReferences(
+                BulkImportJobInput.builder().rows(dataWithPartition)
+                        .instanceProperties(instanceProperties).tableProperties(tableProperties)
+                        .broadcastedPartitions(broadcastedPartitions).conf(conf).build())
                 .collectAsList().stream()
-                .map(SparkFileInfoRow::createFileInfo)
+                .map(SparkFileReferenceRow::createFileReference)
                 .collect(Collectors.toList());
 
-        return new BulkImportJobOutput(fileInfos, sparkContext::stop);
+        return new BulkImportJobOutput(fileReferences, sparkContext::stop);
     }
 
     public static SparkConf createSparkConf() {

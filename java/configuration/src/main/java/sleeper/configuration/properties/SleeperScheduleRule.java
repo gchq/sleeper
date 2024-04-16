@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,14 +23,15 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
 
+import static java.util.Objects.requireNonNull;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.GARBAGE_COLLECTOR_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_JOB_CREATION_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_CLOUDWATCH_RULE;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_RULES;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_WARM_LAMBDA_CLOUDWATCH_RULE;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_RULE;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
 public class SleeperScheduleRule {
@@ -39,11 +40,9 @@ public class SleeperScheduleRule {
     // Rule that creates compaction jobs
     public static final SleeperScheduleRule COMPACTION_JOB_CREATION = add(
             COMPACTION_JOB_CREATION_CLOUDWATCH_RULE, "%s-CompactionJobCreationRule");
-    // Rules that create compaction and splitting compaction tasks
+    // Rule that creates compaction tasks
     public static final SleeperScheduleRule COMPACTION_TASK_CREATION = add(
             COMPACTION_TASK_CREATION_CLOUDWATCH_RULE, "%s-CompactionTasksCreationRule");
-    public static final SleeperScheduleRule SPLITTING_COMPACTION_TASK_CREATION = add(
-            SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE, "%s-SplittingCompactionTasksCreationRule");
     // Rule that looks for partitions that need splitting
     public static final SleeperScheduleRule PARTITION_SPLITTING = add(
             PARTITION_SPLITTING_CLOUDWATCH_RULE, "%s-FindPartitionsToSplitPeriodicTrigger");
@@ -56,7 +55,10 @@ public class SleeperScheduleRule {
     // Rule that batches up ingest jobs from file ingest requests
     public static final SleeperScheduleRule INGEST_BATCHER_JOB_CREATION = add(
             INGEST_BATCHER_JOB_CREATION_CLOUDWATCH_RULE, "%s-IngestBatcherJobCreationRule");
-    public static final SleeperScheduleRule TABLE_METRICS = add(TABLE_METRICS_RULES, null);
+    public static final SleeperScheduleRule TABLE_METRICS = add(TABLE_METRICS_RULE, "%s-MetricsPublishRule");
+    // Rule that triggers the query lambdas to keep warm
+    public static final SleeperScheduleRule QUERY_WARM_LAMBDA = add(
+        QUERY_WARM_LAMBDA_CLOUDWATCH_RULE, "%s-QueryWarmLambdaRule");
 
     private final InstanceProperty property;
     private final String nameFormat;
@@ -68,8 +70,8 @@ public class SleeperScheduleRule {
     }
 
     private SleeperScheduleRule(InstanceProperty property, String nameFormat) {
-        this.property = property;
-        this.nameFormat = nameFormat;
+        this.property = requireNonNull(property, "property must not be null");
+        this.nameFormat = requireNonNull(nameFormat, "nameFormat must not be null");
     }
 
     public static Stream<Value> getCloudWatchRules(InstanceProperties properties) {
@@ -91,11 +93,7 @@ public class SleeperScheduleRule {
     }
 
     public Value getDefault(String instanceId) {
-        if (nameFormat == null) {
-            return new Value(null);
-        } else {
-            return new Value(buildRuleName(instanceId));
-        }
+        return new Value(buildRuleName(instanceId));
     }
 
     public String buildRuleName(String instanceId) {

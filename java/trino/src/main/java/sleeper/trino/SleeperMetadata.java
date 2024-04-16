@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,9 +70,10 @@ import static io.trino.spi.StandardErrorCode.NOT_SUPPORTED;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Provider of metadata about the table structure, and many other similar pieces of metadata, to the Trino framework.
- * This class also handles the application of static filters to tables, and the resolution of indexes.
+ * Provides information to Trino about the table structure and other metadata. This class also handles the application
+ * of static filters to tables, and the resolution of indexes.
  */
+@SuppressWarnings("checkstyle:summaryJavadoc") // Checkstyle fails on the method beginInsert, seemingly mistaking a param tag for a continuation of the summary fragment.
 public class SleeperMetadata implements ConnectorMetadata {
     private static final Logger LOGGER = Logger.get(SleeperMetadata.class);
 
@@ -81,7 +82,7 @@ public class SleeperMetadata implements ConnectorMetadata {
 
     @Inject
     public SleeperMetadata(SleeperConfig sleeperConfig,
-                           SleeperConnectionAsTrino sleeperConnectionAsTrino) {
+            SleeperConnectionAsTrino sleeperConnectionAsTrino) {
         this.sleeperConfig = requireNonNull(sleeperConfig);
         this.sleeperConnectionAsTrino = requireNonNull(sleeperConnectionAsTrino);
     }
@@ -97,8 +98,8 @@ public class SleeperMetadata implements ConnectorMetadata {
     /**
      * List all of the schemas in the underlying Sleeper database.
      *
-     * @param session The current session. This makes no difference at present.
-     * @return A list of all the names of the schemas.
+     * @param  session the current session (makes no difference at present)
+     * @return         a list of all the names of the schemas
      */
     @Override
     public List<String> listSchemaNames(ConnectorSession session) {
@@ -108,9 +109,9 @@ public class SleeperMetadata implements ConnectorMetadata {
     /**
      * List all of the tables in a schema.
      *
-     * @param session            The current session. This makes no difference at present.
-     * @param trinoSchemaNameOpt The schema to examine, or the default schema if this is not set.
-     * @return A list of {@link SchemaTableName} objects.
+     * @param  session            the current session (makes no difference at present)
+     * @param  trinoSchemaNameOpt the schema to examine, or the default schema if this is not set
+     * @return                    a list of {@link SchemaTableName} objects
      */
     @Override
     public List<SchemaTableName> listTables(ConnectorSession session, Optional<String> trinoSchemaNameOpt) {
@@ -123,9 +124,9 @@ public class SleeperMetadata implements ConnectorMetadata {
     /**
      * Retrieve a table handle for a specified schema and table name.
      *
-     * @param session         The current session. This makes no difference at present.
-     * @param schemaTableName The schema and table name.
-     * @return The handle for the table.
+     * @param  session         the current session (makes no difference at present)
+     * @param  schemaTableName the schema and table name
+     * @return                 the handle for the table
      */
     @Override
     public ConnectorTableHandle getTableHandle(ConnectorSession session, SchemaTableName schemaTableName) {
@@ -135,9 +136,9 @@ public class SleeperMetadata implements ConnectorMetadata {
     /**
      * Retrieve the metadata for the specified table.
      *
-     * @param session              The current session. This makes no difference at present.
-     * @param connectorTableHandle The handle for the table to be examined.
-     * @return The metadata for the table.
+     * @param  session              the current session (makes no difference at present)
+     * @param  connectorTableHandle the handle for the table to be examined
+     * @return                      the metadata for the table
      */
     @Override
     public ConnectorTableMetadata getTableMetadata(ConnectorSession session, ConnectorTableHandle connectorTableHandle) {
@@ -146,12 +147,12 @@ public class SleeperMetadata implements ConnectorMetadata {
     }
 
     /**
-     * Retrieve {@link TableColumnsMetadata} objects for all of the tables which match a supplied prefix of schema name
-     * and table name. This is a strange method which seems to have something to do with redirected tables.
+     * Retrieve columns metadata for tables matching a supplied prefix. This seems to have something to do with
+     * redirected tables.
      *
-     * @param session The current session. This makes no difference at present.
-     * @param prefix  The prefix to use to filter the tables.
-     * @return An iterator of {@link TableColumnsMetadata} objects.
+     * @param  session the current session (makes no difference at present)
+     * @param  prefix  the prefix to use to filter the tables
+     * @return         an iterator of {@link TableColumnsMetadata} objects
      */
     @Override
     public Iterator<TableColumnsMetadata> streamTableColumns(ConnectorSession session, SchemaTablePrefix prefix) {
@@ -165,9 +166,10 @@ public class SleeperMetadata implements ConnectorMetadata {
     /**
      * Retrieve the column handles for a specified table.
      *
-     * @param session              The current session. This makes no difference at present.
-     * @param connectorTableHandle The table to examine.
-     * @return A map where the keys are the column names and the values are the corresponding column handles.
+     * @param  session              the current session (makes no difference at present)
+     * @param  connectorTableHandle the table to examine
+     * @return                      a map where the keys are the column names and the values are the corresponding
+     *                              column handles
      */
     @Override
     public Map<String, ColumnHandle> getColumnHandles(ConnectorSession session, ConnectorTableHandle connectorTableHandle) {
@@ -179,15 +181,15 @@ public class SleeperMetadata implements ConnectorMetadata {
     /**
      * Retrieve the metadata for the specified column of the specified table.
      *
-     * @param session               The current session. This makes no difference at present.
-     * @param connectorTableHandle  The table.
-     * @param connectorColumnHandle The column.
-     * @return The metadata for the specified table and column.
+     * @param  session               the current session (makes no difference at present)
+     * @param  connectorTableHandle  the table
+     * @param  connectorColumnHandle the column
+     * @return                       the metadata for the specified table and column
      */
     @Override
     public ColumnMetadata getColumnMetadata(ConnectorSession session,
-                                            ConnectorTableHandle connectorTableHandle,
-                                            ColumnHandle connectorColumnHandle) {
+            ConnectorTableHandle connectorTableHandle,
+            ColumnHandle connectorColumnHandle) {
         SleeperColumnHandle sleeperColumnHandle = (SleeperColumnHandle) connectorColumnHandle;
         return sleeperColumnHandle.toColumnMetadata();
     }
@@ -205,9 +207,9 @@ public class SleeperMetadata implements ConnectorMetadata {
      * The configuration parameter {@link SleeperConfig#isEnableTrinoPartitioning()} can be used to turn off
      * partitioning.
      *
-     * @param session     The current session. This makes no difference at present.
-     * @param tableHandle The table to examine.
-     * @return The {@link ConnectorTableProperties} object.
+     * @param  session     the current session (makes no difference at present)
+     * @param  tableHandle the table to examine
+     * @return             the {@link ConnectorTableProperties} object
      */
     @Override
     public ConnectorTableProperties getTableProperties(ConnectorSession session, ConnectorTableHandle tableHandle) {
@@ -240,11 +242,11 @@ public class SleeperMetadata implements ConnectorMetadata {
     }
 
     /**
-     * Apply a static filter to a table.
+     * Apply a static filter to a table. This is the mechanism where predicates can be pushed down by the Trino
+     * framework into an underlying connector.
      * <p>
-     * This method is the mechanism where predicates can be pushed down by the Trino framework into an underlying
-     * connector. The method is called repeatedly during the query-optimisation phase and so some of the filters that
-     * are passed may never make it into the final execution.
+     * The method is called repeatedly during the query-optimisation phase and so some of the filters that are passed
+     * may never make it into the final execution.
      * <p>
      * This method is passed a {@link SleeperTableHandle} which contains the {@link TupleDomain} that is currently
      * applied to the table, plus an additional {@link Constraint} to try to apply to the table. If this method can push
@@ -254,46 +256,42 @@ public class SleeperMetadata implements ConnectorMetadata {
      * This implementation only considers the {@link TupleDomain} part of any {@link Constraint}. The only filters that
      * are pushed down are those which apply to row keys.
      *
-     * @param session              The current session. This makes no difference at present.
-     * @param connectorTableHandle The table to apply the filter to.
-     * @param additionalConstraint The additional constraint to try to apply to the table.
-     * @return If any part of the constraint can be pushed down, then a {@link ConstraintApplicationResult} is returned
-     * with the new table handle and the remaining parts of the constraint which have not been applied. An empty result
-     * indicates that this filter could not be pushed down.
+     * @param  session              the current session (makes no difference at present)
+     * @param  connectorTableHandle the table to apply the filter to
+     * @param  additionalConstraint the additional constraint to try to apply to the table
+     * @return                      If any part of the constraint can be pushed down, then a
+     *                              {@link ConstraintApplicationResult} is returned with the new table handle and the
+     *                              remaining parts of the constraint which have not been applied. An empty result
+     *                              indicates that this filter could not be pushed down.
      */
     @Override
-    public Optional<ConstraintApplicationResult<ConnectorTableHandle>> applyFilter(ConnectorSession session,
-                                                                                   ConnectorTableHandle connectorTableHandle,
-                                                                                   Constraint additionalConstraint) {
+    public Optional<ConstraintApplicationResult<ConnectorTableHandle>> applyFilter(
+            ConnectorSession session, ConnectorTableHandle connectorTableHandle, Constraint additionalConstraint) {
         SleeperTableHandle sleeperTableHandle = (SleeperTableHandle) connectorTableHandle;
         LOGGER.debug("applyFilter on %s: %s", sleeperTableHandle.getSchemaTableName(), additionalConstraint.getSummary().getDomains());
 
         Set<SleeperColumnHandle> rowKeyColumnHandlesSet = ImmutableSet.copyOf(
                 sleeperTableHandle.getColumnHandlesInCategoryInOrder(SleeperColumnHandle.SleeperColumnCategory.ROWKEY));
 
-        Optional<Map<ColumnHandle, Domain>> additionalConstraintColumnHandleToDomainMapOpt =
-                additionalConstraint.getSummary().getDomains();
+        Optional<Map<ColumnHandle, Domain>> additionalConstraintColumnHandleToDomainMapOpt = additionalConstraint.getSummary().getDomains();
         if (additionalConstraintColumnHandleToDomainMapOpt.isEmpty()) {
             LOGGER.debug("No domains were provided in the constraint");
             return Optional.empty();
         }
-        Map<ColumnHandle, Domain> additionalConstraintColumnHandleToDomainMap =
-                additionalConstraintColumnHandleToDomainMapOpt.get();
+        Map<ColumnHandle, Domain> additionalConstraintColumnHandleToDomainMap = additionalConstraintColumnHandleToDomainMapOpt.get();
 
-        Map<ColumnHandle, Domain> rowKeyConstraintsColumnHandleToDomainMap =
-                additionalConstraintColumnHandleToDomainMap.entrySet().stream()
-                        .filter(entry -> rowKeyColumnHandlesSet.contains((SleeperColumnHandle) entry.getKey()))
-                        .collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
+        Map<ColumnHandle, Domain> rowKeyConstraintsColumnHandleToDomainMap = additionalConstraintColumnHandleToDomainMap.entrySet().stream()
+                .filter(entry -> rowKeyColumnHandlesSet.contains((SleeperColumnHandle) entry.getKey()))
+                .collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
         if (rowKeyConstraintsColumnHandleToDomainMap.isEmpty()) {
             LOGGER.debug("No row key domains were provided in the constraint");
             return Optional.empty();
         }
         TupleDomain<ColumnHandle> rowKeyConstraintsTupleDomain = TupleDomain.withColumnDomains(rowKeyConstraintsColumnHandleToDomainMap);
 
-        Map<ColumnHandle, Domain> remainingConstraintsColumnHandleToDomainMap =
-                additionalConstraintColumnHandleToDomainMap.entrySet().stream()
-                        .filter(entry -> !rowKeyColumnHandlesSet.contains((SleeperColumnHandle) entry.getKey()))
-                        .collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
+        Map<ColumnHandle, Domain> remainingConstraintsColumnHandleToDomainMap = additionalConstraintColumnHandleToDomainMap.entrySet().stream()
+                .filter(entry -> !rowKeyColumnHandlesSet.contains((SleeperColumnHandle) entry.getKey()))
+                .collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
         TupleDomain<ColumnHandle> remainingConstraintsTupleDomain = TupleDomain.withColumnDomains(remainingConstraintsColumnHandleToDomainMap);
 
         TupleDomain<ColumnHandle> originalTableTupleDomain = sleeperTableHandle.getTupleDomain();
@@ -313,18 +311,18 @@ public class SleeperMetadata implements ConnectorMetadata {
     /**
      * Begin an INSERT statement to add rows to a table.
      *
-     * @param session     The session to perform this action under.
-     * @param tableHandle The table to add the rows to.
-     * @param columns     The columns which are to be added. Null or default columns are not permitted and so these
-     *                    columns must match the columns in the table.
-     * @param retryMode   The retry mode (only NO_RETRIES is supported)
-     * @return A handle to this insert operation.
+     * @param  session     the session to perform this action under
+     * @param  tableHandle the table to add the rows to
+     * @param  columns     The columns which are to be added. Null or default columns are not permitted and so these
+     *                     columns must match the columns in the table.
+     * @param  retryMode   the retry mode (only NO_RETRIES is supported)
+     * @return             a handle to this insert operation
      */
     @Override
     public ConnectorInsertTableHandle beginInsert(ConnectorSession session,
-                                                  ConnectorTableHandle tableHandle,
-                                                  List<ColumnHandle> columns,
-                                                  RetryMode retryMode) {
+            ConnectorTableHandle tableHandle,
+            List<ColumnHandle> columns,
+            RetryMode retryMode) {
         if (retryMode != RetryMode.NO_RETRIES) {
             throw new TrinoException(NOT_SUPPORTED, "This connector does not support query retries");
         }
@@ -335,20 +333,21 @@ public class SleeperMetadata implements ConnectorMetadata {
     }
 
     /**
-     * Finish the INSERT operation.
-     * <p>
-     * In this implementation, the {@link SleeperPageSink} does all of the work and this method does nothing.
+     * Finish the INSERT operation. In this implementation, the {@link SleeperPageSink} does all of the work and this
+     * method does nothing.
      *
-     * @param session            The session to perform this action under.
-     * @param insertHandle       The handle of the insert operation.
-     * @param fragments          The values which are returned by {@link SleeperPageSink#finish()}, once the future has
-     *                           resolved. In this implementation, no values are passed back from the {@link
-     *                           SleeperPageSink} to this metadata object.
-     * @param computedStatistics Ignored.
-     * @return An empty Optional.
+     * @param  session            the session to perform this action under
+     * @param  insertHandle       the handle of the insert operation
+     * @param  fragments          The values which are returned by {@link SleeperPageSink#finish()}, once the future has
+     *                            resolved. In this implementation, no values are passed back from the {@link
+     *                            SleeperPageSink} to this metadata object.
+     * @param  computedStatistics ignored
+     * @return                    an empty Optional
      */
     @Override
-    public Optional<ConnectorOutputMetadata> finishInsert(ConnectorSession session, ConnectorInsertTableHandle insertHandle, Collection<Slice> fragments, Collection<ComputedStatistics> computedStatistics) {
+    public Optional<ConnectorOutputMetadata> finishInsert(
+            ConnectorSession session, ConnectorInsertTableHandle insertHandle, Collection<Slice> fragments,
+            Collection<ComputedStatistics> computedStatistics) {
         // Do nothing - the records are written when the PageSink is closed
         return Optional.empty();
     }
@@ -358,4 +357,3 @@ public class SleeperMetadata implements ConnectorMetadata {
         return tableHandle;
     }
 }
-

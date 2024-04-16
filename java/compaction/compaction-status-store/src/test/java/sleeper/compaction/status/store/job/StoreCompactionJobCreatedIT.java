@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,10 +21,9 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusTestData;
 import sleeper.compaction.status.store.testutils.DynamoDBCompactionJobStatusStoreTestBase;
 import sleeper.core.partition.Partition;
-import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.statestore.FileReferenceFactory;
 
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -34,33 +33,10 @@ public class StoreCompactionJobCreatedIT extends DynamoDBCompactionJobStatusStor
     public void shouldReportCompactionJobCreated() {
         // Given
         Partition partition = singlePartition();
-        FileInfoFactory fileFactory = fileFactory(partition);
+        FileReferenceFactory fileFactory = fileFactory(partition);
         CompactionJob job = jobFactory.createCompactionJob(
-                Collections.singletonList(fileFactory.leafFile(100L, "a", "z")),
+                List.of(fileFactory.rootFile(100L)),
                 partition.getId());
-
-        // When
-        store.jobCreated(job);
-
-        // Then
-        assertThat(getAllJobStatuses())
-                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(CompactionJobStatusTestData.jobCreated(job, ignoredUpdateTime()));
-    }
-
-    @Test
-    public void shouldReportSplittingCompactionJobCreated() {
-        // Given
-        FileInfoFactory fileFactory = fileFactoryWithPartitions(builder -> builder
-                .leavesWithSplits(
-                        Arrays.asList("A", "B"),
-                        Collections.singletonList("ggg"))
-                .parentJoining("C", "A", "B"));
-        CompactionJob job = jobFactory.createSplittingCompactionJob(
-                Arrays.asList(
-                        fileFactory.rootFile("file1", 100L),
-                        fileFactory.rootFile("file2", 100L)),
-                "C", "A", "B", "ggg", 0);
 
         // When
         store.jobCreated(job);
@@ -75,11 +51,11 @@ public class StoreCompactionJobCreatedIT extends DynamoDBCompactionJobStatusStor
     public void shouldReportCompactionJobCreatedWithSeveralFiles() {
         // Given
         Partition partition = singlePartition();
-        FileInfoFactory fileFactory = fileFactory(partition);
+        FileReferenceFactory fileFactory = fileFactory(partition);
         CompactionJob job = jobFactory.createCompactionJob(
-                Arrays.asList(
-                        fileFactory.leafFile("file1", 100L, "a", "c"),
-                        fileFactory.leafFile("file2", 100L, "w", "z")),
+                List.of(
+                        fileFactory.rootFile("file1", 100L),
+                        fileFactory.rootFile("file2", 100L)),
                 partition.getId());
 
         // When
@@ -94,41 +70,13 @@ public class StoreCompactionJobCreatedIT extends DynamoDBCompactionJobStatusStor
     @Test
     public void shouldReportSeveralCompactionJobsCreated() {
         // Given
-        FileInfoFactory fileFactory = fileFactoryWithPartitions(builder -> builder
-                .leavesWithSplits(
-                        Arrays.asList("A", "B"),
-                        Collections.singletonList("ggg"))
-                .parentJoining("C", "A", "B"));
+        FileReferenceFactory fileFactory = fileFactoryWithPartitions(builder -> builder
+                .rootFirst("A")
+                .splitToNewChildren("A", "B", "C", "ggg"));
         CompactionJob job1 = jobFactory.createCompactionJob(
-                Collections.singletonList(fileFactory.leafFile(100L, "a", "c")), "A");
+                List.of(fileFactory.partitionFile("B", 100L)), "B");
         CompactionJob job2 = jobFactory.createCompactionJob(
-                Collections.singletonList(fileFactory.leafFile(100L, "w", "z")), "B");
-
-        // When
-        store.jobCreated(job1);
-        store.jobCreated(job2);
-
-        // Then
-        assertThat(getAllJobStatuses())
-                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactlyInAnyOrder(
-                        CompactionJobStatusTestData.jobCreated(job1, ignoredUpdateTime()),
-                        CompactionJobStatusTestData.jobCreated(job2, ignoredUpdateTime()));
-    }
-
-    @Test
-    public void shouldReportCompactionAndSplittingJobCreated() {
-        // Given
-        FileInfoFactory fileFactory = fileFactoryWithPartitions(builder -> builder
-                .leavesWithSplits(
-                        Arrays.asList("A", "B"),
-                        Collections.singletonList("ggg"))
-                .parentJoining("C", "A", "B"));
-        CompactionJob job1 = jobFactory.createCompactionJob(
-                Collections.singletonList(fileFactory.leafFile(100L, "a", "c")), "A");
-        CompactionJob job2 = jobFactory.createSplittingCompactionJob(
-                Collections.singletonList(fileFactory.rootFile(100L)),
-                "C", "A", "B", "ggg", 0);
+                List.of(fileFactory.partitionFile("C", 100L)), "C");
 
         // When
         store.jobCreated(job1);

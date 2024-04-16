@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,7 @@ import sleeper.ingest.impl.IngestCoordinator;
 import java.io.IOException;
 
 /**
- * Writes a {@link Record} objects to the storage system, partitioned and sorted.
- * <p>
- * This class is an adaptor to {@link IngestCoordinator}.
+ * Writes records to the storage system, partitioned and sorted. This class is an adapter to {@link IngestCoordinator}.
  */
 public class IngestRecords {
 

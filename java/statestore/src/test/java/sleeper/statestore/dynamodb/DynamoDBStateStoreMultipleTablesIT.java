@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,59 +16,28 @@
 
 package sleeper.statestore.dynamodb;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import org.apache.hadoop.conf.Configuration;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
-import sleeper.core.statestore.FileInfo;
-import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.dynamodb.tools.DynamoDBContainer;
 import sleeper.statestore.StateStoreFactory;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.dynamodb.tools.GenericContainerAwsV1ClientHelper.buildAwsV1Client;
 
-@Testcontainers
-public class DynamoDBStateStoreMultipleTablesIT {
-    private static AmazonDynamoDB dynamoDBClient;
-    @Container
-    public static DynamoDBContainer dynamoDb = new DynamoDBContainer();
-    private final InstanceProperties instanceProperties = createTestInstanceProperties();
+public class DynamoDBStateStoreMultipleTablesIT extends DynamoDBStateStoreTestBase {
     private final Schema schema = schemaWithKey("key", new LongType());
     private final StateStoreFactory stateStoreFactory = new StateStoreFactory(dynamoDBClient, instanceProperties, new Configuration());
-    private final FileInfoFactory fileInfoFactory = fileInfoFactory(new PartitionsBuilder(schema).singlePartition("root").buildTree());
-
-    @BeforeAll
-    public static void initDynamoClient() {
-        dynamoDBClient = buildAwsV1Client(dynamoDb, dynamoDb.getDynamoPort(), AmazonDynamoDBClientBuilder.standard());
-    }
-
-    @AfterAll
-    public static void shutdownDynamoClient() {
-        dynamoDBClient.shutdown();
-    }
-
-    @BeforeEach
-    void setUp() {
-        new DynamoDBStateStoreCreator(instanceProperties, dynamoDBClient).create();
-    }
+    private final FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(new PartitionsBuilder(schema).singlePartition("root").buildTree());
 
     private StateStore initialiseTableStateStore() throws Exception {
         StateStore stateStore = getTableStateStore();
@@ -87,18 +56,18 @@ public class DynamoDBStateStoreMultipleTablesIT {
         // Given
         StateStore stateStore1 = initialiseTableStateStore();
         StateStore stateStore2 = initialiseTableStateStore();
-        FileInfo file1 = fileInfoFactory.leafFile("file1.parquet", 12, 1L, 12L);
-        FileInfo file2 = fileInfoFactory.leafFile("file2.parquet", 34, 10L, 20L);
+        FileReference file1 = fileReferenceFactory.rootFile("file1.parquet", 12);
+        FileReference file2 = fileReferenceFactory.rootFile("file2.parquet", 34);
 
         // When
         stateStore1.addFile(file1);
         stateStore2.addFile(file2);
 
         // Then
-        assertThat(stateStore1.getActiveFiles())
+        assertThat(stateStore1.getFileReferences())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactly(file1);
-        assertThat(stateStore2.getActiveFiles())
+        assertThat(stateStore2.getFileReferences())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactly(file2);
     }
@@ -125,17 +94,17 @@ public class DynamoDBStateStoreMultipleTablesIT {
         // Given
         StateStore stateStore1 = initialiseTableStateStore();
         StateStore stateStore2 = initialiseTableStateStore();
-        FileInfo file1 = fileInfoFactory.leafFile("file1.parquet", 12, 1L, 12L);
-        FileInfo file2 = fileInfoFactory.leafFile("file2.parquet", 34, 10L, 20L);
+        FileReference file1 = fileReferenceFactory.rootFile("file1.parquet", 12);
+        FileReference file2 = fileReferenceFactory.rootFile("file2.parquet", 34);
         stateStore1.addFile(file1);
         stateStore2.addFile(file2);
 
         // When
-        stateStore1.clearFiles();
+        stateStore1.clearFileData();
 
         // Then
-        assertThat(stateStore1.getActiveFiles()).isEmpty();
-        assertThat(stateStore2.getActiveFiles())
+        assertThat(stateStore1.getFileReferences()).isEmpty();
+        assertThat(stateStore2.getFileReferences())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactly(file2);
     }
@@ -149,24 +118,20 @@ public class DynamoDBStateStoreMultipleTablesIT {
         PartitionTree tree2 = new PartitionsBuilder(schema).singlePartition("partition2").buildTree();
         stateStore1.initialise(tree1.getAllPartitions());
         stateStore2.initialise(tree2.getAllPartitions());
-        FileInfo file1 = fileInfoFactory(tree1).leafFile("file1.parquet", 12, 1L, 12L);
-        FileInfo file2 = fileInfoFactory(tree2).leafFile("file2.parquet", 34, 10L, 20L);
+        FileReference file1 = FileReferenceFactory.from(tree1).rootFile("file1.parquet", 12);
+        FileReference file2 = FileReferenceFactory.from(tree2).rootFile("file2.parquet", 34);
         stateStore1.addFile(file1);
         stateStore2.addFile(file2);
 
         // When
-        stateStore1.clearTable();
+        stateStore1.clearSleeperTable();
 
         // Then
         assertThat(stateStore1.getAllPartitions()).isEmpty();
         assertThat(stateStore2.getAllPartitions()).containsExactly(tree2.getRootPartition());
-        assertThat(stateStore1.getActiveFiles()).isEmpty();
-        assertThat(stateStore2.getActiveFiles())
+        assertThat(stateStore1.getFileReferences()).isEmpty();
+        assertThat(stateStore2.getFileReferences())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactly(file2);
-    }
-
-    private FileInfoFactory fileInfoFactory(PartitionTree tree) {
-        return FileInfoFactory.builder().schema(schema).partitionTree(tree).build();
     }
 }

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2022-2023 Crown Copyright
+  ~ Copyright 2022-2024 Crown Copyright
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -55,19 +55,54 @@
         <module name="AtclauseOrder">
             <property name="id" value="atClauseOrder"/>
         </module>
+        <module name="InvalidJavadocPosition">
+            <property name="id" value="invalidJavadocPosition"/>
+        </module>
+        <module name="JavadocBlockTagLocation">
+            <property name="id" value="javadocBlockTagLocation"/>
+        </module>
+        <module name="JavadocContentLocation">
+            <property name="id" value="javadocContentLocation"/>
+        </module>
         <module name="JavadocMethod">
             <property name="id" value="javadocOnMethod"/>
             <property name="allowMissingParamTags" value="true"/>
         </module>
+        <module name="JavadocMissingLeadingAsterisk">
+            <property name="id" value="javadocMissingLeadingAsterisk"/>
+        </module>
+        <module name="JavadocMissingWhitespaceAfterAsterisk">
+            <property name="id" value="javadocMissingWhitespaceAfterAsterisk"/>
+        </module>
         <module name="JavadocStyle">
             <property name="id" value="javadocStyle"/>
-            <property name="checkFirstSentence" value="false"/>
+            <property name="checkEmptyJavadoc" value="true"/>
+        </module>
+        <module name="JavadocType">
+            <property name="id" value="javadocStyle"/>
+        </module>
+        <module name="MissingJavadocMethod">
+            <property name="id" value="missingJavadocMethod"/>
+            <property name="allowMissingPropertyJavadoc" value="true"/>
+            <property name="allowedAnnotations" value="Override, Test"/>
+            <property name="scope" value="public"/>
+        </module>
+        <module name="MissingJavadocType">
+            <property name="id" value="missingJavadocType"/>
+            <property name="scope" value="private" />
+        </module>
+        <module name="NonEmptyAtclauseDescription">
+            <property name="id" value="nonEmptyAtClause"/>
+        </module>
+        <module name="RequireEmptyLineBeforeBlockTagGroup">
+            <property name="id" value="requireEmptyLineBeforeBlockTagGroup"/>
         </module>
         <module name="SingleLineJavadoc">
             <property name="id" value="singleLineJavadoc"/>
         </module>
-        <module name="NonEmptyAtclauseDescription">
-            <property name="id" value="nonEmptyAtClause"/>
+        <module name="SummaryJavadoc">
+            <property name="id" value="summaryJavadoc"/>
+            <property name="forbiddenSummaryFragments" value="^$|\{|@|&lt;"/>
         </module>
         <module name="ConstantName">
             <property name="id" value="constantName"/>
@@ -193,7 +228,23 @@
         </module>
         <module name="IllegalImport">
             <property name="regexp" value="true"/>
-            <property name="illegalClasses" value="^org\.junit\.jupiter\.api\.Assertions, ^org\.junit\.(?!jupiter).+"/>
+            <property name="illegalClasses"
+                      value="^org\.junit\.jupiter\.api\.Assertions, ^org\.junit\.(?!jupiter|platform).+"/>
+        </module>
+        <module name="Indentation">
+            <property name="id" value="indentation"/>
+        </module>
+        <module name="UnnecessarySemicolonAfterOuterTypeDeclaration">
+            <property name="id" value="unnecessarySemicolonAfterOuterTypeDeclaration"/>
+        </module>
+        <module name="UnnecessarySemicolonAfterTypeMemberDeclaration">
+            <property name="id" value="unnecessarySemicolonAfterTypeMemberDeclaration"/>
+        </module>
+        <module name="UnnecessarySemicolonInEnumeration">
+            <property name="id" value="unnecessarySemicolonInEnumeration"/>
+        </module>
+        <module name="UnnecessarySemicolonInTryWithResources">
+            <property name="id" value="unnecessarySemicolonInTryWithResources"/>
         </module>
     </module>
     <module name="UniqueProperties">

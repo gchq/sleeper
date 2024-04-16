@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,8 +79,7 @@ class FileWritingIteratorIT {
                 RowFactory.create("a", 1, 2, "a"),
                 RowFactory.create("b", 1, 2, "a"),
                 RowFactory.create("c", 1, 2, "b"),
-                RowFactory.create("d", 1, 2, "b")
-        ).iterator();
+                RowFactory.create("d", 1, 2, "b")).iterator();
 
         // When
         FileWritingIterator fileWritingIterator = createIteratorFrom(input);
@@ -96,8 +95,7 @@ class FileWritingIteratorIT {
                 RowFactory.create("a", 1, 2, "a"),
                 RowFactory.create("b", 1, 2, "a"),
                 RowFactory.create("c", 1, 2, "b"),
-                RowFactory.create("d", 1, 2, "b")
-        ).iterator();
+                RowFactory.create("d", 1, 2, "b")).iterator();
 
         // When
         FileWritingIterator fileWritingIterator = createIteratorFrom(input);
@@ -119,8 +117,7 @@ class FileWritingIteratorIT {
                 RowFactory.create("a", 1, 2, "a"),
                 RowFactory.create("b", 1, 2, "a"),
                 RowFactory.create("c", 1, 2, "b"),
-                RowFactory.create("d", 1, 2, "b")
-        ).iterator();
+                RowFactory.create("d", 1, 2, "b")).iterator();
 
         // When
         FileWritingIterator fileWritingIterator = createIteratorFrom(input);
@@ -145,8 +142,7 @@ class FileWritingIteratorIT {
                 RowFactory.create("b", 1, 2, "a"),
                 RowFactory.create("c", 1, 2, "b"),
                 RowFactory.create("d", 1, 2, "b"),
-                RowFactory.create("e", 1, 2, "c")
-        ).iterator();
+                RowFactory.create("e", 1, 2, "c")).iterator();
 
         // When
         FileWritingIterator fileWritingIterator = createIteratorFrom(input);
@@ -172,8 +168,7 @@ class FileWritingIteratorIT {
                 RowFactory.create("a", 1, 2, "a"),
                 RowFactory.create("b", 1, 2, "a"),
                 RowFactory.create("c", 1, 2, "b"),
-                RowFactory.create("d", 1, 2, "b")
-        ).iterator();
+                RowFactory.create("d", 1, 2, "b")).iterator();
 
         // When
         FileWritingIterator fileWritingIterator = createIteratorFrom(input, List.of("file1", "file2").iterator()::next);

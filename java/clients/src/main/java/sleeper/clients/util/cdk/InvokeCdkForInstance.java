@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ public class InvokeCdkForInstance {
         STANDARD("sleeper.cdk.SleeperCdkApp", InvokeCdkForInstance::cdkJarFile),
         SYSTEM_TEST("sleeper.systemtest.cdk.SystemTestApp", InvokeCdkForInstance::systemTestJarFile),
         SYSTEM_TEST_STANDALONE("sleeper.systemtest.cdk.SystemTestStandaloneApp", InvokeCdkForInstance::systemTestJarFile);
+
         private final String cdkAppClassName;
         private final Function<InvokeCdkForInstance, Path> getCdkJarFile;
 
@@ -80,8 +81,7 @@ public class InvokeCdkForInstance {
         List<String> command = new ArrayList<>(List.of(
                 "cdk",
                 "-a", String.format("java -cp \"%s\" %s",
-                        instanceType.getCdkJarFile.apply(this), instanceType.cdkAppClassName)
-        ));
+                        instanceType.getCdkJarFile.apply(this), instanceType.cdkAppClassName)));
         cdkCommand.getCommand().forEach(command::add);
         command.addAll(List.of("-c", String.format("propertiesfile=%s", propertiesFile)));
         cdkCommand.getArguments().forEach(command::add);

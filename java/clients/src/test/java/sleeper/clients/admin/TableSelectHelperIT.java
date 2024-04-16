@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,9 +65,8 @@ class TableSelectHelperIT extends AdminClientITBase {
 
     private String runTableSelectHelperGetOutput() {
         new TableSelectHelper(out.consoleOut(), in.consoleIn(), store())
-                .chooseTableOrReturnToMain(instanceId).ifPresent(tableProperties ->
-                        out.consoleOut().println("\n" +
-                                "Found table " + tableProperties.get(TABLE_NAME)));
+                .chooseTableOrReturnToMain(instanceId).ifPresent(tableProperties -> out.consoleOut().println("\n" +
+                        "Found table " + tableProperties.get(TABLE_NAME)));
         return out.toString();
     }
 }

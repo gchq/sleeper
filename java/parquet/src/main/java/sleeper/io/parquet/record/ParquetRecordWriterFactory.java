@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@ package sleeper.io.parquet.record;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.parquet.column.ParquetProperties.WriterVersion;
+import org.apache.parquet.hadoop.ParquetFileWriter;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.apache.parquet.hadoop.api.WriteSupport;
 import org.apache.parquet.hadoop.metadata.CompressionCodecName;
@@ -37,6 +39,7 @@ import static sleeper.configuration.properties.table.TableProperty.DICTIONARY_EN
 import static sleeper.configuration.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS;
 import static sleeper.configuration.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_VALUE_FIELDS;
 import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.PARQUET_WRITER_VERSION;
 import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.STATISTICS_TRUNCATE_LENGTH;
 
@@ -56,8 +59,13 @@ public class ParquetRecordWriterFactory {
     }
 
     public static ParquetWriter<Record> createParquetRecordWriter(Path path, TableProperties tableProperties, Configuration conf) throws IOException {
+        return createParquetRecordWriter(path, tableProperties, conf, ParquetFileWriter.Mode.CREATE);
+    }
+
+    public static ParquetWriter<Record> createParquetRecordWriter(Path path, TableProperties tableProperties, Configuration conf, ParquetFileWriter.Mode writeMode) throws IOException {
         return parquetRecordWriterBuilder(path, tableProperties)
-                .withConf(conf).build();
+                .withConf(conf)
+                .withWriteMode(writeMode).build();
     }
 
     public static Builder parquetRecordWriterBuilder(Path path, TableProperties tableProperties) {
@@ -69,7 +77,8 @@ public class ParquetRecordWriterFactory {
                 .withDictionaryEncodingForSortKeyFields(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS))
                 .withDictionaryEncodingForValueFields(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_VALUE_FIELDS))
                 .withColumnIndexTruncateLength(tableProperties.getInt(COLUMN_INDEX_TRUNCATE_LENGTH))
-                .withStatisticsTruncateLength(tableProperties.getInt(STATISTICS_TRUNCATE_LENGTH));
+                .withStatisticsTruncateLength(tableProperties.getInt(STATISTICS_TRUNCATE_LENGTH))
+                .withWriterVersion(WriterVersion.fromString(tableProperties.get(PARQUET_WRITER_VERSION)));
     }
 
     public static class Builder extends ParquetWriter.Builder<Record, Builder> {

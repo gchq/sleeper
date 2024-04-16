@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,14 @@
 
 package sleeper.ingest.batcher;
 
-import org.apache.commons.lang3.EnumUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.properties.validation.BatchIngestMode;
-import sleeper.core.table.TableIdentity;
+import sleeper.configuration.properties.validation.IngestQueue;
+import sleeper.core.table.TableStatus;
 import sleeper.ingest.job.IngestJob;
 
 import java.time.Duration;
@@ -34,19 +32,13 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_INGEST_MODE;
+import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_INGEST_QUEUE;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MAX_FILE_AGE_SECONDS;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MAX_JOB_FILES;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MAX_JOB_SIZE;
@@ -93,20 +85,20 @@ public class IngestBatcher {
     private void batchTableFiles(String tableId, List<FileIngestRequest> inputFiles, Instant time) {
         long totalBytes = totalBytes(inputFiles);
         TableProperties properties = tablePropertiesProvider.getById(tableId);
-        TableIdentity tableIdentity = properties.getId();
+        TableStatus table = properties.getStatus();
         LOGGER.info("Attempting to batch {} files of total size {} for table {}",
-                inputFiles.size(), formatBytes(totalBytes), tableIdentity);
+                inputFiles.size(), formatBytes(totalBytes), table);
         if (shouldCreateBatches(properties, inputFiles, time)) {
-            BatchIngestMode batchIngestMode = batchIngestMode(properties).orElse(null);
+            IngestQueue ingestQueue = properties.getEnumValue(INGEST_BATCHER_INGEST_QUEUE, IngestQueue.class);
             LOGGER.info("Creating batches for {} files with total size of {} for table {}",
-                    inputFiles.size(), formatBytes(totalBytes), tableIdentity);
+                    inputFiles.size(), formatBytes(totalBytes), table);
             List<Instant> receivedTimes = inputFiles.stream()
                     .map(FileIngestRequest::getReceivedTime)
                     .sorted().collect(toList());
             LOGGER.info("Files to batch were received between {} and {}",
                     receivedTimes.get(0), receivedTimes.get(receivedTimes.size() - 1));
             createBatches(properties, inputFiles)
-                    .forEach(batch -> sendBatch(tableIdentity, batchIngestMode, batch));
+                    .forEach(batch -> sendBatch(table, ingestQueue, batch));
         }
     }
 
@@ -144,7 +136,7 @@ public class IngestBatcher {
         return meetsMinFiles;
     }
 
-    private void sendBatch(TableIdentity tableIdentity, BatchIngestMode batchIngestMode, List<FileIngestRequest> batch) {
+    private void sendBatch(TableStatus table, IngestQueue ingestQueue, List<FileIngestRequest> batch) {
         String jobId = jobIdSupplier.get();
         List<String> files = store.assignJobGetAssigned(jobId, batch);
         if (files.isEmpty()) {
@@ -154,49 +146,20 @@ public class IngestBatcher {
         long totalBytes = totalBytes(batch);
         IngestJob job = IngestJob.builder()
                 .id(jobId)
-                .tableId(tableIdentity.getTableUniqueId())
+                .tableId(table.getTableUniqueId())
                 .files(files)
                 .build();
         try {
-            String jobQueueUrl = jobQueueUrl(batchIngestMode);
+            String jobQueueUrl = ingestQueue.getJobQueueUrl(instanceProperties);
             if (jobQueueUrl == null) {
-                LOGGER.error("Discarding created job with no queue configured for table {}: {}", tableIdentity, job);
+                LOGGER.error("Discarding created job with no queue configured for table {}: {}", table, job);
             } else {
                 LOGGER.info("Sending ingest job of id {} with {} files and total size of {} to {}",
-                        jobId, job.getFiles().size(), formatBytes(totalBytes), batchIngestMode);
+                        jobId, job.getFiles().size(), formatBytes(totalBytes), ingestQueue);
                 queueClient.send(jobQueueUrl, job);
             }
         } catch (RuntimeException e) {
             LOGGER.error("Failed sending job: {}", job, e);
-        }
-    }
-
-    public static Optional<BatchIngestMode> batchIngestMode(TableProperties properties) {
-        return Optional.ofNullable(properties.get(INGEST_BATCHER_INGEST_MODE))
-                .map(mode -> EnumUtils.getEnumIgnoreCase(BatchIngestMode.class, mode));
-    }
-
-    private String jobQueueUrl(BatchIngestMode batchIngestMode) {
-        return Optional.ofNullable(batchIngestMode)
-                .map(IngestBatcher::jobQueueUrlProperty)
-                .map(instanceProperties::get)
-                .orElse(null);
-    }
-
-    private static InstanceProperty jobQueueUrlProperty(BatchIngestMode mode) {
-        switch (mode) {
-            case STANDARD_INGEST:
-                return INGEST_JOB_QUEUE_URL;
-            case BULK_IMPORT_EMR:
-                return BULK_IMPORT_EMR_JOB_QUEUE_URL;
-            case BULK_IMPORT_PERSISTENT_EMR:
-                return BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL;
-            case BULK_IMPORT_EKS:
-                return BULK_IMPORT_EKS_JOB_QUEUE_URL;
-            case BULK_IMPORT_EMR_SERVERLESS:
-                return BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL;
-            default:
-                return null;
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import com.google.gson.JsonSerializer;
 
 import sleeper.clients.status.report.job.JsonRecordsProcessedSummary;
 import sleeper.clients.status.report.job.query.JobQuery;
-import sleeper.clients.util.GsonConfig;
+import sleeper.clients.util.ClientsGsonConfig;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessRuns;
 import sleeper.ingest.job.status.IngestJobStartedStatus;
@@ -37,7 +37,7 @@ import java.util.Map;
 import static sleeper.clients.status.report.job.JsonProcessRunReporter.processRunsJsonSerializer;
 
 public class JsonIngestJobStatusReporter implements IngestJobStatusReporter {
-    private final Gson gson = GsonConfig.standardBuilder()
+    private final Gson gson = ClientsGsonConfig.standardBuilder()
             .registerTypeAdapter(RecordsProcessedSummary.class, JsonRecordsProcessedSummary.serializer())
             .registerTypeAdapter(ProcessRuns.class, processRunsJsonSerializer())
             .registerTypeAdapter(IngestJobStartedStatus.class, ingestJobStartedStatusJsonSerializer())
@@ -53,13 +53,15 @@ public class JsonIngestJobStatusReporter implements IngestJobStatusReporter {
     }
 
     @Override
-    public void report(List<IngestJobStatus> statusList, JobQuery.Type queryType, IngestQueueMessages queueMessages,
-                       Map<String, Integer> persistentEmrStepCount) {
+    public void report(
+            List<IngestJobStatus> statusList, JobQuery.Type queryType, IngestQueueMessages queueMessages,
+            Map<String, Integer> persistentEmrStepCount) {
         out.println(gson.toJson(createJsonReport(statusList, queueMessages, persistentEmrStepCount)));
     }
 
-    private JsonObject createJsonReport(List<IngestJobStatus> statusList, IngestQueueMessages queueMessages,
-                                        Map<String, Integer> persistentEmrStepCount) {
+    private JsonObject createJsonReport(
+            List<IngestJobStatus> statusList, IngestQueueMessages queueMessages,
+            Map<String, Integer> persistentEmrStepCount) {
         JsonObject jsonObject = new JsonObject();
         jsonObject.add("queueMessages", gson.toJsonTree(queueMessages));
         if (!persistentEmrStepCount.isEmpty()) {

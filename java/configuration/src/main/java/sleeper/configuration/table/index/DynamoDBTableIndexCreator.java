@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,8 @@ import java.util.Objects;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_ID_INDEX_DYNAMO_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_NAME_INDEX_DYNAMO_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_ONLINE_INDEX_DYNAMO_TABLENAME;
+import static sleeper.configuration.table.index.DynamoDBTableIdFormat.ONLINE_FIELD;
 import static sleeper.configuration.table.index.DynamoDBTableIdFormat.TABLE_ID_FIELD;
 import static sleeper.configuration.table.index.DynamoDBTableIdFormat.TABLE_NAME_FIELD;
 
@@ -53,6 +55,11 @@ public class DynamoDBTableIndexCreator {
         initialiseTable(instanceProperties.get(TABLE_ID_INDEX_DYNAMO_TABLENAME),
                 List.of(new AttributeDefinition(TABLE_ID_FIELD, ScalarAttributeType.S)),
                 List.of(new KeySchemaElement(TABLE_ID_FIELD, KeyType.HASH)));
+        initialiseTable(instanceProperties.get(TABLE_ONLINE_INDEX_DYNAMO_TABLENAME),
+                List.of(new AttributeDefinition(ONLINE_FIELD, ScalarAttributeType.S),
+                        new AttributeDefinition(TABLE_NAME_FIELD, ScalarAttributeType.S)),
+                List.of(new KeySchemaElement(ONLINE_FIELD, KeyType.HASH),
+                        new KeySchemaElement(TABLE_NAME_FIELD, KeyType.RANGE)));
     }
 
     private void initialiseTable(

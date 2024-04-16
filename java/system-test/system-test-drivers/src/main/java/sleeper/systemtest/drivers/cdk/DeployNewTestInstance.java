@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,16 @@
  */
 package sleeper.systemtest.drivers.cdk;
 
-import sleeper.clients.deploy.DeployInstanceConfigurationFromTemplates;
 import sleeper.clients.deploy.DeployNewInstance;
+import sleeper.clients.deploy.StackDockerImage;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
+import sleeper.configuration.deploy.DeployInstanceConfigurationFromTemplates;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.List;
 
+import static sleeper.clients.deploy.StackDockerImage.dockerBuildImage;
 import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REPO;
 
@@ -29,6 +32,8 @@ public class DeployNewTestInstance {
 
     private DeployNewTestInstance() {
     }
+
+    public static final StackDockerImage SYSTEM_TEST_IMAGE = dockerBuildImage("system-test");
 
     public static void main(String[] args) throws IOException, InterruptedException {
         if (args.length < 5 || args.length > 7) {
@@ -43,8 +48,8 @@ public class DeployNewTestInstance {
                         .tableNameForTemplate("system-test")
                         .splitPointsFileForTemplate(optionalArgument(args, 6).map(Path::of).orElse(null))
                         .build().load())
-                .extraInstanceProperties(properties ->
-                        properties.set(SYSTEM_TEST_REPO, args[2] + "/system-test"))
+                .extraInstanceProperties(properties -> properties.set(SYSTEM_TEST_REPO, args[2] + "/system-test"))
+                .extraDockerImages(List.of(SYSTEM_TEST_IMAGE))
                 .instanceId(args[2])
                 .vpcId(args[3])
                 .subnetIds(args[4])

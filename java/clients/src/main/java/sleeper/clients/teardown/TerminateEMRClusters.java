@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.util.PollWithRetries;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -39,10 +40,9 @@ import static sleeper.core.util.RateLimitUtils.sleepForSustainedRatePerSecond;
 
 public class TerminateEMRClusters {
     private static final Logger LOGGER = LoggerFactory.getLogger(TerminateEMRClusters.class);
-    private static final long POLL_INTERVAL_MILLIS = 30000;
-    private static final int MAX_POLLS = 30;
 
-    private final PollWithRetries poll = PollWithRetries.intervalAndMaxPolls(POLL_INTERVAL_MILLIS, MAX_POLLS);
+    private final PollWithRetries poll = PollWithRetries
+            .intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(15));
 
     private final AmazonElasticMapReduce emrClient;
     private final String clusterPrefix;

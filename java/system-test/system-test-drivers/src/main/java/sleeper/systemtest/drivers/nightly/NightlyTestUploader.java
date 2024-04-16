@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import com.amazonaws.services.s3.AmazonS3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.file.Path;
 import java.util.Objects;
 
 public class NightlyTestUploader {
@@ -44,17 +43,16 @@ public class NightlyTestUploader {
 
     public void upload(NightlyTestOutput output) {
         LOGGER.info("Uploading to S3 bucket and folder: {}/{}", bucketName, prefix);
-        output.filesToUpload().parallel().forEach(this::upload);
+        output.uploads().parallel().forEach(this::upload);
         NightlyTestSummaryTable.fromS3(s3Client, bucketName)
                 .add(timestamp, output)
                 .saveToS3(s3Client, bucketName);
     }
 
-    public void upload(Path file) {
-        String filename = Objects.toString(file.getFileName());
-        LOGGER.info("Uploading {}", filename);
-        s3Client.putObject(bucketName, prefix + "/" + filename, file.toFile());
-        LOGGER.info("Uploaded {}", filename);
+    public void upload(NightlyTestUploadFile file) {
+        LOGGER.info("Uploading {}", file);
+        s3Client.putObject(bucketName, prefix + "/" + file.getRelativeS3Key(), file.getFile().toFile());
+        LOGGER.info("Uploaded {}", file);
     }
 
     public static final class Builder {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.s3.IBucket;
+import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
@@ -37,7 +38,6 @@ import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.stack.CoreStacks;
 import sleeper.cdk.stack.IngestStatusStoreResources;
-import sleeper.cdk.stack.TopicStack;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
 
@@ -70,12 +70,9 @@ import static sleeper.configuration.properties.instance.PersistentEMRProperty.BU
 import static sleeper.configuration.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING;
 import static sleeper.configuration.properties.validation.EmrInstanceTypeConfig.readInstanceTypes;
 
-
 /**
- * A {@link PersistentEmrBulkImportStack} creates an SQS queue, a lambda and
- * a persistent EMR cluster. Bulk import jobs are sent to the queue. This triggers
- * the lambda which then adds a step to the EMR cluster to run the bulk import
- * job.
+ * Deploys a persistent EMR cluster to perform bulk import jobs. Bulk import jobs are sent to a queue. This triggers
+ * a lambda which then adds a step to the EMR cluster to run the bulk import job.
  */
 public class PersistentEmrBulkImportStack extends NestedStack {
     private final Queue bulkImportJobQueue;
@@ -85,9 +82,9 @@ public class PersistentEmrBulkImportStack extends NestedStack {
             String id,
             InstanceProperties instanceProperties,
             BuiltJars jars,
+            Topic errorsTopic,
             BulkImportBucketStack importBucketStack,
             CommonEmrBulkImportStack commonEmrStack,
-            TopicStack errorsTopicStack,
             CoreStacks coreStacks,
             IngestStatusStoreResources statusStoreResources) {
         super(scope, id);
@@ -95,7 +92,7 @@ public class PersistentEmrBulkImportStack extends NestedStack {
                 this, "PersistentEMR", instanceProperties, coreStacks, statusStoreResources);
         bulkImportJobQueue = commonHelper.createJobQueue(
                 BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL, BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_ARN,
-                errorsTopicStack.getTopic());
+                errorsTopic);
         IFunction jobStarter = commonHelper.createJobStarterFunction(
                 "PersistentEMR", bulkImportJobQueue, jars, importBucketStack.getImportBucket(), commonEmrStack);
         configureJobStarterFunction(jobStarter);
@@ -104,15 +101,15 @@ public class PersistentEmrBulkImportStack extends NestedStack {
     }
 
     private static void createCluster(Construct scope,
-                                      InstanceProperties instanceProperties,
-                                      IBucket importBucket,
-                                      CommonEmrBulkImportStack commonStack) {
+            InstanceProperties instanceProperties,
+            IBucket importBucket,
+            CommonEmrBulkImportStack commonStack) {
 
         // EMR cluster
         String logUri = "s3://" + importBucket.getBucketName() + "/logs";
 
         VolumeSpecificationProperty volumeSpecificationProperty = VolumeSpecificationProperty.builder()
-//                .iops() // TODO Add property to control this
+                //                .iops() // TODO Add property to control this
                 .sizeInGb(instanceProperties.getInt(BULK_IMPORT_EMR_EBS_VOLUME_SIZE_IN_GB))
                 .volumeType(instanceProperties.get(BULK_IMPORT_EMR_EBS_VOLUME_TYPE))
                 .build();

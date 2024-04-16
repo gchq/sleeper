@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package sleeper.ingest.testutils;
 
 import sleeper.core.record.Record;
 import sleeper.ingest.impl.IngestCoordinator;
+import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordWriterAcceptingRecords;
 
@@ -47,9 +48,8 @@ public class TestIngestType {
     public static TestIngestType directWriteBackedByArrowWriteToLocalFile(
             Consumer<ArrowRecordBatchFactory.Builder<Record>> arrowConfig) {
         return new TestIngestType(
-                parameters ->
-                        ingestCoordinatorDirectWriteBackedByArrow(parameters, parameters.getLocalFilePrefix(),
-                                arrowConfig, new ArrowRecordWriterAcceptingRecords()),
+                parameters -> ingestCoordinatorDirectWriteBackedByArrow(parameters, parameters.getLocalFilePrefix(),
+                        arrowConfig, new ArrowRecordWriterAcceptingRecords()),
                 IngestCoordinatorTestParameters::getLocalFilePrefix);
     }
 
@@ -68,6 +68,13 @@ public class TestIngestType {
         return new TestIngestType(
                 IngestCoordinatorFactory::ingestCoordinatorAsyncWriteBackedByArrow,
                 IngestCoordinatorTestParameters::getAsyncS3Prefix);
+    }
+
+    public static TestIngestType directWriteBackedByArrayListWriteToLocalFile(
+            Consumer<ArrayListRecordBatchFactory.Builder<Record>> arrayListConfig) {
+        return new TestIngestType(
+                parameters -> ingestCoordinatorDirectWriteBackedByArrayList(parameters, parameters.getLocalFilePrefix(), arrayListConfig),
+                IngestCoordinatorTestParameters::getLocalFilePrefix);
     }
 
     public static TestIngestType directWriteBackedByArrayListWriteToLocalFile() {
