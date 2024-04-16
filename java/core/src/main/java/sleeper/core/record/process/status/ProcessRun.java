@@ -223,7 +223,8 @@ public class ProcessRun {
         }
 
         /**
-         * Sets the started status.
+         * Sets the started status. This can also be a finished status, and will be set as the finished status if it is
+         * one.
          *
          * @param  startedStatus the started status to set
          * @return               the builder
