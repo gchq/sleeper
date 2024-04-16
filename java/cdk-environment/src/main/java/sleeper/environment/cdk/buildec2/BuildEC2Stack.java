@@ -80,7 +80,9 @@ public class BuildEC2Stack extends Stack {
                 .build();
         CfnOutput.Builder.create(this, "RestrictedRole")
                 .value(restrictedRole.getRoleName())
-                .description("Role with restricted access to deploy Sleeper instances")
+                .description("Role with restricted access to deploy Sleeper instances. " +
+                        "This can be assumed to test deploying a Sleeper instance with fewer permissions. " +
+                        "We can aim to reduce the permissions for this role in the future.")
                 .build();
     }
 
