@@ -19,7 +19,7 @@ import java.time.Instant;
 import java.util.Objects;
 
 /**
- * A record storing information about a process status update for a job.
+ * Represents a record held in a status store, containing a status update for a job.
  */
 public class ProcessStatusUpdateRecord {
 
@@ -113,7 +113,7 @@ public class ProcessStatusUpdateRecord {
     }
 
     /**
-     * Builder class for creating a process status update record.
+     * Creates a status update record.
      */
     public static final class Builder {
         private String jobId;
@@ -137,9 +137,9 @@ public class ProcessStatusUpdateRecord {
         }
 
         /**
-         * Sets the process status update.
+         * Sets the status update.
          *
-         * @param  statusUpdate the process status update to set
+         * @param  statusUpdate the status update to set
          * @return              the builder
          */
         public Builder statusUpdate(ProcessStatusUpdate statusUpdate) {
@@ -148,7 +148,7 @@ public class ProcessStatusUpdateRecord {
         }
 
         /**
-         * Sets the job run ID.
+         * Sets the job run ID to correlate updates that occur on the same run of the job.
          *
          * @param  jobRunId the job run ID to set
          * @return          the builder
