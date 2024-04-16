@@ -29,11 +29,11 @@ import software.amazon.awscdk.services.ec2.SubnetType;
 import software.amazon.awscdk.services.ec2.UserData;
 import software.amazon.awscdk.services.ec2.Vpc;
 import software.amazon.awscdk.services.ec2.VpcLookupOptions;
+import software.amazon.awscdk.services.iam.AccountRootPrincipal;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.iam.Role;
-import software.amazon.awscdk.services.iam.ServicePrincipal;
 import software.constructs.Construct;
 
 import sleeper.environment.cdk.config.AppContext;
@@ -65,9 +65,10 @@ public class BuildEC2Stack extends Stack {
                 .userData(UserData.custom(LoadUserDataUtil.userData(params)))
                 .userDataCausesReplacement(true)
                 .blockDevices(Collections.singletonList(image.rootBlockDevice()))
-                .ssmSessionPermissions(true)
-                .role(createRole())
                 .build();
+        instance.getRole().addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("AdministratorAccess"));
+
+        Role restrictedRole = createRestrictedRole();
 
         CfnOutput.Builder.create(this, "LoginUser")
                 .value(image.loginUser())
@@ -77,16 +78,16 @@ public class BuildEC2Stack extends Stack {
                 .value(instance.getInstanceId())
                 .description("ID of the build EC2 instance")
                 .build();
-        CfnOutput.Builder.create(this, "InstanceRole")
-                .value(instance.getRole().getRoleName())
-                .description("Role of the build EC2 instance")
+        CfnOutput.Builder.create(this, "RestrictedRole")
+                .value(restrictedRole.getRoleName())
+                .description("Role with restricted access to deploy Sleeper instances")
                 .build();
     }
 
-    private Role createRole() {
+    private Role createRestrictedRole() {
 
-        Role role = Role.Builder.create(this, "BuildEC2Role")
-                .assumedBy(new ServicePrincipal("ec2.amazonaws.com"))
+        Role role = Role.Builder.create(this, "RestrictedRole")
+                .assumedBy(new AccountRootPrincipal())
                 .build();
         ManagedPolicy policy = new ManagedPolicy(this, "BuildEC2Policy");
 
