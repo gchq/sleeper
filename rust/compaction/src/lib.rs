@@ -41,13 +41,7 @@ use std::{
 use url::Url;
 
 // Just publicly expose this function
-pub use aws_s3::ObjectStoreFactory;
-pub use details::create_sketch_path;
-pub use details::get_file_iterator;
-pub use details::get_parquet_builder;
 pub use details::merge_sorted_files;
-pub use details::read_schema;
-pub use details::validate_schemas_same;
 pub use details::CompactionResult;
 
 /// An object guaranteed to only initialise once. Thread safe.
@@ -293,7 +287,6 @@ pub extern "C" fn ffi_merge_sorted_files(
 pub extern "C" fn free_result(ob: *mut FFICompactionResult) {
     maybe_cfg_log();
     if !ob.is_null() {
-        // we  need to de-allocate the two byte vectors inside the result
         info!("Compaction result destructed at {:p}", ob);
         let _ = unsafe { Box::from_raw(ob) };
     }
