@@ -21,6 +21,9 @@ import sleeper.core.table.TableStatusTestHelper;
 
 import java.util.List;
 
+/**
+ * A helper for creating ingest jobs for tests.
+ */
 public class IngestJobTestData {
 
     public static final String DEFAULT_TABLE_ID = "test-table-id";
@@ -29,6 +32,14 @@ public class IngestJobTestData {
     private IngestJobTestData() {
     }
 
+    /**
+     * Creates an ingest job.
+     *
+     * @param  jobId     the ingest job ID
+     * @param  table     the table status
+     * @param  filenames a list of files to ingest
+     * @return           an {@link IngestJob}
+     */
     public static IngestJob createJobWithTableAndFiles(String jobId, TableStatus table, List<String> filenames) {
         return IngestJob.builder()
                 .id(jobId)
@@ -38,10 +49,25 @@ public class IngestJobTestData {
                 .build();
     }
 
+    /**
+     * Creates an ingest job.
+     *
+     * @param  jobId     the ingest job ID
+     * @param  table     the table status
+     * @param  filenames the names of files to ingest
+     * @return           an {@link IngestJob}
+     */
     public static IngestJob createJobWithTableAndFiles(String jobId, TableStatus table, String... filenames) {
         return createJobWithTableAndFiles(jobId, table, List.of(filenames));
     }
 
+    /**
+     * Creates an ingest job. The job will be created for the table {@link IngestJobTestData#DEFAULT_TABLE}.
+     *
+     * @param  jobId     the ingest job ID
+     * @param  filenames the names of files to ingest
+     * @return           an {@link IngestJob}
+     */
     public static IngestJob createJobInDefaultTable(String jobId, String... filenames) {
         return createJobWithTableAndFiles(jobId, DEFAULT_TABLE, filenames);
     }

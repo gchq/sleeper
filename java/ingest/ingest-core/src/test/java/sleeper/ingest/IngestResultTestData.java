@@ -20,7 +20,7 @@ import sleeper.core.statestore.FileReferenceTestData;
 import java.util.Collections;
 
 /**
- * A helper for creating ingest result objects for tests.
+ * A helper for creating ingest results for tests.
  */
 public class IngestResultTestData {
 
