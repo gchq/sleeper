@@ -105,6 +105,13 @@ pub mod i32 {
         /// for documentation.
         ///
         /// # Errors
+        /// Rare, but might throw a consistency error if the C++ layer experienced an internal consistency fault.
+        fn merge(self: Pin<&mut i32_sketch_t>, other: &i32_sketch_t) -> Result<()>;
+
+        /// Please see [quantiles sketch](https://github.com/apache/datasketches-cpp/blob/master/quantiles/include/quantiles_sketch.hpp)
+        /// for documentation.
+        ///
+        /// # Errors
         /// If called on an empty then an error will be returned.
         fn get_min_item(self: &i32_sketch_t) -> Result<i32>;
 
@@ -178,8 +185,11 @@ pub mod i32 {
         /// If an error in the deserialization stream occurs, then the exception is wrapped in the error message.
         #[rust_name = "i32_deserialize"]
         fn deserialize(bytes: &[u8]) -> Result<UniquePtr<i32_sketch_t>>;
+
     }
 }
+
+unsafe impl Send for i32::i32_sketch_t {}
 
 #[cfg(test)]
 mod i32_tests {
@@ -313,6 +323,51 @@ mod i32_tests {
     }
 
     #[test]
+    fn empty_merge_stays_empty() {
+        let mut sketch_l = create_empty();
+        let sketch_r = create_empty();
+        sketch_l.pin_mut().merge(&sketch_r).unwrap();
+        assert!(sketch_l.is_empty());
+    }
+
+    #[test]
+    fn empty_merge_single_is_single() {
+        let mut sketch_l = create_empty();
+        let sketch_r = create_single_entry();
+        sketch_l.pin_mut().merge(&sketch_r).unwrap();
+        assert_eq!(sketch_l.get_n(), 1);
+        check_approx_equal(sketch_l, sketch_r);
+    }
+
+    #[test]
+    fn single_merge_empty_is_single() {
+        let mut sketch_l = create_single_entry();
+        let sketch_r = create_empty();
+        sketch_l.pin_mut().merge(&sketch_r).unwrap();
+        assert_eq!(sketch_l.get_n(), 1);
+        assert_eq!(
+            sketch_l.get_min_item().unwrap(),
+            sketch_l.get_max_item().unwrap()
+        );
+        assert_eq!(sketch_l.get_num_retained(), 1);
+    }
+
+    #[test]
+    fn multi_sketch_merge() {
+        let mut sketch_l = create_multiple_entries();
+        let sketch_r = create_multiple_entries();
+        sketch_l.pin_mut().merge(&sketch_r).unwrap();
+        assert_eq!(sketch_l.get_n(), sketch_r.get_n() * 2);
+
+        let mut expected = create_empty();
+        for i in 1..10 {
+            expected.pin_mut().update(i);
+            expected.pin_mut().update(i);
+        }
+        check_approx_equal(sketch_l, expected);
+    }
+
+    #[test]
     fn multi_sketch_returns_min() {
         let sketch = create_multiple_entries();
         assert_eq!(sketch.get_min_item().unwrap(), 1);
@@ -406,6 +461,13 @@ pub mod i64 {
         /// for documentation.
         ///
         /// # Errors
+        /// Rare, but might throw a consistency error if the C++ layer experienced an internal consistency fault.
+        fn merge(self: Pin<&mut i64_sketch_t>, other: &i64_sketch_t) -> Result<()>;
+
+        /// Please see [quantiles sketch](https://github.com/apache/datasketches-cpp/blob/master/quantiles/include/quantiles_sketch.hpp)
+        /// for documentation.
+        ///
+        /// # Errors
         /// If called on an empty then an error will be returned.
         fn get_min_item(self: &i64_sketch_t) -> Result<i64>;
 
@@ -474,6 +536,8 @@ pub mod i64 {
         fn deserialize(bytes: &[u8]) -> Result<UniquePtr<i64_sketch_t>>;
     }
 }
+
+unsafe impl Send for i64::i64_sketch_t {}
 
 #[cfg(test)]
 mod i64_tests {
@@ -607,6 +671,50 @@ mod i64_tests {
     }
 
     #[test]
+    fn empty_merge_stays_empty() {
+        let mut sketch_l = create_empty();
+        let sketch_r = create_empty();
+        sketch_l.pin_mut().merge(&sketch_r).unwrap();
+        assert!(sketch_l.is_empty());
+    }
+
+    #[test]
+    fn empty_merge_single_is_single() {
+        let mut sketch_l = create_empty();
+        let sketch_r = create_single_entry();
+        sketch_l.pin_mut().merge(&sketch_r).unwrap();
+        assert_eq!(sketch_l.get_n(), 1);
+        check_approx_equal(sketch_l, sketch_r);
+    }
+
+    #[test]
+    fn single_merge_empty_is_single() {
+        let mut sketch_l = create_single_entry();
+        let sketch_r = create_empty();
+        sketch_l.pin_mut().merge(&sketch_r).unwrap();
+        assert_eq!(sketch_l.get_n(), 1);
+        assert_eq!(
+            sketch_l.get_min_item().unwrap(),
+            sketch_l.get_max_item().unwrap()
+        );
+        assert_eq!(sketch_l.get_num_retained(), 1);
+    }
+
+    #[test]
+    fn multi_sketch_merge() {
+        let mut sketch_l = create_multiple_entries();
+        let sketch_r = create_multiple_entries();
+        sketch_l.pin_mut().merge(&sketch_r).unwrap();
+        assert_eq!(sketch_l.get_n(), sketch_r.get_n() * 2);
+
+        let mut expected = create_empty();
+        for i in 1..10 {
+            expected.pin_mut().update(i);
+            expected.pin_mut().update(i);
+        }
+        check_approx_equal(sketch_l, expected);
+    }
+    #[test]
     fn multi_sketch_returns_min() {
         let sketch = create_multiple_entries();
         assert_eq!(sketch.get_min_item().unwrap(), 1);
@@ -692,7 +800,16 @@ pub mod str {
         #[rust_name = "new_str_sketch"]
         fn new_quantiles_sketch(K: u16) -> UniquePtr<string_sketch_t>;
 
+        /// Please see [quantiles sketch](https://github.com/apache/datasketches-cpp/blob/master/quantiles/include/quantiles_sketch.hpp)
+        /// for documentation.
         fn update(self: Pin<&mut string_sketch_t>, value: &str);
+
+        /// Please see [quantiles sketch](https://github.com/apache/datasketches-cpp/blob/master/quantiles/include/quantiles_sketch.hpp)
+        /// for documentation.
+        ///
+        /// # Errors
+        /// Rare, but might throw a consistency error if the C++ layer experienced an internal consistency fault.
+        fn merge(self: Pin<&mut string_sketch_t>, other: &string_sketch_t) -> Result<()>;
 
         /// Please see [quantiles sketch](https://github.com/apache/datasketches-cpp/blob/master/quantiles/include/quantiles_sketch.hpp)
         /// for documentation.
@@ -766,6 +883,8 @@ pub mod str {
         fn deserialize(bytes: &[u8]) -> Result<UniquePtr<string_sketch_t>>;
     }
 }
+
+unsafe impl Send for str::string_sketch_t {}
 
 #[cfg(test)]
 mod str_tests {
@@ -901,6 +1020,55 @@ mod str_tests {
     }
 
     #[test]
+    fn empty_merge_stays_empty() {
+        let mut sketch_l = create_empty();
+        let sketch_r = create_empty();
+        sketch_l.pin_mut().merge(&sketch_r).unwrap();
+        assert!(sketch_l.is_empty());
+    }
+
+    #[test]
+    fn empty_merge_single_is_single() {
+        let mut sketch_l = create_empty();
+        let sketch_r = create_single_entry();
+        sketch_l.pin_mut().merge(&sketch_r).unwrap();
+        assert_eq!(sketch_l.get_n(), 1);
+        check_approx_equal(sketch_l, sketch_r);
+    }
+
+    #[test]
+    fn single_merge_empty_is_single() {
+        let mut sketch_l = create_single_entry();
+        let sketch_r = create_empty();
+        sketch_l.pin_mut().merge(&sketch_r).unwrap();
+        assert_eq!(sketch_l.get_n(), 1);
+        assert_eq!(
+            sketch_l.get_min_item().unwrap(),
+            sketch_l.get_max_item().unwrap()
+        );
+        assert_eq!(sketch_l.get_num_retained(), 1);
+    }
+
+    #[test]
+    fn multi_sketch_merge() {
+        let mut sketch_l = create_multiple_entries();
+        let sketch_r = create_multiple_entries();
+        sketch_l.pin_mut().merge(&sketch_r).unwrap();
+        assert_eq!(sketch_l.get_n(), sketch_r.get_n() * 2);
+
+        let mut expected = create_empty();
+        for i in 'a'..'z' {
+            expected
+                .pin_mut()
+                .update(&String::from_utf8(vec![i as u8]).unwrap());
+            expected
+                .pin_mut()
+                .update(&String::from_utf8(vec![i as u8]).unwrap());
+        }
+        check_approx_equal(sketch_l, expected);
+    }
+
+    #[test]
     fn multi_sketch_returns_min() {
         let sketch = create_multiple_entries();
         assert_eq!(sketch.get_min_item().unwrap(), "a");
@@ -985,7 +1153,16 @@ pub mod byte {
         #[rust_name = "new_byte_sketch"]
         fn new_quantiles_sketch(K: u16) -> UniquePtr<byte_sketch_t>;
 
+        /// Please see [quantiles sketch](https://github.com/apache/datasketches-cpp/blob/master/quantiles/include/quantiles_sketch.hpp)
+        /// for documentation.
         fn update(self: Pin<&mut byte_sketch_t>, value: &[u8]);
+
+        /// Please see [quantiles sketch](https://github.com/apache/datasketches-cpp/blob/master/quantiles/include/quantiles_sketch.hpp)
+        /// for documentation.
+        ///
+        /// # Errors
+        /// Rare, but might throw a consistency error if the C++ layer experienced an internal consistency fault.
+        fn merge(self: Pin<&mut byte_sketch_t>, other: &byte_sketch_t) -> Result<()>;
 
         /// Please see [quantiles sketch](https://github.com/apache/datasketches-cpp/blob/master/quantiles/include/quantiles_sketch.hpp)
         /// for documentation.
@@ -1059,6 +1236,8 @@ pub mod byte {
         fn deserialize(bytes: &[u8]) -> Result<UniquePtr<byte_sketch_t>>;
     }
 }
+
+unsafe impl Send for byte::byte_sketch_t {}
 
 #[cfg(test)]
 mod byte_tests {
@@ -1189,6 +1368,51 @@ mod byte_tests {
         let serial = sketch.serialize(0).unwrap();
         let deserial = byte_deserialize(&serial).unwrap();
         check_approx_equal(sketch, deserial);
+    }
+
+    #[test]
+    fn empty_merge_stays_empty() {
+        let mut sketch_l = create_empty();
+        let sketch_r = create_empty();
+        sketch_l.pin_mut().merge(&sketch_r).unwrap();
+        assert!(sketch_l.is_empty());
+    }
+
+    #[test]
+    fn empty_merge_single_is_single() {
+        let mut sketch_l = create_empty();
+        let sketch_r = create_single_entry();
+        sketch_l.pin_mut().merge(&sketch_r).unwrap();
+        assert_eq!(sketch_l.get_n(), 1);
+        check_approx_equal(sketch_l, sketch_r);
+    }
+
+    #[test]
+    fn single_merge_empty_is_single() {
+        let mut sketch_l = create_single_entry();
+        let sketch_r = create_empty();
+        sketch_l.pin_mut().merge(&sketch_r).unwrap();
+        assert_eq!(sketch_l.get_n(), 1);
+        assert_eq!(
+            sketch_l.get_min_item().unwrap(),
+            sketch_l.get_max_item().unwrap()
+        );
+        assert_eq!(sketch_l.get_num_retained(), 1);
+    }
+
+    #[test]
+    fn multi_sketch_merge() {
+        let mut sketch_l = create_multiple_entries();
+        let sketch_r = create_multiple_entries();
+        sketch_l.pin_mut().merge(&sketch_r).unwrap();
+        assert_eq!(sketch_l.get_n(), sketch_r.get_n() * 2);
+
+        let mut expected = create_empty();
+        for i in 'a'..'z' {
+            expected.pin_mut().update(&vec![i as u8]);
+            expected.pin_mut().update(&vec![i as u8]);
+        }
+        check_approx_equal(sketch_l, expected);
     }
 
     #[test]

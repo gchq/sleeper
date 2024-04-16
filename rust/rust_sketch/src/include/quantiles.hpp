@@ -204,6 +204,16 @@ struct quantiles_sketch_derived : public base_type<T, C, A> {
     double get_rank(T const item, bool inclusive = true) const {
         return pop_base::get_rank(item, inclusive);
     }
+
+    /**
+     * @brief Merges another sketch into this one.
+     * 
+     * @param other the other sketch to merge into this one
+     */
+    template <typename FwdSk>
+    void merge(FwdSk&& other) {
+        pop_base::merge(std::forward<FwdSk>(other));
+    }
 };
 
 /**
@@ -305,7 +315,6 @@ struct quantiles_sketch_derived<std::string, C, A> : public base_type<std::strin
      * which has no Rust equivalent so we have to wrap the function to allow
      * binding from Rust.
      *
-     * @tparam FwdT fixed width integer type
      * @param item the item to add to the sketch
      */
     void update(rust::Str const item) {
@@ -411,7 +420,6 @@ struct quantiles_sketch_derived<byte_array, C, A> : public base_type<byte_array,
      * which has no Rust equivalent so we have to wrap the function to allow
      * binding from Rust.
      *
-     * @tparam FwdT fixed width integer type
      * @param item the item to add to the sketch
      */
     void update(rust::Slice<::uint8_t const> const item) {
