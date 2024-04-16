@@ -109,7 +109,7 @@ public class SleeperSystemTest {
     }
 
     public SystemTestIngest ingest() {
-        return new SystemTestIngest(context);
+        return new SystemTestIngest(context, baseDrivers);
     }
 
     public SystemTestQuery query() {

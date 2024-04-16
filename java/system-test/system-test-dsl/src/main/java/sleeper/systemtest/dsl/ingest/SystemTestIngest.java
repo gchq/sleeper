@@ -26,11 +26,13 @@ import java.nio.file.Path;
 
 public class SystemTestIngest {
     private final SystemTestContext context;
-    private final SystemTestDrivers drivers;
+    private final SystemTestDrivers baseDrivers;
+    private final SystemTestDrivers adminDrivers;
 
-    public SystemTestIngest(SystemTestContext context) {
+    public SystemTestIngest(SystemTestContext context, SystemTestDrivers baseDrivers) {
         this.context = context;
-        this.drivers = context.instance().adminDrivers();
+        this.baseDrivers = baseDrivers;
+        this.adminDrivers = context.instance().adminDrivers();
     }
 
     public SystemTestIngest setType(SystemTestIngestType type) {
@@ -39,11 +41,11 @@ public class SystemTestIngest {
     }
 
     public SystemTestIngestBatcher batcher() {
-        return new SystemTestIngestBatcher(context, drivers);
+        return new SystemTestIngestBatcher(context, adminDrivers);
     }
 
     public SystemTestDirectIngest direct(Path tempDir) {
-        return new SystemTestDirectIngest(instance(), drivers.directIngest(context), tempDir);
+        return new SystemTestDirectIngest(instance(), adminDrivers.directIngest(context), tempDir);
     }
 
     public SystemTestIngestToStateStore toStateStore() {
@@ -60,7 +62,7 @@ public class SystemTestIngest {
 
     public SystemTestDirectBulkImport directEmrServerless() {
         return new SystemTestDirectBulkImport(
-                instance(), sourceFiles(), drivers.directEmrServerless(context), waitForBulkImport());
+                instance(), sourceFiles(), baseDrivers.directEmrServerless(context), waitForBulkImport());
     }
 
     private SystemTestInstanceContext instance() {
@@ -72,18 +74,18 @@ public class SystemTestIngest {
     }
 
     private IngestByQueue ingestByQueue() {
-        return drivers.ingestByQueue(context);
+        return adminDrivers.ingestByQueue(context);
     }
 
     private InvokeIngestTasksDriver tasksDriver() {
-        return drivers.invokeIngestTasks(context);
+        return adminDrivers.invokeIngestTasks(context);
     }
 
     private WaitForJobs waitForIngest() {
-        return drivers.waitForIngest(context);
+        return adminDrivers.waitForIngest(context);
     }
 
     private WaitForJobs waitForBulkImport() {
-        return drivers.waitForBulkImport(context);
+        return adminDrivers.waitForBulkImport(context);
     }
 }

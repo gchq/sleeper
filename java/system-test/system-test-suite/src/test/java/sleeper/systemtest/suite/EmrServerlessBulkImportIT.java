@@ -17,7 +17,6 @@
 package sleeper.systemtest.suite;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.record.Record;
@@ -63,8 +62,6 @@ public class EmrServerlessBulkImportIT {
     }
 
     @Test
-    @Disabled("Normally permissions are not given to call EMR Serverless directly. " +
-            "This can be used to test it if you have that permission.")
     void shouldBulkImportOneRecordWithEmrServerlessDirectly(SleeperSystemTest sleeper) {
         // Given
         Record record = new Record(Map.of(

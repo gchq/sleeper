@@ -26,22 +26,22 @@ import java.util.Map;
 public class SystemTestQuery {
     private final SystemTestContext context;
     private final SystemTestDrivers baseDrivers;
-    private final SystemTestDrivers drivers;
+    private final SystemTestDrivers adminDrivers;
     private QueryAllTablesDriver driver = null;
 
     public SystemTestQuery(SystemTestContext context, SystemTestDrivers baseDrivers) {
         this.context = context;
         this.baseDrivers = baseDrivers;
-        this.drivers = context.instance().adminDrivers();
+        this.adminDrivers = context.instance().adminDrivers();
     }
 
     public SystemTestQuery byQueue() {
-        driver = drivers.queryByQueue(context);
+        driver = adminDrivers.queryByQueue(context);
         return this;
     }
 
     public SystemTestQuery direct() {
-        driver = drivers.directQuery(context);
+        driver = adminDrivers.directQuery(context);
         return this;
     }
 
@@ -66,7 +66,7 @@ public class SystemTestQuery {
     }
 
     public void emptyResultsBucket() {
-        drivers.clearQueryResults(context).deleteAllQueryResults();
+        adminDrivers.clearQueryResults(context).deleteAllQueryResults();
     }
 
     private QueryCreator queryCreator() {
