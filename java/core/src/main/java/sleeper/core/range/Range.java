@@ -384,7 +384,7 @@ public class Range {
     }
 
     /**
-     * A class for specifying ranges. Used to build {@link Range} objects and validate them against the schema.
+     * Creates ranges and validates them against a schema.
      */
     public static class RangeFactory {
         private final Map<String, PrimitiveType> rowKeyFieldToType;
