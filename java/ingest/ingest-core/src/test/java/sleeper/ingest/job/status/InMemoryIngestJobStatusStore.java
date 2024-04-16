@@ -31,6 +31,9 @@ import java.util.stream.Stream;
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.ingest.job.status.IngestJobStatusType.REJECTED;
 
+/**
+ * An in-memory implementation of the ingest job status store.
+ */
 public class InMemoryIngestJobStatusStore implements IngestJobStatusStore {
     private final Map<String, TableJobs> tableIdToJobs = new HashMap<>();
 
@@ -99,6 +102,12 @@ public class InMemoryIngestJobStatusStore implements IngestJobStatusStore {
                 .flatMap(TableJobs::streamAllRecords));
     }
 
+    /**
+     * Streams all process status update records for a table.
+     *
+     * @param  tableId the table ID
+     * @return         a stream of {@link ProcessStatusUpdateRecord}
+     */
     public Stream<ProcessStatusUpdateRecord> streamTableRecords(String tableId) {
         return tableJobs(tableId)
                 .map(TableJobs::streamAllRecords)
@@ -109,6 +118,9 @@ public class InMemoryIngestJobStatusStore implements IngestJobStatusStore {
         return Optional.ofNullable(tableIdToJobs.get(tableId));
     }
 
+    /**
+     * A class which stores job updates by job ID in memory.
+     */
     private static class TableJobs {
         private final Map<String, List<ProcessStatusUpdateRecord>> jobIdToUpdateRecords = new HashMap<>();
 
