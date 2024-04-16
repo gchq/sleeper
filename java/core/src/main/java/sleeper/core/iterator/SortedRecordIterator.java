@@ -28,7 +28,7 @@ import java.util.function.Function;
 public interface SortedRecordIterator extends Function<CloseableIterator<Record>, CloseableIterator<Record>> {
 
     /**
-     * Configure the iterator to accept records.
+     * Configures the iterator to accept records.
      *
      * @param configString configuration specific to the iterator which may be set before the iterator is used
      * @param schema       the schema of the Sleeper table being processed

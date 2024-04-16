@@ -58,7 +58,7 @@ public class PartitionSerDe {
     }
 
     /**
-     * Serialise a partition to JSON.
+     * Serialises a partition to JSON.
      *
      * @param  partition the partition
      * @return           a JSON representation of the partition
@@ -68,7 +68,7 @@ public class PartitionSerDe {
     }
 
     /**
-     * Serialise a partition to JSON.
+     * Serialises a partition to JSON.
      *
      * @param  partition   the partition
      * @param  prettyPrint true if the JSON should be formatted for readability
@@ -82,7 +82,7 @@ public class PartitionSerDe {
     }
 
     /**
-     * Deserialise a partition from JSON.
+     * Deserialises a partition from JSON.
      *
      * @param  jsonSchema the JSON
      * @return            the partition represented by the JSON

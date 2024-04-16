@@ -164,7 +164,7 @@ public class Partition {
         }
 
         /**
-         * Set the region covered by the partition.
+         * Sets the region covered by the partition.
          *
          * @param  region the region
          * @return        the builder
@@ -175,7 +175,7 @@ public class Partition {
         }
 
         /**
-         * Set the ID of the partition.
+         * Sets the ID of the partition.
          *
          * @param  id a unique identifier
          * @return    the builder
@@ -186,7 +186,7 @@ public class Partition {
         }
 
         /**
-         * Set whether this is a leaf partition.
+         * Sets whether this is a leaf partition.
          *
          * @param  leafPartition true if the partition has no child partitions, false otherwise
          * @return               the builder
@@ -197,7 +197,7 @@ public class Partition {
         }
 
         /**
-         * Set the parent of the partition. This is the ID of the partition that was split to create this partition.
+         * Sets the parent of the partition. This is the ID of the partition that was split to create this partition.
          * Can be null if this is the root partition of the Sleeper table.
          *
          * @param  parentPartitionId the ID of the parent partition
@@ -209,7 +209,7 @@ public class Partition {
         }
 
         /**
-         * Set the children of the partition. This is the IDs of any partitions that were created by splitting this
+         * Sets the children of the partition. This is the IDs of any partitions that were created by splitting this
          * partition. This will default to an empty list, and must be empty for a leaf partition.
          *
          * @param  childPartitionIds the IDs of the child partitions
@@ -221,7 +221,7 @@ public class Partition {
         }
 
         /**
-         * Set the dimension this partition was split on. If this partition has been split, this should be the index of
+         * Sets the dimension this partition was split on. If this partition has been split, this should be the index of
          * the row key in the schema that this partition was split on.
          *
          * @param  dimension the index of the row key used as the split point

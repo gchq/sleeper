@@ -49,7 +49,7 @@ public class Key {
     }
 
     /**
-     * Retrieve the nth key value by its order in the schema.
+     * Retrieves the nth key value by its order in the schema.
      *
      * @param  i index in the schema's row keys
      * @return   value of the key field
@@ -63,7 +63,7 @@ public class Key {
     }
 
     /**
-     * Retreive the number of keys this object is based on. If this is fewer than the number of row keys in the schema,
+     * Retreives the number of keys this object is based on. If this is fewer than the number of row keys in the schema,
      * this object holds the first n row keys where this method returns n.
      *
      * @return the number of keys we have values for
