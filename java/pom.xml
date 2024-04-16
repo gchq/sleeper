@@ -166,7 +166,7 @@
         <testcontainers.version>1.19.7</testcontainers.version>
         <wiremock.version>2.35.2</wiremock.version>
         <assertj.version>3.25.3</assertj.version>
-        <approvaltests.version>23.0.1</approvaltests.version>
+        <approvaltests.version>23.1.0</approvaltests.version>
         <jsonunit.version>3.2.7</jsonunit.version>
         <checkstyle.version>10.15.0</checkstyle.version>
         <sleeper.system.test.short.id/>
