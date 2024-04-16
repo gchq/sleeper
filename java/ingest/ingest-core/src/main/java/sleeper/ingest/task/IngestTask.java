@@ -56,6 +56,9 @@ public class IngestTask {
         this.taskId = taskId;
     }
 
+    /**
+     * Executes jobs from a queue, updating the status stores with progress of the task.
+     */
     public void run() {
         Instant startTime = timeSupplier.get();
         IngestTaskStatus.Builder taskStatusBuilder = IngestTaskStatus.builder().taskId(taskId).startTime(startTime);
@@ -70,6 +73,14 @@ public class IngestTask {
         taskStatusStore.taskFinished(taskFinished);
     }
 
+    /**
+     * Receives a message, then deserialises and runs the ingest job. Updates the ingest job status store with progress
+     * on the job.
+     *
+     * @param  startTime       the start time
+     * @param  summaryConsumer a consumer for finished job summaries
+     * @return                 the finish time
+     */
     public Instant handleMessages(Instant startTime, Consumer<RecordsProcessedSummary> summaryConsumer) {
         while (true) {
             Optional<MessageHandle> messageOpt = messageReceiver.receiveMessage();
@@ -100,18 +111,45 @@ public class IngestTask {
         }
     }
 
+    /**
+     * An interface for receiving message handles.
+     */
     @FunctionalInterface
     public interface MessageReceiver {
+        /**
+         * Receives a message.
+         *
+         * @return a {@link MessageHandle}, or an empty optional if there are no messages
+         */
         Optional<MessageHandle> receiveMessage();
     }
 
+    /**
+     * An interface for a message. Used to control the message visibility of an SQS message.
+     */
     public interface MessageHandle extends AutoCloseable {
+        /**
+         * Gets the ingest job this message handle is linked to.
+         *
+         * @return an {@link IngestJob}
+         */
         IngestJob getJob();
 
+        /**
+         * Called when a job completes successfully.
+         *
+         * @param summary the records processed summary for the finished job
+         */
         void completed(RecordsProcessedSummary summary);
 
+        /**
+         * Called when a job fails.
+         */
         void failed();
 
+        /**
+         * Called when this message handle is closed.
+         */
         void close();
     }
 }
