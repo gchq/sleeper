@@ -26,6 +26,7 @@ mod details;
 mod sketch;
 
 use arrow::error::ArrowError;
+use aws_config::BehaviorVersion;
 use aws_credential_types::provider::ProvideCredentials;
 use chrono::Local;
 use futures::TryFutureExt;
@@ -99,7 +100,7 @@ async fn credentials_and_merge(
     row_fields: &[usize],
     sort_cols: &[usize],
 ) -> Result<CompactionResult, ArrowError> {
-    let config = aws_config::from_env().load().await;
+    let config = aws_config::defaults(BehaviorVersion::latest()).load().await;
     let region = config.region().ok_or(ArrowError::InvalidArgumentError(
         "Couldn't retrieve AWS region".into(),
     ))?;

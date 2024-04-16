@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ fn main() {
     println!("cargo:rerun-if-changed=src/include");
     println!("cargo:rerun-if-changed=src/quantiles.rs");
     println!("cargo:rerun-if-env-changed=RUST_SKETCH_DATASKETCH_URL");
+    println!("cargo:rerun-if-env-changed=RUST_SKETCH_DATASKETCH_TAG");
 
     let out_dir = std::env::var_os("OUT_DIR").expect("OUT_DIR environment variable not set!");
     let path = std::path::Path::new(&out_dir);
@@ -25,16 +26,29 @@ fn main() {
     let url = std::env::var("RUST_SKETCH_DATASKETCH_URL")
         .unwrap_or(String::from("https://github.com/apache/datasketches-cpp"));
 
+    // look to see if the repo tag has been overridden
+    let tag = std::env::var("RUST_SKETCH_DATASKETCH_TAG").unwrap_or(String::from("5.0.2"));
+
     // try to open repository in case it already exists
     let _ = match git2::Repository::open(path.join("datasketches-cpp")) {
         Ok(repo) => repo,
         Err(..) => {
             // otherwise clone its repository
-            println!("cargo:warning=Git cloned datasketches-cpp from {}", url);
-            match git2::Repository::clone(&url, path.join("datasketches-cpp")) {
+            println!(
+                "cargo:warning=Git cloned datasketches-cpp from {} tag {}",
+                url, tag
+            );
+            let repo = match git2::Repository::clone(&url, path.join("datasketches-cpp")) {
                 Ok(repo) => repo,
-                Err(e) => panic!("failed to clone from {}: {}", url, e),
+                Err(e) => panic!("failed to clone from {} tag {}: {}", url, tag, e),
+            };
+            {
+                let reference = repo.find_reference(&format!("refs/tags/{}", tag)).unwrap();
+                let ob = reference.peel_to_tag().unwrap().into_object();
+                repo.checkout_tree(&ob, None).unwrap();
+                repo.set_head_detached(ob.id()).unwrap();
             }
+            repo
         }
     };
 

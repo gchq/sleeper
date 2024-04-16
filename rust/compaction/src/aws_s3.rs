@@ -17,10 +17,10 @@
  * limitations under the License.
  */
 use std::{
-    any::Any,
     cell::RefCell,
     collections::{hash_map::Entry, HashMap},
     future::ready,
+    ops::Range,
     pin::Pin,
     sync::{Arc, Mutex},
 };
@@ -35,8 +35,8 @@ use object_store::{
     aws::{AmazonS3Builder, AwsCredential},
     local::LocalFileSystem,
     path::Path,
-    CredentialProvider, Error, GetOptions, GetResult, ListResult, MultipartId, ObjectMeta,
-    ObjectStore, Result,
+    CredentialProvider, Error, GetOptions, GetRange, GetResult, ListResult, MultipartId,
+    ObjectMeta, ObjectStore, PutOptions, PutResult, Result,
 };
 use tokio::io::AsyncWrite;
 use url::Url;
@@ -71,51 +71,24 @@ impl CredentialProvider for CredentialsFromConfigProvider {
 }
 
 /// Trait the provides ability to count the number of GET
-/// operations a store makes.
+/// operations a store makes and number of bytes read.
 pub trait CountingObjectStore: ObjectStore {
     /// Get the number of GET object requests this store as made.
-    fn get_count(&self) -> usize;
-}
+    fn get_count(&self) -> Option<usize>;
 
-/// Trait that provides ability to cast pointers to a trait object.
-pub trait AsObjectStore {
+    /// Get the number of bytes read in requests.
+    fn get_bytes_read(&self) -> Option<usize>;
+
+    /// Trait upcasting.
     fn as_object_store(self: Arc<Self>) -> Arc<dyn ObjectStore>;
 }
-
-/// Blanket trait allowing any type implementing [`ObjectStore`] to be
-/// converted to a trait object.
-impl<T: ObjectStore> AsObjectStore for T {
-    fn as_object_store(self: Arc<Self>) -> Arc<dyn ObjectStore> {
-        self
-    }
-}
-
-/// The [`AsAny`] trait provides casting from a shared pointer to
-/// a pointer to [`Any`].
-pub trait AsAny {
-    /// Convert a pointer to a specific type to a pointer
-    /// to [`Any`].
-    fn as_any(self: Arc<Self>) -> Arc<dyn Any>;
-}
-
-/// Blanket implementation for any static lifetime type,
-impl<T: 'static> AsAny for T {
-    fn as_any(self: Arc<Self>) -> Arc<dyn Any> {
-        self
-    }
-}
-
-pub trait CountAnyObjectStore: AsAny + CountingObjectStore + AsObjectStore {}
-
-/// Blanket implementation for any type of super traits.
-impl<T: AsAny + CountingObjectStore + AsObjectStore> CountAnyObjectStore for T {}
 
 /// Creates [`ObjectStore`] implementations from a URL and loads credentials into the S3
 /// object store.
 pub struct ObjectStoreFactory {
     creds: Option<Arc<CredentialsFromConfigProvider>>,
     region: Region,
-    store_map: RefCell<HashMap<String, Arc<dyn CountAnyObjectStore>>>,
+    store_map: RefCell<HashMap<String, Arc<dyn CountingObjectStore>>>,
 }
 
 impl ObjectStoreFactory {
@@ -139,7 +112,7 @@ impl ObjectStoreFactory {
     /// # Errors
     ///
     /// If no credentials have been provided, then trying to access S3 URLs will fail.
-    pub fn get_object_store(&self, src: &Url) -> Result<Arc<dyn CountAnyObjectStore>, ArrowError> {
+    pub fn get_object_store(&self, src: &Url) -> Result<Arc<dyn CountingObjectStore>, ArrowError> {
         let scheme = src.scheme();
         let mut borrow = self.store_map.borrow_mut();
         // Perform a single lookup into the cache map
@@ -163,7 +136,7 @@ impl ObjectStoreFactory {
     /// # Errors
     ///
     /// If no credentials have been provided, then trying to access S3 URLs will fail.
-    fn make_object_store(&self, src: &Url) -> Result<Arc<dyn CountAnyObjectStore>, ArrowError> {
+    fn make_object_store(&self, src: &Url) -> Result<Arc<dyn CountingObjectStore>, ArrowError> {
         match src.scheme() {
             "s3" => {
                 if let Some(creds) = &self.creds {
@@ -197,13 +170,15 @@ impl ObjectStoreFactory {
 pub struct LoggingObjectStore {
     store: Arc<dyn ObjectStore>,
     get_count: Arc<Mutex<usize>>,
+    get_bytes_read: Arc<Mutex<usize>>,
 }
 
 impl LoggingObjectStore {
-    pub fn new(inner: Arc<dyn ObjectStore>) -> LoggingObjectStore {
-        LoggingObjectStore {
+    pub fn new(inner: Arc<dyn ObjectStore>) -> Self {
+        Self {
             store: inner,
             get_count: Arc::new(Mutex::new(0)),
+            get_bytes_read: Arc::new(Mutex::new(0)),
         }
     }
 }
@@ -214,13 +189,30 @@ impl std::fmt::Display for LoggingObjectStore {
     }
 }
 
+/// Creates a [`Range`] of `usize` from a [`GetRange`].
+///
+/// If the range is bounded, the returned range has the same bounds,
+/// otherwise the returned range is from 0..N or N..[`usize::MAX`] as
+/// appropriate.
+pub fn to_range(range: &GetRange) -> Range<usize> {
+    match range {
+        GetRange::Bounded(r) => r.clone(),
+        GetRange::Offset(n) => *n..usize::MAX,
+        GetRange::Suffix(n) => 0..*n,
+    }
+}
+
 impl ObjectStore for LoggingObjectStore {
     fn put<'life0, 'life1, 'async_trait>(
         &'life0 self,
         location: &'life1 Path,
         bytes: Bytes,
     ) -> ::core::pin::Pin<
-        Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send + 'async_trait>,
+        Box<
+            dyn ::core::future::Future<Output = Result<PutResult>>
+                + ::core::marker::Send
+                + 'async_trait,
+        >,
     >
     where
         'life0: 'async_trait,
@@ -281,23 +273,16 @@ impl ObjectStore for LoggingObjectStore {
         'life1: 'async_trait,
         Self: 'async_trait,
     {
-        info!(
-            "GET request byte range {} to {} = {} bytes",
-            options
-                .range
-                .as_ref()
-                .unwrap()
-                .start
-                .to_formatted_string(&Locale::en),
-            options
-                .range
-                .as_ref()
-                .unwrap()
-                .end
-                .to_formatted_string(&Locale::en),
-            (options.range.as_ref().unwrap().end - options.range.as_ref().unwrap().start)
-                .to_formatted_string(&Locale::en)
-        );
+        if let Some(ref get_range) = options.range {
+            let range = to_range(&get_range);
+            info!(
+                "GET request byte range {} to {} = {} bytes",
+                range.start.to_formatted_string(&Locale::en),
+                range.end.to_formatted_string(&Locale::en),
+                range.len().to_formatted_string(&Locale::en)
+            );
+            *self.get_bytes_read.lock().unwrap() += range.len();
+        }
         *self.get_count.lock().unwrap() += 1;
         self.store.get_opts(location, options)
     }
@@ -334,22 +319,7 @@ impl ObjectStore for LoggingObjectStore {
     {
         self.store.delete(location)
     }
-
-    fn list<'life0, 'life1, 'async_trait>(
-        &'life0 self,
-        prefix: Option<&'life1 Path>,
-    ) -> ::core::pin::Pin<
-        Box<
-            dyn ::core::future::Future<Output = Result<BoxStream<'_, Result<ObjectMeta>>>>
-                + ::core::marker::Send
-                + 'async_trait,
-        >,
-    >
-    where
-        'life0: 'async_trait,
-        'life1: 'async_trait,
-        Self: 'async_trait,
-    {
+    fn list(&self, prefix: Option<&Path>) -> BoxStream<'_, Result<ObjectMeta>> {
         info!("LIST request {:?}", prefix);
         self.store.list(prefix)
     }
@@ -403,10 +373,31 @@ impl ObjectStore for LoggingObjectStore {
     {
         self.store.copy_if_not_exists(from, to)
     }
+
+    fn put_opts<'life0, 'life1, 'async_trait>(
+        &'life0 self,
+        location: &'life1 Path,
+        bytes: Bytes,
+        opts: PutOptions,
+    ) -> Pin<Box<dyn Future<Output = Result<PutResult>> + Send + 'async_trait>>
+    where
+        Self: 'async_trait,
+        'life0: 'async_trait,
+        'life1: 'async_trait,
+    {
+        self.store.put_opts(location, bytes, opts)
+    }
 }
 
 impl CountingObjectStore for LoggingObjectStore {
-    fn get_count(&self) -> usize {
-        *self.get_count.lock().unwrap()
+    fn get_count(&self) -> Option<usize> {
+        Some(*self.get_count.lock().unwrap())
+    }
+    fn get_bytes_read(&self) -> Option<usize> {
+        Some(*self.get_bytes_read.lock().unwrap())
+    }
+
+    fn as_object_store(self: Arc<Self>) -> Arc<dyn ObjectStore> {
+        self
     }
 }

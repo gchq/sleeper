@@ -344,8 +344,7 @@ where
     info!("Writing to {}", output_file_path);
 
     // Create Parquet writer
-    let mut writer =
-        AsyncArrowWriter::try_new(store_writer, schema.clone(), 1024 * 1024, Some(props))?;
+    let mut writer = AsyncArrowWriter::try_new(store_writer, schema.clone(), Some(props))?;
 
     // Data sketches quantiles sketches
     let mut sketches = make_sketches_for_schema(schema, &row_key_fields);
@@ -398,7 +397,17 @@ where
     let sketch_path = create_sketch_path(output_file_path);
     serialise_sketches(store_factory, &sketch_path, &sketches)?;
 
-    info!("Object store made {} GET requests", store.get_count());
+    info!(
+        "Object store made {} GET requests and read {} bytes",
+        store
+            .get_count()
+            .unwrap_or_default()
+            .to_formatted_string(&Locale::en),
+        store
+            .get_bytes_read()
+            .unwrap_or_default()
+            .to_formatted_string(&Locale::en),
+    );
 
     Ok(CompactionResult {
         rows_read: rows_written,
