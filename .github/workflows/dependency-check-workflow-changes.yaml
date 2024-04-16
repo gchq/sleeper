@@ -1,0 +1,12 @@
+name: Dependency Check Workflow Changes
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/dependency-check-workflow-changes.yaml'
+      - '.github/workflows/dependency-check.yaml'
+
+jobs:
+  build-cli:
+    uses: ./.github/workflows/dependency-check.yaml
+    with:
+      failOnCacheMiss: false
