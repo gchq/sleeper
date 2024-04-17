@@ -123,7 +123,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
     void shouldStoreFileUpdateTimeInLogEntry() throws Exception {
         // Given
         Instant updateTime = Instant.parse("2024-04-09T14:19:01Z");
-        StateStore stateStore = new DynamoDBTransactionLogStateStore(instanceProperties, tableProperties, dynamoDBClient);
+        StateStore stateStore = new DynamoDBTransactionLogStateStore(instanceProperties, tableProperties, dynamoDBClient, s3Client);
         stateStore.fixFileUpdateTime(updateTime);
         PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
         stateStore.initialise(partitions.getAllPartitions());
@@ -142,7 +142,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
     void shouldStorePartitionUpdateTimeInLogEntry() throws Exception {
         // Given
         Instant updateTime = Instant.parse("2024-04-09T14:19:01Z");
-        StateStore stateStore = new DynamoDBTransactionLogStateStore(instanceProperties, tableProperties, dynamoDBClient);
+        StateStore stateStore = new DynamoDBTransactionLogStateStore(instanceProperties, tableProperties, dynamoDBClient, s3Client);
         stateStore.fixPartitionUpdateTime(updateTime);
         stateStore.initialise();
 
@@ -162,12 +162,12 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
     private TransactionLogStore fileLogStore() {
         return new DynamoDBTransactionLogStore(
                 instanceProperties.get(FILE_TRANSACTION_LOG_TABLENAME),
-                tableProperties, dynamoDBClient);
+                tableProperties, dynamoDBClient, s3Client);
     }
 
     private TransactionLogStore partitionLogStore() {
         return new DynamoDBTransactionLogStore(
                 instanceProperties.get(PARTITION_TRANSACTION_LOG_TABLENAME),
-                tableProperties, dynamoDBClient);
+                tableProperties, dynamoDBClient, s3Client);
     }
 }

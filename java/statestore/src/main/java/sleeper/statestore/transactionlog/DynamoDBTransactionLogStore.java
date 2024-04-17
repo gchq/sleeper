@@ -21,6 +21,7 @@ import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
+import com.amazonaws.services.s3.AmazonS3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,13 +57,15 @@ class DynamoDBTransactionLogStore implements TransactionLogStore {
     private final String logTableName;
     private final String sleeperTableId;
     private final AmazonDynamoDB dynamo;
+    private final AmazonS3 s3;
     private final TransactionSerDe serDe;
 
     DynamoDBTransactionLogStore(
-            String logTableName, TableProperties tableProperties, AmazonDynamoDB dynamo) {
+            String logTableName, TableProperties tableProperties, AmazonDynamoDB dynamo, AmazonS3 s3) {
         this.logTableName = logTableName;
         this.sleeperTableId = tableProperties.get(TableProperty.TABLE_ID);
         this.dynamo = dynamo;
+        this.s3 = s3;
         this.serDe = new TransactionSerDe(tableProperties.getSchema());
     }
 

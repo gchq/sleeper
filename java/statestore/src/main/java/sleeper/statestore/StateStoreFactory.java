@@ -16,6 +16,7 @@
 package sleeper.statestore;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.s3.AmazonS3;
 import org.apache.hadoop.conf.Configuration;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -29,11 +30,17 @@ import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CL
 
 public class StateStoreFactory {
     private final AmazonDynamoDB dynamoDB;
+    private final AmazonS3 s3;
     private final InstanceProperties instanceProperties;
     private final Configuration configuration;
 
     public StateStoreFactory(AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties, Configuration configuration) {
+        this(dynamoDB, null, instanceProperties, configuration);
+    }
+
+    public StateStoreFactory(AmazonDynamoDB dynamoDB, AmazonS3 s3, InstanceProperties instanceProperties, Configuration configuration) {
         this.dynamoDB = dynamoDB;
+        this.s3 = s3;
         this.instanceProperties = instanceProperties;
         this.configuration = configuration;
     }
@@ -47,7 +54,7 @@ public class StateStoreFactory {
             return new S3StateStore(instanceProperties, tableProperties, dynamoDB, configuration);
         }
         if (stateStoreClassName.equals(DynamoDBTransactionLogStateStore.class.getName())) {
-            return new DynamoDBTransactionLogStateStore(instanceProperties, tableProperties, dynamoDB);
+            return new DynamoDBTransactionLogStateStore(instanceProperties, tableProperties, dynamoDB, s3);
         }
         throw new RuntimeException("Unknown StateStore class: " + stateStoreClassName);
     }
