@@ -22,9 +22,8 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
 
 /**
- * Given a {@link Range}, this class can determine if it is in canonical form,
- * i.e. the minimum is inclusive and the maximum is exclusive, and if not it
- * can convert it into canonical form.
+ * Given a range, determine if it is in canonical form, and convert it if not. A range is in canonincal form when the
+ * minimum is inclusive and the maximum is exclusive.
  */
 public class RangeCanonicaliser {
 

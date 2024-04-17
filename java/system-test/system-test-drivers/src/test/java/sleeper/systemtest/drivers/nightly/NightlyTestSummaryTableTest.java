@@ -52,9 +52,10 @@ class NightlyTestSummaryTableTest {
                     "{\"executions\":[{" +
                             "\"startTime\":\"2023-05-03T15:15:00Z\"," +
                             "\"tests\": [{\"name\":\"bulkImportPerformance\", \"exitCode\":0}]" +
-                            "}]}").add(
-                    NightlyTestTimestamp.from(Instant.parse("2023-05-04T15:42:00Z")),
-                    NightlyTestOutputTestHelper.outputWithStatusCodeByTest(Map.of("bulkImportPerformance", 1)));
+                            "}]}")
+                    .add(
+                            NightlyTestTimestamp.from(Instant.parse("2023-05-04T15:42:00Z")),
+                            NightlyTestOutputTestHelper.outputWithStatusCodeByTest(Map.of("bulkImportPerformance", 1)));
 
             // When / Then
             assertThatJson(summary.toJson())

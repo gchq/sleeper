@@ -77,6 +77,8 @@ public class DashboardStack extends NestedStack {
         tableNames = Utils.getAllTableProperties(instanceProperties, this)
                 .map(tableProperties -> tableProperties.get(TableProperty.TABLE_NAME))
                 .sorted()
+                // There's a limit of 500 widgets in a dashboard, including the widgets not associated with a table
+                .limit(50)
                 .collect(Collectors.toList());
         metricsNamespace = instanceProperties.get(METRICS_NAMESPACE);
         int timeWindowInMinutes = instanceProperties.getInt(DASHBOARD_TIME_WINDOW_MINUTES);
@@ -120,8 +122,7 @@ public class DashboardStack extends NestedStack {
                             .title("Errors")
                             .metrics(errorMetrics)
                             .width(24)
-                            .build()
-            );
+                            .build());
         }
     }
 
@@ -185,12 +186,10 @@ public class DashboardStack extends NestedStack {
                                                         .dimensionsMap(createDimensionMap(instanceId, tableNames.get(i)))
                                                         .build()))
                                                 .build())
-                                        .collect(Collectors.toList())
-                        )
+                                        .collect(Collectors.toList()))
                         .leftYAxis(YAxisProps.builder().min(0).build())
                         .width(6)
-                        .build()
-        );
+                        .build());
     }
 
     private static Map<String, String> createDimensionMap(String instanceId, String tableName) {
@@ -259,8 +258,7 @@ public class DashboardStack extends NestedStack {
                                             .period(window)
                                             .statistic("Average")
                                             .dimensionsMap(dimensions)
-                                            .build()
-                            ))
+                                            .build()))
                             .leftYAxis(YAxisProps.builder().min(0).build())
                             .width(6)
                             .build(),
@@ -277,8 +275,7 @@ public class DashboardStack extends NestedStack {
                                     .build()))
                             .leftYAxis(YAxisProps.builder().min(0).build())
                             .width(6)
-                            .build()
-            );
+                            .build());
         });
     }
 
@@ -297,24 +294,21 @@ public class DashboardStack extends NestedStack {
                             .unit(Unit.COUNT)
                             .period(window)
                             .statistic("Sum")
-                            .build())
-            );
+                            .build()));
             jobsWaitingMetrics.add(
                     compactionStack.getCompactionJobsQueue().metricApproximateNumberOfMessagesVisible(MetricOptions.builder()
                             .label("Compaction")
                             .unit(Unit.COUNT)
                             .period(window)
                             .statistic("Average")
-                            .build())
-            );
+                            .build()));
             oldestJobMetrics.add(
                     compactionStack.getCompactionJobsQueue().metricApproximateAgeOfOldestMessage(MetricOptions.builder()
                             .label("Compaction")
                             .unit(Unit.COUNT)
                             .period(window)
                             .statistic("Maximum")
-                            .build())
-            );
+                            .build()));
         }
 
         if (null != partitionSplittingStack) {
@@ -324,24 +318,21 @@ public class DashboardStack extends NestedStack {
                             .unit(Unit.COUNT)
                             .period(window)
                             .statistic("Sum")
-                            .build())
-            );
+                            .build()));
             jobsWaitingMetrics.add(
                     partitionSplittingStack.getJobQueue().metricApproximateNumberOfMessagesVisible(MetricOptions.builder()
                             .label("Partition Splits")
                             .unit(Unit.COUNT)
                             .period(window)
                             .statistic("Average")
-                            .build())
-            );
+                            .build()));
             oldestJobMetrics.add(
                     partitionSplittingStack.getJobQueue().metricApproximateAgeOfOldestMessage(MetricOptions.builder()
                             .label("Partition Splits")
                             .unit(Unit.COUNT)
                             .period(window)
                             .statistic("Maximum")
-                            .build())
-            );
+                            .build()));
         }
 
         dashboard.addWidgets(
@@ -367,7 +358,6 @@ public class DashboardStack extends NestedStack {
                         .title("AgeOfOldestWaitingJob")
                         .left(oldestJobMetrics)
                         .width(6)
-                        .build()
-        );
+                        .build());
     }
 }

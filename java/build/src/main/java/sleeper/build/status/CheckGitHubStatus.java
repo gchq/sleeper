@@ -58,8 +58,8 @@ public class CheckGitHubStatus {
                 fetchStatusForEachChunk(chunk -> Optional.ofNullable(lastRun)),
                 lastRun != null ? Collections.emptyList()
                         : chunks.stream()
-                        .map(ProjectChunk::getId)
-                        .collect(Collectors.toList()));
+                                .map(ProjectChunk::getId)
+                                .collect(Collectors.toList()));
     }
 
     private ChunkStatuses fetchStatusForEachChunk(

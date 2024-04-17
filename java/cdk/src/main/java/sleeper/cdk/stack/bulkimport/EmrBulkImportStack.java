@@ -20,6 +20,7 @@ import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.IFunction;
+import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
@@ -27,7 +28,6 @@ import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.stack.CoreStacks;
 import sleeper.cdk.stack.IngestStatusStoreResources;
-import sleeper.cdk.stack.TopicStack;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.HashMap;
@@ -37,9 +37,8 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
 
 /**
- * An {@link EmrBulkImportStack} creates an SQS queue that bulk import jobs can
- * be sent to. A message arriving on this queue triggers a lambda. That lambda
- * creates an EMR cluster that executes the bulk import job and then terminates.
+ * Deploys resources to perform bulk import jobs on EMR, with a cluster created per job. A message arriving on a queue
+ * triggers a lambda. That lambda creates an EMR cluster that executes the bulk import job and then terminates.
  */
 public class EmrBulkImportStack extends NestedStack {
     private final Queue bulkImportJobQueue;
@@ -49,9 +48,9 @@ public class EmrBulkImportStack extends NestedStack {
             String id,
             InstanceProperties instanceProperties,
             BuiltJars jars,
+            Topic errorsTopic,
             BulkImportBucketStack importBucketStack,
             CommonEmrBulkImportStack commonEmrStack,
-            TopicStack errorsTopicStack,
             CoreStacks coreStacks,
             IngestStatusStoreResources statusStoreResources) {
         super(scope, id);
@@ -60,7 +59,7 @@ public class EmrBulkImportStack extends NestedStack {
                 this, "NonPersistentEMR", instanceProperties, coreStacks, statusStoreResources);
         bulkImportJobQueue = commonHelper.createJobQueue(
                 BULK_IMPORT_EMR_JOB_QUEUE_URL, BULK_IMPORT_EMR_JOB_QUEUE_ARN,
-                errorsTopicStack.getTopic());
+                errorsTopic);
         IFunction jobStarter = commonHelper.createJobStarterFunction(
                 "NonPersistentEMR", bulkImportJobQueue, jars, importBucketStack.getImportBucket(), commonEmrStack);
 

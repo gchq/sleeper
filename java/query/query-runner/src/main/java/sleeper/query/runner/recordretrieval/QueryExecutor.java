@@ -48,7 +48,8 @@ import static sleeper.configuration.properties.table.TableProperty.QUERY_PROCESS
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
 /**
- *
+ * Runs queries against a Sleeper table by querying the state store and data files directly. An instance of this class
+ * cannot be used concurrently in multiple threads, due to how partitions are cached.
  */
 public class QueryExecutor {
     private static final Logger LOGGER = LoggerFactory.getLogger(QueryExecutor.class);
@@ -62,21 +63,17 @@ public class QueryExecutor {
     private Map<String, List<String>> partitionToFiles;
     private Instant nextInitialiseTime;
 
-    public QueryExecutor(ObjectFactory objectFactory,
-                         TableProperties tableProperties,
-                         StateStore stateStore,
-                         Configuration configuration,
-                         ExecutorService executorService) {
+    public QueryExecutor(
+            ObjectFactory objectFactory, TableProperties tableProperties, StateStore stateStore,
+            Configuration configuration, ExecutorService executorService) {
         this(objectFactory, stateStore, tableProperties,
                 new LeafPartitionRecordRetrieverImpl(executorService, configuration),
                 Instant.now());
     }
 
-    public QueryExecutor(ObjectFactory objectFactory,
-                         StateStore stateStore,
-                         TableProperties tableProperties,
-                         LeafPartitionRecordRetriever recordRetriever,
-                         Instant timeNow) {
+    public QueryExecutor(
+            ObjectFactory objectFactory, StateStore stateStore, TableProperties tableProperties,
+            LeafPartitionRecordRetriever recordRetriever, Instant timeNow) {
         this.objectFactory = objectFactory;
         this.stateStore = stateStore;
         this.tableProperties = tableProperties;
@@ -139,8 +136,8 @@ public class QueryExecutor {
      * could be high. Using suppliers ensures that only files for a single
      * leaf partition are opened at a time.
      *
-     * @param query the query
-     * @return An iterator containing the relevant records
+     * @param  query          the query
+     * @return                An iterator containing the relevant records
      * @throws QueryException if it errors.
      */
     public CloseableIterator<Record> execute(Query query) throws QueryException {
@@ -154,13 +151,13 @@ public class QueryExecutor {
     }
 
     /**
-     * Splits up a {@link Query} into multiple {@link LeafPartitionQuery}s using the
-     * {@code getRelevantLeafPartitions()} method. For each leaf partition, it
+     * Splits up a query into a sub-query per relevant leaf partition. Uses the
+     * {@link #getRelevantLeafPartitions} method. For each leaf partition, it
      * finds the parent partitions in the tree and adds any files still belonging
      * to the parent to the sub query.
      *
-     * @param query the query to be split up
-     * @return A list of {@link LeafPartitionQuery}s
+     * @param  query the query to be split up
+     * @return       A list of {@link LeafPartitionQuery}s
      */
     public List<LeafPartitionQuery> splitIntoLeafPartitionQueries(Query query) {
         // Get mapping from leaf partitions to ranges from the query that overlap
@@ -223,8 +220,8 @@ public class QueryExecutor {
      * called by the default implementation of {@code getPartitionFiles()} If
      * you overwrite getPartitionFiles() then you may make this method a no-op.
      *
-     * @param query the query
-     * @return the relevant leaf partitions
+     * @param  query the query
+     * @return       the relevant leaf partitions
      */
     private Map<Partition, List<Region>> getRelevantLeafPartitions(Query query) {
         Map<Partition, List<Region>> leafPartitionToOverlappingRegions = new HashMap<>();

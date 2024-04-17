@@ -34,7 +34,7 @@ import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FI
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 /**
- * A simple {@link sleeper.compaction.strategy.LeafPartitionCompactionStrategy} that lists the active files for a
+ * A simple leaf partition compaction strategy to compact all files over the batch size. Lists the active files for a
  * partition in increasing order of the number of records they contain, and iterates through this list creating
  * compaction jobs with at most compactionFilesBatchSize files in each.
  */

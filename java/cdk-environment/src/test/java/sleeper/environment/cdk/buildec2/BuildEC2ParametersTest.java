@@ -30,7 +30,7 @@ public class BuildEC2ParametersTest {
     @Test
     public void fillGitClone() {
         assertThat(BuildEC2Parameters.from(AppContext.of(
-                        BRANCH.value("feature/test"), FORK.value("test-fork"), REPOSITORY.value("test-project")))
+                BRANCH.value("feature/test"), FORK.value("test-fork"), REPOSITORY.value("test-project")))
                 .fillUserDataTemplate("git clone -b ${branch} https://github.com/${fork}/${repository}.git"))
                 .isEqualTo("git clone -b feature/test https://github.com/test-fork/test-project.git");
     }
@@ -56,7 +56,7 @@ public class BuildEC2ParametersTest {
         assertThat(BuildEC2Parameters.from(AppContext.empty()))
                 .usingRecursiveComparison()
                 .isEqualTo(BuildEC2Parameters.from(AppContext.of(
-                        REPOSITORY.value("sleeper"), FORK.value("gchq"), BRANCH.value("main"))));
+                        REPOSITORY.value("sleeper"), FORK.value("gchq"), BRANCH.value("develop"))));
     }
 
 }

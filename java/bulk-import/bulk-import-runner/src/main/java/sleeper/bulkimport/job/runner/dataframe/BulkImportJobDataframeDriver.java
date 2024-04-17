@@ -28,7 +28,6 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.bulkimport.job.runner.BulkImportJobDriver;
 import sleeper.bulkimport.job.runner.BulkImportJobInput;
-import sleeper.bulkimport.job.runner.BulkImportJobRunner;
 import sleeper.bulkimport.job.runner.SparkFileReferenceRow;
 import sleeper.bulkimport.job.runner.StructTypeFactory;
 import sleeper.core.partition.Partition;
@@ -40,9 +39,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * This class runs {@link BulkImportJobDriver} with a {@link BulkImportJobRunner} which
- * uses Spark's Dataframe API to efficiently sort and write out the data split by
- * Sleeoer partition.
+ * Runs a bulk import job using Spark's Dataframe API. Sorts and writes out the data split by Sleeper partition.
  */
 public class BulkImportJobDataframeDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportJobDataframeDriver.class);
@@ -70,8 +67,8 @@ public class BulkImportJobDataframeDriver {
                 RowEncoder.apply(schemaWithPartitionField));
 
         Column[] sortColumns = Lists.newArrayList(
-                        Lists.newArrayList(PARTITION_FIELD_NAME),
-                        schema.getRowKeyFieldNames(), schema.getSortKeyFieldNames())
+                Lists.newArrayList(PARTITION_FIELD_NAME),
+                schema.getRowKeyFieldNames(), schema.getSortKeyFieldNames())
                 .stream()
                 .flatMap(List::stream)
                 .map(Column::new)

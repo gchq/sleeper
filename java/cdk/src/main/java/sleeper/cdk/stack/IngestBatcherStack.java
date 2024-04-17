@@ -29,6 +29,7 @@ import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
+import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.IQueue;
 import software.amazon.awscdk.services.sqs.Queue;
@@ -49,6 +50,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import static sleeper.cdk.Utils.createAlarmForDlq;
 import static sleeper.cdk.Utils.createLambdaLogGroup;
 import static sleeper.cdk.Utils.removalPolicy;
 import static sleeper.cdk.Utils.shouldDeployPaused;
@@ -76,6 +78,7 @@ public class IngestBatcherStack extends NestedStack {
             String id,
             InstanceProperties instanceProperties,
             BuiltJars jars,
+            Topic topic,
             CoreStacks coreStacks,
             IngestStacks ingestStacks) {
         super(scope, id);
@@ -100,6 +103,9 @@ public class IngestBatcherStack extends NestedStack {
         instanceProperties.set(INGEST_BATCHER_SUBMIT_DLQ_URL, submitDLQ.getQueueUrl());
         instanceProperties.set(INGEST_BATCHER_SUBMIT_DLQ_ARN, submitDLQ.getQueueArn());
 
+        createAlarmForDlq(this, "IngestBatcherAlarm",
+                "Alarms if there are any messages on the dead letter queue for the ingest batcher queue",
+                submitDLQ, topic);
         // DynamoDB table to track submitted files
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
         Table ingestRequestsTable = Table.Builder
@@ -165,6 +171,9 @@ public class IngestBatcherStack extends NestedStack {
         ingestRequestsTable.grantReadWriteData(jobCreatorLambda);
         coreStacks.grantReadTablesConfig(jobCreatorLambda);
         ingestStacks.ingestQueues().forEach(queue -> queue.grantSendMessages(jobCreatorLambda));
+        submitQueue.grantSendMessages(coreStacks.getIngestPolicy());
+        ingestRequestsTable.grantReadData(coreStacks.getIngestPolicy());
+        coreStacks.grantInvokeScheduled(jobCreatorLambda);
 
         // CloudWatch rule to trigger the batcher to create jobs from file ingest requests
         Rule rule = Rule.Builder

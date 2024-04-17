@@ -108,8 +108,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
                 tableName,
                 new Constraints(predicate),
                 getTableResponse.getSchema(),
-                getTableResponse.getPartitionColumns()
-        );
+                getTableResponse.getPartitionColumns());
 
         GetTableLayoutResponse getTableLayoutResponse = sleeperMetadataHandler.doGetTableLayout(blockAllocator, request);
 
@@ -156,8 +155,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
                 tableName,
                 new Constraints(predicate),
                 getTableResponse.getSchema(),
-                getTableResponse.getPartitionColumns()
-        );
+                getTableResponse.getPartitionColumns());
 
         GetTableLayoutResponse getTableLayoutResponse = sleeperMetadataHandler.doGetTableLayout(blockAllocator, request);
 
@@ -211,8 +209,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
                 tableName,
                 new Constraints(predicate),
                 getTableResponse.getSchema(),
-                getTableResponse.getPartitionColumns()
-        );
+                getTableResponse.getPartitionColumns());
 
         GetTableLayoutResponse getTableLayoutResponse = sleeperMetadataHandler.doGetTableLayout(new BlockAllocatorImpl(),
                 request);
@@ -259,8 +256,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
                 tableName,
                 new Constraints(predicate),
                 getTableResponse.getSchema(),
-                getTableResponse.getPartitionColumns()
-        );
+                getTableResponse.getPartitionColumns());
 
         GetTableLayoutResponse getTableLayoutResponse = sleeperMetadataHandler.doGetTableLayout(new BlockAllocatorImpl(),
                 request);
@@ -308,8 +304,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
                 tableName,
                 new Constraints(predicate),
                 getTableResponse.getSchema(),
-                getTableResponse.getPartitionColumns()
-        );
+                getTableResponse.getPartitionColumns());
 
         GetTableLayoutResponse getTableLayoutResponse = sleeperMetadataHandler.doGetTableLayout(new BlockAllocatorImpl(),
                 request);
@@ -384,8 +379,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
                 tableName,
                 new Constraints(predicate),
                 getTableResponse.getSchema(),
-                getTableResponse.getPartitionColumns()
-        );
+                getTableResponse.getPartitionColumns());
 
         GetTableLayoutResponse getTableLayoutResponse = sleeperMetadataHandler.doGetTableLayout(new BlockAllocatorImpl(),
                 request);
@@ -518,8 +512,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
                 "abc", "cde",
                 tableName,
                 queryConstraints, getTableResponse.getSchema(),
-                getTableResponse.getPartitionColumns()
-        ));
+                getTableResponse.getPartitionColumns()));
 
         // Then
         Block partitions = getTableLayoutResponse.getPartitions();

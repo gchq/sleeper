@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * A wrapper for a {@link List} of {@link Object}s used as a key.
+ * Wraps a list of values for a record's key fields.
  */
 public class Key {
     private List<Object> key;

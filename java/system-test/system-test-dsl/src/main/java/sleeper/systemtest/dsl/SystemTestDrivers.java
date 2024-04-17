@@ -25,6 +25,7 @@ import sleeper.systemtest.dsl.ingest.IngestByAnyQueueDriver;
 import sleeper.systemtest.dsl.ingest.IngestByQueue;
 import sleeper.systemtest.dsl.ingest.IngestLocalFileByAnyQueueDriver;
 import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
+import sleeper.systemtest.dsl.instance.AssumeAdminRoleDriver;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
 import sleeper.systemtest.dsl.instance.SleeperTablesDriver;
@@ -45,10 +46,8 @@ import sleeper.systemtest.dsl.util.PurgeQueueDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
 /**
- * This is the interface that {@link SleeperSystemTest} will use to communicate with instances of Sleeper and the
- * deployed environment.
- * <p>
- * Where {@link SleeperSystemTest} defines the language for interacting with Sleeper, the implementation is defined
+ * The interface for the system test DSL to interact with Sleeper and the deployed environment. Where
+ * {@link SleeperSystemTest} defines the language for interacting with Sleeper, the implementation is defined
  * by drivers that can be accessed through an implementation of this interface.
  */
 public interface SystemTestDrivers {
@@ -56,6 +55,8 @@ public interface SystemTestDrivers {
     SystemTestDeploymentDriver systemTestDeployment(SystemTestParameters parameters);
 
     SleeperInstanceDriver instance(SystemTestParameters parameters);
+
+    AssumeAdminRoleDriver assumeAdminRole();
 
     SleeperTablesDriver tables(SystemTestParameters parameters);
 
@@ -82,6 +83,8 @@ public interface SystemTestDrivers {
     QueryAllTablesDriver queryByQueue(SystemTestContext context);
 
     QueryAllTablesDriver directQuery(SystemTestContext context);
+
+    QueryAllTablesDriver queryByWebSocket(SystemTestContext context);
 
     ClearQueryResultsDriver clearQueryResults(SystemTestContext context);
 

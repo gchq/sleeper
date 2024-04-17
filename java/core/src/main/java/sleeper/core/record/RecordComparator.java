@@ -22,7 +22,7 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * Compares {@link Record}s by row keys then sort keys.
+ * Compares records by row keys then sort keys.
  */
 public class RecordComparator implements Comparator<Record> {
     private final List<String> rowKeyNames;

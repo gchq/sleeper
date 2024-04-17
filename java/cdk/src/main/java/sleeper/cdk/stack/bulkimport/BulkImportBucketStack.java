@@ -23,6 +23,7 @@ import software.amazon.awscdk.services.s3.BucketEncryption;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
+import sleeper.cdk.stack.CoreStacks;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.Locale;
@@ -33,9 +34,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.ID;
 public class BulkImportBucketStack extends NestedStack {
     private final IBucket importBucket;
 
-    public BulkImportBucketStack(Construct scope,
-                                 String id,
-                                 InstanceProperties instanceProperties) {
+    public BulkImportBucketStack(Construct scope, String id, InstanceProperties instanceProperties, CoreStacks coreStacks) {
         super(scope, id);
         importBucket = Bucket.Builder.create(this, "BulkImportBucket")
                 .bucketName(String.join("-", "sleeper", instanceProperties.get(ID),
@@ -46,6 +45,7 @@ public class BulkImportBucketStack extends NestedStack {
                 .removalPolicy(RemovalPolicy.DESTROY)
                 .encryption(BucketEncryption.S3_MANAGED)
                 .build();
+        importBucket.grantWrite(coreStacks.getIngestPolicy());
         instanceProperties.set(BULK_IMPORT_BUCKET, importBucket.getBucketName());
     }
 

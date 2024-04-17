@@ -54,8 +54,7 @@ public class QuerySerDeTest {
     private static Stream<Arguments> alternateTestParameters() {
         return Stream.of(
                 Arguments.of(Named.of("Create QuerySerDe using Map", false)),
-                Arguments.of(Named.of("Create QuerySerDe using TablePropertiesProvider", true))
-        );
+                Arguments.of(Named.of("Create QuerySerDe using TablePropertiesProvider", true)));
     }
 
     private final Field field = new Field("key", new IntType());

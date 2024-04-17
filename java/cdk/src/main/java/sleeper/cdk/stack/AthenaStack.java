@@ -58,8 +58,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
 public class AthenaStack extends NestedStack {
     public AthenaStack(
-            Construct scope, String id, InstanceProperties instanceProperties,
-            BuiltJars jars, CoreStacks coreStacks) {
+            Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars, CoreStacks coreStacks) {
         super(scope, id);
 
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());

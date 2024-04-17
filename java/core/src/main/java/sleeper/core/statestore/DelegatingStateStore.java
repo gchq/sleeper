@@ -129,22 +129,27 @@ public class DelegatingStateStore implements StateStore {
     }
 
     @Override
-    public boolean hasNoFiles() {
+    public boolean hasNoFiles() throws StateStoreException {
         return fileReferenceStore.hasNoFiles();
     }
 
     @Override
-    public void clearFileData() {
+    public void clearFileData() throws StateStoreException {
         fileReferenceStore.clearFileData();
     }
 
     @Override
-    public void clearPartitionData() {
+    public void clearPartitionData() throws StateStoreException {
         partitionStore.clearPartitionData();
     }
 
     @Override
-    public void fixTime(Instant now) {
-        fileReferenceStore.fixTime(now);
+    public void fixFileUpdateTime(Instant now) {
+        fileReferenceStore.fixFileUpdateTime(now);
+    }
+
+    @Override
+    public void fixPartitionUpdateTime(Instant now) {
+        partitionStore.fixPartitionUpdateTime(now);
     }
 }

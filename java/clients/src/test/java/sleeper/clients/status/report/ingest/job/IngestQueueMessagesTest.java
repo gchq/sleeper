@@ -22,8 +22,8 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.clients.testutil.ToStringPrintStream;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.job.common.InMemoryQueueMessageCounts;
-import sleeper.job.common.QueueMessageCount;
+import sleeper.task.common.InMemoryQueueMessageCounts;
+import sleeper.task.common.QueueMessageCount;
 
 import java.util.Map;
 
@@ -34,7 +34,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
-import static sleeper.job.common.QueueMessageCount.approximateNumberVisibleAndNotVisible;
+import static sleeper.task.common.QueueMessageCount.approximateNumberVisibleAndNotVisible;
 
 class IngestQueueMessagesTest {
     @Test

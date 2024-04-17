@@ -17,11 +17,6 @@ package sleeper.cdk.stack.bulkimport;
 
 import com.google.common.collect.Lists;
 import software.amazon.awscdk.Duration;
-import software.amazon.awscdk.services.cloudwatch.ComparisonOperator;
-import software.amazon.awscdk.services.cloudwatch.CreateAlarmOptions;
-import software.amazon.awscdk.services.cloudwatch.MetricOptions;
-import software.amazon.awscdk.services.cloudwatch.TreatMissingData;
-import software.amazon.awscdk.services.cloudwatch.actions.SnsAction;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.PolicyStatement;
@@ -29,7 +24,7 @@ import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
-import software.amazon.awscdk.services.sns.ITopic;
+import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
@@ -49,6 +44,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static sleeper.cdk.Utils.createAlarmForDlq;
 import static sleeper.cdk.Utils.createLambdaLogGroup;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
@@ -74,32 +70,20 @@ public class CommonEmrBulkImportHelper {
     // Queue for messages to trigger jobs - note that each concrete substack
     // will have its own queue. The shortId is used to ensure the names of
     // the queues are different.
-    public Queue createJobQueue(CdkDefinedInstanceProperty jobQueueUrl, CdkDefinedInstanceProperty jobQueueArn, ITopic errorsTopic) {
+    public Queue createJobQueue(CdkDefinedInstanceProperty jobQueueUrl, CdkDefinedInstanceProperty jobQueueArn, Topic errorsTopic) {
         String instanceId = instanceProperties.get(ID);
         Queue queueForDLs = Queue.Builder
                 .create(scope, "BulkImport" + shortId + "JobDeadLetterQueue")
                 .queueName(String.join("-", "sleeper", instanceId, "BulkImport" + shortId + "DLQ"))
                 .build();
-
         DeadLetterQueue deadLetterQueue = DeadLetterQueue.builder()
                 .maxReceiveCount(1)
                 .queue(queueForDLs)
                 .build();
 
-        queueForDLs.metricApproximateNumberOfMessagesVisible()
-                .with(MetricOptions.builder()
-                        .period(Duration.seconds(60))
-                        .statistic("Sum")
-                        .build())
-                .createAlarm(scope, "BulkImport" + shortId + "UndeliveredJobsAlarm", CreateAlarmOptions.builder()
-                        .alarmDescription("Alarms if there are any messages that have failed validation or failed to start a " + shortId + " EMR Spark job")
-                        .evaluationPeriods(1)
-                        .comparisonOperator(ComparisonOperator.GREATER_THAN_THRESHOLD)
-                        .threshold(0)
-                        .datapointsToAlarm(1)
-                        .treatMissingData(TreatMissingData.IGNORE)
-                        .build())
-                .addAlarmAction(new SnsAction(errorsTopic));
+        createAlarmForDlq(scope, "BulkImport" + shortId + "UndeliveredJobsAlarm",
+                "Alarms if there are any messages that have failed validation or failed to start a " + shortId + " EMR Spark job",
+                queueForDLs, errorsTopic);
 
         Queue emrBulkImportJobQueue = Queue.Builder
                 .create(scope, "BulkImport" + shortId + "JobQueue")
@@ -111,20 +95,21 @@ public class CommonEmrBulkImportHelper {
         instanceProperties.set(jobQueueUrl, emrBulkImportJobQueue.getQueueUrl());
         instanceProperties.set(jobQueueArn, emrBulkImportJobQueue.getQueueArn());
         emrBulkImportJobQueue.grantSendMessages(coreStacks.getIngestPolicy());
+        emrBulkImportJobQueue.grantPurge(coreStacks.getPurgeQueuesPolicy());
 
         return emrBulkImportJobQueue;
     }
 
     public IFunction createJobStarterFunction(
-            String bulkImportPlatform, Queue jobQueue, BuiltJars jars,
-            IBucket importBucket, CommonEmrBulkImportStack commonEmrStack) {
+            String bulkImportPlatform, Queue jobQueue, BuiltJars jars, IBucket importBucket,
+            CommonEmrBulkImportStack commonEmrStack) {
         return createJobStarterFunction(bulkImportPlatform, jobQueue, jars, importBucket,
                 List.of(commonEmrStack.getEmrRole(), commonEmrStack.getEc2Role()));
     }
 
     public IFunction createJobStarterFunction(
-            String bulkImportPlatform, Queue jobQueue, BuiltJars jars,
-            IBucket importBucket, List<IRole> passRoles) {
+            String bulkImportPlatform, Queue jobQueue, BuiltJars jars, IBucket importBucket,
+            List<IRole> passRoles) {
         String instanceId = instanceProperties.get(ID);
         Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
         env.put("BULK_IMPORT_PLATFORM", bulkImportPlatform);

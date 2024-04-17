@@ -31,7 +31,8 @@ public class SystemTestCompaction {
     private final WaitForJobs waitForJobs;
     private List<String> lastJobIds;
 
-    public SystemTestCompaction(SystemTestContext context, SystemTestDrivers drivers) {
+    public SystemTestCompaction(SystemTestContext context) {
+        SystemTestDrivers drivers = context.instance().adminDrivers();
         this.driver = drivers.compaction(context);
         this.waitForJobCreation = new WaitForCompactionJobCreation(context.instance(), driver);
         this.waitForJobs = drivers.waitForCompaction(context);
@@ -39,7 +40,7 @@ public class SystemTestCompaction {
 
     public SystemTestCompaction createJobs(int expectedJobs) {
         lastJobIds = waitForJobCreation.createJobsGetIds(expectedJobs,
-                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofSeconds(30)),
+                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(1)),
                 driver::triggerCreateJobs);
         return this;
     }
@@ -60,6 +61,11 @@ public class SystemTestCompaction {
         return this;
     }
 
+    public SystemTestCompaction forceStartTasks(int expectedTasks, PollWithRetries poll) {
+        driver.forceStartTasks(expectedTasks, poll);
+        return this;
+    }
+
     public SystemTestCompaction waitForJobs() {
         waitForJobs.waitForJobs(lastJobIds);
         return this;
@@ -68,5 +74,9 @@ public class SystemTestCompaction {
     public SystemTestCompaction waitForJobs(PollWithRetries poll) {
         waitForJobs.waitForJobs(lastJobIds, poll);
         return this;
+    }
+
+    public void scaleToZero() {
+        driver.scaleToZero();
     }
 }

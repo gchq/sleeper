@@ -22,11 +22,6 @@ import org.apache.commons.io.IOUtils;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.cdk.lambdalayer.kubectl.v24.KubectlV24Layer;
-import software.amazon.awscdk.services.cloudwatch.ComparisonOperator;
-import software.amazon.awscdk.services.cloudwatch.CreateAlarmOptions;
-import software.amazon.awscdk.services.cloudwatch.MetricOptions;
-import software.amazon.awscdk.services.cloudwatch.TreatMissingData;
-import software.amazon.awscdk.services.cloudwatch.actions.SnsAction;
 import software.amazon.awscdk.services.ec2.ISubnet;
 import software.amazon.awscdk.services.ec2.IVpc;
 import software.amazon.awscdk.services.ec2.Subnet;
@@ -51,7 +46,7 @@ import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
-import software.amazon.awscdk.services.sns.ITopic;
+import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.amazon.awscdk.services.stepfunctions.Choice;
@@ -72,7 +67,6 @@ import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.stack.CoreStacks;
 import sleeper.cdk.stack.IngestStatusStoreStack;
-import sleeper.cdk.stack.TopicStack;
 import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
@@ -85,6 +79,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 
+import static sleeper.cdk.Utils.createAlarmForDlq;
 import static sleeper.cdk.Utils.createLambdaLogGroup;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_ARN;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
@@ -98,22 +93,15 @@ import static sleeper.configuration.properties.instance.EKSProperty.BULK_IMPORT_
 import static sleeper.configuration.properties.instance.EKSProperty.EKS_CLUSTER_ADMIN_ROLES;
 
 /**
- * An {@link EksBulkImportStack} creates an EKS cluster and associated Kubernetes
- * resources needed to run Spark on Kubernetes. In addition to this, it creates
- * a statemachine which can run jobs on the cluster.
+ * Deploys an EKS cluster and associated Kubernetes resources needed to run Spark on Kubernetes. In addition to this,
+ * it creates a state machine which can run bulk import jobs on the cluster.
  */
 public final class EksBulkImportStack extends NestedStack {
     private final Queue bulkImportJobQueue;
 
     public EksBulkImportStack(
-            Construct scope,
-            String id,
-            InstanceProperties instanceProperties,
-            BuiltJars jars,
-            BulkImportBucketStack importBucketStack,
-            CoreStacks coreStacks,
-            TopicStack errorsTopicStack,
-            IngestStatusStoreStack statusStoreStack) {
+            Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars,
+            Topic errorsTopic, BulkImportBucketStack importBucketStack, CoreStacks coreStacks, IngestStatusStoreStack statusStoreStack) {
         super(scope, id);
 
         String instanceId = instanceProperties.get(ID);
@@ -128,20 +116,9 @@ public final class EksBulkImportStack extends NestedStack {
                 .queue(queueForDLs)
                 .build();
 
-        queueForDLs.metricApproximateNumberOfMessagesVisible()
-                .with(MetricOptions.builder()
-                        .period(Duration.seconds(60))
-                        .statistic("Sum")
-                        .build())
-                .createAlarm(this, "BulkImportEKSUndeliveredJobsAlarm", CreateAlarmOptions.builder()
-                        .alarmDescription("Alarms if there are any messages that have failed validation or failed to be passed to the statemachine")
-                        .evaluationPeriods(1)
-                        .comparisonOperator(ComparisonOperator.GREATER_THAN_THRESHOLD)
-                        .threshold(0)
-                        .datapointsToAlarm(1)
-                        .treatMissingData(TreatMissingData.IGNORE)
-                        .build())
-                .addAlarmAction(new SnsAction(errorsTopicStack.getTopic()));
+        createAlarmForDlq(this, "BulkImportEKSUndeliveredJobsAlarm",
+                "Alarms if there are any messages that have failed validation or failed to be passed to the statemachine",
+                queueForDLs, errorsTopic);
 
         bulkImportJobQueue = Queue.Builder
                 .create(this, "BulkImportEKSJobQueue")
@@ -153,6 +130,7 @@ public final class EksBulkImportStack extends NestedStack {
         instanceProperties.set(BULK_IMPORT_EKS_JOB_QUEUE_URL, bulkImportJobQueue.getQueueUrl());
         instanceProperties.set(BULK_IMPORT_EKS_JOB_QUEUE_ARN, bulkImportJobQueue.getQueueArn());
         bulkImportJobQueue.grantSendMessages(coreStacks.getIngestPolicy());
+        bulkImportJobQueue.grantPurge(coreStacks.getPurgeQueuesPolicy());
 
         Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
         env.put("BULK_IMPORT_PLATFORM", "EKS");
@@ -227,7 +205,7 @@ public final class EksBulkImportStack extends NestedStack {
                 .forEach(sa -> sa.getNode().addDependency(namespace));
         coreStacks.grantIngest(sparkServiceAccount.getRole());
 
-        StateMachine stateMachine = createStateMachine(bulkImportCluster, instanceProperties, errorsTopicStack.getTopic());
+        StateMachine stateMachine = createStateMachine(bulkImportCluster, instanceProperties, errorsTopic);
         instanceProperties.set(CdkDefinedInstanceProperty.BULK_IMPORT_EKS_STATE_MACHINE_ARN, stateMachine.getStateMachineArn());
 
         bulkImportCluster.getAwsAuth().addRoleMapping(stateMachine.getRole(), AwsAuthMapping.builder()
@@ -253,8 +231,7 @@ public final class EksBulkImportStack extends NestedStack {
                 .build());
     }
 
-    private StateMachine createStateMachine(Cluster cluster, InstanceProperties instanceProperties,
-            ITopic errorsTopic) {
+    private StateMachine createStateMachine(Cluster cluster, InstanceProperties instanceProperties, Topic errorsTopic) {
         String imageName = instanceProperties.get(ACCOUNT) +
                 ".dkr.ecr." +
                 instanceProperties.get(REGION) +
@@ -317,8 +294,8 @@ public final class EksBulkImportStack extends NestedStack {
         }
     }
 
-    private void createManifests(
-            Cluster cluster, KubernetesManifest namespace, String namespaceName, IRole stateMachineRole) {
+    private void createManifests(Cluster cluster, KubernetesManifest namespace, String namespaceName,
+            IRole stateMachineRole) {
         Lists.newArrayList(
                 createManifestFromResource(cluster, "SparkSubmitRole", namespaceName, "/k8s/spark-submit-role.json"),
                 createManifestFromResource(cluster, "SparkSubmitRoleBinding", namespaceName,
@@ -336,8 +313,8 @@ public final class EksBulkImportStack extends NestedStack {
         return createManifestFromResource(cluster, id, namespace, resource, json -> json);
     }
 
-    private static KubernetesManifest createManifestFromResource(
-            Cluster cluster, String id, String namespace, String resource, Function<String, String> replacements) {
+    private static KubernetesManifest createManifestFromResource(Cluster cluster, String id, String namespace, String resource,
+            Function<String, String> replacements) {
         return cluster.addManifest(id, parseJsonWithNamespace(resource, namespace, replacements));
     }
 

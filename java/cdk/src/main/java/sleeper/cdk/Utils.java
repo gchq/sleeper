@@ -18,13 +18,25 @@ package sleeper.cdk;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.internal.BucketNameUtils;
+import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.Tags;
+import software.amazon.awscdk.services.cloudwatch.Alarm;
+import software.amazon.awscdk.services.cloudwatch.ComparisonOperator;
+import software.amazon.awscdk.services.cloudwatch.MetricOptions;
+import software.amazon.awscdk.services.cloudwatch.TreatMissingData;
+import software.amazon.awscdk.services.cloudwatch.actions.SnsAction;
 import software.amazon.awscdk.services.ecs.AwsLogDriverProps;
 import software.amazon.awscdk.services.ecs.LogDriver;
+import software.amazon.awscdk.services.iam.Effect;
+import software.amazon.awscdk.services.iam.ManagedPolicy;
+import software.amazon.awscdk.services.iam.PolicyStatement;
+import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.logs.LogGroup;
 import software.amazon.awscdk.services.logs.RetentionDays;
+import software.amazon.awscdk.services.sns.Topic;
+import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
@@ -37,6 +49,7 @@ import sleeper.core.SleeperVersion;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
@@ -59,7 +72,7 @@ import static sleeper.configuration.properties.instance.LoggingLevelsProperty.PA
 import static sleeper.configuration.properties.instance.LoggingLevelsProperty.ROOT_LOGGING_LEVEL;
 
 /**
- * Collection of utility methods related to the CDK deployment
+ * Collection of utility methods related to the CDK deployment.
  */
 public class Utils {
 
@@ -111,7 +124,9 @@ public class Utils {
     }
 
     /**
-     * Valid values are taken from <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-logs-loggroup.html">here</a>
+     * Configures a log group with the specified number of days. Valid values are taken from
+     * <a href=
+     * "https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-logs-loggroup.html">here</a>.
      * A value of -1 represents an infinite number of days.
      *
      * @param  numberOfDays number of days you want to retain the logs
@@ -261,9 +276,9 @@ public class Utils {
     }
 
     /**
-     * Normalises EC2 instance size strings so they can be looked up in the
-     * {@link software.amazon.awscdk.services.ec2.InstanceSize} enum.
-     * Java identifiers can't start with a number, so "2xlarge" becomes "xlarge2".
+     * Normalises EC2 instance size strings to match enum identifiers. They can then be looked up in the
+     * {@link software.amazon.awscdk.services.ec2.InstanceSize} enum. Java identifiers can't start with a number, so
+     * "2xlarge" becomes "xlarge2".
      *
      * @param  size the human readable size
      * @return      the internal enum name
@@ -279,6 +294,31 @@ public class Utils {
         } else {
             return size;
         }
+    }
+
+    public static void createAlarmForDlq(Construct scope, String name, String description, Queue dlq, Topic topic) {
+        Alarm alarm = Alarm.Builder
+                .create(scope, name)
+                .alarmDescription(description)
+                .metric(dlq.metricApproximateNumberOfMessagesVisible()
+                        .with(MetricOptions.builder().statistic("Sum").period(Duration.seconds(60)).build()))
+                .comparisonOperator(ComparisonOperator.GREATER_THAN_THRESHOLD)
+                .threshold(0)
+                .evaluationPeriods(1)
+                .datapointsToAlarm(1)
+                .treatMissingData(TreatMissingData.IGNORE)
+                .build();
+        alarm.addAlarmAction(new SnsAction(topic));
+    }
+
+    public static void grantInvokeOnPolicy(IFunction function, ManagedPolicy policy) {
+        // IFunction.grantInvoke does not work with a ManagedPolicy at time of writing.
+        // It tries to set it as a Principal, which you can't do with a ManagedPolicy.
+        policy.addStatements(PolicyStatement.Builder.create()
+                .effect(Effect.ALLOW)
+                .actions(List.of("lambda:InvokeFunction"))
+                .resources(List.of(function.getFunctionArn()))
+                .build());
     }
 
 }

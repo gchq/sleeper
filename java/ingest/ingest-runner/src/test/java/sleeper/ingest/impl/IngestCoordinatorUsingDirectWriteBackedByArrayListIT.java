@@ -102,7 +102,7 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
         s3.createBucket(instanceProperties.get(DATA_BUCKET));
         new S3StateStoreCreator(instanceProperties, dynamoDB).create();
         stateStore.initialise(tree.getAllPartitions());
-        stateStore.fixTime(stateStoreUpdateTime);
+        stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
     }
 
@@ -194,8 +194,7 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
                 DirectPartitionFileWriterFactory.from(
                         parquetConfiguration,
                         "s3a://" + dataBucketName,
-                        fileNames.iterator()::next
-                ))
+                        fileNames.iterator()::next))
                 .ingestFileWritingStrategy(tableProperties.getEnumValue(INGEST_FILE_WRITING_STRATEGY, IngestFileWritingStrategy.class))
                 .build()) {
             for (Record record : recordListAndSchema.recordList) {

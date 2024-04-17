@@ -31,7 +31,7 @@ import sleeper.ingest.job.status.IngestJobStatus;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.task.IngestTaskStatus;
 import sleeper.ingest.task.IngestTaskStatusStore;
-import sleeper.job.common.QueueMessageCount;
+import sleeper.task.common.QueueMessageCount;
 
 import java.time.Instant;
 import java.util.List;
@@ -61,7 +61,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.rejectedRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestJob;
-import static sleeper.job.common.InMemoryQueueMessageCounts.visibleMessages;
+import static sleeper.task.common.InMemoryQueueMessageCounts.visibleMessages;
 
 class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
     @DisplayName("Ingest job status report")
@@ -147,7 +147,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
             // Given
             when(ingestJobStatusStore.getJobsInTimePeriod(tableProperties.get(TABLE_ID),
                     Instant.parse("2023-03-15T14:00:00Z"), Instant.parse("2023-03-15T18:00:00Z")))
-                            .thenReturn(oneStartedJobStatus());
+                    .thenReturn(oneStartedJobStatus());
 
             // When/Then
             String output = runIngestJobStatusReport()

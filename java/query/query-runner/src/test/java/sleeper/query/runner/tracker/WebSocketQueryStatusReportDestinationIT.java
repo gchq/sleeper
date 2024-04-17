@@ -112,9 +112,12 @@ class WebSocketQueryStatusReportDestinationIT {
                 .regions(List.of(new Region(range)))
                 .build();
         List<LeafPartitionQuery> subQueries = List.of(
-                LeafPartitionQuery.builder().parentQuery(query).tableId("tableId").subQueryId("s1").regions(List.of(region)).leafPartitionId("leaf1").partitionRegion(partitionRegion).files(List.of()).build(),
-                LeafPartitionQuery.builder().parentQuery(query).tableId("tableId").subQueryId("s2").regions(List.of(region)).leafPartitionId("leaf2").partitionRegion(partitionRegion).files(List.of()).build(),
-                LeafPartitionQuery.builder().parentQuery(query).tableId("tableId").subQueryId("s3").regions(List.of(region)).leafPartitionId("leaf3").partitionRegion(partitionRegion).files(List.of()).build());
+                LeafPartitionQuery.builder().parentQuery(query).tableId("tableId").subQueryId("s1").regions(List.of(region)).leafPartitionId("leaf1").partitionRegion(partitionRegion).files(List.of())
+                        .build(),
+                LeafPartitionQuery.builder().parentQuery(query).tableId("tableId").subQueryId("s2").regions(List.of(region)).leafPartitionId("leaf2").partitionRegion(partitionRegion).files(List.of())
+                        .build(),
+                LeafPartitionQuery.builder().parentQuery(query).tableId("tableId").subQueryId("s3").regions(List.of(region)).leafPartitionId("leaf3").partitionRegion(partitionRegion).files(List.of())
+                        .build());
 
         // When
         config.getListener().subQueriesCreated(query, subQueries);
@@ -125,8 +128,7 @@ class WebSocketQueryStatusReportDestinationIT {
                         .and(matchingJsonPath("$.message", equalTo("subqueries")))
                         .and(matchingJsonPath("$.error", absent()))
                         .and(matchingJsonPath("$.recordCount", absent()))
-                        .and(matchingJsonPath("$.queryIds", equalToJson("[\"s1\",\"s2\",\"s3\"]")))
-        ));
+                        .and(matchingJsonPath("$.queryIds", equalToJson("[\"s1\",\"s2\",\"s3\"]")))));
     }
 
     @Test
@@ -141,8 +143,7 @@ class WebSocketQueryStatusReportDestinationIT {
                 .build();
         ResultsOutputInfo result = new ResultsOutputInfo(1, Lists.newArrayList(
                 new ResultsOutputLocation("s3", "s3://bucket/file1.parquet"),
-                new ResultsOutputLocation("s3", "s3://bucket/file2.parquet")
-        ));
+                new ResultsOutputLocation("s3", "s3://bucket/file2.parquet")));
 
         // When
         config.getListener().queryCompleted(query, result);
@@ -152,8 +153,7 @@ class WebSocketQueryStatusReportDestinationIT {
                 matchingJsonPath("$.queryId", equalTo("q1"))
                         .and(matchingJsonPath("$.message", equalTo("completed")))
                         .and(matchingJsonPath("$.error", absent()))
-                        .and(matchingJsonPath("$.recordCount", equalTo(String.valueOf(result.getRecordCount()))))
-        ));
+                        .and(matchingJsonPath("$.recordCount", equalTo(String.valueOf(result.getRecordCount()))))));
     }
 
     @Test
@@ -168,8 +168,7 @@ class WebSocketQueryStatusReportDestinationIT {
                 .build();
         ResultsOutputInfo result = new ResultsOutputInfo(1, Lists.newArrayList(
                 new ResultsOutputLocation("data", "s3://bucket/data/parquet"),
-                new ResultsOutputLocation("sketches", "s3://bucket/sketches.parquet")
-        ), new IOException("error writing record #2"));
+                new ResultsOutputLocation("sketches", "s3://bucket/sketches.parquet")), new IOException("error writing record #2"));
 
         // When
         config.getListener().queryCompleted(query, result);
@@ -179,8 +178,7 @@ class WebSocketQueryStatusReportDestinationIT {
                 matchingJsonPath("$.queryId", equalTo("q2"))
                         .and(matchingJsonPath("$.message", equalTo("error")))
                         .and(matchingJsonPath("$.error", equalTo(result.getError().getClass().getSimpleName() + ": " + result.getError().getMessage())))
-                        .and(matchingJsonPath("$.recordCount", equalTo(String.valueOf(result.getRecordCount()))))
-        ));
+                        .and(matchingJsonPath("$.recordCount", equalTo(String.valueOf(result.getRecordCount()))))));
     }
 
     @Test
@@ -202,8 +200,7 @@ class WebSocketQueryStatusReportDestinationIT {
                 matchingJsonPath("$.queryId", equalTo("q3"))
                         .and(matchingJsonPath("$.message", equalTo("error")))
                         .and(matchingJsonPath("$.error", equalTo("IOException: fail")))
-                        .and(matchingJsonPath("$.recordCount", absent()))
-        ));
+                        .and(matchingJsonPath("$.recordCount", absent()))));
     }
 
     private static class WebSocketQueryConfig {

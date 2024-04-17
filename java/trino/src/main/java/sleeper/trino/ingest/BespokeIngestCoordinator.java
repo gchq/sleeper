@@ -38,17 +38,18 @@ public class BespokeIngestCoordinator {
     private BespokeIngestCoordinator() {
     }
 
-    public static IngestCoordinator<Page> asyncFromPage(ObjectFactory objectFactory,
-                                                        StateStore sleeperStateStore,
-                                                        InstanceProperties instanceProperties,
-                                                        TableProperties tableProperties,
-                                                        SleeperConfig sleeperConfig,
-                                                        Configuration hadoopConfiguration,
-                                                        String sleeperIteratorClassName,
-                                                        String sleeperIteratorConfig,
-                                                        int ingestPartitionRefreshFrequencyInSeconds,
-                                                        S3AsyncClient s3AsyncClient,
-                                                        BufferAllocator arrowBufferAllocator) {
+    public static IngestCoordinator<Page> asyncFromPage(
+            ObjectFactory objectFactory,
+            StateStore sleeperStateStore,
+            InstanceProperties instanceProperties,
+            TableProperties tableProperties,
+            SleeperConfig sleeperConfig,
+            Configuration hadoopConfiguration,
+            String sleeperIteratorClassName,
+            String sleeperIteratorConfig,
+            int ingestPartitionRefreshFrequencyInSeconds,
+            S3AsyncClient s3AsyncClient,
+            BufferAllocator arrowBufferAllocator) {
         String localWorkingDirectory = sleeperConfig.getLocalWorkingDirectory();
         long maxBytesToWriteLocally = sleeperConfig.getMaxBytesToWriteLocallyPerWriter();
         long maxBatchArrowBufferAllocatorBytes = sleeperConfig.getMaxArrowRootAllocatorBytes();

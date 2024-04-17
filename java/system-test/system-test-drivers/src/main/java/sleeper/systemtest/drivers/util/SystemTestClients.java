@@ -16,6 +16,8 @@
 
 package sleeper.systemtest.drivers.util;
 
+import com.amazonaws.services.autoscaling.AmazonAutoScaling;
+import com.amazonaws.services.autoscaling.AmazonAutoScalingClientBuilder;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.ecr.AmazonECR;
@@ -37,24 +39,66 @@ import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 import software.amazon.awssdk.services.lambda.LambdaClient;
+import software.amazon.awssdk.services.lambda.LambdaClientBuilder;
 import software.amazon.awssdk.services.s3.S3Client;
 
+import sleeper.clients.util.AssumeSleeperRole;
+
 import java.time.Duration;
+import java.util.Map;
 
 public class SystemTestClients {
-    private final AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
-    private final S3Client s3V2 = S3Client.create();
-    private final AmazonDynamoDB dynamoDB = AmazonDynamoDBClientBuilder.defaultClient();
-    private final AWSSecurityTokenService sts = AWSSecurityTokenServiceClientBuilder.defaultClient();
-    private final AwsRegionProvider regionProvider = DefaultAwsRegionProviderChain.builder().build();
-    private final AmazonSQS sqs = AmazonSQSClientBuilder.defaultClient();
-    private final LambdaClient lambda = createSystemTestLambdaClient();
-    private final CloudFormationClient cloudFormation = CloudFormationClient.create();
-    private final EmrServerlessClient emrServerless = EmrServerlessClient.create();
-    private final AmazonElasticMapReduce emr = AmazonElasticMapReduceClientBuilder.defaultClient();
-    private final AmazonECS ecs = AmazonECSClientBuilder.defaultClient();
-    private final AmazonECR ecr = AmazonECRClientBuilder.defaultClient();
-    private final CloudWatchClient cloudWatch = CloudWatchClient.create();
+    private final AmazonS3 s3;
+    private final S3Client s3V2;
+    private final AmazonDynamoDB dynamoDB;
+    private final AWSSecurityTokenService sts;
+    private final AwsRegionProvider regionProvider;
+    private final AmazonSQS sqs;
+    private final LambdaClient lambda;
+    private final CloudFormationClient cloudFormation;
+    private final EmrServerlessClient emrServerless;
+    private final AmazonElasticMapReduce emr;
+    private final AmazonECS ecs;
+    private final AmazonAutoScaling autoScaling;
+    private final AmazonECR ecr;
+    private final CloudWatchClient cloudWatch;
+    private final Map<String, String> authEnvVars;
+
+    public SystemTestClients() {
+        s3 = AmazonS3ClientBuilder.defaultClient();
+        s3V2 = S3Client.create();
+        dynamoDB = AmazonDynamoDBClientBuilder.defaultClient();
+        sts = AWSSecurityTokenServiceClientBuilder.defaultClient();
+        regionProvider = DefaultAwsRegionProviderChain.builder().build();
+        sqs = AmazonSQSClientBuilder.defaultClient();
+        lambda = systemTestLambdaClientBuilder().build();
+        cloudFormation = CloudFormationClient.create();
+        emrServerless = EmrServerlessClient.create();
+        emr = AmazonElasticMapReduceClientBuilder.defaultClient();
+        ecs = AmazonECSClientBuilder.defaultClient();
+        autoScaling = AmazonAutoScalingClientBuilder.defaultClient();
+        ecr = AmazonECRClientBuilder.defaultClient();
+        cloudWatch = CloudWatchClient.create();
+        authEnvVars = Map.of();
+    }
+
+    public SystemTestClients(AssumeSleeperRole assumeRole) {
+        s3 = assumeRole.v1Client(AmazonS3ClientBuilder.standard());
+        s3V2 = assumeRole.v2Client(S3Client.builder());
+        dynamoDB = assumeRole.v1Client(AmazonDynamoDBClientBuilder.standard());
+        sts = assumeRole.v1Client(AWSSecurityTokenServiceClientBuilder.standard());
+        regionProvider = assumeRole.v2RegionProvider();
+        sqs = assumeRole.v1Client(AmazonSQSClientBuilder.standard());
+        lambda = assumeRole.v2Client(systemTestLambdaClientBuilder());
+        cloudFormation = assumeRole.v2Client(CloudFormationClient.builder());
+        emrServerless = assumeRole.v2Client(EmrServerlessClient.builder());
+        emr = assumeRole.v1Client(AmazonElasticMapReduceClientBuilder.standard());
+        ecs = assumeRole.v1Client(AmazonECSClientBuilder.standard());
+        autoScaling = assumeRole.v1Client(AmazonAutoScalingClientBuilder.standard());
+        ecr = assumeRole.v1Client(AmazonECRClientBuilder.standard());
+        cloudWatch = assumeRole.v2Client(CloudWatchClient.builder());
+        authEnvVars = assumeRole.authEnvVars();
+    }
 
     public AmazonS3 getS3() {
         return s3;
@@ -100,6 +144,10 @@ public class SystemTestClients {
         return ecs;
     }
 
+    public AmazonAutoScaling getAutoScaling() {
+        return autoScaling;
+    }
+
     public AmazonECR getEcr() {
         return ecr;
     }
@@ -108,13 +156,16 @@ public class SystemTestClients {
         return cloudWatch;
     }
 
-    private static LambdaClient createSystemTestLambdaClient() {
+    public Map<String, String> getAuthEnvVars() {
+        return authEnvVars;
+    }
+
+    private static LambdaClientBuilder systemTestLambdaClientBuilder() {
         return LambdaClient.builder()
                 .overrideConfiguration(builder -> builder
                         .apiCallTimeout(Duration.ofMinutes(11))
                         .apiCallAttemptTimeout(Duration.ofMinutes(11)))
                 .httpClientBuilder(ApacheHttpClient.builder()
-                        .socketTimeout(Duration.ofMinutes(11)))
-                .build();
+                        .socketTimeout(Duration.ofMinutes(11)));
     }
 }

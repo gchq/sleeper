@@ -1,7 +1,7 @@
 Sleeper is mainly written in Java and this is built using maven. This process will automatically
 pull in dependencies. We list Sleeper's dependencies, and their licenses below.
 
-AWS Athena SDK (com.amazonaws:aws-athena-federation-sdk:2021.21.1):
+AWS Athena SDK (com.amazonaws:aws-athena-federation-sdk:2023.3.1):
 
 - Apache License, Version 2.0
 
@@ -9,11 +9,11 @@ AWS Java SDK (com.amazonaws:aws-java-sdk-*:1.12.498):
 
 - Apache License, Version 2.0
 
-AWS Java SDK v2 (software.amazon.awssdk:*:2.20.95):
+AWS Java SDK v2 (software.amazon.awssdk:*:2.25.14):
 
 - Apache License, Version 2.0
 
-AWS CRT (software.amazon.awssdk.crt:aws-crt:0.22.2):
+AWS CRT (software.amazon.awssdk.crt:aws-crt:0.29.11):
 
 - Apache License, Version 2.0
 
@@ -21,7 +21,7 @@ AWS Lambda Java Core SDK (com.amazonaws:aws-lambda-java-core:1.2.2):
 
 - Apache License, Version 2.0
 
-AWS Lambda Java Events SDK (com.amazonaws:aws-lambda-java-events:3.11.2):
+AWS Lambda Java Events SDK (com.amazonaws:aws-lambda-java-events:3.11.4):
 
 - Apache License, Version 2.0
 
@@ -29,7 +29,7 @@ AWS X-Ray SDK for Java (com.amazonaws:aws-xray-recorder-sdk-*:2.15.1):
 
 - Apache License, Version 2.0
 
-WildFly OpenSSL (org.wildfly.openssl:wildfly-openssl:1.1.3.Final):
+WildFly OpenSSL (org.wildfly.openssl:wildfly-openssl:2.2.5.Final):
 
 - Apache License, Version 2.0
 
@@ -41,7 +41,7 @@ Apache Ivy (org.apache.ivy:ivy:2.5.2):
 
 - Apache License, Version 2.0
 
-Snappy Java (org.xerial.snappy:snappy-java:1.1.10.4):
+Snappy Java (org.xerial.snappy:snappy-java:1.1.10.5):
 
 - Apache License, Version 2.0
 
@@ -69,7 +69,15 @@ XNIO (org.jboss.xnio:xnio-api:3.8.13.Final):
 
 - Apache License, Version 2.0
 
-Kotlin Stdlib (org.jetbrains.kotlin:*:1.6.20):
+OkHttp (com.squareup.okhttp3:okhttp:4.12.0):
+
+- Apache License, Version 2.0
+
+Okio (com.squareup.okio:*:3.9.0):
+
+- Apache License, Version 2.0
+
+Kotlin Stdlib (org.jetbrains.kotlin:*:1.9.23):
 
 - Apache License, Version 2.0
 
@@ -83,15 +91,15 @@ Facebook Jcommon collections (com.facebook.jcommon:collections::0.1.32):
 
 - Apache License, Version 2.0
 
-Guava: Google Core Libraries For Java (com.google.guava:guava:32.0.1-jre):
+Guava: Google Core Libraries For Java (com.google.guava:guava:33.0.0-jre):
 
 - Apache License, Version 2.0
 
-Fasterxml Jackson (com.fasterxml.jackson.core:*:2.16.2, com.fasterxml.jackson.module:*:2.16.2)
+Fasterxml Jackson (com.fasterxml.jackson.core:*:2.17.0, com.fasterxml.jackson.module:*:2.17.0)
 
 - Apache License, Version 2.0
 
-Wiremock (com.github.tomakehurst:wiremock-jre8:2.35.0):
+Wiremock (com.github.tomakehurst:wiremock-jre8:2.35.2):
 
 - Apache License, Version 2.0
 
@@ -99,7 +107,7 @@ GSON (com.google.code.gson:gson:2.10.1):
 
 - Apache License, Version 2.0
 
-Commons Codec (commons-codec:commons-codec:1.16.0):
+Commons Codec (commons-codec:commons-codec:1.16.1):
 
 - Apache License, Version 2.0
 
@@ -111,7 +119,7 @@ Apache Commons Configuration (org.apache.commons:commons-configuration2:2.9.0):
 
 - Apache License, Version 2.0
 
-Apache Commons Compress (org.apache.commons:commons-compress:1.26.0):
+Apache Commons Compress (org.apache.commons:commons-compress:1.26.1):
 
 - Apache License, Version 2.0
 
@@ -127,7 +135,7 @@ Apache Commons Lang (org.apache.commons:commons-lang3:3.12.0):
 
 - Apache License, Version 2.0
 
-Codehaus Janino (org.codehaus.janino:*:3.1.9):
+Codehaus Janino (org.codehaus.janino:*:3.1.12):
 
 - The 3-Clause BSD License
 
@@ -155,7 +163,7 @@ Apache Arrow (org.apache.arrow:*:11.0.0)
 
 - Apache License, Version 2.0
 
-Java Websocket (org.java-websocket:Java-WebSocket:1.5.3):
+Java Websocket (org.java-websocket:Java-WebSocket:1.5.6):
 
 - MIT License
 
@@ -163,7 +171,7 @@ JUnit (org.junit.jupiter:junit-jupiter-*:5.10.2):
 
 - Eclipse Public License 1.0
 
-Mockito (org.mockito:mockito-core:4.11.0):
+Mockito (org.mockito:mockito-core:5.11.0):
 
 - MIT License
 
@@ -179,11 +187,11 @@ JsonUnit (net.javacrumbs.json-unit:json-unit-assertj:2.38.0):
 
 - Apache License, Version 2.0
 
-SLF4J (org.slf4j:slf4j-api:2.0.6, org.slf4j:slf4j-reload4j:2.0.6):
+SLF4J (org.slf4j:slf4j-api:2.0.12, org.slf4j:slf4j-reload4j:2.0.12):
 
 - MIT License
 
-Reload4j (ch.qos.reload4j:reload4j:1.2.24):
+Reload4j (ch.qos.reload4j:reload4j:1.2.25):
 
 - Apache License, Version 2.0
 
@@ -191,15 +199,15 @@ Bouncy Castle (org.bouncycastle:bcpkix-jdk18on:1.75):
 
 - Bouncy Castle License
 
-Testcontainers (org.testcontainers:localstack:1.19.0, org.testcontainers:testcontainers:1.19.0, org.testcontainers:junit-jupiter:1.19.0):
+Testcontainers (org.testcontainers:localstack:1.19.7, org.testcontainers:testcontainers:1.19.7, org.testcontainers:junit-jupiter:1.19.7):
 
 - MIT License
 
-AWS CDK (software.amazon.awscdk:aws-cdk-lib:2.123.0):
+AWS CDK (software.amazon.awscdk:aws-cdk-lib:2.133.0):
 
 - Apache License, Version 2.0
 
-CDK Lambda Layer KUBECTL V24 (software.amazon.awscdk:cdk-lambda-layer-kubectl-v24:2.0.237):
+CDK Lambda Layer KUBECTL V24 (software.amazon.awscdk:cdk-lambda-layer-kubectl-v24:2.0.242):
 
 - Apache License, Version 2.0
 
@@ -207,7 +215,7 @@ AWS Constructs (software.constructs:constructs:10.2.63):
 
 - Apache License, Version 2.0
 
-AWS Lambda Powertools (software.amazon.lambda:powertools-metrics:1.16.0):
+AWS Lambda Powertools (software.amazon.lambda:powertools-metrics:1.18.0):
 
 - MIT License (https://github.com/awslabs/aws-lambda-powertools-java/blob/master/LICENSE)
 
@@ -233,11 +241,25 @@ Jungrapht Visualization (jungrapht) (com.github.tomnelson:jungrapht-visualizatio
 
 - The 3-Clause BSD License
 
+JGraphT (org.jgrapht:*:1.5.2):
+
+- May be used under either of two licenses (https://github.com/jgrapht/jgrapht)
+- GNU Lesser General Public License (LGPL) 2.1
+- Eclipse Public License (EPL) 2.0
+
+Apfloat (org.apfloat:apfloat:1.13.0):
+
+- MIT License
+
+Joda Time (joda-time:joda-time:2.12.7):
+
+- Apache License, Version 2.0
+
 Go Offline Maven Plugin (de.qaware.maven:go-offline-maven-plugin:1.2.8):
 
 - Apache License, Version 2.0
 
-Dependency Check Maven Plugin (org.owasp:dependency-check-maven:8.3.1):
+Dependency Check Maven Plugin (org.owasp:dependency-check-maven:9.0.10):
 
 - Apache License, Version 2.0
 

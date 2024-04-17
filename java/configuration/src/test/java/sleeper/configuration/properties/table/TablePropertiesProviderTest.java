@@ -198,7 +198,7 @@ public class TablePropertiesProviderTest {
             // When / Then
             assertThat(provider.streamAllTables()
                     .map(properties -> properties.getInt(ROW_GROUP_SIZE)))
-                            .contains(123);
+                    .contains(123);
         }
     }
 

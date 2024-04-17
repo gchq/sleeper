@@ -41,8 +41,7 @@ public class ChangeMessageVisibilityTimeoutActionIT {
 
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE)).withServices(
-            LocalStackContainer.Service.SQS
-    );
+            LocalStackContainer.Service.SQS);
 
     private final AmazonSQS sqs = createSQSClient();
 

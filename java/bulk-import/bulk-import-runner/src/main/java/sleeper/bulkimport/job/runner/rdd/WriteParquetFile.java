@@ -33,7 +33,7 @@ import java.util.List;
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 
 /**
- * A {@link WriteParquetFile} writes sorted Rows to a Parquet file.
+ * Writes sorted rows to a Parquet file.
  */
 public class WriteParquetFile implements FlatMapFunction<Iterator<Row>, Row>, MapPartitionsFunction<Row, Row> {
     private static final long serialVersionUID = 1873341639622053831L;

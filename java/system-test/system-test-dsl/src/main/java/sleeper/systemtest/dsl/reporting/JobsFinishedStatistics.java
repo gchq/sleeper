@@ -59,9 +59,11 @@ public class JobsFinishedStatistics {
                 && numFinishedJobRuns == expectedJobs;
     }
 
-    public boolean isMinAverageRunRecordsPerSecond(double minRate) {
+    public boolean isAverageRunRecordsPerSecondInRange(double minRate, double maxRate) {
         return averageRecordRate.getAverageRunRecordsReadPerSecond() > minRate
-                && averageRecordRate.getAverageRunRecordsWrittenPerSecond() > minRate;
+                && averageRecordRate.getAverageRunRecordsWrittenPerSecond() > minRate
+                && averageRecordRate.getAverageRunRecordsReadPerSecond() < maxRate
+                && averageRecordRate.getAverageRunRecordsWrittenPerSecond() < maxRate;
     }
 
     @Override

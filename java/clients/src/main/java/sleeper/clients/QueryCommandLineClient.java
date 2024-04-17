@@ -44,6 +44,7 @@ import sleeper.query.model.Query;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
@@ -55,6 +56,7 @@ public abstract class QueryCommandLineClient {
     private final TableIndex tableIndex;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final InstanceProperties instanceProperties;
+    private final Supplier<String> queryIdSupplier;
     protected ConsoleInput in;
     protected ConsoleOutput out;
 
@@ -63,20 +65,26 @@ public abstract class QueryCommandLineClient {
     }
 
     protected QueryCommandLineClient(AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, InstanceProperties instanceProperties,
-                                     ConsoleInput in, ConsoleOutput out) {
+            ConsoleInput in, ConsoleOutput out) {
         this(instanceProperties, new DynamoDBTableIndex(instanceProperties, dynamoDBClient), new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient), in, out);
     }
 
     protected QueryCommandLineClient(InstanceProperties instanceProperties, TableIndex tableIndex, TablePropertiesProvider tablePropertiesProvider,
-                                     ConsoleInput in, ConsoleOutput out) {
+            ConsoleInput in, ConsoleOutput out) {
+        this(instanceProperties, tableIndex, tablePropertiesProvider, in, out, () -> UUID.randomUUID().toString());
+    }
+
+    protected QueryCommandLineClient(InstanceProperties instanceProperties, TableIndex tableIndex, TablePropertiesProvider tablePropertiesProvider,
+            ConsoleInput in, ConsoleOutput out, Supplier<String> queryIdSupplier) {
         this.instanceProperties = instanceProperties;
         this.tableIndex = tableIndex;
         this.tablePropertiesProvider = tablePropertiesProvider;
+        this.queryIdSupplier = queryIdSupplier;
         this.in = in;
         this.out = out;
     }
 
-    public void run() throws StateStoreException {
+    public void run() throws StateStoreException, InterruptedException {
         TableProperties tableProperties = getTableProperties();
         init(tableProperties);
 
@@ -85,7 +93,7 @@ public abstract class QueryCommandLineClient {
 
     protected abstract void init(TableProperties tableProperties) throws StateStoreException;
 
-    protected abstract void submitQuery(TableProperties tableProperties, Query query);
+    protected abstract void submitQuery(TableProperties tableProperties, Query query) throws InterruptedException;
 
     protected TableProperties getTableProperties() {
         String tableName = promptTableName();
@@ -95,7 +103,7 @@ public abstract class QueryCommandLineClient {
         return tablePropertiesProvider.getByName(tableName);
     }
 
-    protected void runQueries(TableProperties tableProperties) {
+    protected void runQueries(TableProperties tableProperties) throws InterruptedException {
         String tableName = tableProperties.get(TABLE_NAME);
         Schema schema = tableProperties.getSchema();
         RangeFactory rangeFactory = new RangeFactory(schema);
@@ -141,7 +149,7 @@ public abstract class QueryCommandLineClient {
 
         return Query.builder()
                 .tableName(tableName)
-                .queryId(UUID.randomUUID().toString())
+                .queryId(queryIdSupplier.get())
                 .regions(List.of(region))
                 .build();
     }
@@ -213,7 +221,7 @@ public abstract class QueryCommandLineClient {
         Region region = new Region(ranges);
         return Query.builder()
                 .tableName(tableName)
-                .queryId(UUID.randomUUID().toString())
+                .queryId(queryIdSupplier.get())
                 .regions(List.of(region))
                 .build();
     }

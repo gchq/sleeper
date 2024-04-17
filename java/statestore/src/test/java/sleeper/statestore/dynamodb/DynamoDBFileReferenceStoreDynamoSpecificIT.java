@@ -68,7 +68,7 @@ public class DynamoDBFileReferenceStoreDynamoSpecificIT extends DynamoDBStateSto
             List<FileReference> files = IntStream.range(0, 1000)
                     .mapToObj(i -> factory.rootFile("file-" + i, 1))
                     .collect(Collectors.toUnmodifiableList());
-            store.fixTime(Instant.ofEpochMilli(1_000_000L));
+            store.fixFileUpdateTime(Instant.ofEpochMilli(1_000_000L));
 
             // When
             store.addFiles(files);
@@ -89,7 +89,7 @@ public class DynamoDBFileReferenceStoreDynamoSpecificIT extends DynamoDBStateSto
                     .mapToObj(i -> "gcFile" + i)
                     .collect(toUnmodifiableList());
 
-            store.fixTime(updateTime);
+            store.fixFileUpdateTime(updateTime);
             store.addFilesWithReferences(filenames.stream()
                     .map(AllReferencesToAFileTestHelper::fileWithNoReferences)
                     .collect(toUnmodifiableList()));
@@ -150,11 +150,10 @@ public class DynamoDBFileReferenceStoreDynamoSpecificIT extends DynamoDBStateSto
 
             // When / Then
             assertThatThrownBy(() -> store.splitFileReferences(splitRequests))
-                    .isInstanceOfSatisfying(SplitRequestsFailedException.class, exception ->
-                            assertThat(exception)
-                                    .extracting(SplitRequestsFailedException::getSuccessfulRequests,
-                                            SplitRequestsFailedException::getFailedRequests)
-                                    .containsExactly(splitRequests.subList(0, 25), splitRequests.subList(25, 26)))
+                    .isInstanceOfSatisfying(SplitRequestsFailedException.class, exception -> assertThat(exception)
+                            .extracting(SplitRequestsFailedException::getSuccessfulRequests,
+                                    SplitRequestsFailedException::getFailedRequests)
+                            .containsExactly(splitRequests.subList(0, 25), splitRequests.subList(25, 26)))
                     .hasCauseInstanceOf(FileNotFoundException.class);
             List<FileReference> expectedReferences = fileReferences.stream()
                     .flatMap(file -> Stream.of(splitFile(file, "L"), splitFile(file, "R")))
@@ -172,13 +171,11 @@ public class DynamoDBFileReferenceStoreDynamoSpecificIT extends DynamoDBStateSto
 
             // When / Then
             SplitFileReferenceRequest request = splitFileToChildPartitions(file, "L", "R");
-            assertThatThrownBy(() ->
-                    store.splitFileReferences(List.of(request)))
-                    .isInstanceOfSatisfying(SplitRequestsFailedException.class, exception ->
-                            assertThat(exception)
-                                    .extracting(SplitRequestsFailedException::getSuccessfulRequests,
-                                            SplitRequestsFailedException::getFailedRequests)
-                                    .containsExactly(List.of(), List.of(request)))
+            assertThatThrownBy(() -> store.splitFileReferences(List.of(request)))
+                    .isInstanceOfSatisfying(SplitRequestsFailedException.class, exception -> assertThat(exception)
+                            .extracting(SplitRequestsFailedException::getSuccessfulRequests,
+                                    SplitRequestsFailedException::getFailedRequests)
+                            .containsExactly(List.of(), List.of(request)))
                     .hasCauseInstanceOf(FileNotFoundException.class);
             assertThat(store.getFileReferences()).isEmpty();
             assertThat(store.getAllFilesWithMaxUnreferenced(100))
@@ -194,13 +191,11 @@ public class DynamoDBFileReferenceStoreDynamoSpecificIT extends DynamoDBStateSto
             SplitFileReferenceRequest request = new SplitFileReferenceRequest(file, IntStream.range(0, 100)
                     .mapToObj(i -> SplitFileReference.referenceForChildPartition(file, "" + i, 1))
                     .collect(toUnmodifiableList()));
-            assertThatThrownBy(() ->
-                    store.splitFileReferences(List.of(request)))
-                    .isInstanceOfSatisfying(SplitRequestsFailedException.class, exception ->
-                            assertThat(exception)
-                                    .extracting(SplitRequestsFailedException::getSuccessfulRequests,
-                                            SplitRequestsFailedException::getFailedRequests)
-                                    .containsExactly(List.of(), List.of(request)))
+            assertThatThrownBy(() -> store.splitFileReferences(List.of(request)))
+                    .isInstanceOfSatisfying(SplitRequestsFailedException.class, exception -> assertThat(exception)
+                            .extracting(SplitRequestsFailedException::getSuccessfulRequests,
+                                    SplitRequestsFailedException::getFailedRequests)
+                            .containsExactly(List.of(), List.of(request)))
                     .hasNoCause();
             assertThat(store.getFileReferences()).isEmpty();
             assertThat(store.getAllFilesWithMaxUnreferenced(100))

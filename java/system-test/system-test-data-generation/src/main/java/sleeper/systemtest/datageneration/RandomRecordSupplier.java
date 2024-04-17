@@ -39,8 +39,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 /**
- * A {@link Supplier} of {@link Record}s generated randomly that conform to the
- * given schema.
+ * A supplier of Sleeper records generated randomly that conform to the given schema.
  */
 public class RandomRecordSupplier implements Supplier<Record> {
     private final Map<String, Supplier<Object>> fieldNameToSupplier;

@@ -16,26 +16,24 @@
 
 package sleeper.systemtest.dsl.instance;
 
+import org.approvaltests.Approvals;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.partition.PartitionTree;
-import sleeper.core.partition.PartitionsBuilder;
+import sleeper.compaction.strategy.impl.BasicCompactionStrategy;
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 
-import java.util.List;
 import java.util.Map;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
+import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
-import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFiles;
-import static sleeper.core.testutils.printers.FileReferencePrinter.printExpectedFilesForAllTables;
 import static sleeper.core.testutils.printers.FileReferencePrinter.printTableFilesExpectingIdentical;
-import static sleeper.core.testutils.printers.PartitionsPrinter.printExpectedPartitionsForAllTables;
 import static sleeper.core.testutils.printers.PartitionsPrinter.printTablePartitionsExpectingIdentical;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStringAndZeroPadTo;
@@ -43,6 +41,7 @@ import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides.o
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.DEFAULT_SCHEMA;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.ROW_KEY_FIELD_NAME;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.withDefaultProperties;
+import static sleeper.systemtest.dsl.testutil.SystemTestTableMetricsHelper.tableMetrics;
 
 @InMemoryDslTest
 public class MultipleTablesTest {
@@ -77,6 +76,36 @@ public class MultipleTablesTest {
     }
 
     @Test
+    void shouldCompactAndGCMultipleTables(SleeperSystemTest sleeper) {
+        // Given we have several tables
+        // And we ingest two source files as separate jobs
+        sleeper.tables().createManyWithProperties(NUMBER_OF_TABLES, schema, Map.of(
+                COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
+                COMPACTION_FILES_BATCH_SIZE, "2",
+                GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "0"));
+        sleeper.sourceFiles()
+                .createWithNumberedRecords(schema, "file1.parquet", LongStream.range(0, 50))
+                .createWithNumberedRecords(schema, "file2.parquet", LongStream.range(50, 100));
+        sleeper.ingest().byQueue()
+                .sendSourceFilesToAllTables("file1.parquet")
+                .sendSourceFilesToAllTables("file2.parquet")
+                .invokeTask().waitForJobs();
+
+        // When we run compaction and GC
+        sleeper.compaction().createJobs(NUMBER_OF_TABLES).invokeTasks(1).waitForJobs();
+        sleeper.garbageCollection().invoke().waitFor();
+
+        // Then all tables should have one active file with the expected records, and none ready for GC
+        assertThat(sleeper.query().byQueue().allRecordsByTable())
+                .hasSize(NUMBER_OF_TABLES)
+                .allSatisfy(((table, records) -> assertThat(records).containsExactlyElementsOf(
+                        sleeper.generateNumberedRecords(schema, LongStream.range(0, 100)))));
+        var partitionsByTable = sleeper.partitioning().treeByTable();
+        var filesByTable = sleeper.tableFiles().filesByTable();
+        Approvals.verify(printTableFilesExpectingIdentical(partitionsByTable, filesByTable));
+    }
+
+    @Test
     void shouldSplitPartitionsOfMultipleTables(SleeperSystemTest sleeper) {
         // Given we have several tables with a split threshold of 20
         // And we ingest a file of 100 records to each table
@@ -103,34 +132,38 @@ public class MultipleTablesTest {
                 .allSatisfy((table, records) -> assertThat(records)
                         .containsExactlyInAnyOrderElementsOf(
                                 sleeper.generateNumberedRecords(schema, LongStream.range(0, 100))));
-        var tables = sleeper.tables().list();
         var partitionsByTable = sleeper.partitioning().treeByTable();
         var filesByTable = sleeper.tableFiles().filesByTable();
-        PartitionTree expectedPartitions = new PartitionsBuilder(schema)
-                .rootFirst("root")
-                .splitToNewChildren("root", "L", "R", "row-50")
-                .splitToNewChildren("L", "LL", "LR", "row-25")
-                .splitToNewChildren("R", "RL", "RR", "row-75")
-                .splitToNewChildren("LL", "LLL", "LLR", "row-12")
-                .splitToNewChildren("LR", "LRL", "LRR", "row-37")
-                .splitToNewChildren("RL", "RLL", "RLR", "row-62")
-                .splitToNewChildren("RR", "RRL", "RRR", "row-87")
-                .buildTree();
-        assertThat(printTablePartitionsExpectingIdentical(schema, partitionsByTable))
-                .isEqualTo(printExpectedPartitionsForAllTables(schema, tables, expectedPartitions));
-        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(expectedPartitions);
-        assertThat(printTableFilesExpectingIdentical(partitionsByTable, filesByTable))
-                .isEqualTo(printExpectedFilesForAllTables(tables, expectedPartitions, activeAndReadyForGCFiles(
-                        List.of(
-                                fileReferenceFactory.partitionFile("LLL", 12),
-                                fileReferenceFactory.partitionFile("LLR", 13),
-                                fileReferenceFactory.partitionFile("LRL", 12),
-                                fileReferenceFactory.partitionFile("LRR", 13),
-                                fileReferenceFactory.partitionFile("RLL", 12),
-                                fileReferenceFactory.partitionFile("RLR", 13),
-                                fileReferenceFactory.partitionFile("RRL", 12),
-                                fileReferenceFactory.partitionFile("RRR", 13)),
-                        List.of("root", "L", "R", "LL", "LR", "RL", "RR"))));
+        Approvals.verify(printTablePartitionsExpectingIdentical(schema, partitionsByTable) + "\n" +
+                printTableFilesExpectingIdentical(partitionsByTable, filesByTable));
     }
 
+    @Test
+    void shouldGenerateMetricsForMultipleTables(SleeperSystemTest sleeper) {
+        // Given we have several tables
+        // And we ingest two source files as separate jobs
+        sleeper.tables().createManyWithProperties(NUMBER_OF_TABLES, schema, Map.of(
+                COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
+                COMPACTION_FILES_BATCH_SIZE, "2",
+                GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "0"));
+        sleeper.sourceFiles()
+                .createWithNumberedRecords(schema, "file1.parquet", LongStream.range(0, 50))
+                .createWithNumberedRecords(schema, "file2.parquet", LongStream.range(50, 100));
+        sleeper.ingest().byQueue()
+                .sendSourceFilesToAllTables("file1.parquet")
+                .sendSourceFilesToAllTables("file2.parquet")
+                .invokeTask().waitForJobs();
+
+        // When we compute table metrics
+        sleeper.tableMetrics().generate();
+
+        // Then each table has the expected metrics
+        sleeper.tables().forEach(() -> {
+            assertThat(sleeper.tableMetrics().get()).isEqualTo(tableMetrics(sleeper)
+                    .partitionCount(1).leafPartitionCount(1)
+                    .fileCount(2).recordCount(100)
+                    .averageActiveFilesPerPartition(2)
+                    .build());
+        });
+    }
 }

@@ -27,6 +27,7 @@ import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSourceProps;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
+import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
@@ -42,6 +43,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import java.util.Collections;
 import java.util.Locale;
 
+import static sleeper.cdk.Utils.createAlarmForDlq;
 import static sleeper.cdk.Utils.createLambdaLogGroup;
 import static sleeper.cdk.Utils.shouldDeployPaused;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_DLQ_ARN;
@@ -58,7 +60,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.TABLE_BAT
 public class TableMetricsStack extends NestedStack {
     public TableMetricsStack(
             Construct scope, String id, InstanceProperties instanceProperties,
-            BuiltJars jars, CoreStacks coreStacks) {
+            BuiltJars jars, Topic topic, CoreStacks coreStacks) {
         super(scope, id);
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
         LambdaCode metricsJar = jars.lambdaCode(BuiltJar.METRICS, jarsBucket);
@@ -119,8 +121,11 @@ public class TableMetricsStack extends NestedStack {
         instanceProperties.set(TABLE_METRICS_QUEUE_ARN, queue.getQueueArn());
         instanceProperties.set(TABLE_METRICS_DLQ_URL, deadLetterQueue.getQueueUrl());
         instanceProperties.set(TABLE_METRICS_DLQ_ARN, deadLetterQueue.getQueueArn());
-
+        createAlarmForDlq(this, "MetricsJobAlarm",
+                "Alarms if there are any messages on the dead letter queue for the table metrics queue",
+                deadLetterQueue, topic);
         queue.grantSendMessages(tableMetricsTrigger);
+        coreStacks.grantInvokeScheduled(tableMetricsTrigger, queue);
         tableMetricsPublisher.addEventSource(new SqsEventSource(queue,
                 SqsEventSourceProps.builder().batchSize(1).build()));
 

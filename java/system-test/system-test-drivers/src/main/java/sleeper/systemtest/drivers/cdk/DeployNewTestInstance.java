@@ -48,8 +48,7 @@ public class DeployNewTestInstance {
                         .tableNameForTemplate("system-test")
                         .splitPointsFileForTemplate(optionalArgument(args, 6).map(Path::of).orElse(null))
                         .build().load())
-                .extraInstanceProperties(properties ->
-                        properties.set(SYSTEM_TEST_REPO, args[2] + "/system-test"))
+                .extraInstanceProperties(properties -> properties.set(SYSTEM_TEST_REPO, args[2] + "/system-test"))
                 .extraDockerImages(List.of(SYSTEM_TEST_IMAGE))
                 .instanceId(args[2])
                 .vpcId(args[3])

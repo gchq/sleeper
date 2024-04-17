@@ -25,6 +25,7 @@ import sleeper.systemtest.dsl.ingest.DirectIngestDriver;
 import sleeper.systemtest.dsl.ingest.IngestBatcherDriver;
 import sleeper.systemtest.dsl.ingest.IngestByQueue;
 import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
+import sleeper.systemtest.dsl.instance.AssumeAdminRoleDriver;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
 import sleeper.systemtest.dsl.instance.SleeperTablesDriver;
@@ -76,6 +77,11 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
     @Override
     public SleeperInstanceDriver instance(SystemTestParameters parameters) {
         return instanceDriver;
+    }
+
+    @Override
+    public AssumeAdminRoleDriver assumeAdminRole() {
+        return properties -> this;
     }
 
     @Override
@@ -149,6 +155,11 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
 
     @Override
     public QueryAllTablesDriver queryByQueue(SystemTestContext context) {
+        return InMemoryQueryByQueueDriver.allTablesDriver(context.instance(), data);
+    }
+
+    @Override
+    public QueryAllTablesDriver queryByWebSocket(SystemTestContext context) {
         return InMemoryQueryByQueueDriver.allTablesDriver(context.instance(), data);
     }
 

@@ -29,9 +29,9 @@ import sleeper.clients.util.ClientUtils;
 import sleeper.compaction.job.CompactionJobSerDe;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.job.common.QueueMessageCount;
 import sleeper.query.model.QuerySerDe;
 import sleeper.splitter.SplitPartitionJobDefinitionSerDe;
+import sleeper.task.common.QueueMessageCount;
 
 import java.io.IOException;
 import java.util.function.Function;

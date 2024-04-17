@@ -28,7 +28,6 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.bulkimport.job.runner.BulkImportJobDriver;
 import sleeper.bulkimport.job.runner.BulkImportJobInput;
-import sleeper.bulkimport.job.runner.BulkImportJobRunner;
 import sleeper.bulkimport.job.runner.SparkFileReferenceRow;
 import sleeper.bulkimport.job.runner.StructTypeFactory;
 import sleeper.bulkimport.job.runner.rdd.WriteParquetFile;
@@ -41,9 +40,8 @@ import java.util.Collection;
 import java.util.stream.Collectors;
 
 /**
- * This class runs {@link BulkImportJobDriver} with a {@link BulkImportJobRunner} which
- * uses Spark's Dataframe API to efficiently sort and write out the data split by
- * Sleeper partition.
+ * Runs a bulk import job using Spark's Dataframe API, sorting locally in each partition. Sorts and writes out the data
+ * split by Sleeper partition.
  */
 public class BulkImportDataframeLocalSortDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportDataframeLocalSortDriver.class);

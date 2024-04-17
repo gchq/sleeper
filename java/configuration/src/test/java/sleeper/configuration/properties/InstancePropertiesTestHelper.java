@@ -30,7 +30,9 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.FILE_REFERENCE_COUNT_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.FILE_TRANSACTION_LOG_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_TRANSACTION_LOG_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.REVISION_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_ID_INDEX_DYNAMO_TABLENAME;
@@ -84,6 +86,8 @@ public class InstancePropertiesTestHelper {
         instanceProperties.set(FILE_REFERENCE_COUNT_TABLENAME, id + "-frc");
         instanceProperties.set(PARTITION_TABLENAME, id + "-p");
         instanceProperties.set(REVISION_TABLENAME, id + "-rv");
+        instanceProperties.set(FILE_TRANSACTION_LOG_TABLENAME, id + "-ftl");
+        instanceProperties.set(PARTITION_TRANSACTION_LOG_TABLENAME, id + "-ptl");
         instanceProperties.set(TABLE_NAME_INDEX_DYNAMO_TABLENAME, id + "-tni");
         instanceProperties.set(TABLE_ID_INDEX_DYNAMO_TABLENAME, id + "-tii");
         instanceProperties.set(TABLE_ONLINE_INDEX_DYNAMO_TABLENAME, id + "-tio");

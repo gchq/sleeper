@@ -50,8 +50,7 @@ public class PartitionsTestHelper {
     }
 
     private static PartitionTree createPartitionsFromSplitPoints(Schema schema, List<Object> splitPoints) {
-        return new PartitionTree(
-                new PartitionsFromSplitPoints(schema, splitPoints).construct());
+        return new PartitionTree(new PartitionsFromSplitPoints(schema, splitPoints).construct());
     }
 
     private static List<Object> readStringSplitPoints(Path file) {

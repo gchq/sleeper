@@ -112,8 +112,7 @@ public class IngestTaskStatusReportTest {
     private String getReport(IngestTaskQuery query, Function<PrintStream, IngestTaskStatusReporter> getReporter) {
         ToStringPrintStream output = new ToStringPrintStream();
         new IngestTaskStatusReport(store,
-                getReporter.apply(output.getPrintStream()), query
-        ).run();
+                getReporter.apply(output.getPrintStream()), query).run();
         return output.toString();
     }
 }

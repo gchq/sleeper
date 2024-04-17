@@ -16,7 +16,7 @@
 package sleeper.core.schema.type;
 
 /**
- * Represents the types of data that can in a Sleeper <code>Record</code>.
+ * Represents the types of data that can be in a Sleeper record.
  */
 public interface Type {
 }

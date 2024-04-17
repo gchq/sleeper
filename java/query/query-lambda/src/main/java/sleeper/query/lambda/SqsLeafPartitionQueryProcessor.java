@@ -37,6 +37,7 @@ import sleeper.query.model.QueryOrLeafPartitionQuery;
 import sleeper.query.output.ResultsOutput;
 import sleeper.query.output.ResultsOutputConstants;
 import sleeper.query.output.ResultsOutputInfo;
+import sleeper.query.runner.output.NoResultsOutput;
 import sleeper.query.runner.output.S3ResultsOutput;
 import sleeper.query.runner.output.SQSResultsOutput;
 import sleeper.query.runner.output.WebSocketResultsOutput;
@@ -53,6 +54,7 @@ import java.util.concurrent.Executors;
 
 import static sleeper.configuration.properties.instance.QueryProperty.QUERY_PROCESSOR_LAMBDA_RECORD_RETRIEVAL_THREADS;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.query.runner.output.NoResultsOutput.NO_RESULTS_OUTPUT;
 
 public class SqsLeafPartitionQueryProcessor {
     private static final Logger LOGGER = LoggerFactory.getLogger(SqsLeafPartitionQueryProcessor.class);
@@ -98,7 +100,6 @@ public class SqsLeafPartitionQueryProcessor {
         }
     }
 
-
     private Configuration getConfiguration(TableProperties tableProperties) {
         String tableName = tableProperties.get(TABLE_NAME);
         if (!configurationCache.containsKey(tableName)) {
@@ -131,7 +132,9 @@ public class SqsLeafPartitionQueryProcessor {
         } else if (S3ResultsOutput.S3.equals(destination)) {
             return new S3ResultsOutput(instanceProperties, tableProperties, resultsPublisherConfig);
         } else if (WebSocketResultsOutput.DESTINATION_NAME.equals(destination)) {
-            return new WebSocketResultsOutput(resultsPublisherConfig);
+            return new WebSocketResultsOutput(tableProperties.getSchema(), resultsPublisherConfig);
+        } else if (NO_RESULTS_OUTPUT.equals(destination)) {
+            return new NoResultsOutput();
         } else {
             LOGGER.info("Unknown results publisher from config {}", resultsPublisherConfig);
             return (query, results) -> new ResultsOutputInfo(0, Collections.emptyList(),

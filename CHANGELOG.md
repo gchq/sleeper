@@ -4,6 +4,51 @@ Releases
 This page documents the releases of Sleeper. Performance figures for each release
 are available [here](docs/13-system-tests.md#performance-benchmarks)
 
+## Version 0.22.1
+
+This is a bug-fix release. It contains a fix of the following bug:
+
+- Fixed bug in compaction task starter logic that was introduced in 0.22.0.
+
+## Version 0.22.0
+
+*Note: this release contains breaking changes. It is not possible to upgrade from a previous version of Sleeper
+to version 0.22.0*
+
+This contains the following improvements:
+
+Tables:
+
+- Increased scalability of creating and running compaction jobs when using multiple tables.
+- Increased scalability of partition splitting when using multiple tables.
+- Increased scalability of garbage collection when using multiple tables.
+- Increased scalability of table metrics when using multiple tables.
+- Added ability to delete a table using the script `scripts/deploy/deleteTable.sh`.
+- Added ability to rename a table using the script `scripts/deploy/renameTable.sh`.
+- Added ability to take a table offline and put a table online using the scripts `scripts/utility/takeTableOffline.sh`
+and `scripts/utility/putTableOnline.sh` respectively. Partition splitting and compactions will not be performed on
+offline tables, but you will still be able to perform ingests and queries against them.
+See the documentation [here](docs/12-design.md#tables) for more information.
+
+Compaction:
+
+- Added new properties to configure how long compaction tasks will wait for compaction jobs before they terminate.
+- Added script to allow you to create compaction tasks manually, even if there are no compaction jobs on the queue
+using the script `scripts/utility/startCompactionTasks.sh`.
+- Added ability to create compaction jobs for a specific table using the script `scripts/utility/compactAllFiles.sh`.
+
+Ingest:
+
+- Added a new property `INGEST_FILE_WRITING_STRATEGY` to specify how files are created when performing an ingest.
+
+Query:
+
+- Moved the WebSocket API into a new optional stack called `WebSocketQueryStack`.
+
+System tests:
+
+- Added tests for running compactions in parallel, in preparation for the next milestone.
+
 ## Version 0.21.0
 
 *Note: this release contains breaking changes. It is not possible to upgrade from a previous version of Sleeper
@@ -22,7 +67,7 @@ Compactions:
 
 State store:
 
-- Files are now split by storing references to them in the state store. More information about how file references are 
+- Files are now split by storing references to them in the state store. More information about how file references are
   stored can be found [here](docs/12-design.md#state-store).
 - `FileInfo` has been renamed to `FileReference`.
 - Renamed several state store methods to reflect new file reference changes.

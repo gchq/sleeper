@@ -40,7 +40,7 @@ import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.table.TableStatus;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
-import sleeper.job.common.QueueMessageCount;
+import sleeper.task.common.QueueMessageCount;
 
 import java.time.Clock;
 import java.util.HashMap;
@@ -72,7 +72,7 @@ public class IngestJobStatusReport {
             IngestJobStatusReporter reporter, QueueMessageCount.Client queueClient, InstanceProperties properties,
             Map<String, Integer> persistentEmrStepCount) {
         this(ingestJobStatusStore, JobQuery.fromParametersOrPrompt(table, queryType, queryParameters,
-                        Clock.systemUTC(), new ConsoleInput(System.console()), Map.of("n", new RejectedJobsQuery())),
+                Clock.systemUTC(), new ConsoleInput(System.console()), Map.of("n", new RejectedJobsQuery())),
                 reporter, queueClient, properties, persistentEmrStepCount);
     }
 

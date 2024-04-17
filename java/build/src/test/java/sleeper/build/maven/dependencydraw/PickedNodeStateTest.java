@@ -25,7 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.build.maven.TestMavenModuleStructure.dependency;
 import static sleeper.build.maven.TestMavenModuleStructure.moduleRef;
 import static sleeper.build.maven.TestMavenModuleStructure.rootBuilder;
-import static sleeper.build.maven.TestMavenModuleStructure.testedModuleBuilder;
+import static sleeper.build.maven.TestMavenModuleStructure.sourceModuleBuilder;
 
 public class PickedNodeStateTest {
 
@@ -33,9 +33,8 @@ public class PickedNodeStateTest {
     void shouldDrawUnpickedDependencyInBlack() {
         // Given
         GraphModel model = GraphModel.from(rootBuilder().modulesArray(
-                testedModuleBuilder("core").build(),
-                testedModuleBuilder("configuration").dependenciesArray(dependency("sleeper:core")).build()
-        ).build());
+                sourceModuleBuilder("core").build(),
+                sourceModuleBuilder("configuration").dependenciesArray(dependency("sleeper:core")).build()).build());
 
         // When
         PickedNodeState picked = new PickedNodeState(model);
@@ -50,9 +49,8 @@ public class PickedNodeStateTest {
     void shouldDrawPickedDependencyInBlue() {
         // Given
         GraphModel model = GraphModel.from(rootBuilder().modulesArray(
-                testedModuleBuilder("core").build(),
-                testedModuleBuilder("configuration").dependenciesArray(dependency("sleeper:core")).build()
-        ).build());
+                sourceModuleBuilder("core").build(),
+                sourceModuleBuilder("configuration").dependenciesArray(dependency("sleeper:core")).build()).build());
         PickedNodeState picked = new PickedNodeState(model);
 
         // When
@@ -68,9 +66,8 @@ public class PickedNodeStateTest {
     void shouldDrawPickedDependentInRed() {
         // Given
         GraphModel model = GraphModel.from(rootBuilder().modulesArray(
-                testedModuleBuilder("core").build(),
-                testedModuleBuilder("configuration").dependenciesArray(dependency("sleeper:core")).build()
-        ).build());
+                sourceModuleBuilder("core").build(),
+                sourceModuleBuilder("configuration").dependenciesArray(dependency("sleeper:core")).build()).build());
         PickedNodeState picked = new PickedNodeState(model);
 
         // When
@@ -86,11 +83,10 @@ public class PickedNodeStateTest {
     void shouldDrawUnpickedDependencyInGreyWhenViewingTransitives() {
         // Given
         GraphModel model = GraphModel.from(rootBuilder().modulesArray(
-                testedModuleBuilder("core").build(),
-                testedModuleBuilder("configuration").dependenciesArray(dependency("sleeper:core")).build(),
-                testedModuleBuilder("ingest").dependenciesArray(dependency("sleeper:configuration")).build(),
-                testedModuleBuilder("splitter").dependenciesArray(dependency("sleeper:configuration")).build()
-        ).build());
+                sourceModuleBuilder("core").build(),
+                sourceModuleBuilder("configuration").dependenciesArray(dependency("sleeper:core")).build(),
+                sourceModuleBuilder("ingest").dependenciesArray(dependency("sleeper:configuration")).build(),
+                sourceModuleBuilder("splitter").dependenciesArray(dependency("sleeper:configuration")).build()).build());
         PickedNodeState picked = new PickedNodeState(model);
 
         // When
@@ -106,11 +102,10 @@ public class PickedNodeStateTest {
     void shouldDrawIndirectTransitiveInBlack() {
         // Given
         GraphModel model = GraphModel.from(rootBuilder().modulesArray(
-                testedModuleBuilder("core").build(),
-                testedModuleBuilder("configuration").dependenciesArray(dependency("sleeper:core")).build(),
-                testedModuleBuilder("ingest").dependenciesArray(dependency("sleeper:configuration")).build(),
-                testedModuleBuilder("bulk-import").dependenciesArray(dependency("sleeper:ingest")).build()
-        ).build());
+                sourceModuleBuilder("core").build(),
+                sourceModuleBuilder("configuration").dependenciesArray(dependency("sleeper:core")).build(),
+                sourceModuleBuilder("ingest").dependenciesArray(dependency("sleeper:configuration")).build(),
+                sourceModuleBuilder("bulk-import").dependenciesArray(dependency("sleeper:ingest")).build()).build());
         PickedNodeState picked = new PickedNodeState(model);
 
         // When

@@ -103,8 +103,7 @@ public class IngestBatcherTestBase {
     }
 
     protected void batchFilesWithTablesAndJobIds(List<TableProperties> tables, List<String> jobIds) {
-        batchFilesWithJobIds(jobIds, builder ->
-                builder.tablePropertiesProvider(new FixedTablePropertiesProvider(tables)));
+        batchFilesWithJobIds(jobIds, builder -> builder.tablePropertiesProvider(new FixedTablePropertiesProvider(tables)));
     }
 
     protected void batchFilesWithJobIds(List<String> jobIds, Consumer<IngestBatcher.Builder> config) {

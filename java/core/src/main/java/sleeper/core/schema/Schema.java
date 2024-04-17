@@ -222,7 +222,6 @@ public class Schema {
 
     private static Stream<Field> streamAllFields(
             List<Field> rowKeyFields, List<Field> sortKeyFields, List<Field> valueFields) {
-
         return Stream.of(rowKeyFields, sortKeyFields, valueFields)
                 .flatMap(List::stream);
     }

@@ -49,8 +49,7 @@ public class ObjectFactory {
                     .getDeclaredConstructor()
                     .newInstance();
             LOGGER.info("Created object of class {} as subclass of {}", className, parentClass.getName());
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException |
-                 InvocationTargetException e) {
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
             throw new ObjectFactoryException("Exception instantiating object of class " + className
                     + " as subclass of " + parentClass.getName(), e);
         }

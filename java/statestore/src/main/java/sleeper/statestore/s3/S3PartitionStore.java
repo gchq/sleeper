@@ -30,7 +30,6 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.ListType;
-import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.PartitionStore;
 import sleeper.core.statestore.StateStoreException;
@@ -39,7 +38,6 @@ import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -59,7 +57,6 @@ class S3PartitionStore implements PartitionStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(S3PartitionStore.class);
     private static final Schema PARTITION_SCHEMA = initialisePartitionSchema();
 
-    private final List<PrimitiveType> rowKeyTypes;
     private final S3RevisionIdStore s3RevisionIdStore;
     private final Configuration conf;
     private final RegionSerDe regionSerDe;
@@ -71,7 +68,6 @@ class S3PartitionStore implements PartitionStore {
         conf = Objects.requireNonNull(builder.conf, "hadoopConfiguration must not be null");
         tableSchema = Objects.requireNonNull(builder.tableSchema, "tableSchema must not be null");
         regionSerDe = new RegionSerDe(tableSchema);
-        rowKeyTypes = tableSchema.getRowKeyTypes();
         stateStorePath = Objects.requireNonNull(builder.stateStorePath, "stateStorePath must not be null");
         s3RevisionIdStore = Objects.requireNonNull(builder.s3RevisionIdStore, "s3RevisionIdStore must not be null");
         s3StateStoreFile = S3StateStoreDataFile.builder()
@@ -118,9 +114,9 @@ class S3PartitionStore implements PartitionStore {
     }
 
     private static String validateSplitPartitionRequest(Map<String, Partition> partitionIdToPartition,
-                                                        Partition splitPartition,
-                                                        Partition newPartition1,
-                                                        Partition newPartition2) {
+            Partition splitPartition,
+            Partition newPartition1,
+            Partition newPartition2) {
         // Validate that splitPartition is there and is a leaf partition
         if (!partitionIdToPartition.containsKey(splitPartition.getId())) {
             return "splitPartition should be present";
@@ -171,14 +167,14 @@ class S3PartitionStore implements PartitionStore {
     }
 
     @Override
-    public void clearPartitionData() {
-        Path path = new Path(stateStorePath + "/partitions");
+    public void clearPartitionData() throws StateStoreException {
         try {
+            Path path = new Path(stateStorePath + "/partitions");
             path.getFileSystem(conf).delete(path, true);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+            s3RevisionIdStore.deletePartitionsRevision();
+        } catch (IOException | RuntimeException e) {
+            throw new StateStoreException("Failed deleting partitions file", e);
         }
-        s3RevisionIdStore.deletePartitionsRevision();
     }
 
     private String getPartitionsPath(S3RevisionId revisionId) {
@@ -280,7 +276,6 @@ class S3PartitionStore implements PartitionStore {
         Partition.Builder partitionBuilder = Partition.builder()
                 .id((String) record.get("partitionId"))
                 .leafPartition(record.get("leafPartition").equals("true"))
-                .rowKeyTypes(rowKeyTypes)
                 .childPartitionIds((List<String>) record.get("childPartitionIds"))
                 .region(regionSerDe.fromJson((String) record.get("region")))
                 .dimension((int) record.get("dimension"));

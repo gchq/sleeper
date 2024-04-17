@@ -39,8 +39,7 @@ public class RegionTest {
     private static Schema schemaWithTwoKeysOfTypes(PrimitiveType type1, PrimitiveType type2) {
         return Schema.builder().rowKeyFields(
                 new Field("key1", type1),
-                new Field("key2", type2)
-        ).build();
+                new Field("key2", type2)).build();
     }
 
     @Test

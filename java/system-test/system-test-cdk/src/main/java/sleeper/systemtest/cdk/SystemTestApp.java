@@ -34,8 +34,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_ENABLED;
 
 /**
- * An {@link App} to deploy the {@link SleeperCdkApp} and the additional stacks
- * needed for the system tests.
+ * Deploys Sleeper and additional stacks used for large-scale system tests.
  */
 public class SystemTestApp extends SleeperCdkApp {
     private boolean readyToGenerateProperties = false;

@@ -20,32 +20,17 @@ import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.range.RegionSerDe;
 import sleeper.core.schema.Schema;
-import sleeper.core.table.TableStatus;
 
 import java.io.PrintStream;
-import java.util.Collection;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class PartitionsPrinter {
 
     private PartitionsPrinter() {
     }
 
-    public static String printExpectedPartitionsForAllTables(Schema schema, List<TableStatus> tables, PartitionTree tree) {
-        return printExpectedPartitionsForAllTables(schema,
-                tables.stream().map(TableStatus::getTableName).collect(Collectors.toUnmodifiableList()), tree);
-    }
-
-    public static String printExpectedPartitionsForAllTables(Schema schema, Collection<String> tableNames, PartitionTree tree) {
-        return printTablePartitionsExpectingIdentical(schema, tableNames.stream()
-                .collect(Collectors.toMap(table -> table, table -> tree)));
-    }
-
     public static String printTablePartitionsExpectingIdentical(Schema schema, Map<String, PartitionTree> partitionsByTable) {
-        return TablesPrinter.printForAllTables(partitionsByTable.keySet(), table ->
-                printPartitions(schema, partitionsByTable.get(table)));
+        return TablesPrinter.printForAllTables(partitionsByTable.keySet(), table -> printPartitions(schema, partitionsByTable.get(table)));
     }
 
     public static String printPartitions(Schema schema, PartitionTree partitionTree) {

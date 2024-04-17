@@ -16,64 +16,73 @@
 package sleeper.core.statestore;
 
 import sleeper.core.partition.Partition;
+import sleeper.core.partition.PartitionTree;
 
+import java.time.Instant;
 import java.util.List;
 
 /**
- * Stores information about the partitions where data files are held (ie. {@link Partition}s).
+ * Stores information about the partitions holding records in a Sleeper table.
  */
 public interface PartitionStore {
 
     /**
-     * Atomically updates a {@link Partition} and adds two new ones, conditional
-     * on the splitPartition being marked as a leaf partition.
+     * Atomically splits a partition to create child partitions. Updates the existing partition to record it as split,
+     * and creates new leaf partitions.
      *
-     * @param splitPartition The {@link Partition} to be updated
-     * @param newPartition1  The first new {@link Partition}
-     * @param newPartition2  The second new {@link Partition}
+     * @param  splitPartition      The {@link Partition} to be updated (must refer to the new leaves as children).
+     * @param  newPartition1       The first new {@link Partition} (must be a leaf partition).
+     * @param  newPartition2       The second new {@link Partition} (must be a leaf partition).
      * @throws StateStoreException if split is not valid or update fails
      */
     void atomicallyUpdatePartitionAndCreateNewOnes(Partition splitPartition,
-                                                   Partition newPartition1,
-                                                   Partition newPartition2) throws StateStoreException;
+            Partition newPartition1,
+            Partition newPartition2) throws StateStoreException;
 
     /**
-     * Returns all the {@link Partition}s.
+     * Returns all partitions.
      *
-     * @return All the {@link Partition}s
+     * @return                     all the {@link Partition}s
      * @throws StateStoreException if query fails
      */
     List<Partition> getAllPartitions() throws StateStoreException;
 
     /**
-     * Returns all the {@link Partition}s which are leaf partitions.
+     * Returns all partitions which are leaf partitions.
      *
-     * @return All the {@link Partition}s which are leaf partitions.
+     * @return                     all the {@link Partition}s which are leaf partitions
      * @throws StateStoreException if query fails
      */
     List<Partition> getLeafPartitions() throws StateStoreException;
 
     /**
-     * Initialises the store with a single root {@link Partition} covering all
-     * keys.
+     * Initialises the store with a single partition covering all keys. This is the root partition which may be split
+     * in the future.
      *
      * @throws StateStoreException if update fails
      */
     void initialise() throws StateStoreException;
 
     /**
-     * Initialises store with the list of {@link Partition}s.
+     * Initialises the store with a list of all partitions. This must be a complete {@link PartitionTree}.
      *
-     * @param partitions The initial list of {@link Partition}s
+     * @param  partitions          The initial list of {@link Partition}s
      * @throws StateStoreException if partitions not provided or update fails
      */
     void initialise(List<Partition> partitions) throws StateStoreException;
 
     /**
-     * Clears all partition data from the partition store.
-     * <p>
-     * Note that after calling this method the partition store must be initialised
-     * before the Sleeper table can be used again.
+     * Clears all partition data from the store. Note that this will invalidate any file references held in the store,
+     * so this should only be used when no files are present. The store must be initialised before the Sleeper table can
+     * be used again. Any file references will need to be added again.
      */
-    void clearPartitionData();
+    void clearPartitionData() throws StateStoreException;
+
+    /**
+     * Used to fix the time of partition updates. Should only be called during tests.
+     *
+     * @param time the time that any future partition updates will be considered to occur
+     */
+    default void fixPartitionUpdateTime(Instant time) {
+    }
 }
