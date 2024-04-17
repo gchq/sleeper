@@ -30,6 +30,7 @@ import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.status.update.AddTable;
+import sleeper.clients.util.AssumeSleeperRole;
 import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.CommandPipelineRunner;
 import sleeper.clients.util.EcrRepositoryCreator;
@@ -59,7 +60,6 @@ public class DeployNewInstance {
     private final AmazonS3 s3;
     private final S3Client s3v2;
     private final AmazonECR ecr;
-    private final AmazonDynamoDB dynamoDB;
     private final Path scriptsDirectory;
     private final String instanceId;
     private final String vpcId;
@@ -77,7 +77,6 @@ public class DeployNewInstance {
         s3 = builder.s3;
         s3v2 = builder.s3v2;
         ecr = builder.ecr;
-        dynamoDB = builder.dynamoDB;
         scriptsDirectory = builder.scriptsDirectory;
         instanceId = builder.instanceId;
         vpcId = builder.vpcId;
@@ -166,9 +165,12 @@ public class DeployNewInstance {
                 .jarsDirectory(jarsDirectory).version(sleeperVersion)
                 .build().invoke(instanceType, cdkCommand, runCommand);
         instanceProperties.loadFromS3GivenInstanceId(s3, instanceId);
+        AssumeSleeperRole assumeAdmin = AssumeSleeperRole.instanceAdmin(sts, instanceProperties);
+        AmazonS3 instanceS3 = assumeAdmin.v1Client(AmazonS3ClientBuilder.standard());
+        AmazonDynamoDB instanceDynamoDB = assumeAdmin.v1Client(AmazonDynamoDBClientBuilder.standard());
         for (TableProperties tableProperties : deployInstanceConfiguration.getTableProperties()) {
             LOGGER.info("Adding table " + tableProperties.getStatus());
-            new AddTable(s3, dynamoDB, instanceProperties, tableProperties, getConfigurationForClient(instanceProperties, tableProperties)).run();
+            new AddTable(instanceS3, instanceDynamoDB, instanceProperties, tableProperties, getConfigurationForClient(instanceProperties, tableProperties)).run();
         }
         LOGGER.info("Finished deployment of new instance");
     }
@@ -186,7 +188,6 @@ public class DeployNewInstance {
         private AmazonS3 s3;
         private S3Client s3v2;
         private AmazonECR ecr;
-        private AmazonDynamoDB dynamoDB;
         private Path scriptsDirectory;
         private String instanceId;
         private String vpcId;
@@ -224,11 +225,6 @@ public class DeployNewInstance {
 
         public Builder ecr(AmazonECR ecr) {
             this.ecr = ecr;
-            return this;
-        }
-
-        public Builder dynamoDB(AmazonDynamoDB dynamoDB) {
-            this.dynamoDB = dynamoDB;
             return this;
         }
 
@@ -292,17 +288,15 @@ public class DeployNewInstance {
                         AWSSecurityTokenServiceClientBuilder.defaultClient(),
                         DefaultAwsRegionProviderChain.builder().build(),
                         AmazonS3ClientBuilder.defaultClient(), s3v2,
-                        AmazonECRClientBuilder.defaultClient(),
-                        AmazonDynamoDBClientBuilder.defaultClient());
+                        AmazonECRClientBuilder.defaultClient());
             }
         }
 
         public void deployWithClients(
                 AWSSecurityTokenService sts, AwsRegionProvider regionProvider,
-                AmazonS3 s3, S3Client s3v2, AmazonECR ecr, AmazonDynamoDB dynamoDB) throws IOException, InterruptedException {
+                AmazonS3 s3, S3Client s3v2, AmazonECR ecr) throws IOException, InterruptedException {
             sts(sts).regionProvider(regionProvider)
                     .s3(s3).s3v2(s3v2).ecr(ecr)
-                    .dynamoDB(dynamoDB)
                     .build().deploy();
         }
     }

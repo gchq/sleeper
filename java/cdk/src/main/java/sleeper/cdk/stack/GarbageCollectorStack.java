@@ -148,6 +148,7 @@ public class GarbageCollectorStack extends NestedStack {
         queue.grantSendMessages(triggerFunction);
         handlerFunction.addEventSource(new SqsEventSource(queue,
                 SqsEventSourceProps.builder().batchSize(1).build()));
+        coreStacks.grantInvokeScheduled(triggerFunction, queue);
 
         Utils.addStackTagIfSet(this, instanceProperties);
     }

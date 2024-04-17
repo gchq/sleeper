@@ -13,15 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package sleeper.systemtest.dsl.instance;
 
-package sleeper.systemtest.dsl.extension;
+import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.systemtest.dsl.SystemTestDrivers;
 
-import sleeper.systemtest.dsl.SystemTestContext;
-import sleeper.systemtest.dsl.reporting.SystemTestReports;
+public interface AssumeAdminRoleDriver {
 
-public class AfterTestReports extends AfterTestReportsBase<SystemTestReports.SystemTestBuilder> {
+    SystemTestDrivers assumeAdminRole(InstanceProperties instanceProperties);
 
-    AfterTestReports(SystemTestContext context) {
-        super(() -> SystemTestReports.builder(context));
-    }
 }

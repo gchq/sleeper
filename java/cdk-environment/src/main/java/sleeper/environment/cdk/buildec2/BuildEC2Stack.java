@@ -29,12 +29,17 @@ import software.amazon.awscdk.services.ec2.SubnetType;
 import software.amazon.awscdk.services.ec2.UserData;
 import software.amazon.awscdk.services.ec2.Vpc;
 import software.amazon.awscdk.services.ec2.VpcLookupOptions;
+import software.amazon.awscdk.services.iam.AccountRootPrincipal;
+import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
+import software.amazon.awscdk.services.iam.PolicyStatement;
+import software.amazon.awscdk.services.iam.Role;
 import software.constructs.Construct;
 
 import sleeper.environment.cdk.config.AppContext;
 
 import java.util.Collections;
+import java.util.List;
 
 import static sleeper.environment.cdk.config.AppParameters.VPC_ID;
 
@@ -63,6 +68,8 @@ public class BuildEC2Stack extends Stack {
                 .build();
         instance.getRole().addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("AdministratorAccess"));
 
+        Role restrictedRole = createRestrictedRole();
+
         CfnOutput.Builder.create(this, "LoginUser")
                 .value(image.loginUser())
                 .description("User to SSH into on build EC2 instance")
@@ -71,6 +78,50 @@ public class BuildEC2Stack extends Stack {
                 .value(instance.getInstanceId())
                 .description("ID of the build EC2 instance")
                 .build();
+        CfnOutput.Builder.create(this, "RestrictedRoleArn")
+                .value(restrictedRole.getRoleArn())
+                .description("Role with restricted access to deploy Sleeper instances. " +
+                        "This can be assumed to test deploying a Sleeper instance with fewer permissions. " +
+                        "We can aim to reduce the permissions for this role in the future.")
+                .build();
+    }
+
+    private Role createRestrictedRole() {
+
+        Role role = Role.Builder.create(this, "RestrictedRole")
+                .assumedBy(new AccountRootPrincipal())
+                .build();
+        ManagedPolicy policy = new ManagedPolicy(this, "BuildEC2Policy");
+
+        // Allow running CDK by assuming roles created by cdk bootstrap
+        // Allow interacting with Sleeper by assuming admin role
+        policy.addStatements(PolicyStatement.Builder.create()
+                .effect(Effect.ALLOW)
+                .actions(List.of("sts:AssumeRole"))
+                .resources(List.of(
+                        "arn:aws:iam::*:role/cdk-*",
+                        "arn:aws:iam::*:role/sleeper-admin-*"))
+                .build());
+
+        // Allow creating jars bucket & Docker repositories, working with CloudFormation stacks
+        policy.addStatements(PolicyStatement.Builder.create()
+                .effect(Effect.ALLOW)
+                .actions(List.of("s3:*", "ecr:*", "cloudformation:*"))
+                .resources(List.of("*"))
+                .build());
+
+        // Allow running ECS tasks
+        policy.addStatements(PolicyStatement.Builder.create()
+                .effect(Effect.ALLOW)
+                .actions(List.of("ecs:DescribeClusters", "ecs:RunTask", "iam:PassRole",
+                        "ecs:DescribeContainerInstances", "ecs:DescribeTasks", "ecs:ListContainerInstances",
+                        "autoscaling:SetDesiredCapacity", "autoscaling:DescribeAutoScalingGroups"))
+                .resources(List.of("*"))
+                .build());
+        role.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonECSTaskExecutionRolePolicy"));
+
+        role.addManagedPolicy(policy);
+        return role;
     }
 
     private SecurityGroup createSecurityGroup() {

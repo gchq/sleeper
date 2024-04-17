@@ -24,9 +24,10 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 public class IngestStatusStoreStack extends NestedStack {
     private final IngestStatusStoreResources resources;
 
-    public IngestStatusStoreStack(Construct scope, String id, InstanceProperties instanceProperties) {
+    public IngestStatusStoreStack(
+            Construct scope, String id, InstanceProperties instanceProperties, CoreStacks coreStacks) {
         super(scope, id);
-        resources = IngestStatusStoreResources.from(this, instanceProperties);
+        resources = IngestStatusStoreResources.from(this, instanceProperties, coreStacks);
     }
 
     public IngestStatusStoreResources getResources() {

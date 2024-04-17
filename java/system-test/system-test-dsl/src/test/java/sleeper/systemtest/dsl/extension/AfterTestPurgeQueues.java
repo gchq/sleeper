@@ -20,17 +20,23 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperty;
+import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.util.PurgeQueueDriver;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 public class AfterTestPurgeQueues {
     private static final Logger LOGGER = LoggerFactory.getLogger(AfterTestPurgeQueues.class);
-    private final PurgeQueueDriver driver;
+    private final Supplier<PurgeQueueDriver> getDriver;
     private List<InstanceProperty> queueProperties = List.of();
 
-    AfterTestPurgeQueues(PurgeQueueDriver driver) {
-        this.driver = driver;
+    AfterTestPurgeQueues(SystemTestContext context) {
+        this(() -> context.instance().adminDrivers().purgeQueues(context));
+    }
+
+    AfterTestPurgeQueues(Supplier<PurgeQueueDriver> getDriver) {
+        this.getDriver = getDriver;
     }
 
     public void purgeIfTestFailed(InstanceProperty... queueProperties) {
@@ -44,7 +50,7 @@ public class AfterTestPurgeQueues {
     void testFailed() {
         LOGGER.info("Test failed, purging queues: {}", queueProperties);
         if (!queueProperties.isEmpty()) {
-            driver.purgeQueues(queueProperties);
+            getDriver.get().purgeQueues(queueProperties);
         }
     }
 }

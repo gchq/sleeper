@@ -25,8 +25,8 @@ import java.util.function.Supplier;
 public class AfterTestReportsBase<B extends SystemTestReports.Builder> {
 
     private final Supplier<B> reportsFactory;
-    private SystemTestReports reports;
     private boolean reportIfPassed;
+    private Consumer<B> config;
 
     AfterTestReportsBase(Supplier<B> reportsFactory) {
         this.reportsFactory = reportsFactory;
@@ -41,21 +41,25 @@ public class AfterTestReportsBase<B extends SystemTestReports.Builder> {
     }
 
     private void reportIfPassed(boolean reportIfPassed, Consumer<B> config) {
-        B builder = reportsFactory.get();
-        config.accept(builder);
-        reports = builder.build();
         this.reportIfPassed = reportIfPassed;
+        this.config = config;
     }
 
     void afterTestPassed(TestContext testContext) {
         if (reportIfPassed) {
-            reports.print(testContext);
+            reports().print(testContext);
         }
     }
 
     void afterTestFailed(TestContext testContext) {
-        if (reports != null) {
-            reports.print(testContext);
+        if (config != null) {
+            reports().print(testContext);
         }
+    }
+
+    private SystemTestReports reports() {
+        B builder = reportsFactory.get();
+        config.accept(builder);
+        return builder.build();
     }
 }
