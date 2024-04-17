@@ -21,7 +21,9 @@ import java.time.Duration;
 import java.time.Instant;
 
 /**
- * A utility class for formatting durations as strings.
+ * A wrapper around a Duration object for inclusion in log messages. This implements <code>toString</code> to produce
+ * human-readable output, for lazy evaluation by a logger. If we pass an instance of this class to a logger, instead of
+ * a string, we avoid building a string for a log message with a level that is not configured to be logged.
  */
 public class LoggedDuration {
     private static final DecimalFormat FORMATTER = new DecimalFormat("0.###");
