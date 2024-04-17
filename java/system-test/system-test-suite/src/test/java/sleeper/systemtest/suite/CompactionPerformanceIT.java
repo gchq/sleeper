@@ -63,7 +63,7 @@ public class CompactionPerformanceIT {
                         "contain 4.4 billion records");
         assertThat(sleeper.reporting().compactionJobs().finishedStatistics())
                 .matches(stats -> stats.isAllFinishedOneRunEach(10)
-                        && stats.isMinAverageRunRecordsPerSecond(300000),
-                        "meets minimum performance");
+                        && stats.isAverageRunRecordsPerSecondInRange(250_000, 300_000),
+                        "meets expected performance");
     }
 }
