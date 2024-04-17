@@ -2,7 +2,7 @@ Unreferenced files: 0
 Referenced files: 4
 File references: 4
 Partition at root:
-400 records in file
-300 records in file
-200 records in file
-100 records in file
+400 records in file 1
+300 records in file 2
+200 records in file 3
+100 records in file 4

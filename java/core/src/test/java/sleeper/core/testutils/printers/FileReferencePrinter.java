@@ -19,7 +19,6 @@ package sleeper.core.testutils.printers;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.table.TableStatus;
 
 import java.io.PrintWriter;
 import java.util.HashMap;
@@ -34,13 +33,6 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 public class FileReferencePrinter {
 
     private FileReferencePrinter() {
-    }
-
-    public static String printExpectedFilesForAllTables(
-            List<TableStatus> tables, PartitionTree partitions, AllReferencesToAllFiles files) {
-        return printTableFilesExpectingIdentical(
-                tables.stream().collect(Collectors.toMap(TableStatus::getTableName, table -> partitions)),
-                tables.stream().collect(Collectors.toMap(TableStatus::getTableName, table -> files)));
     }
 
     public static String printTableFilesExpectingIdentical(
@@ -64,8 +56,8 @@ public class FileReferencePrinter {
         out.println("File references: " + references.size());
         Map<String, List<FileReference>> filesByPartition = references.stream()
                 .collect(Collectors.groupingBy(FileReference::getPartitionId));
-        AtomicInteger partialCount = new AtomicInteger();
-        Map<String, Integer> numberByPartialFilename = new HashMap<>();
+        AtomicInteger nextFileNumber = new AtomicInteger();
+        Map<String, Integer> numberByFilename = new HashMap<>();
         partitionTree.traverseLeavesFirst().forEach(partition -> {
             List<FileReference> partitionFiles = filesByPartition.get(partition.getId());
             if (partitionFiles == null) {
@@ -83,12 +75,12 @@ public class FileReferencePrinter {
                 if (file.isCountApproximate()) {
                     out.print("(approx) ");
                 }
+                int fileNumber = numberByFilename.computeIfAbsent(
+                        file.getFilename(), name -> nextFileNumber.incrementAndGet());
                 if (file.onlyContainsDataForThisPartition()) {
-                    out.println("in file");
+                    out.println("in file " + fileNumber);
                 } else {
-                    int partialFileNumber = numberByPartialFilename.computeIfAbsent(
-                            file.getFilename(), name -> partialCount.incrementAndGet());
-                    out.println("in partial file " + partialFileNumber);
+                    out.println("in partial file " + fileNumber);
                 }
             }
         });
@@ -97,7 +89,9 @@ public class FileReferencePrinter {
     private static List<FileReference> sortFileReferences(AllReferencesToAllFiles files) {
         return files.getFilesWithReferences().stream()
                 .flatMap(file -> file.getInternalReferences().stream())
-                .sorted(comparing(FileReference::getNumberOfRecords).reversed())
+                .sorted(comparing(FileReference::onlyContainsDataForThisPartition)
+                        .thenComparing(FileReference::getNumberOfRecords)
+                        .reversed())
                 .collect(toUnmodifiableList());
     }
 }
