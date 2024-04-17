@@ -38,6 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
+import static sleeper.core.table.TableStatusTestHelper.uniqueIdAndName;
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.fixJitterSeed;
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.recordWaits;
 
@@ -176,6 +177,7 @@ public class TransactionLogStateStoreLogSpecificTest {
 
     private StateStore stateStore(Consumer<TransactionLogStateStore.Builder> config) {
         TransactionLogStateStore.Builder builder = TransactionLogStateStore.builder()
+                .sleeperTable(uniqueIdAndName("test-table-id", "test-table"))
                 .schema(schema)
                 .filesLogStore(filesLogStore)
                 .partitionsLogStore(partitionsLogStore)
