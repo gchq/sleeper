@@ -17,9 +17,11 @@ package sleeper.core.statestore.transactionlog;
 
 import sleeper.core.statestore.StateStoreException;
 
+import java.time.Instant;
+
 public interface StateStoreTransaction<T> {
 
     void validate(T state) throws StateStoreException;
 
-    void apply(T state);
+    void apply(T state, Instant updateTime);
 }

@@ -49,6 +49,7 @@ import sleeper.cdk.stack.TableDataStack;
 import sleeper.cdk.stack.TableIndexStack;
 import sleeper.cdk.stack.TableMetricsStack;
 import sleeper.cdk.stack.TopicStack;
+import sleeper.cdk.stack.TransactionLogStateStoreStack;
 import sleeper.cdk.stack.VpcStack;
 import sleeper.cdk.stack.WebSocketQueryStack;
 import sleeper.cdk.stack.bulkimport.BulkImportBucketStack;
@@ -140,7 +141,8 @@ public class SleeperCdkApp extends Stack {
         TableDataStack dataStack = new TableDataStack(this, "TableData", instanceProperties, policiesStack);
         StateStoreStacks stateStoreStacks = new StateStoreStacks(
                 new DynamoDBStateStoreStack(this, "DynamoDBStateStore", instanceProperties, policiesStack),
-                new S3StateStoreStack(this, "S3StateStore", instanceProperties, dataStack, policiesStack));
+                new S3StateStoreStack(this, "S3StateStore", instanceProperties, dataStack, policiesStack),
+                new TransactionLogStateStoreStack(dataStack, "TransactionLogStateStore", instanceProperties, policiesStack));
         coreStacks = new CoreStacks(
                 new ConfigBucketStack(this, "Configuration", instanceProperties, policiesStack),
                 new TableIndexStack(this, "TableIndex", instanceProperties, policiesStack),
@@ -155,10 +157,10 @@ public class SleeperCdkApp extends Stack {
         }
 
         if (INGEST_STACK_NAMES.stream().anyMatch(optionalStacks::contains)) {
-            ingestStatusStoreStack = new IngestStatusStoreStack(this, "IngestStatusStore", instanceProperties);
+            ingestStatusStoreStack = new IngestStatusStoreStack(this, "IngestStatusStore", instanceProperties, coreStacks);
         }
         if (BULK_IMPORT_STACK_NAMES.stream().anyMatch(optionalStacks::contains)) {
-            bulkImportBucketStack = new BulkImportBucketStack(this, "BulkImportBucket", instanceProperties);
+            bulkImportBucketStack = new BulkImportBucketStack(this, "BulkImportBucket", instanceProperties, coreStacks);
         }
         if (EMR_BULK_IMPORT_STACK_NAMES.stream().anyMatch(optionalStacks::contains)) {
             emrBulkImportCommonStack = new CommonEmrBulkImportStack(this, "BulkImportEMRCommon",
@@ -250,7 +252,7 @@ public class SleeperCdkApp extends Stack {
         if (QUERY_STACK_NAMES.stream().anyMatch(optionalStacks::contains)) {
             queryQueueStack = new QueryQueueStack(this, "QueryQueue",
                     instanceProperties,
-                    topicStack.getTopic(),
+                    topicStack.getTopic(), coreStacks,
                     errorMetrics::add);
             queryStack = new QueryStack(this,
                     "Query",

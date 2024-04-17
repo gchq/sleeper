@@ -47,8 +47,7 @@ public class AwsIngestReportsDriver implements IngestReportsDriver {
     private final QueueMessageCount.Client queueMessages;
     private final AmazonElasticMapReduce emr;
 
-    public AwsIngestReportsDriver(SystemTestInstanceContext instance,
-            SystemTestClients clients) {
+    public AwsIngestReportsDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
         this.instance = instance;
         this.dynamoDB = clients.getDynamoDB();
         this.queueMessages = QueueMessageCount.withSqsClient(clients.getSqs());

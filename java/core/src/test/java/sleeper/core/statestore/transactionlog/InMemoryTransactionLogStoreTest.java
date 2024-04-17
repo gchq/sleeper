@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.statestore.transactionlog.transactions.ClearFilesTransaction;
 import sleeper.core.statestore.transactionlog.transactions.DeleteFilesTransaction;
 
+import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -27,22 +28,33 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class InMemoryTransactionLogStoreTest {
 
+    private static final Instant DEFAULT_UPDATE_TIME = Instant.parse("2024-04-09T14:01:01Z");
     private final InMemoryTransactionLogStore store = new InMemoryTransactionLogStore();
+
+    private TransactionLogEntry logEntry(long number, StateStoreTransaction<?> transaction) {
+        return new TransactionLogEntry(number, DEFAULT_UPDATE_TIME, transaction);
+    }
 
     @Test
     void shouldAddFirstTransaction() throws Exception {
+        // Given
+        TransactionLogEntry entry = logEntry(1, new ClearFilesTransaction());
+
         // When
-        store.addTransaction(new ClearFilesTransaction(), 1);
+        store.addTransaction(entry);
 
         // Then
         assertThat(store.readTransactionsAfter(0))
-                .containsExactly(new ClearFilesTransaction());
+                .containsExactly(entry);
     }
 
     @Test
     void shouldFailToAddFirstTransactionWithTooHighNumber() throws Exception {
+        // Given
+        TransactionLogEntry entry = logEntry(2, new ClearFilesTransaction());
+
         // When / Then
-        assertThatThrownBy(() -> store.addTransaction(new ClearFilesTransaction(), 2))
+        assertThatThrownBy(() -> store.addTransaction(entry))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("Attempted to add transaction 2 when we only have 0");
         assertThat(store.readTransactionsAfter(0)).isEmpty();
@@ -51,28 +63,36 @@ public class InMemoryTransactionLogStoreTest {
     @Test
     void shouldFailToAddTransactionWithTooLowNumber() throws Exception {
         // Given
-        store.addTransaction(new DeleteFilesTransaction(List.of("file1.parquet")), 1);
+        TransactionLogEntry entry1 = logEntry(1,
+                new DeleteFilesTransaction(List.of("file1.parquet")));
+        TransactionLogEntry entry2 = logEntry(1,
+                new DeleteFilesTransaction(List.of("file2.parquet")));
+        store.addTransaction(entry1);
 
         // When / Then
-        assertThatThrownBy(() -> store.addTransaction(new DeleteFilesTransaction(List.of("file2.parquet")), 1))
+        assertThatThrownBy(() -> store.addTransaction(entry2))
                 .isInstanceOf(DuplicateTransactionNumberException.class)
                 .hasMessage("Unread transaction found. Adding transaction number 1, but it already exists.");
         assertThat(store.readTransactionsAfter(0))
-                .containsExactly(new DeleteFilesTransaction(List.of("file1.parquet")));
+                .containsExactly(entry1);
     }
 
     @Test
     void shouldFailToAddTransactionWhenAnotherWasAddedAtSameTime() throws Exception {
         // Given
+        TransactionLogEntry entry1 = logEntry(1,
+                new DeleteFilesTransaction(List.of("file1.parquet")));
+        TransactionLogEntry entry2 = logEntry(1,
+                new DeleteFilesTransaction(List.of("file2.parquet")));
         store.beforeNextAddTransaction(
-                () -> store.addTransaction(new ClearFilesTransaction(), 1));
+                () -> store.addTransaction(entry1));
 
         // When / Then
-        assertThatThrownBy(() -> store.addTransaction(new DeleteFilesTransaction(List.of("file.parquet")), 1))
+        assertThatThrownBy(() -> store.addTransaction(entry2))
                 .isInstanceOf(DuplicateTransactionNumberException.class)
                 .hasMessage("Unread transaction found. Adding transaction number 1, but it already exists.");
         assertThat(store.readTransactionsAfter(0))
-                .containsExactly(new ClearFilesTransaction());
+                .containsExactly(entry1);
     }
 
     @Test
@@ -84,7 +104,7 @@ public class InMemoryTransactionLogStoreTest {
         });
 
         // When / Then
-        assertThatThrownBy(() -> store.addTransaction(new ClearFilesTransaction(), 1))
+        assertThatThrownBy(() -> store.addTransaction(logEntry(1, new ClearFilesTransaction())))
                 .isSameAs(failure);
         assertThat(store.readTransactionsAfter(0))
                 .isEmpty();

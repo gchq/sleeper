@@ -68,7 +68,7 @@ public class DynamoDBFileReferenceStoreDynamoSpecificIT extends DynamoDBStateSto
             List<FileReference> files = IntStream.range(0, 1000)
                     .mapToObj(i -> factory.rootFile("file-" + i, 1))
                     .collect(Collectors.toUnmodifiableList());
-            store.fixTime(Instant.ofEpochMilli(1_000_000L));
+            store.fixFileUpdateTime(Instant.ofEpochMilli(1_000_000L));
 
             // When
             store.addFiles(files);
@@ -89,7 +89,7 @@ public class DynamoDBFileReferenceStoreDynamoSpecificIT extends DynamoDBStateSto
                     .mapToObj(i -> "gcFile" + i)
                     .collect(toUnmodifiableList());
 
-            store.fixTime(updateTime);
+            store.fixFileUpdateTime(updateTime);
             store.addFilesWithReferences(filenames.stream()
                     .map(AllReferencesToAFileTestHelper::fileWithNoReferences)
                     .collect(toUnmodifiableList()));

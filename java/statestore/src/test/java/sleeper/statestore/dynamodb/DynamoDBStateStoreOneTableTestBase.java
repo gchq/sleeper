@@ -48,7 +48,7 @@ public class DynamoDBStateStoreOneTableTestBase extends DynamoDBStateStoreTestBa
     private void createStore(Schema schema) {
         tableProperties.setSchema(schema);
         store = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDBClient);
-        store.fixTime(DEFAULT_UPDATE_TIME);
+        store.fixFileUpdateTime(DEFAULT_UPDATE_TIME);
     }
 
     private void setPartitions(PartitionsBuilder partitions) {

@@ -125,6 +125,7 @@ public class TableMetricsStack extends NestedStack {
                 deadLetterQueue, topic);
         errorMetricsConsumer.accept(Utils.createErrorMetric("Table Metrics Errors", deadLetterQueue, instanceProperties));
         queue.grantSendMessages(tableMetricsTrigger);
+        coreStacks.grantInvokeScheduled(tableMetricsTrigger, queue);
         tableMetricsPublisher.addEventSource(new SqsEventSource(queue,
                 SqsEventSourceProps.builder().batchSize(1).build()));
 

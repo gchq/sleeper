@@ -66,8 +66,7 @@ public class TransactionSerDeTest {
                         fileFactory.rootFile("file1.parquet", 100),
                         fileFactory.rootFile("file2.parquet", 200)),
                         updateTime)
-                        .collect(toUnmodifiableList()),
-                updateTime);
+                        .collect(toUnmodifiableList()));
 
         // When / Then
         whenSerDeThenMatchAndVerify(schema, transaction);
@@ -89,8 +88,7 @@ public class TransactionSerDeTest {
                 AllReferencesToAFile.newFilesWithReferences(Stream.of(
                         referenceForChildPartition(file, "L"),
                         referenceForChildPartition(file, "R")),
-                        updateTime).collect(toUnmodifiableList()),
-                updateTime);
+                        updateTime).collect(toUnmodifiableList()));
 
         // When / Then
         whenSerDeThenMatchAndVerify(schema, transaction);
@@ -103,8 +101,7 @@ public class TransactionSerDeTest {
                 assignJobOnPartitionToFiles("job1", "root",
                         List.of("file1.parquet", "file2.parquet")),
                 assignJobOnPartitionToFiles("job2", "L",
-                        List.of("file3.parquet", "file4.parquet"))),
-                Instant.parse("2024-03-26T09:44:01Z"));
+                        List.of("file3.parquet", "file4.parquet"))));
 
         // When / Then
         whenSerDeThenMatchAndVerify(schemaWithKey("key"), transaction);
@@ -152,7 +149,7 @@ public class TransactionSerDeTest {
         FileReferenceFactory fileFactory = FileReferenceFactory.fromUpdatedAt(partitions, updateTime);
         FileReferenceTransaction transaction = new ReplaceFileReferencesTransaction(
                 "job", "root", List.of("file1.parquet", "file2.parquet"),
-                fileFactory.rootFile("file3.parquet", 100), updateTime);
+                fileFactory.rootFile("file3.parquet", 100));
 
         // When / Then
         whenSerDeThenMatchAndVerify(schema, transaction);
@@ -174,8 +171,7 @@ public class TransactionSerDeTest {
                 splitFileToChildPartitions(
                         fileFactory.rootFile("file1.parquet", 100), "L", "R"),
                 splitFileToChildPartitions(
-                        fileFactory.partitionFile("L", "file2.parquet", 200), "LL", "LR")),
-                updateTime);
+                        fileFactory.partitionFile("L", "file2.parquet", 200), "LL", "LR")));
 
         // When / Then
         whenSerDeThenMatchAndVerify(schema, transaction);

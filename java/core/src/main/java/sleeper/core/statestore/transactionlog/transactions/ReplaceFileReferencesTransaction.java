@@ -35,16 +35,14 @@ public class ReplaceFileReferencesTransaction implements FileReferenceTransactio
     private final String partitionId;
     private final List<String> inputFiles;
     private final FileReference newReference;
-    private final Instant updateTime;
 
     public ReplaceFileReferencesTransaction(
-            String jobId, String partitionId, List<String> inputFiles, FileReference newReference, Instant updateTime)
+            String jobId, String partitionId, List<String> inputFiles, FileReference newReference)
             throws StateStoreException {
         this.jobId = jobId;
         this.partitionId = partitionId;
         this.inputFiles = inputFiles;
         this.newReference = newReference.toBuilder().lastStateStoreUpdateTime(null).build();
-        this.updateTime = updateTime;
         FileReference.validateNewReferenceForJobOutput(inputFiles, newReference);
     }
 
@@ -65,7 +63,7 @@ public class ReplaceFileReferencesTransaction implements FileReferenceTransactio
     }
 
     @Override
-    public void apply(StateStoreFiles stateStoreFiles) {
+    public void apply(StateStoreFiles stateStoreFiles, Instant updateTime) {
         for (String filename : inputFiles) {
             stateStoreFiles.updateFile(filename, file -> file.removeReferenceForPartition(partitionId, updateTime));
         }
@@ -74,7 +72,7 @@ public class ReplaceFileReferencesTransaction implements FileReferenceTransactio
 
     @Override
     public int hashCode() {
-        return Objects.hash(jobId, partitionId, inputFiles, newReference, updateTime);
+        return Objects.hash(jobId, partitionId, inputFiles, newReference);
     }
 
     @Override
@@ -86,13 +84,11 @@ public class ReplaceFileReferencesTransaction implements FileReferenceTransactio
             return false;
         }
         ReplaceFileReferencesTransaction other = (ReplaceFileReferencesTransaction) obj;
-        return Objects.equals(jobId, other.jobId) && Objects.equals(partitionId, other.partitionId) && Objects.equals(inputFiles, other.inputFiles) && Objects.equals(newReference, other.newReference)
-                && Objects.equals(updateTime, other.updateTime);
+        return Objects.equals(jobId, other.jobId) && Objects.equals(partitionId, other.partitionId) && Objects.equals(inputFiles, other.inputFiles) && Objects.equals(newReference, other.newReference);
     }
 
     @Override
     public String toString() {
-        return "ReplaceFileReferencesTransaction{jobId=" + jobId + ", partitionId=" + partitionId + ", inputFiles=" + inputFiles + ", newReference=" + newReference + ", updateTime=" + updateTime
-                + "}";
+        return "ReplaceFileReferencesTransaction{jobId=" + jobId + ", partitionId=" + partitionId + ", inputFiles=" + inputFiles + ", newReference=" + newReference + "}";
     }
 }

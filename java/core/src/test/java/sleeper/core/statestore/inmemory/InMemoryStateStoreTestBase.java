@@ -46,7 +46,7 @@ public abstract class InMemoryStateStoreTestBase {
         this.partitions = partitions;
         factory = FileReferenceFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
         store = inMemoryStateStoreUninitialised(partitions.getSchema());
-        store.fixTime(DEFAULT_UPDATE_TIME);
+        store.fixFileUpdateTime(DEFAULT_UPDATE_TIME);
     }
 
     protected void splitPartition(String parentId, String leftId, String rightId, long splitPoint) throws StateStoreException {

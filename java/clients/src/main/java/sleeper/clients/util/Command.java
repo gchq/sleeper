@@ -17,42 +17,58 @@
 package sleeper.clients.util;
 
 import java.util.Arrays;
+import java.util.Map;
+import java.util.Objects;
 
 import static java.lang.ProcessBuilder.Redirect.INHERIT;
 import static java.util.Objects.requireNonNull;
 
 public class Command {
 
+    private final Map<String, String> envVars;
     private final String[] command;
 
-    public Command(String[] command) {
+    private Command(Map<String, String> envVars, String[] command) {
+        this.envVars = requireNonNull(envVars, "envVars must not be null");
         this.command = requireNonNull(command, "command must not be null");
     }
 
+    public static Command envAndCommand(Map<String, String> envVars, String... command) {
+        return new Command(envVars, command);
+    }
+
     public static Command command(String... command) {
-        return new Command(command);
+        return new Command(Map.of(), command);
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
+    public boolean equals(Object obj) {
+        if (this == obj) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(obj instanceof Command)) {
             return false;
         }
-        Command command1 = (Command) o;
-        return Arrays.equals(command, command1.command);
+        Command other = (Command) obj;
+        return Objects.equals(envVars, other.envVars) && Arrays.equals(command, other.command);
     }
 
     @Override
     public int hashCode() {
-        return Arrays.hashCode(command);
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + Arrays.hashCode(command);
+        result = prime * result + Objects.hash(envVars);
+        return result;
     }
 
     @Override
     public String toString() {
-        return Arrays.toString(command);
+        if (envVars.isEmpty()) {
+            return Arrays.toString(command);
+        } else {
+            return Arrays.toString(command) + envVars.toString();
+        }
     }
 
     public String[] toArray() {
@@ -60,7 +76,9 @@ public class Command {
     }
 
     public ProcessBuilder toProcessBuilder() {
-        return new ProcessBuilder(command);
+        ProcessBuilder builder = new ProcessBuilder(command);
+        builder.environment().putAll(envVars);
+        return builder;
     }
 
     public ProcessBuilder toProcessBuilderInheritIO(int index, int pipelineSize) {

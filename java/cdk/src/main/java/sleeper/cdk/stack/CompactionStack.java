@@ -162,7 +162,7 @@ public class CompactionStack extends NestedStack {
             Consumer<IMetric> errorMetricsConsumer) {
         super(scope, id);
         this.instanceProperties = instanceProperties;
-        statusStore = CompactionStatusStoreResources.from(this, instanceProperties);
+        statusStore = CompactionStatusStoreResources.from(this, instanceProperties, coreStacks);
         // The compaction stack consists of the following components:
         // - An SQS queue for the compaction jobs.
         // - A lambda to periodically check for compaction jobs that should be created.
@@ -181,7 +181,7 @@ public class CompactionStack extends NestedStack {
         LambdaCode taskCreatorJar = jars.lambdaCode(BuiltJar.COMPACTION_TASK_CREATOR, jarsBucket);
 
         // SQS queue for the compaction jobs
-        Queue compactionJobsQueue = sqsQueueForCompactionJobs(topic, errorMetricsConsumer);
+        Queue compactionJobsQueue = sqsQueueForCompactionJobs(coreStacks, topic, errorMetricsConsumer);
 
         // Lambda to periodically check for compaction jobs that should be created
         lambdaToCreateCompactionJobsBatchedViaSQS(coreStacks, topic, errorMetricsConsumer, jarsBucket, jobCreatorJar, compactionJobsQueue);
@@ -195,7 +195,7 @@ public class CompactionStack extends NestedStack {
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
-    private Queue sqsQueueForCompactionJobs(Topic topic, Consumer<IMetric> errorMetricsConsumer) {
+    private Queue sqsQueueForCompactionJobs(CoreStacks coreStacks, Topic topic, Consumer<IMetric> errorMetricsConsumer) {
         // Create queue for compaction job definitions
         String dlQueueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-CompactionJobDLQ");
         compactionDLQ = Queue.Builder
@@ -214,6 +214,7 @@ public class CompactionStack extends NestedStack {
                 .visibilityTimeout(
                         Duration.seconds(instanceProperties.getInt(COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS)))
                 .build();
+        compactionJobQ.grantPurge(coreStacks.getPurgeQueuesPolicy());
         instanceProperties.set(COMPACTION_JOB_QUEUE_URL, compactionJobQ.getQueueUrl());
         instanceProperties.set(COMPACTION_JOB_QUEUE_ARN, compactionJobQ.getQueueArn());
         instanceProperties.set(COMPACTION_JOB_DLQ_URL,
@@ -286,6 +287,11 @@ public class CompactionStack extends NestedStack {
         jarsBucket.grantRead(handlerFunction);
         statusStore.grantWriteJobEvent(handlerFunction);
         compactionJobsQueue.grantSendMessages(handlerFunction);
+        coreStacks.grantInvokeScheduled(triggerFunction, jobCreationQueue);
+        statusStore.grantWriteJobEvent(coreStacks.getInvokeCompactionPolicy());
+        coreStacks.grantReadTablesStatus(coreStacks.getInvokeCompactionPolicy());
+        coreStacks.grantCreateCompactionJobs(coreStacks.getInvokeCompactionPolicy());
+        compactionJobsQueue.grantSendMessages(coreStacks.getInvokeCompactionPolicy());
 
         // Cloudwatch rule to trigger this lambda
         Rule rule = Rule.Builder
@@ -584,8 +590,11 @@ public class CompactionStack extends NestedStack {
         coreStacks.grantReadInstanceConfig(handler);
 
         // Grant this function permission to query the queue for number of messages
-        compactionJobsQueue.grantSendMessages(handler);
         compactionJobsQueue.grant(handler, "sqs:GetQueueAttributes");
+        compactionJobsQueue.grantSendMessages(handler);
+        compactionJobsQueue.grantSendMessages(coreStacks.getInvokeCompactionPolicy());
+        Utils.grantInvokeOnPolicy(handler, coreStacks.getInvokeCompactionPolicy());
+        coreStacks.grantInvokeScheduled(handler);
 
         // Grant this function permission to query ECS for the number of tasks, etc
         PolicyStatement policyStatement = PolicyStatement.Builder

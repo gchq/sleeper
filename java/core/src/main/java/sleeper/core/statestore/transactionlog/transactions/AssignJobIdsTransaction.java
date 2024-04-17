@@ -31,11 +31,9 @@ import java.util.Objects;
 public class AssignJobIdsTransaction implements FileReferenceTransaction {
 
     private final List<AssignJobIdRequest> requests;
-    private final Instant updateTime;
 
-    public AssignJobIdsTransaction(List<AssignJobIdRequest> requests, Instant updateTime) {
+    public AssignJobIdsTransaction(List<AssignJobIdRequest> requests) {
         this.requests = requests;
-        this.updateTime = updateTime;
     }
 
     @Override
@@ -54,7 +52,7 @@ public class AssignJobIdsTransaction implements FileReferenceTransaction {
     }
 
     @Override
-    public void apply(StateStoreFiles stateStoreFiles) {
+    public void apply(StateStoreFiles stateStoreFiles, Instant updateTime) {
         for (AssignJobIdRequest request : requests) {
             for (String filename : request.getFilenames()) {
                 stateStoreFiles.updateFile(filename,
@@ -65,7 +63,7 @@ public class AssignJobIdsTransaction implements FileReferenceTransaction {
 
     @Override
     public int hashCode() {
-        return Objects.hash(requests, updateTime);
+        return Objects.hash(requests);
     }
 
     @Override
@@ -77,12 +75,12 @@ public class AssignJobIdsTransaction implements FileReferenceTransaction {
             return false;
         }
         AssignJobIdsTransaction other = (AssignJobIdsTransaction) obj;
-        return Objects.equals(requests, other.requests) && Objects.equals(updateTime, other.updateTime);
+        return Objects.equals(requests, other.requests);
     }
 
     @Override
     public String toString() {
-        return "AssignJobIdsTransaction{requests=" + requests + ", updateTime=" + updateTime + "}";
+        return "AssignJobIdsTransaction{requests=" + requests + "}";
     }
 
 }
