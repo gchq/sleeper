@@ -19,6 +19,7 @@ import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.CfnOutputProps;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
+import software.amazon.awscdk.services.cloudwatch.IMetric;
 import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
@@ -29,6 +30,7 @@ import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
+import software.amazon.awscdk.services.sqs.IQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
@@ -72,9 +74,8 @@ import static sleeper.configuration.properties.instance.PartitionSplittingProper
  */
 public class PartitionSplittingStack extends NestedStack {
     public static final String PARTITION_SPLITTING_QUEUE_URL = "PartitionSplittingQueueUrl";
-    public static final String PARTITION_SPLITTING_DL_QUEUE_URL = "PartitionSplittingDLQueueUrl";
+    public static final String PARTITION_SPLITTING_DLQ_URL = "PartitionSplittingDLQUrl";
     private final Queue partitionSplittingJobQueue;
-    private final Queue partitionSplittingJobDlq;
     private final Queue partitionSplittingBatchQueue;
 
     public PartitionSplittingStack(Construct scope,
@@ -82,19 +83,17 @@ public class PartitionSplittingStack extends NestedStack {
             InstanceProperties instanceProperties,
             BuiltJars jars,
             Topic topic,
-            CoreStacks coreStacks) {
+            CoreStacks coreStacks,
+            List<IMetric> errorMetrics) {
         super(scope, id);
 
         // Jars bucket
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
 
         // Create queue for batching tables
-        QueueAndDlq batchQueueAndDlq = createBatchQueues(instanceProperties);
-        this.partitionSplittingBatchQueue = batchQueueAndDlq.queue;
+        this.partitionSplittingBatchQueue = createBatchQueues(instanceProperties, topic, errorMetrics);
         // Create queue for partition splitting job definitions
-        QueueAndDlq jobQueueAndDlq = createJobQueues(instanceProperties, topic, coreStacks);
-        this.partitionSplittingJobQueue = jobQueueAndDlq.queue;
-        this.partitionSplittingJobDlq = jobQueueAndDlq.dlq;
+        this.partitionSplittingJobQueue = createJobQueues(instanceProperties, topic, coreStacks, errorMetrics);
 
         // Partition splitting code
         LambdaCode splitterJar = jars.lambdaCode(BuiltJar.PARTITION_SPLITTER, jarsBucket);
@@ -114,7 +113,7 @@ public class PartitionSplittingStack extends NestedStack {
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
-    private QueueAndDlq createBatchQueues(InstanceProperties instanceProperties) {
+    private Queue createBatchQueues(InstanceProperties instanceProperties, Topic topic, List<IMetric> errorMetrics) {
         // Create queue for batching tables
         Queue partitionSplittingBatchDlq = Queue.Builder
                 .create(this, "PartitionSplittingBatchDeadLetterQueue")
@@ -134,10 +133,14 @@ public class PartitionSplittingStack extends NestedStack {
         instanceProperties.set(PARTITION_SPLITTING_TABLE_BATCH_QUEUE_ARN, partitionSplittingBatchQueue.getQueueArn());
         instanceProperties.set(PARTITION_SPLITTING_TABLE_BATCH_DLQ_URL, partitionSplittingBatchDlq.getQueueUrl());
         instanceProperties.set(PARTITION_SPLITTING_TABLE_BATCH_DLQ_ARN, partitionSplittingBatchDlq.getQueueArn());
-        return new QueueAndDlq(partitionSplittingBatchQueue, partitionSplittingBatchDlq);
+        createAlarmForDlq(this, "PartitionSplittingBatchAlarm",
+                "Alarms if there are any messages on the dead letter queue for the partition splitting batch queue",
+                partitionSplittingBatchDlq, topic);
+        errorMetrics.add(Utils.createErrorMetric("Partition Split Batching Errors", partitionSplittingBatchDlq, instanceProperties));
+        return partitionSplittingBatchQueue;
     }
 
-    private QueueAndDlq createJobQueues(InstanceProperties instanceProperties, Topic topic, CoreStacks coreStacks) {
+    private Queue createJobQueues(InstanceProperties instanceProperties, Topic topic, CoreStacks coreStacks, List<IMetric> errorMetrics) {
         // Create queue for partition splitting job definitions
         Queue partitionSplittingJobDlq = Queue.Builder
                 .create(this, "PartitionSplittingDeadLetterQueue")
@@ -162,6 +165,7 @@ public class PartitionSplittingStack extends NestedStack {
         createAlarmForDlq(this, "PartitionSplittingAlarm",
                 "Alarms if there are any messages on the dead letter queue for the partition splitting queue",
                 partitionSplittingJobDlq, topic);
+        errorMetrics.add(Utils.createErrorMetric("Partition Split Errors", partitionSplittingJobDlq, instanceProperties));
 
         CfnOutputProps partitionSplittingQueueOutputProps = new CfnOutputProps.Builder()
                 .value(partitionSplittingJobQueue.getQueueUrl())
@@ -171,8 +175,8 @@ public class PartitionSplittingStack extends NestedStack {
         CfnOutputProps partitionSplittingDLQueueOutputProps = new CfnOutputProps.Builder()
                 .value(partitionSplittingJobDlq.getQueueUrl())
                 .build();
-        new CfnOutput(this, PARTITION_SPLITTING_DL_QUEUE_URL, partitionSplittingDLQueueOutputProps);
-        return new QueueAndDlq(partitionSplittingJobQueue, partitionSplittingJobDlq);
+        new CfnOutput(this, PARTITION_SPLITTING_DLQ_URL, partitionSplittingDLQueueOutputProps);
+        return partitionSplittingJobQueue;
     }
 
     private void createTriggerFunction(InstanceProperties instanceProperties, LambdaCode splitterJar, CoreStacks coreStacks, Map<String, String> environmentVariables) {
@@ -248,22 +252,7 @@ public class PartitionSplittingStack extends NestedStack {
                 SqsEventSourceProps.builder().batchSize(1).build()));
     }
 
-    private static class QueueAndDlq {
-        private Queue queue;
-        private Queue dlq;
-
-        QueueAndDlq(Queue queue, Queue dlq) {
-            this.queue = queue;
-            this.dlq = dlq;
-        }
-
-    }
-
-    public Queue getJobQueue() {
+    public IQueue getJobQueue() {
         return partitionSplittingJobQueue;
-    }
-
-    public Queue getDeadLetterQueue() {
-        return partitionSplittingJobDlq;
     }
 }

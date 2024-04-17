@@ -15,7 +15,6 @@
  */
 package sleeper.cdk.stack;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
@@ -47,18 +46,18 @@ import java.util.stream.IntStream;
 
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.METRICS_NAMESPACE;
+import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 import static sleeper.configuration.properties.instance.DashboardProperty.DASHBOARD_TIME_WINDOW_MINUTES;
 
-@SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR")
 public class DashboardStack extends NestedStack {
-    private final IngestStack ingestStack;
-    private final CompactionStack compactionStack;
-    private final PartitionSplittingStack partitionSplittingStack;
     private final String instanceId;
     private final List<String> tableNames;
     private final String metricsNamespace;
     private final Duration window;
     private final Dashboard dashboard;
+    private final IngestStack ingestStack;
+    private final CompactionStack compactionStack;
+    private final PartitionSplittingStack partitionSplittingStack;
 
     public DashboardStack(
             Construct scope,
@@ -66,7 +65,8 @@ public class DashboardStack extends NestedStack {
             IngestStack ingestStack,
             CompactionStack compactionStack,
             PartitionSplittingStack partitionSplittingStack,
-            InstanceProperties instanceProperties) {
+            InstanceProperties instanceProperties,
+            List<IMetric> errorMetrics) {
         super(scope, id);
 
         this.ingestStack = ingestStack;
@@ -85,37 +85,24 @@ public class DashboardStack extends NestedStack {
         window = Duration.minutes(timeWindowInMinutes);
         dashboard = Dashboard.Builder.create(this, "dashboard").dashboardName(instanceId).build();
 
-        addErrorMetrics();
+        addErrorMetricsWidgets(errorMetrics);
         addIngestWidgets();
         addTableWidgets();
         addCompactionWidgets();
 
         CfnOutput.Builder.create(this, "DashboardUrl")
-                .value(constructUrl())
+                .value(constructUrl(instanceProperties))
                 .build();
 
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
-    private String constructUrl() {
-        return "https://" + this.getRegion() + ".console.aws.amazon.com/cloudwatch/home#dashboards:name=" + instanceId + ";expand=true";
+    private static String constructUrl(InstanceProperties instanceProperties) {
+        return "https://" + instanceProperties.get(REGION) + ".console.aws.amazon.com/cloudwatch/home" +
+                "#dashboards:name=" + instanceProperties.get(ID) + ";expand=true";
     }
 
-    private void addErrorMetrics() {
-        List<IMetric> errorMetrics = new ArrayList<>();
-        if (null != ingestStack) {
-            errorMetrics.add(ingestStack.getErrorQueue().metricApproximateNumberOfMessagesVisible(
-                    MetricOptions.builder().label("Ingest Errors").period(window).statistic("Sum").build()));
-        }
-        if (null != compactionStack) {
-            errorMetrics.add(compactionStack.getCompactionDeadLetterQueue().metricApproximateNumberOfMessagesVisible(
-                    MetricOptions.builder().label("Compaction Errors").period(window).statistic("Sum").build()));
-        }
-        if (null != partitionSplittingStack) {
-            errorMetrics.add(partitionSplittingStack.getDeadLetterQueue().metricApproximateNumberOfMessagesVisible(
-                    MetricOptions.builder().label("Partition Split Errors").period(window).statistic("Sum").build()));
-        }
-
+    private void addErrorMetricsWidgets(List<IMetric> errorMetrics) {
         if (!errorMetrics.isEmpty()) {
             dashboard.addWidgets(
                     SingleValueWidget.Builder.create()

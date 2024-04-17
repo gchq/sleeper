@@ -23,6 +23,7 @@ import software.amazon.awscdk.CfnOutputProps;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.RemovalPolicy;
+import software.amazon.awscdk.services.cloudwatch.IMetric;
 import software.amazon.awscdk.services.dynamodb.Attribute;
 import software.amazon.awscdk.services.dynamodb.AttributeType;
 import software.amazon.awscdk.services.dynamodb.BillingMode;
@@ -58,6 +59,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 
@@ -93,7 +95,8 @@ public class QueryStack extends NestedStack {
             BuiltJars jars,
             Topic topic,
             CoreStacks coreStacks,
-            QueryQueueStack queryQueueStack) {
+            QueryQueueStack queryQueueStack,
+            List<IMetric> errorMetrics) {
         super(scope, id);
 
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
@@ -119,7 +122,7 @@ public class QueryStack extends NestedStack {
 
         LambdaCode queryJar = jars.lambdaCode(BuiltJar.QUERY, jarsBucket);
         queryExecutorLambda = setupQueryExecutorLambda(coreStacks, queryQueueStack, instanceProperties, queryJar, jarsBucket, queryTrackingTable);
-        leafPartitionQueryLambda = setupLeafPartitionQueryQueueAndLambda(coreStacks, instanceProperties, topic, queryJar, jarsBucket, queryTrackingTable);
+        leafPartitionQueryLambda = setupLeafPartitionQueryQueueAndLambda(coreStacks, instanceProperties, topic, queryJar, jarsBucket, queryTrackingTable, errorMetrics);
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
@@ -205,8 +208,8 @@ public class QueryStack extends NestedStack {
      */
     private IFunction setupLeafPartitionQueryQueueAndLambda(
             CoreStacks coreStacks, InstanceProperties instanceProperties, Topic topic, LambdaCode queryJar,
-            IBucket jarsBucket, ITable queryTrackingTable) {
-        Queue leafPartitionQueryQueue = setupLeafPartitionQueryQueue(instanceProperties, topic);
+            IBucket jarsBucket, ITable queryTrackingTable, List<IMetric> errorMetrics) {
+        Queue leafPartitionQueryQueue = setupLeafPartitionQueryQueue(instanceProperties, topic, errorMetrics);
         Queue queryResultsQueue = setupResultsQueue(instanceProperties);
         IBucket queryResultsBucket = setupResultsBucket(instanceProperties);
         String leafQueryFunctionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
@@ -256,7 +259,7 @@ public class QueryStack extends NestedStack {
      * @param  instanceProperties containing configuration details
      * @return                    the queue to be used for leaf partition queries
      */
-    private Queue setupLeafPartitionQueryQueue(InstanceProperties instanceProperties, Topic topic) {
+    private Queue setupLeafPartitionQueryQueue(InstanceProperties instanceProperties, Topic topic, List<IMetric> errorMetrics) {
         String dlLeafPartitionQueueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-LeafPartitionQueryDLQ");
         Queue leafPartitionQueryDlq = Queue.Builder
                 .create(this, "LeafPartitionQueryDeadLetterQueue")
@@ -280,6 +283,7 @@ public class QueryStack extends NestedStack {
         createAlarmForDlq(this, "LeafPartitionQueryAlarm",
                 "Alarms if there are any messages on the dead letter queue for the leaf partition query queue",
                 leafPartitionQueryDlq, topic);
+        errorMetrics.add(Utils.createErrorMetric("Subquery Errors", leafPartitionQueryDlq, instanceProperties));
         CfnOutputProps leafPartitionQueryQueueOutputNameProps = new CfnOutputProps.Builder()
                 .value(leafPartitionQueryQueue.getQueueName())
                 .exportName(instanceProperties.get(ID) + "-" + LEAF_PARTITION_QUERY_QUEUE_NAME)
