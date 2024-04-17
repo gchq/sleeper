@@ -17,6 +17,7 @@ package sleeper.cdk.stack.bulkimport;
 
 import com.google.common.collect.Lists;
 import software.amazon.awscdk.Duration;
+import software.amazon.awscdk.services.cloudwatch.IMetric;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.PolicyStatement;
@@ -55,15 +56,17 @@ public class CommonEmrBulkImportHelper {
     private final InstanceProperties instanceProperties;
     private final IngestStatusStoreResources statusStoreResources;
     private final CoreStacks coreStacks;
+    private final List<IMetric> errorMetrics;
 
     public CommonEmrBulkImportHelper(
             Construct scope, String shortId, InstanceProperties instanceProperties,
-            CoreStacks coreStacks, IngestStatusStoreResources ingestStatusStoreResources) {
+            CoreStacks coreStacks, IngestStatusStoreResources ingestStatusStoreResources, List<IMetric> errorMetrics) {
         this.scope = scope;
         this.shortId = shortId;
         this.instanceProperties = instanceProperties;
         this.coreStacks = coreStacks;
         this.statusStoreResources = ingestStatusStoreResources;
+        this.errorMetrics = errorMetrics;
     }
 
     // Queue for messages to trigger jobs - note that each concrete substack
@@ -81,9 +84,10 @@ public class CommonEmrBulkImportHelper {
                 .build();
 
         createAlarmForDlq(scope, "BulkImport" + shortId + "UndeliveredJobsAlarm",
-                "Alarms if there are any messages that have failed validation or failed to start a " + shortId + " EMR Spark job",
+                "Alarms if there are any messages that have failed validation or failed to start a " + shortId + " Spark job",
                 queueForDLs, errorsTopic);
 
+        errorMetrics.add(Utils.createErrorMetric("Bulk Import " + shortId + " Errors", queueForDLs, instanceProperties));
         Queue emrBulkImportJobQueue = Queue.Builder
                 .create(scope, "BulkImport" + shortId + "JobQueue")
                 .deadLetterQueue(deadLetterQueue)

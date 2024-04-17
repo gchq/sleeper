@@ -20,6 +20,7 @@ import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.CfnOutputProps;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
+import software.amazon.awscdk.services.cloudwatch.IMetric;
 import software.amazon.awscdk.services.ec2.IVpc;
 import software.amazon.awscdk.services.ec2.Vpc;
 import software.amazon.awscdk.services.ec2.VpcLookupOptions;
@@ -53,6 +54,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 
@@ -99,7 +101,8 @@ public class IngestStack extends NestedStack {
             BuiltJars jars,
             Topic topic,
             CoreStacks coreStacks,
-            IngestStatusStoreStack statusStoreStack) {
+            IngestStatusStoreStack statusStoreStack,
+            List<IMetric> errorMetrics) {
         super(scope, id);
         this.instanceProperties = instanceProperties;
         this.statusStore = statusStoreStack.getResources();
@@ -117,7 +120,7 @@ public class IngestStack extends NestedStack {
         LambdaCode taskCreatorJar = jars.lambdaCode(BuiltJar.INGEST_STARTER, jarsBucket);
 
         // SQS queue for ingest jobs
-        sqsQueueForIngestJobs(coreStacks, topic);
+        sqsQueueForIngestJobs(coreStacks, topic, errorMetrics);
 
         // ECS cluster for ingest tasks
         ecsClusterForIngestTasks(jarsBucket, coreStacks, ingestJobQueue);
@@ -128,7 +131,7 @@ public class IngestStack extends NestedStack {
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
-    private Queue sqsQueueForIngestJobs(CoreStacks coreStacks, Topic topic) {
+    private Queue sqsQueueForIngestJobs(CoreStacks coreStacks, Topic topic, List<IMetric> errorMetrics) {
         // Create queue for ingest job definitions
         String dlQueueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-IngestJobDLQ");
 
@@ -158,6 +161,7 @@ public class IngestStack extends NestedStack {
         createAlarmForDlq(this, "IngestAlarm",
                 "Alarms if there are any messages on the dead letter queue for the ingest queue",
                 ingestDLQ, topic);
+        errorMetrics.add(Utils.createErrorMetric("Ingest Errors", ingestDLQ, instanceProperties));
 
         CfnOutputProps ingestJobQueueProps = new CfnOutputProps.Builder()
                 .value(ingestJobQueue.getQueueUrl())
@@ -295,9 +299,5 @@ public class IngestStack extends NestedStack {
 
     public Queue getIngestJobQueue() {
         return ingestJobQueue;
-    }
-
-    public Queue getErrorQueue() {
-        return ingestDLQ;
     }
 }
