@@ -23,5 +23,5 @@ public class ContainerConstants {
     public static final String COMPACTION_CONTAINER_NAME = "CompactionContainer";
     public static final String INGEST_CONTAINER_NAME = "IngestContainer";
     public static final String XRAY_CONTAINER_NAME = "XRayDaemon";
-    public static final String XRAY_IMAGE = "amazon/aws-xray-daemon:3.x";
+    public static final String XRAY_IMAGE = "public.ecr.aws/xray/aws-xray-daemon:3.x";
 }
