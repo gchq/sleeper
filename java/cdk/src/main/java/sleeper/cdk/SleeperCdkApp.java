@@ -129,6 +129,7 @@ public class SleeperCdkApp extends Stack {
     public void create() {
         // Optional stacks to be included
         List<String> optionalStacks = instanceProperties.getList(OPTIONAL_STACKS);
+
         List<IMetric> errorMetrics = new ArrayList<>();
         // Stack for Checking VPC configuration
         new VpcStack(this, "Vpc", instanceProperties, jars);

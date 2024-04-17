@@ -86,6 +86,7 @@ public class CommonEmrBulkImportHelper {
         createAlarmForDlq(scope, "BulkImport" + shortId + "UndeliveredJobsAlarm",
                 "Alarms if there are any messages that have failed validation or failed to start a " + shortId + " Spark job",
                 queueForDLs, errorsTopic);
+
         errorMetrics.add(Utils.createErrorMetric("Bulk Import " + shortId + " Errors", queueForDLs, instanceProperties));
         Queue emrBulkImportJobQueue = Queue.Builder
                 .create(scope, "BulkImport" + shortId + "JobQueue")
