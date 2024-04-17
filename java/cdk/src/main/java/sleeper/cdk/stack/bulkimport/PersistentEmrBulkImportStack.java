@@ -46,7 +46,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME;
@@ -89,10 +88,10 @@ public class PersistentEmrBulkImportStack extends NestedStack {
             CommonEmrBulkImportStack commonEmrStack,
             CoreStacks coreStacks,
             IngestStatusStoreResources statusStoreResources,
-            Consumer<IMetric> errorMetricsConsumer) {
+            List<IMetric> errorMetrics) {
         super(scope, id);
         CommonEmrBulkImportHelper commonHelper = new CommonEmrBulkImportHelper(
-                this, "PersistentEMR", instanceProperties, coreStacks, statusStoreResources, errorMetricsConsumer);
+                this, "PersistentEMR", instanceProperties, coreStacks, statusStoreResources, errorMetrics);
         bulkImportJobQueue = commonHelper.createJobQueue(
                 BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL, BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_ARN,
                 errorsTopic);

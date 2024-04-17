@@ -42,7 +42,6 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static sleeper.cdk.Utils.createAlarmForDlq;
@@ -57,17 +56,17 @@ public class CommonEmrBulkImportHelper {
     private final InstanceProperties instanceProperties;
     private final IngestStatusStoreResources statusStoreResources;
     private final CoreStacks coreStacks;
-    private final Consumer<IMetric> errorMetricsConsumer;
+    private final List<IMetric> errorMetrics;
 
     public CommonEmrBulkImportHelper(
             Construct scope, String shortId, InstanceProperties instanceProperties,
-            CoreStacks coreStacks, IngestStatusStoreResources ingestStatusStoreResources, Consumer<IMetric> errorMetricsConsumer) {
+            CoreStacks coreStacks, IngestStatusStoreResources ingestStatusStoreResources, List<IMetric> errorMetrics) {
         this.scope = scope;
         this.shortId = shortId;
         this.instanceProperties = instanceProperties;
         this.coreStacks = coreStacks;
         this.statusStoreResources = ingestStatusStoreResources;
-        this.errorMetricsConsumer = errorMetricsConsumer;
+        this.errorMetrics = errorMetrics;
     }
 
     // Queue for messages to trigger jobs - note that each concrete substack
@@ -87,7 +86,7 @@ public class CommonEmrBulkImportHelper {
         createAlarmForDlq(scope, "BulkImport" + shortId + "UndeliveredJobsAlarm",
                 "Alarms if there are any messages that have failed validation or failed to start a " + shortId + " Spark job",
                 queueForDLs, errorsTopic);
-        errorMetricsConsumer.accept(Utils.createErrorMetric("Bulk Import " + shortId + " Errors", queueForDLs, instanceProperties));
+        errorMetrics.add(Utils.createErrorMetric("Bulk Import " + shortId + " Errors", queueForDLs, instanceProperties));
         Queue emrBulkImportJobQueue = Queue.Builder
                 .create(scope, "BulkImport" + shortId + "JobQueue")
                 .deadLetterQueue(deadLetterQueue)

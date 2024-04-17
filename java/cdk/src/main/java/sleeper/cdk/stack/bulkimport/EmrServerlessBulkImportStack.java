@@ -56,7 +56,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_APPLICATION_ID;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CLUSTER_NAME;
@@ -102,13 +101,13 @@ public class EmrServerlessBulkImportStack extends NestedStack {
             BulkImportBucketStack importBucketStack,
             CoreStacks coreStacks,
             IngestStatusStoreResources statusStoreResources,
-            Consumer<IMetric> errorMetricsConsumer) {
+            List<IMetric> errorMetrics) {
         super(scope, id);
         createEmrServerlessApplication(instanceProperties);
         IRole emrRole = createEmrServerlessRole(
                 instanceProperties, importBucketStack, statusStoreResources, coreStacks);
         CommonEmrBulkImportHelper commonHelper = new CommonEmrBulkImportHelper(this,
-                "EMRServerless", instanceProperties, coreStacks, statusStoreResources, errorMetricsConsumer);
+                "EMRServerless", instanceProperties, coreStacks, statusStoreResources, errorMetrics);
         bulkImportJobQueue = commonHelper.createJobQueue(
                 BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL, BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_ARN,
                 errorsTopic);

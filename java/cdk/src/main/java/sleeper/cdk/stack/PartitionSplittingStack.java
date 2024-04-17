@@ -44,7 +44,6 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.function.Consumer;
 
 import static sleeper.cdk.Utils.createAlarmForDlq;
 import static sleeper.cdk.Utils.createLambdaLogGroup;
@@ -84,16 +83,16 @@ public class PartitionSplittingStack extends NestedStack {
             BuiltJars jars,
             Topic topic,
             CoreStacks coreStacks,
-            Consumer<IMetric> errorMetricsConsumer) {
+            List<IMetric> errorMetrics) {
         super(scope, id);
 
         // Jars bucket
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
 
         // Create queue for batching tables
-        this.partitionSplittingBatchQueue = createBatchQueues(instanceProperties, topic, errorMetricsConsumer);
+        this.partitionSplittingBatchQueue = createBatchQueues(instanceProperties, topic, errorMetrics);
         // Create queue for partition splitting job definitions
-        this.partitionSplittingJobQueue = createJobQueues(instanceProperties, topic, coreStacks, errorMetricsConsumer);
+        this.partitionSplittingJobQueue = createJobQueues(instanceProperties, topic, coreStacks, errorMetrics);
 
         // Partition splitting code
         LambdaCode splitterJar = jars.lambdaCode(BuiltJar.PARTITION_SPLITTER, jarsBucket);
@@ -113,7 +112,7 @@ public class PartitionSplittingStack extends NestedStack {
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
-    private Queue createBatchQueues(InstanceProperties instanceProperties, Topic topic, Consumer<IMetric> errorMetricsConsumer) {
+    private Queue createBatchQueues(InstanceProperties instanceProperties, Topic topic, List<IMetric> errorMetrics) {
         // Create queue for batching tables
         Queue partitionSplittingBatchDlq = Queue.Builder
                 .create(this, "PartitionSplittingBatchDeadLetterQueue")
@@ -136,11 +135,11 @@ public class PartitionSplittingStack extends NestedStack {
         createAlarmForDlq(this, "PartitionSplittingBatchAlarm",
                 "Alarms if there are any messages on the dead letter queue for the partition splitting batch queue",
                 partitionSplittingBatchDlq, topic);
-        errorMetricsConsumer.accept(Utils.createErrorMetric("Partition Split Batching Errors", partitionSplittingBatchDlq, instanceProperties));
+        errorMetrics.add(Utils.createErrorMetric("Partition Split Batching Errors", partitionSplittingBatchDlq, instanceProperties));
         return partitionSplittingBatchQueue;
     }
 
-    private Queue createJobQueues(InstanceProperties instanceProperties, Topic topic, CoreStacks coreStacks, Consumer<IMetric> errorMetricsConsumer) {
+    private Queue createJobQueues(InstanceProperties instanceProperties, Topic topic, CoreStacks coreStacks, List<IMetric> errorMetrics) {
         // Create queue for partition splitting job definitions
         Queue partitionSplittingJobDlq = Queue.Builder
                 .create(this, "PartitionSplittingDeadLetterQueue")
@@ -165,7 +164,7 @@ public class PartitionSplittingStack extends NestedStack {
         createAlarmForDlq(this, "PartitionSplittingAlarm",
                 "Alarms if there are any messages on the dead letter queue for the partition splitting queue",
                 partitionSplittingJobDlq, topic);
-        errorMetricsConsumer.accept(Utils.createErrorMetric("Partition Split Errors", partitionSplittingJobDlq, instanceProperties));
+        errorMetrics.add(Utils.createErrorMetric("Partition Split Errors", partitionSplittingJobDlq, instanceProperties));
 
         CfnOutputProps partitionSplittingQueueOutputProps = new CfnOutputProps.Builder()
                 .value(partitionSplittingJobQueue.getQueueUrl())

@@ -148,7 +148,7 @@ public class SleeperCdkApp extends Stack {
                 new TableIndexStack(this, "TableIndex", instanceProperties, policiesStack),
                 policiesStack, stateStoreStacks, dataStack);
         if (optionalStacks.contains(TableMetricsStack.class.getSimpleName())) {
-            new TableMetricsStack(this, "TableMetrics", instanceProperties, jars, topicStack.getTopic(), coreStacks, errorMetrics::add);
+            new TableMetricsStack(this, "TableMetrics", instanceProperties, jars, topicStack.getTopic(), coreStacks, errorMetrics);
         }
 
         // Stack for Athena analytics
@@ -175,7 +175,7 @@ public class SleeperCdkApp extends Stack {
                     bulkImportBucketStack,
                     coreStacks,
                     ingestStatusStoreStack.getResources(),
-                    errorMetrics::add);
+                    errorMetrics);
 
             // Stack to created EMR studio to be used to access EMR Serverless
             if (optionalStacks.contains(EmrStudioStack.class.getSimpleName())) {
@@ -191,7 +191,7 @@ public class SleeperCdkApp extends Stack {
                     emrBulkImportCommonStack,
                     coreStacks,
                     ingestStatusStoreStack.getResources(),
-                    errorMetrics::add);
+                    errorMetrics);
         }
 
         // Stack to run bulk import jobs via a persistent EMR cluster
@@ -203,7 +203,7 @@ public class SleeperCdkApp extends Stack {
                     emrBulkImportCommonStack,
                     coreStacks,
                     ingestStatusStoreStack.getResources(),
-                    errorMetrics::add);
+                    errorMetrics);
         }
 
         // Stack to run bulk import jobs via EKS
@@ -214,7 +214,7 @@ public class SleeperCdkApp extends Stack {
                     bulkImportBucketStack,
                     coreStacks,
                     ingestStatusStoreStack,
-                    errorMetrics::add);
+                    errorMetrics);
         }
 
         // Stack to garbage collect old files
@@ -224,7 +224,7 @@ public class SleeperCdkApp extends Stack {
                     instanceProperties, jars,
                     topicStack.getTopic(),
                     coreStacks,
-                    errorMetrics::add);
+                    errorMetrics);
         }
 
         // Stack for containers for compactions and splitting compactions
@@ -234,7 +234,7 @@ public class SleeperCdkApp extends Stack {
                     instanceProperties, jars,
                     topicStack.getTopic(),
                     coreStacks,
-                    errorMetrics::add);
+                    errorMetrics);
         }
 
         // Stack to split partitions
@@ -244,7 +244,7 @@ public class SleeperCdkApp extends Stack {
                     instanceProperties, jars,
                     topicStack.getTopic(),
                     coreStacks,
-                    errorMetrics::add);
+                    errorMetrics);
         }
 
         QueryStack queryStack = null;
@@ -253,13 +253,13 @@ public class SleeperCdkApp extends Stack {
             queryQueueStack = new QueryQueueStack(this, "QueryQueue",
                     instanceProperties,
                     topicStack.getTopic(), coreStacks,
-                    errorMetrics::add);
+                    errorMetrics);
             queryStack = new QueryStack(this,
                     "Query",
                     instanceProperties, jars,
                     topicStack.getTopic(),
                     coreStacks, queryQueueStack,
-                    errorMetrics::add);
+                    errorMetrics);
             // Stack to execute queries using the web socket API
             if (optionalStacks.contains(WebSocketQueryStack.class.getSimpleName())) {
                 new WebSocketQueryStack(this,
@@ -276,7 +276,7 @@ public class SleeperCdkApp extends Stack {
                     topicStack.getTopic(),
                     coreStacks,
                     ingestStatusStoreStack,
-                    errorMetrics::add);
+                    errorMetrics);
         }
 
         // Aggregate ingest stacks
@@ -289,7 +289,7 @@ public class SleeperCdkApp extends Stack {
                     topicStack.getTopic(),
                     coreStacks,
                     ingestStacks,
-                    errorMetrics::add);
+                    errorMetrics);
         }
 
         if (optionalStacks.contains(DashboardStack.class.getSimpleName())) {

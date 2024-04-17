@@ -49,7 +49,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.function.Consumer;
 
 import static sleeper.cdk.Utils.createAlarmForDlq;
 import static sleeper.cdk.Utils.createLambdaLogGroup;
@@ -82,7 +81,7 @@ public class IngestBatcherStack extends NestedStack {
             Topic topic,
             CoreStacks coreStacks,
             IngestStacks ingestStacks,
-            Consumer<IMetric> errorMetricsConsumer) {
+            List<IMetric> errorMetrics) {
         super(scope, id);
 
         // Queue to submit files to the batcher
@@ -108,7 +107,7 @@ public class IngestBatcherStack extends NestedStack {
         createAlarmForDlq(this, "IngestBatcherAlarm",
                 "Alarms if there are any messages on the dead letter queue for the ingest batcher queue",
                 submitDLQ, topic);
-        errorMetricsConsumer.accept(Utils.createErrorMetric("Ingest Batcher Errors", submitDLQ, instanceProperties));
+        errorMetrics.add(Utils.createErrorMetric("Ingest Batcher Errors", submitDLQ, instanceProperties));
         // DynamoDB table to track submitted files
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
         Table ingestRequestsTable = Table.Builder

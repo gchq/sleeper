@@ -77,7 +77,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static sleeper.cdk.Utils.createAlarmForDlq;
@@ -103,7 +102,7 @@ public final class EksBulkImportStack extends NestedStack {
     public EksBulkImportStack(
             Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars,
             Topic errorsTopic, BulkImportBucketStack importBucketStack, CoreStacks coreStacks, IngestStatusStoreStack statusStoreStack,
-            Consumer<IMetric> errorMetricsConsumer) {
+            List<IMetric> errorMetrics) {
         super(scope, id);
 
         String instanceId = instanceProperties.get(ID);
@@ -121,7 +120,7 @@ public final class EksBulkImportStack extends NestedStack {
         createAlarmForDlq(this, "BulkImportEKSUndeliveredJobsAlarm",
                 "Alarms if there are any messages that have failed validation or failed to be passed to the statemachine",
                 queueForDLs, errorsTopic);
-        errorMetricsConsumer.accept(Utils.createErrorMetric("Bulk Import EKS Errors", queueForDLs, instanceProperties));
+        errorMetrics.add(Utils.createErrorMetric("Bulk Import EKS Errors", queueForDLs, instanceProperties));
 
         bulkImportJobQueue = Queue.Builder
                 .create(this, "BulkImportEKSJobQueue")
