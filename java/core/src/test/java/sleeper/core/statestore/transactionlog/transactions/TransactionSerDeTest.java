@@ -15,13 +15,13 @@
  */
 package sleeper.core.statestore.transactionlog.transactions;
 
+import org.apache.commons.lang.StringUtils;
 import org.approvaltests.Approvals;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
@@ -147,24 +147,53 @@ public class TransactionSerDeTest {
     @Test
     void shouldSerialiseTooManyPartitionsToFitInOneDynamoDBTransaction() {
         // Given
-        Schema schema = schemaWithKey("key", new LongType());
-        List<String> leafIds = IntStream.range(0, 1000)
+        Schema schema = schemaWithKey("key", new StringType());
+        List<String> leafIds = IntStream.range(0, 250)
                 .mapToObj(i -> "" + i)
                 .collect(toUnmodifiableList());
-        List<Object> splitPoints = LongStream.range(1, 1000)
-                .mapToObj(i -> i)
+        List<Object> splitPoints = LongStream.range(1, 250)
+                .mapToObj(i -> StringUtils.repeat("abc", 100) // Use a long split point
+                        + StringUtils.leftPad(i + "", 4, "0"))
                 .collect(toUnmodifiableList());
-        PartitionTransaction transaction = new InitialisePartitionsTransaction(new PartitionsBuilder(schema)
+        PartitionTree partitions = new PartitionsBuilder(schema)
                 .leavesWithSplits(leafIds, splitPoints)
                 .anyTreeJoiningAllLeaves()
-                .buildList());
+                .buildTree();
+        PartitionTransaction transaction = new InitialisePartitionsTransaction(partitions.getAllPartitions());
+
+        // When
+        String json = new TransactionSerDe(schema).toJson(transaction);
+
+        // Then
+        assertThat(NumberFormatUtils.formatBytes(json.getBytes().length))
+                .isEqualTo("454486B (454.5KB)");
+        assertThat(partitions.getAllPartitions()).hasSize(499);
+    }
+
+    @Test
+    void shouldSerialiseFewEnoughPartitionsToFitInOneDynamoDBTransaction() {
+        // Given
+        Schema schema = schemaWithKey("key", new StringType());
+        List<String> leafIds = IntStream.range(0, 200)
+                .mapToObj(i -> "" + i)
+                .collect(toUnmodifiableList());
+        List<Object> splitPoints = LongStream.range(1, 200)
+                .mapToObj(i -> StringUtils.repeat("abc", 100) // Use a long split point
+                        + StringUtils.leftPad(i + "", 4, "0"))
+                .collect(toUnmodifiableList());
+        PartitionTree partitions = new PartitionsBuilder(schema)
+                .leavesWithSplits(leafIds, splitPoints)
+                .anyTreeJoiningAllLeaves()
+                .buildTree();
+        PartitionTransaction transaction = new InitialisePartitionsTransaction(partitions.getAllPartitions());
 
         // When
         String json = new TransactionSerDe(schema).toJson(transaction);
 
         // Then
         assertThat(NumberFormatUtils.formatBytes(json.length()))
-                .isEqualTo("593082B (593.1KB)");
+                .isEqualTo("363136B (363.1KB)");
+        assertThat(partitions.getAllPartitions()).hasSize(399);
     }
 
     @Test
