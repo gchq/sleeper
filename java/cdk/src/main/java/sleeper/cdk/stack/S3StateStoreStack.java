@@ -35,13 +35,12 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.S3_STATE_STORE_DYNAMO_POINT_IN_TIME_RECOVERY;
 
-public final class S3StateStoreStack extends NestedStack {
+public class S3StateStoreStack extends NestedStack {
     private final Table revisionTable;
     private final TableDataStack dataStack;
 
     public S3StateStoreStack(
-            Construct scope, String id, InstanceProperties instanceProperties,
-            TableDataStack dataStack, ManagedPoliciesStack policiesStack) {
+            Construct scope, String id, InstanceProperties instanceProperties, TableDataStack dataStack) {
         super(scope, id);
         this.dataStack = dataStack;
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
@@ -66,8 +65,6 @@ public final class S3StateStoreStack extends NestedStack {
                 .pointInTimeRecovery(instanceProperties.getBoolean(S3_STATE_STORE_DYNAMO_POINT_IN_TIME_RECOVERY))
                 .build();
         instanceProperties.set(REVISION_TABLENAME, this.revisionTable.getTableName());
-        grantReadWrite(policiesStack.getIngestPolicy());
-        grantReadWrite(policiesStack.getEditTablesPolicy());
     }
 
     public void grantReadWrite(IGrantable grantee) {
