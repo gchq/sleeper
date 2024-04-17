@@ -25,7 +25,8 @@ public class SystemTestReporting {
     private final IngestReportsDriver ingestDriver;
     private final CompactionReportsDriver compactionDriver;
 
-    public SystemTestReporting(SystemTestContext context, SystemTestDrivers drivers) {
+    public SystemTestReporting(SystemTestContext context) {
+        SystemTestDrivers drivers = context.instance().adminDrivers();
         this.context = context.reporting();
         this.ingestDriver = drivers.ingestReports(context);
         this.compactionDriver = drivers.compactionReports(context);

@@ -36,9 +36,9 @@ public class SystemTestPartitioning {
     private final SystemTestDrivers drivers;
     private final SystemTestInstanceContext instance;
 
-    public SystemTestPartitioning(SystemTestContext context, SystemTestDrivers drivers) {
+    public SystemTestPartitioning(SystemTestContext context) {
         this.context = context;
-        this.drivers = drivers;
+        this.drivers = context.instance().adminDrivers();
         this.instance = context.instance();
     }
 

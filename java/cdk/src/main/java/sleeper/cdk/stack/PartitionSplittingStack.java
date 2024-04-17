@@ -91,7 +91,7 @@ public class PartitionSplittingStack extends NestedStack {
         QueueAndDlq batchQueueAndDlq = createBatchQueues(instanceProperties);
         this.partitionSplittingBatchQueue = batchQueueAndDlq.queue;
         // Create queue for partition splitting job definitions
-        QueueAndDlq jobQueueAndDlq = createJobQueues(instanceProperties, topic);
+        QueueAndDlq jobQueueAndDlq = createJobQueues(instanceProperties, topic, coreStacks);
         this.partitionSplittingJobQueue = jobQueueAndDlq.queue;
         this.partitionSplittingJobDlq = jobQueueAndDlq.dlq;
 
@@ -136,7 +136,7 @@ public class PartitionSplittingStack extends NestedStack {
         return new QueueAndDlq(partitionSplittingBatchQueue, partitionSplittingBatchDlq);
     }
 
-    private QueueAndDlq createJobQueues(InstanceProperties instanceProperties, Topic topic) {
+    private QueueAndDlq createJobQueues(InstanceProperties instanceProperties, Topic topic, CoreStacks coreStacks) {
         // Create queue for partition splitting job definitions
         Queue partitionSplittingJobDlq = Queue.Builder
                 .create(this, "PartitionSplittingDeadLetterQueue")
@@ -151,6 +151,7 @@ public class PartitionSplittingStack extends NestedStack {
                         .build())
                 .visibilityTimeout(Duration.seconds(instanceProperties.getInt(SPLIT_PARTITIONS_TIMEOUT_IN_SECONDS))) // TODO Needs to be >= function timeout
                 .build();
+        partitionSplittingJobQueue.grantPurge(coreStacks.getPurgeQueuesPolicy());
         instanceProperties.set(PARTITION_SPLITTING_JOB_QUEUE_URL, partitionSplittingJobQueue.getQueueUrl());
         instanceProperties.set(PARTITION_SPLITTING_JOB_QUEUE_ARN, partitionSplittingJobQueue.getQueueArn());
         instanceProperties.set(PARTITION_SPLITTING_JOB_DLQ_URL, partitionSplittingJobDlq.getQueueUrl());
@@ -200,6 +201,7 @@ public class PartitionSplittingStack extends NestedStack {
 
         coreStacks.grantReadTablesStatus(triggerFunction);
         partitionSplittingBatchQueue.grantSendMessages(triggerFunction);
+        coreStacks.grantInvokeScheduled(triggerFunction, partitionSplittingBatchQueue);
     }
 
     private void createFindPartitionsToSplitFunction(InstanceProperties instanceProperties, LambdaCode splitterJar, CoreStacks coreStacks, Map<String, String> environmentVariables) {

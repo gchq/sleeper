@@ -122,6 +122,7 @@ public class TableMetricsStack extends NestedStack {
                 "Alarms if there are any messages on the dead letter queue for the table metrics queue",
                 deadLetterQueue, topic);
         queue.grantSendMessages(tableMetricsTrigger);
+        coreStacks.grantInvokeScheduled(tableMetricsTrigger, queue);
         tableMetricsPublisher.addEventSource(new SqsEventSource(queue,
                 SqsEventSourceProps.builder().batchSize(1).build()));
 
