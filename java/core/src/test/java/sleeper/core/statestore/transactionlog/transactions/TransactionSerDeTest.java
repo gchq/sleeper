@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
@@ -28,9 +29,12 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.transactionlog.FileReferenceTransaction;
 import sleeper.core.statestore.transactionlog.PartitionTransaction;
 import sleeper.core.statestore.transactionlog.StateStoreTransaction;
+import sleeper.core.util.NumberFormatUtils;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
@@ -138,6 +142,29 @@ public class TransactionSerDeTest {
 
         // When / Then
         whenSerDeThenMatchAndVerify(schema, transaction);
+    }
+
+    @Test
+    void shouldSerialiseTooManyPartitionsToFitInOneDynamoDBTransaction() {
+        // Given
+        Schema schema = schemaWithKey("key", new LongType());
+        List<String> leafIds = IntStream.range(0, 1000)
+                .mapToObj(i -> "" + i)
+                .collect(toUnmodifiableList());
+        List<Object> splitPoints = LongStream.range(1, 1000)
+                .mapToObj(i -> i)
+                .collect(toUnmodifiableList());
+        PartitionTransaction transaction = new InitialisePartitionsTransaction(new PartitionsBuilder(schema)
+                .leavesWithSplits(leafIds, splitPoints)
+                .anyTreeJoiningAllLeaves()
+                .buildList());
+
+        // When
+        String json = new TransactionSerDe(schema).toJson(transaction);
+
+        // Then
+        assertThat(NumberFormatUtils.formatBytes(json.length()))
+                .isEqualTo("593082B (593.1KB)");
     }
 
     @Test
