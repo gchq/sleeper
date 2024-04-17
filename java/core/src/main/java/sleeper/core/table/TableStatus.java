@@ -19,8 +19,8 @@ package sleeper.core.table;
 import java.util.Objects;
 
 /**
- * A data structure for storing metadata about a Sleeper table.
- * Stores the table name, the internal unique ID, and whether the table is online or not.
+ * Holds metadata about the status of a Sleeper table. This is any data that's required to look up the table for some
+ * operation. Note that the configuration of the table is stored separately.
  */
 public class TableStatus {
 
@@ -59,7 +59,8 @@ public class TableStatus {
     }
 
     /**
-     * Takes this table offline.
+     * Creates a copy of this table status, with the table offline. Can be used with {@link TableIndex#update} to take
+     * the table offline.
      *
      * @return a copy of this table status with the online flag set to false
      */
@@ -68,7 +69,8 @@ public class TableStatus {
     }
 
     /**
-     * Puts this table online.
+     * Creates a copy of this table status, with the table online. Can be used with {@link TableIndex#update} to put the
+     * table online.
      *
      * @return a copy of this table status with the online flag set to true
      */
