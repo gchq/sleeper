@@ -29,7 +29,7 @@ import java.lang.reflect.Type;
 import java.time.Instant;
 
 /**
- * A helper class to create preconfigured a GSON builder.
+ * A helper class for common GSON configuration for JSON internal to Sleeper.
  */
 public class GsonConfig {
 
@@ -37,9 +37,10 @@ public class GsonConfig {
     }
 
     /**
-     * Creates a GSON builder preconfigured to serialise and deserialise instants.
+     * Creates a GSON builder preconfigured for JSON internal to Sleeper. This must be further configured to work with
+     * specific Sleeper entities.
      *
-     * @return a {@link GsonBuilder} that supports serialising {@link Instant} objects
+     * @return the new builder
      */
     public static GsonBuilder standardBuilder() {
         return new GsonBuilder().serializeSpecialFloatingPointValues()
