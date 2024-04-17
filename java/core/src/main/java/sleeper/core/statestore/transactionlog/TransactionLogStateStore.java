@@ -17,6 +17,7 @@ package sleeper.core.statestore.transactionlog;
 
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.DelegatingStateStore;
+import sleeper.core.table.TableStatus;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
 
@@ -28,9 +29,13 @@ public class TransactionLogStateStore extends DelegatingStateStore {
     public TransactionLogStateStore(Builder builder) {
         super(
                 new TransactionLogFileReferenceStore(
-                        TransactionLogHead.forFiles(builder.filesLogStore, builder.maxAddTransactionAttempts, builder.retryBackoff)),
+                        TransactionLogHead.forFiles(
+                                builder.sleeperTable, builder.filesLogStore,
+                                builder.maxAddTransactionAttempts, builder.retryBackoff)),
                 new TransactionLogPartitionStore(builder.schema,
-                        TransactionLogHead.forPartitions(builder.partitionsLogStore, builder.maxAddTransactionAttempts, builder.retryBackoff)));
+                        TransactionLogHead.forPartitions(
+                                builder.sleeperTable, builder.partitionsLogStore,
+                                builder.maxAddTransactionAttempts, builder.retryBackoff)));
     }
 
     public static Builder builder() {
@@ -38,6 +43,7 @@ public class TransactionLogStateStore extends DelegatingStateStore {
     }
 
     public static class Builder {
+        private TableStatus sleeperTable;
         private Schema schema;
         private TransactionLogStore filesLogStore;
         private TransactionLogStore partitionsLogStore;
@@ -45,6 +51,11 @@ public class TransactionLogStateStore extends DelegatingStateStore {
         private ExponentialBackoffWithJitter retryBackoff = new ExponentialBackoffWithJitter(RETRY_WAIT_RANGE);
 
         private Builder() {
+        }
+
+        public Builder sleeperTable(TableStatus sleeperTable) {
+            this.sleeperTable = sleeperTable;
+            return this;
         }
 
         public Builder schema(Schema schema) {
