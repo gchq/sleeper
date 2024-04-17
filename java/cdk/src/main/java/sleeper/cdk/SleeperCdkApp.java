@@ -155,10 +155,10 @@ public class SleeperCdkApp extends Stack {
         }
 
         if (INGEST_STACK_NAMES.stream().anyMatch(optionalStacks::contains)) {
-            ingestStatusStoreStack = new IngestStatusStoreStack(this, "IngestStatusStore", instanceProperties);
+            ingestStatusStoreStack = new IngestStatusStoreStack(this, "IngestStatusStore", instanceProperties, coreStacks);
         }
         if (BULK_IMPORT_STACK_NAMES.stream().anyMatch(optionalStacks::contains)) {
-            bulkImportBucketStack = new BulkImportBucketStack(this, "BulkImportBucket", instanceProperties);
+            bulkImportBucketStack = new BulkImportBucketStack(this, "BulkImportBucket", instanceProperties, coreStacks);
         }
         if (EMR_BULK_IMPORT_STACK_NAMES.stream().anyMatch(optionalStacks::contains)) {
             emrBulkImportCommonStack = new CommonEmrBulkImportStack(this, "BulkImportEMRCommon",
@@ -244,7 +244,7 @@ public class SleeperCdkApp extends Stack {
         if (QUERY_STACK_NAMES.stream().anyMatch(optionalStacks::contains)) {
             queryQueueStack = new QueryQueueStack(this, "QueryQueue",
                     instanceProperties,
-                    topicStack.getTopic());
+                    topicStack.getTopic(), coreStacks);
             queryStack = new QueryStack(this,
                     "Query",
                     instanceProperties, jars,

@@ -42,8 +42,7 @@ public class SystemTestContext {
             DeployedSystemTestResources systemTestResources, DeployedSleeperInstances deployedInstances) {
         this.parameters = parameters;
         this.systemTestResources = systemTestResources;
-        instance = new SystemTestInstanceContext(parameters, deployedInstances,
-                drivers.instance(parameters), drivers.tables(parameters));
+        instance = new SystemTestInstanceContext(parameters, deployedInstances, drivers.instance(parameters));
         sourceFiles = new IngestSourceFilesContext(systemTestResources, instance);
         reporting = new ReportingContext(parameters);
     }
