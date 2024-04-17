@@ -17,7 +17,7 @@
 package sleeper.core.table;
 
 /**
- * An exception for when a table could not be found.
+ * An exception for when a Sleeper table could not be found.
  */
 public class TableNotFoundException extends RuntimeException {
     private TableNotFoundException(String message, Exception cause) {
@@ -25,7 +25,7 @@ public class TableNotFoundException extends RuntimeException {
     }
 
     /**
-     * Creates an instance of this class with a table ID.
+     * Creates an instance of this class when we looked up the table by its internal ID.
      *
      * @param  tableId the table ID
      * @return         an instance of this class
@@ -35,7 +35,7 @@ public class TableNotFoundException extends RuntimeException {
     }
 
     /**
-     * Creates an instance of this class with a table ID and a cause exception.
+     * Creates an instance of this class when we looked up the table by its internal ID.
      *
      * @param  tableId the table ID
      * @param  cause   a cause exception
@@ -46,7 +46,7 @@ public class TableNotFoundException extends RuntimeException {
     }
 
     /**
-     * Creates an instance of this class with a table name.
+     * Creates an instance of this class when we looked up the table by its name.
      *
      * @param  tableName the table name
      * @return           an instance of this class
@@ -56,7 +56,7 @@ public class TableNotFoundException extends RuntimeException {
     }
 
     /**
-     * Creates an instance of this class with a table name and a cause exception.
+     * Creates an instance of this class when we looked up the table by its name.
      *
      * @param  tableName the table name
      * @param  cause     a cause exception
@@ -67,7 +67,7 @@ public class TableNotFoundException extends RuntimeException {
     }
 
     /**
-     * Creates an instance of this class with a table status.
+     * Creates an instance of this class when we looked up the table based on a status object.
      *
      * @param  table the table status
      * @return       an instance of this class
@@ -77,7 +77,7 @@ public class TableNotFoundException extends RuntimeException {
     }
 
     /**
-     * Creates an instance of this class with a table status and a cause exception.
+     * Creates an instance of this class when we looked up the table based on a status object.
      *
      * @param  table the table status
      * @param  cause a cause exception
