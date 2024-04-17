@@ -116,6 +116,8 @@ class TransactionLogHead<T> {
 
     private void applyTransaction(TransactionLogEntry entry) {
         if (!transactionType.isInstance(entry.getTransaction())) {
+            LOGGER.warn("Found unexpected transaction type. Expected {}, found {}",
+                    transactionType.getClass().getName(), entry.getTransaction().getClass().getName());
             return;
         }
         transactionType.cast(entry.getTransaction())
