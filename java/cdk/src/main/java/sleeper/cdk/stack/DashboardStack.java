@@ -55,7 +55,6 @@ public class DashboardStack extends NestedStack {
     private final String metricsNamespace;
     private final Duration window;
     private final Dashboard dashboard;
-    private final List<IMetric> errorMetrics;
     private final IngestStack ingestStack;
     private final CompactionStack compactionStack;
     private final PartitionSplittingStack partitionSplittingStack;
@@ -85,9 +84,8 @@ public class DashboardStack extends NestedStack {
         int timeWindowInMinutes = instanceProperties.getInt(DASHBOARD_TIME_WINDOW_MINUTES);
         window = Duration.minutes(timeWindowInMinutes);
         dashboard = Dashboard.Builder.create(this, "dashboard").dashboardName(instanceId).build();
-        this.errorMetrics = errorMetrics;
 
-        addErrorMetricsWidgets();
+        addErrorMetricsWidgets(errorMetrics);
         addIngestWidgets();
         addTableWidgets();
         addCompactionWidgets();
@@ -104,7 +102,7 @@ public class DashboardStack extends NestedStack {
                 "#dashboards:name=" + instanceProperties.get(ID) + ";expand=true";
     }
 
-    private void addErrorMetricsWidgets() {
+    private void addErrorMetricsWidgets(List<IMetric> errorMetrics) {
         if (!errorMetrics.isEmpty()) {
             dashboard.addWidgets(
                     SingleValueWidget.Builder.create()
