@@ -230,9 +230,11 @@ public interface TableProperty extends SleeperProperty {
             .propertyGroup(TablePropertyGroup.COMPACTION)
             .build();
     TableProperty STATESTORE_CLASSNAME = Index.propertyBuilder("sleeper.table.statestore.classname")
-            .defaultValue("sleeper.statestore.s3.S3StateStore")
-            .description("The name of the class used for the metadata store. The default is S3StateStore. " +
-                    "An alternative option is the DynamoDBStateStore.")
+            .defaultValue("sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore")
+            .description("The name of the class used for the metadata store. " +
+                    "The default is DynamoDBTransactionLogStateStore. Alternative options are:\n" +
+                    "sleeper.statestore.s3.S3StateStore\n" +
+                    "sleeper.statestore.dynamodb.DynamoDBStateStore")
             .propertyGroup(TablePropertyGroup.METADATA)
             .editable(false).build();
     TableProperty DYNAMODB_STRONGLY_CONSISTENT_READS = Index.propertyBuilder("sleeper.table.metadata.dynamo.consistent.reads")
