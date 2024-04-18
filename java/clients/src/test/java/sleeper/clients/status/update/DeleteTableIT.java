@@ -89,7 +89,7 @@ public class DeleteTableIT {
     private final Schema schema = schemaWithKey("key1");
     private final TablePropertiesStore propertiesStore = S3TableProperties.getStore(instanceProperties, s3, dynamoDB);
     private final Configuration conf = getHadoopConfiguration(localStackContainer);
-    private final StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties, conf);
+    private final StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, s3, instanceProperties, conf);
     private String inputFolderName;
 
     @BeforeEach

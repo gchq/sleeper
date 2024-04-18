@@ -183,7 +183,7 @@ public class WarmQueryExecutorLambdaIT {
 
     private void createTable(TableProperties tableProperties) {
         S3TableProperties.getStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
-        StateStore stateStore = new StateStoreProvider(dynamoClient, instanceProperties, configuration)
+        StateStore stateStore = new StateStoreProvider(dynamoClient, s3Client, instanceProperties, configuration)
                 .getStateStore(tableProperties);
         try {
             stateStore.initialise(new PartitionsFromSplitPoints(tableProperties.getSchema(), new ArrayList<>()).construct());

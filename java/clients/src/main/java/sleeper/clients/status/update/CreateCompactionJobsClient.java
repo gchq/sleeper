@@ -88,7 +88,7 @@ public class CreateCompactionJobsClient {
                     .collect(toUnmodifiableList());
             TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
             Configuration conf = HadoopConfigurationProvider.getConfigurationForClient(instanceProperties);
-            StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, conf);
+            StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, s3Client, instanceProperties, conf);
             CompactionJobStatusStore jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
             CreateCompactionJobs jobCreator = new CreateCompactionJobs(
                     new ObjectFactory(instanceProperties, s3Client, "/tmp"),

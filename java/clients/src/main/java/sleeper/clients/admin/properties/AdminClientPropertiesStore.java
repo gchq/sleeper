@@ -172,7 +172,7 @@ public class AdminClientPropertiesStore {
 
     public StateStore loadStateStore(String instanceId, TableProperties tableProperties) {
         InstanceProperties instanceProperties = loadInstanceProperties(instanceId);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties, new Configuration());
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, s3, instanceProperties, new Configuration());
         return stateStoreProvider.getStateStore(tableProperties);
     }
 

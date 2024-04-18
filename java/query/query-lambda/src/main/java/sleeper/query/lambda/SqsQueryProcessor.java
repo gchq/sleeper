@@ -78,7 +78,7 @@ public class SqsQueryProcessor {
         // The following Configuration is only used in StateStoreProvider for reading from S3 if the S3StateStore is used,
         // so use the standard Configuration rather than the one for query lambdas which is specific to the table.
         Configuration confForStateStore = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
-        stateStoreProvider = new StateStoreProvider(builder.dynamoClient, instanceProperties, confForStateStore);
+        stateStoreProvider = new StateStoreProvider(builder.dynamoClient, builder.s3Client, instanceProperties, confForStateStore);
     }
 
     public static Builder builder() {

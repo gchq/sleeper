@@ -755,7 +755,7 @@ public class SqsQueryProcessorLambdaIT {
             IngestFactory factory = IngestFactory.builder()
                     .objectFactory(ObjectFactory.noUserJars())
                     .localDir(createTempDirectory(tempDir, null).toString())
-                    .stateStoreProvider(new StateStoreProvider(dynamoClient, instanceProperties, configuration))
+                    .stateStoreProvider(new StateStoreProvider(dynamoClient, s3Client, instanceProperties, configuration))
                     .instanceProperties(instanceProperties)
                     .hadoopConfiguration(configuration)
                     .build();
@@ -800,7 +800,7 @@ public class SqsQueryProcessorLambdaIT {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, SCHEMA);
         S3TableProperties.getStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
 
-        StateStore stateStore = new StateStoreProvider(dynamoClient, instanceProperties, configuration)
+        StateStore stateStore = new StateStoreProvider(dynamoClient, s3Client, instanceProperties, configuration)
                 .getStateStore(tableProperties);
         try {
             stateStore.initialise(new PartitionsFromSplitPoints(tableProperties.getSchema(), splitPoints).construct());

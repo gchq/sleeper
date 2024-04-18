@@ -74,7 +74,7 @@ public class DockerInstanceTestBase {
 
     public CloseableIterator<Record> queryAllRecords(
             InstanceProperties instanceProperties, TableProperties tableProperties) throws Exception {
-        StateStore stateStore = new StateStoreProvider(dynamoDB, instanceProperties, getHadoopConfiguration())
+        StateStore stateStore = new StateStoreProvider(dynamoDB, s3Client, instanceProperties, getHadoopConfiguration())
                 .getStateStore(tableProperties);
         PartitionTree tree = new PartitionTree(stateStore.getAllPartitions());
         QueryExecutor executor = new QueryExecutor(ObjectFactory.noUserJars(), tableProperties,

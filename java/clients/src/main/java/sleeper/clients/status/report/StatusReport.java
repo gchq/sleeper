@@ -98,15 +98,15 @@ public class StatusReport {
         if (2 != args.length && 3 != args.length) {
             throw new IllegalArgumentException("Usage: <instance-id> <table-name> <optional-verbose-true-or-false>");
         }
-        AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
-        InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, args[0]);
+        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+        InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(s3Client, args[0]);
 
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
         AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
 
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, amazonS3, dynamoDBClient);
+        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
         TableProperties tableProperties = tablePropertiesProvider.getByName(args[1]);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, new Configuration());
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, s3Client, instanceProperties, new Configuration());
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         CompactionJobStatusStore compactionStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
         CompactionTaskStatusStore compactionTaskStatusStore = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
@@ -118,7 +118,7 @@ public class StatusReport {
                 instanceProperties, tableProperties, verbose,
                 stateStore, compactionStatusStore, compactionTaskStatusStore,
                 sqsClient, tablePropertiesProvider);
-        amazonS3.shutdown();
+        s3Client.shutdown();
         statusReport.run();
         sqsClient.shutdown();
         dynamoDBClient.shutdown();

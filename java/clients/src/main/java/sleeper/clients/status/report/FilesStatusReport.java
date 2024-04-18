@@ -114,17 +114,17 @@ public class FilesStatusReport {
             reporterType = args[4].toUpperCase(Locale.ROOT);
         }
 
-        AmazonS3 amazonS3 = buildAwsV1Client(AmazonS3ClientBuilder.standard());
-        InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, instanceId);
+        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
+        InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(s3Client, instanceId);
 
         AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, amazonS3, dynamoDBClient);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, getConfigurationForClient());
+        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, s3Client, instanceProperties, getConfigurationForClient());
         StateStore stateStore = stateStoreProvider.getStateStore(tableName, tablePropertiesProvider);
 
         new FilesStatusReport(stateStore, maxFilesWithNoReferences, verbose, reporterType).run();
 
-        amazonS3.shutdown();
+        s3Client.shutdown();
         dynamoDBClient.shutdown();
     }
 }

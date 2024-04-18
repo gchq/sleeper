@@ -63,7 +63,7 @@ public class GarbageCollectorLambda implements RequestHandler<SQSEvent, Void> {
 
         tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
         Configuration conf = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, conf);
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, s3Client, instanceProperties, conf);
 
         this.garbageCollector = new GarbageCollector(conf,
                 instanceProperties, tablePropertiesProvider, stateStoreProvider);
