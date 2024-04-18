@@ -39,11 +39,6 @@ public class StateStoreProvider {
     private final Map<String, StateStore> tableNameToStateStoreCache;
 
     public StateStoreProvider(
-            AmazonDynamoDB dynamoDBClient, InstanceProperties instanceProperties, Configuration configuration) {
-        this(new StateStoreFactory(dynamoDBClient, instanceProperties, configuration)::getStateStore);
-    }
-
-    public StateStoreProvider(
             AmazonDynamoDB dynamoDBClient, AmazonS3 s3Client, InstanceProperties instanceProperties, Configuration configuration) {
         this(new StateStoreFactory(dynamoDBClient, s3Client, instanceProperties, configuration)::getStateStore);
     }

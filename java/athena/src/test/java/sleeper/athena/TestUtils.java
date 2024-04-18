@@ -97,12 +97,13 @@ public class TestUtils {
     }
 
     public static void ingestData(
-            AmazonDynamoDB dynamoClient, String dataDir, InstanceProperties instanceProperties, TableProperties table) {
+            AmazonS3 s3Client, AmazonDynamoDB dynamoClient, String dataDir,
+            InstanceProperties instanceProperties, TableProperties table) {
         try {
             IngestFactory factory = IngestFactory.builder()
                     .objectFactory(ObjectFactory.noUserJars())
                     .localDir(dataDir)
-                    .stateStoreProvider(new StateStoreProvider(dynamoClient, instanceProperties, new Configuration()))
+                    .stateStoreProvider(new StateStoreProvider(dynamoClient, s3Client, instanceProperties, new Configuration()))
                     .hadoopConfiguration(new Configuration())
                     .instanceProperties(instanceProperties)
                     .build();
