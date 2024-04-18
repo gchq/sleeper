@@ -59,7 +59,7 @@ public class TransactionLogSnapshotIT {
 
         // When
         TransactionLogSnapshot snapshot = TransactionLogSnapshot.from(schema, stateStore, configuration);
-        snapshot.save(tempDir);
+        snapshot.savePartitionsWithTransactionNumber(tempDir, 1);
 
         // Then
         assertThat(snapshot.loadPartitionsFromTransactionNumber(tempDir, 1).all())
@@ -76,7 +76,7 @@ public class TransactionLogSnapshotIT {
 
         // When
         TransactionLogSnapshot snapshot = TransactionLogSnapshot.from(schema, stateStore, configuration);
-        snapshot.save(tempDir);
+        snapshot.saveFilesWithTransactionNumber(tempDir, 1);
 
         // Then
         assertThat(snapshot.loadFilesFromTransactionNumber(tempDir, 1).references())
