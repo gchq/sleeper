@@ -85,6 +85,7 @@ public class ECSCompactionTaskRunner {
         String taskId = UUID.randomUUID().toString();
 
         ObjectFactory objectFactory = new ObjectFactory(instanceProperties, s3Client, "/tmp");
+
         CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties,
                 tablePropertiesProvider, stateStoreProvider, objectFactory);
         CompactionTask task = new CompactionTask(instanceProperties, propertiesReloader,

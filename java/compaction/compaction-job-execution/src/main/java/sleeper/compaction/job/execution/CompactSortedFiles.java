@@ -62,7 +62,7 @@ import static sleeper.sketches.s3.SketchesSerDeToS3.sketchesPathForDataFile;
 /**
  * Executes a compaction job. Compacts N input files into a single output file.
  */
-public class CompactSortedFiles implements CompactionTask.CompactionRunner {
+public class CompactSortedFiles implements CompactionTask.CompactionRunnerDetails {
     private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final ObjectFactory objectFactory;
@@ -202,5 +202,20 @@ public class CompactSortedFiles implements CompactionTask.CompactionRunner {
             LOGGER.error("Exception updating StateStore (moving input files to ready for GC and creating new active file): {}", e.getMessage());
             throw e;
         }
+    }
+
+    @Override
+    public boolean hardwareAccelerated() {
+        return false;
+    }
+
+    @Override
+    public String language() {
+        return "Java";
+    }
+
+    @Override
+    public boolean supportsIterators() {
+        return true;
     }
 }

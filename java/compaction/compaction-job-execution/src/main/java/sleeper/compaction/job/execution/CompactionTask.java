@@ -174,6 +174,20 @@ public class CompactionTask {
         RecordsProcessed compact(CompactionJob job) throws Exception;
     }
 
+    interface CompactionRunnerDetails extends CompactionRunner {
+        default boolean hardwareAccelerated() {
+            return false;
+        }
+
+        default String language() {
+            return "Java";
+        }
+
+        default boolean supportsIterators() {
+            return false;
+        }
+    }
+
     interface MessageHandle extends AutoCloseable {
         CompactionJob getJob();
 
