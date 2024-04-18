@@ -39,8 +39,8 @@ public class DynamoDBTransactionLogStateStore extends TransactionLogStateStore {
         return builder()
                 .sleeperTable(tableProperties.getStatus())
                 .schema(tableProperties.getSchema())
-                .filesLogStore(new DynamoDBTransactionLogStore(instanceProperties.get(FILE_TRANSACTION_LOG_TABLENAME), tableProperties, dynamoDB, s3))
-                .partitionsLogStore(new DynamoDBTransactionLogStore(instanceProperties.get(PARTITION_TRANSACTION_LOG_TABLENAME), tableProperties, dynamoDB, s3));
+                .filesLogStore(new DynamoDBTransactionLogStore(instanceProperties.get(FILE_TRANSACTION_LOG_TABLENAME), instanceProperties, tableProperties, dynamoDB, s3))
+                .partitionsLogStore(new DynamoDBTransactionLogStore(instanceProperties.get(PARTITION_TRANSACTION_LOG_TABLENAME), instanceProperties, tableProperties, dynamoDB, s3));
     }
 
 }

@@ -42,6 +42,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
+import static sleeper.configuration.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
@@ -92,6 +93,7 @@ public class InstancePropertiesTestHelper {
         instanceProperties.set(TABLE_ID_INDEX_DYNAMO_TABLENAME, id + "-tii");
         instanceProperties.set(TABLE_ONLINE_INDEX_DYNAMO_TABLENAME, id + "-tio");
         instanceProperties.set(QUERY_TRACKER_TABLE_NAME, id + "-qt");
+        instanceProperties.setNumber(MAXIMUM_CONNECTIONS_TO_S3, 5);
         return instanceProperties;
     }
 

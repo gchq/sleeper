@@ -15,7 +15,6 @@
  */
 package sleeper.statestore.transactionlog;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.table.TableProperties;
@@ -38,7 +37,6 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
     private final Schema schema = schemaWithKey("key", new LongType());
 
     @Test
-    @Disabled("TODO")
     void shouldInitialiseTableWithManyPartitions() throws Exception {
         // Given
         StateStore stateStore = getTableStateStore();

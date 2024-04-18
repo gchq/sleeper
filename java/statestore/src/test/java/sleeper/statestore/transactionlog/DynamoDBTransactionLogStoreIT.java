@@ -162,12 +162,12 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
     private TransactionLogStore fileLogStore() {
         return new DynamoDBTransactionLogStore(
                 instanceProperties.get(FILE_TRANSACTION_LOG_TABLENAME),
-                tableProperties, dynamoDBClient, s3Client);
+                instanceProperties, tableProperties, dynamoDBClient, s3Client);
     }
 
     private TransactionLogStore partitionLogStore() {
         return new DynamoDBTransactionLogStore(
                 instanceProperties.get(PARTITION_TRANSACTION_LOG_TABLENAME),
-                tableProperties, dynamoDBClient, s3Client);
+                instanceProperties, tableProperties, dynamoDBClient, s3Client);
     }
 }

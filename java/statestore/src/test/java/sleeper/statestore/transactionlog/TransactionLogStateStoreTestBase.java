@@ -22,7 +22,6 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -31,12 +30,7 @@ import org.testcontainers.utility.DockerImageName;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.CommonTestConstants;
 
-import java.nio.file.Path;
-
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
 @Testcontainers
@@ -48,9 +42,6 @@ public class TransactionLogStateStoreTestBase {
     protected static AmazonDynamoDB dynamoDBClient;
     protected static AmazonS3 s3Client;
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
-
-    @TempDir
-    public Path tempDir;
 
     @BeforeAll
     public static void initDynamoClient() {
@@ -65,9 +56,6 @@ public class TransactionLogStateStoreTestBase {
 
     @BeforeEach
     void setUpBase() {
-        instanceProperties.set(FILE_SYSTEM, "file://");
-        instanceProperties.setNumber(MAXIMUM_CONNECTIONS_TO_S3, 5);
-        instanceProperties.set(DATA_BUCKET, tempDir.toString());
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoDBClient).create();
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoDBClient, s3Client).create();
     }
 }
