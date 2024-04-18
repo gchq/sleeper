@@ -23,6 +23,8 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
+import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
@@ -64,6 +66,23 @@ public class TransactionLogSnapshotIT {
                 .containsExactlyElementsOf(stateStore.getAllPartitions());
     }
 
+    @Test
+    void shouldSaveAndLoadFilesState() throws StateStoreException {
+        // Given
+        TransactionLogStateStore stateStore = stateStore();
+        stateStore.initialise();
+        FileReference file1 = fileFactory().rootFile(123L);
+        stateStore.addFile(file1);
+
+        // When
+        TransactionLogSnapshot snapshot = TransactionLogSnapshot.from(schema, stateStore, configuration);
+        snapshot.save(tempDir);
+
+        // Then
+        assertThat(snapshot.loadFilesFromTransactionNumber(tempDir, 1).references())
+                .containsExactlyElementsOf(stateStore.getFileReferences());
+    }
+
     private TransactionLogStateStore stateStore() {
         return stateStore(builder -> {
         });
@@ -87,5 +106,9 @@ public class TransactionLogSnapshotIT {
                 .retryBackoff(new ExponentialBackoffWithJitter(
                         WaitRange.firstAndMaxWaitCeilingSecs(1, 30),
                         fixJitterSeed(), noWaits()));
+    }
+
+    private FileReferenceFactory fileFactory() {
+        return FileReferenceFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
     }
 }
