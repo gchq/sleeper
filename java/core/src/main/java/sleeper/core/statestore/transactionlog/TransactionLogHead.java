@@ -49,19 +49,19 @@ class TransactionLogHead<T> {
     }
 
     static TransactionLogHead<StateStoreFiles> forFiles(
-            TableStatus sleeperTable, TransactionLogStore logStore,
+            TableStatus sleeperTable, TransactionLogStore logStore, StateStoreFiles state,
             int maxAddTransactionAttempts, ExponentialBackoffWithJitter retryBackoff) {
         return new TransactionLogHead<StateStoreFiles>(
                 sleeperTable, logStore, maxAddTransactionAttempts, retryBackoff,
-                FileReferenceTransaction.class, new StateStoreFiles());
+                FileReferenceTransaction.class, state);
     }
 
     static TransactionLogHead<StateStorePartitions> forPartitions(
-            TableStatus sleeperTable, TransactionLogStore logStore,
+            TableStatus sleeperTable, TransactionLogStore logStore, StateStorePartitions state,
             int maxAddTransactionAttempts, ExponentialBackoffWithJitter retryBackoff) {
         return new TransactionLogHead<StateStorePartitions>(
                 sleeperTable, logStore, maxAddTransactionAttempts, retryBackoff,
-                PartitionTransaction.class, new StateStorePartitions());
+                PartitionTransaction.class, state);
     }
 
     void addTransaction(Instant updateTime, StateStoreTransaction<T> transaction) throws StateStoreException {

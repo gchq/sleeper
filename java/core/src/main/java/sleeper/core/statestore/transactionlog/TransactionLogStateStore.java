@@ -30,11 +30,11 @@ public class TransactionLogStateStore extends DelegatingStateStore {
         super(
                 new TransactionLogFileReferenceStore(
                         TransactionLogHead.forFiles(
-                                builder.sleeperTable, builder.filesLogStore,
+                                builder.sleeperTable, builder.filesLogStore, builder.filesState,
                                 builder.maxAddTransactionAttempts, builder.retryBackoff)),
                 new TransactionLogPartitionStore(builder.schema,
                         TransactionLogHead.forPartitions(
-                                builder.sleeperTable, builder.partitionsLogStore,
+                                builder.sleeperTable, builder.partitionsLogStore, builder.partitionsState,
                                 builder.maxAddTransactionAttempts, builder.retryBackoff)));
     }
 
@@ -47,6 +47,8 @@ public class TransactionLogStateStore extends DelegatingStateStore {
         private Schema schema;
         private TransactionLogStore filesLogStore;
         private TransactionLogStore partitionsLogStore;
+        private StateStoreFiles filesState = new StateStoreFiles();
+        private StateStorePartitions partitionsState = new StateStorePartitions();
         private int maxAddTransactionAttempts = MAX_ADD_TRANSACTION_ATTEMPTS;
         private ExponentialBackoffWithJitter retryBackoff = new ExponentialBackoffWithJitter(RETRY_WAIT_RANGE);
 
@@ -70,6 +72,16 @@ public class TransactionLogStateStore extends DelegatingStateStore {
 
         public Builder partitionsLogStore(TransactionLogStore partitionsLogStore) {
             this.partitionsLogStore = partitionsLogStore;
+            return this;
+        }
+
+        public Builder filesState(StateStoreFiles filesState) {
+            this.filesState = filesState;
+            return this;
+        }
+
+        public Builder partitionsState(StateStorePartitions partitionsState) {
+            this.partitionsState = partitionsState;
             return this;
         }
 

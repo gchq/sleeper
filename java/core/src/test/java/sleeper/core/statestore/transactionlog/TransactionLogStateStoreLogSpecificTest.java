@@ -166,6 +166,30 @@ public class TransactionLogStateStoreLogSpecificTest {
         assertThat(retryWaits).isEmpty();
     }
 
+    @Test
+    void shouldSetPartitionsStateWhenCreatingStateStore() throws Exception {
+        StateStorePartitions partitionsState = new StateStorePartitions();
+
+        StateStore stateStore = stateStore(builder -> builder.partitionsState(partitionsState));
+
+        PartitionTree splitTree = partitions.splitToNewChildren("root", "L", "R", "l").buildTree();
+        stateStore.initialise(splitTree.getAllPartitions());
+
+        assertThat(partitionsState.all()).containsExactlyElementsOf(splitTree.getAllPartitions());
+    }
+
+    @Test
+    void shouldSetFilesStateWhenCreatingStateStore() throws Exception {
+        StateStoreFiles filesState = new StateStoreFiles();
+        FileReference file = fileFactory().rootFile(123);
+
+        StateStore stateStore = stateStore(builder -> builder.filesState(filesState));
+
+        stateStore.addFile(file);
+
+        assertThat(filesState.references()).containsExactly(file);
+    }
+
     private StateStore otherProcess() {
         return stateStore();
     }
@@ -176,7 +200,15 @@ public class TransactionLogStateStoreLogSpecificTest {
     }
 
     private StateStore stateStore(Consumer<TransactionLogStateStore.Builder> config) {
-        TransactionLogStateStore.Builder builder = TransactionLogStateStore.builder()
+        TransactionLogStateStore.Builder builder = stateStoreBuilder();
+        config.accept(builder);
+        StateStore stateStore = builder.build();
+        stateStore.fixFileUpdateTime(DEFAULT_UPDATE_TIME);
+        return stateStore;
+    }
+
+    private TransactionLogStateStore.Builder stateStoreBuilder() {
+        return TransactionLogStateStore.builder()
                 .sleeperTable(uniqueIdAndName("test-table-id", "test-table"))
                 .schema(schema)
                 .filesLogStore(filesLogStore)
@@ -185,10 +217,6 @@ public class TransactionLogStateStoreLogSpecificTest {
                 .retryBackoff(new ExponentialBackoffWithJitter(
                         WaitRange.firstAndMaxWaitCeilingSecs(1, 30),
                         fixJitterSeed(), recordWaits(retryWaits)));
-        config.accept(builder);
-        StateStore stateStore = builder.build();
-        stateStore.fixFileUpdateTime(DEFAULT_UPDATE_TIME);
-        return stateStore;
     }
 
     private FileReferenceFactory fileFactory() {
