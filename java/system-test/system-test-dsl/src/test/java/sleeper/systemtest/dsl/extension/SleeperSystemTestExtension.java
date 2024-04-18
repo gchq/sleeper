@@ -16,8 +16,6 @@
 
 package sleeper.systemtest.dsl.extension;
 
-import com.amazonaws.xray.AWSXRay;
-import com.amazonaws.xray.entities.Segment;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
@@ -34,7 +32,6 @@ import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
 
-import java.lang.reflect.Method;
 import java.util.Set;
 
 import static sleeper.systemtest.dsl.extension.TestContextFactory.testContext;
@@ -55,7 +52,6 @@ public class SleeperSystemTestExtension implements ParameterResolver, BeforeAllC
     private SleeperSystemTest dsl = null;
     private AfterTestReports reporting = null;
     private AfterTestPurgeQueues queuePurging = null;
-    private Segment testSegment = null;
 
     protected SleeperSystemTestExtension(SystemTestDeploymentContext context) {
         parameters = context.parameters();
@@ -97,18 +93,11 @@ public class SleeperSystemTestExtension implements ParameterResolver, BeforeAllC
 
     @Override
     public void beforeAll(ExtensionContext context) throws Exception {
-        Segment segment = AWSXRay.beginSegment("SystemTest");
         deployedResources.deployIfMissing();
-        segment.end();
     }
 
     @Override
     public void beforeEach(ExtensionContext context) {
-        testSegment = AWSXRay.beginSegment("SystemTest");
-        context.getTestClass().map(Class::getSimpleName)
-                .ifPresent(testClass -> testSegment.putAnnotation("TestClass", testClass));
-        context.getTestMethod().map(Method::getName)
-                .ifPresent(testMethod -> testSegment.putAnnotation("TestMethod", testMethod));
         deployedResources.resetProperties();
         drivers.generatedSourceFiles(parameters, deployedResources).emptyBucket();
         testContext = new SystemTestContext(parameters, drivers, deployedResources, deployedInstances);
@@ -120,17 +109,14 @@ public class SleeperSystemTestExtension implements ParameterResolver, BeforeAllC
     @Override
     public void afterEach(ExtensionContext context) {
         if (context.getExecutionException().isPresent()) {
-            testSegment.addException(context.getExecutionException().get());
             reporting.afterTestFailed(testContext(context));
             queuePurging.testFailed();
         } else {
             reporting.afterTestPassed(testContext(context));
             queuePurging.testPassed();
         }
-        testSegment.end();
         dsl = null;
         reporting = null;
         queuePurging = null;
-        testSegment = null;
     }
 }
