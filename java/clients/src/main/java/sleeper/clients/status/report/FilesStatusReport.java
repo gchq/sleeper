@@ -119,7 +119,7 @@ public class FilesStatusReport {
 
         AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, s3Client, instanceProperties, getConfigurationForClient());
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, getConfigurationForClient());
         StateStore stateStore = stateStoreProvider.getStateStore(tableName, tablePropertiesProvider);
 
         new FilesStatusReport(stateStore, maxFilesWithNoReferences, verbose, reporterType).run();

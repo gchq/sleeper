@@ -87,7 +87,7 @@ public class InitialiseStateStoreFromSplitPoints {
             splitPoints = readSplitPoints(tableProperties, splitPointsFile, stringsBase64Encoded);
         }
 
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, s3Client, instanceProperties, new Configuration());
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, new Configuration());
 
         new InitialiseStateStoreFromSplitPoints(stateStoreProvider, tableProperties, splitPoints).run();
 

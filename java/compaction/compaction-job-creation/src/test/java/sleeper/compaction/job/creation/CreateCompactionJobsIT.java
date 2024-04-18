@@ -81,7 +81,7 @@ public class CreateCompactionJobsIT {
     private final InstanceProperties instanceProperties = createInstance();
     private final Schema schema = CreateJobsTestUtils.createSchema();
     private final TablePropertiesStore tablePropertiesStore = S3TableProperties.getStore(instanceProperties, s3, dynamoDB);
-    private final StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, s3, instanceProperties, HadoopConfigurationLocalStackUtils.getHadoopConfiguration(localStackContainer));
+    private final StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3, dynamoDB, HadoopConfigurationLocalStackUtils.getHadoopConfiguration(localStackContainer));
     private final TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3, dynamoDB);
 
     @AfterEach

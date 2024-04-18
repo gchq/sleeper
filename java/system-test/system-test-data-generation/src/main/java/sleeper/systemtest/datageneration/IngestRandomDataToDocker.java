@@ -61,8 +61,8 @@ public class IngestRandomDataToDocker {
     private void run() throws IOException {
         SystemTestProperties systemTestProperties = new SystemTestProperties();
         systemTestProperties.setNumber(NUMBER_OF_RECORDS_PER_WRITER, numberOfRecords);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, s3,
-                instanceProperties, HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3,
+                dynamoDB, HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
         WriteRandomDataDirect.writeWithIngestFactory(
                 IngestFactory.builder()
                         .objectFactory(ObjectFactory.noUserJars())

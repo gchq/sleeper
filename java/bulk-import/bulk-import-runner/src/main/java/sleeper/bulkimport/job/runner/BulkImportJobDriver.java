@@ -89,7 +89,7 @@ public class BulkImportJobDriver {
             IngestJobStatusStore statusStore,
             Supplier<Instant> getTime) {
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoClient, s3Client, instanceProperties, conf);
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoClient, conf);
         return new BulkImportJobDriver(new BulkImportSparkSessionRunner(
                 jobRunner, instanceProperties, tablePropertiesProvider, stateStoreProvider),
                 tablePropertiesProvider, stateStoreProvider, statusStore, getTime);

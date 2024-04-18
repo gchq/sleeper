@@ -74,8 +74,8 @@ public class IngestRandomData {
 
         SystemTestIngestMode ingestMode = systemTestProperties.getEnumValue(INGEST_MODE, SystemTestIngestMode.class);
         if (ingestMode == DIRECT) {
-            StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoClient, s3Client,
-                    instanceProperties, HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
+            StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client,
+                    dynamoClient, HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
             WriteRandomDataDirect.writeWithIngestFactory(instanceProperties, tableProperties, systemTestProperties, stateStoreProvider);
         } else {
             String jobId = UUID.randomUUID().toString();

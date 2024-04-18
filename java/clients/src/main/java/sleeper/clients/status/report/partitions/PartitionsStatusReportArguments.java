@@ -59,7 +59,7 @@ public class PartitionsStatusReportArguments {
         InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(s3Client, instanceId);
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
         TableProperties tableProperties = tablePropertiesProvider.getByName(tableName);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, s3Client, instanceProperties, new Configuration());
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, new Configuration());
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
 
         new PartitionsStatusReport(stateStore, tableProperties, reporter.apply(out)).run();

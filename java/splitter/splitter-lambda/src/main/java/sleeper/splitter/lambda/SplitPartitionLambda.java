@@ -65,7 +65,7 @@ public class SplitPartitionLambda implements RequestHandler<SQSEvent, Void> {
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
         this.conf = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
         this.tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
-        this.stateStoreProvider = new StateStoreProvider(dynamoDBClient, s3Client, instanceProperties, conf);
+        this.stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, conf);
         this.propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
     }
 
