@@ -18,11 +18,6 @@ package sleeper.statestore.transactionlog;
 import org.apache.hadoop.conf.Configuration;
 
 import sleeper.core.record.Record;
-import sleeper.core.schema.Field;
-import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.IntType;
-import sleeper.core.schema.type.LongType;
-import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceSerDe;
@@ -34,12 +29,11 @@ import java.time.Instant;
 import java.util.List;
 
 public class TransactionLogFilesSnapshot {
-    private static final Schema FILE_SCHEMA = initialiseFilesSchema();
     private final FileReferenceSerDe serDe = new FileReferenceSerDe();
     private final StateStoreFileUtils stateStoreFileUtils;
 
     TransactionLogFilesSnapshot(Configuration configuration) {
-        this.stateStoreFileUtils = new StateStoreFileUtils(FILE_SCHEMA, configuration);
+        this.stateStoreFileUtils = StateStoreFileUtils.forFiles(configuration);
     }
 
     void save(String basePath, StateStoreFiles state, long lastTransactionNumber) throws StateStoreException {
@@ -76,15 +70,5 @@ public class TransactionLogFilesSnapshot {
 
     private String createFilesPath(String basePath, long lastTransactionNumber) throws StateStoreException {
         return basePath + "/snapshots/" + lastTransactionNumber + "-files.parquet";
-    }
-
-    private static Schema initialiseFilesSchema() {
-        return Schema.builder()
-                .rowKeyFields(new Field("fileName", new StringType()))
-                .valueFields(
-                        new Field("referencesJson", new StringType()),
-                        new Field("externalReferences", new IntType()),
-                        new Field("lastStateStoreUpdateTime", new LongType()))
-                .build();
     }
 }
