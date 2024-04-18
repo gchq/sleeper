@@ -106,7 +106,7 @@ public class StateStoreFileUtils {
         return files;
     }
 
-    public Stream<Record> load(String path) throws StateStoreException {
+    private Stream<Record> load(String path) throws StateStoreException {
         List<Record> records = new ArrayList<>();
         try (ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(path), schema)
                 .withConf(configuration).build();
