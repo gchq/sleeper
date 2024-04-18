@@ -94,7 +94,7 @@ public class AddTableIT {
         TableProperties foundProperties = propertiesStore.loadByName(tableProperties.get(TABLE_NAME));
         assertThat(foundProperties).isEqualTo(tableProperties);
         assertThat(foundProperties.get(TABLE_ID)).isNotEmpty();
-        StateStore stateStore = new StateStoreFactory(dynamoDB, instanceProperties, configuration).getStateStore(foundProperties);
+        StateStore stateStore = new StateStoreFactory(dynamoDB, s3, instanceProperties, configuration).getStateStore(foundProperties);
         assertThat(stateStore.getAllPartitions())
                 .containsExactlyElementsOf(new PartitionsBuilder(schema)
                         .rootFirst("root")
@@ -123,7 +123,7 @@ public class AddTableIT {
         addTable(tableProperties);
 
         // Then
-        StateStore stateStore = new StateStoreFactory(dynamoDB, instanceProperties, configuration).getStateStore(tableProperties);
+        StateStore stateStore = new StateStoreFactory(dynamoDB, s3, instanceProperties, configuration).getStateStore(tableProperties);
         assertThat(stateStore.getAllPartitions())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("id", "parentPartitionId", "childPartitionIds")
                 .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(schema)

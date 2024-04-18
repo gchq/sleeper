@@ -127,7 +127,7 @@ public class IngestCoordinatorCommonIT {
 
     private StateStore createStateStore(Schema schema) {
         tableProperties.setSchema(schema);
-        return new StateStoreFactory(dynamoDB, instanceProperties, hadoopConfiguration).getStateStore(tableProperties);
+        return new StateStoreFactory(dynamoDB, s3, instanceProperties, hadoopConfiguration).getStateStore(tableProperties);
     }
 
     @ParameterizedTest

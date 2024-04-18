@@ -52,7 +52,7 @@ public class InitialiseStateStore {
 
         Configuration conf = new Configuration();
         conf.set("fs.s3a.aws.credentials.provider", DefaultAWSCredentialsProviderChain.class.getName());
-        StateStore stateStore = new StateStoreFactory(dynamoDBClient, instanceProperties, conf).getStateStore(tableProperties);
+        StateStore stateStore = new StateStoreFactory(dynamoDBClient, s3Client, instanceProperties, conf).getStateStore(tableProperties);
 
         stateStore.initialise();
 

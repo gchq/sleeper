@@ -109,7 +109,7 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
     private StateStore createStateStore(Schema schema) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         tableProperties.set(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "0");
-        return new StateStoreFactory(dynamoDBClient, instanceProperties, getHadoopConfiguration(localStackContainer))
+        return new StateStoreFactory(dynamoDBClient, s3Client, instanceProperties, getHadoopConfiguration(localStackContainer))
                 .getStateStore(tableProperties);
     }
 

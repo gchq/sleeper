@@ -62,7 +62,7 @@ public class InitialiseStateStoreFromExportedPartitions {
 
         Configuration conf = new Configuration();
         conf.set("fs.s3a.aws.credentials.provider", DefaultAWSCredentialsProviderChain.class.getName());
-        StateStore stateStore = new StateStoreFactory(dynamoDBClient, instanceProperties, conf).getStateStore(tableProperties);
+        StateStore stateStore = new StateStoreFactory(dynamoDBClient, s3Client, instanceProperties, conf).getStateStore(tableProperties);
 
         PartitionSerDe partitionSerDe = new PartitionSerDe(tableProperties.getSchema());
         List<Partition> partitions = new ArrayList<>();

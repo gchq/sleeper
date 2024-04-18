@@ -89,7 +89,7 @@ public class PartitionsStatusReportIT {
     }
 
     private StateStore stateStore() {
-        return new StateStoreFactory(dynamoDB, instanceProperties, getHadoopConfiguration(localStackContainer))
+        return new StateStoreFactory(dynamoDB, s3, instanceProperties, getHadoopConfiguration(localStackContainer))
                 .getStateStore(tableProperties);
     }
 

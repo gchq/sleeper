@@ -127,7 +127,7 @@ public class SleeperRawAwsConnection implements AutoCloseable {
         this.instanceProperties.loadFromS3(this.s3Client, sleeperConfig.getConfigBucket());
         this.stateStoreProvider = new StateStoreProvider(this.dynamoDbClient, this.instanceProperties,
                 this.hadoopConfigurationProvider.getHadoopConfiguration(instanceProperties));
-        this.stateStoreFactory = new StateStoreFactory(this.dynamoDbClient, this.instanceProperties,
+        this.stateStoreFactory = new StateStoreFactory(this.dynamoDbClient, this.s3Client, this.instanceProperties,
                 this.hadoopConfigurationProvider.getHadoopConfiguration(instanceProperties));
 
         // Member variables related to table properties
