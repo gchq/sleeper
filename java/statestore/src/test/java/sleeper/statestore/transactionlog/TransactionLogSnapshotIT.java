@@ -23,10 +23,11 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStore;
+import sleeper.core.statestore.transactionlog.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
@@ -36,6 +37,7 @@ import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.AllReferencesToAFile.fileWithOneReference;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
 import static sleeper.core.table.TableStatusTestHelper.uniqueIdAndName;
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.fixJitterSeed;
@@ -71,16 +73,16 @@ public class TransactionLogSnapshotIT {
         // Given
         TransactionLogStateStore stateStore = stateStore();
         stateStore.initialise();
-        FileReference file1 = fileFactory().rootFile(123L);
-        stateStore.addFile(file1);
+        AllReferencesToAFile file = fileWithOneReference(fileFactory().rootFile(123L), DEFAULT_UPDATE_TIME);
+        StateStoreFiles state = new StateStoreFiles();
+        state.add(file);
 
         // When
         TransactionLogSnapshot snapshot = TransactionLogSnapshot.from(schema, stateStore, configuration);
-        snapshot.saveFiles(tempDir, 1);
+        snapshot.saveFiles(tempDir, state, 1);
 
         // Then
-        assertThat(snapshot.loadFiles(tempDir, 1).references())
-                .containsExactlyElementsOf(stateStore.getFileReferences());
+        assertThat(snapshot.loadFiles(tempDir, 1)).isEqualTo(state);
     }
 
     private TransactionLogStateStore stateStore() {

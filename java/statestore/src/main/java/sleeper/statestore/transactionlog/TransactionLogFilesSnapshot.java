@@ -31,7 +31,6 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceSerDe;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.StateStoreFiles;
-import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
@@ -43,20 +42,18 @@ import java.util.List;
 
 public class TransactionLogFilesSnapshot {
     private static final Schema FILE_SCHEMA = initialiseFilesSchema();
-    private final TransactionLogStateStore store;
     private final Configuration configuration;
     private final FileReferenceSerDe serDe = new FileReferenceSerDe();
 
-    TransactionLogFilesSnapshot(TransactionLogStateStore store, Configuration configuration) {
-        this.store = store;
+    TransactionLogFilesSnapshot(Configuration configuration) {
         this.configuration = configuration;
     }
 
-    void save(java.nio.file.Path tempDir, long lastTransactionNumber) throws StateStoreException {
+    void save(java.nio.file.Path tempDir, StateStoreFiles state, long lastTransactionNumber) throws StateStoreException {
         String path = createFilesPath(lastTransactionNumber);
         try (ParquetWriter<Record> recordWriter = ParquetRecordWriterFactory.createParquetRecordWriter(
                 new Path(tempDir.resolve(path).toString()), FILE_SCHEMA, new Configuration())) {
-            for (AllReferencesToAFile file : store.getAllFilesWithMaxUnreferenced(100).getFiles()) {
+            for (AllReferencesToAFile file : (Iterable<AllReferencesToAFile>) () -> state.referencedAndUnreferenced().iterator()) {
                 recordWriter.write(getRecordFromFile(file));
             }
         } catch (IOException e) {
