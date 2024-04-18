@@ -37,7 +37,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
     private final Schema schema = schemaWithKey("key", new LongType());
 
     @Test
-    void shouldInitialiseTableWithManyPartitions() throws Exception {
+    void shouldInitialiseTableWithManyPartitionsCreatingTransactionTooLargeToFitInADynamoDBItem() throws Exception {
         // Given
         StateStore stateStore = getTableStateStore();
         List<String> leafIds = IntStream.range(0, 1000)
