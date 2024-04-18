@@ -27,8 +27,8 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 /**
- * A class to assist with periodic polling and retrying. When started, this class will periodically poll until
- * either an exit condition has been met or a maximum number of polls has been reached
+ * Polls a function until some condition is met or a maximum number of polls is reached. Waits for a constant interval
+ * of time between polls.
  */
 public class PollWithRetries {
     private static final Logger LOGGER = LoggerFactory.getLogger(PollWithRetries.class);
@@ -45,7 +45,7 @@ public class PollWithRetries {
      * Creates an instance of this class.
      *
      * @param  pollIntervalMillis the poll interval in milliseconds
-     * @param  maxPolls           the maximum amount of polls
+     * @param  maxPolls           the maximum number of polls
      * @return                    an instance of {@link PollWithRetries}
      */
     public static PollWithRetries intervalAndMaxPolls(long pollIntervalMillis, int maxPolls) {
@@ -56,7 +56,7 @@ public class PollWithRetries {
      * Creates an instance of this class.
      *
      * @param  pollInterval the poll interval
-     * @param  timeout      the timeout used to calculate the maximum amount of polls
+     * @param  timeout      the timeout used to calculate the maximum number of polls
      * @return              an instance of {@link PollWithRetries}
      */
     public static PollWithRetries intervalAndPollingTimeout(Duration pollInterval, Duration timeout) {
