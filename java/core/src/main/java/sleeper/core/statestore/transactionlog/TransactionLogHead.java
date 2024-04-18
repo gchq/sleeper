@@ -36,7 +36,7 @@ class TransactionLogHead<T> {
     private final T state;
     private long lastTransactionNumber = 0;
 
-    private TransactionLogHead(
+    TransactionLogHead(
             TableStatus sleeperTable, TransactionLogStore logStore,
             int maxAddTransactionAttempts, ExponentialBackoffWithJitter retryBackoff,
             Class<? extends StateStoreTransaction<T>> transactionType, T state) {
@@ -127,5 +127,9 @@ class TransactionLogHead<T> {
 
     T state() {
         return state;
+    }
+
+    long lastTransactionNumber() {
+        return lastTransactionNumber;
     }
 }

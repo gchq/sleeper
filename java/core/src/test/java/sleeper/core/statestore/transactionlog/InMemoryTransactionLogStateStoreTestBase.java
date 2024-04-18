@@ -18,8 +18,8 @@ package sleeper.core.statestore.transactionlog;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.table.TableStatus;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
@@ -31,7 +31,7 @@ public class InMemoryTransactionLogStateStoreTestBase {
 
     private PartitionsBuilder partitions;
     protected FileReferenceFactory factory;
-    protected StateStore store;
+    protected TransactionLogStateStore store;
 
     protected void initialiseWithSchema(Schema schema) throws Exception {
         createStore(new PartitionsBuilder(schema).singlePartition("root"));
@@ -47,14 +47,21 @@ public class InMemoryTransactionLogStateStoreTestBase {
         this.partitions = partitions;
         factory = FileReferenceFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
         store = TransactionLogStateStore.builder()
-                .sleeperTable(uniqueIdAndName("test-table-id", "test-table"))
+                .sleeperTable(defaultTableId())
                 .schema(partitions.getSchema())
                 .filesLogStore(new InMemoryTransactionLogStore())
                 .partitionsLogStore(new InMemoryTransactionLogStore())
-                .retryBackoff(new ExponentialBackoffWithJitter(
-                        TransactionLogStateStore.RETRY_WAIT_RANGE, fixJitterSeed(), noWaits()))
+                .retryBackoff(defaultBackoffWithJitter())
                 .build();
         store.fixFileUpdateTime(DEFAULT_UPDATE_TIME);
+    }
+
+    public static TableStatus defaultTableId() {
+        return uniqueIdAndName("test-table-id", "test-table");
+    }
+
+    public static ExponentialBackoffWithJitter defaultBackoffWithJitter() {
+        return new ExponentialBackoffWithJitter(TransactionLogStateStore.RETRY_WAIT_RANGE, fixJitterSeed(), noWaits());
     }
 
     protected void splitPartition(String parentId, String leftId, String rightId, long splitPoint) throws StateStoreException {
