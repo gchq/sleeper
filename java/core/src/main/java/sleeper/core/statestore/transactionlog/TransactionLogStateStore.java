@@ -27,15 +27,18 @@ public class TransactionLogStateStore extends DelegatingStateStore {
     public static final WaitRange RETRY_WAIT_RANGE = WaitRange.firstAndMaxWaitCeilingSecs(0.2, 30);
 
     public TransactionLogStateStore(Builder builder) {
+        this(builder, TransactionLogHead.builder()
+                .sleeperTable(builder.sleeperTable)
+                .maxAddTransactionAttempts(builder.maxAddTransactionAttempts)
+                .retryBackoff(builder.retryBackoff));
+    }
+
+    private TransactionLogStateStore(Builder builder, TransactionLogHead.Builder<?> headBuilder) {
         super(
-                new TransactionLogFileReferenceStore(
-                        TransactionLogHead.forFiles(
-                                builder.sleeperTable, builder.filesLogStore, builder.filesState,
-                                builder.maxAddTransactionAttempts, builder.retryBackoff)),
-                new TransactionLogPartitionStore(builder.schema,
-                        TransactionLogHead.forPartitions(
-                                builder.sleeperTable, builder.partitionsLogStore, builder.partitionsState,
-                                builder.maxAddTransactionAttempts, builder.retryBackoff)));
+                new TransactionLogFileReferenceStore(headBuilder.forFiles()
+                        .state(builder.filesState).logStore(builder.filesLogStore).build()),
+                new TransactionLogPartitionStore(builder.schema, headBuilder.forPartitions()
+                        .state(builder.partitionsState).logStore(builder.partitionsLogStore).build()));
     }
 
     public static Builder builder() {
