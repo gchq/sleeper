@@ -52,10 +52,10 @@ public class TransactionLogSnapshotIT {
 
         // When
         TransactionLogPartitionsSnapshot snapshot = new TransactionLogPartitionsSnapshot(schema, configuration);
-        snapshot.save(tempDir, state, 1);
+        snapshot.save(tempDir.toString(), state, 1);
 
         // Then
-        assertThat(snapshot.load(tempDir, 1)).isEqualTo(state);
+        assertThat(snapshot.load(tempDir.toString(), 1)).isEqualTo(state);
     }
 
     @Test

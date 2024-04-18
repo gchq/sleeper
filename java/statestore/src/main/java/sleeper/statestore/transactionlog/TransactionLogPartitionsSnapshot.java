@@ -16,9 +16,6 @@
 package sleeper.statestore.transactionlog;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.Path;
-import org.apache.parquet.hadoop.ParquetReader;
-import org.apache.parquet.hadoop.ParquetWriter;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.range.RegionSerDe;
@@ -30,49 +27,29 @@ import sleeper.core.schema.type.ListType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.StateStorePartitions;
-import sleeper.io.parquet.record.ParquetReaderIterator;
-import sleeper.io.parquet.record.ParquetRecordReader;
-import sleeper.io.parquet.record.ParquetRecordWriterFactory;
+import sleeper.statestore.StateStoreFileUtils;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.util.List;
 
 public class TransactionLogPartitionsSnapshot {
-    private static final Schema PARTITION_SCHEMA = initialisePartitionSchema();
     private final RegionSerDe regionSerDe;
-    private final Configuration configuration;
+    private final StateStoreFileUtils stateStoreFileUtils;
 
     TransactionLogPartitionsSnapshot(Schema schema, Configuration configuration) {
         this.regionSerDe = new RegionSerDe(schema);
-        this.configuration = configuration;
+        this.stateStoreFileUtils = new StateStoreFileUtils(initialisePartitionSchema(), configuration);
     }
 
-    void save(java.nio.file.Path tempDir, StateStorePartitions state, long lastTransactionNumber) throws StateStoreException {
-        String path = createPartitionsPath(lastTransactionNumber);
-        try (ParquetWriter<Record> recordWriter = ParquetRecordWriterFactory.createParquetRecordWriter(
-                new Path(tempDir.resolve(path).toString()), PARTITION_SCHEMA, new Configuration())) {
-            for (Partition partition : state.all()) {
-                recordWriter.write(getRecordFromPartition(partition));
-            }
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed writing partitions", e);
-        }
+    void save(String basePath, StateStorePartitions state, long lastTransactionNumber) throws StateStoreException {
+        stateStoreFileUtils.save(createPartitionsPath(basePath, lastTransactionNumber),
+                state.all().stream().map(this::getRecordFromPartition));
     }
 
-    StateStorePartitions load(java.nio.file.Path tempDir, long lastTransactionNumber) throws StateStoreException {
+    StateStorePartitions load(String basePath, long lastTransactionNumber) throws StateStoreException {
         StateStorePartitions partitions = new StateStorePartitions();
-        try (ParquetReader<Record> reader = new ParquetRecordReader.Builder(
-                new Path(tempDir.resolve(createPartitionsPath(lastTransactionNumber)).toString()), PARTITION_SCHEMA)
-                .withConf(configuration)
-                .build();
-                ParquetReaderIterator recordReader = new ParquetReaderIterator(reader)) {
-            while (recordReader.hasNext()) {
-                partitions.put(getPartitionFromRecord(recordReader.next()));
-            }
-        } catch (IOException e) {
-            throw new StateStoreException("Failed loading partitions", e);
-        }
+        stateStoreFileUtils.load(createPartitionsPath(basePath, lastTransactionNumber))
+                .map(this::getPartitionFromRecord)
+                .forEach(partitions::put);
         return partitions;
     }
 
@@ -107,8 +84,8 @@ public class TransactionLogPartitionsSnapshot {
         return partitionBuilder.build();
     }
 
-    private String createPartitionsPath(long lastTransactionNumber) throws StateStoreException {
-        return "snapshots/" + lastTransactionNumber + "-partitions.parquet";
+    private String createPartitionsPath(String basePath, long lastTransactionNumber) throws StateStoreException {
+        return basePath + "/snapshots/" + lastTransactionNumber + "-partitions.parquet";
     }
 
     private static Schema initialisePartitionSchema() {
