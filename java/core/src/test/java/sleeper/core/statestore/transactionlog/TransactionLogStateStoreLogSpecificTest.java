@@ -203,7 +203,7 @@ public class TransactionLogStateStoreLogSpecificTest {
 
         // When
         StateStore stateStoreSkippingTransaction = stateStore(builder -> builder
-                .partitionsTransactionNumber(stateStore.getLastPartitionsTransactionNumber()));
+                .partitionsTransactionNumber(partitionsLogStore.getLastTransactionNumber()));
 
         // Then
         assertThat(stateStoreSkippingTransaction.getAllPartitions()).isEmpty();
@@ -218,7 +218,7 @@ public class TransactionLogStateStoreLogSpecificTest {
 
         // When
         StateStore stateStoreSkippingTransaction = stateStore(builder -> builder
-                .filesTransactionNumber(stateStore.getLastFilesTransactionNumber()));
+                .filesTransactionNumber(filesLogStore.getLastTransactionNumber()));
 
         // Then
         assertThat(stateStoreSkippingTransaction.getFileReferences()).isEmpty();
