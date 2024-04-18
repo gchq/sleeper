@@ -36,19 +36,19 @@ public class TransactionLogSnapshot {
         this.filesSnapshot = new TransactionLogFilesSnapshot(store, configuration);
     }
 
-    void savePartitionsWithTransactionNumber(java.nio.file.Path tempDir, long lastTransactionNumber) throws StateStoreException {
+    void savePartitions(java.nio.file.Path tempDir, long lastTransactionNumber) throws StateStoreException {
         partitionsSnapshot.save(tempDir, lastTransactionNumber);
     }
 
-    StateStorePartitions loadPartitionsFromTransactionNumber(java.nio.file.Path tempDir, long lastTransactionNumber) throws StateStoreException {
+    StateStorePartitions loadPartitions(java.nio.file.Path tempDir, long lastTransactionNumber) throws StateStoreException {
         return partitionsSnapshot.load(tempDir, lastTransactionNumber);
     }
 
-    void saveFilesWithTransactionNumber(java.nio.file.Path tempDir, long lastTransactionNumber) throws StateStoreException {
+    void saveFiles(java.nio.file.Path tempDir, long lastTransactionNumber) throws StateStoreException {
         filesSnapshot.save(tempDir, lastTransactionNumber);
     }
 
-    StateStoreFiles loadFilesFromTransactionNumber(java.nio.file.Path tempDir, long lastTransactionNumber) throws StateStoreException {
+    StateStoreFiles loadFiles(java.nio.file.Path tempDir, long lastTransactionNumber) throws StateStoreException {
         return filesSnapshot.load(tempDir, lastTransactionNumber);
     }
 }

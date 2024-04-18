@@ -59,10 +59,10 @@ public class TransactionLogSnapshotIT {
 
         // When
         TransactionLogSnapshot snapshot = TransactionLogSnapshot.from(schema, stateStore, configuration);
-        snapshot.savePartitionsWithTransactionNumber(tempDir, 1);
+        snapshot.savePartitions(tempDir, 1);
 
         // Then
-        assertThat(snapshot.loadPartitionsFromTransactionNumber(tempDir, 1).all())
+        assertThat(snapshot.loadPartitions(tempDir, 1).all())
                 .containsExactlyElementsOf(stateStore.getAllPartitions());
     }
 
@@ -76,10 +76,10 @@ public class TransactionLogSnapshotIT {
 
         // When
         TransactionLogSnapshot snapshot = TransactionLogSnapshot.from(schema, stateStore, configuration);
-        snapshot.saveFilesWithTransactionNumber(tempDir, 1);
+        snapshot.saveFiles(tempDir, 1);
 
         // Then
-        assertThat(snapshot.loadFilesFromTransactionNumber(tempDir, 1).references())
+        assertThat(snapshot.loadFiles(tempDir, 1).references())
                 .containsExactlyElementsOf(stateStore.getFileReferences());
     }
 
