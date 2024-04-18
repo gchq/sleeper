@@ -35,11 +35,12 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogStateStoreTestBase {
     private final Schema schema = schemaWithKey("key", new LongType());
+    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+    private final StateStore stateStore = createStateStore();
 
     @Test
     void shouldInitialiseTableWithManyPartitionsCreatingTransactionTooLargeToFitInADynamoDBItem() throws Exception {
         // Given
-        StateStore stateStore = getTableStateStore();
         List<String> leafIds = IntStream.range(0, 1000)
                 .mapToObj(i -> "" + i)
                 .collect(toUnmodifiableList());
@@ -57,8 +58,27 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
         assertThat(stateStore.getAllPartitions()).containsExactlyElementsOf(tree.getAllPartitions());
     }
 
-    private StateStore getTableStateStore() {
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+    @Test
+    void shouldReadTransactionTooLargeToFitInADynamoDBItemWithFreshStateStoreInstance() throws Exception {
+        // Given
+        List<String> leafIds = IntStream.range(0, 1000)
+                .mapToObj(i -> "" + i)
+                .collect(toUnmodifiableList());
+        List<Object> splitPoints = LongStream.range(1, 1000)
+                .mapToObj(i -> i)
+                .collect(toUnmodifiableList());
+        PartitionTree tree = new PartitionsBuilder(schema)
+                .leavesWithSplits(leafIds, splitPoints)
+                .anyTreeJoiningAllLeaves().buildTree();
+
+        // When
+        stateStore.initialise(tree.getAllPartitions());
+
+        // Then
+        assertThat(createStateStore().getAllPartitions()).containsExactlyElementsOf(tree.getAllPartitions());
+    }
+
+    private StateStore createStateStore() {
         return DynamoDBTransactionLogStateStore.builderFrom(instanceProperties, tableProperties, dynamoDBClient, s3Client)
                 .maxAddTransactionAttempts(1)
                 .build();
