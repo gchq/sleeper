@@ -30,7 +30,6 @@ import sleeper.core.schema.type.ListType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.StateStorePartitions;
-import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
@@ -42,20 +41,18 @@ import java.util.List;
 public class TransactionLogPartitionsSnapshot {
     private static final Schema PARTITION_SCHEMA = initialisePartitionSchema();
     private final RegionSerDe regionSerDe;
-    private final TransactionLogStateStore store;
     private final Configuration configuration;
 
-    TransactionLogPartitionsSnapshot(Schema schema, TransactionLogStateStore store, Configuration configuration) {
-        this.store = store;
+    TransactionLogPartitionsSnapshot(Schema schema, Configuration configuration) {
         this.regionSerDe = new RegionSerDe(schema);
         this.configuration = configuration;
     }
 
-    void save(java.nio.file.Path tempDir, long lastTransactionNumber) throws StateStoreException {
+    void save(java.nio.file.Path tempDir, StateStorePartitions state, long lastTransactionNumber) throws StateStoreException {
         String path = createPartitionsPath(lastTransactionNumber);
         try (ParquetWriter<Record> recordWriter = ParquetRecordWriterFactory.createParquetRecordWriter(
                 new Path(tempDir.resolve(path).toString()), PARTITION_SCHEMA, new Configuration())) {
-            for (Partition partition : store.getAllPartitions()) {
+            for (Partition partition : state.all()) {
                 recordWriter.write(getRecordFromPartition(partition));
             }
         } catch (IOException e) {

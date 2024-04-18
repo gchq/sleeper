@@ -26,88 +26,51 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStore;
 import sleeper.core.statestore.transactionlog.StateStoreFiles;
-import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
-import sleeper.core.util.ExponentialBackoffWithJitter;
-import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
+import sleeper.core.statestore.transactionlog.StateStorePartitions;
 
 import java.nio.file.Path;
-import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AllReferencesToAFile.fileWithOneReference;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
-import static sleeper.core.table.TableStatusTestHelper.uniqueIdAndName;
-import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.fixJitterSeed;
-import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.noWaits;
 
 public class TransactionLogSnapshotIT {
     @TempDir
     private Path tempDir;
     private final Schema schema = schemaWithKey("key", new StringType());
     private final PartitionsBuilder partitions = new PartitionsBuilder(schema).singlePartition("root");
-    private final InMemoryTransactionLogStore filesLogStore = new InMemoryTransactionLogStore();
-    private final InMemoryTransactionLogStore partitionsLogStore = new InMemoryTransactionLogStore();
     private final Configuration configuration = new Configuration();
 
     @Test
     void shouldSaveAndLoadPartitionsState() throws StateStoreException {
         // Given
-        TransactionLogStateStore stateStore = stateStore();
         PartitionTree splitTree = partitions.splitToNewChildren("root", "L", "R", "l").buildTree();
-        stateStore.initialise(splitTree.getAllPartitions());
+        StateStorePartitions state = new StateStorePartitions();
+        splitTree.getAllPartitions().forEach(state::put);
 
         // When
-        TransactionLogSnapshot snapshot = TransactionLogSnapshot.from(schema, stateStore, configuration);
-        snapshot.savePartitions(tempDir, 1);
+        TransactionLogSnapshot snapshot = TransactionLogSnapshot.from(schema, configuration);
+        snapshot.savePartitions(tempDir, state, 1);
 
         // Then
-        assertThat(snapshot.loadPartitions(tempDir, 1).all())
-                .containsExactlyElementsOf(stateStore.getAllPartitions());
+        assertThat(snapshot.loadPartitions(tempDir, 1)).isEqualTo(state);
     }
 
     @Test
     void shouldSaveAndLoadFilesState() throws StateStoreException {
         // Given
-        TransactionLogStateStore stateStore = stateStore();
-        stateStore.initialise();
         AllReferencesToAFile file = fileWithOneReference(fileFactory().rootFile(123L), DEFAULT_UPDATE_TIME);
         StateStoreFiles state = new StateStoreFiles();
         state.add(file);
 
         // When
-        TransactionLogSnapshot snapshot = TransactionLogSnapshot.from(schema, stateStore, configuration);
+        TransactionLogSnapshot snapshot = TransactionLogSnapshot.from(schema, configuration);
         snapshot.saveFiles(tempDir, state, 1);
 
         // Then
         assertThat(snapshot.loadFiles(tempDir, 1)).isEqualTo(state);
-    }
-
-    private TransactionLogStateStore stateStore() {
-        return stateStore(builder -> {
-        });
-    }
-
-    private TransactionLogStateStore stateStore(Consumer<TransactionLogStateStore.Builder> config) {
-        TransactionLogStateStore.Builder builder = stateStoreBuilder();
-        config.accept(builder);
-        TransactionLogStateStore stateStore = builder.build();
-        stateStore.fixFileUpdateTime(DEFAULT_UPDATE_TIME);
-        return stateStore;
-    }
-
-    private TransactionLogStateStore.Builder stateStoreBuilder() {
-        return TransactionLogStateStore.builder()
-                .sleeperTable(uniqueIdAndName("test-table-id", "test-table"))
-                .schema(schema)
-                .filesLogStore(filesLogStore)
-                .partitionsLogStore(partitionsLogStore)
-                .maxAddTransactionAttempts(10)
-                .retryBackoff(new ExponentialBackoffWithJitter(
-                        WaitRange.firstAndMaxWaitCeilingSecs(1, 30),
-                        fixJitterSeed(), noWaits()));
     }
 
     private FileReferenceFactory fileFactory() {

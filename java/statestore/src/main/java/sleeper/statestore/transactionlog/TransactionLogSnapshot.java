@@ -21,25 +21,22 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.StateStorePartitions;
-import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 
 public class TransactionLogSnapshot {
     private final TransactionLogPartitionsSnapshot partitionsSnapshot;
     private final TransactionLogFilesSnapshot filesSnapshot;
-    private final TransactionLogStateStore store;
 
-    public static TransactionLogSnapshot from(Schema schema, TransactionLogStateStore store, Configuration configuration) {
-        return new TransactionLogSnapshot(schema, store, configuration);
+    public static TransactionLogSnapshot from(Schema schema, Configuration configuration) {
+        return new TransactionLogSnapshot(schema, configuration);
     }
 
-    TransactionLogSnapshot(Schema schema, TransactionLogStateStore store, Configuration configuration) {
-        this.partitionsSnapshot = new TransactionLogPartitionsSnapshot(schema, store, configuration);
+    TransactionLogSnapshot(Schema schema, Configuration configuration) {
+        this.partitionsSnapshot = new TransactionLogPartitionsSnapshot(schema, configuration);
         this.filesSnapshot = new TransactionLogFilesSnapshot(configuration);
-        this.store = store;
     }
 
-    void savePartitions(java.nio.file.Path tempDir, long lastTransactionNumber) throws StateStoreException {
-        partitionsSnapshot.save(tempDir, lastTransactionNumber);
+    void savePartitions(java.nio.file.Path tempDir, StateStorePartitions state, long lastTransactionNumber) throws StateStoreException {
+        partitionsSnapshot.save(tempDir, state, lastTransactionNumber);
     }
 
     StateStorePartitions loadPartitions(java.nio.file.Path tempDir, long lastTransactionNumber) throws StateStoreException {
