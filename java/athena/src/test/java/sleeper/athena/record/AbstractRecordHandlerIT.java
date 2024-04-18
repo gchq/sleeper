@@ -96,7 +96,7 @@ public abstract class AbstractRecordHandlerIT {
     public void createInstance() throws IOException {
         this.instanceProperties = TestUtils.createInstance(s3Client, dynamoClient,
                 createTempDirectory(tempDir, null).toString());
-        this.stateStoreFactory = new StateStoreFactory(dynamoClient, s3Client, instanceProperties, configuration);
+        this.stateStoreFactory = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, configuration);
     }
 
     @AfterEach

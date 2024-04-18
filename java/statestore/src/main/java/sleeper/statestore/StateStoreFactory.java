@@ -34,7 +34,7 @@ public class StateStoreFactory {
     private final InstanceProperties instanceProperties;
     private final Configuration configuration;
 
-    public StateStoreFactory(AmazonDynamoDB dynamoDB, AmazonS3 s3, InstanceProperties instanceProperties, Configuration configuration) {
+    public StateStoreFactory(InstanceProperties instanceProperties, AmazonS3 s3, AmazonDynamoDB dynamoDB, Configuration configuration) {
         this.dynamoDB = dynamoDB;
         this.s3 = s3;
         this.instanceProperties = instanceProperties;

@@ -40,7 +40,7 @@ public class StateStoreProvider {
 
     public StateStoreProvider(
             InstanceProperties instanceProperties, AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, Configuration configuration) {
-        this(new StateStoreFactory(dynamoDBClient, s3Client, instanceProperties, configuration)::getStateStore);
+        this(new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, configuration)::getStateStore);
     }
 
     protected StateStoreProvider(Function<TableProperties, StateStore> stateStoreFactory) {

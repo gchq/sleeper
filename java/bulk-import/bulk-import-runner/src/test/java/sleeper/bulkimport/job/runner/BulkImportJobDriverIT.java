@@ -276,7 +276,7 @@ class BulkImportJobDriverIT {
 
     private StateStore createTable(InstanceProperties instanceProperties, TableProperties tableProperties, List<Object> splitPoints) throws StateStoreException {
         tablePropertiesStore(instanceProperties).save(tableProperties);
-        StateStore stateStore = new StateStoreFactory(dynamoDBClient, s3Client, instanceProperties, getHadoopConfiguration(localStackContainer))
+        StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, getHadoopConfiguration(localStackContainer))
                 .getStateStore(tableProperties);
         stateStore.initialise(new PartitionsFromSplitPoints(getSchema(), splitPoints).construct());
         return stateStore;

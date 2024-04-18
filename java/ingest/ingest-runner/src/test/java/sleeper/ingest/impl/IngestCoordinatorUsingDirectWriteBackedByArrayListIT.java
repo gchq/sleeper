@@ -108,7 +108,7 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
 
     private StateStore createStateStore(Schema schema) {
         tableProperties.setSchema(schema);
-        return new StateStoreFactory(dynamoDB, s3, instanceProperties, hadoopConfiguration).getStateStore(tableProperties);
+        return new StateStoreFactory(instanceProperties, s3, dynamoDB, hadoopConfiguration).getStateStore(tableProperties);
     }
 
     @Test

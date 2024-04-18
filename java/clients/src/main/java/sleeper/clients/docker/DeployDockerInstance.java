@@ -100,7 +100,7 @@ public class DeployDockerInstance {
         instanceProperties.saveToS3(s3Client);
         S3TableProperties.getStore(instanceProperties, s3Client, dynamoDB).save(tableProperties);
         try {
-            StateStore stateStore = new StateStoreFactory(dynamoDB, s3Client, instanceProperties, configuration)
+            StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoDB, configuration)
                     .getStateStore(tableProperties);
             stateStore.initialise();
         } catch (StateStoreException e) {

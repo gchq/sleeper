@@ -87,7 +87,7 @@ public class TestUtils {
         S3TableProperties.getStore(instance, s3Client, dynamoDB).save(tableProperties);
 
         try {
-            StateStore stateStore = new StateStoreFactory(dynamoDB, s3Client, instance, configuration).getStateStore(tableProperties);
+            StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoDB, configuration).getStateStore(tableProperties);
             stateStore.initialise(new PartitionsFromSplitPoints(schema, List.of(splitPoints)).construct());
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
