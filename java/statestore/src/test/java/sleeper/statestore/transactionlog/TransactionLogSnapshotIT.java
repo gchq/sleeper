@@ -67,10 +67,10 @@ public class TransactionLogSnapshotIT {
 
         // When
         TransactionLogFilesSnapshot snapshot = new TransactionLogFilesSnapshot(configuration);
-        snapshot.save(tempDir, state, 1);
+        snapshot.save(tempDir.toString(), state, 1);
 
         // Then
-        assertThat(snapshot.load(tempDir, 1)).isEqualTo(state);
+        assertThat(snapshot.load(tempDir.toString(), 1)).isEqualTo(state);
     }
 
     private FileReferenceFactory fileFactory() {

@@ -16,9 +16,6 @@
 package sleeper.statestore.transactionlog;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.Path;
-import org.apache.parquet.hadoop.ParquetReader;
-import org.apache.parquet.hadoop.ParquetWriter;
 
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
@@ -31,49 +28,30 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceSerDe;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.StateStoreFiles;
-import sleeper.io.parquet.record.ParquetReaderIterator;
-import sleeper.io.parquet.record.ParquetRecordReader;
-import sleeper.io.parquet.record.ParquetRecordWriterFactory;
+import sleeper.statestore.StateStoreFileUtils;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.time.Instant;
 import java.util.List;
 
 public class TransactionLogFilesSnapshot {
     private static final Schema FILE_SCHEMA = initialiseFilesSchema();
-    private final Configuration configuration;
     private final FileReferenceSerDe serDe = new FileReferenceSerDe();
+    private final StateStoreFileUtils stateStoreFileUtils;
 
     TransactionLogFilesSnapshot(Configuration configuration) {
-        this.configuration = configuration;
+        this.stateStoreFileUtils = new StateStoreFileUtils(FILE_SCHEMA, configuration);
     }
 
-    void save(java.nio.file.Path tempDir, StateStoreFiles state, long lastTransactionNumber) throws StateStoreException {
-        String path = createFilesPath(lastTransactionNumber);
-        try (ParquetWriter<Record> recordWriter = ParquetRecordWriterFactory.createParquetRecordWriter(
-                new Path(tempDir.resolve(path).toString()), FILE_SCHEMA, new Configuration())) {
-            for (AllReferencesToAFile file : (Iterable<AllReferencesToAFile>) () -> state.referencedAndUnreferenced().iterator()) {
-                recordWriter.write(getRecordFromFile(file));
-            }
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed writing partitions", e);
-        }
+    void save(String basePath, StateStoreFiles state, long lastTransactionNumber) throws StateStoreException {
+        String path = createFilesPath(basePath, lastTransactionNumber);
+        stateStoreFileUtils.save(path, state.referencedAndUnreferenced().map(this::getRecordFromFile));
     }
 
-    StateStoreFiles load(java.nio.file.Path tempDir, long lastTransactionNumber) throws StateStoreException {
+    StateStoreFiles load(String basePath, long lastTransactionNumber) throws StateStoreException {
         StateStoreFiles files = new StateStoreFiles();
-        try (ParquetReader<Record> reader = new ParquetRecordReader.Builder(
-                new Path(tempDir.resolve(createFilesPath(lastTransactionNumber)).toString()), FILE_SCHEMA)
-                .withConf(configuration)
-                .build();
-                ParquetReaderIterator recordReader = new ParquetReaderIterator(reader)) {
-            while (recordReader.hasNext()) {
-                files.add(getFileFromRecord(recordReader.next()));
-            }
-        } catch (IOException e) {
-            throw new StateStoreException("Failed loading partitions", e);
-        }
+        stateStoreFileUtils.load(createFilesPath(basePath, lastTransactionNumber))
+                .map(this::getFileFromRecord)
+                .forEach(files::add);
         return files;
     }
 
@@ -96,8 +74,8 @@ public class TransactionLogFilesSnapshot {
                 .build();
     }
 
-    private String createFilesPath(long lastTransactionNumber) throws StateStoreException {
-        return "snapshots/" + lastTransactionNumber + "-files.parquet";
+    private String createFilesPath(String basePath, long lastTransactionNumber) throws StateStoreException {
+        return basePath + "/snapshots/" + lastTransactionNumber + "-files.parquet";
     }
 
     private static Schema initialiseFilesSchema() {
