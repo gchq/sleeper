@@ -36,6 +36,7 @@ import sleeper.core.statestore.transactionlog.transactions.TransactionSerDe;
 import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
@@ -115,8 +116,9 @@ class DynamoDBTransactionLogStore implements TransactionLogStore {
     }
 
     private void setBodyDirectlyOrInS3IfTooBig(DynamoDBRecordBuilder builder, TransactionLogEntry entry, String body) {
-        long lengthInBytes = body.getBytes().length;
         // Max DynamoDB item size is 400KB. Leave some space for the rest of the item.
+        // DynamoDB uses UTF-8 encoding for strings.
+        long lengthInBytes = body.getBytes(StandardCharsets.UTF_8).length;
         if (lengthInBytes < 1024 * 350) {
             builder.string(BODY, body);
         } else {
