@@ -43,6 +43,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -65,8 +66,12 @@ public class StateStoreFileUtils {
     }
 
     public void savePartitions(String path, StateStorePartitions partitions, Schema sleeperSchema) throws StateStoreException {
+        savePartitions(path, partitions.all(), sleeperSchema);
+    }
+
+    public void savePartitions(String path, Collection<Partition> partitions, Schema sleeperSchema) throws StateStoreException {
         RegionSerDe regionSerDe = new RegionSerDe(sleeperSchema);
-        save(path, partitions.all().stream().map(partition -> getRecordFromPartition(partition, regionSerDe)));
+        save(path, partitions.stream().map(partition -> getRecordFromPartition(partition, regionSerDe)));
     }
 
     public void saveFiles(String path, StateStoreFiles files) throws StateStoreException {
