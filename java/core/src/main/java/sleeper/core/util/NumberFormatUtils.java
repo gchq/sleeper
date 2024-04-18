@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * A utility class to help format numbers as strings.
+ * A utility to format numbers as human readable strings.
  */
 public class NumberFormatUtils {
     private NumberFormatUtils() {
