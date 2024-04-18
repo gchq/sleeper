@@ -34,7 +34,7 @@ class TransactionLogHead<T> {
     private final ExponentialBackoffWithJitter retryBackoff;
     private final Class<? extends StateStoreTransaction<T>> transactionType;
     private final T state;
-    private long lastTransactionNumber = 0;
+    private long lastTransactionNumber;
 
     private TransactionLogHead(Builder<T> builder) {
         this.sleeperTable = builder.sleeperTable;
@@ -43,6 +43,7 @@ class TransactionLogHead<T> {
         this.retryBackoff = builder.retryBackoff;
         this.transactionType = builder.transactionType;
         this.state = builder.state;
+        this.lastTransactionNumber = builder.lastTransactionNumber;
     }
 
     static Builder<?> builder() {
@@ -112,6 +113,10 @@ class TransactionLogHead<T> {
 
     T state() {
         return state;
+    }
+
+    long lastTransactionNumber() {
+        return lastTransactionNumber;
     }
 
     static class Builder<T> {
