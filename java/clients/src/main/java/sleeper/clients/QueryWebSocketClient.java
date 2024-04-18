@@ -279,12 +279,12 @@ public class QueryWebSocketClient {
                 JsonObject message = serde.fromJson(json, JsonObject.class);
                 if (!message.has("queryId")) {
                     queryFailed = true;
-                    future.completeExceptionally(new MessageMissingFieldException("queryId"));
+                    future.completeExceptionally(new MessageMissingFieldException("queryId", json));
                     return Optional.empty();
                 }
                 if (!message.has("message")) {
                     queryFailed = true;
-                    future.completeExceptionally(new MessageMissingFieldException("message"));
+                    future.completeExceptionally(new MessageMissingFieldException("message", json));
                     return Optional.empty();
                 }
                 return Optional.of(message);

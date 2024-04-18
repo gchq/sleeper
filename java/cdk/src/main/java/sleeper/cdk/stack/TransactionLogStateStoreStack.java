@@ -36,15 +36,13 @@ public class TransactionLogStateStoreStack extends NestedStack {
     private final Table filesLogTable;
 
     public TransactionLogStateStoreStack(
-            Construct scope, String id, InstanceProperties instanceProperties, ManagedPoliciesStack policiesStack) {
+            Construct scope, String id, InstanceProperties instanceProperties) {
         super(scope, id);
 
         partitionsLogTable = createTransactionLogTable(instanceProperties, "PartitionTransactionLogTable", "partition-transaction-log");
         filesLogTable = createTransactionLogTable(instanceProperties, "FileTransactionLogTable", "file-transaction-log");
         instanceProperties.set(PARTITION_TRANSACTION_LOG_TABLENAME, partitionsLogTable.getTableName());
         instanceProperties.set(FILE_TRANSACTION_LOG_TABLENAME, filesLogTable.getTableName());
-        partitionsLogTable.grantReadData(policiesStack.getIngestPolicy());
-        filesLogTable.grantReadWriteData(policiesStack.getIngestPolicy());
     }
 
     private Table createTransactionLogTable(InstanceProperties instanceProperties, String id, String name) {

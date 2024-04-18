@@ -23,6 +23,7 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
+import static sleeper.core.table.TableStatusTestHelper.uniqueIdAndName;
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.fixJitterSeed;
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.noWaits;
 
@@ -46,6 +47,7 @@ public class InMemoryTransactionLogStateStoreTestBase {
         this.partitions = partitions;
         factory = FileReferenceFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
         store = TransactionLogStateStore.builder()
+                .sleeperTable(uniqueIdAndName("test-table-id", "test-table"))
                 .schema(partitions.getSchema())
                 .filesLogStore(new InMemoryTransactionLogStore())
                 .partitionsLogStore(new InMemoryTransactionLogStore())
