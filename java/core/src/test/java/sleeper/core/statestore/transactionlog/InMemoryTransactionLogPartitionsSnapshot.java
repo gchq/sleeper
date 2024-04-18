@@ -15,39 +15,42 @@
  */
 package sleeper.core.statestore.transactionlog;
 
-import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.table.TableStatus;
-import sleeper.core.util.ExponentialBackoffWithJitter;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
-public class InMemoryTransactionLogPartitionsSnapshot implements TransactionLogSnapshot<StateStorePartitions> {
-    private final TransactionLogStoreLoader<StateStorePartitions> storeLoader;
+public class InMemoryTransactionLogPartitionsSnapshot implements TransactionLogPartitionsSnapshot {
+    private final List<String> filenames = new ArrayList<>();
     private final TransactionLogStore logStore;
+    private final TransactionLogHeadLoader<StateStorePartitions> headLoader;
 
-    public static InMemoryTransactionLogPartitionsSnapshot fromLogStore(
-            Schema schema, TableStatus sleeperTable, TransactionLogStore logStore,
-            int maxAddTransactionAttempts, ExponentialBackoffWithJitter backoffWithJitter) {
-        return new InMemoryTransactionLogPartitionsSnapshot(schema,
-                TransactionLogStoreLoader.forPartitions(
-                        sleeperTable, maxAddTransactionAttempts, backoffWithJitter),
-                logStore);
+    public static TransactionLogPartitionsSnapshot from(
+            TransactionLogStore logStore, TransactionLogHeadLoader<StateStorePartitions> headLoader) {
+        return new InMemoryTransactionLogPartitionsSnapshot(logStore, headLoader);
     }
 
-    InMemoryTransactionLogPartitionsSnapshot(Schema schema, TransactionLogStoreLoader<StateStorePartitions> storeLoader, TransactionLogStore logStore) {
-        this.storeLoader = storeLoader;
+    InMemoryTransactionLogPartitionsSnapshot(TransactionLogStore logStore, TransactionLogHeadLoader<StateStorePartitions> headLoader) {
         this.logStore = logStore;
+        this.headLoader = headLoader;
     }
 
     public StateStorePartitions state() throws StateStoreException {
-        return storeLoader.getState(logStore);
+        return headLoader.getState(logStore);
     }
 
     public long lastTransactionNumber() throws StateStoreException {
-        return storeLoader.getLastTransactionNumber(logStore);
+        return headLoader.getLastTransactionNumber(logStore);
     }
 
-    public void save(Path tempDir) {
+    public void save(Path tempDir) throws StateStoreException {
+        TransactionLogHead<StateStorePartitions> head = headLoader.head(logStore);
+        head.update();
+        filenames.add(tempDir.resolve(createPath(head)).toString());
+    }
+
+    List<String> getSavedFiles() {
+        return filenames;
     }
 }

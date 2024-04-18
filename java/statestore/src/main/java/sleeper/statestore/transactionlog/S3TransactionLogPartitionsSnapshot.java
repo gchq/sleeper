@@ -25,9 +25,9 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.StateStorePartitions;
+import sleeper.core.statestore.transactionlog.TransactionLogHeadLoader;
 import sleeper.core.statestore.transactionlog.TransactionLogSnapshot;
 import sleeper.core.statestore.transactionlog.TransactionLogStore;
-import sleeper.core.statestore.transactionlog.TransactionLogStoreLoader;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
@@ -39,18 +39,18 @@ import java.util.List;
 public class S3TransactionLogPartitionsSnapshot implements TransactionLogSnapshot<StateStorePartitions> {
     private static final Schema PARTITION_SCHEMA = TransactionLogSnapshot.initialisePartitionSchema();
     private final RegionSerDe regionSerDe;
-    private final TransactionLogStoreLoader<StateStorePartitions> storeLoader;
+    private final TransactionLogHeadLoader<StateStorePartitions> storeLoader;
     private final TransactionLogStore logStore;
 
     public static S3TransactionLogPartitionsSnapshot fromLogStore(
             Schema schema, TableStatus sleeperTable, TransactionLogStore logStore,
             int maxAddTransactionAttempts, ExponentialBackoffWithJitter backoffWithJitter) {
         return new S3TransactionLogPartitionsSnapshot(schema,
-                TransactionLogStoreLoader.forPartitions(sleeperTable, maxAddTransactionAttempts, backoffWithJitter),
+                TransactionLogHeadLoader.forPartitions(sleeperTable, maxAddTransactionAttempts, backoffWithJitter),
                 logStore);
     }
 
-    S3TransactionLogPartitionsSnapshot(Schema schema, TransactionLogStoreLoader<StateStorePartitions> storeLoader, TransactionLogStore logStore) {
+    S3TransactionLogPartitionsSnapshot(Schema schema, TransactionLogHeadLoader<StateStorePartitions> storeLoader, TransactionLogStore logStore) {
         this.regionSerDe = new RegionSerDe(schema);
         this.storeLoader = storeLoader;
         this.logStore = logStore;

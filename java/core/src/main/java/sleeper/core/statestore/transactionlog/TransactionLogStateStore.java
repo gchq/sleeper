@@ -34,7 +34,7 @@ public class TransactionLogStateStore extends DelegatingStateStore {
                                 builder.sleeperTable, builder.filesLogStore,
                                 builder.maxAddTransactionAttempts, builder.retryBackoff)),
                 new TransactionLogPartitionStore(builder.schema,
-                        builder.partitionsStoreLoader.head(builder.partitionsLogStore)));
+                        builder.partitionsHeadLoader.head(builder.partitionsLogStore)));
         this.partitionsSnapshot = builder.partitionsSnapshot;
     }
 
@@ -52,7 +52,7 @@ public class TransactionLogStateStore extends DelegatingStateStore {
         private TransactionLogStore filesLogStore;
         private TransactionLogStore partitionsLogStore;
         private TransactionLogSnapshot<StateStorePartitions> partitionsSnapshot;
-        private TransactionLogStoreLoader<StateStorePartitions> partitionsStoreLoader;
+        private TransactionLogHeadLoader<StateStorePartitions> partitionsHeadLoader;
         private int maxAddTransactionAttempts = MAX_ADD_TRANSACTION_ATTEMPTS;
         private ExponentialBackoffWithJitter retryBackoff = new ExponentialBackoffWithJitter(RETRY_WAIT_RANGE);
 
@@ -79,6 +79,11 @@ public class TransactionLogStateStore extends DelegatingStateStore {
             return this;
         }
 
+        public Builder partitionsSnapshot(TransactionLogPartitionsSnapshot partitionsSnapshot) {
+            this.partitionsSnapshot = partitionsSnapshot;
+            return this;
+        }
+
         public Builder maxAddTransactionAttempts(int maxAddTransactionAttempts) {
             this.maxAddTransactionAttempts = maxAddTransactionAttempts;
             return this;
@@ -90,7 +95,7 @@ public class TransactionLogStateStore extends DelegatingStateStore {
         }
 
         public TransactionLogStateStore build() {
-            this.partitionsStoreLoader = TransactionLogStoreLoader.forPartitions(sleeperTable, maxAddTransactionAttempts, retryBackoff);
+            this.partitionsHeadLoader = TransactionLogHeadLoader.forPartitions(sleeperTable, maxAddTransactionAttempts, retryBackoff);
             return new TransactionLogStateStore(this);
         }
     }

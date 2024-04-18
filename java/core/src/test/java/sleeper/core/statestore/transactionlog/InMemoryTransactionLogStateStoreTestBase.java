@@ -46,11 +46,14 @@ public class InMemoryTransactionLogStateStoreTestBase {
     private void createStore(PartitionsBuilder partitions) {
         this.partitions = partitions;
         factory = FileReferenceFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
+        TransactionLogStore partitionsLogStore = new InMemoryTransactionLogStore();
         store = TransactionLogStateStore.builder()
                 .sleeperTable(defaultTableId())
                 .schema(partitions.getSchema())
                 .filesLogStore(new InMemoryTransactionLogStore())
-                .partitionsLogStore(new InMemoryTransactionLogStore())
+                .partitionsLogStore(partitionsLogStore)
+                .partitionsSnapshot(InMemoryTransactionLogPartitionsSnapshot.from(partitionsLogStore,
+                        TransactionLogHeadLoader.forPartitions(defaultTableId(), 0, defaultBackoffWithJitter())))
                 .retryBackoff(defaultBackoffWithJitter())
                 .build();
         store.fixFileUpdateTime(DEFAULT_UPDATE_TIME);

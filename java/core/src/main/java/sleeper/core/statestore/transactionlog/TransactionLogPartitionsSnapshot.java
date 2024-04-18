@@ -15,6 +15,10 @@
  */
 package sleeper.core.statestore.transactionlog;
 
-public interface TransactionLogPartitionsSnapshot extends TransactionLogSnapshot<StateStorePartitions> {
+import sleeper.core.statestore.StateStoreException;
 
+public interface TransactionLogPartitionsSnapshot extends TransactionLogSnapshot<StateStorePartitions> {
+    default String createPath(TransactionLogHead<StateStorePartitions> head) throws StateStoreException {
+        return "snapshots/" + head.lastTransactionNumber() + "-partitions.parquet";
+    }
 }

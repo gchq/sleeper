@@ -19,14 +19,14 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 
-public class TransactionLogStoreLoader<T> {
+public class TransactionLogHeadLoader<T> {
     private final TableStatus sleeperTable;
     private final int maxAddTransactionAttempts;
     private final ExponentialBackoffWithJitter retryBackoff;
     private final Class<? extends StateStoreTransaction<T>> transactionType;
     private final T state;
 
-    TransactionLogStoreLoader(
+    TransactionLogHeadLoader(
             TableStatus sleeperTable, int maxAddTransactionAttempts, ExponentialBackoffWithJitter retryBackoff,
             Class<? extends StateStoreTransaction<T>> transactionType, T state) {
         this.sleeperTable = sleeperTable;
@@ -36,16 +36,16 @@ public class TransactionLogStoreLoader<T> {
         this.state = state;
     }
 
-    public static TransactionLogStoreLoader<StateStoreFiles> forFiles(
+    public static TransactionLogHeadLoader<StateStoreFiles> forFiles(
             TableStatus sleeperTable, int maxAddTransactionAttempts, ExponentialBackoffWithJitter retryBackoff) {
-        return new TransactionLogStoreLoader<StateStoreFiles>(
+        return new TransactionLogHeadLoader<StateStoreFiles>(
                 sleeperTable, maxAddTransactionAttempts, retryBackoff,
                 FileReferenceTransaction.class, new StateStoreFiles());
     }
 
-    public static TransactionLogStoreLoader<StateStorePartitions> forPartitions(
+    public static TransactionLogHeadLoader<StateStorePartitions> forPartitions(
             TableStatus sleeperTable, int maxAddTransactionAttempts, ExponentialBackoffWithJitter retryBackoff) {
-        return new TransactionLogStoreLoader<StateStorePartitions>(
+        return new TransactionLogHeadLoader<StateStorePartitions>(
                 sleeperTable, maxAddTransactionAttempts, retryBackoff,
                 PartitionTransaction.class, new StateStorePartitions());
     }
