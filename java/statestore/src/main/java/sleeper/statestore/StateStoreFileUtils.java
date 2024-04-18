@@ -75,10 +75,14 @@ public class StateStoreFileUtils {
     }
 
     public void saveFiles(String path, StateStoreFiles files) throws StateStoreException {
-        save(path, files.referencedAndUnreferenced().map(this::getRecordFromFile));
+        saveFiles(path, files.referencedAndUnreferenced());
     }
 
-    public void save(String path, Stream<Record> records) throws StateStoreException {
+    public void saveFiles(String path, Stream<AllReferencesToAFile> files) throws StateStoreException {
+        save(path, files.map(this::getRecordFromFile));
+    }
+
+    private void save(String path, Stream<Record> records) throws StateStoreException {
         try (ParquetWriter<Record> recordWriter = ParquetRecordWriterFactory.createParquetRecordWriter(
                 new Path(path), schema, configuration)) {
             for (Record record : (Iterable<Record>) () -> records.iterator()) {
@@ -104,9 +108,7 @@ public class StateStoreFileUtils {
 
     public Stream<Record> load(String path) throws StateStoreException {
         List<Record> records = new ArrayList<>();
-        try (ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(path), schema)
-                .withConf(configuration)
-                .build();
+        try (ParquetReader<Record> reader = fileReader(path);
                 ParquetReaderIterator recordReader = new ParquetReaderIterator(reader)) {
             while (recordReader.hasNext()) {
                 records.add(recordReader.next());
@@ -115,6 +117,12 @@ public class StateStoreFileUtils {
             throw new StateStoreException("Failed reading records", e);
         }
         return records.stream();
+    }
+
+    public ParquetReader<Record> fileReader(String path) throws IOException {
+        return new ParquetRecordReader.Builder(new Path(path), schema)
+                .withConf(configuration)
+                .build();
     }
 
     private Record getRecordFromPartition(Partition partition, RegionSerDe regionSerDe) {
