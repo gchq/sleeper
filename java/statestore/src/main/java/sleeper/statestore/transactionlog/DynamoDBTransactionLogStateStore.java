@@ -16,6 +16,7 @@
 package sleeper.statestore.transactionlog;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.s3.AmazonS3;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -29,12 +30,17 @@ public class DynamoDBTransactionLogStateStore extends TransactionLogStateStore {
     public static final String TRANSACTION_NUMBER = "TRANSACTION_NUMBER";
 
     public DynamoDBTransactionLogStateStore(
-            InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamoDB) {
-        super(builder()
+            InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamoDB, AmazonS3 s3) {
+        super(builderFrom(instanceProperties, tableProperties, dynamoDB, s3));
+    }
+
+    public static TransactionLogStateStore.Builder builderFrom(
+            InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamoDB, AmazonS3 s3) {
+        return builder()
                 .sleeperTable(tableProperties.getStatus())
                 .schema(tableProperties.getSchema())
-                .filesLogStore(new DynamoDBTransactionLogStore(instanceProperties.get(FILE_TRANSACTION_LOG_TABLENAME), tableProperties, dynamoDB))
-                .partitionsLogStore(new DynamoDBTransactionLogStore(instanceProperties.get(PARTITION_TRANSACTION_LOG_TABLENAME), tableProperties, dynamoDB)));
+                .filesLogStore(new DynamoDBTransactionLogStore(instanceProperties.get(FILE_TRANSACTION_LOG_TABLENAME), instanceProperties, tableProperties, dynamoDB, s3))
+                .partitionsLogStore(new DynamoDBTransactionLogStore(instanceProperties.get(PARTITION_TRANSACTION_LOG_TABLENAME), instanceProperties, tableProperties, dynamoDB, s3));
     }
 
 }

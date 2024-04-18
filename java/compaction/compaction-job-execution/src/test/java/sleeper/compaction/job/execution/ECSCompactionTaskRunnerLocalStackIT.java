@@ -110,7 +110,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
     private final AmazonSQS sqs = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.SQS, AmazonSQSClientBuilder.standard());
     private final InstanceProperties instanceProperties = createInstance();
     private final Configuration configuration = getHadoopConfiguration(localStackContainer);
-    private final StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties, configuration);
+    private final StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3, dynamoDB, configuration);
     private final TablePropertiesStore tablePropertiesStore = S3TableProperties.getStore(instanceProperties, s3, dynamoDB);
     private final TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3, dynamoDB);
     private final Schema schema = createSchema();

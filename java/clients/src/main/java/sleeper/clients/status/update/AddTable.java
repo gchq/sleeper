@@ -53,7 +53,7 @@ public class AddTable {
             InstanceProperties instanceProperties, TableProperties tableProperties, Configuration configuration) {
         this.tableProperties = tableProperties;
         this.tablePropertiesStore = S3TableProperties.getStore(instanceProperties, s3Client, dynamoDB);
-        this.stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties, configuration);
+        this.stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDB, configuration);
     }
 
     public void run() throws IOException {

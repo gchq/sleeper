@@ -101,7 +101,7 @@ public class IngestCoordinatorFileWritingStrategyIT {
 
     private StateStore createStateStore(Schema schema) {
         tableProperties.setSchema(schema);
-        return new StateStoreFactory(dynamoDB, instanceProperties, hadoopConfiguration).getStateStore(tableProperties);
+        return new StateStoreFactory(instanceProperties, s3, dynamoDB, hadoopConfiguration).getStateStore(tableProperties);
     }
 
     @BeforeEach
