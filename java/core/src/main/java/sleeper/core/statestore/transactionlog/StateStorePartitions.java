@@ -60,4 +60,9 @@ public class StateStorePartitions {
         return Objects.equals(partitionById, other.partitionById);
     }
 
+    @Override
+    public String toString() {
+        return "StateStorePartitions{partitionById=" + partitionById + "}";
+    }
+
 }
