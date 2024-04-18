@@ -16,6 +16,9 @@
 
 package sleeper.systemtest.dsl.extension;
 
+import com.amazonaws.xray.AWSXRay;
+import com.amazonaws.xray.AWSXRayRecorderBuilder;
+import com.amazonaws.xray.strategy.IgnoreErrorContextMissingStrategy;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
@@ -93,6 +96,9 @@ public class SleeperSystemTestExtension implements ParameterResolver, BeforeAllC
 
     @Override
     public void beforeAll(ExtensionContext context) throws Exception {
+        AWSXRay.setGlobalRecorder(AWSXRayRecorderBuilder.standard()
+                .withContextMissingStrategy(new IgnoreErrorContextMissingStrategy())
+                .build());
         deployedResources.deployIfMissing();
     }
 
