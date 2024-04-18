@@ -29,15 +29,15 @@ import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 
 public class StateStoreFactory {
-    private final AmazonDynamoDB dynamoDB;
-    private final AmazonS3 s3;
     private final InstanceProperties instanceProperties;
+    private final AmazonS3 s3;
+    private final AmazonDynamoDB dynamoDB;
     private final Configuration configuration;
 
     public StateStoreFactory(InstanceProperties instanceProperties, AmazonS3 s3, AmazonDynamoDB dynamoDB, Configuration configuration) {
-        this.dynamoDB = dynamoDB;
-        this.s3 = s3;
         this.instanceProperties = instanceProperties;
+        this.s3 = s3;
+        this.dynamoDB = dynamoDB;
         this.configuration = configuration;
     }
 
