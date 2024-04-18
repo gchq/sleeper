@@ -17,11 +17,9 @@ package sleeper.statestore.s3;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-import org.apache.parquet.hadoop.ParquetReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.core.record.Record;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.AssignJobIdRequest;
@@ -40,7 +38,6 @@ import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.statestore.StateStoreFileUtils;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -375,17 +372,12 @@ class S3FileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public boolean hasNoFiles() {
+    public boolean hasNoFiles() throws StateStoreException {
         S3RevisionId revisionId = getCurrentFilesRevisionId();
         if (revisionId == null) {
             return true;
         }
-        String path = getFilesPath(revisionId);
-        try (ParquetReader<Record> reader = stateStoreFileUtils.fileReader(path)) {
-            return reader.read() == null;
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed loading files", e);
-        }
+        return stateStoreFileUtils.loadFiles(getFilesPath(revisionId)).isEmpty();
     }
 
     @Override

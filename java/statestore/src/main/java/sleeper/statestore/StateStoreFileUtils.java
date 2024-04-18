@@ -108,7 +108,8 @@ public class StateStoreFileUtils {
 
     public Stream<Record> load(String path) throws StateStoreException {
         List<Record> records = new ArrayList<>();
-        try (ParquetReader<Record> reader = fileReader(path);
+        try (ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(path), schema)
+                .withConf(configuration).build();
                 ParquetReaderIterator recordReader = new ParquetReaderIterator(reader)) {
             while (recordReader.hasNext()) {
                 records.add(recordReader.next());
@@ -117,12 +118,6 @@ public class StateStoreFileUtils {
             throw new StateStoreException("Failed reading records", e);
         }
         return records.stream();
-    }
-
-    public ParquetReader<Record> fileReader(String path) throws IOException {
-        return new ParquetRecordReader.Builder(new Path(path), schema)
-                .withConf(configuration)
-                .build();
     }
 
     private Record getRecordFromPartition(Partition partition, RegionSerDe regionSerDe) {
