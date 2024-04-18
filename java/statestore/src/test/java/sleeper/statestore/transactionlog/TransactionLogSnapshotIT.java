@@ -51,11 +51,11 @@ public class TransactionLogSnapshotIT {
         splitTree.getAllPartitions().forEach(state::put);
 
         // When
-        TransactionLogSnapshot snapshot = TransactionLogSnapshot.from(schema, configuration);
-        snapshot.savePartitions(tempDir, state, 1);
+        TransactionLogPartitionsSnapshot snapshot = new TransactionLogPartitionsSnapshot(schema, configuration);
+        snapshot.save(tempDir, state, 1);
 
         // Then
-        assertThat(snapshot.loadPartitions(tempDir, 1)).isEqualTo(state);
+        assertThat(snapshot.load(tempDir, 1)).isEqualTo(state);
     }
 
     @Test
@@ -66,11 +66,11 @@ public class TransactionLogSnapshotIT {
         state.add(file);
 
         // When
-        TransactionLogSnapshot snapshot = TransactionLogSnapshot.from(schema, configuration);
-        snapshot.saveFiles(tempDir, state, 1);
+        TransactionLogFilesSnapshot snapshot = new TransactionLogFilesSnapshot(configuration);
+        snapshot.save(tempDir, state, 1);
 
         // Then
-        assertThat(snapshot.loadFiles(tempDir, 1)).isEqualTo(state);
+        assertThat(snapshot.load(tempDir, 1)).isEqualTo(state);
     }
 
     private FileReferenceFactory fileFactory() {
