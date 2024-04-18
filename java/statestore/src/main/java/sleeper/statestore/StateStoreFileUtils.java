@@ -29,7 +29,11 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.ListType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
+import sleeper.core.statestore.AllReferencesToAFile;
+import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceSerDe;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.transactionlog.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.StateStorePartitions;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
@@ -37,11 +41,13 @@ import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
 public class StateStoreFileUtils {
+    private final FileReferenceSerDe serDe = new FileReferenceSerDe();
     private final Configuration configuration;
     private final Schema schema;
 
@@ -63,6 +69,10 @@ public class StateStoreFileUtils {
         save(path, partitions.all().stream().map(partition -> getRecordFromPartition(partition, regionSerDe)));
     }
 
+    public void saveFiles(String path, StateStoreFiles files) throws StateStoreException {
+        save(path, files.referencedAndUnreferenced().map(this::getRecordFromFile));
+    }
+
     public void save(String path, Stream<Record> records) throws StateStoreException {
         try (ParquetWriter<Record> recordWriter = ParquetRecordWriterFactory.createParquetRecordWriter(
                 new Path(path), schema, configuration)) {
@@ -79,6 +89,12 @@ public class StateStoreFileUtils {
         RegionSerDe regionSerDe = new RegionSerDe(sleeperSchema);
         load(path).map(record -> getPartitionFromRecord(record, regionSerDe)).forEach(partitions::put);
         return partitions;
+    }
+
+    public StateStoreFiles loadFiles(String path) throws StateStoreException {
+        StateStoreFiles files = new StateStoreFiles();
+        load(path).map(this::getFileFromRecord).forEach(files::add);
+        return files;
     }
 
     public Stream<Record> load(String path) throws StateStoreException {
@@ -125,6 +141,25 @@ public class StateStoreFileUtils {
             partitionBuilder.parentPartitionId(parentPartitionId);
         }
         return partitionBuilder.build();
+    }
+
+    private Record getRecordFromFile(AllReferencesToAFile file) {
+        Record record = new Record();
+        record.put("fileName", file.getFilename());
+        record.put("referencesJson", serDe.collectionToJson(file.getInternalReferences()));
+        record.put("externalReferences", file.getExternalReferenceCount());
+        record.put("lastStateStoreUpdateTime", file.getLastStateStoreUpdateTime().toEpochMilli());
+        return record;
+    }
+
+    private AllReferencesToAFile getFileFromRecord(Record record) {
+        List<FileReference> internalReferences = serDe.listFromJson((String) record.get("referencesJson"));
+        return AllReferencesToAFile.builder()
+                .filename((String) record.get("fileName"))
+                .internalReferences(internalReferences)
+                .totalReferenceCount((int) record.get("externalReferences") + internalReferences.size())
+                .lastStateStoreUpdateTime(Instant.ofEpochMilli((long) record.get("lastStateStoreUpdateTime")))
+                .build();
     }
 
     private static Schema initialisePartitionSchema() {
