@@ -45,6 +45,18 @@ public class DynamoDBTransactionLogSnapshotStoreIT extends TransactionLogStateSt
         // Then
         assertThat(snapshotStore.getFilesSnapshots())
                 .containsExactly(TransactionLogSnapshot.forFiles("snapshot/1-files.parquet", 1));
+        assertThat(snapshotStore.getPartitionsSnapshots()).isEmpty();
+    }
+
+    @Test
+    void shouldStorePartitionsSnapshot() throws Exception {
+        // Given / When
+        snapshotStore.savePartitions("snapshot/1-partitions.parquet", 1);
+
+        // Then
+        assertThat(snapshotStore.getFilesSnapshots()).isEmpty();
+        assertThat(snapshotStore.getPartitionsSnapshots())
+                .containsExactly(TransactionLogSnapshot.forPartitions("snapshot/1-partitions.parquet", 1));
     }
 
     private TransactionLogSnapshotStore snapshotStore() {
