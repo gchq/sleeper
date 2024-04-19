@@ -38,6 +38,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_DLQ_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_QUEUE_URL;
+import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 /**
  * A utility class to take messages off a dead-letter queue and send them back
@@ -112,7 +113,7 @@ public class RetryMessages {
         }
         int maxMessages = Integer.parseInt(args[2]);
 
-        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
         InstanceProperties instanceProperties;
         try {
             instanceProperties = ClientUtils.getInstanceProperties(s3Client, args[0]);
@@ -120,7 +121,7 @@ public class RetryMessages {
             s3Client.shutdown();
         }
 
-        AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
+        AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
         try {
             RetryMessages retryMessages = new RetryMessages(instanceProperties, sqsClient, stack, maxMessages);
             retryMessages.run();
