@@ -287,13 +287,19 @@ public class DeployNewInstance {
         }
 
         public void deployWithDefaultClients() throws IOException, InterruptedException {
+            AWSSecurityTokenService sts = AWSSecurityTokenServiceClientBuilder.defaultClient();
+            AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
+            AmazonDynamoDB dynamoDB = AmazonDynamoDBClientBuilder.defaultClient();
+            AmazonECR ecr = AmazonECRClientBuilder.defaultClient();
             try (S3Client s3v2 = S3Client.create()) {
                 deployWithClients(
-                        AWSSecurityTokenServiceClientBuilder.defaultClient(),
-                        DefaultAwsRegionProviderChain.builder().build(),
-                        AmazonS3ClientBuilder.defaultClient(), s3v2,
-                        AmazonDynamoDBClientBuilder.defaultClient(),
-                        AmazonECRClientBuilder.defaultClient());
+                        sts, DefaultAwsRegionProviderChain.builder().build(),
+                        s3, s3v2, dynamoDB, ecr);
+            } finally {
+                sts.shutdown();
+                s3.shutdown();
+                dynamoDB.shutdown();
+                ecr.shutdown();
             }
         }
 
