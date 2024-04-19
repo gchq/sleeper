@@ -72,13 +72,10 @@ public class IngestRandomData {
         TableProperties tableProperties = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient)
                 .getByName(args[1]);
 
-        s3Client.shutdown();
-        dynamoClient.shutdown();
-
         SystemTestIngestMode ingestMode = systemTestProperties.getEnumValue(INGEST_MODE, SystemTestIngestMode.class);
         if (ingestMode == DIRECT) {
-            StateStoreProvider stateStoreProvider = new StateStoreProvider(AmazonDynamoDBClientBuilder.defaultClient(),
-                    instanceProperties, HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
+            StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client,
+                    dynamoClient, HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
             WriteRandomDataDirect.writeWithIngestFactory(instanceProperties, tableProperties, systemTestProperties, stateStoreProvider);
         } else {
             String jobId = UUID.randomUUID().toString();
@@ -95,5 +92,7 @@ public class IngestRandomData {
                 throw new IllegalArgumentException("Unrecognised ingest mode: " + ingestMode);
             }
         }
+        s3Client.shutdown();
+        dynamoClient.shutdown();
     }
 }

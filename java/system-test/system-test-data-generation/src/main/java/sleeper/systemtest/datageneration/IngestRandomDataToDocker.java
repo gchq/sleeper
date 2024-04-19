@@ -44,14 +44,16 @@ import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECO
 public class IngestRandomDataToDocker {
     private final InstanceProperties instanceProperties;
     private final TableProperties tableProperties;
+    private final AmazonS3 s3;
     private final AmazonDynamoDB dynamoDB;
     private final long numberOfRecords;
 
     public IngestRandomDataToDocker(
             InstanceProperties instanceProperties, TableProperties tableProperties,
-            AmazonDynamoDB dynamoDB, long numberOfRecords) {
+            AmazonS3 s3, AmazonDynamoDB dynamoDB, long numberOfRecords) {
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
+        this.s3 = s3;
         this.dynamoDB = dynamoDB;
         this.numberOfRecords = numberOfRecords;
     }
@@ -59,8 +61,8 @@ public class IngestRandomDataToDocker {
     private void run() throws IOException {
         SystemTestProperties systemTestProperties = new SystemTestProperties();
         systemTestProperties.setNumber(NUMBER_OF_RECORDS_PER_WRITER, numberOfRecords);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB,
-                instanceProperties, HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3,
+                dynamoDB, HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
         WriteRandomDataDirect.writeWithIngestFactory(
                 IngestFactory.builder()
                         .objectFactory(ObjectFactory.noUserJars())
@@ -111,7 +113,7 @@ public class IngestRandomDataToDocker {
             numberOfRecords = Long.parseLong(args[2]);
         }
 
-        new IngestRandomDataToDocker(instanceProperties, tableProperties, dynamoClient, numberOfRecords)
+        new IngestRandomDataToDocker(instanceProperties, tableProperties, s3Client, dynamoClient, numberOfRecords)
                 .run();
 
         s3Client.shutdown();

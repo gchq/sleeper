@@ -197,13 +197,13 @@ public class TransactionLogStateStoreLogSpecificTest {
     @Test
     void shouldNotLoadOldPartitionTransactionsWhenSettingTransactionNumber() throws Exception {
         // Given
-        TransactionLogStateStore stateStore = stateStore();
+        StateStore stateStore = stateStore();
         PartitionTree splitTree = partitions.splitToNewChildren("root", "L", "R", "l").buildTree();
         stateStore.initialise(splitTree.getAllPartitions());
 
         // When
         StateStore stateStoreSkippingTransaction = stateStore(builder -> builder
-                .partitionsTransactionNumber(stateStore.getLastPartitionsTransactionNumber()));
+                .partitionsTransactionNumber(partitionsLogStore.getLastTransactionNumber()));
 
         // Then
         assertThat(stateStoreSkippingTransaction.getAllPartitions()).isEmpty();
@@ -212,31 +212,31 @@ public class TransactionLogStateStoreLogSpecificTest {
     @Test
     void shouldNotLoadOldFileTransactionsWhenSettingTransactionNumber() throws Exception {
         // Given
-        TransactionLogStateStore stateStore = stateStore();
+        StateStore stateStore = stateStore();
         FileReference file = fileFactory().rootFile(123);
         stateStore.addFile(file);
 
         // When
         StateStore stateStoreSkippingTransaction = stateStore(builder -> builder
-                .filesTransactionNumber(stateStore.getLastFilesTransactionNumber()));
+                .filesTransactionNumber(filesLogStore.getLastTransactionNumber()));
 
         // Then
         assertThat(stateStoreSkippingTransaction.getFileReferences()).isEmpty();
     }
 
-    private TransactionLogStateStore otherProcess() {
+    private StateStore otherProcess() {
         return stateStore();
     }
 
-    private TransactionLogStateStore stateStore() {
+    private StateStore stateStore() {
         return stateStore(builder -> {
         });
     }
 
-    private TransactionLogStateStore stateStore(Consumer<TransactionLogStateStore.Builder> config) {
+    private StateStore stateStore(Consumer<TransactionLogStateStore.Builder> config) {
         TransactionLogStateStore.Builder builder = stateStoreBuilder();
         config.accept(builder);
-        TransactionLogStateStore stateStore = builder.build();
+        StateStore stateStore = builder.build();
         stateStore.fixFileUpdateTime(DEFAULT_UPDATE_TIME);
         return stateStore;
     }
