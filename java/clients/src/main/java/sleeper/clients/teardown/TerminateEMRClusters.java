@@ -20,12 +20,9 @@ import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduceClientBuilder;
 import com.amazonaws.services.elasticmapreduce.model.ClusterSummary;
 import com.amazonaws.services.elasticmapreduce.model.TerminateJobFlowsRequest;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.clients.util.ClientUtils;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.util.PollWithRetries;
 
@@ -48,8 +45,12 @@ public class TerminateEMRClusters {
     private final String clusterPrefix;
 
     public TerminateEMRClusters(AmazonElasticMapReduce emrClient, InstanceProperties properties) {
+        this(emrClient, properties.get(ID));
+    }
+
+    public TerminateEMRClusters(AmazonElasticMapReduce emrClient, String instanceId) {
         this.emrClient = emrClient;
-        this.clusterPrefix = "sleeper-" + properties.get(ID) + "-";
+        this.clusterPrefix = "sleeper-" + instanceId + "-";
     }
 
     public void run() throws InterruptedException {
@@ -101,14 +102,11 @@ public class TerminateEMRClusters {
         }
         String instanceId = args[0];
 
-        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         AmazonElasticMapReduce emrClient = AmazonElasticMapReduceClientBuilder.defaultClient();
         try {
-            InstanceProperties properties = ClientUtils.getInstanceProperties(s3Client, instanceId);
-            TerminateEMRClusters terminateClusters = new TerminateEMRClusters(emrClient, properties);
+            TerminateEMRClusters terminateClusters = new TerminateEMRClusters(emrClient, instanceId);
             terminateClusters.run();
         } finally {
-            s3Client.shutdown();
             emrClient.shutdown();
         }
     }
