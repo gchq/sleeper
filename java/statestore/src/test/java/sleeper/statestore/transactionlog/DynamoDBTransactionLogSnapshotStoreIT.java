@@ -33,6 +33,7 @@ import sleeper.dynamodb.tools.DynamoDBContainer;
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
@@ -85,6 +86,16 @@ public class DynamoDBTransactionLogSnapshotStoreIT {
                             filesSnapshot("snapshot/2-files.parquet", 2),
                             filesSnapshot("snapshot/1-files.parquet", 1));
         }
+
+        @Test
+        void shouldFailToAddFilesSnapshotIfSnapshotAlreadyExists() throws Exception {
+            // Given / When
+            store.saveFiles("snapshot/1-files.parquet", 1);
+
+            // Then
+            assertThatThrownBy(() -> store.saveFiles("snapshot/1-files.parquet", 1))
+                    .isInstanceOf(DuplicateSnapshotException.class);
+        }
     }
 
     @Nested
@@ -96,7 +107,6 @@ public class DynamoDBTransactionLogSnapshotStoreIT {
             store.savePartitions("snapshot/1-partitions.parquet", 1);
 
             // Then
-            assertThat(store.getFilesSnapshots()).isEmpty();
             assertThat(store.getPartitionsSnapshots())
                     .containsExactly(partitionSnapshot("snapshot/1-partitions.parquet", 1));
         }
@@ -114,6 +124,16 @@ public class DynamoDBTransactionLogSnapshotStoreIT {
                             partitionSnapshot("snapshot/3-partitions.parquet", 3),
                             partitionSnapshot("snapshot/2-partitions.parquet", 2),
                             partitionSnapshot("snapshot/1-partitions.parquet", 1));
+        }
+
+        @Test
+        void shouldFailToAddPartitionsSnapshotIfSnapshotAlreadyExists() throws Exception {
+            // Given / When
+            store.savePartitions("snapshot/1-partitions.parquet", 1);
+
+            // Then
+            assertThatThrownBy(() -> store.savePartitions("snapshot/1-partitions.parquet", 1))
+                    .isInstanceOf(DuplicateSnapshotException.class);
         }
     }
 
