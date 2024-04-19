@@ -112,15 +112,20 @@ public class RetryMessages {
         }
         int maxMessages = Integer.parseInt(args[2]);
 
-        AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
-        InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, args[0]);
-        amazonS3.shutdown();
+        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+        InstanceProperties instanceProperties;
+        try {
+            instanceProperties = ClientUtils.getInstanceProperties(s3Client, args[0]);
+        } finally {
+            s3Client.shutdown();
+        }
 
         AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
-
-        RetryMessages retryMessages = new RetryMessages(instanceProperties, sqsClient, stack, maxMessages);
-        retryMessages.run();
-
-        sqsClient.shutdown();
+        try {
+            RetryMessages retryMessages = new RetryMessages(instanceProperties, sqsClient, stack, maxMessages);
+            retryMessages.run();
+        } finally {
+            sqsClient.shutdown();
+        }
     }
 }
