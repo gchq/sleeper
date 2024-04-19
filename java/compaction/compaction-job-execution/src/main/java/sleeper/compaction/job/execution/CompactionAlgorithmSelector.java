@@ -24,11 +24,11 @@ import sleeper.compaction.job.execution.CompactionTask.CompactionRunner;
 @FunctionalInterface
 public interface CompactionAlgorithmSelector {
     /**
-     * Picks a {@link CompactionRunner} implementation that is capable
+     * Picks a CompactionRunner implementation that is capable
      * of running a compaction on the given job.
-     * 
+     *
      * @param  job compaction job
      * @return     a compactor object
      */
-    public CompactionRunner chooseCompactor(CompactionJob job);
+    CompactionRunner chooseCompactor(CompactionJob job);
 }

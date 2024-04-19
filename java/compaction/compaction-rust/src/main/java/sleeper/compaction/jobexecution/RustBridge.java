@@ -15,6 +15,7 @@
  */
 package sleeper.compaction.jobexecution;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jnr.ffi.LibraryLoader;
 import jnr.ffi.NativeType;
 import jnr.ffi.Struct;
@@ -123,6 +124,8 @@ public class RustBridge {
     /**
      * The compaction input data that will be populated from the Java side.
      */
+    @SuppressWarnings(value = {"checkstyle:membername"})
+    @SuppressFBWarnings(value = {"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class FFICompactionParams extends Struct {
         /** Array of input files to compact. */
         public final Array<String> input_files = new Array<>(this);
@@ -165,7 +168,7 @@ public class RustBridge {
 
         /**
          * Validate state of struct.
-         * 
+         *
          * @throws IllegalStateException when a invariant fails
          */
         public void validate() {
@@ -197,6 +200,8 @@ public class RustBridge {
      * Array class that can be inside a Struct. Creates a dynamic array that can be passed to C.
      * Strong references are maintained for allocated memory so GC will dispose of memory when
      * this object is collected.
+     *
+     * @param <T> object type of array
      */
     public static class Array<T> {
         // Length of array
@@ -215,11 +220,11 @@ public class RustBridge {
 
         /**
          * Create a dynamic array of items in this array.
-         * 
+         *
          * A base pointer is allocated pointers set to other
          * dynamically allocated memory containing items from array.
-         * 
-         * @param arr
+         *
+         * @param arr array data
          */
         public void populate(final T[] arr) {
             final jnr.ffi.Runtime r = len.struct().getRuntime();
@@ -245,7 +250,7 @@ public class RustBridge {
 
         /**
          * Check class invariants.
-         * 
+         *
          * @throws IllegalStateException if a violation is found
          */
         public void validate() {
@@ -271,9 +276,9 @@ public class RustBridge {
         /**
          * Sets a given value in the array to a specific value. The data
          * is byte encoded.
-         * 
+         *
          * Intended for internal use only.
-         * 
+         *
          * @param  <E>                       item type, must be int, long String or byte[], or boolean
          * @param  item                      the item to encode
          * @param  idx                       array position to use
@@ -316,6 +321,7 @@ public class RustBridge {
      * The compaction output data that the native code will populate.
      */
     @SuppressWarnings(value = {"checkstyle:membername", "checkstyle:parametername"})
+    @SuppressFBWarnings(value = {"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class FFICompactionResult extends Struct {
         public final Struct.size_t rows_read = new Struct.size_t();
         public final Struct.size_t rows_written = new Struct.size_t();
@@ -328,7 +334,7 @@ public class RustBridge {
     /**
      * The interface for the native library we are calling.
      */
-    public static interface Compaction {
+    public interface Compaction {
         FFICompactionResult allocate_result();
 
         void free_result(@In FFICompactionResult res);

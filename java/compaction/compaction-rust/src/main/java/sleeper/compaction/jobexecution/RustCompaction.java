@@ -39,7 +39,7 @@ public class RustCompaction {
             CompactionJob compactionJob, StateStore stateStore) throws IOException {
         // Obtain native library. This throws an exception if native library can't be loaded and
         // linked
-        RustBridge.Compaction nativeLib = RustBridge.getRustCompactor();
+        // RustBridge.Compaction nativeLib = RustBridge.getRustCompactor();
         return null;
         // // Figure out column numbers for row key fields
         // // Row keys are numbered from zero, sort keys follow that
