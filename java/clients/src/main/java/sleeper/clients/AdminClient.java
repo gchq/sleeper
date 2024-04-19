@@ -98,15 +98,23 @@ public class AdminClient {
         AmazonSQS sqsClient = AwsV1ClientHelper.buildAwsV1Client(AmazonSQSClientBuilder.standard());
         AmazonECR ecrClient = AwsV1ClientHelper.buildAwsV1Client(AmazonECRClientBuilder.standard());
         AmazonElasticMapReduce emrClient = AwsV1ClientHelper.buildAwsV1Client(AmazonElasticMapReduceClientBuilder.standard());
+
         UploadDockerImages uploadDockerImages = UploadDockerImages.builder()
                 .ecrClient(EcrRepositoryCreator.withEcrClient(ecrClient))
                 .baseDockerDirectory(baseDockerDir).build();
         ConsoleOutput out = new ConsoleOutput(System.out);
         ConsoleInput in = new ConsoleInput(System.console());
-        System.exit(start(instanceId, s3Client, dynamoDB, cdk, generatedDir, uploadDockerImages, out, in,
+        int errorCode = start(instanceId, s3Client, dynamoDB, cdk, generatedDir, uploadDockerImages, out, in,
                 new UpdatePropertiesWithTextEditor(Path.of("/tmp")),
                 QueueMessageCount.withSqsClient(sqsClient),
-                properties -> PersistentEMRStepCount.byStatus(properties, emrClient)));
+                properties -> PersistentEMRStepCount.byStatus(properties, emrClient));
+
+        s3Client.shutdown();
+        dynamoDB.shutdown();
+        sqsClient.shutdown();
+        ecrClient.shutdown();
+        emrClient.shutdown();
+        System.exit(errorCode);
     }
 
     public static int start(String instanceId, AmazonS3 s3Client, AmazonDynamoDB dynamoDB,
