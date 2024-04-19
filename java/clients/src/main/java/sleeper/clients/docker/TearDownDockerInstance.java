@@ -45,10 +45,16 @@ public class TearDownDockerInstance {
         }
         String instanceId = args[0];
         AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
-        AmazonDynamoDB dynamoDB = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
+        AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
 
-        tearDown(instanceId, s3Client, dynamoDB, sqsClient);
+        try {
+            tearDown(instanceId, s3Client, dynamoDBClient, sqsClient);
+        } finally {
+            s3Client.shutdown();
+            dynamoDBClient.shutdown();
+            sqsClient.shutdown();
+        }
     }
 
     public static void tearDown(String instanceId, AmazonS3 s3Client, AmazonDynamoDB dynamoDB, AmazonSQS sqsClient) {
