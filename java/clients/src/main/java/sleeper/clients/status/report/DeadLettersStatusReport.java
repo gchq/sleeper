@@ -40,6 +40,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_DLQ_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_JOB_DLQ_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_DLQ_URL;
+import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 /**
  * A utility class to report information about messages on the various dead-letter
@@ -97,18 +98,19 @@ public class DeadLettersStatusReport {
         if (1 != args.length) {
             throw new IllegalArgumentException("Usage: <instance-id>");
         }
-        AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
-        AmazonDynamoDB dynamoDB = AmazonDynamoDBClientBuilder.defaultClient();
-        InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, args[0]);
+        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
+        AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
+        AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
 
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, amazonS3, dynamoDB);
-
-        AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
-        DeadLettersStatusReport statusReport = new DeadLettersStatusReport(sqsClient, instanceProperties, tablePropertiesProvider);
-        statusReport.run();
-
-        sqsClient.shutdown();
-        amazonS3.shutdown();
-        dynamoDB.shutdown();
+        try {
+            InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(s3Client, args[0]);
+            TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
+            DeadLettersStatusReport statusReport = new DeadLettersStatusReport(sqsClient, instanceProperties, tablePropertiesProvider);
+            statusReport.run();
+        } finally {
+            s3Client.shutdown();
+            dynamoDBClient.shutdown();
+            sqsClient.shutdown();
+        }
     }
 }
