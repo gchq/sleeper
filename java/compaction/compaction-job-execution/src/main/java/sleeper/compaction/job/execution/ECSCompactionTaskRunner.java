@@ -61,45 +61,47 @@ public class ECSCompactionTaskRunner {
             System.err.println("Error: must have 1 argument (config bucket), got " + args.length + " arguments (" + StringUtils.join(args, ',') + ")");
             System.exit(1);
         }
+        String s3Bucket = args[0];
 
         AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
         AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
         AmazonECS ecsClient = buildAwsV1Client(AmazonECSClientBuilder.standard());
 
-        String s3Bucket = args[0];
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.loadFromS3(s3Client, s3Bucket);
+        try {
+            InstanceProperties instanceProperties = new InstanceProperties();
+            instanceProperties.loadFromS3(s3Client, s3Bucket);
 
-        // Log some basic data if running on EC2 inside ECS
-        logEC2Metadata(instanceProperties, ecsClient);
+            // Log some basic data if running on EC2 inside ECS
+            logEC2Metadata(instanceProperties, ecsClient);
 
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
-        PropertiesReloader propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient,
-                HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
-        CompactionJobStatusStore jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient,
-                instanceProperties);
-        CompactionTaskStatusStore taskStatusStore = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDBClient,
-                instanceProperties);
-        String taskId = UUID.randomUUID().toString();
+            TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
+            PropertiesReloader propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
+            StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient,
+                    HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
+            CompactionJobStatusStore jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient,
+                    instanceProperties);
+            CompactionTaskStatusStore taskStatusStore = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDBClient,
+                    instanceProperties);
+            String taskId = UUID.randomUUID().toString();
 
-        ObjectFactory objectFactory = new ObjectFactory(instanceProperties, s3Client, "/tmp");
-        CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties,
-                tablePropertiesProvider, stateStoreProvider, objectFactory);
-        CompactionTask task = new CompactionTask(instanceProperties, propertiesReloader,
-                new SqsCompactionQueueHandler(sqsClient, instanceProperties),
-                compactSortedFiles, jobStatusStore, taskStatusStore, taskId);
-        task.run();
-
-        sqsClient.shutdown();
-        LOGGER.info("Shut down sqsClient");
-        dynamoDBClient.shutdown();
-        LOGGER.info("Shut down dynamoDBClient");
-        s3Client.shutdown();
-        LOGGER.info("Shut down s3Client");
-        ecsClient.shutdown();
-        LOGGER.info("Shut down ecsClient");
+            ObjectFactory objectFactory = new ObjectFactory(instanceProperties, s3Client, "/tmp");
+            CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties,
+                    tablePropertiesProvider, stateStoreProvider, objectFactory);
+            CompactionTask task = new CompactionTask(instanceProperties, propertiesReloader,
+                    new SqsCompactionQueueHandler(sqsClient, instanceProperties),
+                    compactSortedFiles, jobStatusStore, taskStatusStore, taskId);
+            task.run();
+        } finally {
+            sqsClient.shutdown();
+            LOGGER.info("Shut down sqsClient");
+            dynamoDBClient.shutdown();
+            LOGGER.info("Shut down dynamoDBClient");
+            s3Client.shutdown();
+            LOGGER.info("Shut down s3Client");
+            ecsClient.shutdown();
+            LOGGER.info("Shut down ecsClient");
+        }
     }
 
     public static void logEC2Metadata(InstanceProperties instanceProperties, AmazonECS ecsClient) {
