@@ -29,8 +29,8 @@ import java.util.Objects;
 
 import static sleeper.configuration.Utils.describeEnumValuesInLowerCase;
 import static sleeper.configuration.properties.instance.CompactionProperty.DEFAULT_COMPACTION_FILES_BATCH_SIZE;
-import static sleeper.configuration.properties.instance.CompactionProperty.DEFAULT_COMPACTION_METHOD;
 import static sleeper.configuration.properties.instance.CompactionProperty.DEFAULT_COMPACTION_JOB_SEND_BATCH_SIZE;
+import static sleeper.configuration.properties.instance.CompactionProperty.DEFAULT_COMPACTION_METHOD;
 import static sleeper.configuration.properties.instance.CompactionProperty.DEFAULT_COMPACTION_STRATEGY_CLASS;
 import static sleeper.configuration.properties.instance.CompactionProperty.DEFAULT_SIZERATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION;
 import static sleeper.configuration.properties.instance.CompactionProperty.DEFAULT_SIZERATIO_COMPACTION_STRATEGY_RATIO;
@@ -234,7 +234,7 @@ public interface TableProperty extends SleeperProperty {
     TableProperty COMPACTION_METHOD = Index.propertyBuilder("sleeper.table.compaction.method")
             .defaultProperty(DEFAULT_COMPACTION_METHOD)
             .description("Select what compation method to use on a table. Current options are JAVA and RUST. Rust compaction support is" +
-            "experimental.")
+                    "experimental.")
             .propertyGroup(TablePropertyGroup.COMPACTION)
             .build();
 
