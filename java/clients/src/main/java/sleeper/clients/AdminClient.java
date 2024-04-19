@@ -94,7 +94,7 @@ public class AdminClient {
                 .jarsDirectory(jarsDir).version(version).build();
 
         AmazonS3 s3Client = AwsV1ClientHelper.buildAwsV1Client(AmazonS3ClientBuilder.standard());
-        AmazonDynamoDB dynamoDB = AwsV1ClientHelper.buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
+        AmazonDynamoDB dynamoClient = AwsV1ClientHelper.buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         AmazonSQS sqsClient = AwsV1ClientHelper.buildAwsV1Client(AmazonSQSClientBuilder.standard());
         AmazonECR ecrClient = AwsV1ClientHelper.buildAwsV1Client(AmazonECRClientBuilder.standard());
         AmazonElasticMapReduce emrClient = AwsV1ClientHelper.buildAwsV1Client(AmazonElasticMapReduceClientBuilder.standard());
@@ -104,13 +104,13 @@ public class AdminClient {
                 .baseDockerDirectory(baseDockerDir).build();
         ConsoleOutput out = new ConsoleOutput(System.out);
         ConsoleInput in = new ConsoleInput(System.console());
-        int errorCode = start(instanceId, s3Client, dynamoDB, cdk, generatedDir, uploadDockerImages, out, in,
+        int errorCode = start(instanceId, s3Client, dynamoClient, cdk, generatedDir, uploadDockerImages, out, in,
                 new UpdatePropertiesWithTextEditor(Path.of("/tmp")),
                 QueueMessageCount.withSqsClient(sqsClient),
                 properties -> PersistentEMRStepCount.byStatus(properties, emrClient));
 
         s3Client.shutdown();
-        dynamoDB.shutdown();
+        dynamoClient.shutdown();
         sqsClient.shutdown();
         ecrClient.shutdown();
         emrClient.shutdown();
