@@ -179,6 +179,12 @@ public class RustBridge {
             region_maxs.validate();
             region_mins_inclusive.validate();
             region_maxs_inclusive.validate();
+
+            // Check strings non null
+            Objects.requireNonNull(output_file.get(), "Output file is null");
+            Objects.requireNonNull(writer_version, "Parquet writer is null");
+            Objects.requireNonNull(compression, "Parquet compression codec is null");
+
             // Check lengths
             long rowKeys = row_key_cols.len.get();
             if (rowKeys != region_maxs.len.get()) {
