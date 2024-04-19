@@ -16,13 +16,18 @@
 package sleeper.statestore.transactionlog;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface TransactionLogSnapshotStore {
+    void saveFiles(String snapshotFile, long transactionNumber) throws DuplicateSnapshotException;
+
     void savePartitions(String snapshotFile, long transactionNumber) throws DuplicateSnapshotException;
 
-    void saveFiles(String snapshotFile, long transactionNumber) throws DuplicateSnapshotException;
+    List<TransactionLogSnapshot> getFilesSnapshots();
 
     List<TransactionLogSnapshot> getPartitionsSnapshots();
 
-    List<TransactionLogSnapshot> getFilesSnapshots();
+    Optional<TransactionLogSnapshot> getLatestFilesSnapshot();
+
+    Optional<TransactionLogSnapshot> getLatestPartitionsSnapshot();
 }

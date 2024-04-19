@@ -30,8 +30,10 @@ import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_SNAPSHOT_TABLENAME;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getLongAttribute;
@@ -59,58 +61,48 @@ public class DynamoDBTransactionLogSnapshotStore implements TransactionLogSnapsh
     }
 
     @Override
-    public void savePartitions(String snapshotPath, long transactionNumber) throws DuplicateSnapshotException {
-        Instant updateTime = timeSupplier.get();
-        try {
-            dynamo.putItem(new PutItemRequest()
-                    .withTableName(tableName)
-                    .withItem(new DynamoDBRecordBuilder()
-                            .string(TABLE_ID_AND_SNAPSHOT_TYPE, tableAndType(tableName, SnapshotType.PARTITIONS))
-                            .string(TABLE_ID, sleeperTableId)
-                            .string(PATH, snapshotPath)
-                            .number(TRANSACTION_NUMBER, transactionNumber)
-                            .number(UPDATE_TIME, updateTime.toEpochMilli())
-                            .string(SNAPSHOT_TYPE, SnapshotType.PARTITIONS.name())
-                            .build())
-                    .withConditionExpression("attribute_not_exists(#Path)")
-                    .withExpressionAttributeNames(Map.of("#Path", PATH)));
-        } catch (ConditionalCheckFailedException e) {
-            throw new DuplicateSnapshotException(snapshotPath, e);
-        }
-    }
-
-    @Override
     public void saveFiles(String snapshotPath, long transactionNumber) throws DuplicateSnapshotException {
+        saveSnapshot(SnapshotType.FILES, snapshotPath, transactionNumber);
+    }
+
+    @Override
+    public void savePartitions(String snapshotPath, long transactionNumber) throws DuplicateSnapshotException {
+        saveSnapshot(SnapshotType.PARTITIONS, snapshotPath, transactionNumber);
+    }
+
+    private void saveSnapshot(SnapshotType snapshotType, String snapshotPath, long transactionNumber) throws DuplicateSnapshotException {
         Instant updateTime = timeSupplier.get();
         try {
             dynamo.putItem(new PutItemRequest()
                     .withTableName(tableName)
                     .withItem(new DynamoDBRecordBuilder()
-                            .string(TABLE_ID_AND_SNAPSHOT_TYPE, tableAndType(tableName, SnapshotType.FILES))
+                            .string(TABLE_ID_AND_SNAPSHOT_TYPE, tableAndType(tableName, snapshotType))
                             .string(TABLE_ID, sleeperTableId)
                             .string(PATH, snapshotPath)
                             .number(TRANSACTION_NUMBER, transactionNumber)
                             .number(UPDATE_TIME, updateTime.toEpochMilli())
-                            .string(SNAPSHOT_TYPE, SnapshotType.FILES.name())
+                            .string(SNAPSHOT_TYPE, snapshotType.name())
                             .build())
                     .withConditionExpression("attribute_not_exists(#Path)")
                     .withExpressionAttributeNames(Map.of("#Path", PATH)));
         } catch (ConditionalCheckFailedException e) {
             throw new DuplicateSnapshotException(snapshotPath, e);
         }
-    }
-
-    @Override
-    public List<TransactionLogSnapshot> getPartitionsSnapshots() {
-        return getSnapshots(SnapshotType.PARTITIONS);
     }
 
     @Override
     public List<TransactionLogSnapshot> getFilesSnapshots() {
-        return getSnapshots(SnapshotType.FILES);
+        return getSnapshots(SnapshotType.FILES)
+                .collect(Collectors.toList());
     }
 
-    private List<TransactionLogSnapshot> getSnapshots(SnapshotType type) {
+    @Override
+    public List<TransactionLogSnapshot> getPartitionsSnapshots() {
+        return getSnapshots(SnapshotType.PARTITIONS)
+                .collect(Collectors.toList());
+    }
+
+    private Stream<TransactionLogSnapshot> getSnapshots(SnapshotType type) {
         return streamPagedItems(dynamo, new QueryRequest()
                 .withTableName(tableName)
                 .withConsistentRead(true)
@@ -121,8 +113,17 @@ public class DynamoDBTransactionLogSnapshotStore implements TransactionLogSnapsh
                         .build())
                 .withScanIndexForward(false)
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL))
-                .map(this::getSnapshotFromItem)
-                .collect(Collectors.toList());
+                .map(this::getSnapshotFromItem);
+    }
+
+    @Override
+    public Optional<TransactionLogSnapshot> getLatestFilesSnapshot() {
+        return getSnapshots(SnapshotType.FILES).findFirst();
+    }
+
+    @Override
+    public Optional<TransactionLogSnapshot> getLatestPartitionsSnapshot() {
+        return getSnapshots(SnapshotType.PARTITIONS).findFirst();
     }
 
     private String tableAndType(String table, SnapshotType type) {

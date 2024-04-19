@@ -96,6 +96,18 @@ public class DynamoDBTransactionLogSnapshotStoreIT {
             assertThatThrownBy(() -> store.saveFiles("snapshot/1-files.parquet", 1))
                     .isInstanceOf(DuplicateSnapshotException.class);
         }
+
+        @Test
+        void shouldRetrieveLatestFilesSnapshot() throws Exception {
+            // Given / When
+            store.saveFiles("snapshot/1-files.parquet", 1);
+            store.saveFiles("snapshot/2-files.parquet", 2);
+            store.saveFiles("snapshot/3-files.parquet", 3);
+
+            // Then
+            assertThat(store.getLatestFilesSnapshot())
+                    .contains(filesSnapshot("snapshot/3-files.parquet", 3));
+        }
     }
 
     @Nested
@@ -108,7 +120,7 @@ public class DynamoDBTransactionLogSnapshotStoreIT {
 
             // Then
             assertThat(store.getPartitionsSnapshots())
-                    .containsExactly(partitionSnapshot("snapshot/1-partitions.parquet", 1));
+                    .containsExactly(partitionsSnapshot("snapshot/1-partitions.parquet", 1));
         }
 
         @Test
@@ -121,9 +133,9 @@ public class DynamoDBTransactionLogSnapshotStoreIT {
             // Then
             assertThat(store.getPartitionsSnapshots())
                     .containsExactly(
-                            partitionSnapshot("snapshot/3-partitions.parquet", 3),
-                            partitionSnapshot("snapshot/2-partitions.parquet", 2),
-                            partitionSnapshot("snapshot/1-partitions.parquet", 1));
+                            partitionsSnapshot("snapshot/3-partitions.parquet", 3),
+                            partitionsSnapshot("snapshot/2-partitions.parquet", 2),
+                            partitionsSnapshot("snapshot/1-partitions.parquet", 1));
         }
 
         @Test
@@ -135,6 +147,18 @@ public class DynamoDBTransactionLogSnapshotStoreIT {
             assertThatThrownBy(() -> store.savePartitions("snapshot/1-partitions.parquet", 1))
                     .isInstanceOf(DuplicateSnapshotException.class);
         }
+
+        @Test
+        void shouldRetrieveLatestPartitionsSnapshot() throws Exception {
+            // Given / When
+            store.savePartitions("snapshot/1-partitions.parquet", 1);
+            store.savePartitions("snapshot/2-partitions.parquet", 2);
+            store.savePartitions("snapshot/3-partitions.parquet", 3);
+
+            // Then
+            assertThat(store.getLatestPartitionsSnapshot())
+                    .contains(partitionsSnapshot("snapshot/3-partitions.parquet", 3));
+        }
     }
 
     private TransactionLogSnapshotStore snapshotStore() {
@@ -145,7 +169,7 @@ public class DynamoDBTransactionLogSnapshotStoreIT {
         return TransactionLogSnapshot.forFiles(path, transactionNumber);
     }
 
-    private TransactionLogSnapshot partitionSnapshot(String path, long transactionNumber) {
+    private TransactionLogSnapshot partitionsSnapshot(String path, long transactionNumber) {
         return TransactionLogSnapshot.forPartitions(path, transactionNumber);
     }
 }
