@@ -119,6 +119,7 @@ public class DynamoDBTransactionLogSnapshotStore implements TransactionLogSnapsh
                 .withExpressionAttributeValues(new DynamoDBRecordBuilder()
                         .string(":table_and_type", tableAndType(tableName, type))
                         .build())
+                .withScanIndexForward(false)
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL))
                 .map(this::getSnapshotFromItem)
                 .collect(Collectors.toList());

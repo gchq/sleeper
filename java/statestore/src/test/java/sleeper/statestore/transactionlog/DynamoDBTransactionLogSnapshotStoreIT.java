@@ -78,6 +78,21 @@ public class DynamoDBTransactionLogSnapshotStoreIT {
                 .containsExactly(TransactionLogSnapshot.forPartitions("snapshot/1-partitions.parquet", 1));
     }
 
+    @Test
+    void shouldRetrieveSnapshotsLatestFirst() throws Exception {
+        // Given / When
+        store.savePartitions("snapshot/1-partitions.parquet", 1);
+        store.savePartitions("snapshot/2-partitions.parquet", 2);
+        store.savePartitions("snapshot/3-partitions.parquet", 3);
+
+        // Then
+        assertThat(store.getPartitionsSnapshots())
+                .containsExactly(
+                        TransactionLogSnapshot.forPartitions("snapshot/3-partitions.parquet", 3),
+                        TransactionLogSnapshot.forPartitions("snapshot/2-partitions.parquet", 2),
+                        TransactionLogSnapshot.forPartitions("snapshot/1-partitions.parquet", 1));
+    }
+
     private TransactionLogSnapshotStore snapshotStore() {
         return new DynamoDBTransactionLogSnapshotStore(instanceProperties, tableProperties, dynamoDBClient, Instant::now);
     }
