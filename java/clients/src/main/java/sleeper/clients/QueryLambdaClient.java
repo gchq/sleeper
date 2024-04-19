@@ -146,5 +146,9 @@ public class QueryLambdaClient extends QueryCommandLineClient {
 
         QueryLambdaClient queryLambdaClient = new QueryLambdaClient(amazonS3, dynamoDB, amazonSQS, instanceProperties);
         queryLambdaClient.run();
+
+        amazonS3.shutdown();
+        amazonSQS.shutdown();
+        dynamoDB.shutdown();
     }
 }
