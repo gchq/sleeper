@@ -34,34 +34,20 @@ class TransactionLogHead<T> {
     private final ExponentialBackoffWithJitter retryBackoff;
     private final Class<? extends StateStoreTransaction<T>> transactionType;
     private final T state;
-    private long lastTransactionNumber = 0;
+    private long lastTransactionNumber;
 
-    private TransactionLogHead(
-            TableStatus sleeperTable, TransactionLogStore logStore,
-            int maxAddTransactionAttempts, ExponentialBackoffWithJitter retryBackoff,
-            Class<? extends StateStoreTransaction<T>> transactionType, T state) {
-        this.sleeperTable = sleeperTable;
-        this.logStore = logStore;
-        this.maxAddTransactionAttempts = maxAddTransactionAttempts;
-        this.retryBackoff = retryBackoff;
-        this.transactionType = transactionType;
-        this.state = state;
+    private TransactionLogHead(Builder<T> builder) {
+        this.sleeperTable = builder.sleeperTable;
+        this.logStore = builder.logStore;
+        this.maxAddTransactionAttempts = builder.maxAddTransactionAttempts;
+        this.retryBackoff = builder.retryBackoff;
+        this.transactionType = builder.transactionType;
+        this.state = builder.state;
+        this.lastTransactionNumber = builder.lastTransactionNumber;
     }
 
-    static TransactionLogHead<StateStoreFiles> forFiles(
-            TableStatus sleeperTable, TransactionLogStore logStore,
-            int maxAddTransactionAttempts, ExponentialBackoffWithJitter retryBackoff) {
-        return new TransactionLogHead<StateStoreFiles>(
-                sleeperTable, logStore, maxAddTransactionAttempts, retryBackoff,
-                FileReferenceTransaction.class, new StateStoreFiles());
-    }
-
-    static TransactionLogHead<StateStorePartitions> forPartitions(
-            TableStatus sleeperTable, TransactionLogStore logStore,
-            int maxAddTransactionAttempts, ExponentialBackoffWithJitter retryBackoff) {
-        return new TransactionLogHead<StateStorePartitions>(
-                sleeperTable, logStore, maxAddTransactionAttempts, retryBackoff,
-                PartitionTransaction.class, new StateStorePartitions());
+    static Builder<?> builder() {
+        return new Builder<>();
     }
 
     void addTransaction(Instant updateTime, StateStoreTransaction<T> transaction) throws StateStoreException {
@@ -127,5 +113,69 @@ class TransactionLogHead<T> {
 
     T state() {
         return state;
+    }
+
+    long lastTransactionNumber() {
+        return lastTransactionNumber;
+    }
+
+    static class Builder<T> {
+        private TableStatus sleeperTable;
+        private TransactionLogStore logStore;
+        private int maxAddTransactionAttempts;
+        private ExponentialBackoffWithJitter retryBackoff;
+        private Class<? extends StateStoreTransaction<T>> transactionType;
+        private T state;
+        private long lastTransactionNumber = 0;
+
+        private Builder() {
+        }
+
+        public Builder<T> sleeperTable(TableStatus sleeperTable) {
+            this.sleeperTable = sleeperTable;
+            return this;
+        }
+
+        public Builder<T> logStore(TransactionLogStore logStore) {
+            this.logStore = logStore;
+            return this;
+        }
+
+        public Builder<T> maxAddTransactionAttempts(int maxAddTransactionAttempts) {
+            this.maxAddTransactionAttempts = maxAddTransactionAttempts;
+            return this;
+        }
+
+        public Builder<T> retryBackoff(ExponentialBackoffWithJitter retryBackoff) {
+            this.retryBackoff = retryBackoff;
+            return this;
+        }
+
+        public <N> Builder<N> transactionType(Class<? extends StateStoreTransaction<N>> transactionType) {
+            this.transactionType = (Class<? extends StateStoreTransaction<T>>) transactionType;
+            return (Builder<N>) this;
+        }
+
+        public Builder<T> state(T state) {
+            this.state = state;
+            return this;
+        }
+
+        public Builder<T> lastTransactionNumber(long lastTransactionNumber) {
+            this.lastTransactionNumber = lastTransactionNumber;
+            return this;
+        }
+
+        public Builder<StateStoreFiles> forFiles() {
+            return transactionType(FileReferenceTransaction.class);
+        }
+
+        public Builder<StateStorePartitions> forPartitions() {
+            return transactionType(PartitionTransaction.class);
+        }
+
+        public TransactionLogHead<T> build() {
+            return new TransactionLogHead<>(this);
+        }
     }
 }
