@@ -54,7 +54,7 @@ public class CompactionTask {
     private final Duration maxIdleTime;
     private final Duration delayBeforeRetry;
     private final MessageReceiver messageReceiver;
-    private final CompactionRunner compactor;
+    private final CompactionAlgorithmSelector selector;
     private final CompactionJobStatusStore jobStatusStore;
     private final CompactionTaskStatusStore taskStatusStore;
     private final String taskId;
@@ -63,13 +63,13 @@ public class CompactionTask {
     private int totalNumberOfMessagesProcessed = 0;
 
     public CompactionTask(InstanceProperties instanceProperties, PropertiesReloader propertiesReloader,
-            MessageReceiver messageReceiver, CompactionRunner compactor,
+            MessageReceiver messageReceiver, CompactionAlgorithmSelector selector,
             CompactionJobStatusStore jobStore, CompactionTaskStatusStore taskStore, String taskId) {
-        this(instanceProperties, propertiesReloader, messageReceiver, compactor, jobStore, taskStore, taskId, Instant::now, threadSleep());
+        this(instanceProperties, propertiesReloader, messageReceiver, selector, jobStore, taskStore, taskId, Instant::now, threadSleep());
     }
 
     public CompactionTask(InstanceProperties instanceProperties, PropertiesReloader propertiesReloader,
-            MessageReceiver messageReceiver, CompactionRunner compactor, CompactionJobStatusStore jobStore,
+            MessageReceiver messageReceiver, CompactionAlgorithmSelector selector, CompactionJobStatusStore jobStore,
             CompactionTaskStatusStore taskStore, String taskId, Supplier<Instant> timeSupplier, Consumer<Duration> sleepForTime) {
         maxIdleTime = Duration.ofSeconds(instanceProperties.getInt(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS));
         maxConsecutiveFailures = instanceProperties.getInt(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES);
@@ -78,7 +78,7 @@ public class CompactionTask {
         this.timeSupplier = timeSupplier;
         this.sleepForTime = sleepForTime;
         this.messageReceiver = messageReceiver;
-        this.compactor = compactor;
+        this.selector = selector;
         this.jobStatusStore = jobStore;
         this.taskStatusStore = taskStore;
         this.taskId = taskId;
@@ -147,6 +147,7 @@ public class CompactionTask {
         LOGGER.info("Compaction job {}: compaction called at {}", job.getId(), jobStartTime);
         jobStatusStore.jobStarted(job, jobStartTime, taskId);
         propertiesReloader.reloadIfNeeded();
+        CompactionRunner compactor = this.selector.chooseCompactor(job);
         RecordsProcessed recordsProcessed = compactor.compact(job);
         Instant jobFinishTime = timeSupplier.get();
         RecordsProcessedSummary summary = new RecordsProcessedSummary(recordsProcessed, jobStartTime, jobFinishTime);
@@ -175,11 +176,11 @@ public class CompactionTask {
     }
 
     interface CompactionRunnerDetails extends CompactionRunner {
-        default boolean hardwareAccelerated() {
+        default boolean isHardwareAccelerated() {
             return false;
         }
 
-        default String language() {
+        default String implementationLanguage() {
             return "Java";
         }
 

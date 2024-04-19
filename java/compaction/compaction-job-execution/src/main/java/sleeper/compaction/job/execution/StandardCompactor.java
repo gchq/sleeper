@@ -38,7 +38,6 @@ import sleeper.core.partition.Partition;
 import sleeper.core.record.Record;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.io.parquet.record.ParquetReaderIterator;
@@ -62,15 +61,15 @@ import static sleeper.sketches.s3.SketchesSerDeToS3.sketchesPathForDataFile;
 /**
  * Executes a compaction job. Compacts N input files into a single output file.
  */
-public class CompactSortedFiles implements CompactionTask.CompactionRunnerDetails {
+public class StandardCompactor implements CompactionTask.CompactionRunnerDetails {
     private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final ObjectFactory objectFactory;
     private final StateStoreProvider stateStoreProvider;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(CompactSortedFiles.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(StandardCompactor.class);
 
-    public CompactSortedFiles(
+    public StandardCompactor(
             InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider, ObjectFactory objectFactory) {
         this.instanceProperties = instanceProperties;
@@ -80,7 +79,8 @@ public class CompactSortedFiles implements CompactionTask.CompactionRunnerDetail
     }
 
     public RecordsProcessed compact(CompactionJob compactionJob) throws IOException, IteratorException, StateStoreException {
-        TableProperties tableProperties = tablePropertiesProvider.getById(compactionJob.getTableId());
+        TableProperties tableProperties = tablePropertiesProvider
+                .getById(compactionJob.getTableId());
         Schema schema = tableProperties.getSchema();
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         Partition partition = stateStore.getAllPartitions().stream()
@@ -98,7 +98,8 @@ public class CompactSortedFiles implements CompactionTask.CompactionRunnerDetail
         LOGGER.debug("Creating writer for file {}", compactionJob.getOutputFile());
         Path outputPath = new Path(compactionJob.getOutputFile());
         // Setting file writer mode to OVERWRITE so if the same job runs again after failing to
-        // update the state store, it will overwrite the existing output file written by the previous run
+        // update the state store, it will overwrite the existing output file writte
+        //  by the previous run
         ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(
                 outputPath, tableProperties, conf, ParquetFileWriter.Mode.OVERWRITE);
 
@@ -136,14 +137,19 @@ public class CompactSortedFiles implements CompactionTask.CompactionRunnerDetail
 
         LOGGER.info("Compaction job {}: Read {} records and wrote {} records", compactionJob.getId(), totalNumberOfRecordsRead, recordsWritten);
 
-        updateStateStoreSuccess(compactionJob, recordsWritten, stateStore);
+        CompactionAlgorithmSelector.updateStateStoreSuccess(compactionJob, recordsWritten, stateStore);
         LOGGER.info("Compaction job {}: compaction committed to state store at {}", compactionJob.getId(), LocalDateTime.now());
 
         return new RecordsProcessed(totalNumberOfRecordsRead, recordsWritten);
     }
 
+    private Configuration getConfiguration() {
+        return HadoopConfigurationProvider.getConfigurationForECS(instanceProperties);
+    }
+
     private List<CloseableIterator<Record>> createInputIterators(CompactionJob compactionJob, Partition partition, Schema schema, Configuration conf) throws IOException {
         List<CloseableIterator<Record>> inputIterators = new ArrayList<>();
+
         FilterCompat.Filter partitionFilter = FilterCompat.get(RangeQueryUtils.getFilterPredicate(partition));
         for (String file : compactionJob.getInputFiles()) {
             ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(file), schema)
@@ -172,6 +178,7 @@ public class CompactSortedFiles implements CompactionTask.CompactionRunnerDetail
             } catch (ObjectFactoryException e) {
                 throw new IteratorException("ObjectFactoryException creating iterator of class " + compactionJob.getIteratorClassName(), e);
             }
+
             LOGGER.debug("Created iterator of class {}", compactionJob.getIteratorClassName());
             iterator.init(compactionJob.getIteratorConfig(), schema);
             LOGGER.debug("Initialised iterator with config {}", compactionJob.getIteratorConfig());
@@ -180,42 +187,4 @@ public class CompactSortedFiles implements CompactionTask.CompactionRunnerDetail
         return mergingIterator;
     }
 
-    private Configuration getConfiguration() {
-        return HadoopConfigurationProvider.getConfigurationForECS(instanceProperties);
-    }
-
-    public static void updateStateStoreSuccess(
-            CompactionJob job,
-            long recordsWritten,
-            StateStore stateStore) throws StateStoreException {
-        FileReference fileReference = FileReference.builder()
-                .filename(job.getOutputFile())
-                .partitionId(job.getPartitionId())
-                .numberOfRecords(recordsWritten)
-                .countApproximate(false)
-                .onlyContainsDataForThisPartition(true)
-                .build();
-        try {
-            stateStore.atomicallyReplaceFileReferencesWithNewOne(job.getId(), job.getPartitionId(), job.getInputFiles(), fileReference);
-            LOGGER.debug("Updated file references in state store");
-        } catch (StateStoreException e) {
-            LOGGER.error("Exception updating StateStore (moving input files to ready for GC and creating new active file): {}", e.getMessage());
-            throw e;
-        }
-    }
-
-    @Override
-    public boolean hardwareAccelerated() {
-        return false;
-    }
-
-    @Override
-    public String language() {
-        return "Java";
-    }
-
-    @Override
-    public boolean supportsIterators() {
-        return true;
-    }
 }

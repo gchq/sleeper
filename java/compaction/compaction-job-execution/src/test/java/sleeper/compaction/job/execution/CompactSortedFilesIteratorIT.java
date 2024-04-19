@@ -67,7 +67,7 @@ class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
         assignJobIdToInputFiles(stateStore, compactionJob);
 
         // When
-        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema);
+        CompactionAlgorithmSelector compactSortedFiles = createCompactSortedFiles(schema);
         RecordsProcessed summary = compactSortedFiles.compact(compactionJob);
         // Then
         //  - Read output files and check that they contain the right results

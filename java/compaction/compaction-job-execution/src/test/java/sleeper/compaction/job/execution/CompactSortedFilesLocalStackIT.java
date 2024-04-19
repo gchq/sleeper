@@ -113,9 +113,9 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
                 .getStateStore(tableProperties);
     }
 
-    private CompactSortedFiles createCompactSortedFiles(Schema schema, StateStore stateStore) throws Exception {
+    private CompactionAlgorithmSelector createCompactSortedFiles(Schema schema, StateStore stateStore) throws Exception {
         tableProperties.setSchema(schema);
-        return new CompactSortedFiles(instanceProperties,
+        return new CompactionAlgorithmSelector(instanceProperties,
                 new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties, stateStore),
                 ObjectFactory.noUserJars());
@@ -139,7 +139,7 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
         assignJobIdToInputFiles(stateStore, compactionJob);
 
         // When
-        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, stateStore);
+        CompactionAlgorithmSelector compactSortedFiles = createCompactSortedFiles(schema, stateStore);
         RecordsProcessed summary = compactSortedFiles.compact(compactionJob);
 
         // Then

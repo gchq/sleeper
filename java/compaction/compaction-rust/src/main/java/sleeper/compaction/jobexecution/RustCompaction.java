@@ -19,16 +19,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.store.StoreUtils;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
-import java.util.stream.LongStream;
 
 public class RustCompaction {
     /** Maximum number of rows in a Parquet row group. */
@@ -44,51 +40,50 @@ public class RustCompaction {
         // Obtain native library. This throws an exception if native library can't be loaded and
         // linked
         RustBridge.Compaction nativeLib = RustBridge.getRustCompactor();
+        return null;
+        // // Figure out column numbers for row key fields
+        // // Row keys are numbered from zero, sort keys follow that
+        // long[] rowKeys = LongStream.rangeClosed(0, schema.getRowKeyFields().size()).toArray();
+        // long[] sortKeys = LongStream
+        //         .rangeClosed(0, schema.getRowKeyFields().size() + schema.getSortKeyFields().size())
+        //         .toArray();
 
-        // Figure out column numbers for row key fields
-        // Row keys are numbered from zero, sort keys follow that
-        long[] rowKeys = LongStream.rangeClosed(0, schema.getRowKeyFields().size()).toArray();
-        long[] sortKeys = LongStream
-                .rangeClosed(0, schema.getRowKeyFields().size() + schema.getSortKeyFields().size())
-                .toArray();
+        // // Get the page size from table properties
+        // long maxPageSize = tableProperties.getLong(TableProperty.PAGE_SIZE);
 
-        // Get the page size from table properties
-        long maxPageSize = tableProperties.getLong(TableProperty.PAGE_SIZE);
+        // // Create object to hold the result (in native memory)
+        // RustBridge.FFICompactionResult compactionData = nativeLib.allocate_result();
 
-        // Create object to hold the result (in native memory)
-        RustBridge.FFICompactionResult compactionData = nativeLib.allocate_result();
+        // LOGGER.info("Invoking native Rust compaction...");
 
-        LOGGER.info("Invoking native Rust compaction...");
+        // try {
+        //     // Perform compaction
+        //     int result = nativeLib.ffi_merge_sorted_files(
+        //             compactionJob.getInputFiles().toArray(new String[0]),
+        //             compactionJob.getInputFiles().size(), compactionJob.getOutputFile(),
+        //             RUST_MAX_ROW_GROUP_ROWS, maxPageSize, rowKeys, rowKeys.length, sortKeys,
+        //             sortKeys.length, compactionData);
 
-        try {
-            // Perform compaction
-            int result = nativeLib.ffi_merge_sorted_files(
-                    compactionJob.getInputFiles().toArray(new String[0]),
-                    compactionJob.getInputFiles().size(), compactionJob.getOutputFile(),
-                    RUST_MAX_ROW_GROUP_ROWS, maxPageSize, rowKeys, rowKeys.length, sortKeys,
-                    sortKeys.length, compactionData);
+        //     // Check result
+        //     if (result != 0) {
+        //         LOGGER.error("Rust compaction failed, return code: {}", result);
+        //         throw new IOException("Rust compaction failed with return code " + result);
+        //     }
 
-            // Check result
-            if (result != 0) {
-                LOGGER.error("Rust compaction failed, return code: {}", result);
-                throw new IOException("Rust compaction failed with return code " + result);
-            }
+        //     long totalNumberOfRecordsRead = compactionData.rows_read.get();
+        //     long recordsWritten = compactionData.rows_written.get();
 
-            long totalNumberOfRecordsRead = compactionData.rows_read.get();
-            long recordsWritten = compactionData.rows_written.get();
+        //     LOGGER.info("Compaction job {}: Read {} records and wrote {} records",
+        //             compactionJob.getId(), totalNumberOfRecordsRead, recordsWritten);
 
-            LOGGER.info("Compaction job {}: Read {} records and wrote {} records",
-                    compactionJob.getId(), totalNumberOfRecordsRead, recordsWritten);
+        //     CompactionAlgorithmSelector.updateStateStoreSuccess(compactionJob, recordsWritten, stateStore);
+        //     LOGGER.info("Compaction job {}: compaction finished at {}", compactionJob.getId(),
+        //             LocalDateTime.now());
 
-            StoreUtils.updateStateStoreSuccess(compactionJob.getInputFiles(), compactionJob.getOutputFile(),
-                    compactionJob.getPartitionId(), recordsWritten, stateStore);
-            LOGGER.info("Compaction job {}: compaction finished at {}", compactionJob.getId(),
-                    LocalDateTime.now());
-
-            return new RecordsProcessed(totalNumberOfRecordsRead, recordsWritten);
-        } finally {
-            // Ensure de-allocation
-            nativeLib.free_result(compactionData);
-        }
+        //     return new RecordsProcessed(totalNumberOfRecordsRead, recordsWritten);
+        // } finally {
+        //     // Ensure de-allocation
+        //     nativeLib.free_result(compactionData);
+        // }
     }
 }

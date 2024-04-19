@@ -54,7 +54,7 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
         assignJobIdToInputFiles(stateStore, compactionJob);
 
         // When
-        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema);
+        CompactionAlgorithmSelector compactSortedFiles = createCompactSortedFiles(schema);
         RecordsProcessed summary = compactSortedFiles.compact(compactionJob);
 
         // Then
@@ -88,7 +88,7 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
         assignJobIdToInputFiles(stateStore, compactionJob);
 
         // When
-        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema);
+        CompactionAlgorithmSelector compactSortedFiles = createCompactSortedFiles(schema);
         RecordsProcessed summary = compactSortedFiles.compact(compactionJob);
 
         // Then

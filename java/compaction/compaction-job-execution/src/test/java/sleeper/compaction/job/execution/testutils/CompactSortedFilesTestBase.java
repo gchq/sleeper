@@ -19,7 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.compaction.job.CompactionJobFactory;
-import sleeper.compaction.job.execution.CompactSortedFiles;
+import sleeper.compaction.job.execution.CompactionAlgorithmSelector;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
@@ -66,9 +66,9 @@ public class CompactSortedFilesTestBase {
         return new CompactionJobFactory(instanceProperties, tableProperties);
     }
 
-    protected CompactSortedFiles createCompactSortedFiles(Schema schema) throws Exception {
+    protected CompactionAlgorithmSelector createCompactSortedFiles(Schema schema) throws Exception {
         tableProperties.setSchema(schema);
-        return new CompactSortedFiles(instanceProperties,
+        return new CompactionAlgorithmSelector(instanceProperties,
                 new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties, stateStore),
                 ObjectFactory.noUserJars());

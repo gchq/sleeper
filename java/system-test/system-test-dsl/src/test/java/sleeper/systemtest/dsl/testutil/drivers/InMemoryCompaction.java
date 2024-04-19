@@ -22,7 +22,7 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.creation.CreateCompactionJobs;
 import sleeper.compaction.job.creation.CreateCompactionJobs.Mode;
-import sleeper.compaction.job.execution.CompactSortedFiles;
+import sleeper.compaction.job.execution.CompactionAlgorithmSelector;
 import sleeper.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusStore;
@@ -176,7 +176,7 @@ public class InMemoryCompaction {
         Partition partition = getPartitionForJob(stateStore, job);
         RecordsProcessed recordsProcessed = mergeInputFiles(job, partition, schema);
         try {
-            CompactSortedFiles.updateStateStoreSuccess(job, recordsProcessed.getRecordsWritten(), stateStore);
+            CompactionAlgorithmSelector.updateStateStoreSuccess(job, recordsProcessed.getRecordsWritten(), stateStore);
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
         }
@@ -200,7 +200,7 @@ public class InMemoryCompaction {
                 .collect(toUnmodifiableList());
         CloseableIterator<Record> mergingIterator;
         try {
-            mergingIterator = CompactSortedFiles.getMergingIterator(
+            mergingIterator = CompactionAlgorithmSelector.getMergingIterator(
                     ObjectFactory.noUserJars(), schema, job, inputIterators);
         } catch (IteratorException e) {
             throw new RuntimeException(e);
