@@ -15,38 +15,20 @@
  */
 package sleeper.compaction.job.execution;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.execution.CompactionTask.CompactionRunner;
-import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.statestore.StateStoreProvider;
 
 /**
- * Determines which compaction algorithm should be run based on the table and instance configuration properties and
- * other environmental information.
+ * Interface for classes that implement logic for choosing which compaction method should be chosen.
  */
-public class CompactionAlgorithmSelector {
-    private final InstanceProperties instanceProperties;
-    private final TablePropertiesProvider tablePropertiesProvider;
-    private final ObjectFactory objectFactory;
-    private final StateStoreProvider stateStoreProvider;
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(CompactionAlgorithmSelector.class);
-
-    public CompactionAlgorithmSelector(
-            InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
-            StateStoreProvider stateStoreProvider, ObjectFactory objectFactory) {
-        this.instanceProperties = instanceProperties;
-        this.tablePropertiesProvider = tablePropertiesProvider;
-        this.objectFactory = objectFactory;
-        this.stateStoreProvider = stateStoreProvider;
-    }
-
-    public CompactionRunner chooseCompactor(CompactionJob job) {
-        return new StandardCompactor(instanceProperties, tablePropertiesProvider, stateStoreProvider, objectFactory);
-    }
+@FunctionalInterface
+public interface CompactionAlgorithmSelector {
+    /**
+     * Picks a {@link CompactionRunner} implementation that is capable
+     * of running a compaction on the given job.
+     * 
+     * @param  job compaction job
+     * @return     a compactor object
+     */
+    public CompactionRunner chooseCompactor(CompactionJob job);
 }

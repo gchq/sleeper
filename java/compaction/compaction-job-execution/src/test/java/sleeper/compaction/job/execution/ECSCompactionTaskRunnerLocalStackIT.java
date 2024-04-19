@@ -338,7 +338,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
     }
 
     private CompactionTask createTask(String taskId, StateStoreProvider stateStoreProvider) {
-        CompactionAlgorithmSelector compactSortedFiles = new CompactionAlgorithmSelector(instanceProperties,
+        DefaultSelector compactSortedFiles = new DefaultSelector(instanceProperties,
                 tablePropertiesProvider, stateStoreProvider,
                 ObjectFactory.noUserJars());
         CompactionTask task = new CompactionTask(instanceProperties, PropertiesReloader.neverReload(),

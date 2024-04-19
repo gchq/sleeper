@@ -47,7 +47,7 @@ import static sleeper.configuration.properties.instance.CompactionProperty.COMPA
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 /**
- * Runs a compaction task in ECS. Delegates the running of compaction jobs to {@link CompactionAlgorithmSelector},
+ * Runs a compaction task in ECS. Delegates the running of compaction jobs to {@link DefaultSelector},
  * and the processing of SQS messages to {@link SqsCompactionQueueHandler}.
  */
 public class ECSCompactionTaskRunner {
@@ -86,7 +86,7 @@ public class ECSCompactionTaskRunner {
 
         ObjectFactory objectFactory = new ObjectFactory(instanceProperties, s3Client, "/tmp");
 
-        CompactionAlgorithmSelector compactionSelector = new CompactionAlgorithmSelector(instanceProperties,
+        DefaultSelector compactionSelector = new DefaultSelector(instanceProperties,
                 tablePropertiesProvider, stateStoreProvider, objectFactory);
         CompactionTask task = new CompactionTask(instanceProperties, propertiesReloader,
                 new SqsCompactionQueueHandler(sqsClient, instanceProperties),

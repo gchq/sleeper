@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.StateStoreUpdate;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -61,7 +62,7 @@ import static sleeper.sketches.s3.SketchesSerDeToS3.sketchesPathForDataFile;
 /**
  * Executes a compaction job. Compacts N input files into a single output file.
  */
-public class StandardCompactor implements CompactionTask.CompactionRunnerDetails {
+public class StandardCompactor implements CompactionTask.CompactionRunner {
     private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final ObjectFactory objectFactory;
@@ -137,7 +138,7 @@ public class StandardCompactor implements CompactionTask.CompactionRunnerDetails
 
         LOGGER.info("Compaction job {}: Read {} records and wrote {} records", compactionJob.getId(), totalNumberOfRecordsRead, recordsWritten);
 
-        CompactionAlgorithmSelector.updateStateStoreSuccess(compactionJob, recordsWritten, stateStore);
+        StateStoreUpdate.updateStateStoreSuccess(compactionJob, recordsWritten, stateStore);
         LOGGER.info("Compaction job {}: compaction committed to state store at {}", compactionJob.getId(), LocalDateTime.now());
 
         return new RecordsProcessed(totalNumberOfRecordsRead, recordsWritten);

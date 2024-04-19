@@ -171,11 +171,11 @@ public class CompactionTask {
     }
 
     @FunctionalInterface
-    interface CompactionRunner {
+    interface CompactionRunner extends CompactionRunnerDetails {
         RecordsProcessed compact(CompactionJob job) throws Exception;
     }
 
-    interface CompactionRunnerDetails extends CompactionRunner {
+    interface CompactionRunnerDetails {
         default boolean isHardwareAccelerated() {
             return false;
         }

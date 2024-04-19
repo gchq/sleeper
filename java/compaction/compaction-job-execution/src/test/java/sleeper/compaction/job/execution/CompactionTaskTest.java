@@ -457,8 +457,9 @@ public class CompactionTaskTest {
             CompactionRunner compactor,
             Supplier<Instant> timeSupplier,
             String taskId) throws Exception {
+        CompactionAlgorithmSelector identity = (job) -> compactor;
         new CompactionTask(instanceProperties, PropertiesReloader.neverReload(),
-                messageReceiver, compactor, jobStore, taskStore, taskId, timeSupplier, sleeps::add)
+                messageReceiver, identity, jobStore, taskStore, taskId, timeSupplier, sleeps::add)
                 .run();
     }
 

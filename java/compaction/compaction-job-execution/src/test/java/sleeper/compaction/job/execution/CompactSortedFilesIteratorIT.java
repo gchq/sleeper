@@ -19,6 +19,7 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.execution.CompactionTask.CompactionRunner;
 import sleeper.compaction.job.execution.testutils.CompactSortedFilesTestBase;
 import sleeper.compaction.job.execution.testutils.CompactSortedFilesTestData;
 import sleeper.compaction.job.execution.testutils.CompactSortedFilesTestUtils;
@@ -67,8 +68,9 @@ class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
         assignJobIdToInputFiles(stateStore, compactionJob);
 
         // When
-        CompactionAlgorithmSelector compactSortedFiles = createCompactSortedFiles(schema);
-        RecordsProcessed summary = compactSortedFiles.compact(compactionJob);
+        DefaultSelector compactSortedFiles = createCompactSortedFiles(schema);
+        CompactionRunner runner = compactSortedFiles.chooseCompactor(compactionJob);
+        RecordsProcessed summary = runner.compact(compactionJob);
         // Then
         //  - Read output files and check that they contain the right results
         assertThat(summary.getRecordsRead()).isEqualTo(200L);

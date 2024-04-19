@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.execution.CompactionTask.CompactionRunner;
 import sleeper.compaction.job.execution.testutils.CompactSortedFilesTestBase;
 import sleeper.compaction.job.execution.testutils.CompactSortedFilesTestData;
 import sleeper.core.partition.PartitionsBuilder;
@@ -58,8 +59,9 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
         assignJobIdToInputFiles(stateStore, compactionJob);
 
         // When
-        CompactionAlgorithmSelector compactSortedFiles = createCompactSortedFiles(schema);
-        RecordsProcessed summary = compactSortedFiles.compact(compactionJob);
+        DefaultSelector compactSortedFiles = createCompactSortedFiles(schema);
+        CompactionRunner runner = compactSortedFiles.chooseCompactor(compactionJob);
+        RecordsProcessed summary = runner.compact(compactionJob);
 
         // Then
         //  - Read output file and check that it contains the right results
@@ -115,8 +117,9 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
             assignJobIdToInputFiles(stateStore, compactionJob);
 
             // When
-            CompactionAlgorithmSelector compactSortedFiles = createCompactSortedFiles(schema);
-            RecordsProcessed summary = compactSortedFiles.compact(compactionJob);
+            DefaultSelector compactSortedFiles = createCompactSortedFiles(schema);
+            CompactionRunner runner = compactSortedFiles.chooseCompactor(compactionJob);
+            RecordsProcessed summary = runner.compact(compactionJob);
 
             // Then
             //  - Read output file and check that it contains the right results
@@ -179,8 +182,9 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
             assignJobIdToInputFiles(stateStore, compactionJob);
 
             // When
-            CompactionAlgorithmSelector compactSortedFiles = createCompactSortedFiles(schema);
-            RecordsProcessed summary = compactSortedFiles.compact(compactionJob);
+            DefaultSelector compactSortedFiles = createCompactSortedFiles(schema);
+            CompactionRunner runner = compactSortedFiles.chooseCompactor(compactionJob);
+            RecordsProcessed summary = runner.compact(compactionJob);
 
             // Then
             //  - Read output file and check that it contains the right results
