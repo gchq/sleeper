@@ -377,7 +377,7 @@ class S3FileReferenceStore implements FileReferenceStore {
         if (revisionId == null) {
             return true;
         }
-        return stateStoreFileUtils.loadFiles(getFilesPath(revisionId)).isEmpty();
+        return readFilesFromParquet(getFilesPath(revisionId)).isEmpty();
     }
 
     @Override
@@ -403,9 +403,8 @@ class S3FileReferenceStore implements FileReferenceStore {
 
     private List<AllReferencesToAFile> readFilesFromParquet(String path) throws StateStoreException {
         LOGGER.debug("Loading file records from {}", path);
-        List<AllReferencesToAFile> files = stateStoreFileUtils.loadFiles(path)
-                .referencedAndUnreferenced()
-                .collect(Collectors.toList());
+        List<AllReferencesToAFile> files = new ArrayList<>();
+        stateStoreFileUtils.loadFiles(path, files::add);
         LOGGER.debug("Loaded {} file records from {}", files.size(), path);
         return files;
     }

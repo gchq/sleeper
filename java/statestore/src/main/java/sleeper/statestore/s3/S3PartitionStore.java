@@ -210,7 +210,8 @@ class S3PartitionStore implements PartitionStore {
 
     private List<Partition> readPartitionsFromParquet(String path) throws StateStoreException {
         LOGGER.debug("Loading partitions from {}", path);
-        List<Partition> partitions = new ArrayList<>(stateStoreFileUtils.loadPartitions(path, tableSchema).all());
+        List<Partition> partitions = new ArrayList<>();
+        stateStoreFileUtils.loadPartitions(path, tableSchema, partitions::add);
         LOGGER.debug("Loaded {} partitions from {}", partitions.size(), path);
         return partitions;
     }

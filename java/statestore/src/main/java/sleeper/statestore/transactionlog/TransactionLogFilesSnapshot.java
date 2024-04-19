@@ -33,7 +33,9 @@ public class TransactionLogFilesSnapshot {
     }
 
     StateStoreFiles load(String basePath, long lastTransactionNumber) throws StateStoreException {
-        return stateStoreFileUtils.loadFiles(createFilesPath(basePath, lastTransactionNumber));
+        StateStoreFiles files = new StateStoreFiles();
+        stateStoreFileUtils.loadFiles(createFilesPath(basePath, lastTransactionNumber), files::add);
+        return files;
     }
 
     private String createFilesPath(String basePath, long lastTransactionNumber) throws StateStoreException {

@@ -42,9 +42,9 @@ import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 public class StateStoreFileUtils {
@@ -93,31 +93,25 @@ public class StateStoreFileUtils {
         }
     }
 
-    public StateStorePartitions loadPartitions(String path, Schema sleeperSchema) throws StateStoreException {
-        StateStorePartitions partitions = new StateStorePartitions();
+    public void loadPartitions(String path, Schema sleeperSchema, Consumer<Partition> partitionConsumer) throws StateStoreException {
         RegionSerDe regionSerDe = new RegionSerDe(sleeperSchema);
-        load(path).map(record -> getPartitionFromRecord(record, regionSerDe)).forEach(partitions::put);
-        return partitions;
+        load(path, record -> partitionConsumer.accept(getPartitionFromRecord(record, regionSerDe)));
     }
 
-    public StateStoreFiles loadFiles(String path) throws StateStoreException {
-        StateStoreFiles files = new StateStoreFiles();
-        load(path).map(this::getFileFromRecord).forEach(files::add);
-        return files;
+    public void loadFiles(String path, Consumer<AllReferencesToAFile> fileConsumer) throws StateStoreException {
+        load(path, record -> fileConsumer.accept(getFileFromRecord(record)));
     }
 
-    private Stream<Record> load(String path) throws StateStoreException {
-        List<Record> records = new ArrayList<>();
+    private void load(String path, Consumer<Record> recordConsumer) throws StateStoreException {
         try (ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(path), schema)
                 .withConf(configuration).build();
                 ParquetReaderIterator recordReader = new ParquetReaderIterator(reader)) {
             while (recordReader.hasNext()) {
-                records.add(recordReader.next());
+                recordConsumer.accept(recordReader.next());
             }
         } catch (IOException e) {
             throw new StateStoreException("Failed reading records", e);
         }
-        return records.stream();
     }
 
     private Record getRecordFromPartition(Partition partition, RegionSerDe regionSerDe) {
