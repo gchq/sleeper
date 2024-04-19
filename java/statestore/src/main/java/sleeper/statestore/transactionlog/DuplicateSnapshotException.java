@@ -15,12 +15,8 @@
  */
 package sleeper.statestore.transactionlog;
 
-public interface TransactionLogSnapshotStore {
-    void savePartitions(long transactionNumber);
-
-    void saveFiles(long transactionNumber);
-
-    long getLatestFiles();
-
-    long getLatestPartitions();
+public class DuplicateSnapshotException extends Exception {
+    public DuplicateSnapshotException(String path, Exception cause) {
+        super("Snapshot already exists: " + path, cause);
+    }
 }

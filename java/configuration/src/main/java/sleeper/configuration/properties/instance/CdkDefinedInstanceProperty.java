@@ -94,7 +94,10 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .description("The name of the DynamoDB table holding the state store partition transaction log.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
-
+    CdkDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_TABLENAME = Index.propertyBuilder("sleeper.metadata.transactionlog.dynamo.snapshot.table")
+            .description("The name of the DynamoDB table holding information about transaction log snapshots.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
     // Table metrics
     CdkDefinedInstanceProperty TABLE_METRICS_LAMBDA_FUNCTION = Index.propertyBuilder("sleeper.table.metrics.lambda.function")
             .description("The name of the Lambda function that triggers generation of metrics for tables.")
