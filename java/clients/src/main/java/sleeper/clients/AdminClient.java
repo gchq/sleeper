@@ -143,12 +143,7 @@ public class AdminClient {
     }
 
     public void start(String instanceId) throws InterruptedException {
-        try {
-            store.loadInstanceProperties(instanceId);
-            new AdminMainScreen(out, in).mainLoop(this, instanceId);
-        } catch (AdminClientPropertiesStore.CouldNotLoadInstanceProperties e) {
-            e.print(out);
-        }
+        new AdminMainScreen(out, in).mainLoop(this, instanceId);
     }
 
     public InstanceConfigurationScreen instanceConfigurationScreen() {
