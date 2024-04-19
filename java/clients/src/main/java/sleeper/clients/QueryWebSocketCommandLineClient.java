@@ -102,15 +102,17 @@ public class QueryWebSocketCommandLineClient extends QueryCommandLineClient {
 
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
-        InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(s3Client, args[0]);
 
-        QueryWebSocketCommandLineClient client = new QueryWebSocketCommandLineClient(instanceProperties,
-                new DynamoDBTableIndex(instanceProperties, dynamoDBClient),
-                new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient),
-                new ConsoleInput(System.console()), new ConsoleOutput(System.out));
-        client.run();
-
-        s3Client.shutdown();
-        dynamoDBClient.shutdown();
+        try {
+            InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(s3Client, args[0]);
+            QueryWebSocketCommandLineClient client = new QueryWebSocketCommandLineClient(instanceProperties,
+                    new DynamoDBTableIndex(instanceProperties, dynamoDBClient),
+                    new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient),
+                    new ConsoleInput(System.console()), new ConsoleOutput(System.out));
+            client.run();
+        } finally {
+            s3Client.shutdown();
+            dynamoDBClient.shutdown();
+        }
     }
 }
