@@ -40,17 +40,17 @@ public class InitialiseStateStore {
 
     public static void main(String[] args) throws StateStoreException {
         if (2 != args.length) {
-            System.out.println("Usage: <Sleeper S3 Config Bucket> <Table name>");
+            System.out.println("Usage: <instance-id> <table-name>");
             return;
         }
-        String bucketName = args[0];
+        String instanceId = args[0];
         String tableName = args[1];
 
         AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
         AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         try {
             InstanceProperties instanceProperties = new InstanceProperties();
-            instanceProperties.loadFromS3(s3Client, bucketName);
+            instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
 
             TableProperties tableProperties = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient).getByName(tableName);
 
