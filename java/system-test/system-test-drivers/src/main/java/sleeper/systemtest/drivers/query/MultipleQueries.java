@@ -50,6 +50,7 @@ import java.util.UUID;
 import java.util.function.Supplier;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_QUEUE_URL;
+import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 /**
  * Submits random queries to the query queue.
@@ -141,19 +142,23 @@ public class MultipleQueries {
 
     public static void main(String[] args) {
         if (args.length != 3) {
-            System.out.println("Usage: <S3 config Bucket> <table name> <Number of queries>");
+            System.out.println("Usage: <instance id> <table name> <Number of queries>");
         }
-
-        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        SystemTestProperties systemTestProperties = new SystemTestProperties();
-        systemTestProperties.loadFromS3(s3Client, args[0]);
+        String instanceId = args[0];
         String tableName = args[1];
         long numQueries = Long.parseLong(args[2]); // TODO Get from system test properties file
-        AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
-        AmazonDynamoDB dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
-        MultipleQueries multipleQueries = new MultipleQueries(tableName, numQueries, systemTestProperties, sqsClient, s3Client, dynamoClient);
-        multipleQueries.run();
-        s3Client.shutdown();
-        sqsClient.shutdown();
+
+        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
+        AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
+        AmazonDynamoDB dynamoClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
+        try {
+            SystemTestProperties systemTestProperties = new SystemTestProperties();
+            systemTestProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
+            MultipleQueries multipleQueries = new MultipleQueries(tableName, numQueries, systemTestProperties, sqsClient, s3Client, dynamoClient);
+            multipleQueries.run();
+        } finally {
+            s3Client.shutdown();
+            sqsClient.shutdown();
+        }
     }
 }
