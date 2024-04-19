@@ -25,6 +25,7 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.clients.util.ClientUtils;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.util.PollWithRetries;
 
@@ -35,7 +36,6 @@ import java.util.stream.Collectors;
 import static java.lang.Math.min;
 import static sleeper.clients.util.EmrUtils.listActiveClusters;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.core.util.RateLimitUtils.sleepForSustainedRatePerSecond;
 
 public class TerminateEMRClusters {
@@ -99,21 +99,17 @@ public class TerminateEMRClusters {
             System.out.println("Usage: <instance-id>");
             return;
         }
-
         String instanceId = args[0];
 
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-
-        InstanceProperties properties = new InstanceProperties();
-        properties.loadFromS3GivenInstanceId(s3Client, instanceId);
-
-        if (properties.getList(OPTIONAL_STACKS).contains("EmrBulkImportStack")) {
-            AmazonElasticMapReduce emrClient = AmazonElasticMapReduceClientBuilder.defaultClient();
+        AmazonElasticMapReduce emrClient = AmazonElasticMapReduceClientBuilder.defaultClient();
+        try {
+            InstanceProperties properties = ClientUtils.getInstanceProperties(s3Client, instanceId);
             TerminateEMRClusters terminateClusters = new TerminateEMRClusters(emrClient, properties);
             terminateClusters.run();
+        } finally {
+            s3Client.shutdown();
             emrClient.shutdown();
         }
-
-        s3Client.shutdown();
     }
 }
