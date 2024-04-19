@@ -145,5 +145,8 @@ public class QueryClient extends QueryCommandLineClient {
         QueryClient queryClient = new QueryClient(amazonS3, instanceProperties, dynamoDB, getConfigurationForClient(instanceProperties),
                 new ConsoleInput(System.console()), new ConsoleOutput(System.out));
         queryClient.run();
+
+        amazonS3.shutdown();
+        dynamoDB.shutdown();
     }
 }
