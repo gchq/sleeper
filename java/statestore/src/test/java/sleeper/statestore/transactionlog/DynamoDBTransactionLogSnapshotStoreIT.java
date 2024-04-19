@@ -19,6 +19,8 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -56,44 +58,74 @@ public class DynamoDBTransactionLogSnapshotStoreIT {
         new DynamoDBTransactionLogSnapshotStoreCreator(instanceProperties, dynamoDBClient).create();
     }
 
-    @Test
-    void shouldStoreFilesSnapshot() throws Exception {
-        // Given / When
-        store.saveFiles("snapshot/1-files.parquet", 1);
+    @Nested
+    @DisplayName("Files snapshots")
+    class FilesSnapshots {
+        @Test
+        void shouldStoreFilesSnapshot() throws Exception {
+            // Given / When
+            store.saveFiles("snapshot/1-files.parquet", 1);
 
-        // Then
-        assertThat(store.getFilesSnapshots())
-                .containsExactly(TransactionLogSnapshot.forFiles("snapshot/1-files.parquet", 1));
-        assertThat(store.getPartitionsSnapshots()).isEmpty();
+            // Then
+            assertThat(store.getFilesSnapshots())
+                    .containsExactly(filesSnapshot("snapshot/1-files.parquet", 1));
+        }
+
+        @Test
+        void shouldRetrieveFilesSnapshotsLatestFirst() throws Exception {
+            // Given / When
+            store.saveFiles("snapshot/1-files.parquet", 1);
+            store.saveFiles("snapshot/2-files.parquet", 2);
+            store.saveFiles("snapshot/3-files.parquet", 3);
+
+            // Then
+            assertThat(store.getFilesSnapshots())
+                    .containsExactly(
+                            filesSnapshot("snapshot/3-files.parquet", 3),
+                            filesSnapshot("snapshot/2-files.parquet", 2),
+                            filesSnapshot("snapshot/1-files.parquet", 1));
+        }
     }
 
-    @Test
-    void shouldStorePartitionsSnapshot() throws Exception {
-        // Given / When
-        store.savePartitions("snapshot/1-partitions.parquet", 1);
+    @Nested
+    @DisplayName("Partitions snapshot")
+    class PartitionsSnapshot {
+        @Test
+        void shouldStorePartitionsSnapshot() throws Exception {
+            // Given / When
+            store.savePartitions("snapshot/1-partitions.parquet", 1);
 
-        // Then
-        assertThat(store.getFilesSnapshots()).isEmpty();
-        assertThat(store.getPartitionsSnapshots())
-                .containsExactly(TransactionLogSnapshot.forPartitions("snapshot/1-partitions.parquet", 1));
-    }
+            // Then
+            assertThat(store.getFilesSnapshots()).isEmpty();
+            assertThat(store.getPartitionsSnapshots())
+                    .containsExactly(partitionSnapshot("snapshot/1-partitions.parquet", 1));
+        }
 
-    @Test
-    void shouldRetrieveSnapshotsLatestFirst() throws Exception {
-        // Given / When
-        store.savePartitions("snapshot/1-partitions.parquet", 1);
-        store.savePartitions("snapshot/2-partitions.parquet", 2);
-        store.savePartitions("snapshot/3-partitions.parquet", 3);
+        @Test
+        void shouldRetrievePartitionsSnapshotsLatestFirst() throws Exception {
+            // Given / When
+            store.savePartitions("snapshot/1-partitions.parquet", 1);
+            store.savePartitions("snapshot/2-partitions.parquet", 2);
+            store.savePartitions("snapshot/3-partitions.parquet", 3);
 
-        // Then
-        assertThat(store.getPartitionsSnapshots())
-                .containsExactly(
-                        TransactionLogSnapshot.forPartitions("snapshot/3-partitions.parquet", 3),
-                        TransactionLogSnapshot.forPartitions("snapshot/2-partitions.parquet", 2),
-                        TransactionLogSnapshot.forPartitions("snapshot/1-partitions.parquet", 1));
+            // Then
+            assertThat(store.getPartitionsSnapshots())
+                    .containsExactly(
+                            partitionSnapshot("snapshot/3-partitions.parquet", 3),
+                            partitionSnapshot("snapshot/2-partitions.parquet", 2),
+                            partitionSnapshot("snapshot/1-partitions.parquet", 1));
+        }
     }
 
     private TransactionLogSnapshotStore snapshotStore() {
         return new DynamoDBTransactionLogSnapshotStore(instanceProperties, tableProperties, dynamoDBClient, Instant::now);
+    }
+
+    private TransactionLogSnapshot filesSnapshot(String path, long transactionNumber) {
+        return TransactionLogSnapshot.forFiles(path, transactionNumber);
+    }
+
+    private TransactionLogSnapshot partitionSnapshot(String path, long transactionNumber) {
+        return TransactionLogSnapshot.forPartitions(path, transactionNumber);
     }
 }
