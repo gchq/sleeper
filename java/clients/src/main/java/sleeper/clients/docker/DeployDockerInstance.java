@@ -84,9 +84,15 @@ public class DeployDockerInstance {
         AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
         AmazonDynamoDB dynamoDB = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
-        DeployDockerInstance.builder().s3Client(s3Client).dynamoDB(dynamoDB).sqsClient(sqsClient)
-                .configuration(getConfigurationForClient()).build()
-                .deploy(instanceId);
+        try {
+            DeployDockerInstance.builder().s3Client(s3Client).dynamoDB(dynamoDB).sqsClient(sqsClient)
+                    .configuration(getConfigurationForClient()).build()
+                    .deploy(instanceId);
+        } finally {
+            s3Client.shutdown();
+            dynamoDB.shutdown();
+            sqsClient.shutdown();
+        }
     }
 
     public void deploy(String instanceId) {
