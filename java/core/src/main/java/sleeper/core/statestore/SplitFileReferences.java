@@ -52,7 +52,9 @@ public class SplitFileReferences {
                         .map(fileReference -> splitFileInPartition(fileReference, partition)))
                 .forEach(splitRequests::add);
         LOGGER.info("Found {} files in non-leaf partitions that need splitting", splitRequests.size());
-        stateStore.splitFileReferences(splitRequests);
+        if (!splitRequests.isEmpty()) {
+            stateStore.splitFileReferences(splitRequests);
+        }
     }
 
     private static SplitFileReferenceRequest splitFileInPartition(FileReference file, Partition partition) {
