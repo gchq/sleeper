@@ -70,7 +70,7 @@ For a table with a Dynamo DB state store:
 - Reinitialise the state store:
 
 ```bash
-sleeper deployment java -cp jars/clients-*-utility.jar sleeper.statestore.InitialiseStateStore sleeper-<instance-id>-config <table-name>
+sleeper deployment java -cp jars/clients-*-utility.jar sleeper.statestore.InitialiseStateStore <instance-id> <table-name>
 ```
 
 For a table with an S3 state store:
@@ -83,7 +83,7 @@ For a table with an S3 state store:
 - Reinitialise the state store:
 
 ```bash
-sleeper deployment java -cp jars/clients-*-utility.jar sleeper.statestore.InitialiseStateStore sleeper-<instance-id>-config <table-name>
+sleeper deployment java -cp jars/clients-*-utility.jar sleeper.statestore.InitialiseStateStore <instance-id> <table-name>
 ```
 
 ## Why is adding a table to an existing Sleeper instance so slow?
