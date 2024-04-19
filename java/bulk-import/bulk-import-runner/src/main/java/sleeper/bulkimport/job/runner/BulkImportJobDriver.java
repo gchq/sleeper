@@ -156,7 +156,7 @@ public class BulkImportJobDriver {
         String bulkImportMode = args[4];
 
         InstanceProperties instanceProperties = new InstanceProperties();
-        AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
+        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         Configuration configuration;
         if (bulkImportMode.equals("EKS")) {
             configuration = HadoopConfigurationProvider.getConfigurationForEKS(instanceProperties);
@@ -167,7 +167,7 @@ public class BulkImportJobDriver {
         }
 
         try {
-            instanceProperties.loadFromS3(amazonS3, configBucket);
+            instanceProperties.loadFromS3(s3Client, configBucket);
         } catch (Exception e) {
             // This is a good indicator if something is wrong with the permissions
             LOGGER.error("Failed to load instance properties", e);
@@ -195,7 +195,7 @@ public class BulkImportJobDriver {
         }
         String jsonJobKey = "bulk_import/" + jobId + "-" + jobRunId + ".json";
         LOGGER.info("Loading bulk import job from key {} in bulk import bucket {}", jsonJobKey, bulkImportBucket);
-        String jsonJob = amazonS3.getObjectAsString(bulkImportBucket, jsonJobKey);
+        String jsonJob = s3Client.getObjectAsString(bulkImportBucket, jsonJobKey);
         BulkImportJob bulkImportJob;
         try {
             bulkImportJob = new BulkImportJobSerDe().fromJson(jsonJob);
@@ -204,8 +204,12 @@ public class BulkImportJobDriver {
             throw e;
         }
 
+        AmazonDynamoDB dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
         BulkImportJobDriver driver = BulkImportJobDriver.from(runner, instanceProperties,
-                amazonS3, AmazonDynamoDBClientBuilder.defaultClient(), configuration);
+                s3Client, dynamoClient, configuration);
         driver.run(bulkImportJob, jobRunId, taskId);
+
+        s3Client.shutdown();
+        dynamoClient.shutdown();
     }
 }
