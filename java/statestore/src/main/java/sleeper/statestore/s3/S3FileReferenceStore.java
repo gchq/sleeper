@@ -377,7 +377,7 @@ class S3FileReferenceStore implements FileReferenceStore {
         if (revisionId == null) {
             return true;
         }
-        return readFilesFromParquet(getFilesPath(revisionId)).isEmpty();
+        return stateStoreFileUtils.isEmpty(getFilesPath(revisionId));
     }
 
     @Override

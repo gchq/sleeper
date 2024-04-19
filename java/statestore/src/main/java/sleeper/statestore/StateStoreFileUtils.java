@@ -114,6 +114,19 @@ public class StateStoreFileUtils {
         }
     }
 
+    public boolean isEmpty(String path) throws StateStoreException {
+        try (ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(path), schema)
+                .withConf(configuration).build();
+                ParquetReaderIterator recordReader = new ParquetReaderIterator(reader)) {
+            if (recordReader.hasNext()) {
+                return false;
+            }
+        } catch (IOException e) {
+            throw new StateStoreException("Failed reading records", e);
+        }
+        return true;
+    }
+
     private Record getRecordFromPartition(Partition partition, RegionSerDe regionSerDe) {
         Record record = new Record();
         record.put("partitionId", partition.getId());
