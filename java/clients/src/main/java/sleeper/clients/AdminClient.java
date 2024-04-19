@@ -104,16 +104,19 @@ public class AdminClient {
                 .baseDockerDirectory(baseDockerDir).build();
         ConsoleOutput out = new ConsoleOutput(System.out);
         ConsoleInput in = new ConsoleInput(System.console());
-        int errorCode = start(instanceId, s3Client, dynamoClient, cdk, generatedDir, uploadDockerImages, out, in,
-                new UpdatePropertiesWithTextEditor(Path.of("/tmp")),
-                QueueMessageCount.withSqsClient(sqsClient),
-                properties -> PersistentEMRStepCount.byStatus(properties, emrClient));
-
-        s3Client.shutdown();
-        dynamoClient.shutdown();
-        sqsClient.shutdown();
-        ecrClient.shutdown();
-        emrClient.shutdown();
+        int errorCode;
+        try {
+            errorCode = start(instanceId, s3Client, dynamoClient, cdk, generatedDir, uploadDockerImages, out, in,
+                    new UpdatePropertiesWithTextEditor(Path.of("/tmp")),
+                    QueueMessageCount.withSqsClient(sqsClient),
+                    properties -> PersistentEMRStepCount.byStatus(properties, emrClient));
+        } finally {
+            s3Client.shutdown();
+            dynamoClient.shutdown();
+            sqsClient.shutdown();
+            ecrClient.shutdown();
+            emrClient.shutdown();
+        }
         System.exit(errorCode);
     }
 
