@@ -36,7 +36,9 @@ public class TransactionLogPartitionsSnapshot {
     }
 
     StateStorePartitions load(String basePath, long lastTransactionNumber) throws StateStoreException {
-        return stateStoreFileUtils.loadPartitions(createPartitionsPath(basePath, lastTransactionNumber), sleeperSchema);
+        StateStorePartitions partitions = new StateStorePartitions();
+        stateStoreFileUtils.loadPartitions(createPartitionsPath(basePath, lastTransactionNumber), sleeperSchema, partitions::put);
+        return partitions;
     }
 
     private String createPartitionsPath(String basePath, long lastTransactionNumber) throws StateStoreException {
