@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.CompactionRunner;
 import sleeper.compaction.job.StateStoreUpdate;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
@@ -62,7 +63,7 @@ import static sleeper.sketches.s3.SketchesSerDeToS3.sketchesPathForDataFile;
 /**
  * Executes a compaction job. Compacts N input files into a single output file.
  */
-public class StandardCompactor implements CompactionTask.CompactionRunner {
+public class StandardCompactor implements CompactionRunner {
     private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final ObjectFactory objectFactory;

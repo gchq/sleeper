@@ -18,7 +18,7 @@ package sleeper.compaction.job.execution;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.execution.CompactionTask.CompactionRunner;
+import sleeper.compaction.job.CompactionRunner;
 import sleeper.compaction.job.execution.testutils.CompactSortedFilesTestBase;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
@@ -91,7 +91,7 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
 
         // When
         DefaultSelector compactSortedFiles = createCompactSortedFiles(schema);
-        CompactionRunner runner = compactSortedFiles.chooseCompactor(compactionJob);
+        sleeper.compaction.job.CompactionRunner runner = compactSortedFiles.chooseCompactor(compactionJob);
         RecordsProcessed summary = runner.compact(compactionJob);
 
         // Then

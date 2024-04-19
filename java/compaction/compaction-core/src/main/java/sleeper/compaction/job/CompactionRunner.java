@@ -13,22 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.job.execution;
+package sleeper.compaction.job;
 
-import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionRunner;
+import sleeper.core.record.process.RecordsProcessed;
 
-/**
- * Interface for classes that implement logic for choosing which compaction method should be chosen.
- */
 @FunctionalInterface
-public interface CompactionAlgorithmSelector {
-    /**
-     * Picks a CompactionRunner implementation that is capable
-     * of running a compaction on the given job.
-     *
-     * @param  job compaction job
-     * @return     a compactor object
-     */
-    CompactionRunner chooseCompactor(CompactionJob job);
+public interface CompactionRunner extends CompactionRunnerDetails {
+    RecordsProcessed compact(CompactionJob job) throws Exception;
 }

@@ -19,24 +19,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.compaction.job.CompactionRunner;
 import sleeper.core.record.process.RecordsProcessed;
-import sleeper.core.schema.Schema;
-import sleeper.core.statestore.StateStore;
 
-import java.io.IOException;
-
-public class RustCompaction {
+public class RustCompaction implements CompactionRunner {
     /** Maximum number of rows in a Parquet row group. */
     private static final long RUST_MAX_ROW_GROUP_ROWS = 1_000_000;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RustCompaction.class);
 
-    private RustCompaction() {
+    public RustCompaction() {
     }
 
-    public static RecordsProcessed compact(Schema schema, TableProperties tableProperties,
-            CompactionJob compactionJob, StateStore stateStore) throws IOException {
+    @Override
+    public RecordsProcessed compact(CompactionJob job) throws Exception {
         // Obtain native library. This throws an exception if native library can't be loaded and
         // linked
         // RustBridge.Compaction nativeLib = RustBridge.getRustCompactor();

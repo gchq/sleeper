@@ -19,10 +19,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.execution.CompactionTask.CompactionRunner;
+import sleeper.compaction.job.CompactionRunner;
+import sleeper.compaction.jobexecution.RustCompaction;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.properties.table.TableProperty;
 import sleeper.statestore.StateStoreProvider;
 
 /**
@@ -48,7 +51,36 @@ public class DefaultSelector implements CompactionAlgorithmSelector {
 
     @Override
     public CompactionRunner chooseCompactor(CompactionJob job) {
-        //TODO implement Java/Rust choice based on Table properties
-        return new StandardCompactor(instanceProperties, tablePropertiesProvider, stateStoreProvider, objectFactory);
+        TableProperties tableProperties = tablePropertiesProvider
+                .getById(job.getTableId());
+        String method = tableProperties.get(TableProperty.COMPACTION_METHOD);
+
+        // Convert to enum value and default to Java
+        CompactionMethod desired;
+        try {
+            desired = CompactionMethod.valueOf(method);
+        } catch (IllegalArgumentException e) {
+            desired = CompactionMethod.JAVA;
+        }
+
+        CompactionRunner defaultRunner = new StandardCompactor(instanceProperties, tablePropertiesProvider, stateStoreProvider, objectFactory);
+        CompactionRunner runner;
+        switch (desired) {
+            case RUST:
+                runner = new RustCompaction();
+                break;
+            default:
+                runner = defaultRunner;
+                break;
+        }
+
+        // Is an iterator specifed, if so can we support this?
+        if (job.getIteratorClassName() != null && !runner.supportsIterators()) {
+            LOGGER.debug("Table has an iterator set, which compactor %s doesn't support, falling back to default", runner.getClass().getSimpleName());
+            runner = defaultRunner;
+        }
+
+        LOGGER.info("Selecting %s compactor (language %s) for job ID %s table ID %s", runner.getClass().getSimpleName(), runner.implementationLanguage(), job.getId(), job.getTableId());
+        return runner;
     }
 }

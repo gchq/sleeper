@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.execution.CompactionTask.CompactionRunner;
+import sleeper.compaction.job.CompactionRunner;
 import sleeper.compaction.job.execution.testutils.CompactSortedFilesTestBase;
 import sleeper.compaction.job.execution.testutils.CompactSortedFilesTestData;
 import sleeper.core.partition.PartitionsBuilder;

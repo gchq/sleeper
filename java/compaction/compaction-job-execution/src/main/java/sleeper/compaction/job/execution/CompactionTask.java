@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.job.CompactionRunner;
 import sleeper.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusStore;
@@ -168,25 +169,6 @@ public class CompactionTask {
     @FunctionalInterface
     interface MessageReceiver {
         Optional<MessageHandle> receiveMessage() throws IOException;
-    }
-
-    @FunctionalInterface
-    interface CompactionRunner extends CompactionRunnerDetails {
-        RecordsProcessed compact(CompactionJob job) throws Exception;
-    }
-
-    interface CompactionRunnerDetails {
-        default boolean isHardwareAccelerated() {
-            return false;
-        }
-
-        default String implementationLanguage() {
-            return "Java";
-        }
-
-        default boolean supportsIterators() {
-            return false;
-        }
     }
 
     interface MessageHandle extends AutoCloseable {

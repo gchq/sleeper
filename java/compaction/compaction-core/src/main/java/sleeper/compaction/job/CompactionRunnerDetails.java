@@ -13,22 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.job.execution;
+package sleeper.compaction.job;
 
-import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionRunner;
+public interface CompactionRunnerDetails {
+    default boolean isHardwareAccelerated() {
+        return false;
+    }
 
-/**
- * Interface for classes that implement logic for choosing which compaction method should be chosen.
- */
-@FunctionalInterface
-public interface CompactionAlgorithmSelector {
-    /**
-     * Picks a CompactionRunner implementation that is capable
-     * of running a compaction on the given job.
-     *
-     * @param  job compaction job
-     * @return     a compactor object
-     */
-    CompactionRunner chooseCompactor(CompactionJob job);
+    default String implementationLanguage() {
+        return "Java";
+    }
+
+    default boolean supportsIterators() {
+        return false;
+    }
 }

@@ -15,20 +15,18 @@
  */
 package sleeper.compaction.job.execution;
 
-import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionRunner;
-
 /**
- * Interface for classes that implement logic for choosing which compaction method should be chosen.
+ * Different compaction methods for Sleeper which support different capabilities and must be
+ * selected based on need.
  */
-@FunctionalInterface
-public interface CompactionAlgorithmSelector {
+public enum CompactionMethod {
+    /** Pure Java compaction implementation. */
+    JAVA,
     /**
-     * Picks a CompactionRunner implementation that is capable
-     * of running a compaction on the given job.
-     *
-     * @param  job compaction job
-     * @return     a compactor object
+     * Rust compaction method. This uses a native library written in Rust to perform a
+     * compaction.
      */
-    CompactionRunner chooseCompactor(CompactionJob job);
+    RUST;
+
+    public static final CompactionMethod DEFAULT = CompactionMethod.JAVA;
 }

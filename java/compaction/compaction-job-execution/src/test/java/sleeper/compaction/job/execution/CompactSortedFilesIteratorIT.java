@@ -19,7 +19,7 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.execution.CompactionTask.CompactionRunner;
+import sleeper.compaction.job.CompactionRunner;
 import sleeper.compaction.job.execution.testutils.CompactSortedFilesTestBase;
 import sleeper.compaction.job.execution.testutils.CompactSortedFilesTestData;
 import sleeper.compaction.job.execution.testutils.CompactSortedFilesTestUtils;
