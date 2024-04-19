@@ -96,19 +96,20 @@ public class ReinitialiseTableFromExportedPartitions extends ReinitialiseTable {
         if (!choice.equalsIgnoreCase("y")) {
             System.exit(0);
         }
-        AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
+        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
 
         try {
-            ReinitialiseTable reinitialiseTable = new ReinitialiseTableFromExportedPartitions(amazonS3, dynamoDBClient, instanceId, tableName, exportedPartitionsFile);
+            ReinitialiseTable reinitialiseTable = new ReinitialiseTableFromExportedPartitions(s3Client, dynamoDBClient, instanceId, tableName, exportedPartitionsFile);
             reinitialiseTable.run();
             LOGGER.info("Table reinitialised successfully");
         } catch (RuntimeException | IOException | StateStoreException e) {
             LOGGER.error("\nAn Error occurred while trying to reinitialise the table. " +
                     "The error message is as follows:\n\n" + e.getMessage()
                     + "\n\nCause:" + e.getCause());
+        } finally {
+            s3Client.shutdown();
+            dynamoDBClient.shutdown();
         }
-        amazonS3.shutdown();
-        dynamoDBClient.shutdown();
     }
 }
