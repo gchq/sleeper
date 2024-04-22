@@ -17,10 +17,16 @@ package sleeper.statestore.transactionlog;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
+import org.apache.hadoop.conf.Configuration;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.LatestSnapshots;
+
+import java.nio.file.Path;
+import java.util.Optional;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.FILE_TRANSACTION_LOG_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_TRANSACTION_LOG_TABLENAME;
@@ -32,6 +38,30 @@ public class DynamoDBTransactionLogStateStore extends TransactionLogStateStore {
     public DynamoDBTransactionLogStateStore(
             InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamoDB, AmazonS3 s3) {
         super(builderFrom(instanceProperties, tableProperties, dynamoDB, s3));
+    }
+
+    public static TransactionLogStateStore.Builder builderFrom(
+            InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamoDB, AmazonS3 s3,
+            Configuration configuration, Path basePath) {
+        Builder builder = builder()
+                .sleeperTable(tableProperties.getStatus())
+                .schema(tableProperties.getSchema())
+                .filesLogStore(new DynamoDBTransactionLogStore(instanceProperties.get(FILE_TRANSACTION_LOG_TABLENAME), instanceProperties, tableProperties, dynamoDB, s3))
+                .partitionsLogStore(new DynamoDBTransactionLogStore(instanceProperties.get(PARTITION_TRANSACTION_LOG_TABLENAME), instanceProperties, tableProperties, dynamoDB, s3));
+        DynamoDBTransactionLogSnapshotStore snapshotStore = new DynamoDBTransactionLogSnapshotStore(instanceProperties, tableProperties, dynamoDB);
+        TransactionLogFilesSnapshotSerDe filesSnapshotSerDe = new TransactionLogFilesSnapshotSerDe(configuration);
+        TransactionLogPartitionsSnapshotSerDe partitionsSnapshotSerDe = new TransactionLogPartitionsSnapshotSerDe(tableProperties.getSchema(), configuration);
+        Optional<LatestSnapshots> latestSnapshotsOpt = snapshotStore.getLatestSnapshots();
+        if (latestSnapshotsOpt.isPresent()) {
+            LatestSnapshots latestSnapshots = latestSnapshotsOpt.get();
+            try {
+                builder.filesState(filesSnapshotSerDe.load(latestSnapshots.getFilesSnapshot()))
+                        .partitionsState(partitionsSnapshotSerDe.load(latestSnapshots.getPartitionsSnapshot()));
+            } catch (StateStoreException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return builder;
     }
 
     public static TransactionLogStateStore.Builder builderFrom(

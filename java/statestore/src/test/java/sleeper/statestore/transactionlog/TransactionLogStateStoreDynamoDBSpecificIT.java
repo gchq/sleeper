@@ -16,6 +16,7 @@
 package sleeper.statestore.transactionlog;
 
 import org.apache.hadoop.conf.Configuration;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -49,13 +50,20 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
     private Path tempDir;
     private final Schema schema = schemaWithKey("key", new LongType());
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-    private final StateStore stateStore = createStateStore();
     private TransactionLogFilesSnapshotSerDe filesSnapshotSerDe = new TransactionLogFilesSnapshotSerDe(new Configuration());
     private TransactionLogPartitionsSnapshotSerDe partitionsSnapshotSerDe = new TransactionLogPartitionsSnapshotSerDe(schema, new Configuration());
+    private DynamoDBTransactionLogSnapshotStore snapshotStore = new DynamoDBTransactionLogSnapshotStore(instanceProperties, tableProperties, dynamoDBClient);
 
     @Nested
     @DisplayName("Handle large transactions")
     class HandleLargeTransactions {
+        private StateStore stateStore;
+
+        @BeforeEach
+        public void setup() {
+            stateStore = createStateStore();
+        }
+
         @Test
         void shouldInitialiseTableWithManyPartitionsCreatingTransactionTooLargeToFitInADynamoDBItem() throws Exception {
             // Given
@@ -100,6 +108,11 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
     @Nested
     @DisplayName("Load latest snapshots")
     class LoadLatestSnapshots {
+        @BeforeEach
+        public void setup() {
+            new DynamoDBTransactionLogSnapshotStoreCreator(instanceProperties, dynamoDBClient).create();
+        }
+
         @Test
         void shouldLoadLatestSnapshotsWhenCreatingStateStore() throws Exception {
             // Given
@@ -122,24 +135,29 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
             assertThat(stateStore.getAllPartitions())
                     .containsExactlyElementsOf(tree.getAllPartitions());
             assertThat(stateStore.getFileReferences())
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                     .containsExactlyElementsOf(files);
         }
+
     }
 
     private void saveFilesSnapshot(List<FileReference> files, long transcationNumber) throws Exception {
         StateStoreFiles state = new StateStoreFiles();
         files.forEach(file -> state.add(fileWithOneReference(file, Instant.now())));
-        filesSnapshotSerDe.save(tempDir.toString(), state, transcationNumber);
+        String filePath = filesSnapshotSerDe.save(tempDir.toString(), state, transcationNumber);
+        snapshotStore.saveFiles(filePath, transcationNumber);
     }
 
     private void savePartitionsSnapshot(PartitionTree partitionTree, long transcationNumber) throws Exception {
         StateStorePartitions state = new StateStorePartitions();
         partitionTree.getAllPartitions().forEach(state::put);
-        partitionsSnapshotSerDe.save(tempDir.toString(), state, transcationNumber);
+        String filePath = partitionsSnapshotSerDe.save(tempDir.toString(), state, transcationNumber);
+        snapshotStore.savePartitions(filePath, transcationNumber);
     }
 
     private StateStore createStateStore() {
-        return DynamoDBTransactionLogStateStore.builderFrom(instanceProperties, tableProperties, dynamoDBClient, s3Client)
+        return DynamoDBTransactionLogStateStore.builderFrom(
+                instanceProperties, tableProperties, dynamoDBClient, s3Client, new Configuration(), tempDir)
                 .maxAddTransactionAttempts(1)
                 .build();
     }

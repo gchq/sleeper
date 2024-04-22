@@ -28,13 +28,19 @@ public class TransactionLogFilesSnapshotSerDe {
         this.stateStoreFileUtils = StateStoreFileUtils.forFiles(configuration);
     }
 
-    void save(String basePath, StateStoreFiles state, long lastTransactionNumber) throws StateStoreException {
-        stateStoreFileUtils.saveFiles(createFilesPath(basePath, lastTransactionNumber), state);
+    String save(String basePath, StateStoreFiles state, long lastTransactionNumber) throws StateStoreException {
+        String filePath = createFilesPath(basePath, lastTransactionNumber);
+        stateStoreFileUtils.saveFiles(filePath, state);
+        return filePath;
     }
 
-    StateStoreFiles load(String basePath, long lastTransactionNumber) throws StateStoreException {
+    StateStoreFiles load(TransactionLogSnapshot snapshot) throws StateStoreException {
+        return load(snapshot.getPath());
+    }
+
+    StateStoreFiles load(String filePath) throws StateStoreException {
         StateStoreFiles files = new StateStoreFiles();
-        stateStoreFileUtils.loadFiles(createFilesPath(basePath, lastTransactionNumber), files::add);
+        stateStoreFileUtils.loadFiles(filePath, files::add);
         return files;
     }
 

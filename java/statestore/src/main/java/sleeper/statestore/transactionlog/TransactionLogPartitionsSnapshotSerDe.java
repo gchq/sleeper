@@ -31,13 +31,19 @@ public class TransactionLogPartitionsSnapshotSerDe {
         this.stateStoreFileUtils = StateStoreFileUtils.forPartitions(configuration);
     }
 
-    void save(String basePath, StateStorePartitions state, long lastTransactionNumber) throws StateStoreException {
-        stateStoreFileUtils.savePartitions(createPartitionsPath(basePath, lastTransactionNumber), state, sleeperSchema);
+    String save(String basePath, StateStorePartitions state, long lastTransactionNumber) throws StateStoreException {
+        String filePath = createPartitionsPath(basePath, lastTransactionNumber);
+        stateStoreFileUtils.savePartitions(filePath, state, sleeperSchema);
+        return filePath;
     }
 
-    StateStorePartitions load(String basePath, long lastTransactionNumber) throws StateStoreException {
+    StateStorePartitions load(TransactionLogSnapshot snapshot) throws StateStoreException {
+        return load(snapshot.getPath());
+    }
+
+    StateStorePartitions load(String filePath) throws StateStoreException {
         StateStorePartitions partitions = new StateStorePartitions();
-        stateStoreFileUtils.loadPartitions(createPartitionsPath(basePath, lastTransactionNumber), sleeperSchema, partitions::put);
+        stateStoreFileUtils.loadPartitions(filePath, sleeperSchema, partitions::put);
         return partitions;
     }
 

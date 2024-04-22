@@ -17,13 +17,11 @@ package sleeper.statestore.transactionlog;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -33,7 +31,6 @@ import sleeper.core.schema.Schema;
 import sleeper.dynamodb.tools.DynamoDBContainer;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.LatestSnapshots;
 
-import java.nio.file.Path;
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -156,20 +153,6 @@ public class DynamoDBTransactionLogSnapshotStoreIT {
                 new LatestSnapshots(
                         filesSnapshot("snapshot/3-files.parquet", 3),
                         partitionsSnapshot("snapshot/3-partitions.parquet", 3)));
-    }
-
-    @Nested
-    @DisplayName("Load latest snapshot")
-    class LoadLatestSnapshot {
-        @TempDir
-        private Path tempDir;
-        private Configuration configuration;
-        private TransactionLogFilesSnapshotSerDe fileSnapshotSerDe = new TransactionLogFilesSnapshotSerDe(configuration);
-
-        @Test
-        void shouldLoadLatestFilesSnapshotWhenCreatingStateStore() {
-            TableProperties table = createTable();
-        }
     }
 
     @Test

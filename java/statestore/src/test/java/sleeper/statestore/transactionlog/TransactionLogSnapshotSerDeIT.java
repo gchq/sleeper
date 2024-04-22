@@ -52,10 +52,10 @@ public class TransactionLogSnapshotSerDeIT {
 
         // When
         TransactionLogPartitionsSnapshotSerDe snapshot = new TransactionLogPartitionsSnapshotSerDe(schema, configuration);
-        snapshot.save(tempDir.toString(), state, 1);
+        String filePath = snapshot.save(tempDir.toString(), state, 1);
 
         // Then
-        assertThat(snapshot.load(tempDir.toString(), 1)).isEqualTo(state);
+        assertThat(snapshot.load(filePath)).isEqualTo(state);
     }
 
     @Test
@@ -67,10 +67,10 @@ public class TransactionLogSnapshotSerDeIT {
 
         // When
         TransactionLogFilesSnapshotSerDe snapshot = new TransactionLogFilesSnapshotSerDe(configuration);
-        snapshot.save(tempDir.toString(), state, 1);
+        String filePath = snapshot.save(tempDir.toString(), state, 1);
 
         // Then
-        assertThat(snapshot.load(tempDir.toString(), 1)).isEqualTo(state);
+        assertThat(snapshot.load(filePath)).isEqualTo(state);
     }
 
     private FileReferenceFactory fileFactory() {
