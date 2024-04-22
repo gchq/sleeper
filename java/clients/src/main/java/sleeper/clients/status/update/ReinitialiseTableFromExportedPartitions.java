@@ -38,6 +38,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
+import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+
 /**
  * A utility class to reinitialise a table. It deletes all the data in the table
  * and all the information in the state store. Then the state store for the table
@@ -96,19 +98,20 @@ public class ReinitialiseTableFromExportedPartitions extends ReinitialiseTable {
         if (!choice.equalsIgnoreCase("y")) {
             System.exit(0);
         }
-        AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
-        AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
+        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
+        AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
 
         try {
-            ReinitialiseTable reinitialiseTable = new ReinitialiseTableFromExportedPartitions(amazonS3, dynamoDBClient, instanceId, tableName, exportedPartitionsFile);
+            ReinitialiseTable reinitialiseTable = new ReinitialiseTableFromExportedPartitions(s3Client, dynamoDBClient, instanceId, tableName, exportedPartitionsFile);
             reinitialiseTable.run();
             LOGGER.info("Table reinitialised successfully");
         } catch (RuntimeException | IOException | StateStoreException e) {
             LOGGER.error("\nAn Error occurred while trying to reinitialise the table. " +
                     "The error message is as follows:\n\n" + e.getMessage()
                     + "\n\nCause:" + e.getCause());
+        } finally {
+            s3Client.shutdown();
+            dynamoDBClient.shutdown();
         }
-        amazonS3.shutdown();
-        dynamoDBClient.shutdown();
     }
 }

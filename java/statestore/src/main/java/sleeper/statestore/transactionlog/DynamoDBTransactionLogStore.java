@@ -21,9 +21,11 @@ import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
+import com.amazonaws.services.s3.AmazonS3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.statestore.transactionlog.DuplicateTransactionNumberException;
@@ -34,10 +36,13 @@ import sleeper.core.statestore.transactionlog.transactions.TransactionSerDe;
 import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Stream;
 
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getInstantAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getLongAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getNumberAttribute;
@@ -52,17 +57,25 @@ class DynamoDBTransactionLogStore implements TransactionLogStore {
     private static final String UPDATE_TIME = "UPDATE_TIME";
     private static final String TYPE = "TYPE";
     private static final String BODY = "BODY";
+    private static final String BODY_S3_KEY = "BODY_S3_KEY";
 
     private final String logTableName;
+    private final String dataBucket;
+    private final String transactionsPrefix;
     private final String sleeperTableId;
     private final AmazonDynamoDB dynamo;
+    private final AmazonS3 s3;
     private final TransactionSerDe serDe;
 
     DynamoDBTransactionLogStore(
-            String logTableName, TableProperties tableProperties, AmazonDynamoDB dynamo) {
+            String logTableName, InstanceProperties instanceProperties, TableProperties tableProperties,
+            AmazonDynamoDB dynamo, AmazonS3 s3) {
         this.logTableName = logTableName;
+        this.dataBucket = instanceProperties.get(DATA_BUCKET);
         this.sleeperTableId = tableProperties.get(TableProperty.TABLE_ID);
+        this.transactionsPrefix = sleeperTableId + "/statestore/transactions/";
         this.dynamo = dynamo;
+        this.s3 = s3;
         this.serDe = new TransactionSerDe(tableProperties.getSchema());
     }
 
@@ -78,7 +91,7 @@ class DynamoDBTransactionLogStore implements TransactionLogStore {
                             .number(TRANSACTION_NUMBER, transactionNumber)
                             .number(UPDATE_TIME, entry.getUpdateTime().toEpochMilli())
                             .string(TYPE, TransactionType.getType(transaction).name())
-                            .string(BODY, serDe.toJson(transaction))
+                            .apply(builder -> setBodyDirectlyOrInS3IfTooBig(builder, entry, serDe.toJson(transaction)))
                             .build())
                     .withConditionExpression("attribute_not_exists(#Number)")
                     .withExpressionAttributeNames(Map.of("#Number", TRANSACTION_NUMBER)));
@@ -102,11 +115,34 @@ class DynamoDBTransactionLogStore implements TransactionLogStore {
                 .map(this::readTransaction);
     }
 
+    private void setBodyDirectlyOrInS3IfTooBig(DynamoDBRecordBuilder builder, TransactionLogEntry entry, String body) {
+        // Max DynamoDB item size is 400KB. Leave some space for the rest of the item.
+        // DynamoDB uses UTF-8 encoding for strings.
+        long lengthInBytes = body.getBytes(StandardCharsets.UTF_8).length;
+        if (lengthInBytes < 1024 * 350) {
+            builder.string(BODY, body);
+        } else {
+            // Use a random UUID to avoid conflicting when another process is adding a transaction with the same number
+            String key = transactionsPrefix + entry.getTransactionNumber() + "-" + UUID.randomUUID().toString() + ".json";
+            LOGGER.info("Found large transaction, saving to data bucket instead of DynamoDB at {}", key);
+            builder.string(BODY_S3_KEY, key);
+            s3.putObject(dataBucket, key, body);
+        }
+    }
+
     private TransactionLogEntry readTransaction(Map<String, AttributeValue> item) {
         long number = getLongAttribute(item, TRANSACTION_NUMBER, -1);
         Instant updateTime = getInstantAttribute(item, UPDATE_TIME);
         TransactionType type = readType(item);
-        StateStoreTransaction<?> transaction = serDe.toTransaction(type, getStringAttribute(item, BODY));
+        String body;
+        String bodyS3Key = getStringAttribute(item, BODY_S3_KEY);
+        if (bodyS3Key != null) {
+            LOGGER.debug("Reading large transaction from data bucket at {}", bodyS3Key);
+            body = s3.getObjectAsString(dataBucket, bodyS3Key);
+        } else {
+            body = getStringAttribute(item, BODY);
+        }
+        StateStoreTransaction<?> transaction = serDe.toTransaction(type, body);
         return new TransactionLogEntry(number, updateTime, transaction);
     }
 

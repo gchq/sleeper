@@ -20,6 +20,7 @@ import sleeper.core.partition.Partition;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 public class StateStorePartitions {
@@ -40,6 +41,28 @@ public class StateStorePartitions {
 
     public Optional<Partition> byId(String id) {
         return Optional.ofNullable(partitionById.get(id));
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(partitionById);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof StateStorePartitions)) {
+            return false;
+        }
+        StateStorePartitions other = (StateStorePartitions) obj;
+        return Objects.equals(partitionById, other.partitionById);
+    }
+
+    @Override
+    public String toString() {
+        return "StateStorePartitions{partitionById=" + partitionById + "}";
     }
 
 }

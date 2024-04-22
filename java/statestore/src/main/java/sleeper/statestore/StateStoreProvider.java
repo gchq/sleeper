@@ -16,6 +16,7 @@
 package sleeper.statestore;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.s3.AmazonS3;
 import org.apache.hadoop.conf.Configuration;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -38,8 +39,8 @@ public class StateStoreProvider {
     private final Map<String, StateStore> tableNameToStateStoreCache;
 
     public StateStoreProvider(
-            AmazonDynamoDB dynamoDBClient, InstanceProperties instanceProperties, Configuration configuration) {
-        this(new StateStoreFactory(dynamoDBClient, instanceProperties, configuration)::getStateStore);
+            InstanceProperties instanceProperties, AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, Configuration configuration) {
+        this(new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, configuration)::getStateStore);
     }
 
     protected StateStoreProvider(Function<TableProperties, StateStore> stateStoreFactory) {

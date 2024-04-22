@@ -56,6 +56,10 @@ public class InMemoryTransactionLogStore implements TransactionLogStore {
         beforeNextRead = wrappingCheckedExceptions(action);
     }
 
+    public long getLastTransactionNumber() {
+        return transactions.size();
+    }
+
     private void doBeforeNextAdd() {
         Runnable action = beforeNextAdd;
         beforeNextAdd = DO_NOTHING;

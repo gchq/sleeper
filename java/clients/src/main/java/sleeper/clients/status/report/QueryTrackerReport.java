@@ -69,7 +69,7 @@ public class QueryTrackerReport {
     }
 
     public static void main(String[] args) {
-        AmazonS3 amazonS3 = buildAwsV1Client(AmazonS3ClientBuilder.standard());
+        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
         AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         try {
             if (args.length < 2 || args.length > 3) {
@@ -80,7 +80,7 @@ public class QueryTrackerReport {
             TrackerQuery queryType = optionalArgument(args, 2)
                     .map(QueryTrackerReport::readTypeArgument)
                     .orElse(promptForQueryType());
-            InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, instanceId);
+            InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(s3Client, instanceId);
             QueryTrackerStore queryTrackerStore = new DynamoDBQueryTracker(instanceProperties, dynamoDBClient);
             new QueryTrackerReport(queryTrackerStore, queryType, reporter).run();
         } catch (IllegalArgumentException e) {
@@ -88,7 +88,7 @@ public class QueryTrackerReport {
             printUsage();
             System.exit(1);
         } finally {
-            amazonS3.shutdown();
+            s3Client.shutdown();
             dynamoDBClient.shutdown();
         }
     }

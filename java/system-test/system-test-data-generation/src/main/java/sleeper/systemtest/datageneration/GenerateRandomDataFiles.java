@@ -62,15 +62,17 @@ public class GenerateRandomDataFiles {
 
         AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
         AmazonDynamoDB dynamoClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
-        TableProperties tableProperties = S3TableProperties.getStore(instanceProperties, s3Client, dynamoClient)
-                .loadByName("system-test");
+        try {
+            InstanceProperties instanceProperties = new InstanceProperties();
+            instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
+            TableProperties tableProperties = S3TableProperties.getStore(instanceProperties, s3Client, dynamoClient)
+                    .loadByName("system-test");
 
-        new GenerateRandomDataFiles(tableProperties, numberOfRecords, outputDirectory)
-                .run();
-
-        s3Client.shutdown();
-        dynamoClient.shutdown();
+            new GenerateRandomDataFiles(tableProperties, numberOfRecords, outputDirectory)
+                    .run();
+        } finally {
+            s3Client.shutdown();
+            dynamoClient.shutdown();
+        }
     }
 }
