@@ -23,8 +23,6 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
-import com.amazonaws.xray.AWSXRay;
-import com.amazonaws.xray.entities.Segment;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,11 +64,8 @@ public class ECSCompactionTaskRunner {
             System.exit(1);
         }
         String s3Bucket = args[0];
-        String taskId = UUID.randomUUID().toString();
 
         Instant startTime = Instant.now();
-        Segment segment = AWSXRay.beginSegment("CompactionTask");
-        segment.putAnnotation("taskId", taskId);
         AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
         AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
@@ -91,6 +86,7 @@ public class ECSCompactionTaskRunner {
                     instanceProperties);
             CompactionTaskStatusStore taskStatusStore = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDBClient,
                     instanceProperties);
+            String taskId = UUID.randomUUID().toString();
 
             ObjectFactory objectFactory = new ObjectFactory(instanceProperties, s3Client, "/tmp");
             CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties,
@@ -99,11 +95,7 @@ public class ECSCompactionTaskRunner {
                     new SqsCompactionQueueHandler(sqsClient, instanceProperties),
                     compactSortedFiles, jobStatusStore, taskStatusStore, taskId);
             task.run();
-        } catch (IOException | ObjectFactoryException | RuntimeException e) {
-            segment.addException(e);
-            throw e;
         } finally {
-            segment.close();
             sqsClient.shutdown();
             LOGGER.info("Shut down sqsClient");
             dynamoDBClient.shutdown();
