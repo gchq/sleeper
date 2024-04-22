@@ -34,6 +34,7 @@ import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -165,15 +166,7 @@ public class DynamoDBTransactionLogSnapshotStore {
                 .map(DynamoDBTransactionLogSnapshotStore::getSnapshotFromItem);
     }
 
-    public Optional<TransactionLogSnapshot> getLatestFilesSnapshot() {
-        return getLatestSnapshot(SnapshotType.FILES);
-    }
-
-    public Optional<TransactionLogSnapshot> getLatestPartitionsSnapshot() {
-        return getLatestSnapshot(SnapshotType.PARTITIONS);
-    }
-
-    private Optional<TransactionLogSnapshot> getLatestSnapshot(SnapshotType snapshotType) {
+    public Optional<LatestSnapshots> getLatestSnapshots() {
         QueryResult result = dynamo.query(new QueryRequest()
                 .withTableName(latestSnapshotsTable)
                 .withKeyConditionExpression("#TableId = :table_id")
@@ -182,23 +175,24 @@ public class DynamoDBTransactionLogSnapshotStore {
                         .string(":table_id", sleeperTableId)
                         .build()));
         if (result.getCount() > 0) {
-            return Optional.of(getLatestSnapshotFromItem(result.getItems().get(0), snapshotType));
+            return Optional.of(getLatestSnapshotsFromItem(result.getItems().get(0)));
         } else {
             return Optional.empty();
         }
     }
 
-    private static TransactionLogSnapshot getLatestSnapshotFromItem(Map<String, AttributeValue> item, SnapshotType snapshotType) {
-        String pathKey;
-        String transactionNumberKey;
-        if (snapshotType == SnapshotType.FILES) {
-            pathKey = FILES_SNAPSHOT_PATH;
-            transactionNumberKey = FILES_TRANSACTION_NUMBER;
-        } else {
-            pathKey = PARTITIONS_SNAPSHOT_PATH;
-            transactionNumberKey = PARTITIONS_TRANSACTION_NUMBER;
-        }
-        return new TransactionLogSnapshot(getStringAttribute(item, pathKey), snapshotType, getLongAttribute(item, transactionNumberKey, 0));
+    private static LatestSnapshots getLatestSnapshotsFromItem(Map<String, AttributeValue> item) {
+        return new LatestSnapshots(getFilesSnapshotFromItem(item), getPartitionsSnapshotFromItem(item));
+    }
+
+    private static TransactionLogSnapshot getFilesSnapshotFromItem(Map<String, AttributeValue> item) {
+        return new TransactionLogSnapshot(getStringAttribute(item, FILES_SNAPSHOT_PATH), SnapshotType.FILES,
+                getLongAttribute(item, FILES_TRANSACTION_NUMBER, 0));
+    }
+
+    private static TransactionLogSnapshot getPartitionsSnapshotFromItem(Map<String, AttributeValue> item) {
+        return new TransactionLogSnapshot(getStringAttribute(item, PARTITIONS_SNAPSHOT_PATH), SnapshotType.PARTITIONS,
+                getLongAttribute(item, PARTITIONS_TRANSACTION_NUMBER, 0));
     }
 
     private static String tableAndType(String table, SnapshotType type) {
@@ -209,4 +203,41 @@ public class DynamoDBTransactionLogSnapshotStore {
         SnapshotType type = SnapshotType.valueOf(item.get(SNAPSHOT_TYPE).getS());
         return new TransactionLogSnapshot(getStringAttribute(item, PATH), type, getLongAttribute(item, TRANSACTION_NUMBER, 0));
     }
+
+    public static class LatestSnapshots {
+        TransactionLogSnapshot filesSnapshot;
+        TransactionLogSnapshot partitionsSnapshot;
+
+        public LatestSnapshots(TransactionLogSnapshot filesSnapshot, TransactionLogSnapshot partitionsSnapshot) {
+            this.filesSnapshot = filesSnapshot;
+            this.partitionsSnapshot = partitionsSnapshot;
+        }
+
+        public TransactionLogSnapshot getFilesSnapshot() {
+            return filesSnapshot;
+        }
+
+        public TransactionLogSnapshot getPartitionsSnapshot() {
+            return partitionsSnapshot;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(filesSnapshot, partitionsSnapshot);
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (!(obj instanceof LatestSnapshots)) {
+                return false;
+            }
+            LatestSnapshots other = (LatestSnapshots) obj;
+            return Objects.equals(filesSnapshot, other.filesSnapshot) && Objects.equals(partitionsSnapshot, other.partitionsSnapshot);
+        }
+
+    }
+
 }
