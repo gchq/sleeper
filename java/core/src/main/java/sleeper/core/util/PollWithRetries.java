@@ -28,7 +28,7 @@ import java.util.function.Supplier;
 
 /**
  * Polls a function until some condition is met or a maximum number of polls is reached. Waits for a constant interval
- * of time between polls.
+ * between polls.
  */
 public class PollWithRetries {
     private static final Logger LOGGER = LoggerFactory.getLogger(PollWithRetries.class);
@@ -44,7 +44,7 @@ public class PollWithRetries {
     /**
      * Creates an instance of this class.
      *
-     * @param  pollIntervalMillis the poll interval in milliseconds
+     * @param  pollIntervalMillis milliseconds to wait in between polls
      * @param  maxPolls           the maximum number of polls
      * @return                    an instance of {@link PollWithRetries}
      */
@@ -55,8 +55,8 @@ public class PollWithRetries {
     /**
      * Creates an instance of this class.
      *
-     * @param  pollInterval the poll interval
-     * @param  timeout      the timeout used to calculate the maximum number of polls
+     * @param  pollInterval time to wait in between polls
+     * @param  timeout      the maximum amount of time to wait for, used to compute the maximum number of polls
      * @return              an instance of {@link PollWithRetries}
      */
     public static PollWithRetries intervalAndPollingTimeout(Duration pollInterval, Duration timeout) {
@@ -76,7 +76,7 @@ public class PollWithRetries {
     }
 
     /**
-     * Creates an instance of this class which retry a provided number of times with no poll interval.
+     * Creates an instance of this class which will retry a fixed number of times without waiting between polls.
      *
      * @return an instance of {@link PollWithRetries}
      */
@@ -87,9 +87,10 @@ public class PollWithRetries {
     /**
      * Starts polling until an exit condition is met or the maximum polls has been reached.
      *
-     * @param  description          a short description to display when the poll fails
-     * @param  checkFinished        an exit condition
-     * @throws InterruptedException if any thread has interrupted the current thread
+     * @param  description          a short description to fill in the blank of "timed out waiting until _" or "expected
+     *                              to find _"
+     * @param  checkFinished        the exit condition
+     * @throws InterruptedException if the thread was interrupted while waiting
      */
     public void pollUntil(String description, BooleanSupplier checkFinished) throws InterruptedException {
         int polls = 0;
@@ -113,14 +114,15 @@ public class PollWithRetries {
     }
 
     /**
-     * Given a supplier, starts polling then return the last result from the supplier.
+     * Polls a query function until the results meet an exit condition. Returns the results of the last query.
      *
-     * @param  <T>                  the type of object being supplied
-     * @param  description          a short description to display when the poll fails
-     * @param  query                the supplier of {@link T}
-     * @param  condition            the exit condition applied to {@link T}
-     * @return                      the last object from the supplier
-     * @throws InterruptedException if any thread has interrupted the current thread
+     * @param  <T>                  the result type
+     * @param  description          a short description to fill in the blank of "timed out waiting until _" or "expected
+     *                              to find _"
+     * @param  query                the query function
+     * @param  condition            the exit condition to check against each query result
+     * @return                      the last query result
+     * @throws InterruptedException if the thread was interrupted while waiting
      */
     public <T> T queryUntil(String description, Supplier<T> query, Predicate<T> condition) throws InterruptedException {
         QueryTracker<T> tracker = new QueryTracker<>(query, condition);
@@ -129,9 +131,9 @@ public class PollWithRetries {
     }
 
     /**
-     * Checks a predicate against objects from a supplier. It also holds on to the last object from the supplier.
+     * Checks an exit condition against results of a query. Remembers the last query result.
      *
-     * @param <T> the type of object that is supplied
+     * @param <T> the result type
      */
     private static class QueryTracker<T> {
         private final Supplier<T> query;
@@ -151,7 +153,7 @@ public class PollWithRetries {
     }
 
     /**
-     * Exception thrown when the exit condition was not met and polling was configured with no retries.
+     * Thrown when the exit condition was not met and no retries were made.
      */
     public static class CheckFailedException extends RuntimeException {
         private CheckFailedException(String message) {
@@ -160,7 +162,7 @@ public class PollWithRetries {
     }
 
     /**
-     * Exception thrown when the exit condition was not met.
+     * Thrown when the exit condition was not met and the maximum number of retries were made.
      */
     public static class TimedOutException extends CheckFailedException {
         private TimedOutException(String message) {
