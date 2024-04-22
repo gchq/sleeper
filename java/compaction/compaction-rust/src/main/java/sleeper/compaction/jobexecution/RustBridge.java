@@ -128,16 +128,16 @@ public class RustBridge {
     @SuppressFBWarnings(value = {"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class FFICompactionParams extends Struct {
         /** Array of input files to compact. */
-        public final Array<String> input_files = new Array<>(this);
+        public final Array<java.lang.String> input_files = new Array<>(this);
         /** Output file name. */
         public final Struct.UTF8StringRef output_file = new Struct.UTF8StringRef();
         /** Names of Sleeper row key columns from schema. */
-        public final Array<String> row_key_cols = new Array<>(this);
+        public final Array<java.lang.String> row_key_cols = new Array<>(this);
         /** Names of Sleeper sort key columns from schema. */
-        public final Array<String> sort_key_cols = new Array<>(this);
-        /** Maximum size of output Parquet row group in bytes. */
+        public final Array<java.lang.String> sort_key_cols = new Array<>(this);
+        /** Maximum size of output Parquet row group in rows. */
         public final Struct.size_t max_row_group_size = new Struct.size_t();
-        /** Maximum size of output Parquet page size. */
+        /** Maximum size of output Parquet page size in bytes. */
         public final Struct.size_t max_page_size = new Struct.size_t();
         /** Output Parquet compression codec. */
         public final Struct.UTF8StringRef compression = new Struct.UTF8StringRef();
@@ -158,9 +158,9 @@ public class RustBridge {
         /** Compaction partition region maximums. MUST BE SAME LENGTH AS row_key_cols. */
         public final Array<Object> region_maxs = new Array<>(this);
         /** Compaction partition region minimums are inclusive? MUST BE SAME LENGTH AS row_key_cols. */
-        public final Array<Boolean> region_mins_inclusive = new Array<>(this);
+        public final Array<java.lang.Boolean> region_mins_inclusive = new Array<>(this);
         /** Compaction partition region maximums are inclusive? MUST BE SAME LENGTH AS row_key_cols. */
-        public final Array<Boolean> region_maxs_inclusive = new Array<>(this);
+        public final Array<java.lang.Boolean> region_maxs_inclusive = new Array<>(this);
 
         public FFICompactionParams(jnr.ffi.Runtime runtime) {
             super(runtime);
@@ -301,8 +301,8 @@ public class RustBridge {
                 long e = (long) item;
                 this.items[idx] = r.getMemoryManager().allocateDirect(r.findType(NativeType.SLONGLONG).size());
                 this.items[idx].putLong(0, e);
-            } else if (item instanceof String) {
-                String e = (String) item;
+            } else if (item instanceof java.lang.String) {
+                java.lang.String e = (java.lang.String) item;
                 byte[] bytes = e.getBytes(StandardCharsets.UTF_8);
                 // Add one for NULL terminator
                 int stringSize = bytes.length + 1;

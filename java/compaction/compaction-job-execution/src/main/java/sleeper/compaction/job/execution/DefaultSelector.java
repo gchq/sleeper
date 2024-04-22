@@ -60,17 +60,16 @@ public class DefaultSelector implements CompactionAlgorithmSelector {
         try {
             desired = CompactionMethod.valueOf(method);
         } catch (IllegalArgumentException e) {
-            desired = CompactionMethod.JAVA;
+            desired = CompactionMethod.DEFAULT;
         }
 
         CompactionRunner defaultRunner = new StandardCompactor(instanceProperties, tablePropertiesProvider, stateStoreProvider, objectFactory);
-        CompactionRunner runner;
+        CompactionRunner runner = defaultRunner;
         switch (desired) {
             case RUST:
-                runner = new RustCompaction();
+                runner = new RustCompaction(tablePropertiesProvider, stateStoreProvider);
                 break;
             default:
-                runner = defaultRunner;
                 break;
         }
 
