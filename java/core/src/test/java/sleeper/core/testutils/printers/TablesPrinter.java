@@ -54,9 +54,9 @@ public class TablesPrinter {
         PrintStream out = printer.getPrintStream();
 
         for (Map.Entry<String, List<String>> entry : printedSortedByFrequency) {
-            String printedLine = entry.getKey();
-            List<String> tablesThatPrintThisLine = entry.getValue();
-            int frequency = tablesThatPrintThisLine.size();
+            String printedValue = entry.getKey();
+            List<String> tablesThatPrintThisValue = entry.getValue();
+            int frequency = tablesThatPrintThisValue.size();
             if (frequency == 1) {
                 if (printedSortedByFrequency.size() == 1) {
                     out.println("One table");
@@ -66,7 +66,7 @@ public class TablesPrinter {
             } else {
                 out.println("Same for " + frequency + " tables");
             }
-            out.println(printedLine);
+            out.println(printedValue);
         }
         return printer.toString();
     }
