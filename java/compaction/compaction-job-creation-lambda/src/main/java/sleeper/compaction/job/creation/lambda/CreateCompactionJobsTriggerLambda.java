@@ -82,6 +82,7 @@ public class CreateCompactionJobsTriggerLambda implements RequestHandler<Schedul
                 .withEntries(tables.stream()
                         .map(table -> new SendMessageBatchRequestEntry()
                                 .withMessageDeduplicationId(UUID.randomUUID().toString())
+                                .withId(table.getTableUniqueId())
                                 .withMessageGroupId(table.getTableUniqueId())
                                 .withMessageBody(table.getTableUniqueId()))
                         .collect(toUnmodifiableList())));
