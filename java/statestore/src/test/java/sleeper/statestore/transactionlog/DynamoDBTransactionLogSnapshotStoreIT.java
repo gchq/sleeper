@@ -47,7 +47,7 @@ public class DynamoDBTransactionLogSnapshotStoreIT {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = schemaWithKey("key");
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-    private DynamoDBTransactionLogSnapshotStore store = snapshotStore();
+    private final DynamoDBTransactionLogSnapshotStore store = snapshotStore();
 
     @BeforeAll
     public static void initDynamoClient() {
