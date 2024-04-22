@@ -159,6 +159,7 @@ public class MultipleQueries {
         } finally {
             s3Client.shutdown();
             sqsClient.shutdown();
+            dynamoClient.shutdown();
         }
     }
 }
