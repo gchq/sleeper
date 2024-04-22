@@ -93,11 +93,11 @@ import static sleeper.cdk.Utils.createLambdaLogGroup;
 import static sleeper.cdk.Utils.shouldDeployPaused;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_AUTO_SCALING_GROUP;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_CLUSTER;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_BATCH_DLQ_ARN;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_BATCH_DLQ_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_BATCH_QUEUE_ARN;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_BATCH_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_CLOUDWATCH_RULE;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_DLQ_ARN;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_DLQ_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_QUEUE_ARN;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_TRIGGER_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_DLQ_ARN;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
@@ -122,6 +122,7 @@ import static sleeper.configuration.properties.instance.CompactionProperty.COMPA
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_EC2_ROOT_SIZE;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_EC2_TYPE;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_BATCH_SIZE;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LAMBDA_MEMORY_IN_MB;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS;
@@ -276,7 +277,9 @@ public class CompactionStack extends NestedStack {
         // Send messages from the trigger function to the handler function
         Queue jobCreationQueue = sqsQueueForCompactionJobCreation(topic, errorMetrics);
         handlerFunction.addEventSource(new SqsEventSource(jobCreationQueue,
-                SqsEventSourceProps.builder().batchSize(1).build()));
+                SqsEventSourceProps.builder()
+                        .batchSize(instanceProperties.getInt(COMPACTION_JOB_CREATION_BATCH_SIZE))
+                        .build()));
 
         // Grant permissions
         // - Read through tables in trigger, send batches
@@ -319,16 +322,17 @@ public class CompactionStack extends NestedStack {
                         .maxReceiveCount(1)
                         .queue(deadLetterQueue)
                         .build())
+                .fifo(true)
                 .visibilityTimeout(
                         Duration.seconds(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS)))
                 .build();
-        instanceProperties.set(COMPACTION_JOB_CREATION_BATCH_QUEUE_URL, queue.getQueueUrl());
-        instanceProperties.set(COMPACTION_JOB_CREATION_BATCH_QUEUE_ARN, queue.getQueueArn());
-        instanceProperties.set(COMPACTION_JOB_CREATION_BATCH_DLQ_URL, deadLetterQueue.getQueueUrl());
-        instanceProperties.set(COMPACTION_JOB_CREATION_BATCH_DLQ_ARN, deadLetterQueue.getQueueArn());
+        instanceProperties.set(COMPACTION_JOB_CREATION_QUEUE_URL, queue.getQueueUrl());
+        instanceProperties.set(COMPACTION_JOB_CREATION_QUEUE_ARN, queue.getQueueArn());
+        instanceProperties.set(COMPACTION_JOB_CREATION_DLQ_URL, deadLetterQueue.getQueueUrl());
+        instanceProperties.set(COMPACTION_JOB_CREATION_DLQ_ARN, deadLetterQueue.getQueueArn());
 
         createAlarmForDlq(this, "CompactionJobCreationBatchAlarm",
-                "Alarms if there are any messages on the dead letter queue for the compaction job creation batch queue",
+                "Alarms if there are any messages on the dead letter queue for compaction job creation",
                 deadLetterQueue, topic);
         errorMetrics.add(Utils.createErrorMetric("Compaction Batching Errors", deadLetterQueue, instanceProperties));
         return queue;

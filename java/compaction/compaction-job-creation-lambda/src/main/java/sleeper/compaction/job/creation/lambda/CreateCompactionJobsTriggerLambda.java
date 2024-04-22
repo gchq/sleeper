@@ -24,21 +24,25 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import com.amazonaws.services.sqs.model.SendMessageBatchRequest;
+import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
-import sleeper.core.table.InvokeForTableRequest;
 import sleeper.core.table.InvokeForTableRequestSerDe;
 import sleeper.core.table.TableIndex;
+import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
+import sleeper.core.util.SplitIntoBatches;
 
 import java.time.Instant;
+import java.util.List;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_BATCH_QUEUE_URL;
+import static java.util.stream.Collectors.toUnmodifiableList;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_BATCH_SIZE;
 
 /**
  * Creates batches of tables to create compaction jobs for. Sends these batches to an SQS queue to be picked up by
@@ -70,15 +74,24 @@ public class CreateCompactionJobsTriggerLambda implements RequestHandler<Schedul
         Instant startTime = Instant.now();
         LOGGER.info("Lambda triggered at {}, started at {}", event.getTime(), startTime);
         instanceProperties.loadFromS3(s3Client, configBucketName);
-        int batchSize = instanceProperties.getInt(COMPACTION_JOB_CREATION_BATCH_SIZE);
-        String queueUrl = instanceProperties.get(COMPACTION_JOB_CREATION_BATCH_QUEUE_URL);
+        String queueUrl = instanceProperties.get(COMPACTION_JOB_CREATION_QUEUE_URL);
         TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
-        InvokeForTableRequest.forTables(tableIndex.streamOnlineTables(), batchSize,
-                request -> sqsClient.sendMessage(queueUrl, serDe.toJson(request)));
+        SplitIntoBatches.reusingListOfSize(10,
+                tableIndex.streamOnlineTables(),
+                tables -> sendMessageBatch(tables, queueUrl));
 
         Instant finishTime = Instant.now();
         LOGGER.info("Lambda finished at {} (ran for {})", finishTime, LoggedDuration.withFullOutput(startTime, finishTime));
         return null;
+    }
+
+    private void sendMessageBatch(List<TableStatus> tables, String queueUrl) {
+        sqsClient.sendMessageBatch(new SendMessageBatchRequest()
+                .withQueueUrl(queueUrl)
+                .withEntries(tables.stream()
+                        .map(table -> new SendMessageBatchRequestEntry()
+                                .withMessageBody(table.getTableUniqueId()))
+                        .collect(toUnmodifiableList())));
     }
 
 }

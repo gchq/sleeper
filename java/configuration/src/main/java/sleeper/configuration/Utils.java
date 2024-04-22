@@ -50,6 +50,10 @@ public class Utils {
         return parseAndCheckInteger(integer, num -> num > 0);
     }
 
+    public static boolean isPositiveIntegerLtEq10(String integer) {
+        return parseAndCheckInteger(integer, num -> num > 0 && num <= 10);
+    }
+
     public static boolean isNonNegativeInteger(String integer) {
         return parseAndCheckInteger(integer, num -> num >= 0);
     }
