@@ -40,8 +40,6 @@ public class DynamoDBTransactionLogSnapshotStoreCreator {
     }
 
     public void create() {
-        // Latest snapshot - hash key = table ID
-        // Field for files snapshot path and partitions snapshot path
         createLatestSnapshotTable();
         createAllSnapshotsTable();
     }
