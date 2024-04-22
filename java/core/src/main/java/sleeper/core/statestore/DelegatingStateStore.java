@@ -15,6 +15,9 @@
  */
 package sleeper.core.statestore;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import sleeper.core.partition.Partition;
 
 import java.time.Instant;
@@ -23,6 +26,7 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 public class DelegatingStateStore implements StateStore {
+    public static final Logger LOGGER = LoggerFactory.getLogger(DelegatingStateStore.class);
     private final FileReferenceStore fileReferenceStore;
     private final PartitionStore partitionStore;
 
@@ -38,16 +42,28 @@ public class DelegatingStateStore implements StateStore {
 
     @Override
     public void addFiles(List<FileReference> fileReferences) throws StateStoreException {
+        if (fileReferences.isEmpty()) {
+            LOGGER.info("Ignoring addFiles call with no files");
+            return;
+        }
         fileReferenceStore.addFiles(fileReferences);
     }
 
     @Override
     public void addFilesWithReferences(List<AllReferencesToAFile> files) throws StateStoreException {
+        if (files.isEmpty()) {
+            LOGGER.info("Ignoring addFilesWithReferences call with no files");
+            return;
+        }
         fileReferenceStore.addFilesWithReferences(files);
     }
 
     @Override
     public void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws SplitRequestsFailedException {
+        if (splitRequests.isEmpty()) {
+            LOGGER.info("Ignoring splitFileReferences call with no requests");
+            return;
+        }
         fileReferenceStore.splitFileReferences(splitRequests);
     }
 
@@ -58,11 +74,19 @@ public class DelegatingStateStore implements StateStore {
 
     @Override
     public void assignJobIds(List<AssignJobIdRequest> requests) throws StateStoreException {
+        if (requests.isEmpty()) {
+            LOGGER.info("Ignoring assignJobIds call with no requests");
+            return;
+        }
         fileReferenceStore.assignJobIds(requests);
     }
 
     @Override
     public void deleteGarbageCollectedFileReferenceCounts(List<String> filenames) throws StateStoreException {
+        if (filenames.isEmpty()) {
+            LOGGER.info("Ignoring deleteGarbageCollectedFileReferenceCounts call with no files");
+            return;
+        }
         fileReferenceStore.deleteGarbageCollectedFileReferenceCounts(filenames);
     }
 

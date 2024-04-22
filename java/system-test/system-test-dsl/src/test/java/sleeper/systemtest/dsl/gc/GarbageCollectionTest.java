@@ -15,13 +15,11 @@
  */
 package sleeper.systemtest.dsl.gc;
 
+import org.approvaltests.Approvals;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.strategy.impl.BasicCompactionStrategy;
-import sleeper.core.partition.PartitionTree;
-import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.extension.AfterTestPurgeQueues;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
@@ -29,7 +27,6 @@ import sleeper.systemtest.dsl.sourcedata.RecordNumbers;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 import sleeper.systemtest.dsl.testutil.InMemorySystemTestDrivers;
 
-import java.util.List;
 import java.util.Map;
 import java.util.stream.LongStream;
 
@@ -37,9 +34,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
-import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFiles;
 import static sleeper.core.testutils.printers.FileReferencePrinter.printFiles;
-import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.DEFAULT_SCHEMA;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.withDefaultProperties;
 
 @InMemoryDslTest
@@ -70,15 +65,9 @@ public class GarbageCollectionTest {
         sleeper.garbageCollection().invoke().waitFor();
 
         // Then
-        PartitionTree expectedPartitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
-        FileReferenceFactory fileFactory = FileReferenceFactory.from(expectedPartitions);
         assertThat(sleeper.directQuery().allRecordsInTable())
                 .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 50)));
-        assertThat(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().all()))
-                .isEqualTo(printFiles(expectedPartitions,
-                        activeAndReadyForGCFiles(
-                                List.of(fileFactory.rootFile(50)),
-                                List.of())));
+        Approvals.verify(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().all()));
         assertThat(drivers.data().files()).hasSize(1);
     }
 }

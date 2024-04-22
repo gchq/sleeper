@@ -16,7 +16,7 @@
 package sleeper.clients.exception;
 
 public class MessageMissingFieldException extends WebSocketException {
-    public MessageMissingFieldException(String field) {
-        super("Message missing required field: " + field);
+    public MessageMissingFieldException(String field, String json) {
+        super("Message missing required field " + field + ": " + json);
     }
 }

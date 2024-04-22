@@ -35,13 +35,13 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CommonProperty.DYNAMO_STATE_STORE_POINT_IN_TIME_RECOVERY;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
-public final class DynamoDBStateStoreStack extends NestedStack {
+public class DynamoDBStateStoreStack extends NestedStack {
     private final Table activeFilesTable;
     private final Table fileReferenceCountTable;
     private final Table partitionTable;
 
     public DynamoDBStateStoreStack(
-            Construct scope, String id, InstanceProperties instanceProperties, ManagedPoliciesStack policiesStack) {
+            Construct scope, String id, InstanceProperties instanceProperties) {
         super(scope, id);
         String instanceId = instanceProperties.get(ID);
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
@@ -107,9 +107,6 @@ public final class DynamoDBStateStoreStack extends NestedStack {
                 .build();
 
         instanceProperties.set(PARTITION_TABLENAME, partitionTable.getTableName());
-        grantReadPartitionMetadata(policiesStack.getIngestPolicy());
-        grantReadWriteActiveFileMetadata(policiesStack.getIngestPolicy());
-        grantReadWritePartitionMetadata(policiesStack.getEditTablesPolicy());
     }
 
     public void grantReadActiveFileMetadata(IGrantable grantee) {

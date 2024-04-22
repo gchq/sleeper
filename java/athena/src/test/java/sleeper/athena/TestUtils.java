@@ -87,7 +87,7 @@ public class TestUtils {
         S3TableProperties.getStore(instance, s3Client, dynamoDB).save(tableProperties);
 
         try {
-            StateStore stateStore = new StateStoreFactory(dynamoDB, instance, configuration).getStateStore(tableProperties);
+            StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoDB, configuration).getStateStore(tableProperties);
             stateStore.initialise(new PartitionsFromSplitPoints(schema, List.of(splitPoints)).construct());
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
@@ -97,12 +97,13 @@ public class TestUtils {
     }
 
     public static void ingestData(
-            AmazonDynamoDB dynamoClient, String dataDir, InstanceProperties instanceProperties, TableProperties table) {
+            AmazonS3 s3Client, AmazonDynamoDB dynamoClient, String dataDir,
+            InstanceProperties instanceProperties, TableProperties table) {
         try {
             IngestFactory factory = IngestFactory.builder()
                     .objectFactory(ObjectFactory.noUserJars())
                     .localDir(dataDir)
-                    .stateStoreProvider(new StateStoreProvider(dynamoClient, instanceProperties, new Configuration()))
+                    .stateStoreProvider(new StateStoreProvider(instanceProperties, s3Client, dynamoClient, new Configuration()))
                     .hadoopConfiguration(new Configuration())
                     .instanceProperties(instanceProperties)
                     .build();

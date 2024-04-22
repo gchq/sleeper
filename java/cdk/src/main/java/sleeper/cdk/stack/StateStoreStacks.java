@@ -18,7 +18,7 @@ package sleeper.cdk.stack;
 
 import software.amazon.awscdk.services.iam.IGrantable;
 
-public class StateStoreStacks {
+public final class StateStoreStacks {
 
     private final DynamoDBStateStoreStack dynamo;
     private final S3StateStoreStack s3;
@@ -26,10 +26,15 @@ public class StateStoreStacks {
 
     public StateStoreStacks(
             DynamoDBStateStoreStack dynamo, S3StateStoreStack s3,
-            TransactionLogStateStoreStack transactionLog) {
+            TransactionLogStateStoreStack transactionLog,
+            ManagedPoliciesStack policiesStack) {
         this.dynamo = dynamo;
         this.s3 = s3;
         this.transactionLog = transactionLog;
+        grantReadPartitionsReadWriteActiveFiles(policiesStack.getIngestPolicy());
+        grantReadActiveFilesAndPartitions(policiesStack.getQueryPolicy());
+        grantReadActiveFilesAndPartitions(policiesStack.getReportingPolicy());
+        grantReadWritePartitions(policiesStack.getEditTablesPolicy());
     }
 
     public void grantReadActiveFilesAndPartitions(IGrantable grantee) {

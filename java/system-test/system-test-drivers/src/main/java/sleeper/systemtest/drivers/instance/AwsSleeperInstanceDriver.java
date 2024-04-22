@@ -16,6 +16,7 @@
 
 package sleeper.systemtest.drivers.instance;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.ecr.AmazonECR;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
@@ -55,6 +56,7 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
     private final SystemTestParameters parameters;
     private final AmazonS3 s3;
     private final S3Client s3v2;
+    private final AmazonDynamoDB dynamoDB;
     private final AWSSecurityTokenService sts;
     private final AwsRegionProvider regionProvider;
     private final CloudFormationClient cloudFormationClient;
@@ -64,6 +66,7 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
         this.parameters = parameters;
         this.s3 = clients.getS3();
         this.s3v2 = clients.getS3V2();
+        this.dynamoDB = clients.getDynamoDB();
         this.sts = clients.getSts();
         this.regionProvider = clients.getRegionProvider();
         this.cloudFormationClient = clients.getCloudFormation();
@@ -94,7 +97,7 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
                     .instanceType(InvokeCdkForInstance.Type.STANDARD)
                     .runCommand(ClientUtils::runCommandLogOutput)
                     .extraInstanceProperties(instanceProperties -> instanceProperties.set(JARS_BUCKET, parameters.buildJarsBucketName()))
-                    .deployWithClients(sts, regionProvider, s3, s3v2, ecr);
+                    .deployWithClients(sts, regionProvider, s3, s3v2, dynamoDB, ecr);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
