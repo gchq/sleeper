@@ -161,7 +161,43 @@ public class DynamoDBTransactionLogSnapshotStoreIT {
         }
     }
 
+    @Test
+    void shouldSaveAndLoadSnapshotsForMultipleTables() throws Exception {
+        TableProperties table1 = createTable();
+        TableProperties table2 = createTable();
+        DynamoDBTransactionLogSnapshotStore snapshotStore1 = snapshotStore(table1);
+        DynamoDBTransactionLogSnapshotStore snapshotStore2 = snapshotStore(table2);
+
+        // When
+        snapshotStore1.saveFiles("snapshot/table1/1-files.parquet", 1);
+        snapshotStore1.savePartitions("snapshot/table1/1-partitions.parquet", 1);
+        snapshotStore2.saveFiles("snapshot/table2/1-files.parquet", 1);
+        snapshotStore2.savePartitions("snapshot/table2/1-partitions.parquet", 1);
+
+        // Then
+        assertThat(snapshotStore1.getFilesSnapshots())
+                .containsExactly(
+                        filesSnapshot("snapshot/table1/1-files.parquet", 1));
+        assertThat(snapshotStore1.getPartitionsSnapshots())
+                .containsExactly(
+                        partitionsSnapshot("snapshot/table1/1-partitions.parquet", 1));
+        assertThat(snapshotStore2.getFilesSnapshots())
+                .containsExactly(
+                        filesSnapshot("snapshot/table2/1-files.parquet", 1));
+        assertThat(snapshotStore2.getPartitionsSnapshots())
+                .containsExactly(
+                        partitionsSnapshot("snapshot/table2/1-partitions.parquet", 1));
+    }
+
+    private TableProperties createTable() {
+        return createTestTableProperties(instanceProperties, schema);
+    }
+
     private DynamoDBTransactionLogSnapshotStore snapshotStore() {
+        return snapshotStore(tableProperties);
+    }
+
+    private DynamoDBTransactionLogSnapshotStore snapshotStore(TableProperties tableProperties) {
         return new DynamoDBTransactionLogSnapshotStore(instanceProperties, tableProperties, dynamoDBClient, Instant::now);
     }
 

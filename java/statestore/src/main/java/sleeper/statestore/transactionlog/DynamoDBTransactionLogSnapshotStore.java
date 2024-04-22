@@ -105,7 +105,7 @@ public class DynamoDBTransactionLogSnapshotStore {
         return new Put()
                 .withTableName(allSnapshotsTable)
                 .withItem(new DynamoDBRecordBuilder()
-                        .string(TABLE_ID_AND_SNAPSHOT_TYPE, tableAndType(allSnapshotsTable, snapshotType))
+                        .string(TABLE_ID_AND_SNAPSHOT_TYPE, tableAndType(sleeperTableId, snapshotType))
                         .string(TABLE_ID, sleeperTableId)
                         .string(PATH, snapshotPath)
                         .number(TRANSACTION_NUMBER, transactionNumber)
@@ -159,7 +159,7 @@ public class DynamoDBTransactionLogSnapshotStore {
                 .withKeyConditionExpression("#TableIdAndType = :table_and_type")
                 .withExpressionAttributeNames(Map.of("#TableIdAndType", TABLE_ID_AND_SNAPSHOT_TYPE))
                 .withExpressionAttributeValues(new DynamoDBRecordBuilder()
-                        .string(":table_and_type", tableAndType(allSnapshotsTable, type))
+                        .string(":table_and_type", tableAndType(sleeperTableId, type))
                         .build())
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL))
                 .map(DynamoDBTransactionLogSnapshotStore::getSnapshotFromItem);
