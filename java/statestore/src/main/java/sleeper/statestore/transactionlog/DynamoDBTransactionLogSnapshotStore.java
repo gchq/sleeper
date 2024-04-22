@@ -19,6 +19,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
+import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
@@ -160,7 +161,6 @@ public class DynamoDBTransactionLogSnapshotStore {
                 .withExpressionAttributeValues(new DynamoDBRecordBuilder()
                         .string(":table_and_type", tableAndType(allSnapshotsTable, type))
                         .build())
-                .withScanIndexForward(false)
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL))
                 .map(DynamoDBTransactionLogSnapshotStore::getSnapshotFromItem);
     }
@@ -174,18 +174,18 @@ public class DynamoDBTransactionLogSnapshotStore {
     }
 
     private Optional<TransactionLogSnapshot> getLatestSnapshot(SnapshotType snapshotType) {
-        return streamPagedItems(dynamo, new QueryRequest()
+        QueryResult result = dynamo.query(new QueryRequest()
                 .withTableName(latestSnapshotsTable)
-                .withConsistentRead(true)
                 .withKeyConditionExpression("#TableId = :table_id")
                 .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID))
                 .withExpressionAttributeValues(new DynamoDBRecordBuilder()
                         .string(":table_id", sleeperTableId)
-                        .build())
-                .withScanIndexForward(false)
-                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL))
-                .map(item -> getLatestSnapshotFromItem(item, snapshotType))
-                .findFirst();
+                        .build()));
+        if (result.getCount() > 0) {
+            return Optional.of(getLatestSnapshotFromItem(result.getItems().get(0), snapshotType));
+        } else {
+            return Optional.empty();
+        }
     }
 
     private static TransactionLogSnapshot getLatestSnapshotFromItem(Map<String, AttributeValue> item, SnapshotType snapshotType) {

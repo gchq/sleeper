@@ -82,9 +82,9 @@ public class DynamoDBTransactionLogSnapshotStoreIT {
             // Then
             assertThat(store.getFilesSnapshots())
                     .containsExactly(
-                            filesSnapshot("snapshot/3-files.parquet", 3),
+                            filesSnapshot("snapshot/1-files.parquet", 1),
                             filesSnapshot("snapshot/2-files.parquet", 2),
-                            filesSnapshot("snapshot/1-files.parquet", 1));
+                            filesSnapshot("snapshot/3-files.parquet", 3));
         }
 
         @Test
@@ -133,9 +133,9 @@ public class DynamoDBTransactionLogSnapshotStoreIT {
             // Then
             assertThat(store.getPartitionsSnapshots())
                     .containsExactly(
-                            partitionsSnapshot("snapshot/3-partitions.parquet", 3),
+                            partitionsSnapshot("snapshot/1-partitions.parquet", 1),
                             partitionsSnapshot("snapshot/2-partitions.parquet", 2),
-                            partitionsSnapshot("snapshot/1-partitions.parquet", 1));
+                            partitionsSnapshot("snapshot/3-partitions.parquet", 3));
         }
 
         @Test
