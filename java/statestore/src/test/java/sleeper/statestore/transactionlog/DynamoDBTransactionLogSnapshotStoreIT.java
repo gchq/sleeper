@@ -17,11 +17,13 @@ package sleeper.statestore.transactionlog;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -30,6 +32,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.dynamodb.tools.DynamoDBContainer;
 
+import java.nio.file.Path;
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -161,7 +164,29 @@ public class DynamoDBTransactionLogSnapshotStoreIT {
         }
     }
 
+    @Nested
+    @DisplayName("Load latest snapshot")
+    class LoadLatestSnapshot {
+        @TempDir
+        private Path tempDir;
+        private Configuration configuration;
+        private TransactionLogFilesSnapshotSerDe fileSnapshotSerDe = new TransactionLogFilesSnapshotSerDe(configuration);
+
+        @Test
+        void shouldLoadLatestFilesSnapshotWhenCreatingStateStore() {
+            TableProperties table = createTable();
+        }
+    }
+
+    private TableProperties createTable() {
+        return createTestTableProperties(instanceProperties, schema);
+    }
+
     private DynamoDBTransactionLogSnapshotStore snapshotStore() {
+        return snapshotStore(tableProperties);
+    }
+
+    private DynamoDBTransactionLogSnapshotStore snapshotStore(TableProperties tableProperties) {
         return new DynamoDBTransactionLogSnapshotStore(instanceProperties, tableProperties, dynamoDBClient, Instant::now);
     }
 
