@@ -78,7 +78,7 @@ public class ReinitialiseTable {
         Configuration conf = new Configuration();
         conf.set("fs.s3a.aws.credentials.provider", DefaultAWSCredentialsProviderChain.class.getName());
 
-        StateStore stateStore = new StateStoreFactory(dynamoDBClient, instanceProperties, conf)
+        StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, conf)
                 .getStateStore(tableProperties);
 
         LOGGER.info("State store type: {}", stateStore.getClass().getName());

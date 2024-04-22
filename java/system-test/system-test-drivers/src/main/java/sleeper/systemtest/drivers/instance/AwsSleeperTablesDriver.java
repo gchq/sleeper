@@ -121,7 +121,7 @@ public class AwsSleeperTablesDriver implements SleeperTablesDriver {
     }
 
     public StateStoreProvider createStateStoreProvider(InstanceProperties instanceProperties) {
-        return new StateStoreProvider(dynamoDB, instanceProperties, hadoopConfiguration);
+        return new StateStoreProvider(instanceProperties, s3, dynamoDB, hadoopConfiguration);
     }
 
     public TableIndex tableIndex(InstanceProperties instanceProperties) {

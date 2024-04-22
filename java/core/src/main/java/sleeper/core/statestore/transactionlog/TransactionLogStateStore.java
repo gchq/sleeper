@@ -25,8 +25,6 @@ public class TransactionLogStateStore extends DelegatingStateStore {
 
     public static final int MAX_ADD_TRANSACTION_ATTEMPTS = 10;
     public static final WaitRange RETRY_WAIT_RANGE = WaitRange.firstAndMaxWaitCeilingSecs(0.2, 30);
-    private final TransactionLogHead<StateStoreFiles> filesHead;
-    private final TransactionLogHead<StateStorePartitions> partitionsHead;
 
     public TransactionLogStateStore(Builder builder) {
         this(builder, TransactionLogHead.builder()
@@ -36,7 +34,7 @@ public class TransactionLogStateStore extends DelegatingStateStore {
     }
 
     private TransactionLogStateStore(Builder builder, TransactionLogHead.Builder<?> headBuilder) {
-        this(builder,
+        this(builder.schema,
                 headBuilder.forFiles()
                         .state(builder.filesState)
                         .logStore(builder.filesLogStore)
@@ -49,23 +47,13 @@ public class TransactionLogStateStore extends DelegatingStateStore {
                         .build());
     }
 
-    private TransactionLogStateStore(Builder builder, TransactionLogHead<StateStoreFiles> filesHead, TransactionLogHead<StateStorePartitions> partitionsHead) {
+    private TransactionLogStateStore(Schema schema, TransactionLogHead<StateStoreFiles> filesHead, TransactionLogHead<StateStorePartitions> partitionsHead) {
         super(new TransactionLogFileReferenceStore(filesHead),
-                new TransactionLogPartitionStore(builder.schema, partitionsHead));
-        this.filesHead = filesHead;
-        this.partitionsHead = partitionsHead;
+                new TransactionLogPartitionStore(schema, partitionsHead));
     }
 
     public static Builder builder() {
         return new Builder();
-    }
-
-    public long getLastFilesTransactionNumber() {
-        return filesHead.lastTransactionNumber();
-    }
-
-    public long getLastPartitionsTransactionNumber() {
-        return partitionsHead.lastTransactionNumber();
     }
 
     public static class Builder {
