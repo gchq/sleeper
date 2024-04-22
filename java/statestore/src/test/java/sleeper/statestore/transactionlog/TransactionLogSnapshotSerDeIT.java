@@ -36,7 +36,7 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AllReferencesToAFile.fileWithOneReference;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
 
-public class TransactionLogSnapshotIT {
+public class TransactionLogSnapshotSerDeIT {
     @TempDir
     private Path tempDir;
     private final Schema schema = schemaWithKey("key", new StringType());
