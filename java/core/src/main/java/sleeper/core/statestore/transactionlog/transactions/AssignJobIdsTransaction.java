@@ -27,6 +27,9 @@ import sleeper.core.statestore.transactionlog.StateStoreFiles;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+
+import static java.util.stream.Collectors.toUnmodifiableList;
 
 public class AssignJobIdsTransaction implements FileReferenceTransaction {
 
@@ -34,6 +37,17 @@ public class AssignJobIdsTransaction implements FileReferenceTransaction {
 
     public AssignJobIdsTransaction(List<AssignJobIdRequest> requests) {
         this.requests = requests;
+    }
+
+    public static Optional<AssignJobIdsTransaction> ignoringEmptyRequests(List<AssignJobIdRequest> requests) {
+        List<AssignJobIdRequest> filtered = requests.stream()
+                .filter(request -> !request.getFilenames().isEmpty())
+                .collect(toUnmodifiableList());
+        if (filtered.isEmpty()) {
+            return Optional.empty();
+        } else {
+            return Optional.of(new AssignJobIdsTransaction(filtered));
+        }
     }
 
     @Override
