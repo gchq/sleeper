@@ -42,7 +42,7 @@ public class PartitionFactory {
     }
 
     /**
-     * Start a partition covering a range over a single row key field. May only be used for a schema with one row key.
+     * Starts a partition covering a range over a single row key field. May only be used for a schema with one row key.
      * Will default to a leaf partition, where the parent partition ID must be set on the builder.
      *
      * @param  id  unique identifier for the new partition
@@ -55,7 +55,7 @@ public class PartitionFactory {
     }
 
     /**
-     * Start a partition covering a region. Will default to a leaf partition, where the parent partition ID must be set
+     * Starts a partition covering a region. Will default to a leaf partition, where the parent partition ID must be set
      * on the builder.
      *
      * @param  id     unique identifier for the new partition
@@ -73,7 +73,7 @@ public class PartitionFactory {
     }
 
     /**
-     * Split a partition into two new child partitions. The left child will cover values lower than the split point,
+     * Splits a partition into two new child partitions. The left child will cover values lower than the split point,
      * and the right child will cover values equal to or higher than the split point.
      *
      * @param  parent     partition to split
@@ -104,7 +104,7 @@ public class PartitionFactory {
     }
 
     /**
-     * Join two partitions to produce a new parent partition.
+     * Joins two partitions to produce a new parent partition.
      *
      * @param  parentId unique identifier for the new partition
      * @param  left     builder for the left partition, covering values lower than the split point
@@ -116,7 +116,7 @@ public class PartitionFactory {
     }
 
     /**
-     * Create a new root partition, covering all values for all row keys. This will initially be a leaf partition, but
+     * Creates a new root partition, covering all values for all row keys. This will initially be a leaf partition, but
      * it can be split into child partitions.
      *
      * @param  id unique identifier for the new partition
