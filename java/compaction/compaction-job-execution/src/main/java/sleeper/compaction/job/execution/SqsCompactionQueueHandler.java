@@ -93,7 +93,7 @@ public class SqsCompactionQueueHandler implements CompactionTask.MessageReceiver
             TraceHeader traceHeader = TraceHeader.fromString(traceHeaderStr);
             segment.setTraceId(traceHeader.getRootTraceId());
             segment.setParentId(traceHeader.getParentId());
-            segment.setSampled(traceHeader.getSampled().equals(TraceHeader.SampleDecision.SAMPLED));
+            segment.setSampled(TraceHeader.SampleDecision.SAMPLED == traceHeader.getSampled());
         }
         return segment;
     }
