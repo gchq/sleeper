@@ -164,23 +164,39 @@ public class DynamoDBTransactionLogSnapshotStoreIT {
 
         // When
         snapshotStore1.saveFiles("snapshot/table1/1-files.parquet", 1);
+        snapshotStore1.saveFiles("snapshot/table1/2-files.parquet", 2);
         snapshotStore1.savePartitions("snapshot/table1/1-partitions.parquet", 1);
+        snapshotStore1.savePartitions("snapshot/table1/2-partitions.parquet", 2);
         snapshotStore2.saveFiles("snapshot/table2/1-files.parquet", 1);
+        snapshotStore2.saveFiles("snapshot/table2/2-files.parquet", 2);
         snapshotStore2.savePartitions("snapshot/table2/1-partitions.parquet", 1);
+        snapshotStore2.savePartitions("snapshot/table2/2-partitions.parquet", 2);
 
         // Then
         assertThat(snapshotStore1.getFilesSnapshots())
                 .containsExactly(
-                        filesSnapshot("snapshot/table1/1-files.parquet", 1));
+                        filesSnapshot("snapshot/table1/1-files.parquet", 1),
+                        filesSnapshot("snapshot/table1/2-files.parquet", 2));
         assertThat(snapshotStore1.getPartitionsSnapshots())
                 .containsExactly(
-                        partitionsSnapshot("snapshot/table1/1-partitions.parquet", 1));
+                        partitionsSnapshot("snapshot/table1/1-partitions.parquet", 1),
+                        partitionsSnapshot("snapshot/table1/2-partitions.parquet", 2));
         assertThat(snapshotStore2.getFilesSnapshots())
                 .containsExactly(
-                        filesSnapshot("snapshot/table2/1-files.parquet", 1));
+                        filesSnapshot("snapshot/table2/1-files.parquet", 1),
+                        filesSnapshot("snapshot/table2/2-files.parquet", 2));
         assertThat(snapshotStore2.getPartitionsSnapshots())
                 .containsExactly(
-                        partitionsSnapshot("snapshot/table2/1-partitions.parquet", 1));
+                        partitionsSnapshot("snapshot/table2/1-partitions.parquet", 1),
+                        partitionsSnapshot("snapshot/table2/2-partitions.parquet", 2));
+        assertThat(snapshotStore1.getLatestSnapshots()).contains(
+                new LatestSnapshots(
+                        filesSnapshot("snapshot/table1/2-files.parquet", 2),
+                        partitionsSnapshot("snapshot/table1/2-partitions.parquet", 2)));
+        assertThat(snapshotStore2.getLatestSnapshots()).contains(
+                new LatestSnapshots(
+                        filesSnapshot("snapshot/table2/2-files.parquet", 2),
+                        partitionsSnapshot("snapshot/table2/2-partitions.parquet", 2)));
     }
 
     private TableProperties createTable() {
