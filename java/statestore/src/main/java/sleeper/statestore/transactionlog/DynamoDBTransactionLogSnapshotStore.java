@@ -65,7 +65,7 @@ public class DynamoDBTransactionLogSnapshotStore {
     private final AmazonDynamoDB dynamo;
     private final Supplier<Instant> timeSupplier;
 
-    DynamoDBTransactionLogSnapshotStore(InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamo, Supplier<Instant> timeSupplier) {
+    public DynamoDBTransactionLogSnapshotStore(InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamo, Supplier<Instant> timeSupplier) {
         this.allSnapshotsTable = instanceProperties.get(TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME);
         this.latestSnapshotsTable = instanceProperties.get(TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME);
         this.sleeperTableId = tableProperties.get(TableProperty.TABLE_ID);
