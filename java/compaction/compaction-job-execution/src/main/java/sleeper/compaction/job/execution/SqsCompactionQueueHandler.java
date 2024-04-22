@@ -91,7 +91,7 @@ public class SqsCompactionQueueHandler implements CompactionTask.MessageReceiver
         if (traceHeaderStr != null) {
             // Recover the trace context from the trace header
             TraceHeader traceHeader = TraceHeader.fromString(traceHeaderStr);
-            segment.setTraceId(traceHeader.getRootTraceId());
+            Optional.ofNullable(traceHeader.getRootTraceId()).ifPresent(segment::setTraceId);
             segment.setParentId(traceHeader.getParentId());
             segment.setSampled(TraceHeader.SampleDecision.SAMPLED == traceHeader.getSampled());
         }
