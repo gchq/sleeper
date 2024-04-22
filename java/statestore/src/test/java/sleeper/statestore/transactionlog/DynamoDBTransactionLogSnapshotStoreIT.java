@@ -47,7 +47,7 @@ public class DynamoDBTransactionLogSnapshotStoreIT {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = schemaWithKey("key");
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-    private TransactionLogSnapshotStore store = snapshotStore();
+    private DynamoDBTransactionLogSnapshotStore store = snapshotStore();
 
     @BeforeAll
     public static void initDynamoClient() {
@@ -161,7 +161,7 @@ public class DynamoDBTransactionLogSnapshotStoreIT {
         }
     }
 
-    private TransactionLogSnapshotStore snapshotStore() {
+    private DynamoDBTransactionLogSnapshotStore snapshotStore() {
         return new DynamoDBTransactionLogSnapshotStore(instanceProperties, tableProperties, dynamoDBClient, Instant::now);
     }
 

@@ -47,7 +47,7 @@ import static sleeper.dynamodb.tools.DynamoDBAttributes.getStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.hasConditionalCheckFailure;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
 
-public class DynamoDBTransactionLogSnapshotStore implements TransactionLogSnapshotStore {
+public class DynamoDBTransactionLogSnapshotStore {
     private static final String DELIMETER = "|";
     public static final String TABLE_ID = DynamoDBTransactionLogStateStore.TABLE_ID;
     public static final String TABLE_ID_AND_SNAPSHOT_TYPE = "TABLE_ID_AND_SNAPSHOT_TYPE";
@@ -73,12 +73,10 @@ public class DynamoDBTransactionLogSnapshotStore implements TransactionLogSnapsh
         this.timeSupplier = timeSupplier;
     }
 
-    @Override
     public void saveFiles(String snapshotPath, long transactionNumber) throws DuplicateSnapshotException {
         saveSnapshot(SnapshotType.FILES, snapshotPath, transactionNumber);
     }
 
-    @Override
     public void savePartitions(String snapshotPath, long transactionNumber) throws DuplicateSnapshotException {
         saveSnapshot(SnapshotType.PARTITIONS, snapshotPath, transactionNumber);
     }
@@ -143,13 +141,11 @@ public class DynamoDBTransactionLogSnapshotStore implements TransactionLogSnapsh
                         ":update_time", createNumberAttribute(updateTime.toEpochMilli())));
     }
 
-    @Override
     public List<TransactionLogSnapshot> getFilesSnapshots() {
         return getSnapshots(SnapshotType.FILES)
                 .collect(Collectors.toList());
     }
 
-    @Override
     public List<TransactionLogSnapshot> getPartitionsSnapshots() {
         return getSnapshots(SnapshotType.PARTITIONS)
                 .collect(Collectors.toList());
@@ -169,12 +165,10 @@ public class DynamoDBTransactionLogSnapshotStore implements TransactionLogSnapsh
                 .map(DynamoDBTransactionLogSnapshotStore::getSnapshotFromItem);
     }
 
-    @Override
     public Optional<TransactionLogSnapshot> getLatestFilesSnapshot() {
         return getLatestSnapshot(SnapshotType.FILES);
     }
 
-    @Override
     public Optional<TransactionLogSnapshot> getLatestPartitionsSnapshot() {
         return getLatestSnapshot(SnapshotType.PARTITIONS);
     }
