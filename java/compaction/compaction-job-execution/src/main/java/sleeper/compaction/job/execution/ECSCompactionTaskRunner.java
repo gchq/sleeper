@@ -103,6 +103,7 @@ public class ECSCompactionTaskRunner {
             segment.addException(e);
             throw e;
         } finally {
+            segment.close();
             sqsClient.shutdown();
             LOGGER.info("Shut down sqsClient");
             dynamoDBClient.shutdown();
@@ -112,7 +113,6 @@ public class ECSCompactionTaskRunner {
             ecsClient.shutdown();
             LOGGER.info("Shut down ecsClient");
             LOGGER.info("Total run time = {}", LoggedDuration.withFullOutput(startTime, Instant.now()));
-            AWSXRay.endSegment();
         }
     }
 
