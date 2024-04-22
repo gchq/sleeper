@@ -166,24 +166,52 @@ public class DynamoDBTransactionLogSnapshotStore implements TransactionLogSnapsh
                         .build())
                 .withScanIndexForward(false)
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL))
-                .map(this::getSnapshotFromItem);
+                .map(DynamoDBTransactionLogSnapshotStore::getSnapshotFromItem);
     }
 
     @Override
     public Optional<TransactionLogSnapshot> getLatestFilesSnapshot() {
-        return getSnapshots(SnapshotType.FILES).findFirst();
+        return getLatestSnapshot(SnapshotType.FILES);
     }
 
     @Override
     public Optional<TransactionLogSnapshot> getLatestPartitionsSnapshot() {
-        return getSnapshots(SnapshotType.PARTITIONS).findFirst();
+        return getLatestSnapshot(SnapshotType.PARTITIONS);
     }
 
-    private String tableAndType(String table, SnapshotType type) {
+    private Optional<TransactionLogSnapshot> getLatestSnapshot(SnapshotType snapshotType) {
+        return streamPagedItems(dynamo, new QueryRequest()
+                .withTableName(latestSnapshotsTable)
+                .withConsistentRead(true)
+                .withKeyConditionExpression("#TableId = :table_id")
+                .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID))
+                .withExpressionAttributeValues(new DynamoDBRecordBuilder()
+                        .string(":table_id", sleeperTableId)
+                        .build())
+                .withScanIndexForward(false)
+                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL))
+                .map(item -> getLatestSnapshotFromItem(item, snapshotType))
+                .findFirst();
+    }
+
+    private static TransactionLogSnapshot getLatestSnapshotFromItem(Map<String, AttributeValue> item, SnapshotType snapshotType) {
+        String pathKey;
+        String transactionNumberKey;
+        if (snapshotType == SnapshotType.FILES) {
+            pathKey = FILES_SNAPSHOT_PATH;
+            transactionNumberKey = FILES_TRANSACTION_NUMBER;
+        } else {
+            pathKey = PARTITIONS_SNAPSHOT_PATH;
+            transactionNumberKey = PARTITIONS_TRANSACTION_NUMBER;
+        }
+        return new TransactionLogSnapshot(getStringAttribute(item, pathKey), snapshotType, getLongAttribute(item, transactionNumberKey, 0));
+    }
+
+    private static String tableAndType(String table, SnapshotType type) {
         return table + DELIMETER + type.name();
     }
 
-    private TransactionLogSnapshot getSnapshotFromItem(Map<String, AttributeValue> item) {
+    private static TransactionLogSnapshot getSnapshotFromItem(Map<String, AttributeValue> item) {
         SnapshotType type = SnapshotType.valueOf(item.get(SNAPSHOT_TYPE).getS());
         return new TransactionLogSnapshot(getStringAttribute(item, PATH), type, getLongAttribute(item, TRANSACTION_NUMBER, 0));
     }
