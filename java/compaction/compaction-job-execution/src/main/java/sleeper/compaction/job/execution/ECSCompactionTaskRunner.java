@@ -67,9 +67,10 @@ public class ECSCompactionTaskRunner {
         }
         String s3Bucket = args[0];
         String taskId = UUID.randomUUID().toString();
+
+        Instant startTime = Instant.now();
         Segment segment = AWSXRay.beginSegment("CompactionTask");
         segment.putAnnotation("taskId", taskId);
-        Instant startTime = Instant.now();
         AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
         AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
