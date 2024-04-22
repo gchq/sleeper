@@ -25,6 +25,8 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 import sleeper.query.tracker.QueryTrackerException;
 
+import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+
 /**
  * Reports progress of a specified query.
  */
@@ -37,15 +39,18 @@ public class TrackedQueryProgressReport {
         if (2 != args.length) {
             throw new IllegalArgumentException("Usage: <instance-id> <query-id>");
         }
-        AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
-        InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, args[0]);
+        String instanceId = args[0];
+        String queryId = args[1];
 
-        AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
-
-        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoDBClient);
-        System.out.println(queryTracker.getStatus(args[1]));
-
-        amazonS3.shutdown();
-        dynamoDBClient.shutdown();
+        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
+        AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
+        try {
+            InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(s3Client, instanceId);
+            DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoDBClient);
+            System.out.println(queryTracker.getStatus(queryId));
+        } finally {
+            s3Client.shutdown();
+            dynamoDBClient.shutdown();
+        }
     }
 }

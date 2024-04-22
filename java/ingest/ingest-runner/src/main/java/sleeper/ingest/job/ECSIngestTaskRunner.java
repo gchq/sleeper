@@ -66,6 +66,7 @@ public class ECSIngestTaskRunner {
             System.err.println("Error: must have 1 argument (config bucket), got " + args.length + " arguments (" + StringUtils.join(args, ',') + ")");
             System.exit(1);
         }
+        String s3Bucket = args[0];
 
         Instant startTime = Instant.now();
         AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
@@ -73,29 +74,30 @@ public class ECSIngestTaskRunner {
         AmazonCloudWatch cloudWatchClient = buildAwsV1Client(AmazonCloudWatchClientBuilder.standard());
         AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
 
-        String s3Bucket = args[0];
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.loadFromS3(s3Client, s3Bucket);
+        try {
+            InstanceProperties instanceProperties = new InstanceProperties();
+            instanceProperties.loadFromS3(s3Client, s3Bucket);
 
-        ObjectFactory objectFactory = new ObjectFactory(instanceProperties, s3Client, "/tmp");
-        String localDir = "/mnt/scratch";
-        String taskId = UUID.randomUUID().toString();
+            ObjectFactory objectFactory = new ObjectFactory(instanceProperties, s3Client, "/tmp");
+            String localDir = "/mnt/scratch";
+            String taskId = UUID.randomUUID().toString();
 
-        IngestTask ingestTask = createIngestTask(objectFactory, instanceProperties, localDir,
-                taskId, s3Client, dynamoDBClient, sqsClient, cloudWatchClient,
-                AsyncS3PartitionFileWriterFactory.s3AsyncClientFromProperties(instanceProperties),
-                ingestHadoopConfiguration(instanceProperties));
-        ingestTask.run();
-
-        s3Client.shutdown();
-        LOGGER.info("Shut down s3Client");
-        sqsClient.shutdown();
-        LOGGER.info("Shut down sqsClient");
-        dynamoDBClient.shutdown();
-        LOGGER.info("Shut down dynamoDBClient");
-        cloudWatchClient.shutdown();
-        LOGGER.info("Shut down cloudWatchClient");
-        LOGGER.info("Total run time = {}", LoggedDuration.withFullOutput(startTime, Instant.now()));
+            IngestTask ingestTask = createIngestTask(objectFactory, instanceProperties, localDir,
+                    taskId, s3Client, dynamoDBClient, sqsClient, cloudWatchClient,
+                    AsyncS3PartitionFileWriterFactory.s3AsyncClientFromProperties(instanceProperties),
+                    ingestHadoopConfiguration(instanceProperties));
+            ingestTask.run();
+        } finally {
+            s3Client.shutdown();
+            LOGGER.info("Shut down s3Client");
+            sqsClient.shutdown();
+            LOGGER.info("Shut down sqsClient");
+            dynamoDBClient.shutdown();
+            LOGGER.info("Shut down dynamoDBClient");
+            cloudWatchClient.shutdown();
+            LOGGER.info("Shut down cloudWatchClient");
+            LOGGER.info("Total run time = {}", LoggedDuration.withFullOutput(startTime, Instant.now()));
+        }
     }
 
     public static IngestTask createIngestTask(

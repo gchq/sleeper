@@ -38,6 +38,7 @@ import java.util.Objects;
 import static sleeper.clients.util.BucketUtils.deleteObjectsInBucketWithPrefix;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
+import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 /**
  * A utility class to reinitialise a table by first deleting the table's contents
@@ -124,19 +125,20 @@ public class ReinitialiseTable {
         if (!choice.equalsIgnoreCase("y")) {
             System.exit(0);
         }
-        AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
-        AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
+        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
+        AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
 
         try {
-            ReinitialiseTable reinitialiseTable = new ReinitialiseTable(amazonS3, dynamoDBClient, instanceId, tableName, deletePartitions);
+            ReinitialiseTable reinitialiseTable = new ReinitialiseTable(s3Client, dynamoDBClient, instanceId, tableName, deletePartitions);
             reinitialiseTable.run();
             LOGGER.info("Table reinitialised successfully");
         } catch (RuntimeException | IOException | StateStoreException e) {
             LOGGER.error("\nAn Error occurred while trying to reinitialise the table. " +
                     "The error message is as follows:\n\n" + e.getMessage()
                     + "\n\nCause:" + e.getCause());
+        } finally {
+            s3Client.shutdown();
+            dynamoDBClient.shutdown();
         }
-        amazonS3.shutdown();
-        dynamoDBClient.shutdown();
     }
 }

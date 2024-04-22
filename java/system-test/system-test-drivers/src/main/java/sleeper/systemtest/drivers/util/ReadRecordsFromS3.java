@@ -17,11 +17,15 @@
 package sleeper.systemtest.drivers.util;
 
 import com.amazonaws.services.s3.model.S3ObjectSummary;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.parquet.hadoop.ParquetReader;
 
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
+import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -35,9 +39,12 @@ public class ReadRecordsFromS3 {
 
     public static Stream<Record> getRecords(Schema schema, S3ObjectSummary s3ObjectSummary) {
         String path = "s3a://" + s3ObjectSummary.getBucketName() + "/" + s3ObjectSummary.getKey();
+        Configuration conf = HadoopConfigurationProvider.getConfigurationForClient();
         List<Record> records = new ArrayList<>();
-        try (ParquetRecordReader reader = new ParquetRecordReader(new org.apache.hadoop.fs.Path(path), schema)) {
-            new ParquetReaderIterator(reader).forEachRemaining(records::add);
+        try (ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(path), schema)
+                .withConf(conf).build();
+                ParquetReaderIterator iterator = new ParquetReaderIterator(reader)) {
+            iterator.forEachRemaining(records::add);
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }

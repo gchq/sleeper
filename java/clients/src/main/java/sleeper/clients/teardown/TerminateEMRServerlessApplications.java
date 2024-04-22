@@ -16,8 +16,6 @@
 
 package sleeper.clients.teardown;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
@@ -34,7 +32,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
 
 public class TerminateEMRServerlessApplications {
     private static final Logger LOGGER = LoggerFactory.getLogger(TerminateEMRServerlessApplications.class);
@@ -45,8 +42,12 @@ public class TerminateEMRServerlessApplications {
     private final String applicationPrefix;
 
     public TerminateEMRServerlessApplications(EmrServerlessClient emrServerlessClient, InstanceProperties properties) {
+        this(emrServerlessClient, properties.get(ID));
+    }
+
+    public TerminateEMRServerlessApplications(EmrServerlessClient emrServerlessClient, String instanceId) {
         this.emrServerlessClient = emrServerlessClient;
-        this.applicationPrefix = "sleeper-" + properties.get(ID);
+        this.applicationPrefix = "sleeper-" + instanceId;
     }
 
     public void run() throws InterruptedException {
@@ -111,22 +112,12 @@ public class TerminateEMRServerlessApplications {
             System.out.println("Usage: <instance-id>");
             return;
         }
-
         String instanceId = args[0];
 
-        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-
-        InstanceProperties properties = new InstanceProperties();
-        properties.loadFromS3GivenInstanceId(s3Client, instanceId);
-
-        if (properties.getList(OPTIONAL_STACKS).contains("EmrServerlessBulkImportStack")) {
-            EmrServerlessClient emrServerlessClient = EmrServerlessClient.create();
+        try (EmrServerlessClient emrServerlessClient = EmrServerlessClient.create()) {
             TerminateEMRServerlessApplications terminateApplications = new TerminateEMRServerlessApplications(
-                    emrServerlessClient, properties);
+                    emrServerlessClient, instanceId);
             terminateApplications.run();
-            emrServerlessClient.close();
         }
-
-        s3Client.shutdown();
     }
 }
