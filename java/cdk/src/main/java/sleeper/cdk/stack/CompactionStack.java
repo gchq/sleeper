@@ -313,11 +313,12 @@ public class CompactionStack extends NestedStack {
         // Create queue for compaction job creation invocation
         Queue deadLetterQueue = Queue.Builder
                 .create(this, "CompactionJobCreationDLQ")
-                .queueName(Utils.truncateTo64Characters(instanceProperties.get(ID) + "-CompactionJobCreationDLQ"))
+                .queueName(Utils.truncateTo64Characters(instanceProperties.get(ID) + "-CompactionJobCreationDLQ.fifo"))
+                .fifo(true)
                 .build();
         Queue queue = Queue.Builder
                 .create(this, "CompactionJobCreationQueue")
-                .queueName(Utils.truncateTo64Characters(instanceProperties.get(ID) + "-CompactionJobCreationQ"))
+                .queueName(Utils.truncateTo64Characters(instanceProperties.get(ID) + "-CompactionJobCreationQ.fifo"))
                 .deadLetterQueue(DeadLetterQueue.builder()
                         .maxReceiveCount(1)
                         .queue(deadLetterQueue)
