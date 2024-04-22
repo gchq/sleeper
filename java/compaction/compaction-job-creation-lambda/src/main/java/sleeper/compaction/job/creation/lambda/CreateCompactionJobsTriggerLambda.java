@@ -31,7 +31,6 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
-import sleeper.core.table.InvokeForTableRequestSerDe;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
@@ -48,32 +47,23 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
  * Creates batches of tables to create compaction jobs for. Sends these batches to an SQS queue to be picked up by
  * {@link CreateCompactionJobsLambda}.
  */
-@SuppressWarnings("unused")
 public class CreateCompactionJobsTriggerLambda implements RequestHandler<ScheduledEvent, Void> {
     private static final Logger LOGGER = LoggerFactory.getLogger(CreateCompactionJobsTriggerLambda.class);
 
     private final InstanceProperties instanceProperties = new InstanceProperties();
-    private final InvokeForTableRequestSerDe serDe = new InvokeForTableRequestSerDe();
-    private final AmazonS3 s3Client;
-    private final AmazonDynamoDB dynamoClient;
-    private final AmazonSQS sqsClient;
-    private final String configBucketName;
+    private final AmazonDynamoDB dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
+    private final AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
 
-    /**
-     * No-args constructor used by Lambda.
-     */
     public CreateCompactionJobsTriggerLambda() {
-        this.s3Client = AmazonS3ClientBuilder.defaultClient();
-        this.dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
-        this.sqsClient = AmazonSQSClientBuilder.defaultClient();
-        this.configBucketName = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
+        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+        String configBucketName = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
+        instanceProperties.loadFromS3(s3Client, configBucketName);
     }
 
     @Override
     public Void handleRequest(ScheduledEvent event, Context context) {
         Instant startTime = Instant.now();
         LOGGER.info("Lambda triggered at {}, started at {}", event.getTime(), startTime);
-        instanceProperties.loadFromS3(s3Client, configBucketName);
         String queueUrl = instanceProperties.get(COMPACTION_JOB_CREATION_QUEUE_URL);
         TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
         SplitIntoBatches.reusingListOfSize(10,
