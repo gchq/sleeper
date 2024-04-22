@@ -73,6 +73,7 @@ public class SystemTestInstance {
     public static final SystemTestInstanceConfiguration COMPACTION_PERFORMANCE = usingSystemTestDefaults("compact", SystemTestInstance::buildCompactionPerformanceConfiguration);
     public static final SystemTestInstanceConfiguration BULK_IMPORT_PERFORMANCE = usingSystemTestDefaults("emr", SystemTestInstance::buildBulkImportPerformanceConfiguration);
     public static final SystemTestInstanceConfiguration INGEST_NO_SOURCE_BUCKET = noSourceBucket("no-src", SystemTestInstance::buildMainConfiguration);
+    public static final SystemTestInstanceConfiguration PARALLEL_COMPACTIONS = usingSystemTestDefaults("cpt-pll", SystemTestInstance::buildCompactionInParallelConfiguration);
     public static final SystemTestInstanceConfiguration COMPACTION_ON_EC2 = usingSystemTestDefaults("cpt-ec2", SystemTestInstance::buildCompactionOnEC2Configuration);
 
     private static final String MAIN_EMR_MASTER_TYPES = "m6i.xlarge,m6a.xlarge,m5.xlarge,m5a.xlarge";
@@ -92,7 +93,6 @@ public class SystemTestInstance {
         properties.set(MAXIMUM_CONCURRENT_INGEST_TASKS, "1");
         properties.set(MAXIMUM_CONCURRENT_COMPACTION_TASKS, "1");
         properties.set(COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS, "5");
-        properties.set(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS, "300");
         properties.set(BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE, EmrInstanceArchitecture.X86_64.toString());
         properties.set(BULK_IMPORT_PERSISTENT_EMR_MASTER_X86_INSTANCE_TYPES, MAIN_EMR_MASTER_TYPES);
         properties.set(BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_X86_INSTANCE_TYPES, MAIN_EMR_EXECUTOR_TYPES);
@@ -175,11 +175,25 @@ public class SystemTestInstance {
     private static DeployInstanceConfiguration buildCompactionOnEC2Configuration() {
         DeployInstanceConfiguration configuration = buildMainConfiguration();
         InstanceProperties properties = configuration.getInstanceProperties();
+        properties.set(OPTIONAL_STACKS, "CompactionStack");
         properties.set(COMPACTION_ECS_LAUNCHTYPE, "EC2");
 
         Map<String, String> tags = new HashMap<>(properties.getTags());
         tags.put("SystemTestInstance", "compactionOnEc2");
         tags.put("Description", "Sleeper Maven system test compaction on EC2 instance");
+        properties.setTags(tags);
+        return configuration;
+    }
+
+    private static DeployInstanceConfiguration buildCompactionInParallelConfiguration() {
+        DeployInstanceConfiguration configuration = buildMainConfiguration();
+        InstanceProperties properties = configuration.getInstanceProperties();
+        properties.set(OPTIONAL_STACKS, "CompactionStack");
+        properties.set(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS, "600");
+
+        Map<String, String> tags = new HashMap<>(properties.getTags());
+        tags.put("SystemTestInstance", "compactionInParallel");
+        tags.put("Description", "Sleeper Maven system test compaction in parallel");
         properties.setTags(tags);
         return configuration;
     }

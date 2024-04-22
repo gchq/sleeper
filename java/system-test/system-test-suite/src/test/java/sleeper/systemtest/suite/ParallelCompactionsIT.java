@@ -26,6 +26,7 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.suite.testutil.Slow;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.nio.file.Path;
@@ -39,25 +40,27 @@ import java.util.stream.LongStream;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.COMPACTION_JOB_SEND_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStringAndZeroPadTo;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides.overrideField;
-import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
+import static sleeper.systemtest.suite.fixtures.SystemTestInstance.PARALLEL_COMPACTIONS;
 import static sleeper.systemtest.suite.fixtures.SystemTestSchema.DEFAULT_SCHEMA;
 import static sleeper.systemtest.suite.fixtures.SystemTestSchema.ROW_KEY_FIELD_NAME;
 
 @SystemTest
+@Slow
 public class ParallelCompactionsIT {
-    public static final int NUMBER_OF_COMPACTIONS = 5;
+    public static final int NUMBER_OF_COMPACTIONS = 1000;
     private final Schema schema = DEFAULT_SCHEMA;
     @TempDir
     private Path tempDir;
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper) throws Exception {
-        sleeper.connectToInstance(MAIN);
+        sleeper.connectToInstance(PARALLEL_COMPACTIONS);
     }
 
     @Test
@@ -81,7 +84,8 @@ public class ParallelCompactionsIT {
         sleeper.updateTableProperties(Map.of(
                 INGEST_FILE_WRITING_STRATEGY, IngestFileWritingStrategy.ONE_FILE_PER_LEAF.toString(),
                 COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
-                COMPACTION_FILES_BATCH_SIZE, "2"));
+                COMPACTION_FILES_BATCH_SIZE, "2",
+                COMPACTION_JOB_SEND_BATCH_SIZE, "" + NUMBER_OF_COMPACTIONS));
         sleeper.ingest().direct(tempDir)
                 .numberedRecords(LongStream.range(0, 5000).map(i -> i * 2)) // Evens
                 .numberedRecords(LongStream.range(0, 5000).map(i -> i * 2 + 1)); // Odds
