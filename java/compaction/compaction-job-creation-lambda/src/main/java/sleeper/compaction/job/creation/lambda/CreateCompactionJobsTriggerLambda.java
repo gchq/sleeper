@@ -38,6 +38,7 @@ import sleeper.core.util.SplitIntoBatches;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_QUEUE_URL;
@@ -80,6 +81,8 @@ public class CreateCompactionJobsTriggerLambda implements RequestHandler<Schedul
                 .withQueueUrl(queueUrl)
                 .withEntries(tables.stream()
                         .map(table -> new SendMessageBatchRequestEntry()
+                                .withMessageDeduplicationId(UUID.randomUUID().toString())
+                                .withMessageGroupId(table.getTableUniqueId())
                                 .withMessageBody(table.getTableUniqueId()))
                         .collect(toUnmodifiableList())));
     }
