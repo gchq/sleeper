@@ -30,7 +30,7 @@ use aws_config::BehaviorVersion;
 use aws_credential_types::provider::ProvideCredentials;
 use chrono::Local;
 use futures::TryFutureExt;
-use libc::{size_t, EFAULT, EINVAL, EIO};
+use libc::{c_void, size_t, EFAULT, EINVAL, EIO};
 use log::{error, info, LevelFilter};
 use std::io::Write;
 use std::sync::Once;
@@ -40,9 +40,9 @@ use std::{
 };
 use url::Url;
 
-// Just publicly expose this function
 pub use details::merge_sorted_files;
 pub use details::CompactionResult;
+pub use details::RangeBound;
 
 /// An object guaranteed to only initialise once. Thread safe.
 static LOG_CFG: Once = Once::new();
@@ -72,15 +72,6 @@ fn maybe_cfg_log() {
             .filter_level(LevelFilter::Info)
             .init();
     });
-}
-
-/// Create a vector from a C pointer to a type.
-///
-/// # Errors
-/// If the array length is invalid, then behaviour is undefined.
-#[must_use]
-fn array_helper<T: Clone>(array: *const T, len: usize) -> Vec<T> {
-    unsafe { slice::from_raw_parts(array, len).to_vec() }
 }
 
 /// Obtains AWS credentials from normal places and then calls merge function
@@ -119,6 +110,38 @@ async fn credentials_and_merge(
     .await
 }
 
+/// Contains all the input data for setting up a compaction.
+///
+/// See java/compaction/compaction-rust/src/main/java/sleeper/compaction/jobexecution/RustBridge.java
+/// for details. Field ordering and types MUST match between the two definitions!
+#[repr(C)]
+pub struct FFICompactionParams {
+    input_files_len: usize,
+    input_files: *const *const c_char,
+    output_file: *const c_char,
+    row_key_cols_len: usize,
+    row_key_cols: *const *const c_char,
+    sort_key_cols_len: usize,
+    sort_key_cols: *const *const c_char,
+    max_row_group_size: usize,
+    max_page_size: usize,
+    compression: *const c_char,
+    writer_version: *const c_char,
+    column_truncate_length: usize,
+    stats_truncate_length: usize,
+    dict_enc_row_keys: bool,
+    dict_enc_sort_keys: bool,
+    dict_enc_values: bool,
+    region_mins_len: usize,
+    region_mins: *const c_void,
+    region_maxs_len: usize,
+    region_maxs: *const c_void,
+    region_mins_inclusive_len: usize,
+    region_mins_inclusive: *const *const bool,
+    region_maxs_inclusive_len: usize,
+    region_maxs_inclusive: *const *const bool,
+}
+
 /// Contains all output data from a compaction operation.
 #[repr(C)]
 pub struct FFICompactionResult {
@@ -149,8 +172,7 @@ pub extern "C" fn allocate_result() -> *const FFICompactionResult {
 
 /// Provides the C FFI interface to calling the [`merge_sorted_files`] function.
 ///
-/// This function has the same signature as [`merge_sorted_files`], but with
-/// C FFI bindings. This function validates the pointers are valid strings (or
+/// This function takes an `FFICompactionParams` struct which contains all the  This function validates the pointers are valid strings (or
 /// at least attempts to), but undefined behaviour will result if bad pointers are passed.
 ///
 /// It is also undefined behaviour to specify and incorrect array length for any array.
@@ -180,51 +202,26 @@ pub extern "C" fn allocate_result() -> *const FFICompactionResult {
 #[allow(clippy::not_unsafe_ptr_arg_deref)]
 #[no_mangle]
 pub extern "C" fn ffi_merge_sorted_files(
-    input_file_paths: *const *const c_char,
-    input_file_paths_len: size_t,
-    output_file_path: *const c_char,
-    row_group_size: size_t,
-    max_page_size: size_t,
-    row_key_columns: *const size_t,
-    row_key_columns_len: size_t,
-    sort_columns: *const size_t,
-    sort_columns_len: size_t,
+    input_data: *mut FFICompactionParams,
     output_data: *mut FFICompactionResult,
 ) -> c_int {
     maybe_cfg_log();
-
-    // Check for nulls
-    if input_file_paths.is_null() || output_file_path.is_null() || output_data.is_null() {
-        error!("Either input or output array pointer or output_data struct pointer is null");
+    let Some(params) = (unsafe { input_data.as_ref() }) else {
+        error!("input data pointer is null");
         return EFAULT;
-    }
-
-    // First convert the C string array to an array of Rust string slices.
-    let Ok(input_paths) = (unsafe {
-        // create a slice from the pointer
-        slice::from_raw_parts(input_file_paths, input_file_paths_len)
-            .iter()
-            // transform pointer to a non-owned string
-            .map(|s| {
-                // is pointer valid?
-                if s.is_null() {
-                    return Err(ArrowError::InvalidArgumentError(String::new()));
-                }
-                // convert to string and check it's valid
-                CStr::from_ptr(*s)
-                    .to_str()
-                    .map_err(|e| ArrowError::ExternalError(Box::new(e)))
-            })
-            // now convert to a vector if all strings OK, else Err
-            .map(|x| x.map(Url::parse))
-            .collect::<Result<Vec<_>, _>>()
-    }) else {
-        error!("Error converting input paths as valid UTF-8");
-        return EINVAL;
     };
 
+    // Unpack input array pointers
+    let Ok(input_paths) = unpack_string_array(params.input_files, params.input_files_len) else {
+        error!("Error converting input paths as valid UTF8");
+        return EINVAL;
+    };
     // Now unwrap the URL parsing errors
-    let input_paths = match input_paths.into_iter().collect::<Result<Vec<_>, _>>() {
+    let input_paths = match input_paths
+        .into_iter()
+        .map(|x| Url::parse(x))
+        .collect::<Result<Vec<_>, _>>()
+    {
         Ok(v) => v,
         Err(e) => {
             error!("URL parsing error on input paths {}", e);
@@ -234,48 +231,131 @@ pub extern "C" fn ffi_merge_sorted_files(
 
     // Get output file URL
     let Ok(Ok(output_path)) =
-        (unsafe { CStr::from_ptr(output_file_path).to_str() }).map(Url::parse)
+        (unsafe { CStr::from_ptr(params.output_file).to_str() }).map(Url::parse)
     else {
-        error!("URL parsing error on output path");
+        error!("UTF8 or URL parsing error on output path");
         return EINVAL;
     };
 
-    // Convert C pointer to dynamic arrays
-    let row_fields = array_helper(row_key_columns, row_key_columns_len);
-    let sort_cols = array_helper(sort_columns, sort_columns_len);
-
-    // Start async runtime
-    let rt = match tokio::runtime::Runtime::new() {
-        Ok(v) => v,
-        Err(e) => {
-            error!("Couldn't create Rust tokio runtime {}", e);
-            return EIO;
-        }
+    // Unpack row column names
+    let Ok(row_key_cols) = unpack_string_array(params.row_key_cols, params.row_key_cols_len) else {
+        error!("Error converting row kew colun names as valid UTF8");
+        return EINVAL;
     };
 
-    // Run compaction
-    let result = rt.block_on(credentials_and_merge(
-        &input_paths,
-        &output_path,
-        row_group_size,
-        max_page_size,
-        &row_fields,
-        &sort_cols,
-    ));
+    // Unpack sort column names
+    let Ok(sort_key_cols) = unpack_string_array(params.sort_key_cols, params.sort_key_cols_len)
+    else {
+        error!("Error converting sort kew colun names as valid UTF8");
+        return EINVAL;
+    };
 
-    match result {
-        Ok(res) => {
-            if let Some(data) = unsafe { output_data.as_mut() } {
-                data.rows_read = res.rows_read;
-                data.rows_written = res.rows_written;
-            }
-            0
-        }
-        Err(e) => {
-            error!("merging error {}", e);
-            -1
-        }
+    // Get compression codec
+    let Ok(compression_codec) = (unsafe { CStr::from_ptr(params.compression).to_str() }) else {
+        error!("UTF8 decoding error on compression codec");
+        return EINVAL;
+    };
+
+    // Get writer version
+    let Ok(writer_version) = (unsafe { CStr::from_ptr(params.writer_version).to_str() }) else {
+        error!("UTF8 decoding error on writer version");
+        return EINVAL;
+    };
+
+    let region_mins_inclusive = unpack_bool_array(
+        params.region_mins_inclusive,
+        params.region_mins_inclusive_len,
+    );
+    let region_maxs_inclusive = unpack_bool_array(
+        params.region_maxs_inclusive,
+        params.region_maxs_inclusive_len,
+    );
+
+    println!(
+        "{:?} {:?} {:?} {:?} {:?} {:?} {:?} {:?}",
+        input_paths,
+        output_path,
+        row_key_cols,
+        sort_key_cols,
+        compression_codec,
+        writer_version,
+        region_mins_inclusive,
+        region_maxs_inclusive
+    );
+    // // Start async runtime
+    // let rt = match tokio::runtime::Runtime::new() {
+    //     Ok(v) => v,
+    //     Err(e) => {
+    //         error!("Couldn't create Rust tokio runtime {}", e);
+    //         return EIO;
+    //     }
+    // };
+
+    // // Run compaction
+    // let result = rt.block_on(credentials_and_merge(
+    //     &input_paths,
+    //     &output_path,
+    //     row_group_size,
+    //     max_page_size,
+    //     &row_fields,
+    //     &sort_cols,
+    // ));
+
+    // match result {
+    //     Ok(res) => {
+    //         if let Some(data) = unsafe { output_data.as_mut() } {
+    //             data.rows_read = res.rows_read;
+    //             data.rows_written = res.rows_written;
+    //         }
+    //         0
+    //     }
+    //     Err(e) => {
+    //         error!("merging error {}", e);
+    //         -1
+    //     }
+    // }
+    let Some(data) = (unsafe { output_data.as_mut() }) else {
+        error!("output data pointer is null");
+        return EFAULT;
+    };
+    data.rows_read = 12;
+    data.rows_written = 34;
+    0
+}
+
+/// Create a vector from a C pointer to an array of strings.
+///
+/// # Errors
+/// If the array length is invalid, then behaviour is undefined.
+fn unpack_string_array(
+    array_base: *const *const c_char,
+    len: usize,
+) -> Result<Vec<&'static str>, ArrowError> {
+    unsafe {
+        // create a slice from the pointer
+        slice::from_raw_parts(array_base, len)
     }
+    .iter()
+    // transform pointer to a non-owned string
+    .map(|s| {
+        // is pointer valid?
+        if s.is_null() {
+            return Err(ArrowError::InvalidArgumentError(String::new()));
+        }
+        // convert to string and check it's valid
+        unsafe { CStr::from_ptr(*s) }
+            .to_str()
+            .map_err(|e| ArrowError::ExternalError(Box::new(e)))
+    })
+    // now convert to a vector if all strings OK, else Err
+    .collect::<Result<Vec<_>, _>>()
+}
+
+fn unpack_bool_array(array_base: *const *const bool, len: usize) -> Vec<bool> {
+    unsafe { slice::from_raw_parts(array_base, len) }
+        .iter()
+        .map(|&bptr| unsafe { *bptr })
+        .collect()
 }
 
 /// Free the compaction result previously allocated by [`allocate_result()`].

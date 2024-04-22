@@ -40,6 +40,7 @@ import static sleeper.configuration.properties.table.TableProperty.COLUMN_INDEX_
 import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.configuration.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS;
 import static sleeper.configuration.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS;
+import static sleeper.configuration.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_VALUE_FIELDS;
 import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.PARQUET_WRITER_VERSION;
 import static sleeper.configuration.properties.table.TableProperty.STATISTICS_TRUNCATE_LENGTH;
@@ -113,8 +114,9 @@ public class RustCompaction implements CompactionRunner {
         params.stats_truncate_length.set(tableProperties.getInt(STATISTICS_TRUNCATE_LENGTH));
         params.dict_enc_row_keys.set(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS));
         params.dict_enc_sort_keys.set(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS));
-        // Sanity check: minimise lifetimeerties.getBoolean(DICTIONARY_ENCODING_FOR_VALUE_FIELDS));
-        { // Sanity check: minimise lifetime
+        params.dict_enc_values.set(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_VALUE_FIELDS));
+        // Sanity check: minimise lifetime
+        {
             Object[] regionMins = region.getRanges().stream().map(Range::getMin).toArray();
             params.region_mins.populate(regionMins);
         }

@@ -43,6 +43,14 @@ use parquet::{
 use std::{cell::RefCell, path::PathBuf, sync::Arc};
 use url::Url;
 
+/// Type safe variant for Sleeper partition boundary
+pub enum RangeBound {
+    Int32 { val: i32 },
+    Int64 { val: i64 },
+    String { val: &'static str },
+    ByteArray { val: &'static [u8] },
+}
+
 /// A simple iterator for a batch of rows (owned).
 #[derive(Debug)]
 struct OwnedRowIter {
