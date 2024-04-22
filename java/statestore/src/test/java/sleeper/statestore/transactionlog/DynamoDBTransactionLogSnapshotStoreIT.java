@@ -50,7 +50,7 @@ public class DynamoDBTransactionLogSnapshotStoreIT {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = schemaWithKey("key");
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-    private DynamoDBTransactionLogSnapshotStore store = snapshotStore();
+    private final DynamoDBTransactionLogSnapshotStore store = snapshotStore();
 
     @BeforeAll
     public static void initDynamoClient() {
@@ -85,9 +85,9 @@ public class DynamoDBTransactionLogSnapshotStoreIT {
             // Then
             assertThat(store.getFilesSnapshots())
                     .containsExactly(
-                            filesSnapshot("snapshot/3-files.parquet", 3),
+                            filesSnapshot("snapshot/1-files.parquet", 1),
                             filesSnapshot("snapshot/2-files.parquet", 2),
-                            filesSnapshot("snapshot/1-files.parquet", 1));
+                            filesSnapshot("snapshot/3-files.parquet", 3));
         }
 
         @Test
@@ -136,9 +136,9 @@ public class DynamoDBTransactionLogSnapshotStoreIT {
             // Then
             assertThat(store.getPartitionsSnapshots())
                     .containsExactly(
-                            partitionsSnapshot("snapshot/3-partitions.parquet", 3),
+                            partitionsSnapshot("snapshot/1-partitions.parquet", 1),
                             partitionsSnapshot("snapshot/2-partitions.parquet", 2),
-                            partitionsSnapshot("snapshot/1-partitions.parquet", 1));
+                            partitionsSnapshot("snapshot/3-partitions.parquet", 3));
         }
 
         @Test
@@ -176,6 +176,34 @@ public class DynamoDBTransactionLogSnapshotStoreIT {
         void shouldLoadLatestFilesSnapshotWhenCreatingStateStore() {
             TableProperties table = createTable();
         }
+    }
+
+    @Test
+    void shouldSaveAndLoadSnapshotsForMultipleTables() throws Exception {
+        TableProperties table1 = createTable();
+        TableProperties table2 = createTable();
+        DynamoDBTransactionLogSnapshotStore snapshotStore1 = snapshotStore(table1);
+        DynamoDBTransactionLogSnapshotStore snapshotStore2 = snapshotStore(table2);
+
+        // When
+        snapshotStore1.saveFiles("snapshot/table1/1-files.parquet", 1);
+        snapshotStore1.savePartitions("snapshot/table1/1-partitions.parquet", 1);
+        snapshotStore2.saveFiles("snapshot/table2/1-files.parquet", 1);
+        snapshotStore2.savePartitions("snapshot/table2/1-partitions.parquet", 1);
+
+        // Then
+        assertThat(snapshotStore1.getFilesSnapshots())
+                .containsExactly(
+                        filesSnapshot("snapshot/table1/1-files.parquet", 1));
+        assertThat(snapshotStore1.getPartitionsSnapshots())
+                .containsExactly(
+                        partitionsSnapshot("snapshot/table1/1-partitions.parquet", 1));
+        assertThat(snapshotStore2.getFilesSnapshots())
+                .containsExactly(
+                        filesSnapshot("snapshot/table2/1-files.parquet", 1));
+        assertThat(snapshotStore2.getPartitionsSnapshots())
+                .containsExactly(
+                        partitionsSnapshot("snapshot/table2/1-partitions.parquet", 1));
     }
 
     private TableProperties createTable() {
