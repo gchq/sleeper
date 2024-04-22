@@ -29,7 +29,6 @@ public class TableStatusTestHelper {
      * @param  tableName     the table name
      * @return               a {@link TableStatus} object
      */
-
     public static TableStatus uniqueIdAndName(String tableUniqueId, String tableName) {
         return TableStatus.uniqueIdAndName(tableUniqueId, tableName, true);
     }
