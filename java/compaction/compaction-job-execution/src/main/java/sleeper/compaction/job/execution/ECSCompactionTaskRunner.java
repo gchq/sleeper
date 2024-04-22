@@ -38,11 +38,13 @@ import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.core.util.LoggedDuration;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.job.common.EC2ContainerMetadata;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.UUID;
 
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
@@ -67,6 +69,7 @@ public class ECSCompactionTaskRunner {
         String taskId = UUID.randomUUID().toString();
         Segment segment = AWSXRay.beginSegment("CompactionTask");
         segment.putAnnotation("taskId", taskId);
+        Instant startTime = Instant.now();
         AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
         AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
@@ -99,7 +102,6 @@ public class ECSCompactionTaskRunner {
             segment.addException(e);
             throw e;
         } finally {
-
             sqsClient.shutdown();
             LOGGER.info("Shut down sqsClient");
             dynamoDBClient.shutdown();
@@ -108,6 +110,7 @@ public class ECSCompactionTaskRunner {
             LOGGER.info("Shut down s3Client");
             ecsClient.shutdown();
             LOGGER.info("Shut down ecsClient");
+            LOGGER.info("Total run time = {}", LoggedDuration.withFullOutput(startTime, Instant.now()));
             AWSXRay.endSegment();
         }
     }

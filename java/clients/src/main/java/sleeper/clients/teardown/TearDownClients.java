@@ -56,19 +56,31 @@ public class TearDownClients {
     }
 
     public static void withDefaults(TearDownOperation operation) throws IOException, InterruptedException {
+        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+        AmazonCloudWatchEvents cloudWatchClient = AmazonCloudWatchEventsClientBuilder.defaultClient();
+        AmazonECS ecsClient = AmazonECSClientBuilder.defaultClient();
+        AmazonECR ecrClient = AmazonECRClientBuilder.defaultClient();
+        AmazonElasticMapReduce emrClient = AmazonElasticMapReduceClientBuilder.defaultClient();
         try (S3Client s3v2Client = S3Client.create();
+                EmrServerlessClient emrServerless = EmrServerlessClient.create();
                 CloudFormationClient cloudFormationClient = CloudFormationClient.create()) {
             TearDownClients clients = builder()
-                    .s3(AmazonS3ClientBuilder.defaultClient())
+                    .s3(s3Client)
                     .s3v2(s3v2Client)
-                    .cloudWatch(AmazonCloudWatchEventsClientBuilder.defaultClient())
-                    .ecs(AmazonECSClientBuilder.defaultClient())
-                    .ecr(AmazonECRClientBuilder.defaultClient())
-                    .emr(AmazonElasticMapReduceClientBuilder.defaultClient())
-                    .emrServerless(EmrServerlessClient.create())
+                    .cloudWatch(cloudWatchClient)
+                    .ecs(ecsClient)
+                    .ecr(ecrClient)
+                    .emr(emrClient)
+                    .emrServerless(emrServerless)
                     .cloudFormation(cloudFormationClient)
                     .build();
             operation.tearDown(clients);
+        } finally {
+            s3Client.shutdown();
+            cloudWatchClient.shutdown();
+            ecsClient.shutdown();
+            ecrClient.shutdown();
+            emrClient.shutdown();
         }
     }
 

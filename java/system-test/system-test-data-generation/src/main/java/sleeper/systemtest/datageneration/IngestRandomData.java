@@ -56,43 +56,46 @@ public class IngestRandomData {
         InstanceProperties instanceProperties;
         SystemTestPropertyValues systemTestProperties;
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        if (args.length == 2) {
-            SystemTestProperties properties = new SystemTestProperties();
-            properties.loadFromS3(s3Client, args[0]);
-            instanceProperties = properties;
-            systemTestProperties = properties.testPropertiesOnly();
-        } else if (args.length == 3) {
-            instanceProperties = new InstanceProperties();
-            instanceProperties.loadFromS3(s3Client, args[0]);
-            systemTestProperties = SystemTestStandaloneProperties.fromS3(s3Client, args[2]);
-        } else {
-            throw new RuntimeException("Wrong number of arguments detected. Usage: IngestRandomData <S3 bucket> <Table name> <optional system test bucket>");
-        }
         AmazonDynamoDB dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
-        TableProperties tableProperties = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient)
-                .getByName(args[1]);
-
-        SystemTestIngestMode ingestMode = systemTestProperties.getEnumValue(INGEST_MODE, SystemTestIngestMode.class);
-        if (ingestMode == DIRECT) {
-            StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client,
-                    dynamoClient, HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
-            WriteRandomDataDirect.writeWithIngestFactory(instanceProperties, tableProperties, systemTestProperties, stateStoreProvider);
-        } else {
-            String jobId = UUID.randomUUID().toString();
-            String dir = WriteRandomDataFiles.writeToS3GetDirectory(
-                    instanceProperties, tableProperties, systemTestProperties, jobId);
-            if (ingestMode == QUEUE) {
-                IngestRandomDataViaQueue.sendJob(
-                        jobId, dir, instanceProperties, tableProperties, systemTestProperties);
-            } else if (ingestMode == BATCHER) {
-                IngestRandomDataViaBatcher.sendRequest(dir, instanceProperties, tableProperties);
-            } else if (ingestMode == GENERATE_ONLY) {
-                LOGGER.debug("Generate data only, no message was sent");
+        try {
+            if (args.length == 2) {
+                SystemTestProperties properties = new SystemTestProperties();
+                properties.loadFromS3(s3Client, args[0]);
+                instanceProperties = properties;
+                systemTestProperties = properties.testPropertiesOnly();
+            } else if (args.length == 3) {
+                instanceProperties = new InstanceProperties();
+                instanceProperties.loadFromS3(s3Client, args[0]);
+                systemTestProperties = SystemTestStandaloneProperties.fromS3(s3Client, args[2]);
             } else {
-                throw new IllegalArgumentException("Unrecognised ingest mode: " + ingestMode);
+                throw new RuntimeException("Wrong number of arguments detected. Usage: IngestRandomData <S3 bucket> <Table name> <optional system test bucket>");
             }
+            TableProperties tableProperties = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient)
+                    .getByName(args[1]);
+
+            SystemTestIngestMode ingestMode = systemTestProperties.getEnumValue(INGEST_MODE, SystemTestIngestMode.class);
+            if (ingestMode == DIRECT) {
+                StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client,
+                        dynamoClient, HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
+                WriteRandomDataDirect.writeWithIngestFactory(instanceProperties, tableProperties, systemTestProperties, stateStoreProvider);
+            } else {
+                String jobId = UUID.randomUUID().toString();
+                String dir = WriteRandomDataFiles.writeToS3GetDirectory(
+                        instanceProperties, tableProperties, systemTestProperties, jobId);
+                if (ingestMode == QUEUE) {
+                    IngestRandomDataViaQueue.sendJob(
+                            jobId, dir, instanceProperties, tableProperties, systemTestProperties);
+                } else if (ingestMode == BATCHER) {
+                    IngestRandomDataViaBatcher.sendRequest(dir, instanceProperties, tableProperties);
+                } else if (ingestMode == GENERATE_ONLY) {
+                    LOGGER.debug("Generate data only, no message was sent");
+                } else {
+                    throw new IllegalArgumentException("Unrecognised ingest mode: " + ingestMode);
+                }
+            }
+        } finally {
+            s3Client.shutdown();
+            dynamoClient.shutdown();
         }
-        s3Client.shutdown();
-        dynamoClient.shutdown();
     }
 }

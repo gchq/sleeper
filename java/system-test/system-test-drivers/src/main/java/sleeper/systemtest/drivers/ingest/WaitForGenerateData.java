@@ -116,10 +116,12 @@ public class WaitForGenerateData {
         ECSTaskStatusFormat ecsTaskFormat = ecsTaskStatusFormat(statusFormatStr);
 
         AmazonECS ecsClient = AmazonECSClientBuilder.defaultClient();
-
-        WaitForGenerateData wait = new WaitForGenerateData(ecsClient, generateDataTasks, ecsTaskFormat);
-        wait.pollUntilFinished();
-        ecsClient.shutdown();
+        try {
+            WaitForGenerateData wait = new WaitForGenerateData(ecsClient, generateDataTasks, ecsTaskFormat);
+            wait.pollUntilFinished();
+        } finally {
+            ecsClient.shutdown();
+        }
     }
 
     public static ECSTaskStatusFormat ecsTaskStatusFormat(String format) {

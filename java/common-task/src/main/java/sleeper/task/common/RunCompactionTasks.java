@@ -48,7 +48,6 @@ import static sleeper.configuration.properties.instance.CommonProperty.FARGATE_V
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
 import static sleeper.configuration.properties.instance.CompactionProperty.MAXIMUM_CONCURRENT_COMPACTION_TASKS;
-import static sleeper.configuration.properties.instance.InstanceProperties.getConfigBucketFromInstanceId;
 import static sleeper.core.ContainerConstants.COMPACTION_CONTAINER_NAME;
 
 /**
@@ -248,14 +247,13 @@ public class RunCompactionTasks {
         }
         String instanceId = args[0];
         int numberOfTasks = Integer.parseInt(args[1]);
-        String s3Bucket = getConfigBucketFromInstanceId(instanceId);
         AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
         AmazonECS ecsClient = AmazonECSClientBuilder.defaultClient();
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         AmazonAutoScaling asClient = AmazonAutoScalingClientBuilder.defaultClient();
         try {
             InstanceProperties instanceProperties = new InstanceProperties();
-            instanceProperties.loadFromS3(s3Client, s3Bucket);
+            instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
             new RunCompactionTasks(instanceProperties, ecsClient, asClient)
                     .runToMeetTargetTasks(numberOfTasks);
         } finally {

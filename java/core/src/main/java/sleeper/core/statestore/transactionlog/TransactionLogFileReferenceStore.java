@@ -15,6 +15,9 @@
  */
 package sleeper.core.statestore.transactionlog;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.AssignJobIdRequest;
@@ -35,12 +38,14 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 class TransactionLogFileReferenceStore implements FileReferenceStore {
 
+    public static final Logger LOGGER = LoggerFactory.getLogger(TransactionLogFileReferenceStore.class);
     private final TransactionLogHead<StateStoreFiles> head;
     private Clock clock = Clock.systemUTC();
 
@@ -55,7 +60,12 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
 
     @Override
     public void assignJobIds(List<AssignJobIdRequest> requests) throws StateStoreException {
-        head.addTransaction(clock.instant(), new AssignJobIdsTransaction(requests));
+        Optional<AssignJobIdsTransaction> transaction = AssignJobIdsTransaction.ignoringEmptyRequests(requests);
+        if (transaction.isPresent()) {
+            head.addTransaction(clock.instant(), transaction.get());
+        } else {
+            LOGGER.info("Ignoring assignJobIds call with no file assignments, received requests: {}", requests);
+        }
     }
 
     @Override
