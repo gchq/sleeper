@@ -40,7 +40,6 @@ import static sleeper.configuration.properties.table.TableProperty.COLUMN_INDEX_
 import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.configuration.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS;
 import static sleeper.configuration.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS;
-import static sleeper.configuration.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_VALUE_FIELDS;
 import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.PARQUET_WRITER_VERSION;
 import static sleeper.configuration.properties.table.TableProperty.STATISTICS_TRUNCATE_LENGTH;
@@ -88,10 +87,10 @@ public class RustCompaction implements CompactionRunner {
 
     /**
      * Creates the input struct that contains all the information needed by the Rust side of the compaction.
-     * 
+     *
      * This includes all Parquet writer settings as well as compaction data such as input files, compaction
      * region etc.
-     * 
+     *
      * @param  job             compaction job
      * @param  tableProperties table configuration for this table
      * @param  schema          the table schema
@@ -99,6 +98,7 @@ public class RustCompaction implements CompactionRunner {
      * @param  runtime         FFI runtime
      * @return                 object to pass to FFI layer
      */
+    @SuppressWarnings(value = "checkstyle:avoidNestedBlocks")
     public static FFICompactionParams createFFIParams(CompactionJob job, TableProperties tableProperties, Schema schema, Region region, jnr.ffi.Runtime runtime) {
         FFICompactionParams params = new FFICompactionParams(runtime);
         params.input_files.populate(job.getInputFiles().toArray(new String[0]));
@@ -113,7 +113,7 @@ public class RustCompaction implements CompactionRunner {
         params.stats_truncate_length.set(tableProperties.getInt(STATISTICS_TRUNCATE_LENGTH));
         params.dict_enc_row_keys.set(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS));
         params.dict_enc_sort_keys.set(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS));
-        params.dict_enc_values.set(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_VALUE_FIELDS));
+        // Sanity check: minimise lifetimeerties.getBoolean(DICTIONARY_ENCODING_FOR_VALUE_FIELDS));
         { // Sanity check: minimise lifetime
             Object[] regionMins = region.getRanges().stream().map(Range::getMin).toArray();
             params.region_mins.populate(regionMins);
