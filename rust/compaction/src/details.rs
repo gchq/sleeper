@@ -44,11 +44,12 @@ use std::{cell::RefCell, path::PathBuf, sync::Arc};
 use url::Url;
 
 /// Type safe variant for Sleeper partition boundary
-pub enum RangeBound {
+#[derive(Debug)]
+pub enum PartitionBound {
     Int32 { val: i32 },
     Int64 { val: i64 },
     String { val: &'static str },
-    ByteArray { val: &'static [u8] },
+    ByteArray { val: &'static [i8] },
 }
 
 /// A simple iterator for a batch of rows (owned).

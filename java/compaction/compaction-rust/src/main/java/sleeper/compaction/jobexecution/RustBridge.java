@@ -135,6 +135,8 @@ public class RustBridge {
         public final Struct.UTF8StringRef output_file = new Struct.UTF8StringRef();
         /** Names of Sleeper row key columns from schema. */
         public final Array<java.lang.String> row_key_cols = new Array<>(this);
+        /** Types for region schema 1 = Int, 2 = Long, 3 = String, 4 = Byte array. */
+        public final Array<java.lang.Integer> row_key_schema = new Array<>(this);
         /** Names of Sleeper sort key columns from schema. */
         public final Array<java.lang.String> sort_key_cols = new Array<>(this);
         /** Maximum size of output Parquet row group in rows. */
@@ -176,6 +178,7 @@ public class RustBridge {
         public void validate() {
             input_files.validate();
             row_key_cols.validate();
+            row_key_schema.validate();
             sort_key_cols.validate();
             region_mins.validate();
             region_maxs.validate();
@@ -189,6 +192,9 @@ public class RustBridge {
 
             // Check lengths
             long rowKeys = row_key_cols.len.get();
+            if (rowKeys != row_key_schema.len.get()) {
+                throw new IllegalStateException("row key schema array has length " + row_key_schema.len.get() + " but there are " + rowKeys + " row key columns");
+            }
             if (rowKeys != region_maxs.len.get()) {
                 throw new IllegalStateException("region maxs has length " + region_maxs.len.get() + " but there are " + rowKeys + " row key columns");
             }
@@ -304,17 +310,22 @@ public class RustBridge {
                 this.items[idx] = r.getMemoryManager().allocateDirect(r.findType(NativeType.SLONGLONG).size());
                 this.items[idx].putLong(0, e);
             } else if (item instanceof java.lang.String) {
+                // Strings are encoded as 4 byte length then value
                 java.lang.String e = (java.lang.String) item;
-                byte[] bytes = e.getBytes(StandardCharsets.UTF_8);
-                // Add one for NULL terminator
-                int stringSize = bytes.length + 1;
-                // Allocate memory for string and set it
+                byte[] utf8string = e.getBytes(StandardCharsets.UTF_8);
+                // Add four for length
+                int stringSize = utf8string.length + 4;
+                // Allocate memory for string and write length then string
                 this.items[idx] = r.getMemoryManager().allocateDirect(stringSize);
-                this.items[idx].putString(0, e, stringSize, StandardCharsets.UTF_8);
+                this.items[idx].putInt(0, utf8string.length);
+                this.items[idx].put(4, utf8string, 0, utf8string.length);
             } else if (item instanceof byte[]) {
+                // Byte arrays are encoded as 4 byte length then value
                 byte[] e = (byte[]) item;
-                this.items[idx] = r.getMemoryManager().allocateDirect(e.length);
-                this.items[idx].put(0, e, 0, e.length);
+                int byteSize = e.length + 4;
+                this.items[idx] = r.getMemoryManager().allocateDirect(byteSize);
+                this.items[idx].putInt(0, e.length);
+                this.items[idx].put(4, e, 0, e.length);
             } else if (item instanceof Boolean) {
                 boolean e = (boolean) item;
                 this.items[idx] = r.getMemoryManager().allocateDirect(1);

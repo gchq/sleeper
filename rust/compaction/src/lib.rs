@@ -33,6 +33,7 @@ use futures::TryFutureExt;
 use libc::{c_void, size_t, EFAULT, EINVAL, EIO};
 use log::{error, info, LevelFilter};
 use std::io::Write;
+use std::str::Utf8Error;
 use std::sync::Once;
 use std::{
     ffi::{c_char, c_int, CStr},
@@ -42,7 +43,7 @@ use url::Url;
 
 pub use details::merge_sorted_files;
 pub use details::CompactionResult;
-pub use details::RangeBound;
+pub use details::PartitionBound;
 
 /// An object guaranteed to only initialise once. Thread safe.
 static LOG_CFG: Once = Once::new();
@@ -121,6 +122,8 @@ pub struct FFICompactionParams {
     output_file: *const c_char,
     row_key_cols_len: usize,
     row_key_cols: *const *const c_char,
+    row_key_schema_len: usize,
+    row_key_schema: *const *const c_int,
     sort_key_cols_len: usize,
     sort_key_cols: *const *const c_char,
     max_row_group_size: usize,
@@ -133,9 +136,9 @@ pub struct FFICompactionParams {
     dict_enc_sort_keys: bool,
     dict_enc_values: bool,
     region_mins_len: usize,
-    region_mins: *const c_void,
+    region_mins: *const *const c_void,
     region_maxs_len: usize,
-    region_maxs: *const c_void,
+    region_maxs: *const *const c_void,
     region_mins_inclusive_len: usize,
     region_mins_inclusive: *const *const bool,
     region_maxs_inclusive_len: usize,
@@ -262,17 +265,24 @@ pub extern "C" fn ffi_merge_sorted_files(
         return EINVAL;
     };
 
-    let region_mins_inclusive = unpack_bool_array(
+    // Deal with compaction region parameters
+    let region_mins_inclusive = unpack_primitive_array(
         params.region_mins_inclusive,
         params.region_mins_inclusive_len,
     );
-    let region_maxs_inclusive = unpack_bool_array(
+    let region_maxs_inclusive = unpack_primitive_array(
         params.region_maxs_inclusive,
         params.region_maxs_inclusive_len,
     );
 
+    let schema_types = unpack_primitive_array(params.row_key_schema, params.row_key_schema_len);
+    let region_mins =
+        unpack_variant_array(params.region_mins, params.region_mins_len, &schema_types);
+    let region_maxs =
+        unpack_variant_array(params.region_maxs, params.region_maxs_len, &schema_types);
+
     println!(
-        "{:?} {:?} {:?} {:?} {:?} {:?} {:?} {:?}",
+        "{:?} {:?} {:?} {:?} {:?} {:?} {:?} {:?} {:?} {:?}",
         input_paths,
         output_path,
         row_key_cols,
@@ -280,7 +290,9 @@ pub extern "C" fn ffi_merge_sorted_files(
         compression_codec,
         writer_version,
         region_mins_inclusive,
-        region_maxs_inclusive
+        region_maxs_inclusive,
+        region_mins,
+        region_maxs,
     );
     // // Start async runtime
     // let rt = match tokio::runtime::Runtime::new() {
@@ -336,25 +348,109 @@ fn unpack_string_array(
         slice::from_raw_parts(array_base, len)
     }
     .iter()
+    .inspect(|p| {
+        if p.is_null() {
+            error!("Found NULL pointer in string array");
+        }
+    })
     // transform pointer to a non-owned string
     .map(|s| {
-        // is pointer valid?
-        if s.is_null() {
-            return Err(ArrowError::InvalidArgumentError(String::new()));
+        //unpack length (signed because it's from Java)
+        let str_len = unsafe { *(*s as *const i32) };
+        if str_len < 0 {
+            return Err(ArrowError::InvalidArgumentError(format!(
+                "Illegal string length in FFI array: {}",
+                str_len
+            )));
         }
         // convert to string and check it's valid
-        unsafe { CStr::from_ptr(*s) }
-            .to_str()
-            .map_err(|e| ArrowError::ExternalError(Box::new(e)))
+        std::str::from_utf8(unsafe {
+            slice::from_raw_parts(s.byte_add(4) as *const u8, str_len as usize)
+        })
+        .map_err(|e| ArrowError::ExternalError(Box::new(e)))
     })
     // now convert to a vector if all strings OK, else Err
     .collect::<Result<Vec<_>, _>>()
 }
 
-fn unpack_bool_array(array_base: *const *const bool, len: usize) -> Vec<bool> {
+/// Create a vector of a primitive array type.
+///
+/// # Errors
+/// If the array length is invalid, then behaviour is undefined.
+fn unpack_primitive_array<T: Copy>(array_base: *const *const T, len: usize) -> Vec<T> {
     unsafe { slice::from_raw_parts(array_base, len) }
         .iter()
+        .inspect(|p| {
+            if p.is_null() {
+                error!("Found NULL pointer in string array");
+            }
+        })
         .map(|&bptr| unsafe { *bptr })
+        .collect()
+}
+
+/// Create a vector of a variant array type. Each element may be a
+/// i32, i64, String or byte array. The schema types define what decoding is attempted.
+///
+/// # Errors
+/// If the array length is invalid, then behaviour is undefined.
+/// If the schema types are incorrect, then behaviour is undefined.
+///
+/// # Panics
+/// If the length of the `schema_types` array doesn't match the length specified.
+///
+/// Also panics if a negative array length is found in decoding byte arrays or strings.
+fn unpack_variant_array(
+    array_base: *const *const c_void,
+    len: usize,
+    schema_types: &[i32],
+) -> Result<Vec<PartitionBound>, Utf8Error> {
+    assert_eq!(len, schema_types.len());
+    unsafe { slice::from_raw_parts(array_base, len) }
+        .iter()
+        .inspect(|p| {
+            if p.is_null() {
+                error!("Found NULL pointer in string array");
+            }
+        })
+        .zip(schema_types.iter())
+        .map(|(&bptr, type_id)| match type_id {
+            1 => Ok(PartitionBound::Int32 {
+                val: unsafe { *(bptr as *const i32) },
+            }),
+            2 => Ok(PartitionBound::Int64 {
+                val: unsafe { *(bptr as *const i64) },
+            }),
+            3 => {
+                //unpack length (signed because it's from Java)
+                let str_len = unsafe { *(bptr as *const i32) };
+                if str_len < 0 {
+                    error!("Illegal string length in FFI array: {}", str_len);
+                    panic!("Illegal string length in FFI array: {}", str_len);
+                }
+                std::str::from_utf8(unsafe {
+                    slice::from_raw_parts(bptr.byte_add(4) as *const u8, str_len as usize)
+                })
+                .map(|v| PartitionBound::String { val: v })
+            }
+            4 => {
+                //unpack length (signed because it's from Java)
+                let byte_len = unsafe { *(bptr as *const i32) };
+                if byte_len < 0 {
+                    error!("Illegal byte array length in FFI array: {}", byte_len);
+                    panic!("Illegal byte array length in FFI array: {}", byte_len);
+                }
+                Ok(PartitionBound::ByteArray {
+                    val: unsafe {
+                        slice::from_raw_parts(bptr.byte_add(4) as *const i8, byte_len as usize)
+                    },
+                })
+            }
+            x @ _ => {
+                error!("Unexpected type id {}", x);
+                panic!("Unexpected type id {}", x);
+            }
+        })
         .collect()
 }
 

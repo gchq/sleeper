@@ -28,11 +28,17 @@ import sleeper.core.range.Range;
 import sleeper.core.range.Region;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.ByteArrayType;
+import sleeper.core.schema.type.IntType;
+import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.PrimitiveType;
+import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 
@@ -105,6 +111,7 @@ public class RustCompaction implements CompactionRunner {
         params.input_files.populate(job.getInputFiles().toArray(new String[0]));
         params.output_file.set(job.getOutputFile());
         params.row_key_cols.populate(schema.getRowKeyFieldNames().toArray(new String[0]));
+        params.row_key_schema.populate(getKeyTypes(schema.getRowKeyTypes()));
         params.sort_key_cols.populate(schema.getSortKeyFieldNames().toArray(new String[0]));
         params.max_row_group_size.set(RUST_MAX_ROW_GROUP_ROWS);
         params.max_page_size.set(tableProperties.getInt(PAGE_SIZE));
@@ -134,6 +141,30 @@ public class RustCompaction implements CompactionRunner {
         }
         params.validate();
         return params;
+    }
+
+    /**
+     * Convert a list of Sleeper primitive types to a number indicating their type for FFI translation.
+     *
+     * @param  keyTypes              list of primitive types of columns
+     * @return                       array of type IDs
+     * @throws IllegalStateException if unsupported type found
+     */
+    public static Integer[] getKeyTypes(List<PrimitiveType> keyTypes) {
+        return keyTypes.stream().mapToInt(type -> {
+            if (type instanceof IntType) {
+                return 1;
+            } else if (type instanceof LongType) {
+                return 2;
+            } else if (type instanceof StringType) {
+                return 3;
+            } else if (type instanceof ByteArrayType) {
+                return 4;
+            } else {
+                throw new IllegalStateException("Unsupported column type found " + type.getClass());
+            }
+        }).boxed()
+                .toArray(Integer[]::new);
     }
 
     /**
