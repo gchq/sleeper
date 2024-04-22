@@ -606,7 +606,7 @@ public class CompactionTaskTest {
         public void completed() {
         }
 
-        public void failed() {
+        public void failed(Exception e) {
             failedJobs.add(job);
         }
     }

@@ -19,6 +19,9 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
+import com.amazonaws.xray.AWSXRay;
+import com.amazonaws.xray.entities.Segment;
+import com.amazonaws.xray.entities.TraceHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,6 +66,7 @@ public class SqsCompactionQueueHandler implements CompactionTask.MessageReceiver
             return Optional.empty();
         } else {
             Message message = receiveMessageResult.getMessages().get(0);
+            Segment segment = beginSegment(message);
             LOGGER.info("Received message: {}", message);
             CompactionJob compactionJob = CompactionJobSerDe.deserialiseFromString(message.getBody());
             MessageReference messageReference = new MessageReference(sqsClient, sqsJobQueueUrl,
@@ -77,19 +81,36 @@ public class SqsCompactionQueueHandler implements CompactionTask.MessageReceiver
             LOGGER.info("Compaction job {}: Created background thread to keep SQS messages alive (period is {} seconds)",
                     compactionJob.getId(), keepAliveFrequency);
 
-            return Optional.of(new SqsMessageHandle(compactionJob, messageReference, keepAliveRunnable));
+            return Optional.of(new SqsMessageHandle(compactionJob, messageReference, keepAliveRunnable, segment));
         }
+    }
+
+    private static Segment beginSegment(Message message) {
+        String traceHeaderStr = message.getAttributes().get("AWSTraceHeader");
+        Segment segment = AWSXRay.beginSegment("CompactionTask");
+        if (traceHeaderStr != null) {
+            // Recover the trace context from the trace header
+            TraceHeader traceHeader = TraceHeader.fromString(traceHeaderStr);
+            segment.setTraceId(traceHeader.getRootTraceId());
+            segment.setParentId(traceHeader.getParentId());
+            segment.setSampled(traceHeader.getSampled().equals(TraceHeader.SampleDecision.SAMPLED));
+        }
+        return segment;
     }
 
     private class SqsMessageHandle implements MessageHandle {
         private final CompactionJob job;
         private final MessageReference message;
         private final PeriodicActionRunnable keepAliveRunnable;
+        private final Segment segment;
 
-        SqsMessageHandle(CompactionJob job, MessageReference message, PeriodicActionRunnable keepAliveRunnable) {
+        SqsMessageHandle(
+                CompactionJob job, MessageReference message,
+                PeriodicActionRunnable keepAliveRunnable, Segment segment) {
             this.job = job;
             this.message = message;
             this.keepAliveRunnable = keepAliveRunnable;
+            this.segment = segment;
         }
 
         @Override
@@ -109,7 +130,8 @@ public class SqsCompactionQueueHandler implements CompactionTask.MessageReceiver
         }
 
         @Override
-        public void failed() {
+        public void failed(Exception e) {
+            segment.addException(e);
             LOGGER.info("Compaction job {}: Returning message to queue", job.getId());
             int visibilityTimeout = instanceProperties.getInt(COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS);
             String sqsJobQueueUrl = instanceProperties.get(COMPACTION_JOB_QUEUE_URL);
@@ -122,6 +144,7 @@ public class SqsCompactionQueueHandler implements CompactionTask.MessageReceiver
             if (keepAliveRunnable != null) {
                 keepAliveRunnable.stop();
             }
+            segment.close();
         }
     }
 

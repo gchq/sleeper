@@ -135,7 +135,7 @@ public class CompactionTask {
                 } catch (Exception e) {
                     LOGGER.error("Failed processing compaction job, putting job back on queue", e);
                     numConsecutiveFailures++;
-                    message.failed();
+                    message.failed(e);
                 }
             }
         }
@@ -179,7 +179,7 @@ public class CompactionTask {
 
         void completed();
 
-        void failed();
+        void failed(Exception e);
 
         void close();
     }
