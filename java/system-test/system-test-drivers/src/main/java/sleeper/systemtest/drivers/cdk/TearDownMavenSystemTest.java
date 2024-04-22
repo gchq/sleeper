@@ -73,8 +73,12 @@ public class TearDownMavenSystemTest {
             RemoveJarsBucket.remove(s3, buildJarsBucketName(shortId));
         }
         AmazonECR ecr = AmazonECRClientBuilder.defaultClient();
-        RemoveECRRepositories.remove(ecr,
-                PopulateInstanceProperties.generateTearDownDefaultsFromInstanceId(shortId),
-                List.of(buildSystemTestECRRepoName(shortId)));
+        try {
+            RemoveECRRepositories.remove(ecr,
+                    PopulateInstanceProperties.generateTearDownDefaultsFromInstanceId(shortId),
+                    List.of(buildSystemTestECRRepoName(shortId)));
+        } finally {
+            ecr.shutdown();
+        }
     }
 }

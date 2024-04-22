@@ -49,6 +49,8 @@ import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+
 /**
  * Allows the split points to be exported from a table. They can then be used
  * to initialise another table with the same partitions (note though that
@@ -116,31 +118,35 @@ public class ExportSplitPoints {
         if (3 != args.length) {
             throw new IllegalArgumentException("Usage: <instance-id> <table-name> <output-file>");
         }
-
-        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(s3Client, args[0]);
-
+        String instanceId = args[0];
         String tableName = args[1];
-        AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
-        TableProperties tableProperties = tablePropertiesProvider.getByName(tableName);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, new Configuration());
-        StateStore stateStore = stateStoreProvider.getStateStore(tableName, tablePropertiesProvider);
-        ExportSplitPoints exportSplitPoints = new ExportSplitPoints(stateStore, tableProperties.getSchema());
-        List<Object> splitPoints = exportSplitPoints.getSplitPoints();
+        String outputFile = args[2];
 
-        try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(args[2]), StandardCharsets.UTF_8))) {
-            for (Object splitPoint : splitPoints) {
-                if (splitPoint instanceof ByteArray) {
-                    writer.write(Base64.encodeBase64String(((ByteArray) splitPoint).getArray()));
-                } else {
-                    writer.write(splitPoint.toString());
+        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
+        AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
+
+        try {
+            InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(s3Client, instanceId);
+            TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
+            TableProperties tableProperties = tablePropertiesProvider.getByName(tableName);
+            StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, new Configuration());
+            StateStore stateStore = stateStoreProvider.getStateStore(tableName, tablePropertiesProvider);
+            ExportSplitPoints exportSplitPoints = new ExportSplitPoints(stateStore, tableProperties.getSchema());
+            List<Object> splitPoints = exportSplitPoints.getSplitPoints();
+
+            try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputFile), StandardCharsets.UTF_8))) {
+                for (Object splitPoint : splitPoints) {
+                    if (splitPoint instanceof ByteArray) {
+                        writer.write(Base64.encodeBase64String(((ByteArray) splitPoint).getArray()));
+                    } else {
+                        writer.write(splitPoint.toString());
+                    }
+                    writer.write("\n");
                 }
-                writer.write("\n");
             }
+        } finally {
+            s3Client.shutdown();
+            dynamoDBClient.shutdown();
         }
-
-        s3Client.shutdown();
-        dynamoDBClient.shutdown();
     }
 }

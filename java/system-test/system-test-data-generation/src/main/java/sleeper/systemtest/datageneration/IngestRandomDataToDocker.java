@@ -101,22 +101,26 @@ public class IngestRandomDataToDocker {
         if (args.length < 2 || args.length > 3) {
             throw new IllegalArgumentException("Usage: <instance-id> <table-name> <optional-number-of-records>");
         }
-        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
-        AmazonDynamoDB dynamoClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
-
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.loadFromS3GivenInstanceId(s3Client, args[0]);
-        TableProperties tableProperties = S3TableProperties.getStore(instanceProperties, s3Client, dynamoClient)
-                .loadByName(args[1]);
+        String instanceId = args[0];
+        String tableName = args[1];
         long numberOfRecords = 100000;
         if (args.length > 2) {
             numberOfRecords = Long.parseLong(args[2]);
         }
 
-        new IngestRandomDataToDocker(instanceProperties, tableProperties, s3Client, dynamoClient, numberOfRecords)
-                .run();
+        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
+        AmazonDynamoDB dynamoClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
+        try {
+            InstanceProperties instanceProperties = new InstanceProperties();
+            instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
+            TableProperties tableProperties = S3TableProperties.getStore(instanceProperties, s3Client, dynamoClient)
+                    .loadByName(tableName);
 
-        s3Client.shutdown();
-        dynamoClient.shutdown();
+            new IngestRandomDataToDocker(instanceProperties, tableProperties, s3Client, dynamoClient, numberOfRecords)
+                    .run();
+        } finally {
+            s3Client.shutdown();
+            dynamoClient.shutdown();
+        }
     }
 }

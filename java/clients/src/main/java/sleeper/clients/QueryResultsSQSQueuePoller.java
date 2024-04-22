@@ -85,13 +85,20 @@ public class QueryResultsSQSQueuePoller {
             throw new IllegalArgumentException("Usage: <instance-id>");
         }
 
-        AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
-        InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, args[0]);
-        amazonS3.shutdown();
+        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+        InstanceProperties instanceProperties;
+        try {
+            instanceProperties = ClientUtils.getInstanceProperties(s3Client, args[0]);
+        } finally {
+            s3Client.shutdown();
+        }
 
         AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
-        QueryResultsSQSQueuePoller poller = new QueryResultsSQSQueuePoller(sqsClient, instanceProperties.get(QUERY_RESULTS_QUEUE_URL));
-        poller.run();
-        sqsClient.shutdown();
+        try {
+            QueryResultsSQSQueuePoller poller = new QueryResultsSQSQueuePoller(sqsClient, instanceProperties.get(QUERY_RESULTS_QUEUE_URL));
+            poller.run();
+        } finally {
+            sqsClient.shutdown();
+        }
     }
 }

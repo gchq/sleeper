@@ -48,6 +48,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import static sleeper.clients.util.ClientUtils.optionalArgument;
+import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 public class IngestJobStatusReport {
     private static final String DEFAULT_REPORTER = "STANDARD";
@@ -110,19 +111,25 @@ public class IngestJobStatusReport {
             JobQuery.Type queryType = IngestJobQueryArgument.readTypeArgument(args, 3);
             String queryParameters = optionalArgument(args, 4).orElse(null);
 
-            AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
-            InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, instanceId);
-
-            AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
-            DynamoDBTableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDBClient);
-            TableStatus table = tableIndex.getTableByName(tableName)
-                    .orElseThrow(() -> new IllegalArgumentException("Table does not exist: " + tableName));
-            IngestJobStatusStore statusStore = IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
-            AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
-            AmazonElasticMapReduce emrClient = AmazonElasticMapReduceClientBuilder.defaultClient();
-            new IngestJobStatusReport(statusStore, table, queryType, queryParameters,
-                    reporter, QueueMessageCount.withSqsClient(sqsClient), instanceProperties,
-                    PersistentEMRStepCount.byStatus(instanceProperties, emrClient)).run();
+            AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
+            AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
+            AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
+            AmazonElasticMapReduce emrClient = buildAwsV1Client(AmazonElasticMapReduceClientBuilder.standard());
+            try {
+                InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(s3Client, instanceId);
+                DynamoDBTableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDBClient);
+                TableStatus table = tableIndex.getTableByName(tableName)
+                        .orElseThrow(() -> new IllegalArgumentException("Table does not exist: " + tableName));
+                IngestJobStatusStore statusStore = IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
+                new IngestJobStatusReport(statusStore, table, queryType, queryParameters,
+                        reporter, QueueMessageCount.withSqsClient(sqsClient), instanceProperties,
+                        PersistentEMRStepCount.byStatus(instanceProperties, emrClient)).run();
+            } finally {
+                s3Client.shutdown();
+                dynamoDBClient.shutdown();
+                sqsClient.shutdown();
+                emrClient.shutdown();
+            }
         } catch (IllegalArgumentException e) {
             System.out.println(e.getMessage());
             printUsage();
