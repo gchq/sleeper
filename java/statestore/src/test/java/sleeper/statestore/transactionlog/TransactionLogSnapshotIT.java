@@ -51,7 +51,7 @@ public class TransactionLogSnapshotIT {
         splitTree.getAllPartitions().forEach(state::put);
 
         // When
-        TransactionLogPartitionsSnapshot snapshot = new TransactionLogPartitionsSnapshot(schema, configuration);
+        TransactionLogPartitionsSnapshotSerDe snapshot = new TransactionLogPartitionsSnapshotSerDe(schema, configuration);
         snapshot.save(tempDir.toString(), state, 1);
 
         // Then
@@ -66,7 +66,7 @@ public class TransactionLogSnapshotIT {
         state.add(file);
 
         // When
-        TransactionLogFilesSnapshot snapshot = new TransactionLogFilesSnapshot(configuration);
+        TransactionLogFilesSnapshotSerDe snapshot = new TransactionLogFilesSnapshotSerDe(configuration);
         snapshot.save(tempDir.toString(), state, 1);
 
         // Then
