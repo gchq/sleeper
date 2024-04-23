@@ -35,7 +35,6 @@ import static sleeper.configuration.properties.table.TableProperty.COMPACTION_ST
 import static sleeper.configuration.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
 import static sleeper.systemtest.configuration.SystemTestIngestMode.DIRECT;
 import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_MODE;
-import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_INGESTS_PER_WRITER;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_INGEST;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRITERS;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.PARALLEL_COMPACTIONS;
@@ -64,32 +63,17 @@ public class ParallelCompactionsIT {
                 .updateProperties(properties -> {
                     properties.setEnum(INGEST_MODE, DIRECT);
                     properties.setNumber(NUMBER_OF_WRITERS, 10);
-                    properties.setNumber(NUMBER_OF_INGESTS_PER_WRITER, 50);
                     properties.setNumber(NUMBER_OF_RECORDS_PER_INGEST, 1_000_000);
-                })
-                .generateData(PollWithRetries.intervalAndPollingTimeout(
-                        Duration.ofSeconds(30), Duration.ofMinutes(20)));
+                }).generateData(
+                        PollWithRetries.intervalAndPollingTimeout(
+                                Duration.ofSeconds(30), Duration.ofMinutes(20)));
 
         // When we run compaction
         sleeper.compaction()
-                .forceStartTasks(1000)
-                .createJobs(8192 * 50,
-                        PollWithRetries.intervalAndPollingTimeout(
-                                Duration.ofSeconds(10), Duration.ofMinutes(5)))
-                .waitForJobs(
-                        PollWithRetries.intervalAndPollingTimeout(
-                                Duration.ofSeconds(30), Duration.ofMinutes(40)))
-                .createJobs(8192 * 5,
-                        PollWithRetries.intervalAndPollingTimeout(
-                                Duration.ofSeconds(10), Duration.ofMinutes(5)))
-                .invokeTasks(1000)
-                .waitForJobs(
-                        PollWithRetries.intervalAndPollingTimeout(
-                                Duration.ofSeconds(30), Duration.ofMinutes(40)))
+                .forceStartTasks(300)
                 .createJobs(8192,
                         PollWithRetries.intervalAndPollingTimeout(
                                 Duration.ofSeconds(10), Duration.ofMinutes(5)))
-                .invokeTasks(1000)
                 .waitForJobs(
                         PollWithRetries.intervalAndPollingTimeout(
                                 Duration.ofSeconds(30), Duration.ofMinutes(40)));

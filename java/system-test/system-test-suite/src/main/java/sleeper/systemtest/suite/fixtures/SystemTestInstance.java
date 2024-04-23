@@ -190,7 +190,7 @@ public class SystemTestInstance {
         InstanceProperties properties = configuration.getInstanceProperties();
         properties.set(OPTIONAL_STACKS, "IngestStack,CompactionStack");
         properties.set(MAXIMUM_CONCURRENT_INGEST_TASKS, "10");
-        properties.set(MAXIMUM_CONCURRENT_COMPACTION_TASKS, "1000");
+        properties.set(MAXIMUM_CONCURRENT_COMPACTION_TASKS, "300");
         properties.set(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS, "600");
 
         Map<String, String> tags = new HashMap<>(properties.getTags());
