@@ -242,6 +242,11 @@ public class DynamoDBTransactionLogSnapshotStore {
             return Objects.equals(filesSnapshot, other.filesSnapshot) && Objects.equals(partitionsSnapshot, other.partitionsSnapshot);
         }
 
+        @Override
+        public String toString() {
+            return "LatestSnapshots{filesSnapshot=" + filesSnapshot + ", partitionsSnapshot=" + partitionsSnapshot + "}";
+        }
+
     }
 
 }
