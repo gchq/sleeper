@@ -53,9 +53,14 @@ public class SendFilesToIngest {
                 .collect(Collectors.toList());
         AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
         AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
-        InstanceProperties properties = new InstanceProperties();
-        properties.loadFromS3GivenInstanceId(s3Client, instanceId);
-        uploadFilesAndSendJob(properties, tableName, filePaths, s3Client, sqsClient);
+        try {
+            InstanceProperties properties = new InstanceProperties();
+            properties.loadFromS3GivenInstanceId(s3Client, instanceId);
+            uploadFilesAndSendJob(properties, tableName, filePaths, s3Client, sqsClient);
+        } finally {
+            s3Client.shutdown();
+            sqsClient.shutdown();
+        }
     }
 
     public static void uploadFilesAndSendJob(

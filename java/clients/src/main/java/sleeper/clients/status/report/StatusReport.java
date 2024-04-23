@@ -41,6 +41,7 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 
 import static sleeper.clients.util.ClientUtils.optionalArgument;
+import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 /**
  * A utility class to report information about the partitions, the files, the
@@ -98,29 +99,33 @@ public class StatusReport {
         if (2 != args.length && 3 != args.length) {
             throw new IllegalArgumentException("Usage: <instance-id> <table-name> <optional-verbose-true-or-false>");
         }
-        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(s3Client, args[0]);
-
-        AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
-        AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
-
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
-        TableProperties tableProperties = tablePropertiesProvider.getByName(args[1]);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, new Configuration());
-        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-        CompactionJobStatusStore compactionStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
-        CompactionTaskStatusStore compactionTaskStatusStore = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
-
+        String instanceId = args[0];
+        String tableName = args[1];
         boolean verbose = optionalArgument(args, 2)
                 .map(Boolean::parseBoolean)
                 .orElse(false);
-        StatusReport statusReport = new StatusReport(
-                instanceProperties, tableProperties, verbose,
-                stateStore, compactionStatusStore, compactionTaskStatusStore,
-                sqsClient, tablePropertiesProvider);
-        s3Client.shutdown();
-        statusReport.run();
-        sqsClient.shutdown();
-        dynamoDBClient.shutdown();
+
+        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
+        AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
+        AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
+        try {
+            InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(s3Client, instanceId);
+            TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
+            TableProperties tableProperties = tablePropertiesProvider.getByName(tableName);
+            StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, new Configuration());
+            StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
+            CompactionJobStatusStore compactionStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
+            CompactionTaskStatusStore compactionTaskStatusStore = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
+
+            StatusReport statusReport = new StatusReport(
+                    instanceProperties, tableProperties, verbose,
+                    stateStore, compactionStatusStore, compactionTaskStatusStore,
+                    sqsClient, tablePropertiesProvider);
+            statusReport.run();
+        } finally {
+            s3Client.shutdown();
+            dynamoDBClient.shutdown();
+            sqsClient.shutdown();
+        }
     }
 }

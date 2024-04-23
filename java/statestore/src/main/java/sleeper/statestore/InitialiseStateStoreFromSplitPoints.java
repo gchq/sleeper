@@ -28,11 +28,13 @@ import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 
 import java.io.IOException;
 import java.util.List;
 
 import static sleeper.configuration.ReadSplitPoints.readSplitPoints;
+import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 /**
  * Initialises a state store. If a file of split points is provided then these are used to create the initial
@@ -68,30 +70,34 @@ public class InitialiseStateStoreFromSplitPoints {
 
     public static void main(String[] args) throws StateStoreException, IOException {
         if (2 != args.length && 3 != args.length && 4 != args.length) {
-            System.out.println("Usage: <Sleeper S3 Config Bucket> <Table name> <optional split points file> <optional boolean strings base64 encoded>");
+            System.out.println("Usage: <instance-id> <table-name> <optional split points file> <optional boolean strings base64 encoded>");
             return;
         }
+        String instanceId = args[0];
+        String tableName = args[1];
 
-        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
+        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
+        AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
+        try {
+            InstanceProperties instanceProperties = new InstanceProperties();
+            instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
 
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.loadFromS3(s3Client, args[0]);
+            TableProperties tableProperties = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient).getByName(tableName);
 
-        TableProperties tableProperties = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient).getByName(args[1]);
+            List<Object> splitPoints = null;
+            if (args.length > 2) {
+                String splitPointsFile = args[2];
+                boolean stringsBase64Encoded = 4 == args.length && Boolean.parseBoolean(args[2]);
+                splitPoints = readSplitPoints(tableProperties, splitPointsFile, stringsBase64Encoded);
+            }
 
-        List<Object> splitPoints = null;
-        if (args.length > 2) {
-            String splitPointsFile = args[2];
-            boolean stringsBase64Encoded = 4 == args.length && Boolean.parseBoolean(args[2]);
-            splitPoints = readSplitPoints(tableProperties, splitPointsFile, stringsBase64Encoded);
+            Configuration conf = HadoopConfigurationProvider.getConfigurationForClient();
+            StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, conf);
+
+            new InitialiseStateStoreFromSplitPoints(stateStoreProvider, tableProperties, splitPoints).run();
+        } finally {
+            dynamoDBClient.shutdown();
+            s3Client.shutdown();
         }
-
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, new Configuration());
-
-        new InitialiseStateStoreFromSplitPoints(stateStoreProvider, tableProperties, splitPoints).run();
-
-        dynamoDBClient.shutdown();
-        s3Client.shutdown();
     }
 }

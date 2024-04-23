@@ -138,12 +138,19 @@ public class QueryClient extends QueryCommandLineClient {
             throw new IllegalArgumentException("Usage: <instance-id>");
         }
 
-        AmazonS3 amazonS3 = buildAwsV1Client(AmazonS3ClientBuilder.standard());
-        AmazonDynamoDB dynamoDB = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
-        InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, args[0]);
+        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
+        AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
 
-        QueryClient queryClient = new QueryClient(amazonS3, instanceProperties, dynamoDB, getConfigurationForClient(instanceProperties),
-                new ConsoleInput(System.console()), new ConsoleOutput(System.out));
-        queryClient.run();
+        try {
+            InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(s3Client, args[0]);
+            QueryClient queryClient = new QueryClient(
+                    s3Client, instanceProperties, dynamoDBClient,
+                    getConfigurationForClient(instanceProperties),
+                    new ConsoleInput(System.console()), new ConsoleOutput(System.out));
+            queryClient.run();
+        } finally {
+            s3Client.shutdown();
+            dynamoDBClient.shutdown();
+        }
     }
 }

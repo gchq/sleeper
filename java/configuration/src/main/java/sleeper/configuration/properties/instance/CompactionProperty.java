@@ -29,11 +29,10 @@ public interface CompactionProperty {
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_JOB_CREATION_BATCH_SIZE = Index.propertyBuilder("sleeper.compaction.job.creation.batch.size")
-            .description("The number of tables to perform compaction job creation for in a single invocation. A separate " +
-                    "invocation of the lambda will be made for each batch when there are more tables than the batch " +
-                    "size.")
-            .defaultValue("5")
-            .validationPredicate(Utils::isPositiveInteger)
+            .description("The number of tables to perform compaction job creation for in a single invocation. " +
+                    "This will be the batch size for a lambda as an SQS FIFO event source. This can be a maximum of 10.")
+            .defaultValue("1")
+            .validationPredicate(Utils::isPositiveIntegerLtEq10)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.queue.visibility.timeout.seconds")
             .description("The visibility timeout for the queue of compaction jobs.")
