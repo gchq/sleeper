@@ -54,7 +54,7 @@ pub enum PartitionBound {
 
 /// All the information for a a Sleeper compaction.
 #[derive(Debug)]
-pub struct CompactionDetails {
+pub struct CompactionInput {
     pub input_files: Vec<Url>,
     pub output_file: Url,
     pub row_key_cols: Vec<String>,
@@ -163,7 +163,7 @@ impl Iterator for OwnedRowIter {
 pub async fn merge_sorted_files(
     aws_creds: Option<Credentials>,
     region: &Region,
-    input_data: &CompactionDetails,
+    input_data: &CompactionInput,
 ) -> Result<CompactionResult, ArrowError> {
     let input_file_paths = input_data.input_files.clone();
     let output_file_path = input_data.output_file.clone();

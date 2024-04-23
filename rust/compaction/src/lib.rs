@@ -44,7 +44,7 @@ use std::{
 use url::Url;
 
 pub use details::merge_sorted_files;
-pub use details::{ColRange, CompactionDetails, CompactionResult, PartitionBound};
+pub use details::{ColRange, CompactionInput, CompactionResult, PartitionBound};
 
 /// An object guaranteed to only initialise once. Thread safe.
 static LOG_CFG: Once = Once::new();
@@ -80,7 +80,7 @@ fn maybe_cfg_log() {
 /// with obtained credentials.
 ///
 async fn credentials_and_merge(
-    input_data: &CompactionDetails,
+    input_data: &CompactionInput,
 ) -> Result<CompactionResult, ArrowError> {
     let config = aws_config::defaults(BehaviorVersion::latest()).load().await;
     let region = config.region().ok_or(ArrowError::InvalidArgumentError(
@@ -131,7 +131,7 @@ pub struct FFICompactionParams {
     region_maxs_inclusive: *const *const bool,
 }
 
-impl TryFrom<&FFICompactionParams> for CompactionDetails {
+impl TryFrom<&FFICompactionParams> for CompactionInput {
     type Error = anyhow::Error;
 
     fn try_from(params: &FFICompactionParams) -> Result<Self, Self::Error> {
@@ -139,7 +139,7 @@ impl TryFrom<&FFICompactionParams> for CompactionDetails {
         let row_key_cols = unpack_string_array(params.row_key_cols, params.row_key_cols_len)?
             .into_iter()
             .map(String::from)
-            .collect();
+            .collect::<Vec<_>>();
         let region = compute_region(params, &row_key_cols)?;
 
         Ok(Self {
@@ -175,7 +175,7 @@ impl TryFrom<&FFICompactionParams> for CompactionDetails {
 
 fn compute_region<T: Borrow<str>>(
     params: &FFICompactionParams,
-    row_key_cols: &Vec<T>,
+    row_key_cols: &[T],
 ) -> Result<HashMap<String, ColRange>, anyhow::Error> {
     let region_mins_inclusive = unpack_primitive_array(
         params.region_mins_inclusive,
@@ -284,7 +284,7 @@ pub extern "C" fn ffi_merge_sorted_files(
         }
     };
 
-    let details = match TryInto::<CompactionDetails>::try_into(params) {
+    let details = match TryInto::<CompactionInput>::try_into(params) {
         Ok(d) => d,
         Err(e) => {
             error!("Couldn't convert compaction input data {}", e);
@@ -333,16 +333,18 @@ fn unpack_string_array(
     // transform pointer to a non-owned string
     .map(|s| {
         //unpack length (signed because it's from Java)
-        let str_len = unsafe { *(*s as *const i32) };
+        // This will have been allocated in Java so alignment will be ok
+        #[allow(clippy::cast_ptr_alignment)]
+        let str_len = unsafe { *(*s).cast::<i32>() };
         if str_len < 0 {
             return Err(ArrowError::InvalidArgumentError(format!(
-                "Illegal string length in FFI array: {}",
-                str_len
+                "Illegal string length in FFI array: {str_len}"
             )));
         }
         // convert to string and check it's valid
         std::str::from_utf8(unsafe {
-            slice::from_raw_parts(s.byte_add(4) as *const u8, str_len as usize)
+            #[allow(clippy::cast_sign_loss)]
+            slice::from_raw_parts(s.byte_add(4).cast::<u8>(), str_len as usize)
         })
         .map_err(|e| ArrowError::ExternalError(Box::new(e)))
     })
@@ -393,39 +395,41 @@ fn unpack_variant_array(
         .zip(schema_types.iter())
         .map(|(&bptr, type_id)| match type_id {
             1 => Ok(PartitionBound::Int32 {
-                val: unsafe { *(bptr as *const i32) },
+                val: unsafe { *bptr.cast::<i32>() },
             }),
             2 => Ok(PartitionBound::Int64 {
-                val: unsafe { *(bptr as *const i64) },
+                val: unsafe { *bptr.cast::<i64>() },
             }),
             3 => {
                 //unpack length (signed because it's from Java)
-                let str_len = unsafe { *(bptr as *const i32) };
+                let str_len = unsafe { *bptr.cast::<i32>() };
                 if str_len < 0 {
-                    error!("Illegal string length in FFI array: {}", str_len);
-                    panic!("Illegal string length in FFI array: {}", str_len);
+                    error!("Illegal string length in FFI array: {str_len}");
+                    panic!("Illegal string length in FFI array: {str_len}");
                 }
                 std::str::from_utf8(unsafe {
-                    slice::from_raw_parts(bptr.byte_add(4) as *const u8, str_len as usize)
+                    #[allow(clippy::cast_sign_loss)]
+                    slice::from_raw_parts(bptr.byte_add(4).cast::<u8>(), str_len as usize)
                 })
                 .map(|v| PartitionBound::String { val: v })
             }
             4 => {
                 //unpack length (signed because it's from Java)
-                let byte_len = unsafe { *(bptr as *const i32) };
+                let byte_len = unsafe { *bptr.cast::<i32>() };
                 if byte_len < 0 {
-                    error!("Illegal byte array length in FFI array: {}", byte_len);
-                    panic!("Illegal byte array length in FFI array: {}", byte_len);
+                    error!("Illegal byte array length in FFI array: {byte_len}");
+                    panic!("Illegal byte array length in FFI array: {byte_len}");
                 }
                 Ok(PartitionBound::ByteArray {
                     val: unsafe {
-                        slice::from_raw_parts(bptr.byte_add(4) as *const i8, byte_len as usize)
+                        #[allow(clippy::cast_sign_loss)]
+                        slice::from_raw_parts(bptr.byte_add(4).cast::<i8>(), byte_len as usize)
                     },
                 })
             }
-            x @ _ => {
-                error!("Unexpected type id {}", x);
-                panic!("Unexpected type id {}", x);
+            x => {
+                error!("Unexpected type id {x}");
+                panic!("Unexpected type id {x}");
             }
         })
         .collect()

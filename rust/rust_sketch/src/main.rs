@@ -32,7 +32,8 @@ fn main() {
     // Serialise it and then deserialise it
     let serial = sketch.serialize(0).expect("Serialise fail");
 
-    let recreate = rust_sketch::quantiles::byte::byte_deserialize(&serial).expect("Deserialise fail");
+    let recreate =
+        rust_sketch::quantiles::byte::byte_deserialize(&serial).expect("Deserialise fail");
 
     println!(
         "Sketch contains {} values, median {} 99th q {}",
@@ -44,9 +45,9 @@ fn main() {
     // Check things match!
     assert_eq!(sketch.get_k(), recreate.get_k());
     assert_eq!(sketch.get_n(), recreate.get_n());
-    assert_eq!(
-        sketch.get_normalized_rank_error(true),
-        recreate.get_normalized_rank_error(true)
+    assert!(
+        (sketch.get_normalized_rank_error(true) - recreate.get_normalized_rank_error(true)).abs()
+            < f64::EPSILON
     );
     assert_eq!(
         sketch.get_quantile(0.4, true).unwrap(),
@@ -56,8 +57,8 @@ fn main() {
         sketch.get_min_item().unwrap(),
         recreate.get_min_item().unwrap()
     );
-    assert_eq!(
-        sketch.get_rank(&[b'f'], true).unwrap(),
-        recreate.get_rank(&[b'f'], true).unwrap()
+    assert!(
+        (sketch.get_rank(&[b'f'], true).unwrap() - recreate.get_rank(&[b'f'], true).unwrap()).abs()
+            < f64::EPSILON
     );
 }

@@ -263,7 +263,7 @@ impl ObjectStore for LoggingObjectStore {
         Self: 'async_trait,
     {
         if let Some(ref get_range) = options.range {
-            let range = to_range(&get_range);
+            let range = to_range(get_range);
             info!(
                 "GET request byte range {} to {} = {} bytes",
                 range.start.to_formatted_string(&Locale::en),

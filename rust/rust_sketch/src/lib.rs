@@ -1,11 +1,11 @@
 //! The `rust_sketch` crate provides a Rust interface to some of the functionality of the Apache
-//! DataSketches library. We use the datasketches-cpp implementation and provide wrappers for it.
+//! `DataSketches` library. We use the datasketches-cpp implementation and provide wrappers for it.
 //!
 //! Currently we only have the "Quantiles Sketch" wrapper implemented, but others could be added in
 //! a similar fashion.
 //!
 //! ## Building
-//! As part of the build process, this crate needs the Apache DataSketches C++ code which it will
+//! As part of the build process, this crate needs the Apache `DataSketches` C++ code which it will
 //! attempt to Git clone from [https://github.com/apache/datasketches-cpp](https://github.com/apache/datasketches-cpp) by default. If you
 //! wish to override this location, please set the environment variable `RUST_SKETCH_DATASKETCH_URL`
 //! to point to a new URL on build:
@@ -18,7 +18,7 @@
 //! **Note** If this crate has already cloned the datasketches-cpp repo then changing the URL to point
 //! at a different repository will not trigger a new clone operation, you will need to `cargo clean` the
 //! build directory first.
-//! 
+//!
 //! ## Performance
 //! Based on the assumption that sketches are updated often and read infrequently, the API design
 //! has been created to allow for quick updates, minimizing copies and trying to do moves instead,

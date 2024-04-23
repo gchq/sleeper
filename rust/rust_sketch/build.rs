@@ -30,27 +30,20 @@ fn main() {
     let tag = std::env::var("RUST_SKETCH_DATASKETCH_TAG").unwrap_or(String::from("5.0.2"));
 
     // try to open repository in case it already exists
-    let _ = match git2::Repository::open(path.join("datasketches-cpp")) {
-        Ok(repo) => repo,
-        Err(..) => {
-            // otherwise clone its repository
-            println!(
-                "cargo:warning=Git cloned datasketches-cpp from {} tag {}",
-                url, tag
-            );
-            let repo = match git2::Repository::clone(&url, path.join("datasketches-cpp")) {
-                Ok(repo) => repo,
-                Err(e) => panic!("failed to clone from {} tag {}: {}", url, tag, e),
-            };
-            {
-                let reference = repo.find_reference(&format!("refs/tags/{}", tag)).unwrap();
-                let ob = reference.peel_to_tag().unwrap().into_object();
-                repo.checkout_tree(&ob, None).unwrap();
-                repo.set_head_detached(ob.id()).unwrap();
-            }
-            repo
+    if git2::Repository::open(path.join("datasketches-cpp")).is_err() {
+        // otherwise clone its repository
+        println!("cargo:warning=Git cloned datasketches-cpp from {url} tag {tag}");
+        let repo = match git2::Repository::clone(&url, path.join("datasketches-cpp")) {
+            Ok(repo) => repo,
+            Err(e) => panic!("failed to clone from {url} tag {tag}: {e}"),
+        };
+        {
+            let reference = repo.find_reference(&format!("refs/tags/{tag}")).unwrap();
+            let ob = reference.peel_to_tag().unwrap().into_object();
+            repo.checkout_tree(&ob, None).unwrap();
+            repo.set_head_detached(ob.id()).unwrap();
         }
-    };
+    }
 
     cxx_build::bridges(vec!["src/quantiles.rs"])
         .warnings_into_errors(true)

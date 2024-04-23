@@ -18,7 +18,7 @@ use aws_config::BehaviorVersion;
 use aws_credential_types::provider::ProvideCredentials;
 use chrono::Local;
 use clap::Parser;
-use compaction::{merge_sorted_files, CompactionDetails};
+use compaction::{merge_sorted_files, CompactionInput};
 use human_panic::setup_panic;
 use std::{collections::HashMap, io::Write};
 use url::Url;
@@ -101,13 +101,13 @@ async fn main() -> color_eyre::Result<()> {
         .provide_credentials()
         .await?;
 
-    let details = CompactionDetails {
+    let details = CompactionInput {
         input_files: input_urls,
         output_file: output_url,
         max_page_size: args.max_page_size,
         max_row_group_size: args.row_group_size,
-        column_truncate_length: 1048576,
-        stats_truncate_length: 1048576,
+        column_truncate_length: 1_048_576,
+        stats_truncate_length: 1_048_576,
         compression: "zstd".into(),
         writer_version: "2.0".into(),
         dict_enc_row_keys: true,

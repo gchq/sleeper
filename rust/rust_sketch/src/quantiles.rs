@@ -70,6 +70,7 @@
  */
 /// Provides a quantiles sketch for the `i32` primitive type.
 #[cxx::bridge(namespace = "rust_sketch")]
+#[allow(clippy::module_name_repetitions, clippy::must_use_candidate)]
 pub mod i32 {
 
     unsafe extern "C++" {
@@ -427,6 +428,7 @@ mod i32_tests {
 
 /// Provides a quantiles sketch for the `i64` primitive type.
 #[cxx::bridge(namespace = "rust_sketch")]
+#[allow(clippy::module_name_repetitions, clippy::must_use_candidate)]
 pub mod i64 {
     unsafe extern "C++" {
         include!("rust_sketch/src/include/quantiles.hpp");
@@ -774,6 +776,7 @@ mod i64_tests {
 
 /// Provides a quantiles sketch for the `str` primitive type.
 #[cxx::bridge(namespace = "rust_sketch")]
+#[allow(clippy::module_name_repetitions, clippy::must_use_candidate)]
 pub mod str {
     unsafe extern "C++" {
         include!("rust_sketch/src/include/quantiles.hpp");
@@ -1127,6 +1130,7 @@ mod str_tests {
 
 /// Provides a quantiles sketch for the [`Vec<u8>`] byte array type.
 #[cxx::bridge(namespace = "rust_sketch")]
+#[allow(clippy::module_name_repetitions, clippy::must_use_candidate)]
 pub mod byte {
     unsafe extern "C++" {
         include!("rust_sketch/src/include/quantiles.hpp");
