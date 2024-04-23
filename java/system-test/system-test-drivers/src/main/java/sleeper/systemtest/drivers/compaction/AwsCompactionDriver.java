@@ -34,8 +34,8 @@ import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
 import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.table.InvokeForTableRequest;
+import sleeper.configuration.jars.ObjectFactoryException;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
@@ -43,9 +43,10 @@ import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.task.common.EC2Scaler;
 import sleeper.task.common.RunCompactionTasks;
 
+import java.io.IOException;
+
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_TRIGGER_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_BATCH_SIZE;
 
 public class AwsCompactionDriver implements CompactionDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(AwsCompactionDriver.class);
@@ -81,14 +82,16 @@ public class AwsCompactionDriver implements CompactionDriver {
     @Override
     public void forceCreateJobs() {
         CreateCompactionJobs createJobs = new CreateCompactionJobs(
-                ObjectFactory.noUserJars(), instance.getInstanceProperties(),
-                instance.getTablePropertiesProvider(), instance.getStateStoreProvider(),
+                ObjectFactory.noUserJars(), instance.getInstanceProperties(), instance.getStateStoreProvider(),
                 new SendCompactionJobToSqs(instance.getInstanceProperties(), sqsClient)::send, getJobStatusStore(),
                 Mode.FORCE_ALL_FILES_AFTER_STRATEGY);
-        int batchSize = instance.getInstanceProperties().getInt(COMPACTION_JOB_CREATION_BATCH_SIZE);
-        InvokeForTableRequest.forTables(
-                instance.streamTableProperties().map(TableProperties::getStatus),
-                batchSize, createJobs::createJobs);
+        instance.streamTableProperties().parallel().forEach(table -> {
+            try {
+                createJobs.createJobs(table);
+            } catch (StateStoreException | IOException | ObjectFactoryException e) {
+                throw new RuntimeException("Failed creating compaction jobs for table " + table.getStatus(), e);
+            }
+        });
     }
 
     @Override

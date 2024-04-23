@@ -29,6 +29,7 @@ import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.compaction.testutils.InMemoryCompactionJobStatusStore;
 import sleeper.compaction.testutils.InMemoryCompactionTaskStatusStore;
 import sleeper.configuration.jars.ObjectFactory;
+import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.iterator.CloseableIterator;
@@ -42,7 +43,6 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.table.InvokeForTableRequest;
 import sleeper.core.util.PollWithRetries;
 import sleeper.ingest.impl.partitionfilewriter.PartitionFileWriterUtils;
 import sleeper.query.runner.recordretrieval.InMemoryDataStore;
@@ -62,7 +62,6 @@ import java.util.TreeMap;
 import java.util.UUID;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_BATCH_SIZE;
 
 public class InMemoryCompaction {
 
@@ -136,15 +135,19 @@ public class InMemoryCompaction {
         }
 
         private void createJobs(Mode mode) {
-            int batchSize = instance.getInstanceProperties().getInt(COMPACTION_JOB_CREATION_BATCH_SIZE);
-            InvokeForTableRequest.forTables(
-                    instance.streamTableProperties().map(TableProperties::getStatus),
-                    batchSize, jobCreator(mode)::createJobs);
+            CreateCompactionJobs jobCreator = jobCreator(mode);
+            instance.streamTableProperties().forEach(table -> {
+                try {
+                    jobCreator.createJobs(table);
+                } catch (StateStoreException | IOException | ObjectFactoryException e) {
+                    throw new RuntimeException("Failed creating compaction jobs for table " + table.getStatus(), e);
+                }
+            });
         }
 
         private CreateCompactionJobs jobCreator(Mode mode) {
             return new CreateCompactionJobs(ObjectFactory.noUserJars(), instance.getInstanceProperties(),
-                    instance.getTablePropertiesProvider(), instance.getStateStoreProvider(), jobSender(), jobStore, mode);
+                    instance.getStateStoreProvider(), jobSender(), jobStore, mode);
         }
     }
 
