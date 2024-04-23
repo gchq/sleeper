@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-use aws_config::BehaviorVersion;
-use aws_credential_types::provider::ProvideCredentials;
 use chrono::Local;
 use clap::Parser;
 use compaction::{merge_sorted_files, CompactionInput};
@@ -91,16 +89,6 @@ async fn main() -> color_eyre::Result<()> {
     let output_url = Url::parse(&args.output)
         .or_else(|_e| Url::parse(&("file://".to_owned() + &args.output)))?;
 
-    let config = aws_config::defaults(BehaviorVersion::latest()).load().await;
-    let region = config
-        .region()
-        .ok_or(color_eyre::eyre::eyre!("Can't determine AWS region"))?;
-    let creds: aws_credential_types::Credentials = config
-        .credentials_provider()
-        .ok_or(color_eyre::eyre::eyre!("Can't load AWS config"))?
-        .provide_credentials()
-        .await?;
-
     let details = CompactionInput {
         input_files: input_urls,
         output_file: output_url,
@@ -118,6 +106,6 @@ async fn main() -> color_eyre::Result<()> {
         sort_key_cols: vec![],
     };
 
-    merge_sorted_files(Some(creds), region, &details).await?;
+    merge_sorted_files(&details).await?;
     Ok(())
 }

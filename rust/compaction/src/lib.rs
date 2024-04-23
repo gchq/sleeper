@@ -26,13 +26,10 @@ mod datafusion;
 mod details;
 mod sketch;
 
-use arrow::error::ArrowError;
-use aws_config::BehaviorVersion;
-use aws_credential_types::provider::ProvideCredentials;
 use chrono::Local;
-use futures::TryFutureExt;
+use color_eyre::eyre::eyre;
 use libc::{c_void, size_t, EFAULT, EINVAL, EIO};
-use log::{error, info, LevelFilter};
+use log::{error, info, warn, LevelFilter};
 use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::io::Write;
@@ -75,27 +72,6 @@ fn maybe_cfg_log() {
             .filter_level(LevelFilter::Info)
             .init();
     });
-}
-
-/// Obtains AWS credentials from normal places and then calls merge function
-/// with obtained credentials.
-///
-async fn credentials_and_merge(
-    input_data: &CompactionInput,
-) -> Result<CompactionResult, ArrowError> {
-    let config = aws_config::defaults(BehaviorVersion::latest()).load().await;
-    let region = config.region().ok_or(ArrowError::InvalidArgumentError(
-        "Couldn't retrieve AWS region".into(),
-    ))?;
-    let creds: aws_credential_types::Credentials = config
-        .credentials_provider()
-        .ok_or(ArrowError::InvalidArgumentError(
-            "Couldn't retrieve AWS credentials".into(),
-        ))?
-        .provide_credentials()
-        .map_err(|e| ArrowError::ExternalError(Box::new(e)))
-        .await?;
-    merge_sorted_files(Some(creds), region, input_data).await
 }
 
 /// Contains all the input data for setting up a compaction.
@@ -271,13 +247,19 @@ pub extern "C" fn ffi_merge_sorted_files(
     output_data: *mut FFICompactionResult,
 ) -> c_int {
     maybe_cfg_log();
+    if let Err(e) = color_eyre::install() {
+        warn!("Couldn't install color_eyre error handler");
+    }
     let Some(params) = (unsafe { input_data.as_ref() }) else {
         error!("input data pointer is null");
         return EFAULT;
     };
 
     // Start async runtime
-    let rt = match tokio::runtime::Runtime::new() {
+    let rt = match tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+    {
         Ok(v) => v,
         Err(e) => {
             error!("Couldn't create Rust tokio runtime {}", e);
@@ -294,7 +276,7 @@ pub extern "C" fn ffi_merge_sorted_files(
     };
 
     // Run compaction
-    let result = rt.block_on(credentials_and_merge(&details));
+    let result = rt.block_on(merge_sorted_files(&details));
     match result {
         Ok(res) => {
             if let Some(data) = unsafe { output_data.as_mut() } {
@@ -320,7 +302,7 @@ pub extern "C" fn ffi_merge_sorted_files(
 fn unpack_string_array(
     array_base: *const *const c_char,
     len: usize,
-) -> Result<Vec<&'static str>, ArrowError> {
+) -> color_eyre::Result<Vec<&'static str>> {
     unsafe {
         // create a slice from the pointer
         slice::from_raw_parts(array_base, len)
@@ -338,16 +320,14 @@ fn unpack_string_array(
         #[allow(clippy::cast_ptr_alignment)]
         let str_len = unsafe { *(*s).cast::<i32>() };
         if str_len < 0 {
-            return Err(ArrowError::InvalidArgumentError(format!(
-                "Illegal string length in FFI array: {str_len}"
-            )));
+            return Err(eyre!("Illegal string length in FFI array: {str_len}"));
         }
         // convert to string and check it's valid
         std::str::from_utf8(unsafe {
             #[allow(clippy::cast_sign_loss)]
             slice::from_raw_parts(s.byte_add(4).cast::<u8>(), str_len as usize)
         })
-        .map_err(|e| ArrowError::ExternalError(Box::new(e)))
+        .map_err(Into::into)
     })
     // now convert to a vector if all strings OK, else Err
     .collect::<Result<Vec<_>, _>>()

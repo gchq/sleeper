@@ -16,9 +16,9 @@
  * limitations under the License.
  */
 use crate::aws_s3::ObjectStoreFactory;
-use arrow::error::ArrowError;
-use aws_credential_types::Credentials;
-use aws_types::region::Region;
+use aws_config::BehaviorVersion;
+use aws_credential_types::provider::ProvideCredentials;
+use color_eyre::eyre::{eyre, Result};
 
 use std::{collections::HashMap, path::PathBuf};
 use url::Url;
@@ -93,21 +93,11 @@ pub struct CompactionResult {
 /// # Errors
 /// There must be at least one input file.
 ///
-#[allow(clippy::too_many_arguments)]
-#[allow(clippy::arc_with_non_send_sync)]
-pub async fn merge_sorted_files(
-    aws_creds: Option<Credentials>,
-    region: &Region,
-    input_data: &CompactionInput,
-) -> Result<CompactionResult, ArrowError> {
+pub async fn merge_sorted_files(input_data: &CompactionInput) -> Result<CompactionResult> {
     // Read the schema from the first file
     if input_data.input_files.is_empty() {
-        Err(ArrowError::InvalidArgumentError(
-            "No input paths supplied".into(),
-        ))
+        Err(eyre!("No input paths supplied"))
     } else {
-        // Create our object store factory
-        let store_factory = ObjectStoreFactory::new(aws_creds, region);
         // Java tends to use s3a:// URI scheme instead of s3:// so map it here
         let input_file_paths: Vec<Url> = input_data
             .input_files
@@ -127,11 +117,27 @@ pub async fn merge_sorted_files(
             let _ = output_file_path.set_scheme("s3");
         }
 
-        
-        Ok(CompactionResult {
-            rows_read: 0,
-            rows_written: 0,
-        })
+        let config = aws_config::defaults(BehaviorVersion::latest()).load().await;
+        let region = config
+            .region()
+            .ok_or(eyre!("Couldn't retrieve AWS region"))?;
+        let creds: aws_credential_types::Credentials = config
+            .credentials_provider()
+            .ok_or(eyre!("Couldn't retrieve AWS credentials"))?
+            .provide_credentials()
+            .await?;
+
+        // Create our object store factory
+        let store_factory = ObjectStoreFactory::new(Some(creds), region);
+
+        crate::datafusion::compact(
+            &store_factory,
+            input_data,
+            &input_file_paths,
+            &output_file_path,
+        )
+        .await
+        .map_err(Into::into)
     }
 }
 
