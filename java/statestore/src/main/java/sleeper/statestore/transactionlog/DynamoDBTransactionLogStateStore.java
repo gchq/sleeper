@@ -23,9 +23,6 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
-import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.LatestSnapshots;
-
-import java.util.Optional;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.FILE_TRANSACTION_LOG_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_TRANSACTION_LOG_TABLENAME;
@@ -54,16 +51,14 @@ public class DynamoDBTransactionLogStateStore extends TransactionLogStateStore {
         DynamoDBTransactionLogSnapshotStore snapshotStore = new DynamoDBTransactionLogSnapshotStore(instanceProperties, tableProperties, dynamoDB);
         TransactionLogFilesSnapshotSerDe filesSnapshotSerDe = new TransactionLogFilesSnapshotSerDe(configuration);
         TransactionLogPartitionsSnapshotSerDe partitionsSnapshotSerDe = new TransactionLogPartitionsSnapshotSerDe(tableProperties.getSchema(), configuration);
-        Optional<LatestSnapshots> latestSnapshotsOpt = snapshotStore.getLatestSnapshots();
-        if (latestSnapshotsOpt.isPresent()) {
-            LatestSnapshots latestSnapshots = latestSnapshotsOpt.get();
+        snapshotStore.getLatestSnapshots().ifPresent(latestSnapshots -> {
             try {
                 builder.filesState(filesSnapshotSerDe.load(latestSnapshots.getFilesSnapshot()))
                         .partitionsState(partitionsSnapshotSerDe.load(latestSnapshots.getPartitionsSnapshot()));
             } catch (StateStoreException e) {
                 throw new RuntimeException(e);
             }
-        }
+        });
         return builder;
     }
 }
