@@ -175,8 +175,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
     }
 
     private StateStore createStateStore() {
-        return DynamoDBTransactionLogStateStore.builderFrom(
-                instanceProperties, tableProperties, dynamoDBClient, s3Client, new Configuration())
+        return DynamoDBTransactionLogStateStore.builderFrom(instanceProperties, tableProperties, dynamoDBClient, s3Client)
                 .maxAddTransactionAttempts(1)
                 .build();
     }
