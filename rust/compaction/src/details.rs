@@ -1,7 +1,7 @@
 //! The `internal` module contains the internal functionality and error conditions
 //! to actually implement the compaction library.
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,25 +80,6 @@ pub struct ColRange {
     pub upper_inclusive: bool,
 }
 
-/// A simple iterator for a batch of rows (owned).
-#[derive(Debug)]
-struct OwnedRowIter {
-    rows: Result<Rows, ArrowError>,
-    error_reported: bool,
-    index: usize,
-}
-
-impl OwnedRowIter {
-    /// Create a new iterator over some rows.
-    fn new(rows: Result<Rows, ArrowError>) -> Self {
-        Self {
-            rows,
-            error_reported: false,
-            index: 0,
-        }
-    }
-}
-
 /// Contains compaction results.
 ///
 /// This provides the details of compaction results that Sleeper
@@ -109,32 +90,6 @@ pub struct CompactionResult {
     pub rows_read: usize,
     /// The total number of rows written by a compaction.
     pub rows_written: usize,
-}
-
-impl Iterator for OwnedRowIter {
-    type Item = Result<OwnedRow, ArrowError>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        match &self.rows {
-            Ok(rows_val) => {
-                if self.index == rows_val.num_rows() {
-                    return None;
-                }
-                let row = rows_val.row(self.index).owned();
-                self.index += 1;
-                Some(Ok(row))
-            }
-            Err(e) => {
-                // This is not really the right way to handle errors inside an iterator
-                if self.error_reported {
-                    None
-                } else {
-                    self.error_reported = true;
-                    Some(Err(ArrowError::InvalidArgumentError(e.to_string())))
-                }
-            }
-        }
-    }
 }
 
 /// Merges the given Parquet files and reads the schema from the first.
@@ -165,16 +120,8 @@ pub async fn merge_sorted_files(
     region: &Region,
     input_data: &CompactionInput,
 ) -> Result<CompactionResult, ArrowError> {
-    let input_file_paths = input_data.input_files.clone();
-    let output_file_path = input_data.output_file.clone();
-    let row_group_size = input_data.max_row_group_size;
-    let max_page_size = input_data.max_page_size;
-    let row_key_fields = (0..input_data.row_key_cols.len()).collect::<Vec<_>>();
-    let sort_columns =
-        (0..input_data.row_key_cols.len() + input_data.sort_key_cols.len()).collect::<Vec<_>>();
-
     // Read the schema from the first file
-    if input_file_paths.is_empty() {
+    if input_data.input_files.is_empty() {
         Err(ArrowError::InvalidArgumentError(
             "No input paths supplied".into(),
         ))
@@ -182,7 +129,8 @@ pub async fn merge_sorted_files(
         // Create our object store factory
         let store_factory = ObjectStoreFactory::new(aws_creds, region);
         // Java tends to use s3a:// URI scheme instead of s3:// so map it here
-        let input_file_paths: Vec<Url> = input_file_paths
+        let input_file_paths: Vec<Url> = input_data
+            .input_files
             .iter()
             .map(|u| {
                 let mut t = u.clone();
@@ -194,263 +142,15 @@ pub async fn merge_sorted_files(
             .collect();
 
         // Change output file scheme
-        let mut output_file_path = output_file_path.clone();
+        let mut output_file_path = input_data.output_file.clone();
         if output_file_path.scheme() == "s3a" {
             let _ = output_file_path.set_scheme("s3");
         }
-        // Read Schema from first file
-        let schema: Arc<Schema> = read_schema(&store_factory, &input_file_paths[0]).await?;
-        // validate all files have same schema
-        if validate_schemas_same(&store_factory, &input_file_paths, &schema).await {
-            // Sort the row key column numbers
-            let sorted_row_keys: Vec<usize> = row_key_fields
-                .iter()
-                .sorted()
-                .map(usize::to_owned)
-                .collect();
-
-            // Create a list of column numbers. Sort columns should be first,
-            // followed by others in order
-            // so if schema has 5 columns [0, 1, 2, 3, 4] and sort_columns is [1,4],
-            // then the full list of columns should be [1, 4, 0, 2, 3]
-            let complete_sort_columns: Vec<_> = sort_columns
-                .iter()
-                .copied() //Deref the integers
-                // then chain to an iterator of [0, schema.len) with sort columns fitered out
-                .chain((0..schema.fields().len()).filter(|i| !sort_columns.contains(i)))
-                .collect();
-
-            debug!("Sort columns {:?}", sort_columns);
-            info!("Sorted column order {:?}", complete_sort_columns);
-
-            // Create a vec of all schema columns for row conversion
-            let fields = schema
-                .fields()
-                .iter()
-                .map(|field| SortField::new(field.data_type().clone()))
-                .collect::<Vec<_>>();
-
-            // now re-order this list according to the indexes in complete_sort_columns
-            let fields: Vec<_> = complete_sort_columns
-                .iter()
-                .map(|&i| fields[i].clone())
-                .collect();
-
-            let converter = RowConverter::new(fields)?;
-
-            merge_sorted_files_with_schema(
-                &store_factory,
-                &input_file_paths,
-                &output_file_path,
-                row_group_size,
-                max_page_size,
-                sorted_row_keys,
-                complete_sort_columns,
-                &schema,
-                &Arc::new(RefCell::new(converter)),
-            )
-            .await
-        } else {
-            Err(ArrowError::SchemaError(
-                "Schemas do not match across all input files".into(),
-            ))
-        }
-    }
-}
-
-/// Merges sorted Parquet files into a single output file. They must also have the same schema.
-///
-/// The files MUST be sorted for this function to work. This is not checked!
-///
-/// The files are read and then k-way merged into a single output Parquet file.
-///
-/// # Examples
-/// ```ignore
-/// let result = merge_sorted_files_with_schema( &vec!["file:///path/to/file1.parquet".into(), "file:///path/to/file2.parquet".into()], "file:///path/to/output.parquet".into(), 65535, 1_000_000, my_schema )?;
-/// ```
-///
-/// # Errors
-/// The supplied input file paths must have a valid extension: parquet, parq, or pq.
-///
-#[allow(clippy::too_many_arguments)]
-async fn merge_sorted_files_with_schema(
-    store_factory: &ObjectStoreFactory,
-    file_paths: &[Url],
-    output_file_path: &Url,
-    row_group_size: usize,
-    max_page_size: usize,
-    row_key_fields: impl AsRef<[usize]>,
-    sort_columns: impl AsRef<[usize]>,
-    schema: &Arc<Schema>,
-    converter_ptr: &Arc<RefCell<RowConverter>>,
-) -> Result<CompactionResult, ArrowError> {
-    // Are the row key columns defined and valid?
-    if row_key_fields.as_ref().is_empty() {
-        return Err(ArrowError::InvalidArgumentError(
-            "row_key_fields cannot be empty".into(),
-        ));
-    } else if sort_columns.as_ref().is_empty() {
-        return Err(ArrowError::InvalidArgumentError(
-            "sort_columns cannot be empty".into(),
-        ));
-    } else if row_key_fields
-        .as_ref()
-        .iter()
-        .any(|&index| index >= schema.fields().len())
-    {
-        return Err(ArrowError::InvalidArgumentError(
-            "row_key_fields contains invalid column number for schema (too high?)".into(),
-        ));
-    } else if sort_columns
-        .as_ref()
-        .iter()
-        .any(|&index| index >= schema.fields().len())
-    {
-        return Err(ArrowError::InvalidArgumentError(
-            "sort_columns contains invalid column number for schema (too high?)".into(),
-        ));
-    }
-
-    let file_iters = future::join_all(
-        file_paths
-            .iter()
-            .map(|file_path| get_file_iterator(store_factory, file_path, None)),
-    )
-    .await
-    .into_iter()
-    .collect::<Result<Vec<_>, _>>();
-
-    let converter_clone = converter_ptr.clone();
-
-    let batch_iters = file_iters?.into_iter().map(|file_iter| {
-        file_iter.flat_map(|batch| match batch {
-            Ok(b) => {
-                let rows = converter_ptr.borrow_mut().convert_columns(b.columns());
-                OwnedRowIter::new(rows)
-            }
-            Err(e) => OwnedRowIter::new(Err(e.into())),
+        Ok(CompactionResult {
+            rows_read: 0,
+            rows_written: 0,
         })
-    });
-
-    merge_sorted_iters_into_parquet_file(
-        store_factory,
-        batch_iters,
-        output_file_path,
-        row_group_size,
-        max_page_size,
-        row_key_fields,
-        schema,
-        &converter_clone,
-    )
-    .await
-}
-
-/// Takes a group of Arrow record batch iterators and writes the merged
-/// output to a Parquet file.
-#[allow(clippy::too_many_arguments)]
-async fn merge_sorted_iters_into_parquet_file<A, B>(
-    store_factory: &ObjectStoreFactory,
-    iters: A,
-    output_file_path: &Url,
-    row_group_size: usize,
-    max_page_size: usize,
-    row_key_fields: impl AsRef<[usize]>,
-    schema: &Arc<Schema>,
-    converter_ptr: &Arc<RefCell<RowConverter>>,
-) -> Result<CompactionResult, ArrowError>
-where
-    A: Iterator<Item = B>,
-    B: Iterator<Item = Result<OwnedRow, ArrowError>>,
-{
-    // Create Parquet writer options
-    let props = WriterProperties::builder()
-        .set_compression(Compression::ZSTD(ZstdLevel::default()))
-        .set_data_page_size_limit(max_page_size)
-        .set_max_row_group_size(row_group_size)
-        .build();
-
-    info!("Row_key columns {:?}", row_key_fields.as_ref());
-
-    // Create Object store async writer
-    let store = store_factory.get_object_store(output_file_path)?;
-    let path = object_store::path::Path::from(output_file_path.path());
-    let (_id, store_writer) = store
-        .put_multipart(&path)
-        .await
-        .map_err(|e| ArrowError::ExternalError(Box::new(e)))?;
-
-    info!("Writing to {}", output_file_path);
-
-    // Create Parquet writer
-    let mut writer = AsyncArrowWriter::try_new(store_writer, schema.clone(), Some(props))?;
-
-    // Data sketches quantiles sketches
-    let mut sketches = make_sketches_for_schema(schema, &row_key_fields);
-
-    // Container for errors
-    let errors: RefCell<Vec<ArrowError>> = RefCell::new(vec![]);
-
-    let error_free =
-        iters.map(|iter| iter.filter_map(|r| r.map_err(|e| errors.borrow_mut().push(e)).ok()));
-
-    // Row K-way merge on iterators
-    let merged = kmerge(error_free);
-
-    // Need to collect min/max key on column 0. Not sure we can assume col. 0 is a row key column, so it might not have a quantiles sketch
-    let mut rows_written = 0;
-    for chunk in &merged.chunks(row_group_size) {
-        // Check for errors
-        if !errors.borrow().is_empty() {
-            // Return first error
-            return Err(errors.borrow_mut().remove(0));
-        }
-
-        let rows = chunk.collect::<Vec<_>>();
-        let rows = rows
-            .iter()
-            .map(arrow::row::OwnedRow::row)
-            .collect::<Vec<_>>();
-
-        rows_written += rows.len();
-        info!(
-            "Merged {} rows",
-            rows_written.to_formatted_string(&Locale::en)
-        );
-
-        let cols = converter_ptr.borrow_mut().convert_rows(rows)?;
-        let batch = RecordBatch::try_new(schema.clone(), cols)?;
-
-        // update the data sketches on this batch
-        update_sketches(&batch, &mut sketches, &row_key_fields);
-
-        // write some data sketches here
-        batch.column(0);
-
-        writer.write(&batch).await?;
     }
-
-    writer.close().await?;
-
-    // serialise the sketches
-    let sketch_path = create_sketch_path(output_file_path);
-    serialise_sketches(store_factory, &sketch_path, &sketches)?;
-
-    info!(
-        "Object store made {} GET requests and read {} bytes",
-        store
-            .get_count()
-            .unwrap_or_default()
-            .to_formatted_string(&Locale::en),
-        store
-            .get_bytes_read()
-            .unwrap_or_default()
-            .to_formatted_string(&Locale::en),
-    );
-
-    Ok(CompactionResult {
-        rows_read: rows_written,
-        rows_written,
-    })
 }
 
 /// Creates a file path suitable for writing sketches to.
@@ -464,158 +164,4 @@ pub fn create_sketch_path(output_path: &Url) -> Url {
             .to_string_lossy(),
     );
     res
-}
-
-/// Creates an iterator of Arrow record batches.
-///
-/// This creates a file reader for a Parquet file returning the Arrow recordbatches.
-/// The optional `batch_size` argument allows for setting the maximum size of each batch
-/// returned in one go.
-///
-/// # Errors
-/// The supplied file path must have a valid extension: parquet, parq, or pq.
-pub async fn get_file_iterator(
-    store_factory: &ObjectStoreFactory,
-    file_path: &Url,
-    batch_size: Option<usize>,
-) -> Result<BlockingStream<ParquetRecordBatchStream<ParquetObjectReader>>, ArrowError> {
-    get_file_iterator_for_row_group_range(store_factory, file_path, None, None, batch_size).await
-}
-
-/// Creates an iterator of Arrow record batches from a Parquet file.
-///
-/// This allows for the row groups to be read from the Parquet file
-/// to be specified.
-///
-/// # Examples
-/// ```ignore
-/// # use url::Url;
-///
-/// let s = get_file_iterator_for_row_group_range(store_factory, Url::parse("/path/to/file.parquet").unwrap(), Some(0), Some(10), None);
-/// ```
-///
-/// # Errors
-/// The supplied file path must have a valid extension: parquet, parq, or pq.
-///
-/// The end row group, if specified, must be greater than or equal to the start row group.
-async fn get_file_iterator_for_row_group_range(
-    store_factory: &ObjectStoreFactory,
-    src: &Url,
-    start_row_group: Option<usize>,
-    end_row_group: Option<usize>,
-    batch_size: Option<usize>,
-) -> Result<BlockingStream<ParquetRecordBatchStream<ParquetObjectReader>>, ArrowError> {
-    let extension = PathBuf::from(src.path())
-        .extension()
-        .map(|ext| ext.to_str().unwrap_or_default().to_owned());
-    if let Some("parquet" | "parq" | "pq") = extension.as_deref() {
-        let mut builder = get_parquet_builder(store_factory, src).await?;
-
-        if let Some(num_groups) = batch_size {
-            builder = builder.with_batch_size(num_groups);
-        }
-
-        let num_row_groups = builder.metadata().num_row_groups();
-        let num_rows = builder.metadata().file_metadata().num_rows();
-
-        let rg_start = start_row_group.unwrap_or(0);
-        let rg_end = end_row_group.unwrap_or(num_row_groups);
-
-        if rg_end < rg_start {
-            return Err(ArrowError::InvalidArgumentError(
-                "end row group must not be less than start".to_owned(),
-            ));
-        }
-
-        info!(
-            "Creating input iterator for file {} row groups {} rows {} loading row groups {}..{}",
-            src.as_ref(),
-            num_row_groups.to_formatted_string(&Locale::en),
-            num_rows.to_formatted_string(&Locale::en),
-            rg_start.to_formatted_string(&Locale::en),
-            rg_end.to_formatted_string(&Locale::en)
-        );
-
-        builder = builder.with_row_groups((rg_start..rg_end).collect());
-
-        builder
-            .build()
-            .map(futures::executor::block_on_stream)
-            .map_err(ArrowError::from)
-    } else {
-        let p = extension.unwrap_or("<none>".to_owned());
-        Err(ArrowError::InvalidArgumentError(format!(
-            "Unrecognised extension {p}"
-        )))
-    }
-}
-
-/// Create an asynchronous builder for reading Parquet files from an object store.
-///
-/// The URL must start with a scheme that the object store recognises, e.g. "file" or "s3".
-///
-/// # Errors
-/// This function will return an error if it couldn't connect to S3 or open a valid
-/// Parquet file.
-pub async fn get_parquet_builder(
-    store_factory: &ObjectStoreFactory,
-    src: &Url,
-) -> Result<ParquetRecordBatchStreamBuilder<ParquetObjectReader>, ArrowError> {
-    let store = store_factory.get_object_store(src)?;
-    // HEAD the file to get metadata
-    let path = object_store::path::Path::from(src.path());
-    let object_meta = store
-        .head(&path)
-        .await
-        .map_err(|e| ArrowError::ExternalError(Box::new(e)))?;
-    // Create a reader for the target file, use it to construct a Stream
-    let reader = ParquetObjectReader::new(store.as_object_store(), object_meta);
-    Ok(ParquetRecordBatchStreamBuilder::new(reader).await?)
-}
-
-/// Read the schema from the given Parquet file.
-///
-/// The Parquet file metadata is read and returned.
-///
-/// # Examples
-/// ```no_run
-/// # use compaction::read_schema;
-/// # use std::sync::Arc;
-/// # use arrow::datatypes::Schema;
-/// # use aws_types::region::Region;
-/// # use url::Url;
-/// # use crate::compaction::ObjectStoreFactory;
-/// let sf = ObjectStoreFactory::new(None, &Region::new("eu-west-2"));
-/// let schema: Arc<Schema> = read_schema(&sf, &Url::parse("file:///path/to/my/file").unwrap()).unwrap();
-/// ```
-/// # Errors
-/// Errors can occur if we are not able to read the named file or if the schema/file is corrupt.
-///
-pub async fn read_schema(
-    store_factory: &ObjectStoreFactory,
-    src: &Url,
-) -> Result<Arc<Schema>, ArrowError> {
-    let builder = get_parquet_builder(store_factory, src).await?;
-    Ok(builder.schema().clone())
-}
-
-/// Checks all files match the schema.
-///
-/// The schema should be provided from the first file, all subsequent
-/// file schemas are compared to this. This function returns true if all match.
-#[must_use]
-pub async fn validate_schemas_same(
-    store_factory: &ObjectStoreFactory,
-    input_file_paths: &[Url],
-    schema: &Arc<Schema>,
-) -> bool {
-    for path in input_file_paths {
-        let file_schema = read_schema(store_factory, path)
-            .await
-            .unwrap_or(Arc::new(Schema::empty()));
-        if file_schema != *schema {
-            return false;
-        }
-    }
-    true
 }
