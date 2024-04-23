@@ -38,14 +38,12 @@
         <module>cdk</module>
         <module>sketches</module>
         <module>athena</module>
-        <module>common-job</module>
-        <module>common-task</module>
+        <module>common</module>
         <module>bulk-import</module>
         <module>cdk-custom-resources</module>
         <module>cdk-environment</module>
         <module>metrics</module>
         <module>distribution</module>
-        <module>dynamodb-tools</module>
         <module>trino</module>
         <module>build</module>
     </modules>
