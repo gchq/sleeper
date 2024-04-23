@@ -16,7 +16,7 @@ on:
       - 'java/ingest/ingest-batcher-store/**'
       - 'java/ingest/ingest-batcher-submitter/**'
       - 'java/ingest/ingest-batcher-job-creator/**'
-      - 'java/common-task/**'
+      - 'java/common/common-task/**'
       - 'java/statestore/**'
       - 'java/parquet/**'
       - 'java/configuration/**'

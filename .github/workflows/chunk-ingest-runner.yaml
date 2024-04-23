@@ -10,7 +10,7 @@ on:
       - 'java/pom.xml'
       - 'java/ingest/pom.xml'
       - 'java/ingest/ingest-runner/**'
-      - 'java/common-job/**'
+      - 'java/common/common-job/**'
       - 'java/sketches/**'
       - 'java/ingest/ingest-status-store/**'
       - 'java/ingest/ingest-core/**'

@@ -48,10 +48,8 @@
     <suppress files="[\\/]sketches[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]dynamodb-tools[\\/].*" id="missingJavadocMethod"/>
     <suppress files="[\\/]dynamodb-tools[\\/].*" id="missingJavadocType"/>
-    <suppress files="[\\/]common-job[\\/].*" id="missingJavadocMethod"/>
-    <suppress files="[\\/]common-job[\\/].*" id="missingJavadocType"/>
-    <suppress files="[\\/]common-task[\\/].*" id="missingJavadocMethod"/>
-    <suppress files="[\\/]common-task[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]common[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]common[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]clients[\\/].*" id="missingJavadocMethod"/>
     <suppress files="[\\/]clients[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]compaction[\\/].*" id="missingJavadocMethod"/>
