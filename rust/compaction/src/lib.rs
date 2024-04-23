@@ -6,7 +6,7 @@
 //! We have an internal "details" module that encapsulates the internal workings. All the
 //! public API should be in this module.
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@
  */
 
 mod aws_s3;
+mod datafusion;
 mod details;
 mod sketch;
 
@@ -132,7 +133,7 @@ pub struct FFICompactionParams {
 }
 
 impl TryFrom<&FFICompactionParams> for CompactionInput {
-    type Error = anyhow::Error;
+    type Error = color_eyre::eyre::Report;
 
     fn try_from(params: &FFICompactionParams) -> Result<Self, Self::Error> {
         // We do this separately since we need the values for computing the region
@@ -176,7 +177,7 @@ impl TryFrom<&FFICompactionParams> for CompactionInput {
 fn compute_region<T: Borrow<str>>(
     params: &FFICompactionParams,
     row_key_cols: &[T],
-) -> Result<HashMap<String, ColRange>, anyhow::Error> {
+) -> color_eyre::Result<HashMap<String, ColRange>> {
     let region_mins_inclusive = unpack_primitive_array(
         params.region_mins_inclusive,
         params.region_mins_inclusive_len,

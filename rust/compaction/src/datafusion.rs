@@ -1,3 +1,7 @@
+/// `DataFusion` contains the implementation for performing Sleeper compactions
+/// using Apache DataFusion. 
+/// 
+/// This allows for multi-threaded compaction and optimised Parquet reading.
 /*
  * Copyright 2022-2024 Crown Copyright
  *
@@ -13,18 +17,3 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#pragma once
-/**
- * @file common_types.hpp
- * @brief Common type declarations.
- * @date 2023
- *
- * @copyright Copyright 2022-2024 Crown Copyright
- *
- */
-#include <cstdint>
-#include <vector>
-/**
- * @brief Standard way of representing byte arrays in a way that is easily compatible with Rust.
- */
-using byte_array = std::vector<::uint8_t>;

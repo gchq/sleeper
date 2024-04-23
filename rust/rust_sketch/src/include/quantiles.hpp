@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,9 @@
  * @file quantiles.hpp
  * @brief Contains the wrapping and helper functions to facilitate mapping from Rust to C++
  * for quantiles sketches.
- * @date 2023
+ * @date 2024
  *
- * @copyright Copyright 2022-2023 Crown Copyright
+ * @copyright Copyright 2022-2024 Crown Copyright
  *
  */
 
@@ -44,7 +44,7 @@ namespace rust_sketch {
 
 /**
  * @brief Use our custom byte_array serializer for byte_array type, otherwise fallback to default one provided by datasketches library.
- * @tparam T element type of sketch 
+ * @tparam T element type of sketch
  */
 template <typename T>
 using serializer_t = std::conditional_t<std::is_same_v<T, byte_array>, ByteArraySerde, datasketches::serde<T>>;
@@ -207,7 +207,7 @@ struct quantiles_sketch_derived : public base_type<T, C, A> {
 
     /**
      * @brief Merges another sketch into this one.
-     * 
+     *
      * @param other the other sketch to merge into this one
      */
     template <typename FwdSk>

@@ -15,32 +15,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-use crate::{
-    aws_s3::ObjectStoreFactory,
-    sketch::{make_sketches_for_schema, serialise_sketches, update_sketches},
-};
-use arrow::{
-    datatypes::Schema,
-    error::ArrowError,
-    record_batch::RecordBatch,
-    row::{OwnedRow, RowConverter, Rows, SortField},
-};
+use crate::aws_s3::ObjectStoreFactory;
+use arrow::error::ArrowError;
 use aws_credential_types::Credentials;
 use aws_types::region::Region;
 
-use futures::{executor::BlockingStream, future};
-use itertools::{kmerge, Itertools};
-use log::{debug, info};
-use num_format::{Locale, ToFormattedString};
-use parquet::{
-    arrow::{
-        async_reader::{ParquetObjectReader, ParquetRecordBatchStream},
-        AsyncArrowWriter, ParquetRecordBatchStreamBuilder,
-    },
-    basic::{Compression, ZstdLevel},
-    file::properties::WriterProperties,
-};
-use std::{cell::RefCell, collections::HashMap, path::PathBuf, sync::Arc};
+use std::{collections::HashMap, path::PathBuf};
 use url::Url;
 
 /// Type safe variant for Sleeper partition boundary
@@ -146,6 +126,8 @@ pub async fn merge_sorted_files(
         if output_file_path.scheme() == "s3a" {
             let _ = output_file_path.set_scheme("s3");
         }
+
+        
         Ok(CompactionResult {
             rows_read: 0,
             rows_written: 0,
