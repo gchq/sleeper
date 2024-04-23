@@ -26,6 +26,7 @@ import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.FILE_TRANSACTION_LOG_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_TRANSACTION_LOG_TABLENAME;
+import static sleeper.configuration.properties.instance.CommonProperty.TRANSACTION_LOG_STATE_STORE_LOAD_LATEST_SNAPSHOTS;
 
 public class DynamoDBTransactionLogStateStore extends TransactionLogStateStore {
     public static final String TABLE_ID = "TABLE_ID";
@@ -48,17 +49,25 @@ public class DynamoDBTransactionLogStateStore extends TransactionLogStateStore {
                 .schema(tableProperties.getSchema())
                 .filesLogStore(new DynamoDBTransactionLogStore(instanceProperties.get(FILE_TRANSACTION_LOG_TABLENAME), instanceProperties, tableProperties, dynamoDB, s3))
                 .partitionsLogStore(new DynamoDBTransactionLogStore(instanceProperties.get(PARTITION_TRANSACTION_LOG_TABLENAME), instanceProperties, tableProperties, dynamoDB, s3));
-        DynamoDBTransactionLogSnapshotStore snapshotStore = new DynamoDBTransactionLogSnapshotStore(instanceProperties, tableProperties, dynamoDB);
-        snapshotStore.getLatestSnapshots().ifPresent(latestSnapshots -> {
-            TransactionLogFilesSnapshotSerDe filesSnapshotSerDe = new TransactionLogFilesSnapshotSerDe(configuration);
-            TransactionLogPartitionsSnapshotSerDe partitionsSnapshotSerDe = new TransactionLogPartitionsSnapshotSerDe(tableProperties.getSchema(), configuration);
-            try {
-                builder.filesState(filesSnapshotSerDe.load(latestSnapshots.getFilesSnapshot()))
-                        .partitionsState(partitionsSnapshotSerDe.load(latestSnapshots.getPartitionsSnapshot()));
-            } catch (StateStoreException e) {
-                throw new RuntimeException(e);
-            }
-        });
+        if (instanceProperties.getBoolean(TRANSACTION_LOG_STATE_STORE_LOAD_LATEST_SNAPSHOTS)) {
+            loadLatestSnapshots(builder, instanceProperties, tableProperties, dynamoDB, configuration);
+        }
         return builder;
+    }
+
+    private static void loadLatestSnapshots(
+            TransactionLogStateStore.Builder builder, InstanceProperties instanceProperties, TableProperties tableProperties,
+            AmazonDynamoDB dynamoDB, Configuration configuration) {
+        new DynamoDBTransactionLogSnapshotStore(instanceProperties, tableProperties, dynamoDB).getLatestSnapshots()
+                .ifPresent(latestSnapshots -> {
+                    TransactionLogFilesSnapshotSerDe filesSnapshotSerDe = new TransactionLogFilesSnapshotSerDe(configuration);
+                    TransactionLogPartitionsSnapshotSerDe partitionsSnapshotSerDe = new TransactionLogPartitionsSnapshotSerDe(tableProperties.getSchema(), configuration);
+                    try {
+                        builder.filesState(filesSnapshotSerDe.load(latestSnapshots.getFilesSnapshot()))
+                                .partitionsState(partitionsSnapshotSerDe.load(latestSnapshots.getPartitionsSnapshot()));
+                    } catch (StateStoreException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
     }
 }

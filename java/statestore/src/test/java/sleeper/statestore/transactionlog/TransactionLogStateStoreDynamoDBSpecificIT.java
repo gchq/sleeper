@@ -41,6 +41,7 @@ import java.util.stream.LongStream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.instance.CommonProperty.TRANSACTION_LOG_STATE_STORE_LOAD_LATEST_SNAPSHOTS;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AllReferencesToAFile.fileWithOneReference;
@@ -134,6 +135,29 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
                     .containsExactlyElementsOf(files);
         }
 
+        @Test
+        void shouldNotLoadLatestSnapshotsIfPropertyIsFalse() throws Exception {
+            // Given
+            instanceProperties.set(TRANSACTION_LOG_STATE_STORE_LOAD_LATEST_SNAPSHOTS, "false");
+            PartitionTree tree = new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 123L)
+                    .buildTree();
+            FileReferenceFactory factory = FileReferenceFactory.from(tree);
+            List<FileReference> files = List.of(
+                    factory.rootFile("file1.parquet", 100L),
+                    factory.partitionFile("L", "file2.parquet", 25L),
+                    factory.partitionFile("R", "file3.parquet", 50L));
+            saveFilesSnapshot(files, 2);
+            savePartitionsSnapshot(tree, 3);
+
+            // When
+            StateStore stateStore = createStateStore();
+
+            // Then
+            assertThat(stateStore.getAllPartitions()).isEmpty();
+            assertThat(stateStore.getFileReferences()).isEmpty();
+        }
     }
 
     private void saveFilesSnapshot(List<FileReference> files, long transcationNumber) throws Exception {
