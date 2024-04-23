@@ -24,16 +24,21 @@ import software.amazon.awscdk.services.iam.IGrantable;
 import software.constructs.Construct;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
 
 import static sleeper.cdk.Utils.removalPolicy;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.FILE_TRANSACTION_LOG_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_TRANSACTION_LOG_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
 public class TransactionLogStateStoreStack extends NestedStack {
     private final Table partitionsLogTable;
     private final Table filesLogTable;
+    private final Table latestSnapshotTable;
+    private final Table allSnapshotsTable;
 
     public TransactionLogStateStoreStack(
             Construct scope, String id, InstanceProperties instanceProperties) {
@@ -41,8 +46,12 @@ public class TransactionLogStateStoreStack extends NestedStack {
 
         partitionsLogTable = createTransactionLogTable(instanceProperties, "PartitionTransactionLogTable", "partition-transaction-log");
         filesLogTable = createTransactionLogTable(instanceProperties, "FileTransactionLogTable", "file-transaction-log");
+        latestSnapshotTable = createLatestSnapshotTable(instanceProperties, "TransactionLogLatestSnapshotTable", "tl-latest-snapshot");
+        allSnapshotsTable = createAllSnapshotsTable(instanceProperties, "TransactionLogAllSnapshotsTable", "tl-all-snapshots-table");
         instanceProperties.set(PARTITION_TRANSACTION_LOG_TABLENAME, partitionsLogTable.getTableName());
         instanceProperties.set(FILE_TRANSACTION_LOG_TABLENAME, filesLogTable.getTableName());
+        instanceProperties.set(TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME, latestSnapshotTable.getTableName());
+        instanceProperties.set(TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME, allSnapshotsTable.getTableName());
     }
 
     private Table createTransactionLogTable(InstanceProperties instanceProperties, String id, String name) {
@@ -57,6 +66,36 @@ public class TransactionLogStateStoreStack extends NestedStack {
                         .build())
                 .sortKey(Attribute.builder()
                         .name(DynamoDBTransactionLogStateStore.TRANSACTION_NUMBER)
+                        .type(AttributeType.NUMBER)
+                        .build())
+                .build();
+    }
+
+    private Table createLatestSnapshotTable(InstanceProperties instanceProperties, String id, String name) {
+        return Table.Builder
+                .create(this, id)
+                .tableName(String.join("-", "sleeper", instanceProperties.get(ID), name))
+                .removalPolicy(removalPolicy(instanceProperties))
+                .billingMode(BillingMode.PAY_PER_REQUEST)
+                .partitionKey(Attribute.builder()
+                        .name(DynamoDBTransactionLogSnapshotStore.TABLE_ID)
+                        .type(AttributeType.STRING)
+                        .build())
+                .build();
+    }
+
+    private Table createAllSnapshotsTable(InstanceProperties instanceProperties, String id, String name) {
+        return Table.Builder
+                .create(this, id)
+                .tableName(String.join("-", "sleeper", instanceProperties.get(ID), name))
+                .removalPolicy(removalPolicy(instanceProperties))
+                .billingMode(BillingMode.PAY_PER_REQUEST)
+                .partitionKey(Attribute.builder()
+                        .name(DynamoDBTransactionLogSnapshotStore.TABLE_ID_AND_SNAPSHOT_TYPE)
+                        .type(AttributeType.STRING)
+                        .build())
+                .sortKey(Attribute.builder()
+                        .name(DynamoDBTransactionLogSnapshotStore.TRANSACTION_NUMBER)
                         .type(AttributeType.NUMBER)
                         .build())
                 .build();
