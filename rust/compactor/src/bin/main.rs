@@ -18,9 +18,9 @@ use aws_config::BehaviorVersion;
 use aws_credential_types::provider::ProvideCredentials;
 use chrono::Local;
 use clap::Parser;
-use compaction::merge_sorted_files;
+use compaction::{merge_sorted_files, CompactionDetails};
 use human_panic::setup_panic;
-use std::io::Write;
+use std::{collections::HashMap, io::Write};
 use url::Url;
 
 /// Implements a Sleeper compaction algorithm in Rust.
@@ -101,16 +101,23 @@ async fn main() -> color_eyre::Result<()> {
         .provide_credentials()
         .await?;
 
-    merge_sorted_files(
-        Some(creds),
-        region,
-        &input_urls,
-        &output_url,
-        args.max_page_size,
-        args.row_group_size,
-        args.row_keys,
-        args.sort_column,
-    )
-    .await?;
+    let details = CompactionDetails {
+        input_files: input_urls,
+        output_file: output_url,
+        max_page_size: args.max_page_size,
+        max_row_group_size: args.row_group_size,
+        column_truncate_length: 1048576,
+        stats_truncate_length: 1048576,
+        compression: "zstd".into(),
+        writer_version: "2.0".into(),
+        dict_enc_row_keys: true,
+        dict_enc_sort_keys: true,
+        dict_enc_values: true,
+        region: HashMap::default(),
+        row_key_cols: vec!["key".into()],
+        sort_key_cols: vec![],
+    };
+
+    merge_sorted_files(Some(creds), region, &details).await?;
     Ok(())
 }

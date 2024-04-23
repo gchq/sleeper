@@ -40,16 +40,44 @@ use parquet::{
     basic::{Compression, ZstdLevel},
     file::properties::WriterProperties,
 };
-use std::{cell::RefCell, path::PathBuf, sync::Arc};
+use std::{cell::RefCell, collections::HashMap, path::PathBuf, sync::Arc};
 use url::Url;
 
 /// Type safe variant for Sleeper partition boundary
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum PartitionBound {
     Int32 { val: i32 },
     Int64 { val: i64 },
     String { val: &'static str },
     ByteArray { val: &'static [i8] },
+}
+
+/// All the information for a a Sleeper compaction.
+#[derive(Debug)]
+pub struct CompactionDetails {
+    pub input_files: Vec<Url>,
+    pub output_file: Url,
+    pub row_key_cols: Vec<String>,
+    pub sort_key_cols: Vec<String>,
+    pub max_row_group_size: usize,
+    pub max_page_size: usize,
+    pub compression: String,
+    pub writer_version: String,
+    pub column_truncate_length: usize,
+    pub stats_truncate_length: usize,
+    pub dict_enc_row_keys: bool,
+    pub dict_enc_sort_keys: bool,
+    pub dict_enc_values: bool,
+    pub region: HashMap<String, ColRange>,
+}
+
+/// Defines a partition range of a single column.
+#[derive(Debug, Copy, Clone)]
+pub struct ColRange {
+    pub lower: PartitionBound,
+    pub lower_inclusive: bool,
+    pub upper: PartitionBound,
+    pub upper_inclusive: bool,
 }
 
 /// A simple iterator for a batch of rows (owned).
@@ -135,13 +163,16 @@ impl Iterator for OwnedRowIter {
 pub async fn merge_sorted_files(
     aws_creds: Option<Credentials>,
     region: &Region,
-    input_file_paths: &[Url],
-    output_file_path: &Url,
-    row_group_size: usize,
-    max_page_size: usize,
-    row_key_fields: impl AsRef<[usize]>,
-    sort_columns: impl AsRef<[usize]>,
+    input_data: &CompactionDetails,
 ) -> Result<CompactionResult, ArrowError> {
+    let input_file_paths = input_data.input_files.clone();
+    let output_file_path = input_data.output_file.clone();
+    let row_group_size = input_data.max_row_group_size;
+    let max_page_size = input_data.max_page_size;
+    let row_key_fields = (0..input_data.row_key_cols.len()).collect::<Vec<_>>();
+    let sort_columns =
+        (0..input_data.row_key_cols.len() + input_data.sort_key_cols.len()).collect::<Vec<_>>();
+
     // Read the schema from the first file
     if input_file_paths.is_empty() {
         Err(ArrowError::InvalidArgumentError(
@@ -173,7 +204,6 @@ pub async fn merge_sorted_files(
         if validate_schemas_same(&store_factory, &input_file_paths, &schema).await {
             // Sort the row key column numbers
             let sorted_row_keys: Vec<usize> = row_key_fields
-                .as_ref()
                 .iter()
                 .sorted()
                 .map(usize::to_owned)
@@ -184,14 +214,13 @@ pub async fn merge_sorted_files(
             // so if schema has 5 columns [0, 1, 2, 3, 4] and sort_columns is [1,4],
             // then the full list of columns should be [1, 4, 0, 2, 3]
             let complete_sort_columns: Vec<_> = sort_columns
-                .as_ref()
                 .iter()
                 .copied() //Deref the integers
                 // then chain to an iterator of [0, schema.len) with sort columns fitered out
-                .chain((0..schema.fields().len()).filter(|i| !sort_columns.as_ref().contains(i)))
+                .chain((0..schema.fields().len()).filter(|i| !sort_columns.contains(i)))
                 .collect();
 
-            debug!("Sort columns {:?}", sort_columns.as_ref());
+            debug!("Sort columns {:?}", sort_columns);
             info!("Sorted column order {:?}", complete_sort_columns);
 
             // Create a vec of all schema columns for row conversion

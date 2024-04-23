@@ -32,6 +32,8 @@ use chrono::Local;
 use futures::TryFutureExt;
 use libc::{c_void, size_t, EFAULT, EINVAL, EIO};
 use log::{error, info, LevelFilter};
+use std::borrow::Borrow;
+use std::collections::HashMap;
 use std::io::Write;
 use std::str::Utf8Error;
 use std::sync::Once;
@@ -42,8 +44,7 @@ use std::{
 use url::Url;
 
 pub use details::merge_sorted_files;
-pub use details::CompactionResult;
-pub use details::PartitionBound;
+pub use details::{ColRange, CompactionDetails, CompactionResult, PartitionBound};
 
 /// An object guaranteed to only initialise once. Thread safe.
 static LOG_CFG: Once = Once::new();
@@ -79,12 +80,7 @@ fn maybe_cfg_log() {
 /// with obtained credentials.
 ///
 async fn credentials_and_merge(
-    input_paths: &[Url],
-    output_path: &Url,
-    row_group_size: size_t,
-    max_page_size: size_t,
-    row_fields: &[usize],
-    sort_cols: &[usize],
+    input_data: &CompactionDetails,
 ) -> Result<CompactionResult, ArrowError> {
     let config = aws_config::defaults(BehaviorVersion::latest()).load().await;
     let region = config.region().ok_or(ArrowError::InvalidArgumentError(
@@ -98,17 +94,7 @@ async fn credentials_and_merge(
         .provide_credentials()
         .map_err(|e| ArrowError::ExternalError(Box::new(e)))
         .await?;
-    merge_sorted_files(
-        Some(creds),
-        region,
-        input_paths,
-        output_path,
-        row_group_size,
-        max_page_size,
-        row_fields,
-        sort_cols,
-    )
-    .await
+    merge_sorted_files(Some(creds), region, input_data).await
 }
 
 /// Contains all the input data for setting up a compaction.
@@ -143,6 +129,81 @@ pub struct FFICompactionParams {
     region_mins_inclusive: *const *const bool,
     region_maxs_inclusive_len: usize,
     region_maxs_inclusive: *const *const bool,
+}
+
+impl TryFrom<&FFICompactionParams> for CompactionDetails {
+    type Error = anyhow::Error;
+
+    fn try_from(params: &FFICompactionParams) -> Result<Self, Self::Error> {
+        // We do this separately since we need the values for computing the region
+        let row_key_cols = unpack_string_array(params.row_key_cols, params.row_key_cols_len)?
+            .into_iter()
+            .map(String::from)
+            .collect();
+        let region = compute_region(params, &row_key_cols)?;
+
+        Ok(Self {
+            input_files: unpack_string_array(params.input_files, params.input_files_len)?
+                .into_iter()
+                .map(Url::parse)
+                .collect::<Result<Vec<_>, _>>()?,
+            output_file: unsafe { CStr::from_ptr(params.output_file) }
+                .to_str()
+                .map(Url::parse)??,
+            row_key_cols,
+            sort_key_cols: unpack_string_array(params.sort_key_cols, params.sort_key_cols_len)?
+                .into_iter()
+                .map(String::from)
+                .collect(),
+            max_row_group_size: params.max_row_group_size,
+            max_page_size: params.max_page_size,
+            compression: unsafe { CStr::from_ptr(params.compression) }
+                .to_str()?
+                .to_owned(),
+            writer_version: unsafe { CStr::from_ptr(params.writer_version) }
+                .to_str()?
+                .to_owned(),
+            column_truncate_length: params.column_truncate_length,
+            stats_truncate_length: params.stats_truncate_length,
+            dict_enc_row_keys: params.dict_enc_row_keys,
+            dict_enc_sort_keys: params.dict_enc_sort_keys,
+            dict_enc_values: params.dict_enc_values,
+            region,
+        })
+    }
+}
+
+fn compute_region<T: Borrow<str>>(
+    params: &FFICompactionParams,
+    row_key_cols: &Vec<T>,
+) -> Result<HashMap<String, ColRange>, anyhow::Error> {
+    let region_mins_inclusive = unpack_primitive_array(
+        params.region_mins_inclusive,
+        params.region_mins_inclusive_len,
+    );
+    let region_maxs_inclusive = unpack_primitive_array(
+        params.region_maxs_inclusive,
+        params.region_maxs_inclusive_len,
+    );
+    let schema_types = unpack_primitive_array(params.row_key_schema, params.row_key_schema_len);
+    let region_mins =
+        unpack_variant_array(params.region_mins, params.region_mins_len, &schema_types)?;
+    let region_maxs =
+        unpack_variant_array(params.region_maxs, params.region_maxs_len, &schema_types)?;
+
+    let mut map = HashMap::with_capacity(row_key_cols.len());
+    for (idx, row_key) in row_key_cols.iter().enumerate() {
+        map.insert(
+            String::from(row_key.borrow()),
+            ColRange {
+                lower: region_mins[idx],
+                lower_inclusive: region_mins_inclusive[idx],
+                upper: region_maxs[idx],
+                upper_inclusive: region_maxs_inclusive[idx],
+            },
+        );
+    }
+    Ok(map)
 }
 
 /// Contains all output data from a compaction operation.
@@ -214,125 +275,41 @@ pub extern "C" fn ffi_merge_sorted_files(
         return EFAULT;
     };
 
-    // Unpack input array pointers
-    let Ok(input_paths) = unpack_string_array(params.input_files, params.input_files_len) else {
-        error!("Error converting input paths as valid UTF8");
-        return EINVAL;
-    };
-    // Now unwrap the URL parsing errors
-    let input_paths = match input_paths
-        .into_iter()
-        .map(|x| Url::parse(x))
-        .collect::<Result<Vec<_>, _>>()
-    {
+    // Start async runtime
+    let rt = match tokio::runtime::Runtime::new() {
         Ok(v) => v,
         Err(e) => {
-            error!("URL parsing error on input paths {}", e);
+            error!("Couldn't create Rust tokio runtime {}", e);
+            return EIO;
+        }
+    };
+
+    let details = match TryInto::<CompactionDetails>::try_into(params) {
+        Ok(d) => d,
+        Err(e) => {
+            error!("Couldn't convert compaction input data {}", e);
             return EINVAL;
         }
     };
 
-    // Get output file URL
-    let Ok(Ok(output_path)) =
-        (unsafe { CStr::from_ptr(params.output_file).to_str() }).map(Url::parse)
-    else {
-        error!("UTF8 or URL parsing error on output path");
-        return EINVAL;
-    };
-
-    // Unpack row column names
-    let Ok(row_key_cols) = unpack_string_array(params.row_key_cols, params.row_key_cols_len) else {
-        error!("Error converting row kew colun names as valid UTF8");
-        return EINVAL;
-    };
-
-    // Unpack sort column names
-    let Ok(sort_key_cols) = unpack_string_array(params.sort_key_cols, params.sort_key_cols_len)
-    else {
-        error!("Error converting sort kew colun names as valid UTF8");
-        return EINVAL;
-    };
-
-    // Get compression codec
-    let Ok(compression_codec) = (unsafe { CStr::from_ptr(params.compression).to_str() }) else {
-        error!("UTF8 decoding error on compression codec");
-        return EINVAL;
-    };
-
-    // Get writer version
-    let Ok(writer_version) = (unsafe { CStr::from_ptr(params.writer_version).to_str() }) else {
-        error!("UTF8 decoding error on writer version");
-        return EINVAL;
-    };
-
-    // Deal with compaction region parameters
-    let region_mins_inclusive = unpack_primitive_array(
-        params.region_mins_inclusive,
-        params.region_mins_inclusive_len,
-    );
-    let region_maxs_inclusive = unpack_primitive_array(
-        params.region_maxs_inclusive,
-        params.region_maxs_inclusive_len,
-    );
-
-    let schema_types = unpack_primitive_array(params.row_key_schema, params.row_key_schema_len);
-    let region_mins =
-        unpack_variant_array(params.region_mins, params.region_mins_len, &schema_types);
-    let region_maxs =
-        unpack_variant_array(params.region_maxs, params.region_maxs_len, &schema_types);
-
-    println!(
-        "{:?} {:?} {:?} {:?} {:?} {:?} {:?} {:?} {:?} {:?}",
-        input_paths,
-        output_path,
-        row_key_cols,
-        sort_key_cols,
-        compression_codec,
-        writer_version,
-        region_mins_inclusive,
-        region_maxs_inclusive,
-        region_mins,
-        region_maxs,
-    );
-    // // Start async runtime
-    // let rt = match tokio::runtime::Runtime::new() {
-    //     Ok(v) => v,
-    //     Err(e) => {
-    //         error!("Couldn't create Rust tokio runtime {}", e);
-    //         return EIO;
-    //     }
-    // };
-
-    // // Run compaction
-    // let result = rt.block_on(credentials_and_merge(
-    //     &input_paths,
-    //     &output_path,
-    //     row_group_size,
-    //     max_page_size,
-    //     &row_fields,
-    //     &sort_cols,
-    // ));
-
-    // match result {
-    //     Ok(res) => {
-    //         if let Some(data) = unsafe { output_data.as_mut() } {
-    //             data.rows_read = res.rows_read;
-    //             data.rows_written = res.rows_written;
-    //         }
-    //         0
-    //     }
-    //     Err(e) => {
-    //         error!("merging error {}", e);
-    //         -1
-    //     }
-    // }
-    let Some(data) = (unsafe { output_data.as_mut() }) else {
-        error!("output data pointer is null");
-        return EFAULT;
-    };
-    data.rows_read = 12;
-    data.rows_written = 34;
-    0
+    // Run compaction
+    let result = rt.block_on(credentials_and_merge(&details));
+    match result {
+        Ok(res) => {
+            if let Some(data) = unsafe { output_data.as_mut() } {
+                data.rows_read = res.rows_read;
+                data.rows_written = res.rows_written;
+            } else {
+                error!("output data pointer is null");
+                return EFAULT;
+            }
+            0
+        }
+        Err(e) => {
+            error!("merging error {}", e);
+            -1
+        }
+    }
 }
 
 /// Create a vector from a C pointer to an array of strings.

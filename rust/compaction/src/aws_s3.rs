@@ -38,7 +38,6 @@ use object_store::{
     CredentialProvider, Error, GetOptions, GetRange, GetResult, ListResult, MultipartId,
     ObjectMeta, ObjectStore, PutOptions, PutResult, Result,
 };
-use tokio::io::AsyncWrite;
 use url::Url;
 
 /// A tuple struct to bridge AWS credentials obtained from the [`aws_config`] crate
@@ -225,12 +224,18 @@ impl ObjectStore for LoggingObjectStore {
     fn put_multipart<'life0, 'life1, 'async_trait>(
         &'life0 self,
         location: &'life1 Path,
-    ) -> ::core::pin::Pin<
+    ) -> Pin<
         Box<
-            dyn ::core::future::Future<
-                    Output = Result<(MultipartId, Box<dyn AsyncWrite + Unpin + Send>)>,
-                > + ::core::marker::Send
-                + 'async_trait,
+            (dyn futures::Future<
+                Output = std::result::Result<
+                    (
+                        std::string::String,
+                        Box<(dyn tokio::io::AsyncWrite + std::marker::Send + Unpin + 'static)>,
+                    ),
+                    object_store::Error,
+                >,
+            > + std::marker::Send
+                 + 'async_trait),
         >,
     >
     where
@@ -239,22 +244,6 @@ impl ObjectStore for LoggingObjectStore {
         Self: 'async_trait,
     {
         self.store.put_multipart(location)
-    }
-
-    fn abort_multipart<'life0, 'life1, 'life2, 'async_trait>(
-        &'life0 self,
-        location: &'life1 Path,
-        multipart_id: &'life2 MultipartId,
-    ) -> ::core::pin::Pin<
-        Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send + 'async_trait>,
-    >
-    where
-        'life0: 'async_trait,
-        'life1: 'async_trait,
-        'life2: 'async_trait,
-        Self: 'async_trait,
-    {
-        self.store.abort_multipart(location, multipart_id)
     }
 
     fn get_opts<'life0, 'life1, 'async_trait>(
@@ -386,6 +375,22 @@ impl ObjectStore for LoggingObjectStore {
         'life1: 'async_trait,
     {
         self.store.put_opts(location, bytes, opts)
+    }
+
+    fn abort_multipart<'life0, 'life1, 'life2, 'async_trait>(
+        &'life0 self,
+        location: &'life1 Path,
+        multipart_id: &'life2 MultipartId,
+    ) -> ::core::pin::Pin<
+        Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send + 'async_trait>,
+    >
+    where
+        'life0: 'async_trait,
+        'life1: 'async_trait,
+        'life2: 'async_trait,
+        Self: 'async_trait,
+    {
+        self.store.abort_multipart(location, multipart_id)
     }
 }
 

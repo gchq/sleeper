@@ -57,3 +57,4 @@ num-format = { version = "0.4.4" } # Nicely formatted numbers
 tokio-test = { version = "0.4.2" } # Doc tests
 env_logger = { version = "0.11.3" }
 chrono = { version = "0.4.26" } # Log helper
+anyhow = { version = "1.0.82" }
