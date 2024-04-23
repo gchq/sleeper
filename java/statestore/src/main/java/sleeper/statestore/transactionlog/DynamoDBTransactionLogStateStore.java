@@ -25,7 +25,6 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.LatestSnapshots;
 
-import java.nio.file.Path;
 import java.util.Optional;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.FILE_TRANSACTION_LOG_TABLENAME;
@@ -41,8 +40,12 @@ public class DynamoDBTransactionLogStateStore extends TransactionLogStateStore {
     }
 
     public static TransactionLogStateStore.Builder builderFrom(
-            InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamoDB, AmazonS3 s3,
-            Configuration configuration, Path basePath) {
+            InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamoDB, AmazonS3 s3) {
+        return builderFrom(instanceProperties, tableProperties, dynamoDB, s3, new Configuration());
+    }
+
+    public static TransactionLogStateStore.Builder builderFrom(
+            InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamoDB, AmazonS3 s3, Configuration configuration) {
         Builder builder = builder()
                 .sleeperTable(tableProperties.getStatus())
                 .schema(tableProperties.getSchema())
@@ -63,14 +66,4 @@ public class DynamoDBTransactionLogStateStore extends TransactionLogStateStore {
         }
         return builder;
     }
-
-    public static TransactionLogStateStore.Builder builderFrom(
-            InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamoDB, AmazonS3 s3) {
-        return builder()
-                .sleeperTable(tableProperties.getStatus())
-                .schema(tableProperties.getSchema())
-                .filesLogStore(new DynamoDBTransactionLogStore(instanceProperties.get(FILE_TRANSACTION_LOG_TABLENAME), instanceProperties, tableProperties, dynamoDB, s3))
-                .partitionsLogStore(new DynamoDBTransactionLogStore(instanceProperties.get(PARTITION_TRANSACTION_LOG_TABLENAME), instanceProperties, tableProperties, dynamoDB, s3));
-    }
-
 }

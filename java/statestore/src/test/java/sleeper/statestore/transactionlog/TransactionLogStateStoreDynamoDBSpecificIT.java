@@ -108,11 +108,6 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
     @Nested
     @DisplayName("Load latest snapshots")
     class LoadLatestSnapshots {
-        @BeforeEach
-        public void setup() {
-            new DynamoDBTransactionLogSnapshotStoreCreator(instanceProperties, dynamoDBClient).create();
-        }
-
         @Test
         void shouldLoadLatestSnapshotsWhenCreatingStateStore() throws Exception {
             // Given
@@ -157,7 +152,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
 
     private StateStore createStateStore() {
         return DynamoDBTransactionLogStateStore.builderFrom(
-                instanceProperties, tableProperties, dynamoDBClient, s3Client, new Configuration(), tempDir)
+                instanceProperties, tableProperties, dynamoDBClient, s3Client, new Configuration())
                 .maxAddTransactionAttempts(1)
                 .build();
     }
