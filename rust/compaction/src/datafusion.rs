@@ -18,7 +18,10 @@
 * limitations under the License.
 */
 use crate::{aws_s3::ObjectStoreFactory, CompactionInput, CompactionResult};
-use datafusion::error::DataFusionError;
+use datafusion::{
+    error::DataFusionError,
+    execution::{config::SessionConfig, context::SessionContext},
+};
 use url::Url;
 
 pub async fn compact(
@@ -27,6 +30,20 @@ pub async fn compact(
     input_paths: &[Url],
     output_path: &Url,
 ) -> Result<CompactionResult, DataFusionError> {
+    let mut sf = SessionConfig::new();
+    sf.options_mut().execution.parquet.data_pagesize_limit = input_data.max_page_size;
+    sf.options_mut().execution.parquet.writer_version = input_data.writer_version.clone();
+    sf.options_mut().execution.parquet.compression = Some(input_data.compression.clone());
+    sf.options_mut().execution.parquet.max_statistics_size = Some(input_data.stats_truncate_length);
+    sf.options_mut().execution.parquet.max_row_group_size = input_data.max_row_group_size;
+    sf.options_mut()
+        .execution
+        .parquet
+        .column_index_truncate_length = Some(input_data.column_truncate_length);
+
+    // Create my scalar UDF
+    let ctx = SessionContext::new_with_config(sf);
+
     Ok(CompactionResult {
         rows_read: 0,
         rows_written: 0,

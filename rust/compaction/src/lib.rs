@@ -248,7 +248,7 @@ pub extern "C" fn ffi_merge_sorted_files(
 ) -> c_int {
     maybe_cfg_log();
     if let Err(e) = color_eyre::install() {
-        warn!("Couldn't install color_eyre error handler");
+        warn!("Couldn't install color_eyre error handler {e}");
     }
     let Some(params) = (unsafe { input_data.as_ref() }) else {
         error!("input data pointer is null");
@@ -262,7 +262,7 @@ pub extern "C" fn ffi_merge_sorted_files(
     {
         Ok(v) => v,
         Err(e) => {
-            error!("Couldn't create Rust tokio runtime {}", e);
+            error!("Couldn't create Rust tokio runtime {e}");
             return EIO;
         }
     };
@@ -270,7 +270,7 @@ pub extern "C" fn ffi_merge_sorted_files(
     let details = match TryInto::<CompactionInput>::try_into(params) {
         Ok(d) => d,
         Err(e) => {
-            error!("Couldn't convert compaction input data {}", e);
+            error!("Couldn't convert compaction input data {e}");
             return EINVAL;
         }
     };
@@ -289,7 +289,7 @@ pub extern "C" fn ffi_merge_sorted_files(
             0
         }
         Err(e) => {
-            error!("merging error {}", e);
+            error!("merging error {e}");
             -1
         }
     }
