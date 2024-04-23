@@ -16,7 +16,7 @@ on:
       - 'java/ingest/ingest-core/**'
       - 'java/statestore/**'
       - 'java/parquet/**'
-      - 'java/dynamodb-tools/**'
+      - 'java/common/dynamodb-tools/**'
       - 'java/configuration/**'
       - 'java/core/**'
 

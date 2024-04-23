@@ -29,5 +29,6 @@
     <modules>
         <module>common-job</module>
         <module>common-task</module>
+        <module>dynamodb-tools</module>
     </modules>
 </project>

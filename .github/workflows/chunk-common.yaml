@@ -16,7 +16,7 @@ on:
       - 'java/common/common-job/**'
       - 'java/common/common-task/**'
       - 'java/build/**'
-      - 'java/dynamodb-tools/**'
+      - 'java/common/dynamodb-tools/**'
 
 jobs:
   chunk-workflow:

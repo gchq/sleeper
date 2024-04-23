@@ -46,8 +46,6 @@
     <suppress files="[\\/]parquet[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]sketches[\\/].*" id="missingJavadocMethod"/>
     <suppress files="[\\/]sketches[\\/].*" id="missingJavadocType"/>
-    <suppress files="[\\/]dynamodb-tools[\\/].*" id="missingJavadocMethod"/>
-    <suppress files="[\\/]dynamodb-tools[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]common[\\/].*" id="missingJavadocMethod"/>
     <suppress files="[\\/]common[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]clients[\\/].*" id="missingJavadocMethod"/>

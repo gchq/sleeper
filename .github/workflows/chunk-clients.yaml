@@ -26,7 +26,7 @@ on:
       - 'java/statestore/**'
       - 'java/parquet/**'
       - 'java/configuration/**'
-      - 'java/dynamodb-tools/**'
+      - 'java/common/dynamodb-tools/**'
       - 'java/core/**'
 
 jobs:
