@@ -39,9 +39,12 @@ public class SystemTestCompaction {
     }
 
     public SystemTestCompaction createJobs(int expectedJobs) {
-        lastJobIds = waitForJobCreation.createJobsGetIds(expectedJobs,
-                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(1)),
-                driver::triggerCreateJobs);
+        return createJobs(expectedJobs,
+                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(1)));
+    }
+
+    public SystemTestCompaction createJobs(int expectedJobs, PollWithRetries poll) {
+        lastJobIds = waitForJobCreation.createJobsGetIds(expectedJobs, poll, driver::triggerCreateJobs);
         return this;
     }
 
@@ -61,8 +64,8 @@ public class SystemTestCompaction {
         return this;
     }
 
-    public SystemTestCompaction forceStartTasks(int expectedTasks, PollWithRetries poll) {
-        driver.forceStartTasks(expectedTasks, poll);
+    public SystemTestCompaction forceStartTasks(int expectedTasks) {
+        driver.forceStartTasks(expectedTasks);
         return this;
     }
 
