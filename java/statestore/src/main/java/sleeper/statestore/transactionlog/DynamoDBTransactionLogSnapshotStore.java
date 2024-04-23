@@ -50,7 +50,7 @@ import static sleeper.dynamodb.tools.DynamoDBUtils.hasConditionalCheckFailure;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
 
 public class DynamoDBTransactionLogSnapshotStore {
-    private static final String DELIMETER = "|";
+    private static final String DELIMITER = "|";
     public static final String TABLE_ID = DynamoDBTransactionLogStateStore.TABLE_ID;
     public static final String TABLE_ID_AND_SNAPSHOT_TYPE = "TABLE_ID_AND_SNAPSHOT_TYPE";
     private static final String PATH = "PATH";
@@ -196,7 +196,7 @@ public class DynamoDBTransactionLogSnapshotStore {
     }
 
     private static String tableAndType(String table, SnapshotType type) {
-        return table + DELIMETER + type.name();
+        return table + DELIMITER + type.name();
     }
 
     private static TransactionLogSnapshot getSnapshotFromItem(Map<String, AttributeValue> item) {
