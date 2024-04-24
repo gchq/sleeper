@@ -26,6 +26,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.StateStorePartitions;
+import sleeper.core.table.InvokeForTableRequest;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.LatestSnapshots;
 
@@ -51,8 +52,10 @@ public class TransactionLogSnapshotCreator {
         this.configuration = configuration;
     }
 
-    public void run() throws StateStoreException {
-        tablePropertiesProvider.streamOnlineTables().forEach(this::createSnapshot);
+    public void run(InvokeForTableRequest tableRequest) throws StateStoreException {
+        tableRequest.getTableIds().stream()
+                .map(tablePropertiesProvider::getById)
+                .forEach(this::createSnapshot);
     }
 
     public void createSnapshot(TableProperties table) {

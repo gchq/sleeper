@@ -26,6 +26,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.table.InvokeForTableRequest;
 import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.LatestSnapshots;
 
@@ -61,7 +62,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
         stateStore.addFile(factory.rootFile(123L));
 
         // When
-        runSnapshotCreator(table, stateStore);
+        snapshotCreator(table, stateStore).run(forTables("test-table-1"));
 
         // Then
         assertThat(snapshotStore(table).getLatestSnapshots())
@@ -70,13 +71,16 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
                         partitionsSnapshot(table, "/snapshots/0-partitions.parquet", 0)));
     }
 
-    private void runSnapshotCreator(TableProperties table, StateStore stateStore) throws Exception {
-        new TransactionLogSnapshotCreator(
+    private TransactionLogSnapshotCreator snapshotCreator(TableProperties table, StateStore stateStore) throws Exception {
+        return new TransactionLogSnapshotCreator(
                 instanceProperties,
                 new FixedTablePropertiesProvider(List.of(table)),
                 new FixedStateStoreProvider(table, stateStore),
-                dynamoDBClient, new Configuration())
-                .run();
+                dynamoDBClient, new Configuration());
+    }
+
+    private InvokeForTableRequest forTables(String... tableIds) {
+        return new InvokeForTableRequest(List.of(tableIds));
     }
 
     private DynamoDBTransactionLogSnapshotStore snapshotStore(TableProperties table) {
