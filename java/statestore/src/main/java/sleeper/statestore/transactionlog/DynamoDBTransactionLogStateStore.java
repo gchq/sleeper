@@ -59,7 +59,9 @@ public class DynamoDBTransactionLogStateStore extends TransactionLogStateStore {
                     TransactionLogPartitionsSnapshotSerDe partitionsSnapshotSerDe = new TransactionLogPartitionsSnapshotSerDe(tableProperties.getSchema(), configuration);
                     try {
                         builder.filesState(filesSnapshotSerDe.load(latestSnapshots.getFilesSnapshot()))
-                                .partitionsState(partitionsSnapshotSerDe.load(latestSnapshots.getPartitionsSnapshot()));
+                                .filesTransactionNumber(latestSnapshots.getFilesSnapshot().getTransactionNumber())
+                                .partitionsState(partitionsSnapshotSerDe.load(latestSnapshots.getPartitionsSnapshot()))
+                                .partitionsTransactionNumber(latestSnapshots.getPartitionsSnapshot().getTransactionNumber());
                     } catch (StateStoreException e) {
                         throw new RuntimeException(e);
                     }
