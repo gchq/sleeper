@@ -20,10 +20,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.InMemoryTableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TablePropertiesStore;
+import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReferenceFactory;
@@ -75,8 +77,8 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
         // Then
         assertThat(snapshotStore(table).getLatestSnapshots())
                 .contains(new LatestSnapshots(
-                        filesSnapshot(table, "/snapshots/0-files.parquet", 0),
-                        partitionsSnapshot(table, "/snapshots/0-partitions.parquet", 0)));
+                        filesSnapshot(table, 0),
+                        partitionsSnapshot(table, 0)));
     }
 
     @Test
@@ -100,12 +102,12 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
         // Then
         assertThat(snapshotStore(table1).getLatestSnapshots())
                 .contains(new LatestSnapshots(
-                        filesSnapshot(table1, "/snapshots/0-files.parquet", 0),
-                        partitionsSnapshot(table1, "/snapshots/0-partitions.parquet", 0)));
+                        filesSnapshot(table1, 0),
+                        partitionsSnapshot(table1, 0)));
         assertThat(snapshotStore(table2).getLatestSnapshots())
                 .contains(new LatestSnapshots(
-                        filesSnapshot(table2, "/snapshots/0-files.parquet", 0),
-                        partitionsSnapshot(table2, "/snapshots/0-partitions.parquet", 0)));
+                        filesSnapshot(table2, 0),
+                        partitionsSnapshot(table2, 0)));
     }
 
     private void runSnapshotCreator(InvokeForTableRequest tableRequest) throws StateStoreException {
@@ -131,23 +133,17 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
         return tableProperties;
     }
 
-    private TransactionLogSnapshot filesSnapshot(TableProperties table, String path, long transactionNumber) {
-        return TransactionLogSnapshot.forFiles(getFilesPath(table, transactionNumber), transactionNumber);
+    private TransactionLogSnapshot filesSnapshot(TableProperties table, long transactionNumber) {
+        return TransactionLogSnapshot.forFiles(getBasePath(instanceProperties, table), transactionNumber);
     }
 
-    private TransactionLogSnapshot partitionsSnapshot(TableProperties table, String path, long transactionNumber) {
-        return TransactionLogSnapshot.forPartitions(getPartitionsPath(table, transactionNumber), transactionNumber);
+    private TransactionLogSnapshot partitionsSnapshot(TableProperties table, long transactionNumber) {
+        return TransactionLogSnapshot.forPartitions(getBasePath(instanceProperties, table), transactionNumber);
     }
 
-    private String getFilesPath(TableProperties tableProperties, long transactionNumber) {
-        return "file://" + instanceProperties.get(DATA_BUCKET) +
-                "/" + tableProperties.get(TABLE_ID) +
-                "/snapshots/" + transactionNumber + "-files.parquet";
-    }
-
-    private String getPartitionsPath(TableProperties tableProperties, long transactionNumber) {
-        return "file://" + instanceProperties.get(DATA_BUCKET) +
-                "/" + tableProperties.get(TABLE_ID) +
-                "/snapshots/" + transactionNumber + "-partitions.parquet";
+    private static String getBasePath(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        return instanceProperties.get(FILE_SYSTEM)
+                + instanceProperties.get(DATA_BUCKET) + "/"
+                + tableProperties.get(TableProperty.TABLE_ID);
     }
 }

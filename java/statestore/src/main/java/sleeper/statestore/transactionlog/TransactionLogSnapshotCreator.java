@@ -30,6 +30,7 @@ import sleeper.core.table.InvokeForTableRequest;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.LatestSnapshots;
 
+import java.io.IOException;
 import java.util.Optional;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
@@ -65,31 +66,33 @@ public class TransactionLogSnapshotCreator {
         try {
             saveFilesSnapshot(table, stateStore, snapshotStore, latestSnapshotsOpt);
             savePartitionsSnapshot(table, stateStore, snapshotStore, latestSnapshotsOpt);
-        } catch (DuplicateSnapshotException | StateStoreException e) {
+        } catch (DuplicateSnapshotException | StateStoreException | IOException e) {
             throw new RuntimeException(e);
         }
     }
 
     private void saveFilesSnapshot(TableProperties table, StateStore stateStore,
-            DynamoDBTransactionLogSnapshotStore snapshotStore, Optional<LatestSnapshots> latestSnapshotsOpt) throws DuplicateSnapshotException, StateStoreException {
+            DynamoDBTransactionLogSnapshotStore snapshotStore, Optional<LatestSnapshots> latestSnapshotsOpt) throws IOException, StateStoreException, DuplicateSnapshotException {
         long lastTransactionNumber = 0L;
         if (latestSnapshotsOpt.isPresent()) {
             lastTransactionNumber = latestSnapshotsOpt.get().getFilesSnapshot().getTransactionNumber();
         }
-        TransactionLogFilesSnapshotSerDe filesSnapshotSerDe = new TransactionLogFilesSnapshotSerDe(configuration);
-        String snapshotPath = filesSnapshotSerDe.save(getBasePath(instanceProperties, table), getFilesState(stateStore), lastTransactionNumber);
-        snapshotStore.saveFiles(snapshotPath, lastTransactionNumber);
+        TransactionLogSnapshotSerDe snapshotSerDe = new TransactionLogSnapshotSerDe(table.getSchema(), configuration);
+        TransactionLogSnapshot snapshot = TransactionLogSnapshot.forFiles(getBasePath(instanceProperties, table), lastTransactionNumber);
+        snapshotSerDe.saveFiles(snapshot, getFilesState(stateStore));
+        snapshotStore.saveSnapshot(snapshot);
     }
 
     private void savePartitionsSnapshot(TableProperties table, StateStore stateStore,
-            DynamoDBTransactionLogSnapshotStore snapshotStore, Optional<LatestSnapshots> latestSnapshotsOpt) throws DuplicateSnapshotException, StateStoreException {
+            DynamoDBTransactionLogSnapshotStore snapshotStore, Optional<LatestSnapshots> latestSnapshotsOpt) throws IOException, StateStoreException, DuplicateSnapshotException {
         long lastTransactionNumber = 0L;
         if (latestSnapshotsOpt.isPresent()) {
             lastTransactionNumber = latestSnapshotsOpt.get().getPartitionsSnapshot().getTransactionNumber();
         }
-        TransactionLogPartitionsSnapshotSerDe partitionsSnapshotSerDe = new TransactionLogPartitionsSnapshotSerDe(table.getSchema(), configuration);
-        String snapshotPath = partitionsSnapshotSerDe.save(getBasePath(instanceProperties, table), getPartitionsState(stateStore), lastTransactionNumber);
-        snapshotStore.savePartitions(snapshotPath, lastTransactionNumber);
+        TransactionLogSnapshotSerDe snapshotSerDe = new TransactionLogSnapshotSerDe(table.getSchema(), configuration);
+        TransactionLogSnapshot snapshot = TransactionLogSnapshot.forPartitions(getBasePath(instanceProperties, table), lastTransactionNumber);
+        snapshotSerDe.savePartitions(snapshot, getPartitionsState(stateStore));
+        snapshotStore.saveSnapshot(snapshot);
     }
 
     private StateStoreFiles getFilesState(StateStore store) throws StateStoreException {
