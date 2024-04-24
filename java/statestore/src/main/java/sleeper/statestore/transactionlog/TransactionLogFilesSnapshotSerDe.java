@@ -17,9 +17,10 @@ package sleeper.statestore.transactionlog;
 
 import org.apache.hadoop.conf.Configuration;
 
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.StateStoreFiles;
 import sleeper.statestore.StateStoreFileUtils;
+
+import java.io.IOException;
 
 public class TransactionLogFilesSnapshotSerDe {
     private final StateStoreFileUtils stateStoreFileUtils;
@@ -28,23 +29,23 @@ public class TransactionLogFilesSnapshotSerDe {
         this.stateStoreFileUtils = StateStoreFileUtils.forFiles(configuration);
     }
 
-    String save(String basePath, StateStoreFiles state, long lastTransactionNumber) throws StateStoreException {
+    String save(String basePath, StateStoreFiles state, long lastTransactionNumber) throws IOException {
         String filePath = createFilesPath(basePath, lastTransactionNumber);
         stateStoreFileUtils.saveFiles(filePath, state);
         return filePath;
     }
 
-    StateStoreFiles load(TransactionLogSnapshot snapshot) throws StateStoreException {
+    StateStoreFiles load(TransactionLogSnapshot snapshot) throws IOException {
         return load(snapshot.getPath());
     }
 
-    StateStoreFiles load(String filePath) throws StateStoreException {
+    StateStoreFiles load(String filePath) throws IOException {
         StateStoreFiles files = new StateStoreFiles();
         stateStoreFileUtils.loadFiles(filePath, files::add);
         return files;
     }
 
-    private String createFilesPath(String basePath, long lastTransactionNumber) throws StateStoreException {
+    private String createFilesPath(String basePath, long lastTransactionNumber) {
         return basePath + "/snapshots/" + lastTransactionNumber + "-files.parquet";
     }
 }

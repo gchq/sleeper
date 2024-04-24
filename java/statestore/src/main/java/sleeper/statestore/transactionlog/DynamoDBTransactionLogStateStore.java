@@ -21,8 +21,9 @@ import org.apache.hadoop.conf.Configuration;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
+
+import java.io.IOException;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.FILE_TRANSACTION_LOG_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_TRANSACTION_LOG_TABLENAME;
@@ -62,8 +63,8 @@ public class DynamoDBTransactionLogStateStore extends TransactionLogStateStore {
                                 .filesTransactionNumber(latestSnapshots.getFilesSnapshot().getTransactionNumber())
                                 .partitionsState(partitionsSnapshotSerDe.load(latestSnapshots.getPartitionsSnapshot()))
                                 .partitionsTransactionNumber(latestSnapshots.getPartitionsSnapshot().getTransactionNumber());
-                    } catch (StateStoreException e) {
-                        throw new RuntimeException(e);
+                    } catch (IOException e) {
+                        throw new RuntimeException("Failed to load latest snapshots", e);
                     }
                 });
     }

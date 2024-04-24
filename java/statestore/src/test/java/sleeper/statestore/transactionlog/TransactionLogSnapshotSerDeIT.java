@@ -25,7 +25,6 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.StateStorePartitions;
 
@@ -44,7 +43,7 @@ public class TransactionLogSnapshotSerDeIT {
     private final Configuration configuration = new Configuration();
 
     @Test
-    void shouldSaveAndLoadPartitionsState() throws StateStoreException {
+    void shouldSaveAndLoadPartitionsState() throws Exception {
         // Given
         PartitionTree splitTree = partitions.splitToNewChildren("root", "L", "R", "l").buildTree();
         StateStorePartitions state = new StateStorePartitions();
@@ -59,7 +58,7 @@ public class TransactionLogSnapshotSerDeIT {
     }
 
     @Test
-    void shouldSaveAndLoadFilesState() throws StateStoreException {
+    void shouldSaveAndLoadFilesState() throws Exception {
         // Given
         AllReferencesToAFile file = fileWithOneReference(fileFactory().rootFile(123L), DEFAULT_UPDATE_TIME);
         StateStoreFiles state = new StateStoreFiles();

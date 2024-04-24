@@ -18,9 +18,10 @@ package sleeper.statestore.transactionlog;
 import org.apache.hadoop.conf.Configuration;
 
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.StateStorePartitions;
 import sleeper.statestore.StateStoreFileUtils;
+
+import java.io.IOException;
 
 public class TransactionLogPartitionsSnapshotSerDe {
     private final Schema sleeperSchema;
@@ -31,23 +32,23 @@ public class TransactionLogPartitionsSnapshotSerDe {
         this.stateStoreFileUtils = StateStoreFileUtils.forPartitions(configuration);
     }
 
-    String save(String basePath, StateStorePartitions state, long lastTransactionNumber) throws StateStoreException {
+    String save(String basePath, StateStorePartitions state, long lastTransactionNumber) throws IOException {
         String filePath = createPartitionsPath(basePath, lastTransactionNumber);
         stateStoreFileUtils.savePartitions(filePath, state, sleeperSchema);
         return filePath;
     }
 
-    StateStorePartitions load(TransactionLogSnapshot snapshot) throws StateStoreException {
+    StateStorePartitions load(TransactionLogSnapshot snapshot) throws IOException {
         return load(snapshot.getPath());
     }
 
-    StateStorePartitions load(String filePath) throws StateStoreException {
+    StateStorePartitions load(String filePath) throws IOException {
         StateStorePartitions partitions = new StateStorePartitions();
         stateStoreFileUtils.loadPartitions(filePath, sleeperSchema, partitions::put);
         return partitions;
     }
 
-    private String createPartitionsPath(String basePath, long lastTransactionNumber) throws StateStoreException {
+    private String createPartitionsPath(String basePath, long lastTransactionNumber) {
         return basePath + "/snapshots/" + lastTransactionNumber + "-partitions.parquet";
     }
 

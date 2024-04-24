@@ -377,7 +377,11 @@ class S3FileReferenceStore implements FileReferenceStore {
         if (revisionId == null) {
             return true;
         }
-        return stateStoreFileUtils.isEmpty(getFilesPath(revisionId));
+        try {
+            return stateStoreFileUtils.isEmpty(getFilesPath(revisionId));
+        } catch (IOException e) {
+            throw new StateStoreException("Failed to load files", e);
+        }
     }
 
     @Override
@@ -397,14 +401,22 @@ class S3FileReferenceStore implements FileReferenceStore {
 
     private void writeFilesToParquet(List<AllReferencesToAFile> files, String path) throws StateStoreException {
         LOGGER.debug("Writing {} file records to {}", files.size(), path);
-        stateStoreFileUtils.saveFiles(path, files.stream());
+        try {
+            stateStoreFileUtils.saveFiles(path, files.stream());
+        } catch (IOException e) {
+            throw new StateStoreException("Failed to save files", e);
+        }
         LOGGER.debug("Wrote {} file records to {}", files.size(), path);
     }
 
     private List<AllReferencesToAFile> readFilesFromParquet(String path) throws StateStoreException {
         LOGGER.debug("Loading file records from {}", path);
         List<AllReferencesToAFile> files = new ArrayList<>();
-        stateStoreFileUtils.loadFiles(path, files::add);
+        try {
+            stateStoreFileUtils.loadFiles(path, files::add);
+        } catch (IOException e) {
+            throw new StateStoreException("Failed to load files", e);
+        }
         LOGGER.debug("Loaded {} file records from {}", files.size(), path);
         return files;
     }
