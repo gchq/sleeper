@@ -31,8 +31,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobStatusFromUpdates;
 import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionStatus;
+import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.finishedStatus;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.DEFAULT_TASK_ID;
-import static sleeper.core.record.process.status.TestRunStatusUpdates.finishedStatus;
 
 public class CompactionJobRunTest {
 

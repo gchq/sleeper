@@ -54,7 +54,6 @@ public class SystemTestInstanceContext {
     private final Map<String, TableProperties> tablesByTestName = new TreeMap<>();
     private final Map<String, String> testNameByTableId = new HashMap<>();
     private DeployedSleeperInstance currentInstance = null;
-    private SleeperTablesDriver tablesDriver = null;
     private DeployedSleeperTablesForTest currentTables = null;
     private GenerateNumberedValueOverrides generatorOverrides = GenerateNumberedValueOverrides.none();
 
@@ -68,17 +67,20 @@ public class SystemTestInstanceContext {
 
     public void connectTo(SystemTestInstanceConfiguration configuration) {
         currentInstance = deployedInstances.connectToAndReset(configuration);
-        tablesDriver = currentInstance.getInstanceAdminDrivers().tables(parameters);
         currentTables = tablesByInstanceShortName.computeIfAbsent(configuration.getShortName(),
-                name -> new DeployedSleeperTablesForTest(currentInstance.getInstanceProperties(), tablesDriver));
+                name -> new DeployedSleeperTablesForTest(currentInstance.getInstanceProperties(), tablesDriver()));
     }
 
     public SystemTestDrivers adminDrivers() {
         return currentInstance.getInstanceAdminDrivers();
     }
 
+    private SleeperTablesDriver tablesDriver() {
+        return adminDrivers().tables(parameters);
+    }
+
     public void addDefaultTables() {
-        currentTables.addTablesAndSetCurrent(tablesDriver, currentInstance.getDefaultTables().stream()
+        currentTables.addTablesAndSetCurrent(tablesDriver(), currentInstance.getDefaultTables().stream()
                 .map(deployProperties -> {
                     TableProperties properties = TableProperties.copyOf(deployProperties);
                     properties.unset(TABLE_ID);
@@ -89,7 +91,7 @@ public class SystemTestInstanceContext {
 
     public void createTables(int numberOfTables, Schema schema, Map<TableProperty, String> setProperties) {
         InstanceProperties instanceProperties = getInstanceProperties();
-        currentTables.addTablesAndSetCurrent(tablesDriver, IntStream.range(0, numberOfTables)
+        currentTables.addTablesAndSetCurrent(tablesDriver(), IntStream.range(0, numberOfTables)
                 .mapToObj(i -> {
                     TableProperties tableProperties = parameters.createTableProperties(instanceProperties, schema);
                     setProperties.forEach(tableProperties::set);
@@ -101,7 +103,7 @@ public class SystemTestInstanceContext {
     public void createTable(String name, Schema schema) {
         TableProperties tableProperties = parameters.createTableProperties(getInstanceProperties(), schema);
         tableProperties.set(TABLE_NAME, name + "-" + UUID.randomUUID());
-        currentTables.addTables(tablesDriver, List.of(tableProperties));
+        currentTables.addTables(tablesDriver(), List.of(tableProperties));
         tablesByTestName.put(name, tableProperties);
         testNameByTableId.put(tableProperties.get(TABLE_ID), name);
     }
@@ -147,7 +149,7 @@ public class SystemTestInstanceContext {
         }
         streamTableProperties().forEach(tableProperties -> {
             values.forEach(tableProperties::set);
-            tablesDriver.saveTableProperties(getInstanceProperties(), tableProperties);
+            tablesDriver().saveTableProperties(getInstanceProperties(), tableProperties);
         });
     }
 
@@ -184,7 +186,7 @@ public class SystemTestInstanceContext {
     }
 
     public List<TableStatus> loadTables() {
-        TableIndex tableIndex = tablesDriver.tableIndex(getInstanceProperties());
+        TableIndex tableIndex = tablesDriver().tableIndex(getInstanceProperties());
         return streamTableProperties()
                 .map(table -> tableIndex.getTableByUniqueId(table.get(TABLE_ID)).orElseThrow())
                 .collect(toUnmodifiableList());

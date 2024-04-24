@@ -47,6 +47,13 @@ public class PartitionTree {
         this.rootPartition = rootPartitions.get(0);
     }
 
+    /**
+     * Retrieves IDs of partitions that were split from a given parent partition.
+     *
+     * @param  partitionId              the ID of the parent partition
+     * @return                          the IDs of the child partitions
+     * @throws IllegalArgumentException if the parent partition does not exist
+     */
     public List<String> getChildIds(String partitionId) throws IllegalArgumentException {
         if (!idToPartition.containsKey(partitionId)) {
             throw new IllegalArgumentException("No partition of id " + partitionId);
@@ -54,6 +61,13 @@ public class PartitionTree {
         return idToPartition.get(partitionId).getChildPartitionIds();
     }
 
+    /**
+     * Retrieves IDs of all partitions that were split to result in the given partition. Starts with the most recent
+     * parent, and includes all ancestors of that parent ending with the root partition.
+     *
+     * @param  partitionId the ID of the partition to find ancestors of
+     * @return             all IDs of the partition's ancestors
+     */
     public List<String> getAllAncestorIds(String partitionId) {
         if (!idToPartition.containsKey(partitionId)) {
             throw new IllegalArgumentException("No partition of id " + partitionId);
@@ -68,6 +82,13 @@ public class PartitionTree {
         return ancestors;
     }
 
+    /**
+     * Retrieves all partitions that were split to result in the given partition. Starts with the most recent parent,
+     * and includes all ancestors of that parent ending with the root partition.
+     *
+     * @param  partitionId the ID of the partition to find ancestors of
+     * @return             all of the partition's ancestors
+     */
     public List<Partition> getAllAncestors(String partitionId) {
         if (!idToPartition.containsKey(partitionId)) {
             throw new IllegalArgumentException("No partition of id " + partitionId);
@@ -82,6 +103,12 @@ public class PartitionTree {
         return ancestors;
     }
 
+    /**
+     * Retrieves a partition by its unique ID.
+     *
+     * @param  partitionId the ID of the partition
+     * @return             the partition
+     */
     public Partition getPartition(String partitionId) {
         return idToPartition.get(partitionId);
     }
@@ -90,6 +117,13 @@ public class PartitionTree {
         return List.copyOf(idToPartition.values());
     }
 
+    /**
+     * Retrieves the leaf partition that includes the given key.
+     *
+     * @param  schema schema of the Sleeper table
+     * @param  key    values for the key to find the leaf partition for
+     * @return        the leaf partition
+     */
     public Partition getLeafPartition(Schema schema, Key key) {
         // Sanity check key is of the correct length
         if (key.size() != schema.getRowKeyFields().size()) {
@@ -132,10 +166,27 @@ public class PartitionTree {
         return rootPartition;
     }
 
+    /**
+     * Retrieves the partition whose region includes both keys. Finds the nearest partition to each of the keys, with
+     * the fewest steps up the partition tree.
+     *
+     * @param  schema schema of the Sleeper table
+     * @param  a      values of the first key
+     * @param  b      values of the second key
+     * @return        the partition that includes both keys
+     */
     public Partition getNearestCommonAncestor(Schema schema, Key a, Key b) {
         return getNearestCommonAncestor(getLeafPartition(schema, a), getLeafPartition(schema, b));
     }
 
+    /**
+     * Retrieves the partition whose region includes both descendent partitions. Finds the partition with the fewest
+     * steps up the partition tree that is an ancestor for both.
+     *
+     * @param  a the first partition
+     * @param  b the second partition
+     * @return   the partition that is an ancestor of both
+     */
     public Partition getNearestCommonAncestor(Partition a, Partition b) {
         if (a.getId().equals(b.getId())) {
             return a;
@@ -150,7 +201,7 @@ public class PartitionTree {
     }
 
     /**
-     * Traverse the partition tree visiting the leaves first. Proceeds in steps where you remove the current leaf
+     * Traverses the partition tree visiting the leaves first. Proceeds in steps where you remove the current leaf
      * partitions and visit the new leaves.
      * <p>
      * The partitions are also ordered by the min and max of their ranges. Each time the tree is split, the partition

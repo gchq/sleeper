@@ -24,6 +24,9 @@ import java.util.Optional;
 import java.util.TreeMap;
 import java.util.stream.Stream;
 
+/**
+ * An in-memory implementation of the table index interface.
+ */
 public class InMemoryTableIndex implements TableIndex {
 
     private final Map<String, TableStatus> indexByName = new TreeMap<>();
@@ -37,6 +40,11 @@ public class InMemoryTableIndex implements TableIndex {
         save(table);
     }
 
+    /**
+     * Saves a table to the table index.
+     *
+     * @param table the table status
+     */
     public void save(TableStatus table) {
         indexByName.put(table.getTableName(), table);
         indexById.put(table.getTableUniqueId(), table);

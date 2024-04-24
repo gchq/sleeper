@@ -30,10 +30,10 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobStatusListFromUpdates;
 import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionStatus;
+import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.finishedStatus;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.DEFAULT_EXPIRY;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.DEFAULT_TASK_ID;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forJob;
-import static sleeper.core.record.process.status.TestRunStatusUpdates.finishedStatus;
 
 class CompactionJobStatusFromRecordsTest {
 

@@ -26,6 +26,8 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class PartitionSerDeTest {
@@ -42,7 +44,7 @@ public class PartitionSerDeTest {
                 .leafPartition(true)
                 .region(region)
                 .parentPartitionId(null)
-                .childPartitionIds("id1", "id2")
+                .childPartitionIds(List.of("id1", "id2"))
                 .build();
         PartitionSerDe partitionSerDe = new PartitionSerDe(schema);
 
@@ -66,7 +68,7 @@ public class PartitionSerDeTest {
                 .leafPartition(true)
                 .region(region)
                 .parentPartitionId(null)
-                .childPartitionIds("id1", "id2")
+                .childPartitionIds(List.of("id1", "id2"))
                 .build();
         PartitionSerDe partitionSerDe = new PartitionSerDe(schema);
 
@@ -90,7 +92,7 @@ public class PartitionSerDeTest {
                 .leafPartition(true)
                 .region(region)
                 .parentPartitionId(null)
-                .childPartitionIds("id1", "id2")
+                .childPartitionIds(List.of("id1", "id2"))
                 .build();
         PartitionSerDe partitionSerDe = new PartitionSerDe(schema);
 
@@ -114,7 +116,7 @@ public class PartitionSerDeTest {
                 .leafPartition(true)
                 .region(region)
                 .parentPartitionId(null)
-                .childPartitionIds("id1", "id2")
+                .childPartitionIds(List.of("id1", "id2"))
                 .build();
         PartitionSerDe partitionSerDe = new PartitionSerDe(schema);
 
@@ -138,7 +140,7 @@ public class PartitionSerDeTest {
                 .leafPartition(true)
                 .region(region)
                 .parentPartitionId(null)
-                .childPartitionIds("id1", "id2")
+                .childPartitionIds(List.of("id1", "id2"))
                 .build();
         PartitionSerDe partitionSerDe = new PartitionSerDe(schema);
 
@@ -162,7 +164,7 @@ public class PartitionSerDeTest {
                 .leafPartition(true)
                 .region(region)
                 .parentPartitionId(null)
-                .childPartitionIds("id1", "id2")
+                .childPartitionIds(List.of("id1", "id2"))
                 .build();
         PartitionSerDe partitionSerDe = new PartitionSerDe(schema);
 

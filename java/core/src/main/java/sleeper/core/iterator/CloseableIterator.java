@@ -24,5 +24,7 @@ import java.util.Iterator;
  * @param <T> the type of elements returned by this iterator
  */
 public interface CloseableIterator<T> extends Iterator<T>, AutoCloseable {
+
+    @Override
     void close() throws IOException;
 }

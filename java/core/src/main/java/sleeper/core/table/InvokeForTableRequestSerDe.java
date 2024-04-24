@@ -26,10 +26,22 @@ public class InvokeForTableRequestSerDe {
 
     private final Gson gson = new GsonBuilder().create();
 
+    /**
+     * Serialises a request for a batch of tables to a JSON string.
+     *
+     * @param  request the request
+     * @return         the JSON string
+     */
     public String toJson(InvokeForTableRequest request) {
         return gson.toJson(request);
     }
 
+    /**
+     * Deserialises a request for a batch of tables from a JSON string.
+     *
+     * @param  json the JSON string
+     * @return      the request
+     */
     public InvokeForTableRequest fromJson(String json) {
         return gson.fromJson(json, InvokeForTableRequest.class);
     }

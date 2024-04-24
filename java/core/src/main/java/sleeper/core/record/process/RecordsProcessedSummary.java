@@ -19,6 +19,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
 
+/**
+ * A representation of a number of records processed over a defined time.
+ */
 public class RecordsProcessedSummary {
 
     private final RecordsProcessed recordsProcessed;
@@ -47,6 +50,12 @@ public class RecordsProcessedSummary {
         this.recordsWrittenPerSecond = recordsProcessed.getRecordsWritten() / (this.timeInProcess.toMillis() / 1000.0);
     }
 
+    /**
+     * Creates an instance of this class with no records processed, and with no duration.
+     *
+     * @param  startTime the start time
+     * @return           an instance of this class
+     */
     public static RecordsProcessedSummary noProcessingDoneAtTime(Instant startTime) {
         return new RecordsProcessedSummary(
                 new RecordsProcessed(0, 0),

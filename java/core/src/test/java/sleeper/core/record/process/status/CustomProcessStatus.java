@@ -19,6 +19,9 @@ package sleeper.core.record.process.status;
 import java.time.Instant;
 import java.util.Objects;
 
+/**
+ * A test implementation of process status update.
+ */
 public class CustomProcessStatus implements ProcessStatusUpdate {
     private final Instant updateTime;
     private final boolean isPartOfRun;
@@ -28,10 +31,22 @@ public class CustomProcessStatus implements ProcessStatusUpdate {
         this.isPartOfRun = isPartOfRun;
     }
 
+    /**
+     * Creates an instance of this class that is marked as part of a job run.
+     *
+     * @param  updateTime the update time
+     * @return            an instance of this class that is marked as part of a job run
+     */
     public static CustomProcessStatus partOfRunWithUpdateTime(Instant updateTime) {
         return new CustomProcessStatus(updateTime, true);
     }
 
+    /**
+     * Creates an instance of this class that is not marked as part of a job run.
+     *
+     * @param  updateTime the update time
+     * @return            an instance of this class that is not marked as part of a job run
+     */
     public static CustomProcessStatus notPartOfRunWithUpdateTime(Instant updateTime) {
         return new CustomProcessStatus(updateTime, false);
     }

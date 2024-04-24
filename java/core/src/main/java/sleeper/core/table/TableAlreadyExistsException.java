@@ -16,6 +16,9 @@
 
 package sleeper.core.table;
 
+/**
+ * Thrown to indicate that a table already exists with the given name. This can occur when creating or renaming a table.
+ */
 public class TableAlreadyExistsException extends RuntimeException {
     public TableAlreadyExistsException(TableStatus table) {
         this(table, null);

@@ -83,6 +83,9 @@ public class MergingIterator implements CloseableIterator<Record> {
         return recordsRead;
     }
 
+    /**
+     * Holds the next record available for an iterator, and the iterator to retrieve further records.
+     */
     private static class RecordIteratorPair {
         private final Record record;
         private final CloseableIterator<Record> iterator;
@@ -93,6 +96,9 @@ public class MergingIterator implements CloseableIterator<Record> {
         }
     }
 
+    /**
+     * Compares the state for two iterators to find the next record in the sort order.
+     */
     private static class RecordIteratorPairComparator implements Comparator<RecordIteratorPair> {
         private final RecordComparator recordComparator;
 

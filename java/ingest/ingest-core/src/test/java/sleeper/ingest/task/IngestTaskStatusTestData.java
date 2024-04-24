@@ -22,7 +22,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.stream.Stream;
 
-import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
+import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_NUMBER_OF_RECORDS;
 
 public class IngestTaskStatusTestData {

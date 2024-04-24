@@ -24,10 +24,10 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
+import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.finishedStatus;
+import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.startedStatus;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forJob;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.records;
-import static sleeper.core.record.process.status.TestRunStatusUpdates.finishedStatus;
-import static sleeper.core.record.process.status.TestRunStatusUpdates.startedStatus;
 
 public class JobStatusesBuilderTest {
 

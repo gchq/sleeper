@@ -17,7 +17,7 @@ package sleeper.clients.admin.testutils;
 
 import sleeper.clients.admin.properties.UpdatePropertiesWithTextEditor;
 import sleeper.clients.testutil.TestConsoleInput;
-import sleeper.clients.testutil.ToStringPrintStream;
+import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Field;
@@ -41,7 +41,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_ONLINE;
 
 public abstract class AdminClientTestBase implements AdminConfigStoreTestHarness {
 
-    protected final ToStringPrintStream out = new ToStringPrintStream();
+    protected final ToStringConsoleOutput out = new ToStringConsoleOutput();
     protected final TestConsoleInput in = new TestConsoleInput(out.consoleOut());
     protected final UpdatePropertiesWithTextEditor editor = mock(UpdatePropertiesWithTextEditor.class);
 

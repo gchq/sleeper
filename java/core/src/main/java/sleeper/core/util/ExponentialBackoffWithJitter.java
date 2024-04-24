@@ -18,6 +18,7 @@ package sleeper.core.util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.util.Objects;
 import java.util.function.DoubleSupplier;
 
@@ -44,27 +45,44 @@ public class ExponentialBackoffWithJitter {
         this(waitRange, Math::random, Thread::sleep);
     }
 
+    /**
+     * Waits for a time calculated from the number of attempts that have been made so far.
+     *
+     * @param  attempt              the number of attempts so far
+     * @return                      the number of milliseconds waited for
+     * @throws InterruptedException if the current thread was interrupted
+     */
     public long waitBeforeAttempt(int attempt) throws InterruptedException {
-        if (attempt == 0) {
+        if (attempt == 0) { // No wait on first attempt
             return 0;
         }
         long waitMillis = getWaitMillisBeforeAttempt(attempt);
-        LOGGER.debug("Sleeping for {} milliseconds", waitMillis);
+        LOGGER.debug("Sleeping for {}", LoggedDuration.withFullOutput(Duration.ofMillis(waitMillis)));
         waiter.waitForMillis(waitMillis);
         return waitMillis;
     }
 
     private long getWaitMillisBeforeAttempt(int attempt) {
-        double sleepTimeInSeconds = Math.min(
+        double waitCeilingInSeconds = Math.min(
                 waitRange.maxWaitCeilingSecs,
                 waitRange.firstWaitCeilingSecs * 0.5 * Math.pow(2.0, attempt));
-        return (long) (randomJitterFraction.getAsDouble() * sleepTimeInSeconds * 1000L);
+        return (long) (randomJitterFraction.getAsDouble() * waitCeilingInSeconds * 1000L);
     }
 
+    /**
+     * Waits for a number of milliseconds. Implemented by <code>Thread.sleep</code>.
+     */
+    @FunctionalInterface
     interface Waiter {
         void waitForMillis(long milliseconds) throws InterruptedException;
     }
 
+    /**
+     * Defines a range for the wait time ceiling. The ceiling is an amount of time that increases exponentially for
+     * each retry. Jitter is then applied to this ceiling to produce the actual wait time.
+     * <p>
+     * The ceiling starts at a first value for the first retry, then increases exponentially until it reaches a maximum.
+     */
     public static class WaitRange {
         private final double firstWaitCeilingSecs;
         private final double maxWaitCeilingSecs;
@@ -74,6 +92,13 @@ public class ExponentialBackoffWithJitter {
             this.maxWaitCeilingSecs = maxWaitCeilingSecs;
         }
 
+        /**
+         * Instantiates this class.
+         *
+         * @param  firstWaitCeilingSecs the wait ceiling in seconds for the first retry, before applying jitter
+         * @param  maxWaitCeilingSecs   the maximum wait ceiling in seconds, before applying jitter
+         * @return                      an instance of this class
+         */
         public static WaitRange firstAndMaxWaitCeilingSecs(double firstWaitCeilingSecs, double maxWaitCeilingSecs) {
             return new WaitRange(firstWaitCeilingSecs, maxWaitCeilingSecs);
         }
