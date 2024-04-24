@@ -21,29 +21,38 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
+import sleeper.configuration.properties.table.InMemoryTableProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.properties.table.TablePropertiesStore;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.table.InvokeForTableRequest;
 import sleeper.statestore.FixedStateStoreProvider;
+import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.LatestSnapshots;
 
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTestBase {
     @TempDir
     private Path tempDir;
     private final Schema schema = schemaWithKey("key", new LongType());
+    private final TablePropertiesStore store = InMemoryTableProperties.getStore();
+    private final TablePropertiesProvider provider = new TablePropertiesProvider(instanceProperties, store, Instant::now);
     private StateStore stateStore;
 
     @BeforeEach
@@ -53,16 +62,16 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
     }
 
     @Test
-    void shouldCreateSnapshotsWhenNoSnapshotsExist() throws Exception {
+    void shouldCreateSnapshotsForOneTable() throws Exception {
         // Given
-        TableProperties table = createTable("test-table-1");
+        TableProperties table = createTable("test-table-id-1", "test-table-1");
         stateStore = createStateStore(table);
         stateStore.initialise();
         FileReferenceFactory factory = FileReferenceFactory.from(stateStore);
         stateStore.addFile(factory.rootFile(123L));
 
         // When
-        snapshotCreator(table, stateStore).run(forTables("test-table-1"));
+        snapshotCreator(table, stateStore).run(forTables("test-table-id-1"));
 
         // Then
         assertThat(snapshotStore(table).getLatestSnapshots())
@@ -71,12 +80,46 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
                         partitionsSnapshot(table, "/snapshots/0-partitions.parquet", 0)));
     }
 
-    private TransactionLogSnapshotCreator snapshotCreator(TableProperties table, StateStore stateStore) throws Exception {
-        return new TransactionLogSnapshotCreator(
-                instanceProperties,
+    @Test
+    void shouldCreateSnapshotsForMultipleTables() throws Exception {
+        // Given
+        TableProperties table1 = createTable("test-table-id-1", "test-table-1");
+        StateStore stateStore1 = createStateStore(table1);
+        stateStore1.initialise();
+        FileReferenceFactory factory1 = FileReferenceFactory.from(stateStore1);
+        stateStore1.addFile(factory1.rootFile(123L));
+
+        TableProperties table2 = createTable("test-table-id-2", "test-table-2");
+        StateStore stateStore2 = createStateStore(table2);
+        stateStore2.initialise();
+        FileReferenceFactory factory2 = FileReferenceFactory.from(stateStore2);
+        stateStore2.addFile(factory2.rootFile(456L));
+
+        // When
+        snapshotCreator(provider,
+                new FixedStateStoreProvider(Map.of("test-table-1", stateStore1, "test-table-2", stateStore2)))
+                .run(forTables("test-table-id-1", "test-table-id-2"));
+
+        // Then
+        assertThat(snapshotStore(table1).getLatestSnapshots())
+                .contains(new LatestSnapshots(
+                        filesSnapshot(table1, "/snapshots/0-files.parquet", 0),
+                        partitionsSnapshot(table1, "/snapshots/0-partitions.parquet", 0)));
+        assertThat(snapshotStore(table2).getLatestSnapshots())
+                .contains(new LatestSnapshots(
+                        filesSnapshot(table2, "/snapshots/0-files.parquet", 0),
+                        partitionsSnapshot(table2, "/snapshots/0-partitions.parquet", 0)));
+    }
+
+    private TransactionLogSnapshotCreator snapshotCreator(TableProperties table, StateStore stateStore) {
+        return snapshotCreator(
                 new FixedTablePropertiesProvider(List.of(table)),
-                new FixedStateStoreProvider(table, stateStore),
-                dynamoDBClient, new Configuration());
+                new FixedStateStoreProvider(table, stateStore));
+    }
+
+    private TransactionLogSnapshotCreator snapshotCreator(TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider) {
+        return new TransactionLogSnapshotCreator(
+                instanceProperties, tablePropertiesProvider, stateStoreProvider, dynamoDBClient, new Configuration());
     }
 
     private InvokeForTableRequest forTables(String... tableIds) {
@@ -87,9 +130,11 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
         return new DynamoDBTransactionLogSnapshotStore(instanceProperties, table, dynamoDBClient);
     }
 
-    private TableProperties createTable(String tableId) {
+    private TableProperties createTable(String tableId, String tableName) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         tableProperties.set(TABLE_ID, tableId);
+        tableProperties.set(TABLE_NAME, tableName);
+        store.createTable(tableProperties);
         return tableProperties;
     }
 
@@ -108,6 +153,6 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
     }
 
     private String basePathForTable(TableProperties tableProperties) {
-        return "file://" + tempDir.resolve("test-table-1").toString();
+        return "file://" + tempDir.resolve(tableProperties.get(TABLE_ID)).toString();
     }
 }
