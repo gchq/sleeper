@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 /// `DataFusion` contains the implementation for performing Sleeper compactions
 /// using Apache `DataFusion`.
 ///
@@ -21,7 +19,7 @@ use std::sync::Arc;
 */
 use crate::{
     aws_s3::{CountingObjectStore, ObjectStoreFactory},
-    CompactionInput, CompactionResult,
+    ColRange, CompactionInput, CompactionResult, PartitionBound,
 };
 use arrow::{array::RecordBatch, util::pretty::pretty_format_batches};
 use datafusion::{
@@ -33,6 +31,7 @@ use datafusion::{
 };
 use log::{error, info};
 use num_format::{Locale, ToFormattedString};
+use std::{collections::HashMap, sync::Arc};
 use url::Url;
 
 /// Starts a Sleeper compaction.
@@ -47,7 +46,7 @@ pub async fn compact(
     output_path: &Url,
 ) -> Result<CompactionResult, DataFusionError> {
     info!("DataFusion compaction of {input_paths:?}");
-
+    info!("Compaction region {:?}", input_data.region);
     let sf = create_session_cfg(input_data);
     let ctx = SessionContext::new_with_config(sf);
 
@@ -59,7 +58,7 @@ pub async fn compact(
     info!("Row key and sort column order {sort_order:?}");
 
     let po = ParquetReadOptions::default().file_sort_order(vec![sort_order.clone()]);
-    let frame = ctx.read_parquet(input_paths.to_owned(), po).await?;
+    let mut frame = ctx.read_parquet(input_paths.to_owned(), po).await?;
 
     // Extract all column names
     let col_names = frame.schema().clone().strip_qualifiers().field_names();
@@ -74,7 +73,12 @@ pub async fn compact(
         .iter()
         .map(col)
         .collect::<Vec<_>>();
-    let frame = frame.sort(sort_order)?.select(col_names_expr)?;
+
+    // Create plan
+    if let Some(expr) = region_filter(&input_data.region) {
+        frame = frame.filter(expr)?;
+    }
+    frame = frame.sort(sort_order)?.select(col_names_expr)?;
 
     // Show explanation of plan
     let explained = frame.clone().explain(false, false)?.collect().await?;
@@ -119,7 +123,50 @@ pub async fn compact(
         rows_read: rows_written,
         rows_written,
     })
-    // TODO: Sketches
+}
+
+fn region_filter(region: &HashMap<String, ColRange>) -> Option<Expr> {
+    let mut col_exprs = vec![];
+    for (name, range) in region {
+        let min_bound = match range.lower {
+            PartitionBound::Int32(val) => lit(val),
+            PartitionBound::Int64(val) => lit(val),
+            PartitionBound::String(val) => lit(val.to_owned()),
+            PartitionBound::ByteArray(val) => lit(val.to_owned()),
+        };
+        let lower_expr = if range.lower_inclusive {
+            col(name).gt_eq(min_bound)
+        } else {
+            col(name).gt(min_bound)
+        };
+
+        let max_bound = match range.upper {
+            PartitionBound::Int32(val) => lit(val),
+            PartitionBound::Int64(val) => lit(val),
+            PartitionBound::String(val) => lit(val.to_owned()),
+            PartitionBound::ByteArray(val) => lit(val.to_owned()),
+        };
+        let upper_expr = if range.upper_inclusive {
+            col(name).lt_eq(max_bound)
+        } else {
+            col(name).lt(max_bound)
+        };
+
+        let expr = lower_expr.and(upper_expr);
+        col_exprs.push(expr);
+    }
+
+    // join them together
+    // TODO: write this more Rust like
+    if !col_exprs.is_empty() {
+        let mut expr = col_exprs[0].clone();
+        for idx in 1..col_exprs.len() {
+            expr = expr.and(col_exprs[idx].clone());
+        }
+        Some(expr)
+    } else {
+        None
+    }
 }
 
 /// Convert a Sleeper compression codec string to one `DataFusion` understands.

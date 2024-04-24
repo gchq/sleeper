@@ -26,10 +26,10 @@ use url::Url;
 /// Type safe variant for Sleeper partition boundary
 #[derive(Debug, Copy, Clone)]
 pub enum PartitionBound {
-    Int32 { val: i32 },
-    Int64 { val: i64 },
-    String { val: &'static str },
-    ByteArray { val: &'static [i8] },
+    Int32(i32),
+    Int64(i64),
+    String(&'static str),
+    ByteArray(&'static [u8]),
 }
 
 /// All the information for a a Sleeper compaction.

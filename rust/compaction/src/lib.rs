@@ -375,12 +375,8 @@ fn unpack_variant_array(
         })
         .zip(schema_types.iter())
         .map(|(&bptr, type_id)| match type_id {
-            1 => Ok(PartitionBound::Int32 {
-                val: unsafe { *bptr.cast::<i32>() },
-            }),
-            2 => Ok(PartitionBound::Int64 {
-                val: unsafe { *bptr.cast::<i64>() },
-            }),
+            1 => Ok(PartitionBound::Int32(unsafe { *bptr.cast::<i32>() })),
+            2 => Ok(PartitionBound::Int64(unsafe { *bptr.cast::<i64>() })),
             3 => {
                 //unpack length (signed because it's from Java)
                 let str_len = unsafe { *bptr.cast::<i32>() };
@@ -392,7 +388,7 @@ fn unpack_variant_array(
                     #[allow(clippy::cast_sign_loss)]
                     slice::from_raw_parts(bptr.byte_add(4).cast::<u8>(), str_len as usize)
                 })
-                .map(|v| PartitionBound::String { val: v })
+                .map(|v| PartitionBound::String(v))
             }
             4 => {
                 //unpack length (signed because it's from Java)
@@ -401,12 +397,10 @@ fn unpack_variant_array(
                     error!("Illegal byte array length in FFI array: {byte_len}");
                     panic!("Illegal byte array length in FFI array: {byte_len}");
                 }
-                Ok(PartitionBound::ByteArray {
-                    val: unsafe {
-                        #[allow(clippy::cast_sign_loss)]
-                        slice::from_raw_parts(bptr.byte_add(4).cast::<i8>(), byte_len as usize)
-                    },
-                })
+                Ok(PartitionBound::ByteArray(unsafe {
+                    #[allow(clippy::cast_sign_loss)]
+                    slice::from_raw_parts(bptr.byte_add(4).cast::<u8>(), byte_len as usize)
+                }))
             }
             x => {
                 error!("Unexpected type id {x}");

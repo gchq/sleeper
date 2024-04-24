@@ -16,7 +16,7 @@
 
 use chrono::Local;
 use clap::Parser;
-use compaction::{merge_sorted_files, CompactionInput};
+use compaction::{merge_sorted_files, ColRange, CompactionInput};
 use human_panic::setup_panic;
 use log::info;
 use num_format::{Locale, ToFormattedString};
@@ -91,6 +91,16 @@ async fn main() -> color_eyre::Result<()> {
     let output_url = Url::parse(&args.output)
         .or_else(|_e| Url::parse(&("file://".to_owned() + &args.output)))?;
 
+    let mut map = HashMap::new();
+    map.insert(
+        "key".into(),
+        ColRange {
+            lower: compaction::PartitionBound::String("h"),
+            lower_inclusive: true,
+            upper: compaction::PartitionBound::String("m"),
+            upper_inclusive: false,
+        },
+    );
     let details = CompactionInput {
         input_files: input_urls,
         output_file: output_url,
@@ -103,7 +113,7 @@ async fn main() -> color_eyre::Result<()> {
         dict_enc_row_keys: true,
         dict_enc_sort_keys: true,
         dict_enc_values: true,
-        region: HashMap::default(),
+        region: map,
         row_key_cols: args.row_keys,
         sort_key_cols: args.sort_column,
     };
