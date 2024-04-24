@@ -20,7 +20,6 @@ use arrow::array::{ArrayAccessor, AsArray};
 use arrow::datatypes::{
     BinaryType, DataType, Int32Type, Int64Type, LargeBinaryType, LargeUtf8Type, Schema, Utf8Type,
 };
-use arrow::error::ArrowError;
 use arrow::record_batch::RecordBatch;
 use bytes::{BufMut, Bytes};
 use cxx::{Exception, UniquePtr};
@@ -267,7 +266,6 @@ impl DataSketchVariant {
 /// followed by the bytes of the sketch.
 ///
 /// # Errors
-/// Any I/O errors are wrapped into an [`ArrowError`] if thrown.
 /// The data sketch serialisation might also throw errors from the underlying
 /// data sketch library.
 #[allow(clippy::cast_possible_truncation)]
@@ -275,15 +273,13 @@ pub fn serialise_sketches(
     store_factory: &ObjectStoreFactory,
     path: &Url,
     sketches: &[DataSketchVariant],
-) -> Result<(), ArrowError> {
+) -> color_eyre::Result<()> {
     let mut buf = vec![].writer();
 
     let mut size = 0;
     // for each sketch write the size i32, followed by bytes
     for sketch in sketches {
-        let serialised = sketch
-            .serialize(0)
-            .map_err(|e| ArrowError::ExternalError(Box::new(e)))?;
+        let serialised = sketch.serialize(0)?;
         buf.write_all(&(serialised.len() as u32).to_be_bytes())?;
         buf.write_all(&serialised)?;
         size += serialised.len() + size_of::<u32>();
@@ -295,8 +291,7 @@ pub fn serialise_sketches(
     // Save to object store
     let store = store_factory.get_object_store(path)?;
 
-    futures::executor::block_on(store.put(&store_path, Bytes::from(buf.into_inner())))
-        .map_err(|e| ArrowError::ExternalError(Box::new(e)))?;
+    futures::executor::block_on(store.put(&store_path, Bytes::from(buf.into_inner())))?;
 
     info!(
         "Serialised {} ({} bytes) sketches to {}",

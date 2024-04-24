@@ -42,15 +42,15 @@ struct CmdLineArgs {
     /// List of input Parquet files (must be sorted) as URLs
     #[arg(num_args=1.., required=true)]
     input: Vec<String>,
-    // Column number for a row key fields
-    #[arg(short = 'k', long, default_value = "0")]
-    row_keys: Vec<usize>,
-    // Column number for sort columns
-    #[arg(short = 's', long, default_value = "0")]
-    sort_column: Vec<usize>,
+    /// Column names for a row key fields
+    #[arg(short = 'k', long, num_args=1.., required=true)]
+    row_keys: Vec<String>,
+    /// Column names for sort columns
+    #[arg(short = 's', long)]
+    sort_column: Vec<String>,
 }
 
-#[tokio::main]
+#[tokio::main(flavor = "multi_thread")]
 async fn main() -> color_eyre::Result<()> {
     // Install coloured errors
     color_eyre::install().unwrap();
@@ -102,8 +102,8 @@ async fn main() -> color_eyre::Result<()> {
         dict_enc_sort_keys: true,
         dict_enc_values: true,
         region: HashMap::default(),
-        row_key_cols: vec!["key".into()],
-        sort_key_cols: vec![],
+        row_key_cols: args.row_keys,
+        sort_key_cols: args.sort_column,
     };
 
     merge_sorted_files(&details).await?;

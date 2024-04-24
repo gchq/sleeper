@@ -25,9 +25,9 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use arrow::error::ArrowError;
 use aws_types::region::Region;
 use bytes::Bytes;
+use color_eyre::eyre::eyre;
 use futures::{stream::BoxStream, Future};
 use log::info;
 use num_format::{Locale, ToFormattedString};
@@ -111,7 +111,7 @@ impl ObjectStoreFactory {
     /// # Errors
     ///
     /// If no credentials have been provided, then trying to access S3 URLs will fail.
-    pub fn get_object_store(&self, src: &Url) -> Result<Arc<dyn CountingObjectStore>, ArrowError> {
+    pub fn get_object_store(&self, src: &Url) -> color_eyre::Result<Arc<dyn CountingObjectStore>> {
         let scheme = src.scheme();
         let mut borrow = self.store_map.borrow_mut();
         // Perform a single lookup into the cache map
@@ -135,29 +135,24 @@ impl ObjectStoreFactory {
     /// # Errors
     ///
     /// If no credentials have been provided, then trying to access S3 URLs will fail.
-    fn make_object_store(&self, src: &Url) -> Result<Arc<dyn CountingObjectStore>, ArrowError> {
+    fn make_object_store(&self, src: &Url) -> color_eyre::Result<Arc<dyn CountingObjectStore>> {
         match src.scheme() {
             "s3" => {
                 if let Some(creds) = &self.creds {
                     Ok(AmazonS3Builder::from_env()
                         .with_credentials(creds.clone())
                         .with_region(self.region.as_ref())
-                        .with_bucket_name(src.host_str().ok_or(
-                            ArrowError::InvalidArgumentError("invalid S3 bucket name".into()),
-                        )?)
+                        .with_bucket_name(src.host_str().ok_or(eyre!("invalid S3 bucket name"))?)
                         .build()
-                        .map(|e| Arc::new(LoggingObjectStore::new(Arc::new(e))))
-                        .map_err(|e| ArrowError::ExternalError(Box::new(e)))?)
+                        .map(|e| Arc::new(LoggingObjectStore::new(Arc::new(e))))?)
                 } else {
-                    Err(ArrowError::InvalidArgumentError("Can't create AWS S3 object_store: no credentials provided to ObjectStoreFactory::from".into()))
+                    Err(eyre!("Can't create AWS S3 object_store: no credentials provided to ObjectStoreFactory::from"))
                 }
             }
             "file" => Ok(Arc::new(LoggingObjectStore::new(Arc::new(
                 LocalFileSystem::new(),
             )))),
-            _ => Err(ArrowError::InvalidArgumentError(
-                "no object store for given schema".into(),
-            )),
+            _ => Err(eyre!("no object store for given schema")),
         }
     }
 }
