@@ -15,14 +15,12 @@
  */
 package sleeper.systemtest.dsl.testutil.drivers;
 
-import sleeper.core.table.InvokeForTableRequest;
 import sleeper.garbagecollector.GarbageCollector;
 import sleeper.query.runner.recordretrieval.InMemoryDataStore;
 import sleeper.systemtest.dsl.gc.GarbageCollectionDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
 public class InMemoryGarbageCollectionDriver implements GarbageCollectionDriver {
 
@@ -39,11 +37,8 @@ public class InMemoryGarbageCollectionDriver implements GarbageCollectionDriver 
         GarbageCollector collector = new GarbageCollector(
                 data::deleteFile,
                 instance.getInstanceProperties(),
-                instance.getTablePropertiesProvider(),
                 instance.getStateStoreProvider());
-        collector.run(new InvokeForTableRequest(instance.streamTableProperties()
-                .map(table -> table.get(TABLE_ID))
-                .collect(toUnmodifiableList())));
+        collector.run(instance.streamTableProperties().collect(toUnmodifiableList()));
     }
 
 }
