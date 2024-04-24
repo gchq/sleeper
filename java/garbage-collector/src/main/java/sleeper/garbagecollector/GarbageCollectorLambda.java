@@ -28,10 +28,10 @@ import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.core.table.InvokeForTableRequestSerDe;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
 import sleeper.garbagecollector.FailedGarbageCollectionException.TableFailures;
@@ -50,12 +50,11 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 /**
  * Runs the garbage collector in AWS Lambda. Builds and invokes {@link GarbageCollector} for a batch of tables.
  */
-@SuppressWarnings("unused")
 public class GarbageCollectorLambda implements RequestHandler<SQSEvent, SQSBatchResponse> {
     private static final Logger LOGGER = LoggerFactory.getLogger(GarbageCollectorLambda.class);
 
-    private final InvokeForTableRequestSerDe serDe = new InvokeForTableRequestSerDe();
     private final TablePropertiesProvider tablePropertiesProvider;
+    private final PropertiesReloader propertiesReloader;
     private final GarbageCollector garbageCollector;
 
     public GarbageCollectorLambda() {
@@ -72,6 +71,7 @@ public class GarbageCollectorLambda implements RequestHandler<SQSEvent, SQSBatch
         LOGGER.debug("Loaded InstanceProperties from {}", s3Bucket);
 
         tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
+        propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
         Configuration conf = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, conf);
         garbageCollector = new GarbageCollector(conf, instanceProperties, stateStoreProvider);
@@ -81,6 +81,7 @@ public class GarbageCollectorLambda implements RequestHandler<SQSEvent, SQSBatch
     public SQSBatchResponse handleRequest(SQSEvent event, Context context) {
         Instant startTime = Instant.now();
         LOGGER.info("Lambda started at {}", startTime);
+        propertiesReloader.reloadIfNeeded();
 
         Map<String, List<SQSMessage>> messagesByTableId = event.getRecords().stream()
                 .collect(groupingBy(SQSEvent.SQSMessage::getBody));
