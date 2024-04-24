@@ -52,13 +52,15 @@ public class GarbageCollectorTriggerLambda implements RequestHandler<ScheduledEv
     private static final Logger LOGGER = LoggerFactory.getLogger(GarbageCollectorTriggerLambda.class);
 
     private final InstanceProperties instanceProperties = new InstanceProperties();
-    private final AmazonDynamoDB dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
+    private final TableIndex tableIndex;
     private final AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
 
     public GarbageCollectorTriggerLambda() {
         String configBucketName = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+        AmazonDynamoDB dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
         instanceProperties.loadFromS3(s3Client, configBucketName);
+        tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
     }
 
     @Override
@@ -67,7 +69,6 @@ public class GarbageCollectorTriggerLambda implements RequestHandler<ScheduledEv
         LOGGER.info("Lambda triggered at {}, started at {}", event.getTime(), startTime);
         String queueUrl = instanceProperties.get(GARBAGE_COLLECTOR_QUEUE_URL);
         boolean offlineEnabled = instanceProperties.getBoolean(GARBAGE_COLLECT_OFFLINE_TABLES);
-        TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
         SplitIntoBatches.reusingListOfSize(10,
                 offlineEnabled ? tableIndex.streamAllTables() : tableIndex.streamOnlineTables(),
                 tables -> sendMessageBatch(tables, queueUrl));
