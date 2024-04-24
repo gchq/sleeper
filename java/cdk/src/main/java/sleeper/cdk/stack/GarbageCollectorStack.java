@@ -24,7 +24,6 @@ import software.amazon.awscdk.services.events.targets.LambdaFunction;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
-import software.amazon.awscdk.services.lambda.eventsources.SqsEventSourceProps;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sns.Topic;
@@ -57,6 +56,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.TABLE_BAT
 import static sleeper.configuration.properties.instance.CommonProperty.TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_LAMBDA_MEMORY_IN_MB;
 import static sleeper.configuration.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_PERIOD_IN_MINUTES;
+import static sleeper.configuration.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_TABLE_BATCH_SIZE;
 
 /**
  * Deploys resources to perform garbage collection. This will find and delete files which have been marked as being
@@ -124,19 +124,19 @@ public class GarbageCollectorStack extends NestedStack {
                 .build();
         instanceProperties.set(GARBAGE_COLLECTOR_CLOUDWATCH_RULE, rule.getRuleName());
 
-        String deadLetterQueueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-GCJobDLQ");
         Queue deadLetterQueue = Queue.Builder
                 .create(this, "GCJobDeadLetterQueue")
-                .queueName(deadLetterQueueName)
+                .queueName(String.join("-", "sleeper", instanceProperties.get(ID), "GCJobDLQ.fifo"))
+                .fifo(true)
                 .build();
-        String queueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-GCJobQ");
         Queue queue = Queue.Builder
                 .create(this, "GCJobQueue")
-                .queueName(queueName)
+                .queueName(String.join("-", "sleeper", instanceProperties.get(ID), "GCJobQ.fifo"))
                 .deadLetterQueue(DeadLetterQueue.builder()
                         .maxReceiveCount(1)
                         .queue(deadLetterQueue)
                         .build())
+                .fifo(true)
                 .visibilityTimeout(queueVisibilityTimeout)
                 .build();
         instanceProperties.set(GARBAGE_COLLECTOR_QUEUE_URL, queue.getQueueUrl());
@@ -144,12 +144,13 @@ public class GarbageCollectorStack extends NestedStack {
         instanceProperties.set(GARBAGE_COLLECTOR_DLQ_URL, deadLetterQueue.getQueueUrl());
         instanceProperties.set(GARBAGE_COLLECTOR_DLQ_ARN, deadLetterQueue.getQueueArn());
         createAlarmForDlq(this, "GarbageCollectorAlarm",
-                "Alarms if there are any messages on the dead letter queue for the garbage collector queue",
+                "Alarms if there are any messages on the dead letter queue for the garbage collector",
                 deadLetterQueue, topic);
         errorMetrics.add(Utils.createErrorMetric("Garbage Collection Errors", deadLetterQueue, instanceProperties));
         queue.grantSendMessages(triggerFunction);
-        handlerFunction.addEventSource(new SqsEventSource(queue,
-                SqsEventSourceProps.builder().batchSize(1).build()));
+        handlerFunction.addEventSource(SqsEventSource.Builder.create(queue)
+                .batchSize(instanceProperties.getInt(GARBAGE_COLLECTOR_TABLE_BATCH_SIZE))
+                .build());
         coreStacks.grantInvokeScheduled(triggerFunction, queue);
 
         Utils.addStackTagIfSet(this, instanceProperties);

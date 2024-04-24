@@ -31,7 +31,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.instance.PartitionSplittingProperty.MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
@@ -43,32 +42,26 @@ import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPL
  */
 public class FindPartitionsToSplit {
     private static final Logger LOGGER = LoggerFactory.getLogger(FindPartitionsToSplit.class);
+    private final InstanceProperties instanceProperties;
     private final StateStoreProvider stateStoreProvider;
     private final JobSender jobSender;
-    private final int maxFilesInJob;
 
     public FindPartitionsToSplit(
             InstanceProperties instanceProperties,
             StateStoreProvider stateStoreProvider,
             JobSender jobSender) {
+        this.instanceProperties = instanceProperties;
         this.stateStoreProvider = stateStoreProvider;
         this.jobSender = jobSender;
-        this.maxFilesInJob = instanceProperties.getInt(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB);
     }
 
-    public void run(Stream<TableProperties> tables) {
-        tables.forEach(table -> {
-            try {
-                findPartitionsToSplit(table, stateStoreProvider.getStateStore(table));
-            } catch (StateStoreException e) {
-                LOGGER.error("StateStoreException thrown whilst running FindPartitionsToSplit for table {}",
-                        table.getStatus(), e);
-            }
-        });
+    public void run(TableProperties tableProperties) throws StateStoreException {
+        findPartitionsToSplit(tableProperties, stateStoreProvider.getStateStore(tableProperties));
     }
 
     private void findPartitionsToSplit(TableProperties tableProperties, StateStore stateStore) throws StateStoreException {
         List<FindPartitionToSplitResult> results = getResults(tableProperties, stateStore);
+        int maxFilesInJob = instanceProperties.getInt(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB);
         for (FindPartitionToSplitResult result : results) {
             // If there are more than PartitionSplittingMaxFilesInJob files then pick the largest ones.
             List<String> filesForJob = new ArrayList<>();
