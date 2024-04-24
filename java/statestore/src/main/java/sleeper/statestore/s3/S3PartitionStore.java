@@ -66,7 +66,7 @@ class S3PartitionStore implements PartitionStore {
                 .loadAndWriteData(this::readPartitionsMapFromParquet, this::writePartitionsMapToParquet)
                 .hadoopConf(conf)
                 .build();
-        stateStoreFileUtils = StateStoreFileUtils.forPartitions(conf);
+        stateStoreFileUtils = new StateStoreFileUtils(conf);
     }
 
     public static Builder builder() {

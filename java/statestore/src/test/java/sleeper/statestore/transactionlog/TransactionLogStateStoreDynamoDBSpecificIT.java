@@ -51,8 +51,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
     private Path tempDir;
     private final Schema schema = schemaWithKey("key", new LongType());
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-    private TransactionLogFilesSnapshotSerDe filesSnapshotSerDe = new TransactionLogFilesSnapshotSerDe(new Configuration());
-    private TransactionLogPartitionsSnapshotSerDe partitionsSnapshotSerDe = new TransactionLogPartitionsSnapshotSerDe(schema, new Configuration());
+    private TransactionLogSnapshotSerDe snapshotSerDe = new TransactionLogSnapshotSerDe(schema, new Configuration());
     private DynamoDBTransactionLogSnapshotStore snapshotStore = new DynamoDBTransactionLogSnapshotStore(instanceProperties, tableProperties, dynamoDBClient);
 
     @Nested
@@ -193,18 +192,20 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
         }
     }
 
-    private void saveFilesSnapshot(List<FileReference> files, long transcationNumber) throws Exception {
+    private void saveFilesSnapshot(List<FileReference> files, long transactionNumber) throws Exception {
         StateStoreFiles state = new StateStoreFiles();
         files.forEach(file -> state.add(fileWithOneReference(file, Instant.now())));
-        String filePath = filesSnapshotSerDe.save(tempDir.toString(), state, transcationNumber);
-        snapshotStore.saveFiles(filePath, transcationNumber);
+        TransactionLogSnapshot snapshot = TransactionLogSnapshot.forFiles(tempDir.toString(), transactionNumber);
+        snapshotSerDe.saveFiles(snapshot, state);
+        snapshotStore.saveSnapshot(snapshot);
     }
 
-    private void savePartitionsSnapshot(PartitionTree partitionTree, long transcationNumber) throws Exception {
+    private void savePartitionsSnapshot(PartitionTree partitionTree, long transactionNumber) throws Exception {
         StateStorePartitions state = new StateStorePartitions();
         partitionTree.getAllPartitions().forEach(state::put);
-        String filePath = partitionsSnapshotSerDe.save(tempDir.toString(), state, transcationNumber);
-        snapshotStore.savePartitions(filePath, transcationNumber);
+        TransactionLogSnapshot snapshot = TransactionLogSnapshot.forPartitions(tempDir.toString(), transactionNumber);
+        snapshotSerDe.savePartitions(snapshot, state);
+        snapshotStore.saveSnapshot(snapshot);
     }
 
     private StateStore createStateStore() {

@@ -56,12 +56,11 @@ public class DynamoDBTransactionLogStateStore extends TransactionLogStateStore {
             AmazonDynamoDB dynamoDB, Configuration configuration) {
         new DynamoDBTransactionLogSnapshotStore(instanceProperties, tableProperties, dynamoDB).getLatestSnapshots()
                 .ifPresent(latestSnapshots -> {
-                    TransactionLogFilesSnapshotSerDe filesSnapshotSerDe = new TransactionLogFilesSnapshotSerDe(configuration);
-                    TransactionLogPartitionsSnapshotSerDe partitionsSnapshotSerDe = new TransactionLogPartitionsSnapshotSerDe(tableProperties.getSchema(), configuration);
+                    TransactionLogSnapshotSerDe snapshotSerDe = new TransactionLogSnapshotSerDe(tableProperties.getSchema(), configuration);
                     try {
-                        builder.filesState(filesSnapshotSerDe.load(latestSnapshots.getFilesSnapshot()))
+                        builder.filesState(snapshotSerDe.loadFiles(latestSnapshots.getFilesSnapshot()))
                                 .filesTransactionNumber(latestSnapshots.getFilesSnapshot().getTransactionNumber())
-                                .partitionsState(partitionsSnapshotSerDe.load(latestSnapshots.getPartitionsSnapshot()))
+                                .partitionsState(snapshotSerDe.loadPartitions(latestSnapshots.getPartitionsSnapshot()))
                                 .partitionsTransactionNumber(latestSnapshots.getPartitionsSnapshot().getTransactionNumber());
                     } catch (IOException e) {
                         throw new RuntimeException("Failed to load latest snapshots", e);

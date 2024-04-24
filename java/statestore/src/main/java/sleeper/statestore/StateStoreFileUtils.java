@@ -46,20 +46,12 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 public class StateStoreFileUtils {
+    private static final Schema FILES_SCHEMA = initialiseFilesSchema();
+    private static final Schema PARTITIONS_SCHEMA = initialisePartitionSchema();
     private final FileReferenceSerDe serDe = new FileReferenceSerDe();
     private final Configuration configuration;
-    private final Schema schema;
 
-    public static StateStoreFileUtils forFiles(Configuration configuration) {
-        return new StateStoreFileUtils(initialiseFilesSchema(), configuration);
-    }
-
-    public static StateStoreFileUtils forPartitions(Configuration configuration) {
-        return new StateStoreFileUtils(initialisePartitionSchema(), configuration);
-    }
-
-    private StateStoreFileUtils(Schema schema, Configuration configuration) {
-        this.schema = schema;
+    public StateStoreFileUtils(Configuration configuration) {
         this.configuration = configuration;
     }
 
@@ -69,7 +61,7 @@ public class StateStoreFileUtils {
 
     public void savePartitions(String path, Collection<Partition> partitions, Schema sleeperSchema) throws IOException {
         RegionSerDe regionSerDe = new RegionSerDe(sleeperSchema);
-        save(path, partitions.stream().map(partition -> getRecordFromPartition(partition, regionSerDe)));
+        save(PARTITIONS_SCHEMA, path, partitions.stream().map(partition -> getRecordFromPartition(partition, regionSerDe)));
     }
 
     public void saveFiles(String path, StateStoreFiles files) throws IOException {
@@ -77,10 +69,10 @@ public class StateStoreFileUtils {
     }
 
     public void saveFiles(String path, Stream<AllReferencesToAFile> files) throws IOException {
-        save(path, files.map(this::getRecordFromFile));
+        save(FILES_SCHEMA, path, files.map(this::getRecordFromFile));
     }
 
-    private void save(String path, Stream<Record> records) throws IOException {
+    private void save(Schema schema, String path, Stream<Record> records) throws IOException {
         try (ParquetWriter<Record> recordWriter = ParquetRecordWriterFactory.createParquetRecordWriter(
                 new Path(path), schema, configuration)) {
             for (Record record : (Iterable<Record>) () -> records.iterator()) {
@@ -91,14 +83,14 @@ public class StateStoreFileUtils {
 
     public void loadPartitions(String path, Schema sleeperSchema, Consumer<Partition> partitionConsumer) throws IOException {
         RegionSerDe regionSerDe = new RegionSerDe(sleeperSchema);
-        load(path, record -> partitionConsumer.accept(getPartitionFromRecord(record, regionSerDe)));
+        load(PARTITIONS_SCHEMA, path, record -> partitionConsumer.accept(getPartitionFromRecord(record, regionSerDe)));
     }
 
     public void loadFiles(String path, Consumer<AllReferencesToAFile> fileConsumer) throws IOException {
-        load(path, record -> fileConsumer.accept(getFileFromRecord(record)));
+        load(FILES_SCHEMA, path, record -> fileConsumer.accept(getFileFromRecord(record)));
     }
 
-    private void load(String path, Consumer<Record> recordConsumer) throws IOException {
+    private void load(Schema schema, String path, Consumer<Record> recordConsumer) throws IOException {
         try (ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(path), schema)
                 .withConf(configuration).build();
                 ParquetReaderIterator recordReader = new ParquetReaderIterator(reader)) {
@@ -109,7 +101,7 @@ public class StateStoreFileUtils {
     }
 
     public boolean isEmpty(String path) throws IOException {
-        try (ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(path), schema)
+        try (ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(path), FILES_SCHEMA)
                 .withConf(configuration).build();
                 ParquetReaderIterator recordReader = new ParquetReaderIterator(reader)) {
             if (recordReader.hasNext()) {

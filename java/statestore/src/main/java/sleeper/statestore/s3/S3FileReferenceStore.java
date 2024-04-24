@@ -86,7 +86,7 @@ class S3FileReferenceStore implements FileReferenceStore {
                 .loadAndWriteData(this::readFilesFromParquet, this::writeFilesToParquet)
                 .hadoopConf(conf)
                 .build();
-        stateStoreFileUtils = StateStoreFileUtils.forFiles(conf);
+        stateStoreFileUtils = new StateStoreFileUtils(conf);
     }
 
     static Builder builder() {
