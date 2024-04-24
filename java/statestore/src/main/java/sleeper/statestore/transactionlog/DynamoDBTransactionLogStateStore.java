@@ -33,13 +33,8 @@ public class DynamoDBTransactionLogStateStore extends TransactionLogStateStore {
     public static final String TRANSACTION_NUMBER = "TRANSACTION_NUMBER";
 
     public DynamoDBTransactionLogStateStore(
-            InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamoDB, AmazonS3 s3) {
-        super(builderFrom(instanceProperties, tableProperties, dynamoDB, s3));
-    }
-
-    public static TransactionLogStateStore.Builder builderFrom(
-            InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamoDB, AmazonS3 s3) {
-        return builderFrom(instanceProperties, tableProperties, dynamoDB, s3, new Configuration());
+            InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamoDB, AmazonS3 s3, Configuration configuration) {
+        super(builderFrom(instanceProperties, tableProperties, dynamoDB, s3, configuration));
     }
 
     public static TransactionLogStateStore.Builder builderFrom(

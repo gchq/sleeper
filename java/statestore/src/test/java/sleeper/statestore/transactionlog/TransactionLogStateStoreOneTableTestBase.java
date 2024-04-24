@@ -46,7 +46,7 @@ public class TransactionLogStateStoreOneTableTestBase extends TransactionLogStat
 
     private void createStore(Schema schema) {
         tableProperties.setSchema(schema);
-        store = new DynamoDBTransactionLogStateStore(instanceProperties, tableProperties, dynamoDBClient, s3Client);
+        store = createStateStore(tableProperties);
         store.fixFileUpdateTime(DEFAULT_UPDATE_TIME);
     }
 
