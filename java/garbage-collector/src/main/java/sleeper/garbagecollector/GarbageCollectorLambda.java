@@ -99,8 +99,8 @@ public class GarbageCollectorLambda implements RequestHandler<SQSEvent, SQSBatch
                     .forEach(batchItemFailures::add);
         } finally {
             Instant finishTime = Instant.now();
-            LOGGER.info("Lambda finished at {} (ran for {})",
-                    finishTime, LoggedDuration.withFullOutput(startTime, finishTime));
+            LOGGER.info("Lambda finished at {} (ran for {}), {} failures",
+                    finishTime, LoggedDuration.withFullOutput(startTime, finishTime), batchItemFailures.size());
         }
         return new SQSBatchResponse(batchItemFailures);
     }
