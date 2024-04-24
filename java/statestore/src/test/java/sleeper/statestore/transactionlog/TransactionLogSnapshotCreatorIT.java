@@ -20,7 +20,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.InMemoryTableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
@@ -53,7 +52,6 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
     private final Schema schema = schemaWithKey("key", new LongType());
     private final TablePropertiesStore store = InMemoryTableProperties.getStore();
     private final TablePropertiesProvider provider = new TablePropertiesProvider(instanceProperties, store, Instant::now);
-    private StateStore stateStore;
 
     @BeforeEach
     public void setup() {
@@ -65,13 +63,15 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
     void shouldCreateSnapshotsForOneTable() throws Exception {
         // Given
         TableProperties table = createTable("test-table-id-1", "test-table-1");
-        stateStore = createStateStore(table);
+        StateStore stateStore = createStateStore(table);
         stateStore.initialise();
         FileReferenceFactory factory = FileReferenceFactory.from(stateStore);
         stateStore.addFile(factory.rootFile(123L));
 
         // When
-        snapshotCreator(table, stateStore).run(forTables("test-table-id-1"));
+        snapshotCreator(
+                new FixedStateStoreProvider(Map.of("test-table-1", stateStore)))
+                .run(forTableIds("test-table-id-1"));
 
         // Then
         assertThat(snapshotStore(table).getLatestSnapshots())
@@ -96,9 +96,9 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
         stateStore2.addFile(factory2.rootFile(456L));
 
         // When
-        snapshotCreator(provider,
+        snapshotCreator(
                 new FixedStateStoreProvider(Map.of("test-table-1", stateStore1, "test-table-2", stateStore2)))
-                .run(forTables("test-table-id-1", "test-table-id-2"));
+                .run(forTableIds("test-table-id-1", "test-table-id-2"));
 
         // Then
         assertThat(snapshotStore(table1).getLatestSnapshots())
@@ -111,18 +111,12 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
                         partitionsSnapshot(table2, "/snapshots/0-partitions.parquet", 0)));
     }
 
-    private TransactionLogSnapshotCreator snapshotCreator(TableProperties table, StateStore stateStore) {
-        return snapshotCreator(
-                new FixedTablePropertiesProvider(List.of(table)),
-                new FixedStateStoreProvider(table, stateStore));
-    }
-
-    private TransactionLogSnapshotCreator snapshotCreator(TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider) {
+    private TransactionLogSnapshotCreator snapshotCreator(StateStoreProvider stateStoreProvider) {
         return new TransactionLogSnapshotCreator(
-                instanceProperties, tablePropertiesProvider, stateStoreProvider, dynamoDBClient, new Configuration());
+                instanceProperties, provider, stateStoreProvider, dynamoDBClient, new Configuration());
     }
 
-    private InvokeForTableRequest forTables(String... tableIds) {
+    private InvokeForTableRequest forTableIds(String... tableIds) {
         return new InvokeForTableRequest(List.of(tableIds));
     }
 
