@@ -41,7 +41,7 @@ import java.util.stream.LongStream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.instance.CommonProperty.TRANSACTION_LOG_STATE_STORE_LOAD_LATEST_SNAPSHOTS;
+import static sleeper.configuration.properties.instance.CommonProperty.TRANSACTION_LOG_LOAD_LATEST_SNAPSHOTS;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AllReferencesToAFile.fileWithOneReference;
@@ -137,7 +137,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
         @Test
         void shouldNotLoadLatestSnapshotsIfPropertyIsFalse() throws Exception {
             // Given
-            instanceProperties.set(TRANSACTION_LOG_STATE_STORE_LOAD_LATEST_SNAPSHOTS, "false");
+            instanceProperties.set(TRANSACTION_LOG_LOAD_LATEST_SNAPSHOTS, "false");
             PartitionTree tree = new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", 123L)

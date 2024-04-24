@@ -27,7 +27,7 @@ import java.io.IOException;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.FILE_TRANSACTION_LOG_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_TRANSACTION_LOG_TABLENAME;
-import static sleeper.configuration.properties.instance.CommonProperty.TRANSACTION_LOG_STATE_STORE_LOAD_LATEST_SNAPSHOTS;
+import static sleeper.configuration.properties.instance.CommonProperty.TRANSACTION_LOG_LOAD_LATEST_SNAPSHOTS;
 
 public class DynamoDBTransactionLogStateStore extends TransactionLogStateStore {
     public static final String TABLE_ID = "TABLE_ID";
@@ -45,7 +45,7 @@ public class DynamoDBTransactionLogStateStore extends TransactionLogStateStore {
                 .schema(tableProperties.getSchema())
                 .filesLogStore(new DynamoDBTransactionLogStore(instanceProperties.get(FILE_TRANSACTION_LOG_TABLENAME), instanceProperties, tableProperties, dynamoDB, s3))
                 .partitionsLogStore(new DynamoDBTransactionLogStore(instanceProperties.get(PARTITION_TRANSACTION_LOG_TABLENAME), instanceProperties, tableProperties, dynamoDB, s3));
-        if (instanceProperties.getBoolean(TRANSACTION_LOG_STATE_STORE_LOAD_LATEST_SNAPSHOTS)) {
+        if (instanceProperties.getBoolean(TRANSACTION_LOG_LOAD_LATEST_SNAPSHOTS)) {
             loadLatestSnapshots(builder, instanceProperties, tableProperties, dynamoDB, configuration);
         }
         return builder;
