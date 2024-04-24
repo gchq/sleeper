@@ -57,6 +57,5 @@ public class TransactionLogStateStoreTestBase {
     @BeforeEach
     void setUpBase() {
         new TransactionLogStateStoreCreator(instanceProperties, dynamoDBClient, s3Client).create();
-        new DynamoDBTransactionLogSnapshotStoreCreator(instanceProperties, dynamoDBClient).create();
     }
 }
