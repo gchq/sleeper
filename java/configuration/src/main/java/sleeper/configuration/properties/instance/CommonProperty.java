@@ -194,12 +194,6 @@ public interface CommonProperty {
             .validationPredicate(Utils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty TRANSACTION_LOG_LOAD_LATEST_SNAPSHOTS = Index.propertyBuilder("sleeper.metadata.transactionlog.load.latest.snapshots")
-            .description("If set, transaction log state stores will load the latest snapshot from the snapshot store when created.")
-            .defaultValue("true")
-            .validationPredicate(Utils::isTrueOrFalse)
-            .propertyGroup(InstancePropertyGroup.COMMON)
-            .build();
     UserDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_CREATION_BATCH_SIZE = Index.propertyBuilder("sleeper.metadata.transactionlog.snapshot.creation.batch.size")
             .description("The number of tables to create transaction log snapshots for in a single invocation. A separate invocation " +
                     "of the lambda will be made for each batch when there are more tables than the batch size.")

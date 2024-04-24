@@ -41,8 +41,8 @@ import java.util.List;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.FILE_TRANSACTION_LOG_TABLENAME;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_TRANSACTION_LOG_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_FILES_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_PARTITIONS_TABLENAME;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore.TABLE_ID;
@@ -89,7 +89,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
     void shouldFailLoadingTransactionWithUnrecognisedType() throws Exception {
         // Given
         dynamoDBClient.putItem(new PutItemRequest()
-                .withTableName(instanceProperties.get(FILE_TRANSACTION_LOG_TABLENAME))
+                .withTableName(instanceProperties.get(TRANSACTION_LOG_FILES_TABLENAME))
                 .withItem(new DynamoDBRecordBuilder()
                         .string(TABLE_ID, tableProperties.get(TableProperty.TABLE_ID))
                         .number(TRANSACTION_NUMBER, 1)
@@ -106,7 +106,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
     void shouldFailLoadingTransactionWithRecognisedTypeButInvalidJson() throws Exception {
         // Given
         dynamoDBClient.putItem(new PutItemRequest()
-                .withTableName(instanceProperties.get(FILE_TRANSACTION_LOG_TABLENAME))
+                .withTableName(instanceProperties.get(TRANSACTION_LOG_FILES_TABLENAME))
                 .withItem(new DynamoDBRecordBuilder()
                         .string(TABLE_ID, tableProperties.get(TableProperty.TABLE_ID))
                         .number(TRANSACTION_NUMBER, 1)
@@ -161,13 +161,13 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
 
     private TransactionLogStore fileLogStore() {
         return new DynamoDBTransactionLogStore(
-                instanceProperties.get(FILE_TRANSACTION_LOG_TABLENAME),
+                instanceProperties.get(TRANSACTION_LOG_FILES_TABLENAME),
                 instanceProperties, tableProperties, dynamoDBClient, s3Client);
     }
 
     private TransactionLogStore partitionLogStore() {
         return new DynamoDBTransactionLogStore(
-                instanceProperties.get(PARTITION_TRANSACTION_LOG_TABLENAME),
+                instanceProperties.get(TRANSACTION_LOG_PARTITIONS_TABLENAME),
                 instanceProperties, tableProperties, dynamoDBClient, s3Client);
     }
 }
