@@ -72,7 +72,7 @@ pub async fn compact(
         .strip_qualifiers()
         .field_names()
         .iter()
-        .map(|x| col(x))
+        .map(col)
         .collect::<Vec<_>>();
     let frame = frame.sort(sort_order)?.select(col_names_expr)?;
 
@@ -130,7 +130,7 @@ pub async fn compact(
 /// Convert a Sleeper compression codec string to one `DataFusion` understands.
 fn get_compression(compression: &str) -> String {
     match compression.to_lowercase().as_str() {
-        x @ "uncompressed" | x @ "snappy" | x @ "lzo" | x @ "lz4" => x.into(),
+        x @ ("uncompressed" | "snappy" | "lzo" | "lz4") => x.into(),
         "gzip" => format!("gzip({})", GzipLevel::default().compression_level()),
         "brotli" => format!("brotli({})", BrotliLevel::default().compression_level()),
         "zstd" => format!("zstd({})", ZstdLevel::default().compression_level()),
@@ -173,10 +173,10 @@ fn sort_order(input_data: &CompactionInput) -> Vec<Expr> {
     sort_order
 }
 
-/// Takes the first Url in the input_paths list and the output path
+/// Takes the first Url in `input_paths` list and `output_path`
 /// and registers the appropriate [`ObjectStore`] for it.
 ///
-/// DataFusion doesn't seem to like loading a single file set from different object stores
+/// `DataFusion` doesn't seem to like loading a single file set from different object stores
 /// so we only register the first one.
 ///
 /// # Errors
