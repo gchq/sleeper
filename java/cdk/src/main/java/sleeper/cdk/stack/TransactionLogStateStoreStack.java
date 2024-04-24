@@ -28,10 +28,10 @@ import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
 
 import static sleeper.cdk.Utils.removalPolicy;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.FILE_TRANSACTION_LOG_TABLENAME;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_TRANSACTION_LOG_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_FILES_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_PARTITIONS_TABLENAME;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
 public class TransactionLogStateStoreStack extends NestedStack {
@@ -44,12 +44,12 @@ public class TransactionLogStateStoreStack extends NestedStack {
             Construct scope, String id, InstanceProperties instanceProperties) {
         super(scope, id);
 
-        partitionsLogTable = createTransactionLogTable(instanceProperties, "PartitionTransactionLogTable", "partition-transaction-log");
-        filesLogTable = createTransactionLogTable(instanceProperties, "FileTransactionLogTable", "file-transaction-log");
+        partitionsLogTable = createTransactionLogTable(instanceProperties, "TransactionLogPartitionsTable", "transaction-log-partitions");
+        filesLogTable = createTransactionLogTable(instanceProperties, "TransactionLogFilesTable", "transaction-log-files");
         latestSnapshotsTable = createLatestSnapshotsTable(instanceProperties, "TransactionLogLatestSnapshotsTable", "transaction-log-latest-snapshots");
         allSnapshotsTable = createAllSnapshotsTable(instanceProperties, "TransactionLogAllSnapshotsTable", "transaction-log-all-snapshots");
-        instanceProperties.set(PARTITION_TRANSACTION_LOG_TABLENAME, partitionsLogTable.getTableName());
-        instanceProperties.set(FILE_TRANSACTION_LOG_TABLENAME, filesLogTable.getTableName());
+        instanceProperties.set(TRANSACTION_LOG_PARTITIONS_TABLENAME, partitionsLogTable.getTableName());
+        instanceProperties.set(TRANSACTION_LOG_FILES_TABLENAME, filesLogTable.getTableName());
         instanceProperties.set(TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME, latestSnapshotsTable.getTableName());
         instanceProperties.set(TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME, allSnapshotsTable.getTableName());
     }
