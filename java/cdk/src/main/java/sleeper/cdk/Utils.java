@@ -298,9 +298,9 @@ public class Utils {
         }
     }
 
-    public static void createAlarmForDlq(Construct scope, String name, String description, Queue dlq, Topic topic) {
+    public static void createAlarmForDlq(Construct scope, String id, String description, Queue dlq, Topic topic) {
         Alarm alarm = Alarm.Builder
-                .create(scope, name)
+                .create(scope, id)
                 .alarmDescription(description)
                 .metric(dlq.metricApproximateNumberOfMessagesVisible()
                         .with(MetricOptions.builder().statistic("Sum").period(Duration.seconds(60)).build()))

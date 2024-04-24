@@ -41,10 +41,17 @@ public class InMemoryPartitionSplittingDriver implements PartitionSplittingDrive
 
     @Override
     public void splitPartitions() {
-        new FindPartitionsToSplit(
+        FindPartitionsToSplit finder = new FindPartitionsToSplit(
                 instance.getInstanceProperties(),
                 instance.getStateStoreProvider(),
-                splitPartition()).run(instance.streamTableProperties());
+                splitPartition());
+        instance.streamTableProperties().forEach(table -> {
+            try {
+                finder.run(table);
+            } catch (StateStoreException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     private JobSender splitPartition() {
