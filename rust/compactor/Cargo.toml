@@ -40,3 +40,4 @@ compaction = { path = "../compaction" }
 chrono = { version = "0.4.26" } # Log helper
 tokio = { version = "1.20.1", features = ["full"] } # Async runtime
 url = { version = "2.4.0" }
+num-format = { version = "0.4.4" } # Formatted numbers

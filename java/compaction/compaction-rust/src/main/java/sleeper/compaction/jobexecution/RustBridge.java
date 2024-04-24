@@ -244,19 +244,25 @@ public class RustBridge {
             final jnr.ffi.Runtime r = len.struct().getRuntime();
             // Calculate size needed for array of pointers
             int ptrSize = r.findType(NativeType.ADDRESS).size();
-            int size = arr.length * ptrSize;
-            // Allocate some memory for string pointers
-            this.basePtr = r.getMemoryManager().allocateDirect(size);
-            this.arrayBase.set(basePtr);
+            // Null out zero length arrays
+            if (arr.length > 0) {
+                int size = arr.length * ptrSize;
+                // Allocate some memory for string pointers
+                this.basePtr = r.getMemoryManager().allocateDirect(size);
+                this.arrayBase.set(basePtr);
 
-            this.items = new jnr.ffi.Pointer[arr.length];
+                this.items = new jnr.ffi.Pointer[arr.length];
 
-            for (int i = 0; i < arr.length; i++) {
-                setValue(arr[i], i, r);
+                for (int i = 0; i < arr.length; i++) {
+                    setValue(arr[i], i, r);
+                }
+
+                // Bulk set the pointers in the base array
+                this.basePtr.put(0, this.items, 0, this.items.length);
+            } else {
+                this.basePtr = null;
+                this.items = null;
             }
-
-            // Bulk set the pointers in the base array
-            this.basePtr.put(0, this.items, 0, this.items.length);
 
             // Set length of array in struct
             this.len.set(arr.length);

@@ -18,6 +18,8 @@ use chrono::Local;
 use clap::Parser;
 use compaction::{merge_sorted_files, CompactionInput};
 use human_panic::setup_panic;
+use log::info;
+use num_format::{Locale, ToFormattedString};
 use std::{collections::HashMap, io::Write};
 use url::Url;
 
@@ -106,6 +108,13 @@ async fn main() -> color_eyre::Result<()> {
         sort_key_cols: args.sort_column,
     };
 
-    merge_sorted_files(&details).await?;
+    let result = merge_sorted_files(&details).await;
+    if let Ok(data) = result {
+        info!(
+            "Compaction read {} rows and wrote {} rows",
+            data.rows_read.to_formatted_string(&Locale::en),
+            data.rows_written.to_formatted_string(&Locale::en)
+        );
+    }
     Ok(())
 }

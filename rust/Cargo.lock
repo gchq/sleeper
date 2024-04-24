@@ -1050,6 +1050,7 @@ dependencies = [
  "env_logger",
  "human-panic",
  "log",
+ "num-format",
  "owo-colors 4.0.0",
  "thiserror",
  "tokio",

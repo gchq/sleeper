@@ -82,20 +82,15 @@ pub async fn compact(
     info!("DataFusion plan:\n {output}");
 
     let mut pqo = ctx.copied_table_options().parquet;
+    // Figure out which columns should be dictionary encoded
     for col in &col_names {
         let col_opts = pqo.column_specific_options.entry(col.into()).or_default();
-        let dict_encode = if input_data.dict_enc_row_keys && input_data.row_key_cols.contains(col) {
-            println!("{col} is a row key and row key dictionary enabled");
-            true
-        } else if input_data.dict_enc_sort_keys && input_data.sort_key_cols.contains(col) {
-            println!("{col} is a sort column and sort column dictionary encoding enabled");
-            true
-        } else if input_data.dict_enc_values {
-            println!("{col} is a value and value dictionary encoding enabled");
-            true
-        } else {
-            false
-        };
+        let dict_encode = (input_data.dict_enc_row_keys && input_data.row_key_cols.contains(col))
+            || (input_data.dict_enc_sort_keys && input_data.sort_key_cols.contains(col))
+            // Check value columns
+            || (input_data.dict_enc_values
+                && !input_data.row_key_cols.contains(col)
+                && !input_data.sort_key_cols.contains(col));
         col_opts.dictionary_enabled = Some(dict_encode);
     }
 
@@ -188,15 +183,15 @@ fn register_store(
     output_path: &Url,
     ctx: &SessionContext,
 ) -> Result<Arc<dyn CountingObjectStore>, DataFusionError> {
-    let store = store_factory
+    let in_store = store_factory
         .get_object_store(&input_paths[0])
         .map_err(|e| DataFusionError::External(e.into()))?;
     ctx.runtime_env()
-        .register_object_store(&input_paths[0], store.clone().as_object_store());
-    let store = store_factory
+        .register_object_store(&input_paths[0], in_store.clone().as_object_store());
+    let out_store = store_factory
         .get_object_store(output_path)
         .map_err(|e| DataFusionError::External(e.into()))?;
     ctx.runtime_env()
-        .register_object_store(output_path, store.clone().as_object_store());
-    Ok(store)
+        .register_object_store(output_path, out_store.clone().as_object_store());
+    Ok(in_store)
 }
