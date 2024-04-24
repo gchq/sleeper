@@ -37,7 +37,7 @@ import sleeper.core.util.LoggedDuration;
 import java.time.Instant;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_TABLE_BATCH_QUEUE_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.FIND_PARTITIONS_TO_SPLIT_QUEUE_URL;
 import static sleeper.configuration.properties.instance.PartitionSplittingProperty.PARTITION_SPLITTING_TABLE_BATCH_SIZE;
 
 /**
@@ -66,7 +66,7 @@ public class FindPartitionsToSplitTriggerLambda implements RequestHandler<Schedu
         LOGGER.info("Lambda triggered at {}, started at {}", event.getTime(), startTime);
         instanceProperties.loadFromS3(s3Client, configBucketName);
         int batchSize = instanceProperties.getInt(PARTITION_SPLITTING_TABLE_BATCH_SIZE);
-        String queueUrl = instanceProperties.get(PARTITION_SPLITTING_TABLE_BATCH_QUEUE_URL);
+        String queueUrl = instanceProperties.get(FIND_PARTITIONS_TO_SPLIT_QUEUE_URL);
         TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
         InvokeForTableRequest.forTables(tableIndex.streamOnlineTables(), batchSize,
                 request -> sqsClient.sendMessage(queueUrl, serDe.toJson(request)));
