@@ -90,6 +90,12 @@ public interface DefaultProperty {
             .defaultValue("false")
             .validationPredicate(Utils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
+    UserDefinedInstanceProperty DEFAULT_TRANSACTION_LOG_LOAD_LATEST_SNAPSHOTS = Index.propertyBuilder("sleeper.default.metadata.transactionlog.load.latest.snapshots")
+            .description("If set, transaction log state stores will load the latest snapshot from the snapshot store when created.")
+            .defaultValue("true")
+            .validationPredicate(Utils::isTrueOrFalse)
+            .propertyGroup(InstancePropertyGroup.DEFAULT)
+            .build();
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT = Index.propertyBuilder("sleeper.default.bulk.import.min.leaf.partitions")
             .description("Specifies the minimum number of leaf partitions that are needed to run a bulk import job. " +
                     "If this minimum has not been reached, bulk import jobs will refuse to start.")

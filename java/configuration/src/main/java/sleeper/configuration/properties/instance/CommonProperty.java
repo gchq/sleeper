@@ -194,12 +194,6 @@ public interface CommonProperty {
             .validationPredicate(Utils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty TRANSACTION_LOG_STATE_STORE_LOAD_LATEST_SNAPSHOTS = Index.propertyBuilder("sleeper.metadata.transactionlog.load.latest.snapshots")
-            .description("If set, transaction log state stores will load the latest snapshot from the snapshot store when created.")
-            .defaultValue("true")
-            .validationPredicate(Utils::isTrueOrFalse)
-            .propertyGroup(InstancePropertyGroup.COMMON)
-            .build();
     UserDefinedInstanceProperty TABLE_INDEX_DYNAMO_POINT_IN_TIME_RECOVERY = Index.propertyBuilder("sleeper.tables.index.dynamo.pointintimerecovery")
             .description("This specifies whether point in time recovery is enabled for the Sleeper table index. " +
                     "This is set on the DynamoDB tables.")
