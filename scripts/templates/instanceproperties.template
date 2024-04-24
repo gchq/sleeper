@@ -154,6 +154,13 @@ sleeper.metadata.s3.dynamo.pointintimerecovery=false
 # created.
 sleeper.metadata.transactionlog.load.latest.snapshots=true
 
+# The number of tables to create transaction log snapshots for in a single invocation. A separate
+# invocation of the lambda will be made for each batch when there are more tables than the batch size.
+sleeper.metadata.transactionlog.snapshot.creation.batch.size=5
+
+# The frequency in minutes with which the transaction log snapshot creation lambda is run.
+sleeper.metadata.transactionlog.snapshot.creation.lambda.period.minutes=5
+
 # This specifies whether point in time recovery is enabled for the Sleeper table index. This is set on
 # the DynamoDB tables.
 sleeper.tables.index.dynamo.pointintimerecovery=false
