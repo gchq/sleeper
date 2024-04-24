@@ -52,18 +52,41 @@ public class Record {
         this.values.putAll(record.values);
     }
 
+    /**
+     * Gets the value of a field.
+     *
+     * @param  fieldName the name of the field
+     * @return           the value of the field
+     */
     public Object get(String fieldName) {
         return values.get(fieldName);
     }
 
+    /**
+     * Gets a key containing the values of all row keys.
+     *
+     * @param  schema the schema for this record
+     * @return        a {@link Key} containing all row key values
+     */
     public Key getRowKeys(Schema schema) {
         return Key.create(getValues(schema.getRowKeyFieldNames()));
     }
 
+    /**
+     * Removes the value of a field.
+     *
+     * @param fieldName the name of the field
+     */
     public void remove(String fieldName) {
         this.values.remove(fieldName);
     }
 
+    /**
+     * Sets a value for a field.
+     *
+     * @param fieldName the name of the field
+     * @param value     the value to set
+     */
     public void put(String fieldName, Object value) {
         values.put(fieldName, value);
     }
@@ -72,6 +95,12 @@ public class Record {
         return Collections.unmodifiableSet(values.keySet());
     }
 
+    /**
+     * Gets the values for all provided field names.
+     *
+     * @param  fieldNames the names of fields
+     * @return            a list of values
+     */
     public List<Object> getValues(List<String> fieldNames) {
         List<Object> valuesList = new ArrayList<>();
         for (String fieldName : fieldNames) {
@@ -140,6 +169,12 @@ public class Record {
         return "Record{" + "values=" + cloneWithWrappedByteArray + '}';
     }
 
+    /**
+     * Returns a string representation of this record. The only fields that are shown are those present in the schema.
+     *
+     * @param  schema the schema to filter fields by
+     * @return        a string representation of this record
+     */
     public String toString(Schema schema) {
         StringBuilder stringBuilder = new StringBuilder();
         List<String> terms = new ArrayList<>();

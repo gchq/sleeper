@@ -18,15 +18,36 @@ package sleeper.core.record.process;
 import java.time.Duration;
 import java.time.Instant;
 
-public class RecordsProcessedSummaryTestData {
+/**
+ * Helper methods for creating a records processed summary.
+ */
+public class RecordsProcessedSummaryTestHelper {
 
-    private RecordsProcessedSummaryTestData() {
+    private RecordsProcessedSummaryTestHelper() {
     }
 
+    /**
+     * Creates a record processed summary.
+     *
+     * @param  startTime      the start time
+     * @param  duration       the duration
+     * @param  recordsRead    the number of records read
+     * @param  recordsWritten the number of records written
+     * @return                a {@link RecordsProcessedSummary}
+     */
     public static RecordsProcessedSummary summary(Instant startTime, Duration duration, long recordsRead, long recordsWritten) {
         return summary(startTime, startTime.plus(duration), recordsRead, recordsWritten);
     }
 
+    /**
+     * Creates a record processed summary.
+     *
+     * @param  startTime      the start time
+     * @param  finishTime     the finish time
+     * @param  recordsRead    the number of records read
+     * @param  recordsWritten the number of records written
+     * @return                a {@link RecordsProcessedSummary}
+     */
     public static RecordsProcessedSummary summary(Instant startTime, Instant finishTime, long recordsRead, long recordsWritten) {
         return new RecordsProcessedSummary(
                 new RecordsProcessed(recordsRead, recordsWritten),

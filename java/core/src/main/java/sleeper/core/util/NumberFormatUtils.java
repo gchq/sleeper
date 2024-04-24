@@ -19,6 +19,9 @@ package sleeper.core.util;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * A utility to format numbers as human readable strings.
+ */
 public class NumberFormatUtils {
     private NumberFormatUtils() {
     }
@@ -28,6 +31,12 @@ public class NumberFormatUtils {
     private static final long G_COUNT = 1_000_000_000;
     private static final long T_COUNT = 1_000_000_000_000L;
 
+    /**
+     * Formats a number of bytes as a string, followed by a human readable representation.
+     *
+     * @param  fileSize the number of bytes to format
+     * @return          a string representation of the number of bytes
+     */
     public static String formatBytes(long fileSize) {
         if (fileSize < K_COUNT) {
             return fileSize + "B";
@@ -42,6 +51,12 @@ public class NumberFormatUtils {
         }
     }
 
+    /**
+     * Formats a number of bytes as a human readable string.
+     *
+     * @param  fileSize the number of bytes to format
+     * @return          a human readable string representing the number of bytes
+     */
     public static String formatBytesAsHumanReadableString(long fileSize) {
         if (fileSize < K_COUNT) {
             return fileSize + "B";
@@ -56,10 +71,22 @@ public class NumberFormatUtils {
         }
     }
 
+    /**
+     * Formats a number as a human readable string by inserting commas.
+     *
+     * @param  count the number to format
+     * @return       a human readable string representing the number
+     */
     public static String countWithCommas(long count) {
         return splitNonDecimalIntoParts("" + count);
     }
 
+    /**
+     * Formats a decimal number as a human readable string by inserting commas.
+     *
+     * @param  decimal the decimal number to format
+     * @return         a human readable string representing the decimal number
+     */
     public static String decimalWithCommas(String formatStr, double decimal) {
         String str = String.format(formatStr, decimal);
         int decimalIndex = str.indexOf('.');

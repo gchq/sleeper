@@ -15,6 +15,9 @@
  */
 package sleeper.core.schema.type;
 
+/**
+ * A primitive type that represents a long.
+ */
 public class LongType extends PrimitiveType {
 
     @Override

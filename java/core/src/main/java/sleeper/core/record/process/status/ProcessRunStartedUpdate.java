@@ -17,8 +17,15 @@ package sleeper.core.record.process.status;
 
 import java.time.Instant;
 
+/**
+ * Interface for a status update that marks the start of a process run.
+ */
 public interface ProcessRunStartedUpdate extends ProcessStatusUpdate {
-
+    /**
+     * Get the start time of this run.
+     *
+     * @return the start time
+     */
     Instant getStartTime();
 
     default boolean isStartOfRun() {
