@@ -29,6 +29,7 @@ import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
@@ -55,6 +56,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 public class FindPartitionsToSplitLambda implements RequestHandler<SQSEvent, SQSBatchResponse> {
     private static final Logger LOGGER = LoggerFactory.getLogger(FindPartitionsToSplitLambda.class);
 
+    private final PropertiesReloader propertiesReloader;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final FindPartitionsToSplit findPartitionsToSplit;
 
@@ -70,6 +72,7 @@ public class FindPartitionsToSplitLambda implements RequestHandler<SQSEvent, SQS
         AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
         StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties));
         tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
+        propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
         findPartitionsToSplit = new FindPartitionsToSplit(instanceProperties, stateStoreProvider,
                 new SqsSplitPartitionJobSender(tablePropertiesProvider, instanceProperties, sqsClient)::send);
     }
@@ -78,6 +81,7 @@ public class FindPartitionsToSplitLambda implements RequestHandler<SQSEvent, SQS
     public SQSBatchResponse handleRequest(SQSEvent event, Context context) {
         Instant startTime = Instant.now();
         LOGGER.info("Lambda started at {}", startTime);
+        propertiesReloader.reloadIfNeeded();
 
         Map<String, List<SQSMessage>> messagesByTableId = event.getRecords().stream()
                 .collect(groupingBy(SQSEvent.SQSMessage::getBody));
