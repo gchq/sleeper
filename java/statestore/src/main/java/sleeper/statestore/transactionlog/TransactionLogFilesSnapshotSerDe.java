@@ -21,10 +21,10 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.StateStoreFiles;
 import sleeper.statestore.StateStoreFileUtils;
 
-public class TransactionLogFilesSnapshot {
+public class TransactionLogFilesSnapshotSerDe {
     private final StateStoreFileUtils stateStoreFileUtils;
 
-    TransactionLogFilesSnapshot(Configuration configuration) {
+    TransactionLogFilesSnapshotSerDe(Configuration configuration) {
         this.stateStoreFileUtils = StateStoreFileUtils.forFiles(configuration);
     }
 
