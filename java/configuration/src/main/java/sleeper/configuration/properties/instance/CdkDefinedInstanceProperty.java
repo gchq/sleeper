@@ -211,20 +211,20 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .description("The name of the CloudWatch rule that periodically triggers the compaction job creation lambda.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
-    CdkDefinedInstanceProperty COMPACTION_JOB_CREATION_BATCH_QUEUE_URL = Index.propertyBuilder("sleeper.compaction.job.creation.batch.queue.url")
-            .description("The URL of the queue for sending batches of tables to create compaction jobs for.")
+    CdkDefinedInstanceProperty COMPACTION_JOB_CREATION_QUEUE_URL = Index.propertyBuilder("sleeper.compaction.job.creation.queue.url")
+            .description("The URL of the queue for tables requiring compaction job creation.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
-    CdkDefinedInstanceProperty COMPACTION_JOB_CREATION_BATCH_QUEUE_ARN = Index.propertyBuilder("sleeper.compaction.job.creation.batch.queue.arn")
-            .description("The ARN of the queue for sending batches of tables to create compaction jobs for.")
+    CdkDefinedInstanceProperty COMPACTION_JOB_CREATION_QUEUE_ARN = Index.propertyBuilder("sleeper.compaction.job.creation.queue.arn")
+            .description("The ARN of the queue for tables requiring compaction job creation.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
-    CdkDefinedInstanceProperty COMPACTION_JOB_CREATION_BATCH_DLQ_URL = Index.propertyBuilder("sleeper.compaction.job.creation.batch.dlq.url")
-            .description("The URL of the dead letter queue for sending batches of tables to create compaction jobs for.")
+    CdkDefinedInstanceProperty COMPACTION_JOB_CREATION_DLQ_URL = Index.propertyBuilder("sleeper.compaction.job.creation.dlq.url")
+            .description("The URL of the dead letter queue for tables that failed compaction job creation.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
-    CdkDefinedInstanceProperty COMPACTION_JOB_CREATION_BATCH_DLQ_ARN = Index.propertyBuilder("sleeper.compaction.job.creation.batch.dlq.arn")
-            .description("The ARN of the dead letter queue for sending batches of tables to create compaction jobs for.")
+    CdkDefinedInstanceProperty COMPACTION_JOB_CREATION_DLQ_ARN = Index.propertyBuilder("sleeper.compaction.job.creation.dlq.arn")
+            .description("The ARN of the dead letter queue for tables that failed compaction job creation.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
     CdkDefinedInstanceProperty COMPACTION_JOB_QUEUE_URL = Index.propertyBuilder("sleeper.compaction.job.queue.url")

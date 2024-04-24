@@ -37,13 +37,17 @@ public class PauseSystem {
         if (1 != args.length) {
             throw new IllegalArgumentException("Usage: <instance-id>");
         }
+        String instanceId = args[0];
 
-        AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
-        InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, args[0]);
-        amazonS3.shutdown();
+        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         AmazonCloudWatchEvents cwClient = AmazonCloudWatchEventsClientBuilder.defaultClient();
-        pause(cwClient, instanceProperties);
-        cwClient.shutdown();
+        try {
+            InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(s3Client, instanceId);
+            pause(cwClient, instanceProperties);
+        } finally {
+            s3Client.shutdown();
+            cwClient.shutdown();
+        }
     }
 
     public static void pause(AmazonCloudWatchEvents cwClient, InstanceProperties instanceProperties) {

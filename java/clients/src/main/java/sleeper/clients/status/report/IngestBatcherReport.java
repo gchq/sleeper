@@ -39,6 +39,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import static sleeper.clients.util.ClientUtils.optionalArgument;
+import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 public class IngestBatcherReport {
     private static final Map<String, BatcherQuery.Type> QUERY_TYPES = new HashMap<>();
@@ -96,28 +97,31 @@ public class IngestBatcherReport {
             System.out.println(e.getMessage());
             printUsage();
             System.exit(1);
+            return;
         }
-        AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
-        InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, instanceId);
 
-        AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
-        IngestBatcherStore statusStore = new DynamoDBIngestBatcherStore(dynamoDBClient, instanceProperties,
-                new TablePropertiesProvider(instanceProperties, amazonS3, dynamoDBClient));
-        IngestBatcherReporter reporter;
-        switch (reporterType) {
-            case JSON:
-                reporter = new JsonIngestBatcherReporter();
-                break;
-            case STANDARD:
-            default:
-                reporter = new StandardIngestBatcherReporter();
+        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
+        AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
+        try {
+            InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(s3Client, instanceId);
+            IngestBatcherStore statusStore = new DynamoDBIngestBatcherStore(dynamoDBClient, instanceProperties,
+                    new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient));
+            IngestBatcherReporter reporter;
+            switch (reporterType) {
+                case JSON:
+                    reporter = new JsonIngestBatcherReporter();
+                    break;
+                case STANDARD:
+                default:
+                    reporter = new StandardIngestBatcherReporter();
+            }
+            new IngestBatcherReport(statusStore, reporter, queryType,
+                    new TableStatusProvider(new DynamoDBTableIndex(instanceProperties, dynamoDBClient)))
+                    .run();
+        } finally {
+            s3Client.shutdown();
+            dynamoDBClient.shutdown();
         }
-        new IngestBatcherReport(statusStore, reporter, queryType,
-                new TableStatusProvider(new DynamoDBTableIndex(instanceProperties, dynamoDBClient)))
-                .run();
-
-        amazonS3.shutdown();
-        dynamoDBClient.shutdown();
     }
 
     private static BatcherQuery.Type readQueryType(String queryTypeStr) {

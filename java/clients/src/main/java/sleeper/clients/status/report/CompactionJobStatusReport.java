@@ -100,15 +100,20 @@ public class CompactionJobStatusReport {
             JobQuery.Type queryType = JobQueryArgument.readTypeArgument(args, 3);
             String queryParameters = optionalArgument(args, 4).orElse(null);
 
-            AmazonS3 amazonS3 = buildAwsV1Client(AmazonS3ClientBuilder.standard());
+            AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
             AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
 
-            InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, instanceId);
-            DynamoDBTableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDBClient);
-            TableStatus table = tableIndex.getTableByName(tableName)
-                    .orElseThrow(() -> new IllegalArgumentException("Table does not exist: " + tableName));
-            CompactionJobStatusStore statusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
-            new CompactionJobStatusReport(statusStore, reporter, table, queryType, queryParameters).run();
+            try {
+                InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(s3Client, instanceId);
+                DynamoDBTableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDBClient);
+                TableStatus table = tableIndex.getTableByName(tableName)
+                        .orElseThrow(() -> new IllegalArgumentException("Table does not exist: " + tableName));
+                CompactionJobStatusStore statusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
+                new CompactionJobStatusReport(statusStore, reporter, table, queryType, queryParameters).run();
+            } finally {
+                s3Client.shutdown();
+                dynamoDBClient.shutdown();
+            }
         } catch (IllegalArgumentException e) {
             System.err.println(e.getMessage());
             printUsage();

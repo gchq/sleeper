@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.util.List;
 
 import static sleeper.configuration.ReadSplitPoints.readSplitPoints;
+import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 /**
  * A utility class to reinitialise a table. It deletes all the data in the table
@@ -79,11 +80,11 @@ public class ReinitialiseTableFromSplitPoints extends ReinitialiseTable {
         if (!choice.equalsIgnoreCase("y")) {
             System.exit(0);
         }
-        AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
-        AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
+        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
+        AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
 
         try {
-            ReinitialiseTable reinitialiseTable = new ReinitialiseTableFromSplitPoints(amazonS3, dynamoDBClient, instanceId, tableName,
+            ReinitialiseTable reinitialiseTable = new ReinitialiseTableFromSplitPoints(s3Client, dynamoDBClient, instanceId, tableName,
                     splitPointsFile, splitPointsFileBase64Encoded);
             reinitialiseTable.run();
             LOGGER.info("Table reinitialised successfully");
@@ -91,8 +92,9 @@ public class ReinitialiseTableFromSplitPoints extends ReinitialiseTable {
             LOGGER.error("\nAn Error occurred while trying to reinitialise the table. " +
                     "The error message is as follows:\n\n" + e.getMessage()
                     + "\n\nCause:" + e.getCause());
+        } finally {
+            s3Client.shutdown();
+            dynamoDBClient.shutdown();
         }
-        amazonS3.shutdown();
-        dynamoDBClient.shutdown();
     }
 }

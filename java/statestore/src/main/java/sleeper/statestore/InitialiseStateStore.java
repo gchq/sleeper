@@ -15,7 +15,6 @@
  */
 package sleeper.statestore;
 
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
@@ -27,6 +26,9 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.io.parquet.utils.HadoopConfigurationProvider;
+
+import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 /**
  * Initialises a state store with a single root partition.
@@ -38,25 +40,27 @@ public class InitialiseStateStore {
 
     public static void main(String[] args) throws StateStoreException {
         if (2 != args.length) {
-            System.out.println("Usage: <Sleeper S3 Config Bucket> <Table name>");
+            System.out.println("Usage: <instance-id> <table-name>");
             return;
         }
+        String instanceId = args[0];
+        String tableName = args[1];
 
-        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
+        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
+        AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
+        try {
+            InstanceProperties instanceProperties = new InstanceProperties();
+            instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
 
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.loadFromS3(s3Client, args[0]);
+            TableProperties tableProperties = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient).getByName(tableName);
 
-        TableProperties tableProperties = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient).getByName(args[1]);
+            Configuration conf = HadoopConfigurationProvider.getConfigurationForClient();
+            StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, conf).getStateStore(tableProperties);
 
-        Configuration conf = new Configuration();
-        conf.set("fs.s3a.aws.credentials.provider", DefaultAWSCredentialsProviderChain.class.getName());
-        StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, conf).getStateStore(tableProperties);
-
-        stateStore.initialise();
-
-        dynamoDBClient.shutdown();
-        s3Client.shutdown();
+            stateStore.initialise();
+        } finally {
+            dynamoDBClient.shutdown();
+            s3Client.shutdown();
+        }
     }
 }

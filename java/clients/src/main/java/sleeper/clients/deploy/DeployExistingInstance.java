@@ -92,6 +92,10 @@ public class DeployExistingInstance {
                     .deployCommand(deployPaused ? deployExistingPaused() : deployExisting())
                     .loadPropertiesFromS3(s3, dynamoDB)
                     .build().update();
+        } finally {
+            s3.shutdown();
+            dynamoDB.shutdown();
+            ecr.shutdown();
         }
     }
 

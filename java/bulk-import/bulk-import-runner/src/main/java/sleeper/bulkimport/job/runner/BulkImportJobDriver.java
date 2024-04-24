@@ -156,7 +156,8 @@ public class BulkImportJobDriver {
         String bulkImportMode = args[4];
 
         InstanceProperties instanceProperties = new InstanceProperties();
-        AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
+        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+        AmazonDynamoDB dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
         Configuration configuration;
         if (bulkImportMode.equals("EKS")) {
             configuration = HadoopConfigurationProvider.getConfigurationForEKS(instanceProperties);
@@ -167,45 +168,60 @@ public class BulkImportJobDriver {
         }
 
         try {
-            instanceProperties.loadFromS3(amazonS3, configBucket);
-        } catch (Exception e) {
-            // This is a good indicator if something is wrong with the permissions
-            LOGGER.error("Failed to load instance properties", e);
-            LOGGER.info("Checking whether token is readable");
-            String token = System.getenv("AWS_WEB_IDENTITY_TOKEN_FILE");
-            java.nio.file.Path tokenPath = Paths.get(token);
-            boolean readable = Files.isReadable(tokenPath);
-            LOGGER.info("Token was{} readable", readable ? "" : " not");
-            if (!readable) {
-                PosixFileAttributes readAttributes = Files.readAttributes(tokenPath, PosixFileAttributes.class);
-                LOGGER.info("Token Permissions: {}", readAttributes.permissions());
-                LOGGER.info("Token owner: {}", readAttributes.owner());
+            try {
+                instanceProperties.loadFromS3(s3Client, configBucket);
+            } catch (Exception e) {
+                // This is a good indicator if something is wrong with the permissions
+                LOGGER.error("Failed to load instance properties", e);
+                logPermissions();
+                throw e;
             }
-            // This could error if not logged in correctly
-            AWSSecurityTokenService sts = AWSSecurityTokenServiceClientBuilder.defaultClient();
-            GetCallerIdentityResult callerIdentity = sts.getCallerIdentity(new GetCallerIdentityRequest());
-            LOGGER.info("Logged in as: {}", callerIdentity.getArn());
 
-            throw e;
+            BulkImportJob bulkImportJob = loadJob(instanceProperties, jobId, jobRunId, s3Client);
+            BulkImportJobDriver driver = BulkImportJobDriver.from(
+                    runner, instanceProperties, s3Client, dynamoClient, configuration);
+            driver.run(bulkImportJob, jobRunId, taskId);
+        } finally {
+            s3Client.shutdown();
+            dynamoClient.shutdown();
         }
+    }
 
+    private static BulkImportJob loadJob(
+            InstanceProperties instanceProperties, String jobId, String jobRunId, AmazonS3 s3Client) {
         String bulkImportBucket = instanceProperties.get(BULK_IMPORT_BUCKET);
         if (null == bulkImportBucket) {
             throw new RuntimeException("sleeper.bulk.import.bucket was not set. Has one of the bulk import stacks been deployed?");
         }
         String jsonJobKey = "bulk_import/" + jobId + "-" + jobRunId + ".json";
         LOGGER.info("Loading bulk import job from key {} in bulk import bucket {}", jsonJobKey, bulkImportBucket);
-        String jsonJob = amazonS3.getObjectAsString(bulkImportBucket, jsonJobKey);
-        BulkImportJob bulkImportJob;
+        String jsonJob = s3Client.getObjectAsString(bulkImportBucket, jsonJobKey);
         try {
-            bulkImportJob = new BulkImportJobSerDe().fromJson(jsonJob);
+            return new BulkImportJobSerDe().fromJson(jsonJob);
         } catch (JsonSyntaxException e) {
-            LOGGER.error("Json job was malformed: {}", jobId);
+            LOGGER.error("Json job was malformed");
             throw e;
         }
+    }
 
-        BulkImportJobDriver driver = BulkImportJobDriver.from(runner, instanceProperties,
-                amazonS3, AmazonDynamoDBClientBuilder.defaultClient(), configuration);
-        driver.run(bulkImportJob, jobRunId, taskId);
+    private static void logPermissions() throws IOException {
+        LOGGER.info("Checking whether token is readable");
+        String token = System.getenv("AWS_WEB_IDENTITY_TOKEN_FILE");
+        java.nio.file.Path tokenPath = Paths.get(token);
+        boolean readable = Files.isReadable(tokenPath);
+        LOGGER.info("Token was{} readable", readable ? "" : " not");
+        if (!readable) {
+            PosixFileAttributes readAttributes = Files.readAttributes(tokenPath, PosixFileAttributes.class);
+            LOGGER.info("Token Permissions: {}", readAttributes.permissions());
+            LOGGER.info("Token owner: {}", readAttributes.owner());
+        }
+        // This could error if not logged in correctly
+        AWSSecurityTokenService sts = AWSSecurityTokenServiceClientBuilder.defaultClient();
+        try {
+            GetCallerIdentityResult callerIdentity = sts.getCallerIdentity(new GetCallerIdentityRequest());
+            LOGGER.info("Logged in as: {}", callerIdentity.getArn());
+        } finally {
+            sts.shutdown();
+        }
     }
 }
