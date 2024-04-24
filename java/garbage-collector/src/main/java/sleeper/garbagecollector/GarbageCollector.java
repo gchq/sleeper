@@ -48,8 +48,8 @@ public class GarbageCollector {
     private static final Logger LOGGER = LoggerFactory.getLogger(GarbageCollector.class);
 
     private final DeleteFile deleteFile;
+    private final InstanceProperties instanceProperties;
     private final StateStoreProvider stateStoreProvider;
-    private final int garbageCollectorBatchSize;
 
     public GarbageCollector(Configuration conf,
             InstanceProperties instanceProperties,
@@ -62,8 +62,8 @@ public class GarbageCollector {
             InstanceProperties instanceProperties,
             StateStoreProvider stateStoreProvider) {
         this.deleteFile = deleteFile;
+        this.instanceProperties = instanceProperties;
         this.stateStoreProvider = stateStoreProvider;
-        this.garbageCollectorBatchSize = instanceProperties.getInt(GARBAGE_COLLECTOR_BATCH_SIZE);
     }
 
     public void run(List<TableProperties> tables) throws FailedGarbageCollectionException {
@@ -96,6 +96,7 @@ public class GarbageCollector {
     }
 
     private void deleteInBatches(TableProperties tableProperties, Instant startTime, TableFilesDeleted deleted) throws StateStoreException {
+        int garbageCollectorBatchSize = instanceProperties.getInt(GARBAGE_COLLECTOR_BATCH_SIZE);
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         Iterator<String> readyForGC = getReadyForGCIterator(tableProperties, startTime, stateStore);
         List<String> batch = new ArrayList<>();
