@@ -131,12 +131,6 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
         return tableProperties;
     }
 
-    private StateStore createStateStore(TableProperties table) {
-        return DynamoDBTransactionLogStateStore.builderFrom(instanceProperties, table, dynamoDBClient, s3Client)
-                .maxAddTransactionAttempts(1)
-                .build();
-    }
-
     private TransactionLogSnapshot filesSnapshot(TableProperties table, String path, long transactionNumber) {
         return TransactionLogSnapshot.forFiles(getFilesPath(table, transactionNumber), transactionNumber);
     }
