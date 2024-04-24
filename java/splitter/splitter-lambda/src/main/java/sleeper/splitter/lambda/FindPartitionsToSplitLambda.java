@@ -56,8 +56,8 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 public class FindPartitionsToSplitLambda implements RequestHandler<SQSEvent, SQSBatchResponse> {
     private static final Logger LOGGER = LoggerFactory.getLogger(FindPartitionsToSplitLambda.class);
 
-    private final PropertiesReloader propertiesReloader;
     private final TablePropertiesProvider tablePropertiesProvider;
+    private final PropertiesReloader propertiesReloader;
     private final FindPartitionsToSplit findPartitionsToSplit;
 
     public FindPartitionsToSplitLambda() {
