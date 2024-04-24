@@ -21,8 +21,9 @@ import org.apache.hadoop.conf.Configuration;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
+
+import java.io.IOException;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.FILE_TRANSACTION_LOG_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_TRANSACTION_LOG_TABLENAME;
@@ -33,13 +34,8 @@ public class DynamoDBTransactionLogStateStore extends TransactionLogStateStore {
     public static final String TRANSACTION_NUMBER = "TRANSACTION_NUMBER";
 
     public DynamoDBTransactionLogStateStore(
-            InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamoDB, AmazonS3 s3) {
-        super(builderFrom(instanceProperties, tableProperties, dynamoDB, s3));
-    }
-
-    public static TransactionLogStateStore.Builder builderFrom(
-            InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamoDB, AmazonS3 s3) {
-        return builderFrom(instanceProperties, tableProperties, dynamoDB, s3, new Configuration());
+            InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamoDB, AmazonS3 s3, Configuration configuration) {
+        super(builderFrom(instanceProperties, tableProperties, dynamoDB, s3, configuration));
     }
 
     public static TransactionLogStateStore.Builder builderFrom(
@@ -60,13 +56,14 @@ public class DynamoDBTransactionLogStateStore extends TransactionLogStateStore {
             AmazonDynamoDB dynamoDB, Configuration configuration) {
         new DynamoDBTransactionLogSnapshotStore(instanceProperties, tableProperties, dynamoDB).getLatestSnapshots()
                 .ifPresent(latestSnapshots -> {
-                    TransactionLogFilesSnapshotSerDe filesSnapshotSerDe = new TransactionLogFilesSnapshotSerDe(configuration);
-                    TransactionLogPartitionsSnapshotSerDe partitionsSnapshotSerDe = new TransactionLogPartitionsSnapshotSerDe(tableProperties.getSchema(), configuration);
+                    TransactionLogSnapshotSerDe snapshotSerDe = new TransactionLogSnapshotSerDe(tableProperties.getSchema(), configuration);
                     try {
-                        builder.filesState(filesSnapshotSerDe.load(latestSnapshots.getFilesSnapshot()))
-                                .partitionsState(partitionsSnapshotSerDe.load(latestSnapshots.getPartitionsSnapshot()));
-                    } catch (StateStoreException e) {
-                        throw new RuntimeException(e);
+                        builder.filesState(snapshotSerDe.loadFiles(latestSnapshots.getFilesSnapshot()))
+                                .filesTransactionNumber(latestSnapshots.getFilesSnapshot().getTransactionNumber())
+                                .partitionsState(snapshotSerDe.loadPartitions(latestSnapshots.getPartitionsSnapshot()))
+                                .partitionsTransactionNumber(latestSnapshots.getPartitionsSnapshot().getTransactionNumber());
+                    } catch (IOException e) {
+                        throw new RuntimeException("Failed to load latest snapshots", e);
                     }
                 });
     }

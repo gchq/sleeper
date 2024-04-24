@@ -37,6 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.dynamodb.tools.GenericContainerAwsV1ClientHelper.buildAwsV1Client;
 
@@ -66,35 +67,35 @@ public class DynamoDBTransactionLogSnapshotStoreIT {
         @Test
         void shouldStoreFilesSnapshot() throws Exception {
             // Given / When
-            store.saveFiles("snapshot/1-files.parquet", 1);
+            store.saveSnapshot(filesSnapshot(1));
 
             // Then
             assertThat(store.getFilesSnapshots())
-                    .containsExactly(filesSnapshot("snapshot/1-files.parquet", 1));
+                    .containsExactly(filesSnapshot(1));
         }
 
         @Test
         void shouldRetrieveFilesSnapshotsLatestFirst() throws Exception {
             // Given / When
-            store.saveFiles("snapshot/1-files.parquet", 1);
-            store.saveFiles("snapshot/2-files.parquet", 2);
-            store.saveFiles("snapshot/3-files.parquet", 3);
+            store.saveSnapshot(filesSnapshot(1));
+            store.saveSnapshot(filesSnapshot(2));
+            store.saveSnapshot(filesSnapshot(3));
 
             // Then
             assertThat(store.getFilesSnapshots())
                     .containsExactly(
-                            filesSnapshot("snapshot/1-files.parquet", 1),
-                            filesSnapshot("snapshot/2-files.parquet", 2),
-                            filesSnapshot("snapshot/3-files.parquet", 3));
+                            filesSnapshot(1),
+                            filesSnapshot(2),
+                            filesSnapshot(3));
         }
 
         @Test
         void shouldFailToAddFilesSnapshotIfSnapshotAlreadyExists() throws Exception {
             // Given / When
-            store.saveFiles("snapshot/1-files.parquet", 1);
+            store.saveSnapshot(filesSnapshot(1));
 
             // Then
-            assertThatThrownBy(() -> store.saveFiles("snapshot/1-files.parquet", 1))
+            assertThatThrownBy(() -> store.saveSnapshot(filesSnapshot(1)))
                     .isInstanceOf(DuplicateSnapshotException.class);
         }
     }
@@ -105,35 +106,35 @@ public class DynamoDBTransactionLogSnapshotStoreIT {
         @Test
         void shouldStorePartitionsSnapshot() throws Exception {
             // Given / When
-            store.savePartitions("snapshot/1-partitions.parquet", 1);
+            store.saveSnapshot(partitionsSnapshot(1));
 
             // Then
             assertThat(store.getPartitionsSnapshots())
-                    .containsExactly(partitionsSnapshot("snapshot/1-partitions.parquet", 1));
+                    .containsExactly(partitionsSnapshot(1));
         }
 
         @Test
         void shouldRetrievePartitionsSnapshotsLatestFirst() throws Exception {
             // Given / When
-            store.savePartitions("snapshot/1-partitions.parquet", 1);
-            store.savePartitions("snapshot/2-partitions.parquet", 2);
-            store.savePartitions("snapshot/3-partitions.parquet", 3);
+            store.saveSnapshot(partitionsSnapshot(1));
+            store.saveSnapshot(partitionsSnapshot(2));
+            store.saveSnapshot(partitionsSnapshot(3));
 
             // Then
             assertThat(store.getPartitionsSnapshots())
                     .containsExactly(
-                            partitionsSnapshot("snapshot/1-partitions.parquet", 1),
-                            partitionsSnapshot("snapshot/2-partitions.parquet", 2),
-                            partitionsSnapshot("snapshot/3-partitions.parquet", 3));
+                            partitionsSnapshot(1),
+                            partitionsSnapshot(2),
+                            partitionsSnapshot(3));
         }
 
         @Test
         void shouldFailToAddPartitionsSnapshotIfSnapshotAlreadyExists() throws Exception {
             // Given / When
-            store.savePartitions("snapshot/1-partitions.parquet", 1);
+            store.saveSnapshot(partitionsSnapshot(1));
 
             // Then
-            assertThatThrownBy(() -> store.savePartitions("snapshot/1-partitions.parquet", 1))
+            assertThatThrownBy(() -> store.saveSnapshot(partitionsSnapshot(1)))
                     .isInstanceOf(DuplicateSnapshotException.class);
         }
     }
@@ -141,18 +142,18 @@ public class DynamoDBTransactionLogSnapshotStoreIT {
     @Test
     void shouldRetrieveLatestSnapshots() throws Exception {
         // Given / When
-        store.saveFiles("snapshot/1-files.parquet", 1);
-        store.saveFiles("snapshot/2-files.parquet", 2);
-        store.saveFiles("snapshot/3-files.parquet", 3);
-        store.savePartitions("snapshot/1-partitions.parquet", 1);
-        store.savePartitions("snapshot/2-partitions.parquet", 2);
-        store.savePartitions("snapshot/3-partitions.parquet", 3);
+        store.saveSnapshot(filesSnapshot(1));
+        store.saveSnapshot(filesSnapshot(2));
+        store.saveSnapshot(filesSnapshot(3));
+        store.saveSnapshot(partitionsSnapshot(1));
+        store.saveSnapshot(partitionsSnapshot(2));
+        store.saveSnapshot(partitionsSnapshot(3));
 
         // Then
         assertThat(store.getLatestSnapshots()).contains(
                 new LatestSnapshots(
-                        filesSnapshot("snapshot/3-files.parquet", 3),
-                        partitionsSnapshot("snapshot/3-partitions.parquet", 3)));
+                        filesSnapshot(3),
+                        partitionsSnapshot(3)));
     }
 
     @Test
@@ -163,40 +164,40 @@ public class DynamoDBTransactionLogSnapshotStoreIT {
         DynamoDBTransactionLogSnapshotStore snapshotStore2 = snapshotStore(table2);
 
         // When
-        snapshotStore1.saveFiles("snapshot/table1/1-files.parquet", 1);
-        snapshotStore1.saveFiles("snapshot/table1/2-files.parquet", 2);
-        snapshotStore1.savePartitions("snapshot/table1/1-partitions.parquet", 1);
-        snapshotStore1.savePartitions("snapshot/table1/2-partitions.parquet", 2);
-        snapshotStore2.saveFiles("snapshot/table2/1-files.parquet", 1);
-        snapshotStore2.saveFiles("snapshot/table2/2-files.parquet", 2);
-        snapshotStore2.savePartitions("snapshot/table2/1-partitions.parquet", 1);
-        snapshotStore2.savePartitions("snapshot/table2/2-partitions.parquet", 2);
+        snapshotStore1.saveSnapshot(filesSnapshot(table1, 1));
+        snapshotStore1.saveSnapshot(filesSnapshot(table1, 2));
+        snapshotStore1.saveSnapshot(partitionsSnapshot(table1, 1));
+        snapshotStore1.saveSnapshot(partitionsSnapshot(table1, 2));
+        snapshotStore2.saveSnapshot(filesSnapshot(table2, 1));
+        snapshotStore2.saveSnapshot(filesSnapshot(table2, 2));
+        snapshotStore2.saveSnapshot(partitionsSnapshot(table2, 1));
+        snapshotStore2.saveSnapshot(partitionsSnapshot(table2, 2));
 
         // Then
         assertThat(snapshotStore1.getFilesSnapshots())
                 .containsExactly(
-                        filesSnapshot("snapshot/table1/1-files.parquet", 1),
-                        filesSnapshot("snapshot/table1/2-files.parquet", 2));
+                        filesSnapshot(table1, 1),
+                        filesSnapshot(table1, 2));
         assertThat(snapshotStore1.getPartitionsSnapshots())
                 .containsExactly(
-                        partitionsSnapshot("snapshot/table1/1-partitions.parquet", 1),
-                        partitionsSnapshot("snapshot/table1/2-partitions.parquet", 2));
+                        partitionsSnapshot(table1, 1),
+                        partitionsSnapshot(table1, 2));
         assertThat(snapshotStore2.getFilesSnapshots())
                 .containsExactly(
-                        filesSnapshot("snapshot/table2/1-files.parquet", 1),
-                        filesSnapshot("snapshot/table2/2-files.parquet", 2));
+                        filesSnapshot(table2, 1),
+                        filesSnapshot(table2, 2));
         assertThat(snapshotStore2.getPartitionsSnapshots())
                 .containsExactly(
-                        partitionsSnapshot("snapshot/table2/1-partitions.parquet", 1),
-                        partitionsSnapshot("snapshot/table2/2-partitions.parquet", 2));
+                        partitionsSnapshot(table2, 1),
+                        partitionsSnapshot(table2, 2));
         assertThat(snapshotStore1.getLatestSnapshots()).contains(
                 new LatestSnapshots(
-                        filesSnapshot("snapshot/table1/2-files.parquet", 2),
-                        partitionsSnapshot("snapshot/table1/2-partitions.parquet", 2)));
+                        filesSnapshot(table1, 2),
+                        partitionsSnapshot(table1, 2)));
         assertThat(snapshotStore2.getLatestSnapshots()).contains(
                 new LatestSnapshots(
-                        filesSnapshot("snapshot/table2/2-files.parquet", 2),
-                        partitionsSnapshot("snapshot/table2/2-partitions.parquet", 2)));
+                        filesSnapshot(table2, 2),
+                        partitionsSnapshot(table2, 2)));
     }
 
     private TableProperties createTable() {
@@ -211,11 +212,19 @@ public class DynamoDBTransactionLogSnapshotStoreIT {
         return new DynamoDBTransactionLogSnapshotStore(instanceProperties, tableProperties, dynamoDBClient, Instant::now);
     }
 
-    private TransactionLogSnapshot filesSnapshot(String path, long transactionNumber) {
-        return TransactionLogSnapshot.forFiles(path, transactionNumber);
+    private TransactionLogSnapshot filesSnapshot(long transactionNumber) {
+        return filesSnapshot(tableProperties, transactionNumber);
     }
 
-    private TransactionLogSnapshot partitionsSnapshot(String path, long transactionNumber) {
-        return TransactionLogSnapshot.forPartitions(path, transactionNumber);
+    private TransactionLogSnapshot filesSnapshot(TableProperties tableProperties, long transactionNumber) {
+        return TransactionLogSnapshot.forFiles(tableProperties.get(TABLE_ID), transactionNumber);
+    }
+
+    private TransactionLogSnapshot partitionsSnapshot(long transactionNumber) {
+        return partitionsSnapshot(tableProperties, transactionNumber);
+    }
+
+    private TransactionLogSnapshot partitionsSnapshot(TableProperties tableProperties, long transactionNumber) {
+        return TransactionLogSnapshot.forPartitions(tableProperties.get(TABLE_ID), transactionNumber);
     }
 }

@@ -37,7 +37,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.ID;
 public class TransactionLogStateStoreStack extends NestedStack {
     private final Table partitionsLogTable;
     private final Table filesLogTable;
-    private final Table latestSnapshotTable;
+    private final Table latestSnapshotsTable;
     private final Table allSnapshotsTable;
 
     public TransactionLogStateStoreStack(
@@ -46,11 +46,11 @@ public class TransactionLogStateStoreStack extends NestedStack {
 
         partitionsLogTable = createTransactionLogTable(instanceProperties, "PartitionTransactionLogTable", "partition-transaction-log");
         filesLogTable = createTransactionLogTable(instanceProperties, "FileTransactionLogTable", "file-transaction-log");
-        latestSnapshotTable = createLatestSnapshotTable(instanceProperties, "TransactionLogLatestSnapshotTable", "tl-latest-snapshot");
-        allSnapshotsTable = createAllSnapshotsTable(instanceProperties, "TransactionLogAllSnapshotsTable", "tl-all-snapshots-table");
+        latestSnapshotsTable = createLatestSnapshotsTable(instanceProperties, "TransactionLogLatestSnapshotsTable", "transaction-log-latest-snapshots");
+        allSnapshotsTable = createAllSnapshotsTable(instanceProperties, "TransactionLogAllSnapshotsTable", "transaction-log-all-snapshots");
         instanceProperties.set(PARTITION_TRANSACTION_LOG_TABLENAME, partitionsLogTable.getTableName());
         instanceProperties.set(FILE_TRANSACTION_LOG_TABLENAME, filesLogTable.getTableName());
-        instanceProperties.set(TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME, latestSnapshotTable.getTableName());
+        instanceProperties.set(TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME, latestSnapshotsTable.getTableName());
         instanceProperties.set(TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME, allSnapshotsTable.getTableName());
     }
 
@@ -71,7 +71,7 @@ public class TransactionLogStateStoreStack extends NestedStack {
                 .build();
     }
 
-    private Table createLatestSnapshotTable(InstanceProperties instanceProperties, String id, String name) {
+    private Table createLatestSnapshotsTable(InstanceProperties instanceProperties, String id, String name) {
         return Table.Builder
                 .create(this, id)
                 .tableName(String.join("-", "sleeper", instanceProperties.get(ID), name))

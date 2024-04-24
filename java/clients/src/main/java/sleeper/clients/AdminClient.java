@@ -94,19 +94,30 @@ public class AdminClient {
                 .jarsDirectory(jarsDir).version(version).build();
 
         AmazonS3 s3Client = AwsV1ClientHelper.buildAwsV1Client(AmazonS3ClientBuilder.standard());
-        AmazonDynamoDB dynamoDB = AwsV1ClientHelper.buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
+        AmazonDynamoDB dynamoClient = AwsV1ClientHelper.buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         AmazonSQS sqsClient = AwsV1ClientHelper.buildAwsV1Client(AmazonSQSClientBuilder.standard());
         AmazonECR ecrClient = AwsV1ClientHelper.buildAwsV1Client(AmazonECRClientBuilder.standard());
         AmazonElasticMapReduce emrClient = AwsV1ClientHelper.buildAwsV1Client(AmazonElasticMapReduceClientBuilder.standard());
+
         UploadDockerImages uploadDockerImages = UploadDockerImages.builder()
                 .ecrClient(EcrRepositoryCreator.withEcrClient(ecrClient))
                 .baseDockerDirectory(baseDockerDir).build();
         ConsoleOutput out = new ConsoleOutput(System.out);
         ConsoleInput in = new ConsoleInput(System.console());
-        System.exit(start(instanceId, s3Client, dynamoDB, cdk, generatedDir, uploadDockerImages, out, in,
-                new UpdatePropertiesWithTextEditor(Path.of("/tmp")),
-                QueueMessageCount.withSqsClient(sqsClient),
-                properties -> PersistentEMRStepCount.byStatus(properties, emrClient)));
+        int errorCode;
+        try {
+            errorCode = start(instanceId, s3Client, dynamoClient, cdk, generatedDir, uploadDockerImages, out, in,
+                    new UpdatePropertiesWithTextEditor(Path.of("/tmp")),
+                    QueueMessageCount.withSqsClient(sqsClient),
+                    properties -> PersistentEMRStepCount.byStatus(properties, emrClient));
+        } finally {
+            s3Client.shutdown();
+            dynamoClient.shutdown();
+            sqsClient.shutdown();
+            ecrClient.shutdown();
+            emrClient.shutdown();
+        }
+        System.exit(errorCode);
     }
 
     public static int start(String instanceId, AmazonS3 s3Client, AmazonDynamoDB dynamoDB,
@@ -135,12 +146,7 @@ public class AdminClient {
     }
 
     public void start(String instanceId) throws InterruptedException {
-        try {
-            store.loadInstanceProperties(instanceId);
-            new AdminMainScreen(out, in).mainLoop(this, instanceId);
-        } catch (AdminClientPropertiesStore.CouldNotLoadInstanceProperties e) {
-            e.print(out);
-        }
+        new AdminMainScreen(out, in).mainLoop(this, instanceId);
     }
 
     public InstanceConfigurationScreen instanceConfigurationScreen() {

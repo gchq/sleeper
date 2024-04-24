@@ -44,6 +44,7 @@ public class TransactionLogStateStoreCreator {
     }
 
     public void create() {
+        new DynamoDBTransactionLogSnapshotStoreCreator(instanceProperties, dynamoDB).create();
         createTransactionLogTable(instanceProperties.get(FILE_TRANSACTION_LOG_TABLENAME));
         createTransactionLogTable(instanceProperties.get(PARTITION_TRANSACTION_LOG_TABLENAME));
         s3Client.createBucket(instanceProperties.get(DATA_BUCKET));

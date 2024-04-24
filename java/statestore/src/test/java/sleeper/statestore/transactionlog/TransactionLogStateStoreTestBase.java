@@ -19,6 +19,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,7 +29,9 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
+import sleeper.core.statestore.StateStore;
 
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
@@ -42,6 +45,7 @@ public class TransactionLogStateStoreTestBase {
     protected static AmazonDynamoDB dynamoDBClient;
     protected static AmazonS3 s3Client;
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
+    protected final Configuration configuration = new Configuration();
 
     @BeforeAll
     public static void initDynamoClient() {
@@ -57,6 +61,9 @@ public class TransactionLogStateStoreTestBase {
     @BeforeEach
     void setUpBase() {
         new TransactionLogStateStoreCreator(instanceProperties, dynamoDBClient, s3Client).create();
-        new DynamoDBTransactionLogSnapshotStoreCreator(instanceProperties, dynamoDBClient).create();
+    }
+
+    public StateStore createStateStore(TableProperties tableProperties) {
+        return new DynamoDBTransactionLogStateStore(instanceProperties, tableProperties, dynamoDBClient, s3Client, configuration);
     }
 }

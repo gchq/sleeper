@@ -51,8 +51,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
     private Path tempDir;
     private final Schema schema = schemaWithKey("key", new LongType());
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-    private TransactionLogFilesSnapshotSerDe filesSnapshotSerDe = new TransactionLogFilesSnapshotSerDe(new Configuration());
-    private TransactionLogPartitionsSnapshotSerDe partitionsSnapshotSerDe = new TransactionLogPartitionsSnapshotSerDe(schema, new Configuration());
+    private TransactionLogSnapshotSerDe snapshotSerDe = new TransactionLogSnapshotSerDe(schema, new Configuration());
     private DynamoDBTransactionLogSnapshotStore snapshotStore = new DynamoDBTransactionLogSnapshotStore(instanceProperties, tableProperties, dynamoDBClient);
 
     @Nested
@@ -158,24 +157,59 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
             assertThat(stateStore.getAllPartitions()).isEmpty();
             assertThat(stateStore.getFileReferences()).isEmpty();
         }
+
+        @Test
+        void shouldExcludePreviousTransactionsWhenLoadingLatestSnapshots() throws Exception {
+            // Given
+            StateStore stateStore = createStateStore();
+            PartitionTree tree1 = new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "A", "B", 123L)
+                    .buildTree();
+            FileReferenceFactory factory1 = FileReferenceFactory.from(tree1);
+            FileReference file1 = factory1.rootFile("file1.parquet", 123L);
+            stateStore.initialise(tree1.getAllPartitions());
+            stateStore.addFile(file1);
+
+            PartitionTree tree2 = new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "C", "D", 456L)
+                    .buildTree();
+            FileReferenceFactory factory2 = FileReferenceFactory.from(tree2);
+            FileReference file2 = factory2.rootFile("file2.parquet", 456L);
+            saveFilesSnapshot(List.of(file2), 2);
+            savePartitionsSnapshot(tree2, 2);
+
+            // When
+            stateStore = createStateStore();
+
+            // Then
+            assertThat(stateStore.getAllPartitions())
+                    .containsExactlyElementsOf(tree2.getAllPartitions());
+            assertThat(stateStore.getFileReferences())
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
+                    .containsExactly(file2);
+        }
     }
 
-    private void saveFilesSnapshot(List<FileReference> files, long transcationNumber) throws Exception {
+    private void saveFilesSnapshot(List<FileReference> files, long transactionNumber) throws Exception {
         StateStoreFiles state = new StateStoreFiles();
         files.forEach(file -> state.add(fileWithOneReference(file, Instant.now())));
-        String filePath = filesSnapshotSerDe.save(tempDir.toString(), state, transcationNumber);
-        snapshotStore.saveFiles(filePath, transcationNumber);
+        TransactionLogSnapshot snapshot = TransactionLogSnapshot.forFiles(tempDir.toString(), transactionNumber);
+        snapshotSerDe.saveFiles(snapshot, state);
+        snapshotStore.saveSnapshot(snapshot);
     }
 
-    private void savePartitionsSnapshot(PartitionTree partitionTree, long transcationNumber) throws Exception {
+    private void savePartitionsSnapshot(PartitionTree partitionTree, long transactionNumber) throws Exception {
         StateStorePartitions state = new StateStorePartitions();
         partitionTree.getAllPartitions().forEach(state::put);
-        String filePath = partitionsSnapshotSerDe.save(tempDir.toString(), state, transcationNumber);
-        snapshotStore.savePartitions(filePath, transcationNumber);
+        TransactionLogSnapshot snapshot = TransactionLogSnapshot.forPartitions(tempDir.toString(), transactionNumber);
+        snapshotSerDe.savePartitions(snapshot, state);
+        snapshotStore.saveSnapshot(snapshot);
     }
 
     private StateStore createStateStore() {
-        return DynamoDBTransactionLogStateStore.builderFrom(instanceProperties, tableProperties, dynamoDBClient, s3Client)
+        return DynamoDBTransactionLogStateStore.builderFrom(instanceProperties, tableProperties, dynamoDBClient, s3Client, configuration)
                 .maxAddTransactionAttempts(1)
                 .build();
     }

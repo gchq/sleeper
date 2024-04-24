@@ -22,8 +22,10 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
+import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.core.statestore.SplitFileReferences;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.ExponentialBackoffWithJitter;
@@ -222,6 +224,91 @@ public class TransactionLogStateStoreLogSpecificTest {
 
         // Then
         assertThat(stateStoreSkippingTransaction.getFileReferences()).isEmpty();
+    }
+
+    @Test
+    void shouldNotAddSplitFileTransactionWithNoRequests() throws Exception {
+        // Given
+        long transactionNumberBefore = filesLogStore.getLastTransactionNumber();
+
+        // When
+        SplitFileReferences.from(store).split();
+
+        // Then
+        assertThat(filesLogStore.getLastTransactionNumber()).isEqualTo(transactionNumberBefore);
+    }
+
+    @Test
+    void shouldNotAddSplitFileTransactionWithNoRequestsDirectly() throws Exception {
+        // Given
+        long transactionNumberBefore = filesLogStore.getLastTransactionNumber();
+
+        // When
+        store.splitFileReferences(List.of());
+
+        // Then
+        assertThat(filesLogStore.getLastTransactionNumber()).isEqualTo(transactionNumberBefore);
+    }
+
+    @Test
+    void shouldNotAddNoFiles() throws Exception {
+        // Given
+        long transactionNumberBefore = filesLogStore.getLastTransactionNumber();
+
+        // When
+        store.addFiles(List.of());
+
+        // Then
+        assertThat(filesLogStore.getLastTransactionNumber()).isEqualTo(transactionNumberBefore);
+    }
+
+    @Test
+    void shouldNotAddNoFilesWithReferences() throws Exception {
+        // Given
+        long transactionNumberBefore = filesLogStore.getLastTransactionNumber();
+
+        // When
+        store.addFilesWithReferences(List.of());
+
+        // Then
+        assertThat(filesLogStore.getLastTransactionNumber()).isEqualTo(transactionNumberBefore);
+    }
+
+    @Test
+    void shouldNotAssignJobIdsWithNoRequests() throws Exception {
+        // Given
+        long transactionNumberBefore = filesLogStore.getLastTransactionNumber();
+
+        // When
+        store.assignJobIds(List.of());
+
+        // Then
+        assertThat(filesLogStore.getLastTransactionNumber()).isEqualTo(transactionNumberBefore);
+    }
+
+    @Test
+    void shouldNotAssignJobIdsWithNoFiles() throws Exception {
+        // Given
+        long transactionNumberBefore = filesLogStore.getLastTransactionNumber();
+
+        // When
+        store.assignJobIds(List.of(AssignJobIdRequest.assignJobOnPartitionToFiles(
+                "test-job", "test-partition", List.of())));
+
+        // Then
+        assertThat(filesLogStore.getLastTransactionNumber()).isEqualTo(transactionNumberBefore);
+    }
+
+    @Test
+    void shouldNotDeleteNoGCFiles() throws Exception {
+        // Given
+        long transactionNumberBefore = filesLogStore.getLastTransactionNumber();
+
+        // When
+        store.deleteGarbageCollectedFileReferenceCounts(List.of());
+
+        // Then
+        assertThat(filesLogStore.getLastTransactionNumber()).isEqualTo(transactionNumberBefore);
     }
 
     private StateStore otherProcess() {

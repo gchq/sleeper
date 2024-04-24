@@ -21,19 +21,16 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.job.creation.FailedCreateCompactionJobsException.TableFailure;
 import sleeper.compaction.strategy.CompactionStrategy;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.partition.Partition;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.SplitFileReferences;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.table.InvokeForTableRequest;
 import sleeper.core.table.TableStatus;
 import sleeper.statestore.StateStoreProvider;
 
@@ -65,14 +62,12 @@ public class CreateCompactionJobs {
     private final ObjectFactory objectFactory;
     private final InstanceProperties instanceProperties;
     private final JobSender jobSender;
-    private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
     private final CompactionJobStatusStore jobStatusStore;
     private final Mode mode;
 
     public CreateCompactionJobs(ObjectFactory objectFactory,
             InstanceProperties instanceProperties,
-            TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider,
             JobSender jobSender,
             CompactionJobStatusStore jobStatusStore,
@@ -80,7 +75,6 @@ public class CreateCompactionJobs {
         this.objectFactory = objectFactory;
         this.instanceProperties = instanceProperties;
         this.jobSender = jobSender;
-        this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
         this.jobStatusStore = jobStatusStore;
         this.mode = mode;
@@ -90,34 +84,7 @@ public class CreateCompactionJobs {
         STRATEGY, FORCE_ALL_FILES_AFTER_STRATEGY
     }
 
-    public void createJobs() throws StateStoreException, IOException, ObjectFactoryException {
-        List<TableProperties> tables = tablePropertiesProvider.streamOnlineTables()
-                .collect(Collectors.toUnmodifiableList());
-        LOGGER.info("Found {} online tables", tables.size());
-        for (TableProperties table : tables) {
-            createJobs(table);
-        }
-    }
-
-    public void createJobs(InvokeForTableRequest request) throws FailedCreateCompactionJobsException {
-        List<TableFailure> tableFailures = new ArrayList<>();
-        for (String tableId : request.getTableIds()) {
-            TableStatus status = TableStatus.uniqueIdAndName(tableId, "not-found", true);
-            try {
-                TableProperties tableProperties = tablePropertiesProvider.getById(tableId);
-                status = tableProperties.getStatus();
-                createJobs(tableProperties);
-            } catch (Exception e) {
-                LOGGER.error("Failed compaction job creation for table {}", status, e);
-                tableFailures.add(new TableFailure(status, e));
-            }
-        }
-        if (!tableFailures.isEmpty()) {
-            throw new FailedCreateCompactionJobsException(tableFailures);
-        }
-    }
-
-    private void createJobs(TableProperties table) throws StateStoreException, IOException, ObjectFactoryException {
+    public void createJobs(TableProperties table) throws StateStoreException, IOException, ObjectFactoryException {
         LOGGER.info("Performing pre-splits on files in {}", table.getStatus());
         StateStore stateStore = stateStoreProvider.getStateStore(table);
         SplitFileReferences.from(stateStore).split();

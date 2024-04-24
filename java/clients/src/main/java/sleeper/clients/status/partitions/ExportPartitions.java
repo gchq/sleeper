@@ -41,6 +41,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+
 /**
  * Allows the metadata about the partitions in a table to be output to a text
  * file with each partition written as JSON on a single line. This file can then
@@ -79,20 +81,23 @@ public class ExportPartitions {
         if (3 != args.length) {
             throw new IllegalArgumentException("Usage: <instance-id> <table-name> <output-file>");
         }
-
-        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(s3Client, args[0]);
-
+        String instanceId = args[0];
         String tableName = args[1];
-        AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
-        TableProperties tableProperties = tablePropertiesProvider.getByName(tableName);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, new Configuration());
-        StateStore stateStore = stateStoreProvider.getStateStore(tableName, tablePropertiesProvider);
-        ExportPartitions exportPartitions = new ExportPartitions(stateStore, tableProperties.getSchema());
-        exportPartitions.writePartitionsToFile(args[2]);
+        String outputFile = args[2];
 
-        s3Client.shutdown();
-        dynamoDBClient.shutdown();
+        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
+        AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
+        try {
+            InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(s3Client, instanceId);
+            TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
+            TableProperties tableProperties = tablePropertiesProvider.getByName(tableName);
+            StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, new Configuration());
+            StateStore stateStore = stateStoreProvider.getStateStore(tableName, tablePropertiesProvider);
+            ExportPartitions exportPartitions = new ExportPartitions(stateStore, tableProperties.getSchema());
+            exportPartitions.writePartitionsToFile(outputFile);
+        } finally {
+            s3Client.shutdown();
+            dynamoDBClient.shutdown();
+        }
     }
 }

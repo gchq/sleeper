@@ -145,13 +145,19 @@ public class AwsTableMetricsDriver implements TableMetricsDriver {
         String instanceId = args[0];
         String tableName = args[1];
         Instant startTime = Instant.parse(args[2]);
-        AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
-        AmazonDynamoDB dynamoDB = AmazonDynamoDBClientBuilder.defaultClient();
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.loadFromS3GivenInstanceId(s3, instanceId);
-        TableProperties tableProperties = S3TableProperties.getStore(instanceProperties, s3, dynamoDB)
-                .loadByName(tableName);
-        Dimensions dimensions = new Dimensions(instanceProperties, tableProperties);
+        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+        AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
+        Dimensions dimensions;
+        try {
+            InstanceProperties instanceProperties = new InstanceProperties();
+            instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
+            TableProperties tableProperties = S3TableProperties.getStore(instanceProperties, s3Client, dynamoDBClient)
+                    .loadByName(tableName);
+            dimensions = new Dimensions(instanceProperties, tableProperties);
+        } finally {
+            s3Client.shutdown();
+            dynamoDBClient.shutdown();
+        }
         try (CloudWatchClient cloudWatch = CloudWatchClient.create()) {
             LOGGER.info("Found metrics: {}", getTableMetrics(cloudWatch, startTime, dimensions));
         }

@@ -25,7 +25,6 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.StateStorePartitions;
 
@@ -42,38 +41,45 @@ public class TransactionLogSnapshotSerDeIT {
     private final Schema schema = schemaWithKey("key", new StringType());
     private final PartitionsBuilder partitions = new PartitionsBuilder(schema).singlePartition("root");
     private final Configuration configuration = new Configuration();
+    private final TransactionLogSnapshotSerDe snapshotSerDe = new TransactionLogSnapshotSerDe(schema, configuration);
 
     @Test
-    void shouldSaveAndLoadPartitionsState() throws StateStoreException {
+    void shouldSaveAndLoadPartitionsState() throws Exception {
         // Given
         PartitionTree splitTree = partitions.splitToNewChildren("root", "L", "R", "l").buildTree();
         StateStorePartitions state = new StateStorePartitions();
         splitTree.getAllPartitions().forEach(state::put);
 
         // When
-        TransactionLogPartitionsSnapshotSerDe snapshot = new TransactionLogPartitionsSnapshotSerDe(schema, configuration);
-        String filePath = snapshot.save(tempDir.toString(), state, 1);
+        snapshotSerDe.savePartitions(partitionsSnapshot(1), state);
 
         // Then
-        assertThat(snapshot.load(filePath)).isEqualTo(state);
+        assertThat(snapshotSerDe.loadPartitions(partitionsSnapshot(1))).isEqualTo(state);
     }
 
     @Test
-    void shouldSaveAndLoadFilesState() throws StateStoreException {
+    void shouldSaveAndLoadFilesState() throws Exception {
         // Given
         AllReferencesToAFile file = fileWithOneReference(fileFactory().rootFile(123L), DEFAULT_UPDATE_TIME);
         StateStoreFiles state = new StateStoreFiles();
         state.add(file);
 
         // When
-        TransactionLogFilesSnapshotSerDe snapshot = new TransactionLogFilesSnapshotSerDe(configuration);
-        String filePath = snapshot.save(tempDir.toString(), state, 1);
+        snapshotSerDe.saveFiles(filesSnapshot(1), state);
 
         // Then
-        assertThat(snapshot.load(filePath)).isEqualTo(state);
+        assertThat(snapshotSerDe.loadFiles(filesSnapshot(1))).isEqualTo(state);
     }
 
     private FileReferenceFactory fileFactory() {
         return FileReferenceFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
+    }
+
+    private TransactionLogSnapshot filesSnapshot(long transactionNumber) {
+        return TransactionLogSnapshot.forFiles(tempDir.toString(), transactionNumber);
+    }
+
+    private TransactionLogSnapshot partitionsSnapshot(long transactionNumber) {
+        return TransactionLogSnapshot.forPartitions(tempDir.toString(), transactionNumber);
     }
 }
