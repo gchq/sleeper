@@ -33,7 +33,6 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.table.InvokeForTableRequestSerDe;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
@@ -53,14 +52,9 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
  * This is triggered when a table batch arrives on the SQS queue. It runs
  * {@link FindPartitionsToSplit} for each table in the batch.
  */
-@SuppressWarnings("unused")
 public class FindPartitionsToSplitLambda implements RequestHandler<SQSEvent, SQSBatchResponse> {
-    private final AmazonSQS sqsClient;
-    private final InstanceProperties instanceProperties;
-    private final StateStoreProvider stateStoreProvider;
-    private final InvokeForTableRequestSerDe serDe = new InvokeForTableRequestSerDe();
-
     private static final Logger LOGGER = LoggerFactory.getLogger(FindPartitionsToSplitLambda.class);
+
     private final TablePropertiesProvider tablePropertiesProvider;
     private final FindPartitionsToSplit findPartitionsToSplit;
 
@@ -70,12 +64,12 @@ public class FindPartitionsToSplitLambda implements RequestHandler<SQSEvent, SQS
         if (null == s3Bucket) {
             throw new RuntimeException("Couldn't get S3 bucket from environment variable");
         }
-        this.instanceProperties = new InstanceProperties();
-        this.instanceProperties.loadFromS3(s3Client, s3Bucket);
+        InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.loadFromS3(s3Client, s3Bucket);
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
-        this.sqsClient = AmazonSQSClientBuilder.defaultClient();
-        this.stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties));
-        this.tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
+        AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties));
+        tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
         findPartitionsToSplit = new FindPartitionsToSplit(instanceProperties, stateStoreProvider,
                 new SqsSplitPartitionJobSender(tablePropertiesProvider, instanceProperties, sqsClient)::send);
     }
