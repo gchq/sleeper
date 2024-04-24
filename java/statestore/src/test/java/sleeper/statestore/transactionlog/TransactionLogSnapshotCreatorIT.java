@@ -145,14 +145,22 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
     }
 
     private TransactionLogSnapshot filesSnapshot(TableProperties table, String path, long transactionNumber) {
-        return TransactionLogSnapshot.forFiles(basePathForTable(table) + path, transactionNumber);
+        return TransactionLogSnapshot.forFiles(getFilesPath(table, transactionNumber), transactionNumber);
     }
 
     private TransactionLogSnapshot partitionsSnapshot(TableProperties table, String path, long transactionNumber) {
-        return TransactionLogSnapshot.forPartitions(basePathForTable(table) + path, transactionNumber);
+        return TransactionLogSnapshot.forPartitions(getPartitionsPath(table, transactionNumber), transactionNumber);
     }
 
-    private String basePathForTable(TableProperties tableProperties) {
-        return "file://" + tempDir.resolve(tableProperties.get(TABLE_ID)).toString();
+    private String getFilesPath(TableProperties tableProperties, long transactionNumber) {
+        return "file://" + instanceProperties.get(DATA_BUCKET) +
+                "/" + tableProperties.get(TABLE_ID) +
+                "/snapshots/" + transactionNumber + "-files.parquet";
+    }
+
+    private String getPartitionsPath(TableProperties tableProperties, long transactionNumber) {
+        return "file://" + instanceProperties.get(DATA_BUCKET) +
+                "/" + tableProperties.get(TABLE_ID) +
+                "/snapshots/" + transactionNumber + "-partitions.parquet";
     }
 }
