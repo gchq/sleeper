@@ -257,19 +257,19 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .build();
 
     // Partition splitting
-    CdkDefinedInstanceProperty FIND_PARTITIONS_TO_SPLIT_QUEUE_URL = Index.propertyBuilder("sleeper.partition.find.splits.queue.url")
+    CdkDefinedInstanceProperty FIND_PARTITIONS_TO_SPLIT_QUEUE_URL = Index.propertyBuilder("sleeper.partition.splitting.finder.queue.url")
             .description("The URL of the queue for requests to find partitions to split.")
             .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
             .build();
-    CdkDefinedInstanceProperty FIND_PARTITIONS_TO_SPLIT_QUEUE_ARN = Index.propertyBuilder("sleeper.partition.find.splits.queue.arn")
+    CdkDefinedInstanceProperty FIND_PARTITIONS_TO_SPLIT_QUEUE_ARN = Index.propertyBuilder("sleeper.partition.splitting.finder.queue.arn")
             .description("The ARN of the queue for requests to find partitions to split.")
             .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
             .build();
-    CdkDefinedInstanceProperty FIND_PARTITIONS_TO_SPLIT_DLQ_URL = Index.propertyBuilder("sleeper.partition.find.splits.dlq.url")
+    CdkDefinedInstanceProperty FIND_PARTITIONS_TO_SPLIT_DLQ_URL = Index.propertyBuilder("sleeper.partition.splitting.finder.dlq.url")
             .description("The URL of the dead letter queue for requests to find partitions to split.")
             .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
             .build();
-    CdkDefinedInstanceProperty FIND_PARTITIONS_TO_SPLIT_DLQ_ARN = Index.propertyBuilder("sleeper.partition.find.splits.dlq.arn")
+    CdkDefinedInstanceProperty FIND_PARTITIONS_TO_SPLIT_DLQ_ARN = Index.propertyBuilder("sleeper.partition.splitting.finder.dlq.arn")
             .description("The ARN of the dead letter queue for requests to find partitions to split.")
             .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
             .build();

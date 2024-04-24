@@ -34,7 +34,7 @@ public interface PartitionSplittingProperty {
                     "maximum number of files that are read in.")
             .defaultValue("50")
             .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING).build();
-    UserDefinedInstanceProperty FIND_PARTITIONS_TO_SPLIT_BATCH_SIZE = Index.propertyBuilder("sleeper.partition.splitting.table.batch.size")
+    UserDefinedInstanceProperty FIND_PARTITIONS_TO_SPLIT_BATCH_SIZE = Index.propertyBuilder("sleeper.partition.splitting.finder.batch.size")
             .description("The number of tables to find partitions to split in a single invocation. " +
                     "This will be the batch size for a lambda as an SQS FIFO event source. This can be a maximum of 10.")
             .defaultValue("1")
