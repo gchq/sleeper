@@ -132,8 +132,8 @@ public class CoreStacks {
         policiesStack.grantInvokeScheduled(function);
     }
 
-    public void grantInvokeScheduled(IFunction triggerFunction, IQueue tableBatchQueue) {
-        policiesStack.grantInvokeScheduled(triggerFunction, tableBatchQueue);
+    public void grantInvokeScheduled(IFunction triggerFunction, IQueue invokeQueue) {
+        policiesStack.grantInvokeScheduled(triggerFunction, invokeQueue);
     }
 
     public ManagedPolicy getInvokeCompactionPolicy() {

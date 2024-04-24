@@ -25,7 +25,6 @@ import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
-import software.amazon.awscdk.services.lambda.eventsources.SqsEventSourceProps;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sns.Topic;
@@ -61,6 +60,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB;
 import static sleeper.configuration.properties.instance.CommonProperty.TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS;
+import static sleeper.configuration.properties.instance.PartitionSplittingProperty.FIND_PARTITIONS_TO_SPLIT_BATCH_SIZE;
 import static sleeper.configuration.properties.instance.PartitionSplittingProperty.FIND_PARTITIONS_TO_SPLIT_LAMBDA_MEMORY_IN_MB;
 import static sleeper.configuration.properties.instance.PartitionSplittingProperty.FIND_PARTITIONS_TO_SPLIT_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.instance.PartitionSplittingProperty.PARTITION_SPLITTING_TRIGGER_PERIOD_IN_MINUTES;
@@ -75,7 +75,7 @@ public class PartitionSplittingStack extends NestedStack {
     public static final String PARTITION_SPLITTING_QUEUE_URL = "PartitionSplittingQueueUrl";
     public static final String PARTITION_SPLITTING_DLQ_URL = "PartitionSplittingDLQUrl";
     private final Queue partitionSplittingJobQueue;
-    private final Queue partitionSplittingBatchQueue;
+    private final Queue findPartitionsToSplitQueue;
 
     public PartitionSplittingStack(Construct scope,
             String id,
@@ -90,7 +90,7 @@ public class PartitionSplittingStack extends NestedStack {
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
 
         // Create queue for batching tables
-        this.partitionSplittingBatchQueue = createBatchQueues(instanceProperties, topic, errorMetrics);
+        this.findPartitionsToSplitQueue = createBatchQueues(instanceProperties, topic, errorMetrics);
         // Create queue for partition splitting job definitions
         this.partitionSplittingJobQueue = createJobQueues(instanceProperties, topic, coreStacks, errorMetrics);
 
@@ -206,8 +206,8 @@ public class PartitionSplittingStack extends NestedStack {
         instanceProperties.set(PARTITION_SPLITTING_CLOUDWATCH_RULE, rule.getRuleName());
 
         coreStacks.grantReadTablesStatus(triggerFunction);
-        partitionSplittingBatchQueue.grantSendMessages(triggerFunction);
-        coreStacks.grantInvokeScheduled(triggerFunction, partitionSplittingBatchQueue);
+        findPartitionsToSplitQueue.grantSendMessages(triggerFunction);
+        coreStacks.grantInvokeScheduled(triggerFunction, findPartitionsToSplitQueue);
     }
 
     private void createFindPartitionsToSplitFunction(InstanceProperties instanceProperties, LambdaCode splitterJar, CoreStacks coreStacks, Map<String, String> environmentVariables) {
@@ -225,8 +225,9 @@ public class PartitionSplittingStack extends NestedStack {
 
         coreStacks.grantReadTablesMetadata(findPartitionsToSplitLambda);
         partitionSplittingJobQueue.grantSendMessages(findPartitionsToSplitLambda);
-        findPartitionsToSplitLambda.addEventSource(new SqsEventSource(partitionSplittingBatchQueue,
-                SqsEventSourceProps.builder().batchSize(1).build()));
+        findPartitionsToSplitLambda.addEventSource(SqsEventSource.Builder.create(findPartitionsToSplitQueue)
+                .batchSize(instanceProperties.getInt(FIND_PARTITIONS_TO_SPLIT_BATCH_SIZE))
+                .build());
     }
 
     private void createSplitPartitionFunction(InstanceProperties instanceProperties, LambdaCode splitterJar, CoreStacks coreStacks, Map<String, String> environmentVariables) {
@@ -246,8 +247,7 @@ public class PartitionSplittingStack extends NestedStack {
                 .logGroup(createLambdaLogGroup(this, "SplitPartitionLogGroup", splitFunctionName, instanceProperties)));
 
         coreStacks.grantSplitPartitions(splitPartitionLambda);
-        splitPartitionLambda.addEventSource(new SqsEventSource(partitionSplittingJobQueue,
-                SqsEventSourceProps.builder().batchSize(1).build()));
+        splitPartitionLambda.addEventSource(SqsEventSource.Builder.create(partitionSplittingJobQueue).batchSize(1).build());
     }
 
     public IQueue getJobQueue() {
