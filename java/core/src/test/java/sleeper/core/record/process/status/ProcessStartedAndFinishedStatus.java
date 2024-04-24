@@ -21,7 +21,7 @@ import java.time.Instant;
 import java.util.Objects;
 
 /**
- * An implementation of a process started update and a process finished update. Only used in tests.
+ * An implementation of a process update that is both the start and finish of a job run. Only used in tests.
  */
 public class ProcessStartedAndFinishedStatus implements ProcessRunStartedUpdate, ProcessRunFinishedUpdate {
 

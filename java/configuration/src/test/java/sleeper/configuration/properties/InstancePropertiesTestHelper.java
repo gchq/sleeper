@@ -38,10 +38,13 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_ID_INDEX_DYNAMO_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_NAME_INDEX_DYNAMO_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_ONLINE_INDEX_DYNAMO_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
+import static sleeper.configuration.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
@@ -88,10 +91,13 @@ public class InstancePropertiesTestHelper {
         instanceProperties.set(REVISION_TABLENAME, id + "-rv");
         instanceProperties.set(FILE_TRANSACTION_LOG_TABLENAME, id + "-ftl");
         instanceProperties.set(PARTITION_TRANSACTION_LOG_TABLENAME, id + "-ptl");
+        instanceProperties.set(TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME, id + "-tlas");
+        instanceProperties.set(TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME, id + "-tlls");
         instanceProperties.set(TABLE_NAME_INDEX_DYNAMO_TABLENAME, id + "-tni");
         instanceProperties.set(TABLE_ID_INDEX_DYNAMO_TABLENAME, id + "-tii");
         instanceProperties.set(TABLE_ONLINE_INDEX_DYNAMO_TABLENAME, id + "-tio");
         instanceProperties.set(QUERY_TRACKER_TABLE_NAME, id + "-qt");
+        instanceProperties.setNumber(MAXIMUM_CONNECTIONS_TO_S3, 5);
         return instanceProperties;
     }
 

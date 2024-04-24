@@ -23,7 +23,8 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Stores a list of process runs.
+ * Information about runs of a job that were tracked in a status store. A job may be run multiple times, potentially in
+ * parallel on different tasks. These are detected by correlating updates stored in the status store.
  */
 public class ProcessRuns {
     private final List<ProcessRun> latestFirst;
@@ -33,9 +34,10 @@ public class ProcessRuns {
     }
 
     /**
-     * Creates an instance of this class using a list of process runs sorted by latest first.
+     * Creates an instance of this class from a list of runs. These must be sorted by the order that each run started,
+     * most recently started run first.
      *
-     * @param  latestFirst the list of process runs sorted by latest first
+     * @param  latestFirst the sorted list of runs
      * @return             an instance of this class
      */
     public static ProcessRuns latestFirst(List<ProcessRun> latestFirst) {
@@ -43,9 +45,10 @@ public class ProcessRuns {
     }
 
     /**
-     * Creates an instance of this class using a list of process status update records sorted by latest first.
+     * Creates an instance of this class from records in a status store. The records must be sorted by the time of the
+     * update, most recent first. These will be correlated to find which updates occurred in the same run.
      *
-     * @param  recordList the list of process status update records sorted by latest first
+     * @param  recordList the list of records sorted by latest first
      * @return            an instance of this class
      */
     public static ProcessRuns fromRecordsLatestFirst(List<ProcessStatusUpdateRecord> recordList) {
@@ -75,9 +78,9 @@ public class ProcessRuns {
     }
 
     /**
-     * Gets the latest update time from the most recent run.
+     * Gets the latest update time from the most recently started run.
      *
-     * @return the latest update time from the most recent run, or an empty optional if there are no runs
+     * @return the update time, or an empty optional if there are no runs
      */
     public Optional<Instant> lastTime() {
         return getLatestRun().map(ProcessRun::getLatestUpdateTime);
@@ -86,7 +89,7 @@ public class ProcessRuns {
     /**
      * Gets the first update time from the oldest run.
      *
-     * @return the first update time from the oldest run, or an empty optional if there are no runs
+     * @return the update time, or an empty optional if there are no runs
      */
     public Optional<Instant> firstTime() {
         return getFirstRun().map(ProcessRun::getStartUpdateTime);

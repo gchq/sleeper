@@ -73,7 +73,7 @@ public class AfterTestPurgeQueuesTest {
     }
 
     private AfterTestPurgeQueues purgingNoQueues() {
-        return new AfterTestPurgeQueues(queuePurges::add);
+        return new AfterTestPurgeQueues(() -> queuePurges::add);
     }
 
     private AfterTestPurgeQueues purgingQueues(InstanceProperty... queueProperties) {

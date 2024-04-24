@@ -20,7 +20,11 @@ import java.time.Duration;
 import java.time.Instant;
 
 /**
- * Helper class for checking if a time lies within a defined time window.
+ * Checks if a process was running during a defined time window. If it overlaps the window at all, it is said to be in
+ * the window.
+ * <p>
+ * This can use a maximum runtime so that if a process has not finished, it is assumed to have finished after the
+ * maximum runtime elapses.
  */
 public class TimeWindowQuery {
     private final Instant windowStartTime;
@@ -38,10 +42,11 @@ public class TimeWindowQuery {
     }
 
     /**
-     * Checks if the start time lies within the time window. Also considers the maximum runtime of a job.
+     * Checks if an unfinished process is in the time window. If a maximum runtime was set, it will be assumed to
+     * finish at the end of that maximum time.
      *
      * @param  startTime the start time to check
-     * @return           whether the start time lies within the time window
+     * @return           true if the process is in the time window
      */
     public boolean isUnfinishedProcessInWindow(Instant startTime) {
         if (maxRuntime != null && startTime.plus(maxRuntime).isBefore(windowStartTime)) {
@@ -51,11 +56,11 @@ public class TimeWindowQuery {
     }
 
     /**
-     * Checks if the start time and the end time lie within the time window.
+     * Checks if a finished process is in the time window.
      *
      * @param  startTime the start time to check
      * @param  endTime   the end time to check
-     * @return           whether the start and end time lie within the time window
+     * @return           true if the process is in the time window
      */
     public boolean isFinishedProcessInWindow(Instant startTime, Instant endTime) {
         return endTime.isAfter(windowStartTime) &&

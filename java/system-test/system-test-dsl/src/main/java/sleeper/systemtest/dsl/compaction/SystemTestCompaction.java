@@ -31,7 +31,8 @@ public class SystemTestCompaction {
     private final WaitForJobs waitForJobs;
     private List<String> lastJobIds;
 
-    public SystemTestCompaction(SystemTestContext context, SystemTestDrivers drivers) {
+    public SystemTestCompaction(SystemTestContext context) {
+        SystemTestDrivers drivers = context.instance().adminDrivers();
         this.driver = drivers.compaction(context);
         this.waitForJobCreation = new WaitForCompactionJobCreation(context.instance(), driver);
         this.waitForJobs = drivers.waitForCompaction(context);

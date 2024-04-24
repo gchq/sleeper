@@ -23,7 +23,8 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 /**
- * Builder for creating job status updates for different jobs.
+ * Builds job status objects. Gathers records from a status store into a list for each job that has updates, then
+ * creates a {@link JobStatusUpdates} object for each job.
  */
 public class JobStatusesBuilder {
 
@@ -42,10 +43,10 @@ public class JobStatusesBuilder {
     }
 
     /**
-     * Streams the updates by job ID and creates a job status update for each entry. The stream is then
-     * ordered using the most recent first update.
+     * Streams through jobs that have status updates, and builds a status object for each one. These are ordered by the
+     * time of the first update to each job, with the job that was created most recently first.
      *
-     * @return a stream of {@link JobStatusUpdates}
+     * @return a stream of {@link JobStatusUpdates} objects
      */
     public Stream<JobStatusUpdates> stream() {
         return updatesByJobId.entrySet().stream()

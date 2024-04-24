@@ -20,6 +20,7 @@ import sleeper.core.statestore.FileReference;
 
 import java.time.Instant;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.function.UnaryOperator;
@@ -71,6 +72,28 @@ public class StateStoreFiles {
         AllReferencesToAFile existing = filesByFilename.get(filename);
         AllReferencesToAFile updated = update.apply(existing);
         filesByFilename.put(filename, updated);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(filesByFilename);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof StateStoreFiles)) {
+            return false;
+        }
+        StateStoreFiles other = (StateStoreFiles) obj;
+        return Objects.equals(filesByFilename, other.filesByFilename);
+    }
+
+    @Override
+    public String toString() {
+        return "StateStoreFiles{filesByFilename=" + filesByFilename + "}";
     }
 
 }

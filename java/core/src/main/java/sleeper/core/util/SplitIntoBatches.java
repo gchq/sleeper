@@ -30,12 +30,12 @@ public class SplitIntoBatches {
     }
 
     /**
-     * Splits a list of items into batches.
+     * Splits a list of items into batches of a given size.
      *
-     * @param  <T>       the type of objects in the list
-     * @param  batchSize the batch size
-     * @param  list      a list of {@link T} objects
-     * @return           an iterable of batched lists
+     * @param  <T>       the item type
+     * @param  batchSize the maximum size of sub-list to return
+     * @param  list      the list to split
+     * @return           an iterable of sub-lists backed by the source list
      */
     public static <T> Iterable<List<T>> splitListIntoBatchesOf(int batchSize, List<T> list) {
         if (batchSize < 1) {
@@ -52,9 +52,9 @@ public class SplitIntoBatches {
     /**
      * Performs an operation on batches of items, reusing the same list to store the current batch.
      *
-     * @param <T>       the type of objects in the List
-     * @param batchSize the batch size
-     * @param items     a stream of {@link T} objects
+     * @param <T>       the item type
+     * @param batchSize the number of items to process in a batch
+     * @param items     a stream of items to process in batches
      * @param operation an operation to perform on a batch of items
      */
     public static <T> void reusingListOfSize(int batchSize, Stream<T> items, Consumer<List<T>> operation) {

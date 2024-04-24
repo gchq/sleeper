@@ -31,7 +31,7 @@ public class RangeCanonicaliser {
     }
 
     /**
-     * Convert a range into canonical form. A range is in canonincal form when the minimum is inclusive and the
+     * Convert a range into canonical form. A range is in canonical form when the minimum is inclusive and the
      * maximum is exclusive.
      *
      * @param  range the range to convert

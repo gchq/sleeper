@@ -22,6 +22,7 @@ import org.apache.commons.io.IOUtils;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.cdk.lambdalayer.kubectl.v24.KubectlV24Layer;
+import software.amazon.awscdk.services.cloudwatch.IMetric;
 import software.amazon.awscdk.services.ec2.ISubnet;
 import software.amazon.awscdk.services.ec2.IVpc;
 import software.amazon.awscdk.services.ec2.Subnet;
@@ -100,7 +101,8 @@ public final class EksBulkImportStack extends NestedStack {
 
     public EksBulkImportStack(
             Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars,
-            Topic errorsTopic, BulkImportBucketStack importBucketStack, CoreStacks coreStacks, IngestStatusStoreStack statusStoreStack) {
+            Topic errorsTopic, BulkImportBucketStack importBucketStack, CoreStacks coreStacks, IngestStatusStoreStack statusStoreStack,
+            List<IMetric> errorMetrics) {
         super(scope, id);
 
         String instanceId = instanceProperties.get(ID);
@@ -118,6 +120,7 @@ public final class EksBulkImportStack extends NestedStack {
         createAlarmForDlq(this, "BulkImportEKSUndeliveredJobsAlarm",
                 "Alarms if there are any messages that have failed validation or failed to be passed to the statemachine",
                 queueForDLs, errorsTopic);
+        errorMetrics.add(Utils.createErrorMetric("Bulk Import EKS Errors", queueForDLs, instanceProperties));
 
         bulkImportJobQueue = Queue.Builder
                 .create(this, "BulkImportEKSJobQueue")
@@ -129,6 +132,7 @@ public final class EksBulkImportStack extends NestedStack {
         instanceProperties.set(BULK_IMPORT_EKS_JOB_QUEUE_URL, bulkImportJobQueue.getQueueUrl());
         instanceProperties.set(BULK_IMPORT_EKS_JOB_QUEUE_ARN, bulkImportJobQueue.getQueueArn());
         bulkImportJobQueue.grantSendMessages(coreStacks.getIngestPolicy());
+        bulkImportJobQueue.grantPurge(coreStacks.getPurgeQueuesPolicy());
 
         Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
         env.put("BULK_IMPORT_PLATFORM", "EKS");

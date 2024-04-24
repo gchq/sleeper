@@ -31,8 +31,9 @@ import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
- * A utility class to generate strings using file references in tables. Intended to be used for approval tests.
- * Uses {@link TablesPrinter} to consolidate the generated output for multiple tables.
+ * Prints the state of files in a Sleeper table as text, for readable assertions in tests. Intended to be used in
+ * approval tests, for visual comparison against previously generated values. Uses {@link TablesPrinter} to consolidate
+ * the generated output for multiple tables.
  */
 public class FileReferencePrinter {
 

@@ -41,7 +41,7 @@ public class PartitionSplitResult {
     }
 
     /**
-     * Build the parent partition.
+     * Builds the parent partition.
      *
      * @return the parent partition
      */
@@ -54,7 +54,7 @@ public class PartitionSplitResult {
     }
 
     /**
-     * Build the child partitions.
+     * Builds a list of the child partitions.
      *
      * @return the child partitions
      */
@@ -73,7 +73,7 @@ public class PartitionSplitResult {
         }
 
         /**
-         * Set the builder for the parent partition.
+         * Sets the builder for the parent partition.
          *
          * @param  parent the parent partition builder
          * @return        this builder
@@ -84,7 +84,7 @@ public class PartitionSplitResult {
         }
 
         /**
-         * Set the builders for the child partitions.
+         * Sets the builders for the child partitions.
          *
          * @param  children the child partition builders
          * @return          this builder

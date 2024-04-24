@@ -20,11 +20,12 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 /**
- * An interface for a class that stores table statuses.
+ * Stores the status of Sleeper tables in an instance. This is used to define and look up which tables exist in the
+ * instance. Note that the configuration of the table is stored separately, and must be kept in sync with the index.
  */
 public interface TableIndex {
     /**
-     * Stores a table status.
+     * Creates a new Sleeper table.
      *
      * @param  table                       the table status to add
      * @throws TableAlreadyExistsException if the table already exists
@@ -32,21 +33,21 @@ public interface TableIndex {
     void create(TableStatus table) throws TableAlreadyExistsException;
 
     /**
-     * Streams all table statuses.
+     * Streams statuses of all Sleeper tables in the instance.
      *
-     * @return all table statuses in the store
+     * @return statuses of all tables
      */
     Stream<TableStatus> streamAllTables();
 
     /**
-     * Streams table statuses that are marked as online.
+     * Streams statuses of all Sleeper tables that are marked as online.
      *
-     * @return all online table statuses in the store
+     * @return statuses of all online tables
      */
     Stream<TableStatus> streamOnlineTables();
 
     /**
-     * Gets a table by the table name.
+     * Gets the status of a Sleeper table by the table name.
      *
      * @param  tableName the table name
      * @return           the table status with the provided table name, or an empty optional if no table exists with
@@ -55,7 +56,7 @@ public interface TableIndex {
     Optional<TableStatus> getTableByName(String tableName);
 
     /**
-     * Gets a table by the table ID.
+     * Gets the status of a Sleeper table by the internal table ID.
      *
      * @param  tableUniqueId the table ID
      * @return               the table status with the provided table ID, or an empty optional if no table exists with
@@ -64,14 +65,14 @@ public interface TableIndex {
     Optional<TableStatus> getTableByUniqueId(String tableUniqueId);
 
     /**
-     * Removes a table status from the store.
+     * Deletes a Sleeper table.
      *
-     * @param table the table status to remove
+     * @param table the status of the table to remove
      */
     void delete(TableStatus table);
 
     /**
-     * Updates a table status in the store.
+     * Update the status of a Sleeper table. This can be used to rename a table, put it online, or take it offline.
      *
      * @param table the updated table status
      */

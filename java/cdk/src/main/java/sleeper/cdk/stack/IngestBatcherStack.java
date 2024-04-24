@@ -18,6 +18,7 @@ package sleeper.cdk.stack;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.RemovalPolicy;
+import software.amazon.awscdk.services.cloudwatch.IMetric;
 import software.amazon.awscdk.services.dynamodb.Attribute;
 import software.amazon.awscdk.services.dynamodb.AttributeType;
 import software.amazon.awscdk.services.dynamodb.BillingMode;
@@ -79,7 +80,8 @@ public class IngestBatcherStack extends NestedStack {
             BuiltJars jars,
             Topic topic,
             CoreStacks coreStacks,
-            IngestStacks ingestStacks) {
+            IngestStacks ingestStacks,
+            List<IMetric> errorMetrics) {
         super(scope, id);
 
         // Queue to submit files to the batcher
@@ -105,6 +107,7 @@ public class IngestBatcherStack extends NestedStack {
         createAlarmForDlq(this, "IngestBatcherAlarm",
                 "Alarms if there are any messages on the dead letter queue for the ingest batcher queue",
                 submitDLQ, topic);
+        errorMetrics.add(Utils.createErrorMetric("Ingest Batcher Errors", submitDLQ, instanceProperties));
         // DynamoDB table to track submitted files
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
         Table ingestRequestsTable = Table.Builder
@@ -168,6 +171,9 @@ public class IngestBatcherStack extends NestedStack {
         ingestRequestsTable.grantReadWriteData(jobCreatorLambda);
         coreStacks.grantReadTablesConfig(jobCreatorLambda);
         ingestStacks.ingestQueues().forEach(queue -> queue.grantSendMessages(jobCreatorLambda));
+        submitQueue.grantSendMessages(coreStacks.getIngestPolicy());
+        ingestRequestsTable.grantReadData(coreStacks.getIngestPolicy());
+        coreStacks.grantInvokeScheduled(jobCreatorLambda);
 
         // CloudWatch rule to trigger the batcher to create jobs from file ingest requests
         Rule rule = Rule.Builder

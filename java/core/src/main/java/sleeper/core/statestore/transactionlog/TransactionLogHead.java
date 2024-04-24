@@ -15,41 +15,45 @@
  */
 package sleeper.core.statestore.transactionlog;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.table.TableStatus;
 import sleeper.core.util.ExponentialBackoffWithJitter;
+import sleeper.core.util.LoggedDuration;
 
 import java.time.Instant;
 
 class TransactionLogHead<T> {
+    public static final Logger LOGGER = LoggerFactory.getLogger(TransactionLogHead.class);
 
+    private final TableStatus sleeperTable;
     private final TransactionLogStore logStore;
     private final int maxAddTransactionAttempts;
     private final ExponentialBackoffWithJitter retryBackoff;
     private final Class<? extends StateStoreTransaction<T>> transactionType;
     private final T state;
-    private long lastTransactionNumber = 0;
+    private long lastTransactionNumber;
 
-    private TransactionLogHead(
-            TransactionLogStore logStore, int maxAddTransactionAttempts, ExponentialBackoffWithJitter retryBackoff,
-            Class<? extends StateStoreTransaction<T>> transactionType, T state) {
-        this.logStore = logStore;
-        this.maxAddTransactionAttempts = maxAddTransactionAttempts;
-        this.retryBackoff = retryBackoff;
-        this.transactionType = transactionType;
-        this.state = state;
+    private TransactionLogHead(Builder<T> builder) {
+        this.sleeperTable = builder.sleeperTable;
+        this.logStore = builder.logStore;
+        this.maxAddTransactionAttempts = builder.maxAddTransactionAttempts;
+        this.retryBackoff = builder.retryBackoff;
+        this.transactionType = builder.transactionType;
+        this.state = builder.state;
+        this.lastTransactionNumber = builder.lastTransactionNumber;
     }
 
-    static TransactionLogHead<StateStoreFiles> forFiles(TransactionLogStore logStore, int retries, ExponentialBackoffWithJitter retryBackoff) {
-        return new TransactionLogHead<StateStoreFiles>(logStore, retries, retryBackoff,
-                FileReferenceTransaction.class, new StateStoreFiles());
-    }
-
-    static TransactionLogHead<StateStorePartitions> forPartitions(TransactionLogStore logStore, int retries, ExponentialBackoffWithJitter retryBackoff) {
-        return new TransactionLogHead<StateStorePartitions>(logStore, retries, retryBackoff,
-                PartitionTransaction.class, new StateStorePartitions());
+    static Builder<?> builder() {
+        return new Builder<>();
     }
 
     void addTransaction(Instant updateTime, StateStoreTransaction<T> transaction) throws StateStoreException {
+        Instant startTime = Instant.now();
+        LOGGER.info("Adding transaction of type {} to table {}",
+                transaction.getClass().getSimpleName(), sleeperTable);
         Exception failure = new IllegalArgumentException("No attempts made");
         for (int attempt = 0; attempt < maxAddTransactionAttempts; attempt++) {
             try {
@@ -64,12 +68,17 @@ class TransactionLogHead<T> {
             try {
                 logStore.addTransaction(new TransactionLogEntry(transactionNumber, updateTime, transaction));
             } catch (Exception e) {
+                LOGGER.warn("Failed adding transaction after {} retries for table {}, failure: {}",
+                        attempt, sleeperTable, e);
                 failure = e;
                 continue;
             }
             transaction.apply(state, updateTime);
             lastTransactionNumber = transactionNumber;
             failure = null;
+            LOGGER.info("Added transaction of type {} to table {} with {} retries, took {}",
+                    transaction.getClass().getSimpleName(), sleeperTable, attempt,
+                    LoggedDuration.withShortOutput(startTime, Instant.now()));
             break;
         }
         if (failure != null) {
@@ -79,8 +88,13 @@ class TransactionLogHead<T> {
 
     void update() throws StateStoreException {
         try {
+            Instant startTime = Instant.now();
+            long transactionNumberBefore = lastTransactionNumber;
             logStore.readTransactionsAfter(lastTransactionNumber)
                     .forEach(this::applyTransaction);
+            LOGGER.info("Updated {}, read {} transactions, took {}, last transaction number is {}",
+                    state.getClass().getSimpleName(), lastTransactionNumber - transactionNumberBefore,
+                    LoggedDuration.withShortOutput(startTime, Instant.now()), lastTransactionNumber);
         } catch (RuntimeException e) {
             throw new StateStoreException("Failed reading transactions", e);
         }
@@ -88,6 +102,8 @@ class TransactionLogHead<T> {
 
     private void applyTransaction(TransactionLogEntry entry) {
         if (!transactionType.isInstance(entry.getTransaction())) {
+            LOGGER.warn("Found unexpected transaction type. Expected {}, found {}",
+                    transactionType.getClass().getName(), entry.getTransaction().getClass().getName());
             return;
         }
         transactionType.cast(entry.getTransaction())
@@ -97,5 +113,69 @@ class TransactionLogHead<T> {
 
     T state() {
         return state;
+    }
+
+    long lastTransactionNumber() {
+        return lastTransactionNumber;
+    }
+
+    static class Builder<T> {
+        private TableStatus sleeperTable;
+        private TransactionLogStore logStore;
+        private int maxAddTransactionAttempts;
+        private ExponentialBackoffWithJitter retryBackoff;
+        private Class<? extends StateStoreTransaction<T>> transactionType;
+        private T state;
+        private long lastTransactionNumber = 0;
+
+        private Builder() {
+        }
+
+        public Builder<T> sleeperTable(TableStatus sleeperTable) {
+            this.sleeperTable = sleeperTable;
+            return this;
+        }
+
+        public Builder<T> logStore(TransactionLogStore logStore) {
+            this.logStore = logStore;
+            return this;
+        }
+
+        public Builder<T> maxAddTransactionAttempts(int maxAddTransactionAttempts) {
+            this.maxAddTransactionAttempts = maxAddTransactionAttempts;
+            return this;
+        }
+
+        public Builder<T> retryBackoff(ExponentialBackoffWithJitter retryBackoff) {
+            this.retryBackoff = retryBackoff;
+            return this;
+        }
+
+        public <N> Builder<N> transactionType(Class<? extends StateStoreTransaction<N>> transactionType) {
+            this.transactionType = (Class<? extends StateStoreTransaction<T>>) transactionType;
+            return (Builder<N>) this;
+        }
+
+        public Builder<T> state(T state) {
+            this.state = state;
+            return this;
+        }
+
+        public Builder<T> lastTransactionNumber(long lastTransactionNumber) {
+            this.lastTransactionNumber = lastTransactionNumber;
+            return this;
+        }
+
+        public Builder<StateStoreFiles> forFiles() {
+            return transactionType(FileReferenceTransaction.class);
+        }
+
+        public Builder<StateStorePartitions> forPartitions() {
+            return transactionType(PartitionTransaction.class);
+        }
+
+        public TransactionLogHead<T> build() {
+            return new TransactionLogHead<>(this);
+        }
     }
 }

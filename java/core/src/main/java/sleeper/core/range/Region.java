@@ -72,7 +72,7 @@ public class Region {
     }
 
     /**
-     * Checkes whether the provided key is contained within this region.
+     * Checks whether the provided key is contained within this region.
      *
      * @param  schema the Sleeper schema
      * @param  key    the key to check
@@ -119,10 +119,11 @@ public class Region {
     }
 
     /**
-     * Creates a copy of this region which also includes the provided range.
+     * Creates a copy of this region which contains the provided range. Note that if there is an existing range for the
+     * same field, it will be replaced by the supplied range.
      *
      * @param  range the range to add to the copy
-     * @return       a copy of this region which also includes the provided range
+     * @return       a copy of this region which contains the provided range
      */
     public Region copyWithRange(Range range) {
         Map<String, Range> newRanges = new HashMap<>(rowKeyFieldNameToRange);

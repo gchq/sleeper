@@ -85,33 +85,33 @@ public class Range {
     }
 
     /**
-     * Checks whether the provided object is contained within this range.
+     * Checks whether the provided value is contained within this range.
      *
-     * @param  object the object to check
-     * @return        whether the object is contained within this range
+     * @param  value the value to check
+     * @return       whether the object is contained within this range
      */
-    public boolean doesRangeContainObject(Object object) {
+    public boolean doesRangeContainObject(Object value) {
         Type type = field.getType();
         if (type instanceof IntType) {
-            if (!(object instanceof Integer)) {
-                throw new IllegalArgumentException("The object must match the schema: expected an Integer, got " + object);
+            if (!(value instanceof Integer)) {
+                throw new IllegalArgumentException("The object must match the schema: expected an Integer, got " + value);
             }
-            return doesRangeContainInt((Integer) object);
+            return doesRangeContainInt((Integer) value);
         } else if (type instanceof LongType) {
-            if (!(object instanceof Long)) {
-                throw new IllegalArgumentException("The object must match the schema: expected a Long, got " + object);
+            if (!(value instanceof Long)) {
+                throw new IllegalArgumentException("The object must match the schema: expected a Long, got " + value);
             }
-            return doesRangeContainLong((Long) object);
+            return doesRangeContainLong((Long) value);
         } else if (type instanceof StringType) {
-            if (!(object instanceof String)) {
-                throw new IllegalArgumentException("The object must match the schema: expected a String, got " + object);
+            if (!(value instanceof String)) {
+                throw new IllegalArgumentException("The object must match the schema: expected a String, got " + value);
             }
-            return doesRangeContainString((String) object);
+            return doesRangeContainString((String) value);
         } else if (type instanceof ByteArrayType) {
-            if (!(object instanceof byte[])) {
-                throw new IllegalArgumentException("The object must match the schema: expected a byte[], got " + object);
+            if (!(value instanceof byte[])) {
+                throw new IllegalArgumentException("The object must match the schema: expected a byte[], got " + value);
             }
-            return doesRangeContainByteArray((byte[]) object);
+            return doesRangeContainByteArray((byte[]) value);
         }
         throw new IllegalArgumentException("Unknown type in the schema: " + type);
     }
@@ -383,7 +383,7 @@ public class Range {
     }
 
     /**
-     * A convenience class for specifying ranges. Used to build {@link Range} objects.
+     * Creates ranges and validates them against a schema.
      */
     public static class RangeFactory {
         private final Map<String, PrimitiveType> rowKeyFieldToType;

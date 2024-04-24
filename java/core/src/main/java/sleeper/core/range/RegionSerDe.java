@@ -65,7 +65,7 @@ public class RegionSerDe {
     }
 
     /**
-     * Serialise a region to a JSON string.
+     * Serialises a region to a JSON string.
      *
      * @param  region the region
      * @return        a JSON representation of the region
@@ -75,7 +75,7 @@ public class RegionSerDe {
     }
 
     /**
-     * Serialise a region to a JSON string.
+     * Serialises a region to a JSON string.
      *
      * @param  region      the region
      * @param  prettyPrint whether the JSON should be pretty-printed or not
@@ -89,7 +89,7 @@ public class RegionSerDe {
     }
 
     /**
-     * Serialise a region to a tree of JSON elements.
+     * Serialises a region to a tree of JSON elements.
      *
      * @param  region the region
      * @return        a tree of JSON elements representing the region
@@ -99,7 +99,7 @@ public class RegionSerDe {
     }
 
     /**
-     * Deserialise a region from a JSON string.
+     * Deserialises a region from a JSON string.
      *
      * @param  jsonSchema the JSON string
      * @return            the region represented by the JSON string
@@ -109,7 +109,7 @@ public class RegionSerDe {
     }
 
     /**
-     * Deserialise a region from a tree of JSON elements.
+     * Deserialises a region from a tree of JSON elements.
      *
      * @param  jsonElement the JSON tree
      * @return             the region represented by the JSON tree

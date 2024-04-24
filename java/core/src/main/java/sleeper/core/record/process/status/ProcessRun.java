@@ -26,7 +26,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Stores information about a job run.
+ * Information about a single run of a job that was tracked in a status store.
  */
 public class ProcessRun {
     private final String taskId;
@@ -98,9 +98,9 @@ public class ProcessRun {
     }
 
     /**
-     * Gets the finish time for this run.
+     * Gets the finish time for this run. This is the time recorded when the job finished.
      *
-     * @return the finish time
+     * @return the finish time, or null if the run has not finished
      */
     public Instant getFinishTime() {
         if (isFinished()) {
@@ -111,9 +111,9 @@ public class ProcessRun {
     }
 
     /**
-     * Gets the finish update time for this run.
+     * Gets the finish update time for this run. This is the time that the status store was updated.
      *
-     * @return the finish update time
+     * @return the finish update time, or null if the run has not finished
      */
     public Instant getFinishUpdateTime() {
         if (isFinished()) {
@@ -124,7 +124,8 @@ public class ProcessRun {
     }
 
     /**
-     * Gets the latest update time for this run.
+     * Gets the latest update time for this run. This will be the finish update time if the run has finished, or the
+     * start update time otherwise.
      *
      * @return the latest update time
      */
@@ -143,7 +144,7 @@ public class ProcessRun {
     /**
      * Gets the finished summary for this run.
      *
-     * @return the finished summary
+     * @return the finished summary, or null if the run has not finished
      */
     public RecordsProcessedSummary getFinishedSummary() {
         if (isFinished()) {
@@ -160,14 +161,14 @@ public class ProcessRun {
     /**
      * Gets the last status update of the provided type.
      *
-     * @param  <T> the type of status update to look for
-     * @param  cls the class to get the type from
-     * @return     the last status update casted to {@link T}
+     * @param  <T>        the status update type
+     * @param  updateType the class defining the type of update to look for
+     * @return            the last status update, or an empty optional if there is no update of the given type
      */
-    public <T extends ProcessStatusUpdate> Optional<T> getLastStatusOfType(Class<T> cls) {
+    public <T extends ProcessStatusUpdate> Optional<T> getLastStatusOfType(Class<T> updateType) {
         for (int i = statusUpdates.size() - 1; i >= 0; i--) {
-            if (cls.isInstance(statusUpdates.get(i))) {
-                return Optional.of(cls.cast(statusUpdates.get(i)));
+            if (updateType.isInstance(statusUpdates.get(i))) {
+                return Optional.of(updateType.cast(statusUpdates.get(i)));
             }
         }
         return Optional.empty();
@@ -199,7 +200,7 @@ public class ProcessRun {
     }
 
     /**
-     * Builder class for creating a process run.
+     * Creates a process run object.
      */
     public static final class Builder {
         private String taskId;
@@ -222,7 +223,8 @@ public class ProcessRun {
         }
 
         /**
-         * Adds the started status.
+         * Sets the started status. This can also be a finished status, and will be set as the finished status if it is
+         * one.
          *
          * @param  startedStatus the started status to set
          * @return               the builder
@@ -237,7 +239,7 @@ public class ProcessRun {
         }
 
         /**
-         * Adds the finished status.
+         * Sets the finished status.
          *
          * @param  finishedStatus the finished status to set
          * @return                the builder
@@ -249,9 +251,9 @@ public class ProcessRun {
         }
 
         /**
-         * Adds the status update.
+         * Adds a status update.
          *
-         * @param  statusUpdate the status update to set
+         * @param  statusUpdate the status update to add
          * @return              the builder
          */
         public Builder statusUpdate(ProcessStatusUpdate statusUpdate) {

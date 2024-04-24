@@ -63,8 +63,8 @@ public class PartitionsFromSplitPoints {
     }
 
     /**
-     * Build a tree of partitions from the given split points. Adds as many layers of parent partitions as are needed to
-     * join the leaf partitions to a root.
+     * Builds a tree of partitions from the given split points. Adds as many layers of parent partitions as are needed
+     * to join the leaf partitions to a root.
      *
      * @return the created partitions
      */
@@ -176,7 +176,7 @@ public class PartitionsFromSplitPoints {
     }
 
     /**
-     * Start a root partition. This will also be a leaf partition that covers the whole range of all row keys.
+     * Starts a root partition. This will also be a leaf partition that covers the whole range of all row keys.
      *
      * @param  schema       schema of the Sleeper table
      * @param  rangeFactory a factory to create ranges covering all row keys
@@ -271,8 +271,8 @@ public class PartitionsFromSplitPoints {
     }
 
     /**
-     * Create regions for each leaf partition that is needed to cover the whole range of all row keys. Splits that range
-     * on the given split points for the given row key.
+     * Creates regions for each leaf partition that is needed to cover the whole range of all row keys. Splits that
+     * range on the given split points for the given row key.
      *
      * @param  schema      schema of the Sleeper table
      * @param  dimension   index in the schema of the row key to split on
@@ -312,7 +312,7 @@ public class PartitionsFromSplitPoints {
     }
 
     /**
-     * Create a partition tree from the given split points, split on the first row key.
+     * Creates a partition tree from the given split points, split on the first row key.
      *
      * @param  schema      schema of the Sleeper table
      * @param  splitPoints values of the first row key to split on

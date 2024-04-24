@@ -41,7 +41,7 @@ public class DynamoDBStateStoreStack extends NestedStack {
     private final Table partitionTable;
 
     public DynamoDBStateStoreStack(
-            Construct scope, String id, InstanceProperties instanceProperties, ManagedPoliciesStack policiesStack) {
+            Construct scope, String id, InstanceProperties instanceProperties) {
         super(scope, id);
         String instanceId = instanceProperties.get(ID);
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
@@ -107,8 +107,6 @@ public class DynamoDBStateStoreStack extends NestedStack {
                 .build();
 
         instanceProperties.set(PARTITION_TABLENAME, partitionTable.getTableName());
-        partitionTable.grantReadData(policiesStack.getIngestPolicy());
-        activeFilesTable.grantReadWriteData(policiesStack.getIngestPolicy());
     }
 
     public void grantReadActiveFileMetadata(IGrantable grantee) {

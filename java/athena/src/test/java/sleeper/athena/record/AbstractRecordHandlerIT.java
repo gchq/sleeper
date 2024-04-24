@@ -96,7 +96,7 @@ public abstract class AbstractRecordHandlerIT {
     public void createInstance() throws IOException {
         this.instanceProperties = TestUtils.createInstance(s3Client, dynamoClient,
                 createTempDirectory(tempDir, null).toString());
-        this.stateStoreFactory = new StateStoreFactory(dynamoClient, instanceProperties, configuration);
+        this.stateStoreFactory = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, configuration);
     }
 
     @AfterEach
@@ -119,7 +119,7 @@ public abstract class AbstractRecordHandlerIT {
 
     protected TableProperties createTable(InstanceProperties instanceProperties, Object... initialSplits) throws IOException {
         TableProperties table = createEmptyTable(instanceProperties, initialSplits);
-        TestUtils.ingestData(dynamoClient, createTempDirectory(tempDir, null).toString(),
+        TestUtils.ingestData(s3Client, dynamoClient, createTempDirectory(tempDir, null).toString(),
                 instanceProperties, table);
         return table;
     }

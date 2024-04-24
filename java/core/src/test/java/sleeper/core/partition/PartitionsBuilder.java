@@ -46,7 +46,7 @@ public class PartitionsBuilder {
     }
 
     /**
-     * Create a tree with just one partition. This will be a root partition and the only leaf partition.
+     * Creates a tree with just one partition. This will be a root partition and the only leaf partition.
      *
      * @param  id unique ID for the partition
      * @return    the builder
@@ -56,7 +56,7 @@ public class PartitionsBuilder {
     }
 
     /**
-     * Create partially constructed leaf partitions. Parent partitions must be defined separately that join the
+     * Creates partially constructed leaf partitions. Parent partitions must be defined separately that join the
      * partitions together into a tree.
      *
      * @param  ids    unique IDs for the leaves
@@ -70,7 +70,7 @@ public class PartitionsBuilder {
     }
 
     /**
-     * Create partially constructed leaf partitions split on a certain row key. Parent partitions must be defined
+     * Creates partially constructed leaf partitions split on a certain row key. Parent partitions must be defined
      * separately that join the partitions together into a tree.
      *
      * @param  dimension index in the schema of the row key the partitions are split on
@@ -91,7 +91,7 @@ public class PartitionsBuilder {
     }
 
     /**
-     * Create parent partitions that join the previously specified leaf partitions. This will create as many layers as
+     * Creates parent partitions that join the previously specified leaf partitions. This will create as many layers as
      * are required to join into a single root partition. The leaf partitions must cover the full range of the table,
      * and must be specified in order of lowest to highest values.
      *
@@ -112,7 +112,7 @@ public class PartitionsBuilder {
     }
 
     /**
-     * Create a parent partition that joins two previously specified partitions. The left and right partition must
+     * Creates a parent partition that joins two previously specified partitions. The left and right partition must
      * share a common split point.
      *
      * @param  parentId unique ID for the new partition
@@ -128,7 +128,7 @@ public class PartitionsBuilder {
     }
 
     /**
-     * Create a root partition that can be further split into child partitions. This can be used to build a partition
+     * Creates a root partition that can be further split into child partitions. This can be used to build a partition
      * tree from the root down.
      *
      * @param  rootId unique ID for the new root partition
@@ -142,7 +142,7 @@ public class PartitionsBuilder {
     }
 
     /**
-     * Create a partition tree with one root and two leaf partitions. Will split on the first row key. IDs will be
+     * Creates a partition tree with one root and two leaf partitions. Will split on the first row key. IDs will be
      * created for partitions based on their position in the tree.
      *
      * @param  splitPoint value for the row key to split on
@@ -153,8 +153,8 @@ public class PartitionsBuilder {
     }
 
     /**
-     * Create a partition tree with splits specified one at a time. This lets you call methods on a {@link Splitter}
-     * to split partitions and set split points. This will start at the root partition, and generate IDs for partitions
+     * Creates a partition tree with splits specified one at a time. Lets you call methods on a {@link Splitter} to
+     * split partitions and set split points. This will start at the root partition, and generate IDs for partitions
      * based on their position in the tree.
      *
      * @param  splits a function to define split points against a {@link Splitter}
@@ -167,7 +167,7 @@ public class PartitionsBuilder {
     }
 
     /**
-     * Create new partitions by splitting a previously defined partition.
+     * Creates new partitions by splitting a previously defined partition.
      *
      * @param  parentId   the ID of the partition to split
      * @param  leftId     unique ID for the new partition covering values lower than the split point
@@ -181,7 +181,7 @@ public class PartitionsBuilder {
     }
 
     /**
-     * Create new partitions by splitting a previously defined partition on a particular row key.
+     * Creates new partitions by splitting a previously defined partition on a particular row key.
      *
      * @param  parentId   the ID of the partition to split
      * @param  leftId     unique ID for the new partition covering values lower than the split point
@@ -210,7 +210,7 @@ public class PartitionsBuilder {
     }
 
     /**
-     * Apply a partition split to a state store, after specifying the split in this builder. You can set initial
+     * Applies a partition split to a state store, after specifying the split in this builder. You can set initial
      * partitions in this builder, initialise the state store from {@link #buildList}, define further partitions with a
      * method like {@link #splitToNewChildren}, then call this method to apply a split in the state store. This must be
      * called for each partition that was split. This must be done before splitting the new child partitions further.
@@ -227,7 +227,7 @@ public class PartitionsBuilder {
     }
 
     /**
-     * Build the specified partitions in a list.
+     * Builds the specified partitions in a list.
      *
      * @return the list of all partitions that were created
      */
@@ -236,7 +236,7 @@ public class PartitionsBuilder {
     }
 
     /**
-     * Build a partition tree containing the specified partitions.
+     * Builds a partition tree containing the specified partitions.
      *
      * @return a partition tree containing all partitions that were created
      */
@@ -269,8 +269,8 @@ public class PartitionsBuilder {
         }
 
         /**
-         * Define the split point for the current partition when both child partitions are leaves. This means no further
-         * splits are required below this partition.
+         * Defines the split point for the current partition when both child partitions are leaves. This means no
+         * further splits are required below this partition.
          *
          * @param splitPoint the value of the first row key at the split point
          */
@@ -279,7 +279,7 @@ public class PartitionsBuilder {
         }
 
         /**
-         * Define the split point for the current partition when both child partitions are also parents. Split points
+         * Defines the split point for the current partition when both child partitions are also parents. Split points
          * must be defined for both child partitions.
          *
          * @param splitPoint the value of the first row key at the split point

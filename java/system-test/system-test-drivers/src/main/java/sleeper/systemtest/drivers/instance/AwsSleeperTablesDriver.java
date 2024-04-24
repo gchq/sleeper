@@ -19,9 +19,7 @@ package sleeper.systemtest.drivers.instance;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.DeleteItemRequest;
-import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
-import com.amazonaws.services.dynamodbv2.model.TableDescription;
 import com.amazonaws.services.s3.AmazonS3;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
@@ -42,6 +40,8 @@ import sleeper.core.table.TableIndex;
 import sleeper.core.util.PollWithRetries;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreProvider;
+import sleeper.statestore.dynamodb.DynamoDBStateStore;
+import sleeper.statestore.s3.S3StateStore;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SleeperTablesDriver;
 
@@ -52,7 +52,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static java.util.Map.entry;
 import static java.util.function.Predicate.not;
@@ -96,14 +95,13 @@ public class AwsSleeperTablesDriver implements SleeperTablesDriver {
     public void deleteAllTables(InstanceProperties instanceProperties) {
         clearBucket(instanceProperties.get(DATA_BUCKET));
         clearBucket(instanceProperties.get(CONFIG_BUCKET), key -> !S3_INSTANCE_PROPERTIES_FILE.equals(key));
-        clearTables(
-                instanceProperties.get(ACTIVE_FILES_TABLELENAME),
-                instanceProperties.get(FILE_REFERENCE_COUNT_TABLENAME),
-                instanceProperties.get(PARTITION_TABLENAME),
-                instanceProperties.get(REVISION_TABLENAME),
-                instanceProperties.get(TABLE_NAME_INDEX_DYNAMO_TABLENAME),
-                instanceProperties.get(TABLE_ID_INDEX_DYNAMO_TABLENAME),
-                instanceProperties.get(TABLE_ONLINE_INDEX_DYNAMO_TABLENAME));
+        clearTable(instanceProperties.get(ACTIVE_FILES_TABLELENAME), DynamoDBStateStore.TABLE_ID, DynamoDBStateStore.PARTITION_ID_AND_FILENAME);
+        clearTable(instanceProperties.get(FILE_REFERENCE_COUNT_TABLENAME), DynamoDBStateStore.TABLE_ID, DynamoDBStateStore.FILE_NAME);
+        clearTable(instanceProperties.get(PARTITION_TABLENAME), DynamoDBStateStore.TABLE_ID, DynamoDBStateStore.PARTITION_ID);
+        clearTable(instanceProperties.get(REVISION_TABLENAME), S3StateStore.TABLE_ID, S3StateStore.REVISION_ID_KEY);
+        clearTable(instanceProperties.get(TABLE_NAME_INDEX_DYNAMO_TABLENAME), DynamoDBTableIndex.TABLE_NAME_FIELD);
+        clearTable(instanceProperties.get(TABLE_ID_INDEX_DYNAMO_TABLENAME), DynamoDBTableIndex.TABLE_ID_FIELD);
+        clearTable(instanceProperties.get(TABLE_ONLINE_INDEX_DYNAMO_TABLENAME), DynamoDBTableIndex.TABLE_ONLINE_FIELD, DynamoDBTableIndex.TABLE_NAME_FIELD);
         waitForTablesToEmpty(
                 instanceProperties.get(TABLE_NAME_INDEX_DYNAMO_TABLENAME),
                 instanceProperties.get(TABLE_ID_INDEX_DYNAMO_TABLENAME),
@@ -123,7 +121,7 @@ public class AwsSleeperTablesDriver implements SleeperTablesDriver {
     }
 
     public StateStoreProvider createStateStoreProvider(InstanceProperties instanceProperties) {
-        return new StateStoreProvider(dynamoDB, instanceProperties, hadoopConfiguration);
+        return new StateStoreProvider(instanceProperties, s3, dynamoDB, hadoopConfiguration);
     }
 
     public TableIndex tableIndex(InstanceProperties instanceProperties) {
@@ -153,17 +151,12 @@ public class AwsSleeperTablesDriver implements SleeperTablesDriver {
                         .delete(del -> del.objects(objectsToDelete))));
     }
 
-    private void clearTables(String... tableNames) {
-        Stream.of(tableNames).parallel().forEach(this::clearTable);
-    }
-
-    private void clearTable(String tableName) {
+    private void clearTable(String tableName, String... keyFields) {
         LOGGER.info("Clearing DynamoDB table: {}", tableName);
-        TableDescription table = dynamoDB.describeTable(tableName).getTable();
         streamPagedResults(dynamoDB, new ScanRequest().withTableName(tableName))
                 .flatMap(result -> result.getItems().stream())
                 .parallel()
-                .map(item -> getKey(item, table))
+                .map(item -> getKey(item, List.of(keyFields)))
                 .forEach(key -> dynamoDB.deleteItem(new DeleteItemRequest()
                         .withTableName(tableName)
                         .withKey(key)));
@@ -188,9 +181,8 @@ public class AwsSleeperTablesDriver implements SleeperTablesDriver {
         }
     }
 
-    private static Map<String, AttributeValue> getKey(Map<String, AttributeValue> item, TableDescription table) {
-        return table.getKeySchema().stream()
-                .map(KeySchemaElement::getAttributeName)
+    private static Map<String, AttributeValue> getKey(Map<String, AttributeValue> item, List<String> keyFields) {
+        return keyFields.stream()
                 .map(name -> entry(name, item.get(name)))
                 .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
     }

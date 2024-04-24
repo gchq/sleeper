@@ -48,7 +48,7 @@ public class PartitionTree {
     }
 
     /**
-     * Retrieve IDs of partitions that were split from a given parent partition.
+     * Retrieves IDs of partitions that were split from a given parent partition.
      *
      * @param  partitionId              the ID of the parent partition
      * @return                          the IDs of the child partitions
@@ -62,7 +62,7 @@ public class PartitionTree {
     }
 
     /**
-     * Retrieve IDs of all partitions that were split to result in the given partition. Starts with the most recent
+     * Retrieves IDs of all partitions that were split to result in the given partition. Starts with the most recent
      * parent, and includes all ancestors of that parent ending with the root partition.
      *
      * @param  partitionId the ID of the partition to find ancestors of
@@ -83,8 +83,8 @@ public class PartitionTree {
     }
 
     /**
-     * Retrieve all partitions that were split to result in the given partition. Starts with the most recent parent, and
-     * includes all ancestors of that parent ending with the root partition.
+     * Retrieves all partitions that were split to result in the given partition. Starts with the most recent parent,
+     * and includes all ancestors of that parent ending with the root partition.
      *
      * @param  partitionId the ID of the partition to find ancestors of
      * @return             all of the partition's ancestors
@@ -104,7 +104,7 @@ public class PartitionTree {
     }
 
     /**
-     * Retrieve a partition by its unique ID.
+     * Retrieves a partition by its unique ID.
      *
      * @param  partitionId the ID of the partition
      * @return             the partition
@@ -118,7 +118,7 @@ public class PartitionTree {
     }
 
     /**
-     * Retrieve the leaf partition that includes a given key.
+     * Retrieves the leaf partition that includes the given key.
      *
      * @param  schema schema of the Sleeper table
      * @param  key    values for the key to find the leaf partition for
@@ -167,8 +167,8 @@ public class PartitionTree {
     }
 
     /**
-     * Retrieve the partition whose region includes both keys. Finds the nearest partition to each of the keys, with the
-     * fewest steps up the partition tree.
+     * Retrieves the partition whose region includes both keys. Finds the nearest partition to each of the keys, with
+     * the fewest steps up the partition tree.
      *
      * @param  schema schema of the Sleeper table
      * @param  a      values of the first key
@@ -180,7 +180,7 @@ public class PartitionTree {
     }
 
     /**
-     * Retrieve the partition whose region includes both descendent partitions. Finds the partition with the fewest
+     * Retrieves the partition whose region includes both descendent partitions. Finds the partition with the fewest
      * steps up the partition tree that is an ancestor for both.
      *
      * @param  a the first partition
@@ -201,7 +201,7 @@ public class PartitionTree {
     }
 
     /**
-     * Traverse the partition tree visiting the leaves first. Proceeds in steps where you remove the current leaf
+     * Traverses the partition tree visiting the leaves first. Proceeds in steps where you remove the current leaf
      * partitions and visit the new leaves.
      * <p>
      * The partitions are also ordered by the min and max of their ranges. Each time the tree is split, the partition

@@ -27,8 +27,6 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.core.table.TableStatus;
-import sleeper.core.table.TableStatusTestHelper;
 
 import java.util.List;
 import java.util.Map;
@@ -418,10 +416,6 @@ public class FileReferencePrinterTest {
             // Then see approved output
             Approvals.verify(printed);
         }
-    }
-
-    private TableStatus table(String name) {
-        return TableStatusTestHelper.uniqueIdAndName(name, name);
     }
 
     private FileReferenceFactory fileReferenceFactory() {

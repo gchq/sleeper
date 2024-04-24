@@ -57,7 +57,7 @@ public class KeySerDe {
     }
 
     /**
-     * Write values of key fields to a byte array.
+     * Writes values of key fields to a byte array.
      *
      * @param  key         values to serialise
      * @return             the values serialised as a byte array
@@ -116,7 +116,7 @@ public class KeySerDe {
     }
 
     /**
-     * Read values of key fields from a byte array.
+     * Reads values of key fields from a byte array.
      *
      * @param  bytes       byte array to read
      * @return             the values contained in the byte array

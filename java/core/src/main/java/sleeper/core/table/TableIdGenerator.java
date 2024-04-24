@@ -22,7 +22,7 @@ import java.security.SecureRandom;
 import java.util.Random;
 
 /**
- * Generates random table IDs. Supports seeding the random generator.
+ * Generates internal IDs for Sleeper tables.
  */
 public class TableIdGenerator {
 
@@ -37,7 +37,8 @@ public class TableIdGenerator {
     }
 
     /**
-     * Creates an instance of this class with a seed for the random generator.
+     * Creates a generator with a fixed seed for random data generation. This can be used to produce deterministic
+     * results. This should only be used for tests.
      *
      * @param  seed the seed for the random generator
      * @return      an instance of this class

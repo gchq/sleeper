@@ -18,7 +18,7 @@ package sleeper.core.record.serialiser;
 import sleeper.core.record.ResultsBatch;
 
 /**
- * Interface for serialising and deserialing results batches.
+ * Serialises and deserialises batches of results for a query.
  */
 public interface ResultsBatchSerialiser {
 
@@ -31,7 +31,7 @@ public interface ResultsBatchSerialiser {
     String serialise(ResultsBatch resultsBatch);
 
     /**
-     * Deserialise a string to a results batch.
+     * Deserialise a results batch from a string.
      *
      * @param  serialisedResultsBatch the serialised results batch
      * @return                        a {@link ResultsBatch} object

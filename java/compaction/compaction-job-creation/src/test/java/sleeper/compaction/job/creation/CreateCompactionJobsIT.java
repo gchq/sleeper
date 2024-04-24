@@ -38,10 +38,7 @@ import sleeper.compaction.job.creation.CreateCompactionJobs.Mode;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.properties.table.TablePropertiesStore;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.schema.Schema;
@@ -49,7 +46,6 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.table.InvokeForTableRequest;
 import sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.s3.S3StateStoreCreator;
@@ -80,9 +76,9 @@ public class CreateCompactionJobsIT {
     private final AmazonSQS sqs = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.SQS, AmazonSQSClientBuilder.standard());
     private final InstanceProperties instanceProperties = createInstance();
     private final Schema schema = CreateJobsTestUtils.createSchema();
-    private final TablePropertiesStore tablePropertiesStore = S3TableProperties.getStore(instanceProperties, s3, dynamoDB);
-    private final StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties, HadoopConfigurationLocalStackUtils.getHadoopConfiguration(localStackContainer));
-    private final TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3, dynamoDB);
+    private final StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3, dynamoDB, HadoopConfigurationLocalStackUtils.getHadoopConfiguration(localStackContainer));
+    private final TableProperties tableProperties = createTableProperties(schema, instanceProperties);
+    private final StateStore stateStore = createAndInitialiseStateStore(tableProperties);
 
     @AfterEach
     void tearDown() {
@@ -94,8 +90,6 @@ public class CreateCompactionJobsIT {
     @Test
     public void shouldCompactAllFilesInSinglePartition() throws Exception {
         // Given
-        StateStore stateStore = createTableAndStateStore(schema);
-
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
         FileReference fileReference1 = fileReferenceFactory.rootFile("file1", 200L);
         FileReference fileReference2 = fileReferenceFactory.rootFile("file2", 200L);
@@ -104,9 +98,7 @@ public class CreateCompactionJobsIT {
         stateStore.addFiles(Arrays.asList(fileReference1, fileReference2, fileReference3, fileReference4));
 
         // When
-        InvokeForTableRequest.forTables(
-                tablePropertiesStore.streamAllTableStatuses(), 1,
-                jobCreator()::createJobs);
+        jobCreator().createJobs(tableProperties);
 
         // Then
         assertThat(stateStore.getFileReferencesWithNoJobId()).isEmpty();
@@ -148,17 +140,19 @@ public class CreateCompactionJobsIT {
         return instanceProperties;
     }
 
-    private StateStore createTableAndStateStore(Schema schema) throws StateStoreException {
-        TableProperties tableProperties = createTableProperties(schema, instanceProperties);
-        tablePropertiesStore.save(tableProperties);
+    private StateStore createAndInitialiseStateStore(TableProperties tableProperties) {
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-        stateStore.initialise();
+        try {
+            stateStore.initialise();
+        } catch (StateStoreException e) {
+            throw new RuntimeException(e);
+        }
         return stateStore;
     }
 
     private CreateCompactionJobs jobCreator() throws ObjectFactoryException {
         return new CreateCompactionJobs(new ObjectFactory(instanceProperties, s3, null),
-                instanceProperties, tablePropertiesProvider, stateStoreProvider,
+                instanceProperties, stateStoreProvider,
                 new SendCompactionJobToSqs(instanceProperties, sqs)::send,
                 CompactionJobStatusStore.NONE, Mode.STRATEGY);
     }

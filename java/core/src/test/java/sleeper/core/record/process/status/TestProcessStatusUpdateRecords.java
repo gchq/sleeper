@@ -23,7 +23,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * A test helper for creating lists of process status update records.
+ * A test helper to simulate the contents of a status store. This will specify status updates for jobs running on tasks,
+ * and create a list of records that would appear in the status store for those updates. This can be used to test any
+ * code that requires records from the status store.
  */
 public class TestProcessStatusUpdateRecords {
 

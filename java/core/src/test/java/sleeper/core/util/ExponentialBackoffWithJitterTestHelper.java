@@ -23,7 +23,7 @@ import java.util.Random;
 import java.util.function.DoubleSupplier;
 
 /**
- * A test helper for instantiating ExponentialBackoffWithJitter class.es.
+ * Helpers to create parameters for ExponentialBackoffWithJitter in tests.
  */
 public class ExponentialBackoffWithJitterTestHelper {
 

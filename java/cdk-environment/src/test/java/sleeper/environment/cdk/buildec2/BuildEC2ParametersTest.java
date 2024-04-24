@@ -56,7 +56,7 @@ public class BuildEC2ParametersTest {
         assertThat(BuildEC2Parameters.from(AppContext.empty()))
                 .usingRecursiveComparison()
                 .isEqualTo(BuildEC2Parameters.from(AppContext.of(
-                        REPOSITORY.value("sleeper"), FORK.value("gchq"), BRANCH.value("main"))));
+                        REPOSITORY.value("sleeper"), FORK.value("gchq"), BRANCH.value("develop"))));
     }
 
 }

@@ -25,8 +25,9 @@ import java.io.PrintStream;
 import java.util.Map;
 
 /**
- * A utility class to generate strings using partitions in tables. Intended to be used for approval tests.
- * Uses {@link TablesPrinter} to consolidate the generated output for multiple tables.
+ * Prints partition trees as text, for readable assertions in tests. Intended to be used in approval tests, for visual
+ * comparison against previously generated values. Uses {@link TablesPrinter} to consolidate the generated output for
+ * multiple tables.
  */
 public class PartitionsPrinter {
 
@@ -34,8 +35,8 @@ public class PartitionsPrinter {
     }
 
     /**
-     * Generates a string with information about partitions for all provided tables. The tables must have
-     * matching {@link Schema}s in order to deserialise the partition regions correctly.
+     * Generates a string with information about partitions for all provided tables. The tables must have the same
+     * schema in order to deserialise the partition regions correctly.
      *
      * @param  schema            the schema for all tables
      * @param  partitionsByTable the map of table name to {@link PartitionTree}

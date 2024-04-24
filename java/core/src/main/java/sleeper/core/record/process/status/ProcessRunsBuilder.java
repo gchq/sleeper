@@ -24,7 +24,20 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * Builder for creating a process runs object.
+ * Gathers status store records and correlates which updates occurred in the same run of a job. Creates a
+ * {@link ProcessRuns} object with the detected runs.
+ * <p>
+ * Records are processed in order of update time. A run is detected based on the type of the update. Some updates mark
+ * the start of a run. Once a run has started, further updates on the same task are assumed to be part of that run,
+ * until another update starts a new run on the same task. Updates on a task before any run has started are ignored.
+ * Updates that happen on different tasks are always in different runs.
+ * <p>
+ * Some jobs may include a run ID, which explicitly correlates updates on the same job run. In this case it is not
+ * necessary to assume updates on the same task are part of the same run. Updates before the run has started are still
+ * ignored.
+ * <p>
+ * Some updates do not occur on any run, particularly ones which do not occur on a task. Those updates will not appear
+ * in the resulting {@link ProcessRuns} object, and must be handled separately.
  */
 class ProcessRunsBuilder {
     private final Map<String, ProcessRun.Builder> builderByJobRunId = new HashMap<>();

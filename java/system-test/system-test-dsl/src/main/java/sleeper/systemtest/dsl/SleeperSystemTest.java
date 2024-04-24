@@ -66,12 +66,12 @@ import java.util.stream.LongStream;
 public class SleeperSystemTest {
 
     private final SystemTestParameters parameters;
-    private final SystemTestDrivers drivers;
+    private final SystemTestDrivers baseDrivers;
     private final SystemTestContext context;
 
-    public SleeperSystemTest(SystemTestParameters parameters, SystemTestDrivers drivers, SystemTestContext context) {
+    public SleeperSystemTest(SystemTestParameters parameters, SystemTestDrivers baseDrivers, SystemTestContext context) {
         this.parameters = parameters;
-        this.drivers = drivers;
+        this.baseDrivers = baseDrivers;
         this.context = context;
     }
 
@@ -97,7 +97,7 @@ public class SleeperSystemTest {
     }
 
     public SystemTestSourceFiles sourceFiles() {
-        return new SystemTestSourceFiles(context.instance(), context.sourceFiles(), drivers.sourceFiles(context));
+        return new SystemTestSourceFiles(context.instance(), context.sourceFiles(), baseDrivers.sourceFiles(context));
     }
 
     public SystemTestTableFiles tableFiles() {
@@ -105,15 +105,15 @@ public class SleeperSystemTest {
     }
 
     public SystemTestPartitioning partitioning() {
-        return new SystemTestPartitioning(context, drivers);
+        return new SystemTestPartitioning(context);
     }
 
     public SystemTestIngest ingest() {
-        return new SystemTestIngest(context, drivers);
+        return new SystemTestIngest(context, baseDrivers);
     }
 
     public SystemTestQuery query() {
-        return new SystemTestQuery(context, drivers);
+        return new SystemTestQuery(context, baseDrivers);
     }
 
     public SystemTestQuery directQuery() {
@@ -121,27 +121,27 @@ public class SleeperSystemTest {
     }
 
     public SystemTestCompaction compaction() {
-        return new SystemTestCompaction(context, drivers);
+        return new SystemTestCompaction(context);
     }
 
     public SystemTestGarbageCollection garbageCollection() {
-        return new SystemTestGarbageCollection(context, drivers);
+        return new SystemTestGarbageCollection(context);
     }
 
     public SystemTestReporting reporting() {
-        return new SystemTestReporting(context, drivers);
+        return new SystemTestReporting(context);
     }
 
     public SystemTestTableMetrics tableMetrics() {
-        return new SystemTestTableMetrics(drivers.tableMetrics(context));
+        return new SystemTestTableMetrics(context.instance().adminDrivers().tableMetrics(context));
     }
 
     public SystemTestCluster systemTestCluster() {
-        return new SystemTestCluster(context, drivers);
+        return new SystemTestCluster(context, baseDrivers);
     }
 
     public SystemTestPythonApi pythonApi() {
-        return new SystemTestPythonApi(context, drivers);
+        return new SystemTestPythonApi(context);
     }
 
     public SystemTestLocalFiles localFiles(Path tempDir) {
