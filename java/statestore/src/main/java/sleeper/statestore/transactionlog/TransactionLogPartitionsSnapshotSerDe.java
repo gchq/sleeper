@@ -22,11 +22,11 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.StateStorePartitions;
 import sleeper.statestore.StateStoreFileUtils;
 
-public class TransactionLogPartitionsSnapshot {
+public class TransactionLogPartitionsSnapshotSerDe {
     private final Schema sleeperSchema;
     private final StateStoreFileUtils stateStoreFileUtils;
 
-    TransactionLogPartitionsSnapshot(Schema sleeperSchema, Configuration configuration) {
+    TransactionLogPartitionsSnapshotSerDe(Schema sleeperSchema, Configuration configuration) {
         this.sleeperSchema = sleeperSchema;
         this.stateStoreFileUtils = StateStoreFileUtils.forPartitions(configuration);
     }
