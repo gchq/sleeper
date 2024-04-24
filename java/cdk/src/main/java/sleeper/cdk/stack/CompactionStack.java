@@ -63,7 +63,6 @@ import software.amazon.awscdk.services.iam.Role;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.Permission;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
-import software.amazon.awscdk.services.lambda.eventsources.SqsEventSourceProps;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sns.Topic;
@@ -276,10 +275,9 @@ public class CompactionStack extends NestedStack {
 
         // Send messages from the trigger function to the handler function
         Queue jobCreationQueue = sqsQueueForCompactionJobCreation(topic, errorMetrics);
-        handlerFunction.addEventSource(new SqsEventSource(jobCreationQueue,
-                SqsEventSourceProps.builder()
-                        .batchSize(instanceProperties.getInt(COMPACTION_JOB_CREATION_BATCH_SIZE))
-                        .build()));
+        handlerFunction.addEventSource(SqsEventSource.Builder.create(jobCreationQueue)
+                .batchSize(instanceProperties.getInt(COMPACTION_JOB_CREATION_BATCH_SIZE))
+                .build());
 
         // Grant permissions
         // - Read through tables in trigger, send batches
@@ -313,12 +311,12 @@ public class CompactionStack extends NestedStack {
         // Create queue for compaction job creation invocation
         Queue deadLetterQueue = Queue.Builder
                 .create(this, "CompactionJobCreationDLQ")
-                .queueName(Utils.truncateTo64Characters(instanceProperties.get(ID) + "-CompactionJobCreationDLQ.fifo"))
+                .queueName(String.join("-", "sleeper", instanceProperties.get(ID), "CompactionJobCreationDLQ.fifo"))
                 .fifo(true)
                 .build();
         Queue queue = Queue.Builder
                 .create(this, "CompactionJobCreationQueue")
-                .queueName(Utils.truncateTo64Characters(instanceProperties.get(ID) + "-CompactionJobCreationQ.fifo"))
+                .queueName(String.join("-", "sleeper", instanceProperties.get(ID), "CompactionJobCreationQ.fifo"))
                 .deadLetterQueue(DeadLetterQueue.builder()
                         .maxReceiveCount(1)
                         .queue(deadLetterQueue)

@@ -33,11 +33,10 @@ public interface GarbageCollectionProperty {
             .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty GARBAGE_COLLECTOR_TABLE_BATCH_SIZE = Index.propertyBuilder("sleeper.gc.table.batch.size")
-            .description("The number of tables to perform garbage collection for in a single invocation. A separate " +
-                    "invocation of the lambda will be made for each batch when there are more tables than the batch " +
-                    "size.")
-            .defaultValue("5")
-            .validationPredicate(Utils::isPositiveInteger)
+            .description("The number of tables to perform garbage collection for in a single invocation. " +
+                    "This will be the batch size for a lambda as an SQS FIFO event source. This can be a maximum of 10.")
+            .defaultValue("1")
+            .validationPredicate(Utils::isPositiveIntegerLtEq10)
             .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR).build();
     UserDefinedInstanceProperty GARBAGE_COLLECT_OFFLINE_TABLES = Index.propertyBuilder("sleeper.gc.offline.enabled")
             .description("Whether to perform garbage collection for offline tables.")
