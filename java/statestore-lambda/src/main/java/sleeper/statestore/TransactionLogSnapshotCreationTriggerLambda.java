@@ -28,17 +28,23 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.S3TableProperties;
+import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.table.InvokeForTableRequest;
 import sleeper.core.table.InvokeForTableRequestSerDe;
 import sleeper.core.table.TableIndex;
+import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
 
 import java.time.Instant;
+import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_SNAPSHOT_CREATION_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CommonProperty.TRANSACTION_LOG_SNAPSHOT_CREATION_BATCH_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 
 /**
  * A lambda that periodically creates batches of tables and sends them to a queue to create transaction log snapshots.
@@ -67,12 +73,20 @@ public class TransactionLogSnapshotCreationTriggerLambda implements RequestHandl
         instanceProperties.loadFromS3(s3Client, configBucketName);
         int batchSize = instanceProperties.getInt(TRANSACTION_LOG_SNAPSHOT_CREATION_BATCH_SIZE);
         String queueUrl = instanceProperties.get(TRANSACTION_LOG_SNAPSHOT_CREATION_QUEUE_URL);
-        TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
-        InvokeForTableRequest.forTables(tableIndex.streamOnlineTables(), batchSize,
+        InvokeForTableRequest.forTables(streamOnlineTransactionLogTables(), batchSize,
                 request -> sqsClient.sendMessage(queueUrl, serDe.toJson(request)));
 
         Instant finishTime = Instant.now();
         LOGGER.info("Lambda finished at {} (ran for {})", finishTime, LoggedDuration.withFullOutput(startTime, finishTime));
         return null;
+    }
+
+    private Stream<TableStatus> streamOnlineTransactionLogTables() {
+        TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
+        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties,
+                S3TableProperties.getStore(instanceProperties, s3Client, dynamoClient), Instant::now);
+        return tableIndex.streamOnlineTables()
+                .filter(tableStatus -> DynamoDBTransactionLogStateStore.class.getName()
+                        .equals(tablePropertiesProvider.getById(tableStatus.getTableUniqueId()).get(STATESTORE_CLASSNAME)));
     }
 }
