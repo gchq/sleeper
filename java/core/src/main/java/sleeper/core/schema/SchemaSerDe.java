@@ -26,7 +26,6 @@ import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 import com.google.gson.stream.JsonReader;
-import org.apache.commons.codec.binary.Base64;
 
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
@@ -104,29 +103,6 @@ public class SchemaSerDe {
      */
     public Schema fromJson(InputStream inputStream) {
         return gson.fromJson(new InputStreamReader(inputStream, Charset.forName("UTF-8")), Schema.class);
-    }
-
-    /**
-     * Serialises a schema to a Base64 encoded JSON string.
-     *
-     * @param  schema the schema
-     * @return        a Base64 encoded JSON string
-     */
-    public String toBase64EncodedJson(Schema schema) {
-        byte[] bytes = toJson(schema).getBytes(Charset.forName("UTF-8"));
-        return Base64.encodeBase64String(bytes);
-    }
-
-    /**
-     * Deserialises a Base64 encoded JSON string to a schema.
-     *
-     * @param  encodedSchema the Base64 encoded JSON string
-     * @return               a schema
-     */
-    public Schema fromBase64EncodedJson(String encodedSchema) {
-        byte[] bytes = Base64.decodeBase64(encodedSchema);
-        String jsonSchema = new String(bytes, Charset.forName("UTF-8"));
-        return fromJson(jsonSchema);
     }
 
     /**
