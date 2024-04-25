@@ -24,7 +24,6 @@ import software.amazon.awscdk.services.events.targets.LambdaFunction;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
-import software.amazon.awscdk.services.lambda.eventsources.SqsEventSourceProps;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sns.Topic;
@@ -54,6 +53,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB;
 import static sleeper.configuration.properties.instance.CommonProperty.TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS;
+import static sleeper.configuration.properties.instance.CommonProperty.TRANSACTION_LOG_SNAPSHOT_CREATION_BATCH_SIZE;
 import static sleeper.configuration.properties.instance.CommonProperty.TRANSACTION_LOG_SNAPSHOT_CREATION_LAMBDA_PERIOD_IN_MINUTES;;
 
 public class TransactionLogSnapshotCreationStack extends NestedStack {
@@ -100,19 +100,19 @@ public class TransactionLogSnapshotCreationStack extends NestedStack {
                 .build();
         instanceProperties.set(TRANSACTION_LOG_SNAPSHOT_CREATION_RULE, rule.getRuleName());
 
-        String deadLetterQueueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-TransactionLogSnapshotDLQ");
         Queue deadLetterQueue = Queue.Builder
                 .create(this, "TransactionLogSnapshotDeadLetterQueue")
-                .queueName(deadLetterQueueName)
+                .queueName(String.join("-", "sleeper", instanceProperties.get(ID), "TransactionLogSnapshotDLQ.fifo"))
+                .fifo(true)
                 .build();
-        String queueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-TransactionLogSnapshotQ");
         Queue queue = Queue.Builder
                 .create(this, "TransactionLogSnapshotQueue")
-                .queueName(queueName)
+                .queueName(String.join("-", "sleeper", instanceProperties.get(ID), "TransactionLogSnapshotQ.fifo"))
                 .deadLetterQueue(DeadLetterQueue.builder()
                         .maxReceiveCount(1)
                         .queue(deadLetterQueue)
                         .build())
+                .fifo(true)
                 .visibilityTimeout(Duration.seconds(70))
                 .build();
         instanceProperties.set(TRANSACTION_LOG_SNAPSHOT_CREATION_QUEUE_URL, queue.getQueueUrl());
@@ -125,8 +125,8 @@ public class TransactionLogSnapshotCreationStack extends NestedStack {
         errorMetrics.add(Utils.createErrorMetric("Transaction Log Snapshot Errors", deadLetterQueue, instanceProperties));
         queue.grantSendMessages(snapshotCreationTrigger);
         coreStacks.grantInvokeScheduled(snapshotCreationTrigger, queue);
-        snapshotCreationLambda.addEventSource(new SqsEventSource(queue,
-                SqsEventSourceProps.builder().batchSize(1).build()));
+        snapshotCreationLambda.addEventSource(SqsEventSource.Builder.create(queue)
+                .batchSize(instanceProperties.getInt(TRANSACTION_LOG_SNAPSHOT_CREATION_BATCH_SIZE)).build());
         coreStacks.grantTransactionLogSnapshotCreation(snapshotCreationLambda);
         transactionLogStateStoreStack.grantReadWriteSnapshots(snapshotCreationLambda);
         Utils.addStackTagIfSet(this, instanceProperties);

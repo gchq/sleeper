@@ -30,13 +30,10 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
-import sleeper.core.table.InvokeForTableRequest;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.LatestSnapshots;
 
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
@@ -70,7 +67,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
         stateStore.addFile(factory.rootFile(123L));
 
         // When
-        runSnapshotCreator(forTableIds("test-table-id-1"));
+        runSnapshotCreator(table);
 
         // Then
         assertThat(snapshotStore(table).getLatestSnapshots())
@@ -95,7 +92,8 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
         stateStore2.addFile(factory2.rootFile(456L));
 
         // When
-        runSnapshotCreator(forTableIds("test-table-id-1", "test-table-id-2"));
+        runSnapshotCreator(table1);
+        runSnapshotCreator(table2);
 
         // Then
         assertThat(snapshotStore(table1).getLatestSnapshots())
@@ -116,10 +114,10 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
         stateStore.initialise();
         FileReferenceFactory factory = FileReferenceFactory.from(stateStore);
         stateStore.addFile(factory.rootFile(123L));
-        runSnapshotCreator(forTableIds("test-table-id-1"));
+        runSnapshotCreator(table);
 
         // When
-        runSnapshotCreator(forTableIds("test-table-id-1"));
+        runSnapshotCreator(table);
 
         // Then
         assertThat(snapshotStore(table).getLatestSnapshots())
@@ -128,14 +126,10 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
                         partitionsSnapshot(table, 1)));
     }
 
-    private void runSnapshotCreator(InvokeForTableRequest tableRequest) throws StateStoreException {
+    private void runSnapshotCreator(TableProperties table) {
         new TransactionLogSnapshotCreator(
-                instanceProperties, provider, s3Client, dynamoDBClient, new Configuration())
-                .run(tableRequest);
-    }
-
-    private InvokeForTableRequest forTableIds(String... tableIds) {
-        return new InvokeForTableRequest(List.of(tableIds));
+                instanceProperties, table, s3Client, dynamoDBClient, new Configuration())
+                .createSnapshot();
     }
 
     private DynamoDBTransactionLogSnapshotStore snapshotStore(TableProperties table) {

@@ -19,7 +19,9 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
+import com.amazonaws.services.lambda.runtime.events.SQSBatchResponse;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
+import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.hadoop.conf.Configuration;
@@ -27,68 +29,91 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.core.table.InvokeForTableRequest;
-import sleeper.core.table.InvokeForTableRequestSerDe;
 import sleeper.core.util.LoggedDuration;
 import sleeper.statestore.transactionlog.TransactionLogSnapshotCreator;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
  * A lambda that receives batches of tables from an SQS queue and creates transaction log snapshots for them.
  */
-public class TransactionLogSnapshotCreationLambda implements RequestHandler<SQSEvent, Void> {
+public class TransactionLogSnapshotCreationLambda implements RequestHandler<SQSEvent, SQSBatchResponse> {
     private static final Logger LOGGER = LoggerFactory.getLogger(TransactionLogSnapshotCreationLambda.class);
 
     private final AmazonS3 s3Client;
     private final AmazonDynamoDB dynamoClient;
-    private final String configBucketName;
-    private final InvokeForTableRequestSerDe serDe = new InvokeForTableRequestSerDe();
+    private final InstanceProperties instanceProperties = new InstanceProperties();
+    private final TablePropertiesProvider tablePropertiesProvider;
 
     public TransactionLogSnapshotCreationLambda() {
-        this(
-                AmazonS3ClientBuilder.defaultClient(),
-                AmazonDynamoDBClientBuilder.defaultClient(),
-                System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
-    }
-
-    public TransactionLogSnapshotCreationLambda(AmazonS3 s3Client, AmazonDynamoDB dynamoClient, String configBucketName) {
-        this.s3Client = s3Client;
-        this.dynamoClient = dynamoClient;
-        this.configBucketName = configBucketName;
+        s3Client = AmazonS3ClientBuilder.defaultClient();
+        dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
+        String configBucketName = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
+        instanceProperties.loadFromS3(s3Client, configBucketName);
+        tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
     }
 
     @Override
-    public Void handleRequest(SQSEvent event, Context context) {
+    public SQSBatchResponse handleRequest(SQSEvent event, Context context) {
         Instant startTime = Instant.now();
         LOGGER.info("Lambda started at {}", startTime);
 
-        event.getRecords().stream()
-                .map(SQSEvent.SQSMessage::getBody)
-                .peek(body -> LOGGER.info("Received message: {}", body))
-                .map(serDe::fromJson)
-                .forEach(this::createSnapshots);
+        Map<String, List<SQSMessage>> messagesByTableId = event.getRecords().stream()
+                .collect(Collectors.groupingBy(SQSEvent.SQSMessage::getBody));
+        List<SQSBatchResponse.BatchItemFailure> batchItemFailures = new ArrayList<SQSBatchResponse.BatchItemFailure>();
+        List<TableProperties> tables = loadTables(messagesByTableId, batchItemFailures);
+        createSnapshots(tables, messagesByTableId, batchItemFailures);
 
         Instant finishTime = Instant.now();
         LOGGER.info("Lambda finished at {} (ran for {})", finishTime, LoggedDuration.withFullOutput(startTime, finishTime));
         return null;
     }
 
-    private void createSnapshots(InvokeForTableRequest request) {
-        LOGGER.info("Loading instance properties from config bucket {}", configBucketName);
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.loadFromS3(s3Client, configBucketName);
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoClient, new Configuration());
-        TransactionLogSnapshotCreator snapshotCreator = new TransactionLogSnapshotCreator(
-                instanceProperties, tablePropertiesProvider, stateStoreProvider, dynamoClient, new Configuration());
-        try {
-            snapshotCreator.run(request);
-        } catch (Exception e) {
-            LOGGER.error("Failed creating snapshots for tables {}", request.getTableIds(), e);
+    private void createSnapshots(List<TableProperties> tables, Map<String, List<SQSMessage>> messagesByTableId,
+            List<SQSBatchResponse.BatchItemFailure> batchItemFailures) {
+        for (TableProperties table : tables) {
+            LOGGER.info("Creating snapshot for table {}", table.getStatus());
+            try {
+                new TransactionLogSnapshotCreator(instanceProperties, table, s3Client, dynamoClient, new Configuration())
+                        .createSnapshot();
+            } catch (RuntimeException e) {
+                LOGGER.error("Failed creating snapshot for table {}", table.getStatus(), e);
+                messagesByTableId.get(table.getStatus().getTableUniqueId()).stream()
+                        .map(SQSMessage::getMessageId)
+                        .map(SQSBatchResponse.BatchItemFailure::new)
+                        .forEach(batchItemFailures::add);
+            }
         }
+    }
+
+    private List<TableProperties> loadTables(
+            Map<String, List<SQSMessage>> messagesByTableId,
+            List<SQSBatchResponse.BatchItemFailure> batchItemFailures) {
+        List<TableProperties> tables = new ArrayList<>();
+        for (Entry<String, List<SQSMessage>> tableAndMessages : messagesByTableId.entrySet()) {
+            String tableId = tableAndMessages.getKey();
+            List<SQSMessage> tableMessages = tableAndMessages.getValue();
+            try {
+                TableProperties tableProperties = tablePropertiesProvider.getById(tableId);
+                LOGGER.info("Received {} messages for table {}", tableMessages.size(), tableProperties.getStatus());
+                tables.add(tableProperties);
+            } catch (RuntimeException e) {
+                LOGGER.error("Failed loading properties for table {}", tableId, e);
+                tableMessages.stream()
+                        .map(SQSMessage::getMessageId)
+                        .map(SQSBatchResponse.BatchItemFailure::new)
+                        .forEach(batchItemFailures::add);
+            }
+        }
+        return tables;
     }
 }
