@@ -80,6 +80,12 @@ public class ParallelCompactionsIT {
 
         // Then we have one file per partition
         assertThat(sleeper.tableFiles().references())
+                .allMatch(file -> file.onlyContainsDataForThisPartition() && !file.isCountApproximate(),
+                        "only contains data for one partition")
+                .allMatch(file -> file.getJobId() != null,
+                        "not assigned to any job")
+                .allMatch(file -> file.getNumberOfRecords() > 1_000 && file.getNumberOfRecords() < 1_300,
+                        "contains an even distribution of records for the partition")
                 .hasSize(8192);
     }
 
