@@ -61,6 +61,7 @@ public class TransactionLogSnapshotCreationStack extends NestedStack {
     public TransactionLogSnapshotCreationStack(
             Construct scope, String id,
             InstanceProperties instanceProperties, BuiltJars jars, CoreStacks coreStacks,
+            TransactionLogStateStoreStack transactionLogStateStoreStack,
             Topic topic, List<IMetric> errorMetrics) {
         super(scope, id);
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
@@ -127,7 +128,7 @@ public class TransactionLogSnapshotCreationStack extends NestedStack {
         snapshotCreationLambda.addEventSource(new SqsEventSource(queue,
                 SqsEventSourceProps.builder().batchSize(1).build()));
         coreStacks.grantReadTablesAndData(snapshotCreationLambda);
-
+        transactionLogStateStoreStack.grantReadWriteSnapshots(snapshotCreationLambda);
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 }

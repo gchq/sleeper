@@ -142,17 +142,19 @@ public class SleeperCdkApp extends Stack {
         // Stacks for tables
         ManagedPoliciesStack policiesStack = new ManagedPoliciesStack(this, "Policies", instanceProperties);
         TableDataStack dataStack = new TableDataStack(this, "TableData", instanceProperties, policiesStack);
+        TransactionLogStateStoreStack transactionLogStateStoreStack = new TransactionLogStateStoreStack(
+                dataStack, "TransactionLogStateStore", instanceProperties, jars);
         StateStoreStacks stateStoreStacks = new StateStoreStacks(
                 new DynamoDBStateStoreStack(this, "DynamoDBStateStore", instanceProperties),
                 new S3StateStoreStack(this, "S3StateStore", instanceProperties, dataStack),
-                new TransactionLogStateStoreStack(dataStack, "TransactionLogStateStore", instanceProperties, jars),
+                transactionLogStateStoreStack,
                 policiesStack);
         coreStacks = new CoreStacks(
                 new ConfigBucketStack(this, "Configuration", instanceProperties, policiesStack),
                 new TableIndexStack(this, "TableIndex", instanceProperties, policiesStack),
                 policiesStack, stateStoreStacks, dataStack);
         new TransactionLogSnapshotCreationStack(this, "TransactionLogSnapshotCreation",
-                instanceProperties, jars, coreStacks, topicStack.getTopic(), errorMetrics);
+                instanceProperties, jars, coreStacks, transactionLogStateStoreStack, topicStack.getTopic(), errorMetrics);
         if (optionalStacks.contains(TableMetricsStack.class.getSimpleName())) {
             new TableMetricsStack(this, "TableMetrics", instanceProperties, jars, topicStack.getTopic(), coreStacks, errorMetrics);
         }
