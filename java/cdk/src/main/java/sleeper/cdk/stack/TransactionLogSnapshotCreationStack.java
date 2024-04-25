@@ -90,7 +90,7 @@ public class TransactionLogSnapshotCreationStack extends NestedStack {
         coreStacks.grantReadTablesStatus(snapshotCreationTrigger);
         coreStacks.grantReadTablesMetadata(snapshotCreationLambda);
         Rule rule = Rule.Builder.create(this, "TransactionLogSnapshotCreationSchedule")
-                .ruleName(SleeperScheduleRule.TABLE_METRICS.buildRuleName(instanceProperties))
+                .ruleName(SleeperScheduleRule.TRANSACTION_LOG_SNAPSHOT_CREATION.buildRuleName(instanceProperties))
                 .schedule(Schedule.rate(Duration.minutes(1)))
                 .targets(List.of(new LambdaFunction(snapshotCreationTrigger)))
                 .enabled(!shouldDeployPaused(this))
@@ -116,10 +116,10 @@ public class TransactionLogSnapshotCreationStack extends NestedStack {
         instanceProperties.set(TRANSACTION_LOG_SNAPSHOT_CREATION_QUEUE_ARN, queue.getQueueArn());
         instanceProperties.set(TRANSACTION_LOG_SNAPSHOT_CREATION_DLQ_URL, deadLetterQueue.getQueueUrl());
         instanceProperties.set(TRANSACTION_LOG_SNAPSHOT_CREATION_DLQ_ARN, deadLetterQueue.getQueueArn());
-        createAlarmForDlq(this, "MetricsJobAlarm",
-                "Alarms if there are any messages on the dead letter queue for the table metrics queue",
+        createAlarmForDlq(this, "TransactionLogSnapshotCreationAlarm",
+                "Alarms if there are any messages on the dead letter queue for the transaction log snapshot creation queue",
                 deadLetterQueue, topic);
-        errorMetrics.add(Utils.createErrorMetric("Table Metrics Errors", deadLetterQueue, instanceProperties));
+        errorMetrics.add(Utils.createErrorMetric("Transaction Log Snapshot Errors", deadLetterQueue, instanceProperties));
         queue.grantSendMessages(snapshotCreationTrigger);
         coreStacks.grantInvokeScheduled(snapshotCreationTrigger, queue);
         snapshotCreationLambda.addEventSource(new SqsEventSource(queue,
