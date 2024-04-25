@@ -153,7 +153,7 @@ public final class EksBulkImportStack extends NestedStack {
                 .handler("sleeper.bulkimport.starter.BulkImportStarterLambda")
                 .logGroup(createLambdaLogGroup(this, "BulkImportEKSJobStarterLogGroup", functionName, instanceProperties))
                 .events(Lists.newArrayList(SqsEventSource.Builder.create(bulkImportJobQueue).batchSize(1).build()))
-                .tracing(TracingUtils.passThrough(instanceProperties)));
+                .tracing(TracingUtils.active(instanceProperties)));
         configureJobStarterFunction(bulkImportJobStarter);
 
         importBucketStack.getImportBucket().grantReadWrite(bulkImportJobStarter);

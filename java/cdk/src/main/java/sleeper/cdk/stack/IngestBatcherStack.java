@@ -150,7 +150,7 @@ public class IngestBatcherStack extends NestedStack {
                 .environment(environmentVariables)
                 .logGroup(createLambdaLogGroup(this, "SubmitToIngestBatcherLogGroup", submitterName, instanceProperties))
                 .events(List.of(new SqsEventSource(submitQueue)))
-                .tracing(TracingUtils.passThrough(instanceProperties)));
+                .tracing(TracingUtils.active(instanceProperties)));
         instanceProperties.set(INGEST_BATCHER_SUBMIT_REQUEST_FUNCTION, submitterLambda.getFunctionName());
 
         ingestRequestsTable.grantReadWriteData(submitterLambda);

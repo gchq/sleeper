@@ -148,7 +148,7 @@ public class QueryStack extends NestedStack {
                 .handler(handler)
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .logGroup(createLambdaLogGroup(this, id + "LogGroup", functionName, instanceProperties))
-                .tracing(TracingUtils.passThrough(instanceProperties)));
+                .tracing(TracingUtils.active(instanceProperties)));
     }
 
     /***

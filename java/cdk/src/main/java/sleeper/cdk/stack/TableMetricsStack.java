@@ -90,7 +90,7 @@ public class TableMetricsStack extends NestedStack {
                 .memorySize(1024)
                 .timeout(Duration.minutes(1))
                 .logGroup(createLambdaLogGroup(this, "MetricsPublisherLogGroup", publishFunctionName, instanceProperties))
-                .tracing(TracingUtils.passThrough(instanceProperties)));
+                .tracing(TracingUtils.active(instanceProperties)));
 
         coreStacks.grantReadTablesStatus(tableMetricsTrigger);
         coreStacks.grantReadTablesMetadata(tableMetricsPublisher);

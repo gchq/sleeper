@@ -224,7 +224,7 @@ public class PartitionSplittingStack extends NestedStack {
                 .handler("sleeper.splitter.lambda.FindPartitionsToSplitLambda::handleRequest")
                 .environment(environmentVariables)
                 .logGroup(createLambdaLogGroup(this, "FindPartitionsToSplitLogGroup", functionName, instanceProperties))
-                .tracing(TracingUtils.passThrough(instanceProperties)));
+                .tracing(TracingUtils.active(instanceProperties)));
 
         coreStacks.grantReadTablesMetadata(findPartitionsToSplitLambda);
         partitionSplittingJobQueue.grantSendMessages(findPartitionsToSplitLambda);

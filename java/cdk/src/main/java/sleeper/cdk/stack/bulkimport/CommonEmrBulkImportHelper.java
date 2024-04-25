@@ -133,7 +133,7 @@ public class CommonEmrBulkImportHelper {
                 .handler("sleeper.bulkimport.starter.BulkImportStarterLambda")
                 .logGroup(createLambdaLogGroup(scope, "BulkImport" + shortId + "JobStarterLogGroup", functionName, instanceProperties))
                 .events(Lists.newArrayList(SqsEventSource.Builder.create(jobQueue).batchSize(1).build()))
-                .tracing(TracingUtils.passThrough(instanceProperties)));
+                .tracing(TracingUtils.active(instanceProperties)));
 
         coreStacks.grantReadConfigAndPartitions(function);
         importBucket.grantReadWrite(function);
