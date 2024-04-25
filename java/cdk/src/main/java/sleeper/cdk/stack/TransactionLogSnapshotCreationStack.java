@@ -53,7 +53,8 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB;
-import static sleeper.configuration.properties.instance.CommonProperty.TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS;;
+import static sleeper.configuration.properties.instance.CommonProperty.TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS;
+import static sleeper.configuration.properties.instance.CommonProperty.TRANSACTION_LOG_SNAPSHOT_CREATION_LAMBDA_PERIOD_IN_MINUTES;;
 
 public class TransactionLogSnapshotCreationStack extends NestedStack {
 
@@ -91,7 +92,8 @@ public class TransactionLogSnapshotCreationStack extends NestedStack {
         coreStacks.grantReadTablesMetadata(snapshotCreationLambda);
         Rule rule = Rule.Builder.create(this, "TransactionLogSnapshotCreationSchedule")
                 .ruleName(SleeperScheduleRule.TRANSACTION_LOG_SNAPSHOT_CREATION.buildRuleName(instanceProperties))
-                .schedule(Schedule.rate(Duration.minutes(1)))
+                .schedule(Schedule.rate(Duration.minutes(
+                        instanceProperties.getLong(TRANSACTION_LOG_SNAPSHOT_CREATION_LAMBDA_PERIOD_IN_MINUTES))))
                 .targets(List.of(new LambdaFunction(snapshotCreationTrigger)))
                 .enabled(!shouldDeployPaused(this))
                 .build();
