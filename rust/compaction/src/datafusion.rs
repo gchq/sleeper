@@ -21,12 +21,15 @@ use crate::{
     aws_s3::{CountingObjectStore, ObjectStoreFactory},
     ColRange, CompactionInput, CompactionResult, PartitionBound,
 };
-use arrow::{array::RecordBatch, util::pretty::pretty_format_batches};
+use arrow::{array::RecordBatch, error::ArrowError, util::pretty::pretty_format_batches};
 use datafusion::{
     dataframe::DataFrameWriteOptions,
     error::DataFusionError,
     execution::{config::SessionConfig, context::SessionContext, options::ParquetReadOptions},
-    parquet::basic::{BrotliLevel, GzipLevel, ZstdLevel},
+    parquet::{
+        arrow::{async_reader::ParquetObjectReader, ParquetRecordBatchStreamBuilder},
+        basic::{BrotliLevel, GzipLevel, ZstdLevel},
+    },
     prelude::*,
 };
 use log::{error, info};
@@ -50,13 +53,14 @@ pub async fn compact(
     let sf = create_session_cfg(input_data);
     let ctx = SessionContext::new_with_config(sf);
 
-    // Register some objects store from first object
+    // Register some object store from first input file and output file
     let store = register_store(store_factory, input_paths, output_path, &ctx)?;
 
     // Sort on row key columns then sort columns (nulls last)
     let sort_order = sort_order(input_data);
     info!("Row key and sort column order {sort_order:?}");
 
+    // Tell DataFusion that the row key columns and sort columns are already sorted
     let po = ParquetReadOptions::default().file_sort_order(vec![sort_order.clone()]);
     let mut frame = ctx.read_parquet(input_paths.to_owned(), po).await?;
 
@@ -64,7 +68,12 @@ pub async fn compact(
     let col_names = frame.schema().clone().strip_qualifiers().field_names();
     info!("All columns in schema {col_names:?}");
 
-    // Perform projection of all columns
+    // If we have a partition region, apply it first
+    if let Some(expr) = region_filter(&input_data.region) {
+        frame = frame.filter(expr)?;
+    }
+
+    // Perform sort of row key and sort columns and projection of all columns
     let col_names_expr = frame
         .schema()
         .clone()
@@ -73,11 +82,6 @@ pub async fn compact(
         .iter()
         .map(col)
         .collect::<Vec<_>>();
-
-    // Create plan
-    if let Some(expr) = region_filter(&input_data.region) {
-        frame = frame.filter(expr)?;
-    }
     frame = frame.sort(sort_order)?.select(col_names_expr)?;
 
     // Show explanation of plan
@@ -98,7 +102,7 @@ pub async fn compact(
         col_opts.dictionary_enabled = Some(dict_encode);
     }
 
-    let result = frame
+    let _ = frame
         .write_parquet(
             output_path.as_str(),
             DataFrameWriteOptions::new(),
@@ -117,56 +121,102 @@ pub async fn compact(
             .unwrap_or(0)
             .to_formatted_string(&Locale::en)
     );
-    let rows_written = result.iter().map(RecordBatch::num_rows).sum::<usize>();
+
+    // Find rows just written to output Parquet file
+    let pq_reader = get_parquet_builder(store_factory, output_path)
+        .await
+        .map_err(|e| DataFusionError::External(e.into()))?;
+    let num_rows = pq_reader.metadata().file_metadata().num_rows();
+
     // The rows read will be same as rows_written.
     Ok(CompactionResult {
-        rows_read: rows_written,
-        rows_written,
+        rows_read: num_rows as usize,
+        rows_written: num_rows as usize,
     })
 }
 
+/// Create an asynchronous builder for reading Parquet files from an object store.
+///
+/// The URL must start with a scheme that the object store recognises, e.g. "file" or "s3".
+///
+/// # Errors
+/// This function will return an error if it couldn't connect to S3 or open a valid
+/// Parquet file.
+pub async fn get_parquet_builder(
+    store_factory: &ObjectStoreFactory,
+    src: &Url,
+) -> color_eyre::Result<ParquetRecordBatchStreamBuilder<ParquetObjectReader>> {
+    let store = store_factory.get_object_store(src)?;
+    // HEAD the file to get metadata
+    let path = object_store::path::Path::from(src.path());
+    let object_meta = store
+        .head(&path)
+        .await
+        .map_err(|e| ArrowError::ExternalError(Box::new(e)))?;
+    // Create a reader for the target file, use it to construct a Stream
+    let reader = ParquetObjectReader::new(store.as_object_store(), object_meta);
+    Ok(ParquetRecordBatchStreamBuilder::new(reader).await?)
+}
+
+/// Create the `DataFusion` filtering expression from a Sleeper region.
+///
+/// For each column in the row keys, we look up the partition range for that
+/// column and create a expression tree that combines all the various filtering conditions.
+///
 fn region_filter(region: &HashMap<String, ColRange>) -> Option<Expr> {
-    let mut col_exprs = vec![];
+    let mut col_expr: Option<Expr> = None;
     for (name, range) in region {
-        let min_bound = match range.lower {
-            PartitionBound::Int32(val) => lit(val),
-            PartitionBound::Int64(val) => lit(val),
-            PartitionBound::String(val) => lit(val.to_owned()),
-            PartitionBound::ByteArray(val) => lit(val.to_owned()),
-        };
-        let lower_expr = if range.lower_inclusive {
-            col(name).gt_eq(min_bound)
-        } else {
-            col(name).gt(min_bound)
-        };
-
-        let max_bound = match range.upper {
-            PartitionBound::Int32(val) => lit(val),
-            PartitionBound::Int64(val) => lit(val),
-            PartitionBound::String(val) => lit(val.to_owned()),
-            PartitionBound::ByteArray(val) => lit(val.to_owned()),
-        };
-        let upper_expr = if range.upper_inclusive {
-            col(name).lt_eq(max_bound)
-        } else {
-            col(name).lt(max_bound)
-        };
-
+        let lower_expr = lower_bound_expr(range, name);
+        let upper_expr = upper_bound_expr(range, name);
         let expr = lower_expr.and(upper_expr);
-        col_exprs.push(expr);
-    }
-
-    // join them together
-    // TODO: write this more Rust like
-    if !col_exprs.is_empty() {
-        let mut expr = col_exprs[0].clone();
-        for idx in 1..col_exprs.len() {
-            expr = expr.and(col_exprs[idx].clone());
+        // Combine this column filter with any previous column filter
+        col_expr = match col_expr {
+            Some(original) => Some(original.and(expr)),
+            None => Some(expr),
         }
-        Some(expr)
-    } else {
-        None
     }
+    col_expr
+}
+
+/// Calculate the upper bound expression on a given [`ColRange`].
+///
+/// This takes into account the inclusive/exclusive nature of the bound.
+///
+fn upper_bound_expr(range: &ColRange, name: &String) -> Expr {
+    let max_bound = bound_to_lit_expr(&range.upper);
+    let upper_expr = if range.upper_inclusive {
+        col(name).lt_eq(max_bound)
+    } else {
+        col(name).lt(max_bound)
+    };
+    upper_expr
+}
+
+/// Calculate the lower bound expression on a given [`ColRange`].
+///
+/// This takes into account the inclusive/exclusive nature of the bound.
+///
+fn lower_bound_expr(range: &ColRange, name: &String) -> Expr {
+    let min_bound = bound_to_lit_expr(&range.lower);
+    let lower_expr = if range.lower_inclusive {
+        col(name).gt_eq(min_bound)
+    } else {
+        col(name).gt(min_bound)
+    };
+    lower_expr
+}
+
+/// Convert a [`PartitionBound`] to an [`Expr`] that can be
+/// used in a bigger expression.
+///
+fn bound_to_lit_expr(bound: &PartitionBound) -> Expr {
+    let expr = match bound {
+        PartitionBound::Int32(val) => lit(*val),
+        PartitionBound::Int64(val) => lit(*val),
+        PartitionBound::String(val) => lit(val.to_owned()),
+        PartitionBound::ByteArray(val) => lit(val.to_owned()),
+    };
+    expr
 }
 
 /// Convert a Sleeper compression codec string to one `DataFusion` understands.
