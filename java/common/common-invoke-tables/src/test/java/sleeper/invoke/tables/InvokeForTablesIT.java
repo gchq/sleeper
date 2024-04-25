@@ -29,14 +29,19 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.core.CommonTestConstants;
+import sleeper.core.table.InMemoryTableIndex;
+import sleeper.core.table.TableIndex;
+import sleeper.core.table.TableNotFoundException;
 
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.table.TableStatusTestHelper.uniqueIdAndName;
 import static sleeper.invoke.tables.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
@@ -55,7 +60,7 @@ public class InvokeForTablesIT {
         String queueUrl = createFifoQueueGetUrl();
 
         // When
-        InvokeForTables.sendOneMessagePerTable(sqsClient, queueUrl, List.of(
+        InvokeForTables.sendOneMessagePerTable(sqsClient, queueUrl, Stream.of(
                 uniqueIdAndName("table-id", "table-name")));
 
         // Then
@@ -71,8 +76,7 @@ public class InvokeForTablesIT {
         // When
         InvokeForTables.sendOneMessagePerTable(sqsClient, queueUrl,
                 IntStream.rangeClosed(1, 11)
-                        .mapToObj(i -> uniqueIdAndName("table-id-" + i, "table-name-" + i))
-                        .collect(toUnmodifiableList()));
+                        .mapToObj(i -> uniqueIdAndName("table-id-" + i, "table-name-" + i)));
 
         // Then
         assertThat(receiveTableIdMessages(queueUrl, 10)).containsExactly(
@@ -80,6 +84,54 @@ public class InvokeForTablesIT {
                 "table-id-6", "table-id-7", "table-id-8", "table-id-9", "table-id-10");
         assertThat(receiveTableIdMessages(queueUrl, 10)).containsExactly(
                 "table-id-11");
+    }
+
+    @Test
+    void shouldLookUpTableByName() {
+        // Given
+        String queueUrl = createFifoQueueGetUrl();
+        TableIndex tableIndex = new InMemoryTableIndex();
+        tableIndex.create(uniqueIdAndName("table-id", "table-name"));
+
+        // When
+        InvokeForTables.sendOneMessagePerTableByName(sqsClient, queueUrl, tableIndex, List.of("table-name"));
+
+        // Then
+        assertThat(receiveTableIdMessages(queueUrl, 2))
+                .containsExactly("table-id");
+    }
+
+    @Test
+    void shouldFailLookUpTableByName() {
+        // Given
+        String queueUrl = createFifoQueueGetUrl();
+        TableIndex tableIndex = new InMemoryTableIndex();
+
+        // When / Then
+        assertThatThrownBy(() -> InvokeForTables.sendOneMessagePerTableByName(
+                sqsClient, queueUrl, tableIndex, List.of("missing-table")))
+                .isInstanceOf(TableNotFoundException.class);
+        assertThat(receiveTableIdMessages(queueUrl, 1))
+                .isEmpty();
+    }
+
+    @Test
+    void shouldFailLookUpTableByNameOnSecondPage() {
+        // Given
+        String queueUrl = createFifoQueueGetUrl();
+        TableIndex tableIndex = new InMemoryTableIndex();
+        IntStream.rangeClosed(1, 11)
+                .mapToObj(i -> uniqueIdAndName("table-id-" + i, "table-name-" + i))
+                .forEach(tableIndex::create);
+
+        // When / Then
+        assertThatThrownBy(() -> InvokeForTables.sendOneMessagePerTableByName(sqsClient, queueUrl, tableIndex,
+                IntStream.rangeClosed(1, 12)
+                        .mapToObj(i -> "table-name-" + i)
+                        .collect(toUnmodifiableList())))
+                .isInstanceOf(TableNotFoundException.class);
+        assertThat(receiveTableIdMessages(queueUrl, 10))
+                .isEmpty();
     }
 
     private String createFifoQueueGetUrl() {
@@ -92,7 +144,8 @@ public class InvokeForTablesIT {
     private List<String> receiveTableIdMessages(String queueUrl, int maxMessages) {
         ReceiveMessageResult result = sqsClient.receiveMessage(
                 new ReceiveMessageRequest(queueUrl)
-                        .withMaxNumberOfMessages(maxMessages));
+                        .withMaxNumberOfMessages(maxMessages)
+                        .withWaitTimeSeconds(0));
         return result.getMessages().stream()
                 .map(Message::getBody)
                 .collect(toUnmodifiableList());

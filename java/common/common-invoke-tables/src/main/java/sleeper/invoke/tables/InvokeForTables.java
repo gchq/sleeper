@@ -19,11 +19,14 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequest;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
 
+import sleeper.core.table.TableIndex;
+import sleeper.core.table.TableNotFoundException;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.SplitIntoBatches;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 
@@ -32,9 +35,17 @@ public class InvokeForTables {
     private InvokeForTables() {
     }
 
-    public static void sendOneMessagePerTable(AmazonSQS sqsClient, String queueUrl, List<TableStatus> tables) {
-        SplitIntoBatches.reusingListOfSize(10, tables.stream(),
+    public static void sendOneMessagePerTable(AmazonSQS sqsClient, String queueUrl, Stream<TableStatus> tables) {
+        SplitIntoBatches.reusingListOfSize(10, tables,
                 batch -> sendMessageBatch(sqsClient, queueUrl, batch));
+    }
+
+    public static void sendOneMessagePerTableByName(
+            AmazonSQS sqsClient, String queueUrl, TableIndex tableIndex, List<String> tableNames) {
+        List<TableStatus> tables = tableNames.stream().map(name -> tableIndex.getTableByName(name)
+                .orElseThrow(() -> TableNotFoundException.withTableName(name)))
+                .collect(toUnmodifiableList());
+        sendOneMessagePerTable(sqsClient, queueUrl, tables.stream());
     }
 
     private static void sendMessageBatch(AmazonSQS sqsClient, String queueUrl, List<TableStatus> tablesBatch) {
