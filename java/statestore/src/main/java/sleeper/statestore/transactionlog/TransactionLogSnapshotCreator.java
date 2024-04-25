@@ -17,6 +17,8 @@ package sleeper.statestore.transactionlog;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import org.apache.hadoop.conf.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -37,6 +39,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 
 public class TransactionLogSnapshotCreator {
+    public static final Logger LOGGER = LoggerFactory.getLogger(TransactionLogSnapshotCreator.class);
     private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
@@ -60,6 +63,7 @@ public class TransactionLogSnapshotCreator {
     }
 
     public void createSnapshot(TableProperties table) {
+        LOGGER.info("Creating snapshot for table {}", table.getStatus());
         DynamoDBTransactionLogSnapshotStore snapshotStore = new DynamoDBTransactionLogSnapshotStore(instanceProperties, table, dynamoDB);
         Optional<LatestSnapshots> latestSnapshotsOpt = snapshotStore.getLatestSnapshots();
         StateStore stateStore = stateStoreProvider.getStateStore(table);
@@ -67,6 +71,7 @@ public class TransactionLogSnapshotCreator {
             saveFilesSnapshot(table, stateStore, snapshotStore, latestSnapshotsOpt);
             savePartitionsSnapshot(table, stateStore, snapshotStore, latestSnapshotsOpt);
         } catch (DuplicateSnapshotException | StateStoreException | IOException e) {
+            LOGGER.error("Failed to create snapshot for table {}", table.getStatus());
             throw new RuntimeException(e);
         }
     }
