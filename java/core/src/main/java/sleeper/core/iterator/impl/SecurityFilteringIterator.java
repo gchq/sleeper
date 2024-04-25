@@ -61,6 +61,9 @@ public class SecurityFilteringIterator implements SortedRecordIterator {
         return new SecurityFilteringIteratorInternal(input, fieldName, auths);
     }
 
+    /**
+     * Discards records in the input iterator where the security label is not one of the permitted auths.
+     */
     public static class SecurityFilteringIteratorInternal implements CloseableIterator<Record> {
         private final CloseableIterator<Record> iterator;
         private final String fieldName;

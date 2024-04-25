@@ -24,7 +24,6 @@ import org.apache.parquet.hadoop.ParquetWriter;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.record.CloneRecord;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -291,14 +290,21 @@ public class IngestRecordsTestDataHelper {
     public static List<Record> readRecordsFromParquetFile(String filename, Schema schema) throws IOException {
         ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(filename), schema).build();
         List<Record> readRecords = new ArrayList<>();
-        CloneRecord cloneRecord = new CloneRecord(schema);
         Record record = reader.read();
         while (null != record) {
-            readRecords.add(cloneRecord.clone(record));
+            readRecords.add(cloneRecord(record, schema));
             record = reader.read();
         }
         reader.close();
         return readRecords;
+    }
+
+    private static Record cloneRecord(Record record, Schema schema) {
+        Record clonedRecord = new Record();
+        for (Field field : schema.getAllFields()) {
+            clonedRecord.put(field.getName(), record.get(field.getName()));
+        }
+        return clonedRecord;
     }
 
     public static Sketches getSketches(Schema schema, String filename) throws IOException {

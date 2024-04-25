@@ -32,6 +32,28 @@ public class Key {
         this.key = key;
     }
 
+    /**
+     * Wraps a single value, a null, or a list of values.
+     *
+     * @param  obj the value or list of values
+     * @return     the wrapped key
+     */
+    public static Key create(Object obj) {
+        if (null == obj) {
+            return new Key(Collections.singletonList(null));
+        }
+        if (obj instanceof List) {
+            return new Key((List<Object>) obj);
+        }
+        return new Key(Collections.singletonList(obj));
+    }
+
+    /**
+     * Retrieves the nth key value by its order in the schema.
+     *
+     * @param  i index in the schema's row keys
+     * @return   value of the key field
+     */
     public Object get(int i) {
         return key.get(i);
     }
@@ -40,6 +62,12 @@ public class Key {
         return key;
     }
 
+    /**
+     * Retreives the number of keys this object is based on. If this is fewer than the number of row keys in the schema,
+     * this object holds the first n row keys where this method returns n.
+     *
+     * @return the number of keys we have values for
+     */
     public int size() {
         return key.size();
     }
@@ -92,15 +120,5 @@ public class Key {
     @Override
     public String toString() {
         return "Key{" + cloneWithWrappedByteArray(key) + '}';
-    }
-
-    public static Key create(Object obj) {
-        if (null == obj) {
-            return new Key(Collections.singletonList(null));
-        }
-        if (obj instanceof List) {
-            return new Key((List<Object>) obj);
-        }
-        return new Key(Collections.singletonList(obj));
     }
 }

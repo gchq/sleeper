@@ -55,6 +55,9 @@ public class AgeOffIterator implements SortedRecordIterator {
         return new AgeOffIteratorInternal(input, fieldName, ageOff);
     }
 
+    /**
+     * Discards records in the input iterator when the timestamp is older than the limit.
+     */
     public static class AgeOffIteratorInternal implements CloseableIterator<Record> {
         private final CloseableIterator<Record> input;
         private final String fieldName;

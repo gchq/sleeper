@@ -24,55 +24,70 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import com.amazonaws.services.sqs.model.SendMessageBatchRequest;
+import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
-import sleeper.core.table.InvokeForTableRequest;
-import sleeper.core.table.InvokeForTableRequestSerDe;
 import sleeper.core.table.TableIndex;
+import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
+import sleeper.core.util.SplitIntoBatches;
 
 import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
 
+import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CommonProperty.METRICS_FOR_OFFLINE_TABLES;
-import static sleeper.configuration.properties.instance.CommonProperty.METRICS_TABLE_BATCH_SIZE;
 
-@SuppressWarnings("unused")
 public class TableMetricsTriggerLambda implements RequestHandler<ScheduledEvent, Void> {
     private static final Logger LOGGER = LoggerFactory.getLogger(TableMetricsTriggerLambda.class);
 
+    private final AmazonDynamoDB dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
+    private final AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
     private final InstanceProperties instanceProperties = new InstanceProperties();
-    private final InvokeForTableRequestSerDe serDe = new InvokeForTableRequestSerDe();
-    private final AmazonS3 s3Client;
-    private final AmazonDynamoDB dynamoClient;
-    private final AmazonSQS sqsClient;
-    private final String configBucketName;
+    private final PropertiesReloader propertiesReloader;
 
     public TableMetricsTriggerLambda() {
-        this.s3Client = AmazonS3ClientBuilder.defaultClient();
-        this.dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
-        this.sqsClient = AmazonSQSClientBuilder.defaultClient();
-        this.configBucketName = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
+        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+        String configBucketName = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
+        instanceProperties.loadFromS3(s3Client, configBucketName);
+        propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties);
     }
 
     @Override
     public Void handleRequest(ScheduledEvent event, Context context) {
         Instant startTime = Instant.now();
         LOGGER.info("Lambda triggered at {}, started at {}", event.getTime(), startTime);
-        instanceProperties.loadFromS3(s3Client, configBucketName);
-        int batchSize = instanceProperties.getInt(METRICS_TABLE_BATCH_SIZE);
+        propertiesReloader.reloadIfNeeded();
+
+        TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
         String queueUrl = instanceProperties.get(TABLE_METRICS_QUEUE_URL);
         boolean offlineEnabled = instanceProperties.getBoolean(METRICS_FOR_OFFLINE_TABLES);
-        TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
-        InvokeForTableRequest.forTablesWithOfflineEnabled(offlineEnabled, tableIndex, batchSize,
-                request -> sqsClient.sendMessage(queueUrl, serDe.toJson(request)));
+        SplitIntoBatches.reusingListOfSize(10,
+                offlineEnabled ? tableIndex.streamAllTables() : tableIndex.streamOnlineTables(),
+                tables -> sendMessageBatch(tables, queueUrl));
 
         Instant finishTime = Instant.now();
         LOGGER.info("Lambda finished at {} (ran for {})", finishTime, LoggedDuration.withFullOutput(startTime, finishTime));
         return null;
+    }
+
+    private void sendMessageBatch(List<TableStatus> tables, String queueUrl) {
+        sqsClient.sendMessageBatch(new SendMessageBatchRequest()
+                .withQueueUrl(queueUrl)
+                .withEntries(tables.stream()
+                        .map(table -> new SendMessageBatchRequestEntry()
+                                .withMessageDeduplicationId(UUID.randomUUID().toString())
+                                .withId(table.getTableUniqueId())
+                                .withMessageGroupId(table.getTableUniqueId())
+                                .withMessageBody(table.getTableUniqueId()))
+                        .collect(toUnmodifiableList())));
     }
 }

@@ -16,7 +16,7 @@
 
 package sleeper.clients.status.report.partitions;
 
-import sleeper.clients.testutil.ToStringPrintStream;
+import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionsBuilder;
@@ -57,7 +57,7 @@ public class PartitionStatusReportTestHelper {
     }
 
     public static String getStandardReport(TableProperties tableProperties, StateStore stateStore) throws StateStoreException {
-        ToStringPrintStream output = new ToStringPrintStream();
+        ToStringConsoleOutput output = new ToStringConsoleOutput();
         PartitionsStatusReporter reporter = new PartitionsStatusReporter(output.getPrintStream());
         reporter.report(PartitionsStatus.from(tableProperties, stateStore));
         return output.toString();

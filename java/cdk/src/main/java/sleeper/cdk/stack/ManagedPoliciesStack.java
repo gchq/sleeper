@@ -136,9 +136,9 @@ public class ManagedPoliciesStack extends NestedStack {
         Utils.grantInvokeOnPolicy(function, invokeSchedulesPolicy);
     }
 
-    public void grantInvokeScheduled(IFunction function, IQueue tableBatchQueue) {
+    public void grantInvokeScheduled(IFunction function, IQueue invokeQueue) {
         grantInvokeScheduled(function);
-        tableBatchQueue.grantSendMessages(invokeSchedulesPolicy);
+        invokeQueue.grantSendMessages(invokeSchedulesPolicy);
     }
 
     // The Lambda IFunction.getRole method is annotated as nullable, even though it will never return null in practice.

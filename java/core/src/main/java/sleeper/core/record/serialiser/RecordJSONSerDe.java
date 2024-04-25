@@ -63,10 +63,23 @@ public class RecordJSONSerDe {
                 .create();
     }
 
+    /**
+     * Serialises a record to a JSON string.
+     *
+     * @param  record the record
+     * @return        a JSON string
+     */
     public String toJson(Record record) {
         return gson.toJson(record);
     }
 
+    /**
+     * Serialises a record to a JSON string.
+     *
+     * @param  record      the record
+     * @param  prettyPrint whether to pretty-print the JSON string
+     * @return             a JSON string
+     */
     public String toJson(Record record, boolean prettyPrint) {
         if (prettyPrint) {
             return gsonPrettyPrinting.toJson(record);
@@ -74,10 +87,19 @@ public class RecordJSONSerDe {
         return toJson(record);
     }
 
+    /**
+     * Deserialises a JSON string to a record.
+     *
+     * @param  jsonSchema the JSON string
+     * @return            a record
+     */
     public Record fromJson(String jsonSchema) {
         return gson.fromJson(jsonSchema, Record.class);
     }
 
+    /**
+     * A GSON plugin to serialise/deserialise a record.
+     */
     public static class RecordGsonSerialiser implements JsonSerializer<Record>, JsonDeserializer<Record> {
         private final Schema schema;
 

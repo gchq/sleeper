@@ -25,7 +25,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-import sleeper.clients.testutil.ToStringPrintStream;
+import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -82,7 +82,7 @@ public class PartitionsStatusReportIT {
     }
 
     private String runReport() throws Exception {
-        ToStringPrintStream out = new ToStringPrintStream();
+        ToStringConsoleOutput out = new ToStringConsoleOutput();
         PartitionsStatusReportArguments.fromArgs(instanceProperties.get(ID), tableProperties.get(TABLE_NAME))
                 .runReport(s3, dynamoDB, out.getPrintStream());
         return out.toString();

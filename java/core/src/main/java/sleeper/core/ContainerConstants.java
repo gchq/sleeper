@@ -15,6 +15,9 @@
  */
 package sleeper.core;
 
+/**
+ * Defines names of containers to be referenced both during deployment in the CDK and when starting tasks.
+ */
 public class ContainerConstants {
 
     private ContainerConstants() {

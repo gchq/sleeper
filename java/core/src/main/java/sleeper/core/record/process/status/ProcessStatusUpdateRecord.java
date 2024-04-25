@@ -18,6 +18,9 @@ package sleeper.core.record.process.status;
 import java.time.Instant;
 import java.util.Objects;
 
+/**
+ * Represents a record held in a status store, containing a status update for a job.
+ */
 public class ProcessStatusUpdateRecord {
 
     private final String jobId;
@@ -109,6 +112,9 @@ public class ProcessStatusUpdateRecord {
                 '}';
     }
 
+    /**
+     * Creates a status update record.
+     */
     public static final class Builder {
         private String jobId;
         private ProcessStatusUpdate statusUpdate;
@@ -119,26 +125,56 @@ public class ProcessStatusUpdateRecord {
         private Builder() {
         }
 
+        /**
+         * Sets the job ID.
+         *
+         * @param  jobId the job ID to set
+         * @return       the builder
+         */
         public Builder jobId(String jobId) {
             this.jobId = jobId;
             return this;
         }
 
+        /**
+         * Sets the status update.
+         *
+         * @param  statusUpdate the status update to set
+         * @return              the builder
+         */
         public Builder statusUpdate(ProcessStatusUpdate statusUpdate) {
             this.statusUpdate = statusUpdate;
             return this;
         }
 
+        /**
+         * Sets the job run ID to correlate updates that occur on the same run of the job.
+         *
+         * @param  jobRunId the job run ID to set
+         * @return          the builder
+         */
         public Builder jobRunId(String jobRunId) {
             this.jobRunId = jobRunId;
             return this;
         }
 
+        /**
+         * Sets the task ID.
+         *
+         * @param  taskId the task ID to set
+         * @return        the builder
+         */
         public Builder taskId(String taskId) {
             this.taskId = taskId;
             return this;
         }
 
+        /**
+         * Sets the expiry date.
+         *
+         * @param  expiryDate the expiry date to set
+         * @return            the builder
+         */
         public Builder expiryDate(Instant expiryDate) {
             this.expiryDate = expiryDate;
             return this;

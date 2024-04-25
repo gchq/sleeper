@@ -173,7 +173,7 @@ class PartitionFactoryTest {
                         .id("parent")
                         .leafPartition(false)
                         .parentPartitionId(null)
-                        .childPartitionIds("A", "B")
+                        .childPartitionIds(List.of("A", "B"))
                         .dimension(0)
                         .build());
     }
