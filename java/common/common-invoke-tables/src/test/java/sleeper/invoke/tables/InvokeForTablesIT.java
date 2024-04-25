@@ -42,8 +42,8 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.table.TableStatusTestHelper.uniqueIdAndName;
-import static sleeper.invoke.tables.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
 @Testcontainers
 public class InvokeForTablesIT {
