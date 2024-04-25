@@ -82,7 +82,7 @@ class PartitionsStatusTest {
         PartitionsStatus status = PartitionsStatus.from(tableProperties, store);
 
         // Then
-        assertThat(status.getNumLeafPartitionsThatNeedSplitting()).isZero();
+        assertThat(status.getNumLeafPartitionsThatWillBeSplit()).isZero();
     }
 
     @Test
@@ -96,7 +96,7 @@ class PartitionsStatusTest {
         PartitionsStatus status = PartitionsStatus.from(tableProperties, store);
 
         // Then
-        assertThat(status.getNumLeafPartitionsThatNeedSplitting()).isEqualTo(2);
+        assertThat(status.getNumLeafPartitionsThatWillBeSplit()).isEqualTo(2);
     }
 
     @Test
@@ -113,7 +113,7 @@ class PartitionsStatusTest {
         PartitionsStatus status = PartitionsStatus.from(tableProperties, store);
 
         // Then
-        assertThat(status.getNumLeafPartitionsThatNeedSplitting()).isEqualTo(0);
+        assertThat(status.getNumLeafPartitionsThatWillBeSplit()).isEqualTo(0);
     }
 
     @Test

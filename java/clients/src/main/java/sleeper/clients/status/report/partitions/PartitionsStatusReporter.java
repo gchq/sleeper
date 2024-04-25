@@ -37,7 +37,8 @@ public class PartitionsStatusReporter {
     private static final TableField APPROX_RECORDS = BUILDER.addNumericField("APPROX_RECORDS");
     private static final TableField KNOWN_RECORDS = BUILDER.addNumericField("KNOWN_RECORDS");
     private static final TableField LEAF = BUILDER.addField("LEAF");
-    private static final TableField NEEDS_SPLITTING = BUILDER.addField("NEEDS_SPLITTING");
+    private static final TableField WILL_BE_SPLIT = BUILDER.addField("WILL_BE_SPLIT");
+    private static final TableField MAY_SPLIT_IF_COMPACTED = BUILDER.addField("MAY_SPLIT_IF_COMPACTED");
     private static final TableField SPLIT_FIELD = BUILDER.addField("SPLIT_FIELD");
     private static final TableField SPLIT_VALUE = BUILDER.addField("SPLIT_VALUE");
     private static final TableWriterFactory TABLE_FACTORY = BUILDER.build();
@@ -53,7 +54,7 @@ public class PartitionsStatusReporter {
         out.println("Partitions Status Report:");
         out.println("--------------------------");
         out.println("There are " + status.getNumPartitions() + " partitions (" + status.getNumLeafPartitions() + " leaf partitions)");
-        out.println("There are " + status.getNumLeafPartitionsThatNeedSplitting() + " leaf partitions that need splitting");
+        out.println("There are " + status.getNumLeafPartitionsThatWillBeSplit() + " leaf partitions that will be split");
         out.println("Split threshold is " + status.getSplitThreshold() + " records");
         TABLE_FACTORY.tableBuilder()
                 .itemsAndWriter(status.getPartitions(), PartitionsStatusReporter::writeRow)
@@ -69,16 +70,24 @@ public class PartitionsStatusReporter {
                 .value(APPROX_RECORDS, status.getApproxRecords())
                 .value(KNOWN_RECORDS, status.getKnownRecords())
                 .value(LEAF, partition.isLeafPartition() ? "yes" : "no")
-                .value(NEEDS_SPLITTING, needsSplittingString(status))
+                .value(WILL_BE_SPLIT, willBeSplitString(status))
+                .value(MAY_SPLIT_IF_COMPACTED, maySplitIfCompactedString(status))
                 .value(SPLIT_FIELD, StandardProcessRunReporter.getOrNull(status.getSplitField(), Field::getName))
                 .value(SPLIT_VALUE, splitValueString(status));
     }
 
-    private static String needsSplittingString(PartitionStatus status) {
+    private static String willBeSplitString(PartitionStatus status) {
         if (!status.isLeafPartition()) {
             return null;
         }
-        return status.isNeedsSplitting() ? "yes" : "no";
+        return status.willBeSplit() ? "yes" : "no";
+    }
+
+    private static String maySplitIfCompactedString(PartitionStatus status) {
+        if (!status.isLeafPartition() || status.willBeSplit()) {
+            return null;
+        }
+        return status.maySplitIfCompacted() ? "yes" : "no";
     }
 
     private static String splitValueString(PartitionStatus status) {
