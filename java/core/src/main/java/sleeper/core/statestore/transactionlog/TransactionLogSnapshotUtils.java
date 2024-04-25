@@ -23,8 +23,8 @@ public class TransactionLogSnapshotUtils {
     }
 
     public static long updateFilesState(
-            TableStatus table, StateStorePartitions state, TransactionLogStore store, long lastTransactionNumber) throws StateStoreException {
-        return updateState(TransactionLogHead.builder().forPartitions()
+            TableStatus table, StateStoreFiles state, TransactionLogStore store, long lastTransactionNumber) throws StateStoreException {
+        return updateState(TransactionLogHead.builder().forFiles()
                 .lastTransactionNumber(lastTransactionNumber)
                 .logStore(store)
                 .sleeperTable(table)
@@ -33,8 +33,8 @@ public class TransactionLogSnapshotUtils {
     }
 
     public static long updatePartitionsState(
-            TableStatus table, StateStoreFiles state, TransactionLogStore store, long lastTransactionNumber) throws StateStoreException {
-        return updateState(TransactionLogHead.builder().forFiles()
+            TableStatus table, StateStorePartitions state, TransactionLogStore store, long lastTransactionNumber) throws StateStoreException {
+        return updateState(TransactionLogHead.builder().forPartitions()
                 .lastTransactionNumber(lastTransactionNumber)
                 .logStore(store)
                 .sleeperTable(table)

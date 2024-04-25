@@ -32,7 +32,6 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.InvokeForTableRequest;
-import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.LatestSnapshots;
 
 import java.nio.file.Path;
@@ -54,7 +53,6 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
     private final Schema schema = schemaWithKey("key", new LongType());
     private final TablePropertiesStore store = InMemoryTableProperties.getStore();
     private final TablePropertiesProvider provider = new TablePropertiesProvider(instanceProperties, store, Instant::now);
-    private final StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, new Configuration());
 
     @BeforeEach
     public void setup() {
@@ -77,8 +75,8 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
         // Then
         assertThat(snapshotStore(table).getLatestSnapshots())
                 .contains(new LatestSnapshots(
-                        filesSnapshot(table, 0),
-                        partitionsSnapshot(table, 0)));
+                        filesSnapshot(table, 1),
+                        partitionsSnapshot(table, 1)));
     }
 
     @Test
@@ -102,17 +100,37 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
         // Then
         assertThat(snapshotStore(table1).getLatestSnapshots())
                 .contains(new LatestSnapshots(
-                        filesSnapshot(table1, 0),
-                        partitionsSnapshot(table1, 0)));
+                        filesSnapshot(table1, 1),
+                        partitionsSnapshot(table1, 1)));
         assertThat(snapshotStore(table2).getLatestSnapshots())
                 .contains(new LatestSnapshots(
-                        filesSnapshot(table2, 0),
-                        partitionsSnapshot(table2, 0)));
+                        filesSnapshot(table2, 1),
+                        partitionsSnapshot(table2, 1)));
+    }
+
+    @Test
+    void shouldSkipCreatingSnapshotsIfStateHasNotUpdatedSinceLastSnapshot() throws Exception {
+        // Given
+        TableProperties table = createTable("test-table-id-1", "test-table-1");
+        StateStore stateStore = createStateStore(table);
+        stateStore.initialise();
+        FileReferenceFactory factory = FileReferenceFactory.from(stateStore);
+        stateStore.addFile(factory.rootFile(123L));
+        runSnapshotCreator(forTableIds("test-table-id-1"));
+
+        // When
+        runSnapshotCreator(forTableIds("test-table-id-1"));
+
+        // Then
+        assertThat(snapshotStore(table).getLatestSnapshots())
+                .contains(new LatestSnapshots(
+                        filesSnapshot(table, 1),
+                        partitionsSnapshot(table, 1)));
     }
 
     private void runSnapshotCreator(InvokeForTableRequest tableRequest) throws StateStoreException {
         new TransactionLogSnapshotCreator(
-                instanceProperties, provider, stateStoreProvider, dynamoDBClient, new Configuration())
+                instanceProperties, provider, s3Client, dynamoDBClient, new Configuration())
                 .run(tableRequest);
     }
 
