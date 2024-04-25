@@ -23,7 +23,6 @@ import org.junit.jupiter.api.io.TempDir;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.InMemoryTableProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TablePropertiesStore;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.schema.Schema;
@@ -33,7 +32,6 @@ import sleeper.core.statestore.StateStore;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.LatestSnapshots;
 
 import java.nio.file.Path;
-import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
@@ -49,7 +47,6 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
     private Path tempDir;
     private final Schema schema = schemaWithKey("key", new LongType());
     private final TablePropertiesStore store = InMemoryTableProperties.getStore();
-    private final TablePropertiesProvider provider = new TablePropertiesProvider(instanceProperties, store, Instant::now);
 
     @BeforeEach
     public void setup() {
