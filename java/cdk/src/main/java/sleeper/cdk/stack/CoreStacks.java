@@ -76,6 +76,13 @@ public class CoreStacks {
         stateStoreStacks.grantReadPartitions(grantee);
     }
 
+    public void grantTransactionLogSnapshotCreation(IGrantable grantee) {
+        configBucketStack.grantRead(grantee);
+        tableIndexStack.grantRead(grantee);
+        stateStoreStacks.grantReadActiveFilesAndPartitions(grantee);
+        dataStack.grantReadWrite(grantee);
+    }
+
     public void grantIngest(IRole grantee) {
         configBucketStack.grantRead(grantee);
         tableIndexStack.grantRead(grantee);
