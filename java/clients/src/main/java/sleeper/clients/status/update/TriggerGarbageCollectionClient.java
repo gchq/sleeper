@@ -21,16 +21,18 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import com.amazonaws.services.sqs.model.SendMessageBatchRequest;
+import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
-import sleeper.core.table.InvokeForTableRequest;
-import sleeper.core.table.InvokeForTableRequestSerDe;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.core.table.TableStatus;
+import sleeper.core.util.SplitIntoBatches;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
@@ -63,13 +65,25 @@ public class TriggerGarbageCollectionClient {
                             .orElseThrow(() -> TableNotFoundException.withTableName(name)))
                     .collect(toUnmodifiableList());
             String queueUrl = instanceProperties.get(GARBAGE_COLLECTOR_QUEUE_URL);
-            InvokeForTableRequestSerDe serDe = new InvokeForTableRequestSerDe();
-            InvokeForTableRequest.forTables(tables.stream(), tables.size(),
-                    request -> sqsClient.sendMessage(queueUrl, serDe.toJson(request)));
+            SplitIntoBatches.reusingListOfSize(10,
+                    tables.stream(),
+                    batch -> sendMessageBatch(sqsClient, batch, queueUrl));
         } finally {
             s3Client.shutdown();
             dynamoClient.shutdown();
             sqsClient.shutdown();
         }
+    }
+
+    public static void sendMessageBatch(AmazonSQS sqsClient, List<TableStatus> tables, String queueUrl) {
+        sqsClient.sendMessageBatch(new SendMessageBatchRequest()
+                .withQueueUrl(queueUrl)
+                .withEntries(tables.stream()
+                        .map(table -> new SendMessageBatchRequestEntry()
+                                .withMessageDeduplicationId(UUID.randomUUID().toString())
+                                .withId(table.getTableUniqueId())
+                                .withMessageGroupId(table.getTableUniqueId())
+                                .withMessageBody(table.getTableUniqueId()))
+                        .collect(toUnmodifiableList())));
     }
 }
