@@ -190,6 +190,48 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                     .containsExactly(file2);
         }
+
+        @Test
+        void shouldLoadLatestPartitionsSnapshotIfNoFilesSnapshotIsPresent() throws Exception {
+            // Given
+            PartitionTree tree = new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 123L)
+                    .buildTree();
+            savePartitionsSnapshot(tree, 3);
+
+            // When
+            StateStore stateStore = createStateStore();
+
+            // Then
+            assertThat(stateStore.getAllPartitions())
+                    .containsExactlyElementsOf(tree.getAllPartitions());
+            assertThat(stateStore.getFileReferences()).isEmpty();
+        }
+
+        @Test
+        void shouldLoadLatestFilesSnapshotIfNoPartitionsSnapshotIsPresent() throws Exception {
+            // Given
+            PartitionTree tree = new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 123L)
+                    .buildTree();
+            FileReferenceFactory factory = FileReferenceFactory.from(tree);
+            List<FileReference> files = List.of(
+                    factory.rootFile("file1.parquet", 100L),
+                    factory.partitionFile("L", "file2.parquet", 25L),
+                    factory.partitionFile("R", "file3.parquet", 50L));
+            saveFilesSnapshot(files, 2);
+
+            // When
+            StateStore stateStore = createStateStore();
+
+            // Then
+            assertThat(stateStore.getAllPartitions()).isEmpty();
+            assertThat(stateStore.getFileReferences())
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
+                    .containsExactlyElementsOf(files);
+        }
     }
 
     private void saveFilesSnapshot(List<FileReference> files, long transactionNumber) throws Exception {
