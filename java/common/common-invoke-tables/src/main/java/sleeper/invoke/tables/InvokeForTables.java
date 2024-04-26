@@ -36,6 +36,7 @@ public class InvokeForTables {
     }
 
     public static void sendOneMessagePerTable(AmazonSQS sqsClient, String queueUrl, Stream<TableStatus> tables) {
+        // Limit to stay under the maximum size for an SQS sendMessageBatch call.
         SplitIntoBatches.reusingListOfSize(10, tables,
                 batch -> sendMessageBatch(sqsClient, queueUrl, batch));
     }
