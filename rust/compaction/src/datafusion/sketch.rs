@@ -43,8 +43,7 @@ pub enum DataSketchVariant {
 
 impl Debug for DataSketchVariant {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_tuple(&format!("{}", std::any::type_name::<Self>()))
-            .finish()
+        f.debug_tuple(std::any::type_name::<Self>()).finish()
     }
 }
 
@@ -171,7 +170,7 @@ impl DataSketchVariant {
     /// # Panics
     /// If the value provided cannot be converted to the type of this [`DataSketch`], i.e.
     /// if you try to update an i32 sketch with a string.
-    pub fn update<T>(&mut self, value: T)
+    pub fn update<T>(&mut self, value: &T)
     where
         T: Item,
     {
@@ -312,13 +311,14 @@ pub fn serialise_sketches(
 ///
 /// # Panics
 /// Panic if sketch type is not compatible with the item type of the array.
+#[allow(clippy::module_name_repetitions)]
 pub fn update_sketch<T: Item, A: ArrayAccessor<Item = T>>(
     sketch: &mut DataSketchVariant,
     array: &A,
 ) {
     for i in 0..array.len() {
         unsafe {
-            sketch.update(array.value_unchecked(i));
+            sketch.update(&array.value_unchecked(i));
         }
     }
 }

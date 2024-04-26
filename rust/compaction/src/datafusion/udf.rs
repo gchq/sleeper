@@ -23,7 +23,6 @@ use std::{
     any::Any,
     fmt::Debug,
     iter::zip,
-    ops::Deref,
     sync::{Mutex, MutexGuard},
 };
 
@@ -139,7 +138,7 @@ impl ScalarUDFImpl for SketchUDF {
     }
     fn return_type(&self, args: &[DataType]) -> Result<DataType> {
         // Return type will be type of first row key column
-        Ok(args[0].to_owned())
+        Ok(args[0].clone())
     }
 
     fn invoke(&self, columns: &[ColumnarValue]) -> Result<ColumnarValue> {
@@ -178,20 +177,20 @@ impl ScalarUDFImpl for SketchUDF {
                 ColumnarValue::Scalar(
                     ScalarValue::Utf8(Some(value)) | ScalarValue::LargeUtf8(Some(value)),
                 ) => {
-                    sketch.update(value.deref());
+                    sketch.update(value);
                 }
                 ColumnarValue::Scalar(
                     ScalarValue::Binary(Some(value)) | ScalarValue::LargeBinary(Some(value)),
                 ) => {
-                    sketch.update(value.deref());
+                    sketch.update(value);
                 }
                 ColumnarValue::Scalar(ScalarValue::Int32(Some(value))) => {
-                    sketch.update(*value);
+                    sketch.update(value);
                 }
                 ColumnarValue::Scalar(ScalarValue::Int64(Some(value))) => {
-                    sketch.update(*value);
+                    sketch.update(value);
                 }
-                x @ _ => {
+                x @ ColumnarValue::Scalar(_) => {
                     return internal_err!(
                         "Row type {} not supported for Sleeper row key field",
                         x.data_type()

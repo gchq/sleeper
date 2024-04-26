@@ -54,10 +54,10 @@ pub struct CompactionInput<'a> {
 impl Default for CompactionInput<'_> {
     fn default() -> Self {
         Self {
-            input_files: Default::default(),
+            input_files: Vec::default(),
             output_file: Url::parse("file:///").unwrap(),
-            row_key_cols: Default::default(),
-            sort_key_cols: Default::default(),
+            row_key_cols: Vec::default(),
+            sort_key_cols: Vec::default(),
             max_row_group_size: 1_000_000,
             max_page_size: 65535,
             compression: "zstd".into(),
@@ -67,7 +67,7 @@ impl Default for CompactionInput<'_> {
             dict_enc_row_keys: true,
             dict_enc_sort_keys: true,
             dict_enc_values: true,
-            region: Default::default(),
+            region: HashMap::default(),
         }
     }
 }

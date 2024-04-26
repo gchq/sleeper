@@ -26,7 +26,7 @@ use url::Url;
 /// Implements a Sleeper compaction algorithm in Rust.
 ///
 /// A sequence of Parquet files is read and compacted into a single output Parquet file. The input
-/// files must be individually sorted according to the row key columns and then the sort columns`. A sketches file containing
+/// files must be individually sorted according to the row key columns and then the sort columns. A sketches file containing
 /// serialised Apache Data Sketches quantiles sketches is written for reach row key column.
 ///
 #[derive(Parser, Debug)]

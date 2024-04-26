@@ -107,7 +107,7 @@ pub struct FFICompactionParams {
     region_maxs_inclusive: *const *const bool,
 }
 
-impl<'a, 'b> TryFrom<&'a FFICompactionParams> for CompactionInput<'a> {
+impl<'a> TryFrom<&'a FFICompactionParams> for CompactionInput<'a> {
     type Error = color_eyre::eyre::Report;
 
     fn try_from(params: &'a FFICompactionParams) -> Result<CompactionInput<'a>, Self::Error> {
@@ -387,7 +387,7 @@ fn unpack_variant_array<'a>(
                     #[allow(clippy::cast_sign_loss)]
                     slice::from_raw_parts(bptr.byte_add(4).cast::<u8>(), str_len as usize)
                 })
-                .map(|v| PartitionBound::String(v))
+                .map(PartitionBound::String)
             }
             4 => {
                 //unpack length (signed because it's from Java)

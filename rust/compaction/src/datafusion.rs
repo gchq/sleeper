@@ -120,7 +120,7 @@ pub async fn compact(
         )
         .await?;
 
-    show_store_stats(store);
+    show_store_stats(&store);
 
     let mut rows_written = 0;
 
@@ -140,7 +140,7 @@ pub async fn compact(
         serialise_sketches(
             store_factory,
             &create_sketch_path(output_path),
-            &*func.get_sketch(),
+            &func.get_sketch(),
         )
         .map_err(|e| DataFusionError::External(e.into()))?;
     }
@@ -154,7 +154,7 @@ pub async fn compact(
 
 /// Show some basic statistics from the [`ObjectStore`].
 ///
-fn show_store_stats(store: Arc<dyn CountingObjectStore>) {
+fn show_store_stats(store: &Arc<dyn CountingObjectStore>) {
     info!(
         "Object store read {} bytes from {} GETs",
         store
@@ -194,12 +194,11 @@ fn region_filter(region: &HashMap<String, ColRange>) -> Option<Expr> {
 ///
 fn upper_bound_expr(range: &ColRange, name: &String) -> Expr {
     let max_bound = bound_to_lit_expr(&range.upper);
-    let upper_expr = if range.upper_inclusive {
+    if range.upper_inclusive {
         col(name).lt_eq(max_bound)
     } else {
         col(name).lt(max_bound)
-    };
-    upper_expr
+    }
 }
 
 /// Calculate the lower bound expression on a given [`ColRange`].
@@ -208,25 +207,23 @@ fn upper_bound_expr(range: &ColRange, name: &String) -> Expr {
 ///
 fn lower_bound_expr(range: &ColRange, name: &String) -> Expr {
     let min_bound = bound_to_lit_expr(&range.lower);
-    let lower_expr = if range.lower_inclusive {
+    if range.lower_inclusive {
         col(name).gt_eq(min_bound)
     } else {
         col(name).gt(min_bound)
-    };
-    lower_expr
+    }
 }
 
 /// Convert a [`PartitionBound`] to an [`Expr`] that can be
 /// used in a bigger expression.
 ///
 fn bound_to_lit_expr(bound: &PartitionBound) -> Expr {
-    let expr = match bound {
+    match bound {
         PartitionBound::Int32(val) => lit(*val),
         PartitionBound::Int64(val) => lit(*val),
         PartitionBound::String(val) => lit(val.to_owned()),
         PartitionBound::ByteArray(val) => lit(val.to_owned()),
-    };
-    expr
+    }
 }
 
 /// Convert a Sleeper compression codec string to one `DataFusion` understands.
