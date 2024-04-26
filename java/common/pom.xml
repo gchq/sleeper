@@ -29,6 +29,7 @@
     <modules>
         <module>common-job</module>
         <module>common-task</module>
+        <module>common-invoke-tables</module>
         <module>dynamodb-tools</module>
     </modules>
 </project>
