@@ -29,6 +29,7 @@ import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.exception.FileNotFoundException;
 import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ExponentialBackoffWithJitter.Waiter;
@@ -111,6 +112,21 @@ public class CompactSortedFilesRetryStateStoreTest {
                 Duration.ofMinutes(1),
                 Duration.ofMinutes(1),
                 Duration.ofMinutes(1));
+    }
+
+    @Test
+    void shouldFailWithNoRetriesWhenFileDoesNotExist() throws Exception {
+        // Given
+        FileReference file = fileFactory.rootFile("file.parquet", 123);
+        CompactionJob job = createCompactionJobForOneFile(file);
+
+        // When
+        assertThatThrownBy(() -> updateStateStoreSuccess(job, 123, noJitter()))
+                .isInstanceOf(FileNotFoundException.class);
+
+        // Then
+        assertThat(stateStore.getFileReferences()).isEmpty();
+        assertThat(foundWaits).isEmpty();
     }
 
     private void updateStateStoreSuccess(CompactionJob job, long recordsWritten, DoubleSupplier randomJitter) throws Exception {
