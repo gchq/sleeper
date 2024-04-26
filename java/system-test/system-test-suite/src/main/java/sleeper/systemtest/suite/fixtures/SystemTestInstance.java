@@ -189,7 +189,6 @@ public class SystemTestInstance {
         DeployInstanceConfiguration configuration = buildMainConfiguration();
         InstanceProperties properties = configuration.getInstanceProperties();
         properties.set(OPTIONAL_STACKS, "CompactionStack");
-        properties.set(MAXIMUM_CONCURRENT_INGEST_TASKS, "10");
         properties.set(MAXIMUM_CONCURRENT_COMPACTION_TASKS, "300");
         properties.set(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS, "600");
 
