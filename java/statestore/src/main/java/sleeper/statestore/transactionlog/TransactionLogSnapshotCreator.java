@@ -66,6 +66,7 @@ public class TransactionLogSnapshotCreator {
         LOGGER.info("Creating snapshot for table {}", tableProperties.getStatus());
         Optional<LatestSnapshots> latestSnapshotsOpt = snapshotStore.getLatestSnapshots();
         StateStoreFiles filesState = latestSnapshotsOpt
+                .filter(latestSnapshot -> latestSnapshot.getFilesSnapshot() != null)
                 .map(latestSnapshot -> {
                     try {
                         return snapshotSerDe.loadFiles(latestSnapshot.getFilesSnapshot());
@@ -75,10 +76,12 @@ public class TransactionLogSnapshotCreator {
                 })
                 .orElseGet(StateStoreFiles::new);
         long filesTransactionNumberBefore = latestSnapshotsOpt
+                .filter(latestSnapshot -> latestSnapshot.getFilesSnapshot() != null)
                 .map(latestSnapshot -> latestSnapshot.getFilesSnapshot().getTransactionNumber())
                 .orElse(0L);
 
         StateStorePartitions partitionsState = latestSnapshotsOpt
+                .filter(latestSnapshot -> latestSnapshot.getPartitionsSnapshot() != null)
                 .map(latestSnapshot -> {
                     try {
                         return snapshotSerDe.loadPartitions(latestSnapshot.getPartitionsSnapshot());
@@ -88,6 +91,7 @@ public class TransactionLogSnapshotCreator {
                 })
                 .orElseGet(StateStorePartitions::new);
         long partitionsTransactionNumberBefore = latestSnapshotsOpt
+                .filter(latestSnapshot -> latestSnapshot.getPartitionsSnapshot() != null)
                 .map(latestSnapshot -> latestSnapshot.getPartitionsSnapshot().getTransactionNumber())
                 .orElse(0L);
         try {

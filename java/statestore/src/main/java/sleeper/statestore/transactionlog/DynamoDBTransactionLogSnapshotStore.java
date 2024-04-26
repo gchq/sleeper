@@ -178,17 +178,19 @@ public class DynamoDBTransactionLogSnapshotStore {
     }
 
     private static LatestSnapshots getLatestSnapshotsFromItem(Map<String, AttributeValue> item) {
-        return new LatestSnapshots(getFilesSnapshotFromItem(item), getPartitionsSnapshotFromItem(item));
-    }
-
-    private static TransactionLogSnapshot getFilesSnapshotFromItem(Map<String, AttributeValue> item) {
-        return new TransactionLogSnapshot(getStringAttribute(item, FILES_SNAPSHOT_PATH), SnapshotType.FILES,
-                getLongAttribute(item, FILES_TRANSACTION_NUMBER, 0));
-    }
-
-    private static TransactionLogSnapshot getPartitionsSnapshotFromItem(Map<String, AttributeValue> item) {
-        return new TransactionLogSnapshot(getStringAttribute(item, PARTITIONS_SNAPSHOT_PATH), SnapshotType.PARTITIONS,
-                getLongAttribute(item, PARTITIONS_TRANSACTION_NUMBER, 0));
+        TransactionLogSnapshot filesSnapshot = null;
+        String filesSnapshotPath = getStringAttribute(item, FILES_SNAPSHOT_PATH);
+        if (filesSnapshotPath != null) {
+            filesSnapshot = new TransactionLogSnapshot(filesSnapshotPath, SnapshotType.FILES,
+                    getLongAttribute(item, FILES_TRANSACTION_NUMBER, 0));
+        }
+        TransactionLogSnapshot partitionsSnapshot = null;
+        String partitionsSnapshotPath = getStringAttribute(item, PARTITIONS_SNAPSHOT_PATH);
+        if (partitionsSnapshotPath != null) {
+            partitionsSnapshot = new TransactionLogSnapshot(partitionsSnapshotPath, SnapshotType.PARTITIONS,
+                    getLongAttribute(item, PARTITIONS_TRANSACTION_NUMBER, 0));
+        }
+        return new LatestSnapshots(filesSnapshot, partitionsSnapshot);
     }
 
     private static String tableAndType(String table, SnapshotType type) {
@@ -201,8 +203,8 @@ public class DynamoDBTransactionLogSnapshotStore {
     }
 
     public static class LatestSnapshots {
-        TransactionLogSnapshot filesSnapshot;
-        TransactionLogSnapshot partitionsSnapshot;
+        private final TransactionLogSnapshot filesSnapshot;
+        private final TransactionLogSnapshot partitionsSnapshot;
 
         public LatestSnapshots(TransactionLogSnapshot filesSnapshot, TransactionLogSnapshot partitionsSnapshot) {
             this.filesSnapshot = filesSnapshot;
