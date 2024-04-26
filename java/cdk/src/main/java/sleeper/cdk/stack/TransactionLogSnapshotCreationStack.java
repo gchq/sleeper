@@ -127,7 +127,7 @@ public class TransactionLogSnapshotCreationStack extends NestedStack {
         coreStacks.grantInvokeScheduled(snapshotCreationTrigger, queue);
         snapshotCreationLambda.addEventSource(SqsEventSource.Builder.create(queue)
                 .batchSize(instanceProperties.getInt(TRANSACTION_LOG_SNAPSHOT_CREATION_BATCH_SIZE)).build());
-        coreStacks.grantTransactionLogSnapshotCreation(snapshotCreationLambda);
+        coreStacks.grantReadTablesMetadata(snapshotCreationLambda);
         transactionLogStateStoreStack.grantReadWriteSnapshots(snapshotCreationLambda);
         Utils.addStackTagIfSet(this, instanceProperties);
     }
