@@ -143,7 +143,7 @@ public class SleeperCdkApp extends Stack {
         ManagedPoliciesStack policiesStack = new ManagedPoliciesStack(this, "Policies", instanceProperties);
         TableDataStack dataStack = new TableDataStack(this, "TableData", instanceProperties, policiesStack);
         TransactionLogStateStoreStack transactionLogStateStoreStack = new TransactionLogStateStoreStack(
-                dataStack, "TransactionLogStateStore", instanceProperties, jars);
+                dataStack, "TransactionLogStateStore", instanceProperties, dataStack);
         StateStoreStacks stateStoreStacks = new StateStoreStacks(
                 new DynamoDBStateStoreStack(this, "DynamoDBStateStore", instanceProperties),
                 new S3StateStoreStack(this, "S3StateStore", instanceProperties, dataStack),

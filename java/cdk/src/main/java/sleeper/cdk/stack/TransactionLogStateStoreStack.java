@@ -23,7 +23,6 @@ import software.amazon.awscdk.services.dynamodb.Table;
 import software.amazon.awscdk.services.iam.IGrantable;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.BuiltJars;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
@@ -40,11 +39,12 @@ public class TransactionLogStateStoreStack extends NestedStack {
     private final Table filesLogTable;
     private final Table latestSnapshotsTable;
     private final Table allSnapshotsTable;
+    private final TableDataStack dataStack;
 
     public TransactionLogStateStoreStack(
-            Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars) {
+            Construct scope, String id, InstanceProperties instanceProperties, TableDataStack dataStack) {
         super(scope, id);
-
+        this.dataStack = dataStack;
         partitionsLogTable = createTransactionLogTable(instanceProperties, "PartitionTransactionLogTable", "partition-transaction-log");
         filesLogTable = createTransactionLogTable(instanceProperties, "FileTransactionLogTable", "file-transaction-log");
         latestSnapshotsTable = createLatestSnapshotsTable(instanceProperties, "TransactionLogLatestSnapshotsTable", "transaction-log-latest-snapshots");
@@ -121,5 +121,6 @@ public class TransactionLogStateStoreStack extends NestedStack {
     public void grantReadWriteSnapshots(IGrantable grantee) {
         latestSnapshotsTable.grantReadWriteData(grantee);
         allSnapshotsTable.grantReadWriteData(grantee);
+        dataStack.grantReadWrite(grantee);
     }
 }

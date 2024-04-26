@@ -80,7 +80,6 @@ public class CoreStacks {
         configBucketStack.grantRead(grantee);
         tableIndexStack.grantRead(grantee);
         stateStoreStacks.grantReadActiveFilesAndPartitions(grantee);
-        dataStack.grantReadWrite(grantee);
     }
 
     public void grantIngest(IRole grantee) {
