@@ -23,6 +23,7 @@ import sleeper.configuration.properties.validation.IngestFileWritingStrategy;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.extension.AfterTestPurgeQueues;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
 import sleeper.systemtest.suite.testutil.Expensive;
@@ -32,6 +33,8 @@ import java.time.Duration;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_QUEUE_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_JOB_SEND_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
@@ -48,9 +51,10 @@ import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.create2048S
 public class ParallelCompactionsIT {
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) throws Exception {
+    void setUp(SleeperSystemTest sleeper, AfterTestReports reporting, AfterTestPurgeQueues purgeQueues) throws Exception {
         sleeper.connectToInstance(PARALLEL_COMPACTIONS);
         reporting.reportIfTestFailed(SystemTestReports.SystemTestBuilder::compactionTasksAndJobs);
+        purgeQueues.purgeIfTestFailed(COMPACTION_JOB_CREATION_QUEUE_URL, COMPACTION_JOB_QUEUE_URL);
     }
 
     @Test
