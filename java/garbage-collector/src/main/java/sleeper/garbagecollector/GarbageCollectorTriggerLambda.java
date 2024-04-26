@@ -24,8 +24,6 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
-import com.amazonaws.services.sqs.model.SendMessageBatchRequest;
-import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,15 +31,11 @@ import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.table.TableIndex;
-import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
-import sleeper.core.util.SplitIntoBatches;
+import sleeper.invoke.tables.InvokeForTables;
 
 import java.time.Instant;
-import java.util.List;
-import java.util.UUID;
 
-import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.GARBAGE_COLLECTOR_QUEUE_URL;
 import static sleeper.configuration.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECT_OFFLINE_TABLES;
@@ -73,25 +67,11 @@ public class GarbageCollectorTriggerLambda implements RequestHandler<ScheduledEv
         String queueUrl = instanceProperties.get(GARBAGE_COLLECTOR_QUEUE_URL);
         boolean offlineEnabled = instanceProperties.getBoolean(GARBAGE_COLLECT_OFFLINE_TABLES);
         TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
-        SplitIntoBatches.reusingListOfSize(10,
-                offlineEnabled ? tableIndex.streamAllTables() : tableIndex.streamOnlineTables(),
-                tables -> sendMessageBatch(tables, queueUrl));
+        InvokeForTables.sendOneMessagePerTable(sqsClient, queueUrl,
+                offlineEnabled ? tableIndex.streamAllTables() : tableIndex.streamOnlineTables());
 
         Instant finishTime = Instant.now();
         LOGGER.info("Lambda finished at {} (ran for {})", finishTime, LoggedDuration.withFullOutput(startTime, finishTime));
         return null;
     }
-
-    private void sendMessageBatch(List<TableStatus> tables, String queueUrl) {
-        sqsClient.sendMessageBatch(new SendMessageBatchRequest()
-                .withQueueUrl(queueUrl)
-                .withEntries(tables.stream()
-                        .map(table -> new SendMessageBatchRequestEntry()
-                                .withMessageDeduplicationId(UUID.randomUUID().toString())
-                                .withId(table.getTableUniqueId())
-                                .withMessageGroupId(table.getTableUniqueId())
-                                .withMessageBody(table.getTableUniqueId()))
-                        .collect(toUnmodifiableList())));
-    }
-
 }
