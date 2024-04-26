@@ -58,15 +58,13 @@ public class DynamoDBTransactionLogStateStore extends TransactionLogStateStore {
                 .ifPresent(latestSnapshots -> {
                     TransactionLogSnapshotSerDe snapshotSerDe = new TransactionLogSnapshotSerDe(tableProperties.getSchema(), configuration);
                     try {
-                        if (latestSnapshots.getFilesSnapshot().isPresent()) {
-                            TransactionLogSnapshot latestFilesSnapshot = latestSnapshots.getFilesSnapshot().get();
-                            builder.filesState(snapshotSerDe.loadFiles(latestFilesSnapshot))
-                                    .filesTransactionNumber(latestFilesSnapshot.getTransactionNumber());
+                        if (latestSnapshots.getFilesSnapshot().getPath() != null) {
+                            builder.filesState(snapshotSerDe.loadFiles(latestSnapshots.getFilesSnapshot()))
+                                    .filesTransactionNumber(latestSnapshots.getFilesSnapshot().getTransactionNumber());
                         }
-                        if (latestSnapshots.getPartitionsSnapshot().isPresent()) {
-                            TransactionLogSnapshot latestPartitionsSnapshot = latestSnapshots.getPartitionsSnapshot().get();
-                            builder.partitionsState(snapshotSerDe.loadPartitions(latestPartitionsSnapshot))
-                                    .partitionsTransactionNumber(latestPartitionsSnapshot.getTransactionNumber());
+                        if (latestSnapshots.getPartitionsSnapshot().getPath() != null) {
+                            builder.partitionsState(snapshotSerDe.loadPartitions(latestSnapshots.getPartitionsSnapshot()))
+                                    .partitionsTransactionNumber(latestSnapshots.getPartitionsSnapshot().getTransactionNumber());
                         }
                     } catch (IOException e) {
                         throw new RuntimeException("Failed to load latest snapshots", e);

@@ -151,7 +151,7 @@ public class DynamoDBTransactionLogSnapshotStoreIT {
 
         // Then
         assertThat(store.getLatestSnapshots()).contains(
-                LatestSnapshots.from(
+                new LatestSnapshots(
                         filesSnapshot(3),
                         partitionsSnapshot(3)));
     }
@@ -191,11 +191,11 @@ public class DynamoDBTransactionLogSnapshotStoreIT {
                         partitionsSnapshot(table2, 1),
                         partitionsSnapshot(table2, 2));
         assertThat(snapshotStore1.getLatestSnapshots()).contains(
-                LatestSnapshots.from(
+                new LatestSnapshots(
                         filesSnapshot(table1, 2),
                         partitionsSnapshot(table1, 2)));
         assertThat(snapshotStore2.getLatestSnapshots()).contains(
-                LatestSnapshots.from(
+                new LatestSnapshots(
                         filesSnapshot(table2, 2),
                         partitionsSnapshot(table2, 2)));
     }
