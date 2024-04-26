@@ -17,11 +17,6 @@ package sleeper.compaction.job.execution;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobFactory;
@@ -38,22 +33,21 @@ import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ExponentialBackoffWithJitter.Waiter;
 
+import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.function.DoubleSupplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
-import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.fixJitterSeed;
+import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.noJitter;
+import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.recordWaits;
 
-@ExtendWith(MockitoExtension.class)
 public class CompactSortedFilesRetryStateStoreTest {
 
     private static final Instant UPDATE_TIME = Instant.parse("2024-04-26T14:06:00Z");
@@ -65,10 +59,8 @@ public class CompactSortedFilesRetryStateStoreTest {
     private final StateStore stateStore = inMemoryStateStoreWithFixedPartitions(partitions.getAllPartitions());
     private final FileReferenceFactory fileFactory = FileReferenceFactory.fromUpdatedAt(partitions, UPDATE_TIME);
     private final CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
-    @Mock
-    Waiter waiter;
-    @Captor
-    ArgumentCaptor<Long> waitCaptor;
+    private final List<Duration> foundWaits = new ArrayList<>();
+    private Waiter waiter = recordWaits(foundWaits);
 
     @BeforeEach
     void setUp() {
@@ -87,12 +79,12 @@ public class CompactSortedFilesRetryStateStoreTest {
         });
 
         // When
-        updateStateStoreSuccess(job, 123, waiter);
+        updateStateStoreSuccess(job, 123, noJitter());
 
         // Then
         assertThat(stateStore.getFileReferences()).containsExactly(
                 fileFactory.rootFile(job.getOutputFile(), 123));
-        verify(waiter, times(1)).waitForMillis(730);
+        assertThat(foundWaits).containsExactly(Duration.ofSeconds(2));
     }
 
     @Test
@@ -103,37 +95,49 @@ public class CompactSortedFilesRetryStateStoreTest {
         CompactionJob job = createCompactionJobForOneFile(file);
 
         // When
-        assertThatThrownBy(() -> updateStateStoreSuccess(job, 123, waiter))
+        assertThatThrownBy(() -> updateStateStoreSuccess(job, 123, noJitter()))
                 .isInstanceOf(TimedOutWaitingForFileAssignmentsException.class)
                 .hasCauseInstanceOf(FileReferenceNotAssignedToJobException.class);
 
         // Then
         assertThat(stateStore.getFileReferences()).containsExactly(file);
-        verify(waiter, times(9)).waitForMillis(waitCaptor.capture());
-        assertThat(waitCaptor.getAllValues()).containsExactly(
-                730L, 481L, 2549L, 4403L, 9560L, 10662L, 24652L, 118180L, 105501L);
+        assertThat(foundWaits).containsExactly(
+                Duration.ofSeconds(2),
+                Duration.ofSeconds(4),
+                Duration.ofSeconds(8),
+                Duration.ofSeconds(16),
+                Duration.ofSeconds(32),
+                Duration.ofMinutes(1),
+                Duration.ofMinutes(1),
+                Duration.ofMinutes(1),
+                Duration.ofMinutes(1));
     }
 
-    private void updateStateStoreSuccess(CompactionJob job, long recordsWritten, Waiter waiter) throws Exception {
+    private void updateStateStoreSuccess(CompactionJob job, long recordsWritten, DoubleSupplier randomJitter) throws Exception {
         CompactSortedFiles.updateStateStoreSuccess(job, 123, stateStore,
-                CompactSortedFiles.JOB_ASSIGNMENT_WAIT_ATTEMPTS, backoff(waiter));
+                CompactSortedFiles.JOB_ASSIGNMENT_WAIT_ATTEMPTS, backoff(randomJitter));
     }
 
     private void actionOnWait(WaitAction action) throws Exception {
-        doAnswer(ivocation -> {
-            action.run();
-            return null;
-        }).when(waiter).waitForMillis(anyLong());
+        Waiter wrapWaiter = waiter;
+        waiter = millis -> {
+            try {
+                action.run();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            wrapWaiter.waitForMillis(millis);
+        };
     }
 
     private CompactionJob createCompactionJobForOneFile(FileReference file) {
         return jobFactory.createCompactionJob(List.of(file), file.getPartitionId());
     }
 
-    private ExponentialBackoffWithJitter backoff(Waiter waiter) {
+    private ExponentialBackoffWithJitter backoff(DoubleSupplier randomJitter) {
         return new ExponentialBackoffWithJitter(
                 CompactSortedFiles.JOB_ASSIGNMENT_WAIT_RANGE,
-                fixJitterSeed(), waiter);
+                randomJitter, waiter);
     }
 
     interface WaitAction {

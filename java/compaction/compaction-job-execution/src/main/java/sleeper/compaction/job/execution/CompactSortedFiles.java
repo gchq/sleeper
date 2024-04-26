@@ -68,7 +68,7 @@ import static sleeper.sketches.s3.SketchesSerDeToS3.sketchesPathForDataFile;
 public class CompactSortedFiles implements CompactionTask.CompactionRunner {
     private static final Logger LOGGER = LoggerFactory.getLogger(CompactSortedFiles.class);
     public static final int JOB_ASSIGNMENT_WAIT_ATTEMPTS = 10;
-    public static final WaitRange JOB_ASSIGNMENT_WAIT_RANGE = WaitRange.firstAndMaxWaitCeilingSecs(1, 120);
+    public static final WaitRange JOB_ASSIGNMENT_WAIT_RANGE = WaitRange.firstAndMaxWaitCeilingSecs(2, 60);
 
     private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
@@ -219,7 +219,8 @@ public class CompactSortedFiles implements CompactionTask.CompactionRunner {
                 LOGGER.debug("Updated file references in state store");
                 return;
             } catch (FileReferenceNotAssignedToJobException e) {
-                LOGGER.error("Exception updating StateStore (moving input files to ready for GC and creating new active file): {}", e.getMessage());
+                LOGGER.warn("Job not yet assigned to input files, {} attempts of {}: {}",
+                        attempts, jobAssignmentWaitAttempts, e.getMessage());
                 failure = e;
             }
         }
