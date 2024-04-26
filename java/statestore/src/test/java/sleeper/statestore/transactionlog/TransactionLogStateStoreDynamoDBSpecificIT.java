@@ -120,8 +120,8 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
                     factory.rootFile("file1.parquet", 100L),
                     factory.partitionFile("L", "file2.parquet", 25L),
                     factory.partitionFile("R", "file3.parquet", 50L));
-            saveFilesSnapshot(files, 2);
-            savePartitionsSnapshot(tree, 3);
+            saveFilesSnapshot(files, 1);
+            savePartitionsSnapshot(tree, 1);
 
             // When
             StateStore stateStore = createStateStore();
@@ -147,8 +147,8 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
                     factory.rootFile("file1.parquet", 100L),
                     factory.partitionFile("L", "file2.parquet", 25L),
                     factory.partitionFile("R", "file3.parquet", 50L));
-            saveFilesSnapshot(files, 2);
-            savePartitionsSnapshot(tree, 3);
+            saveFilesSnapshot(files, 1);
+            savePartitionsSnapshot(tree, 1);
 
             // When
             StateStore stateStore = createStateStore();
@@ -177,8 +177,8 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
                     .buildTree();
             FileReferenceFactory factory2 = FileReferenceFactory.from(tree2);
             FileReference file2 = factory2.rootFile("file2.parquet", 456L);
-            saveFilesSnapshot(List.of(file2), 2);
-            savePartitionsSnapshot(tree2, 2);
+            saveFilesSnapshot(List.of(file2), 1);
+            savePartitionsSnapshot(tree2, 1);
 
             // When
             stateStore = createStateStore();
@@ -198,7 +198,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", 123L)
                     .buildTree();
-            savePartitionsSnapshot(tree, 3);
+            savePartitionsSnapshot(tree, 1);
 
             // When
             StateStore stateStore = createStateStore();
@@ -221,7 +221,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
                     factory.rootFile("file1.parquet", 100L),
                     factory.partitionFile("L", "file2.parquet", 25L),
                     factory.partitionFile("R", "file3.parquet", 50L));
-            saveFilesSnapshot(files, 2);
+            saveFilesSnapshot(files, 1);
 
             // When
             StateStore stateStore = createStateStore();

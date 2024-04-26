@@ -178,17 +178,21 @@ public class DynamoDBTransactionLogSnapshotStore {
     }
 
     private static LatestSnapshots getLatestSnapshotsFromItem(Map<String, AttributeValue> item) {
-        return new LatestSnapshots(getFilesSnapshotFromItem(item), getPartitionsSnapshotFromItem(item));
-    }
+        Optional<TransactionLogSnapshot> filesSnapshotOpt = Optional.empty();
+        Optional<TransactionLogSnapshot> partitionsSnapshotOpt = Optional.empty();
 
-    private static TransactionLogSnapshot getFilesSnapshotFromItem(Map<String, AttributeValue> item) {
-        return new TransactionLogSnapshot(getStringAttribute(item, FILES_SNAPSHOT_PATH), SnapshotType.FILES,
-                getLongAttribute(item, FILES_TRANSACTION_NUMBER, 0));
-    }
+        String filesPath = getStringAttribute(item, FILES_SNAPSHOT_PATH);
+        if (filesPath != null) {
+            filesSnapshotOpt = Optional.of(new TransactionLogSnapshot(getStringAttribute(item, FILES_SNAPSHOT_PATH), SnapshotType.FILES,
+                    getLongAttribute(item, FILES_TRANSACTION_NUMBER, 0)));
+        }
+        String partitionsPath = getStringAttribute(item, PARTITIONS_SNAPSHOT_PATH);
+        if (partitionsPath != null) {
+            partitionsSnapshotOpt = Optional.of(new TransactionLogSnapshot(partitionsPath, SnapshotType.PARTITIONS,
+                    getLongAttribute(item, PARTITIONS_TRANSACTION_NUMBER, 0)));
+        }
 
-    private static TransactionLogSnapshot getPartitionsSnapshotFromItem(Map<String, AttributeValue> item) {
-        return new TransactionLogSnapshot(getStringAttribute(item, PARTITIONS_SNAPSHOT_PATH), SnapshotType.PARTITIONS,
-                getLongAttribute(item, PARTITIONS_TRANSACTION_NUMBER, 0));
+        return new LatestSnapshots(filesSnapshotOpt, partitionsSnapshotOpt);
     }
 
     private static String tableAndType(String table, SnapshotType type) {
@@ -201,25 +205,29 @@ public class DynamoDBTransactionLogSnapshotStore {
     }
 
     public static class LatestSnapshots {
-        TransactionLogSnapshot filesSnapshot;
-        TransactionLogSnapshot partitionsSnapshot;
+        Optional<TransactionLogSnapshot> filesSnapshotOpt;
+        Optional<TransactionLogSnapshot> partitionsSnapshotOpt;
 
-        public LatestSnapshots(TransactionLogSnapshot filesSnapshot, TransactionLogSnapshot partitionsSnapshot) {
-            this.filesSnapshot = filesSnapshot;
-            this.partitionsSnapshot = partitionsSnapshot;
+        static LatestSnapshots from(TransactionLogSnapshot filesSnapshot, TransactionLogSnapshot partitionsSnapshot) {
+            return new LatestSnapshots(Optional.ofNullable(filesSnapshot), Optional.ofNullable(partitionsSnapshot));
         }
 
-        public TransactionLogSnapshot getFilesSnapshot() {
-            return filesSnapshot;
+        public LatestSnapshots(Optional<TransactionLogSnapshot> filesSnapshotOpt, Optional<TransactionLogSnapshot> partitionsSnapshotOpt) {
+            this.filesSnapshotOpt = filesSnapshotOpt;
+            this.partitionsSnapshotOpt = partitionsSnapshotOpt;
         }
 
-        public TransactionLogSnapshot getPartitionsSnapshot() {
-            return partitionsSnapshot;
+        public Optional<TransactionLogSnapshot> getFilesSnapshot() {
+            return filesSnapshotOpt;
+        }
+
+        public Optional<TransactionLogSnapshot> getPartitionsSnapshot() {
+            return partitionsSnapshotOpt;
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(filesSnapshot, partitionsSnapshot);
+            return Objects.hash(filesSnapshotOpt, partitionsSnapshotOpt);
         }
 
         @Override
@@ -231,7 +239,8 @@ public class DynamoDBTransactionLogSnapshotStore {
                 return false;
             }
             LatestSnapshots other = (LatestSnapshots) obj;
-            return Objects.equals(filesSnapshot, other.filesSnapshot) && Objects.equals(partitionsSnapshot, other.partitionsSnapshot);
+            return Objects.equals(filesSnapshotOpt, other.filesSnapshotOpt)
+                    && Objects.equals(partitionsSnapshotOpt, other.partitionsSnapshotOpt);
         }
 
     }
