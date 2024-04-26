@@ -89,8 +89,6 @@ public class TransactionLogSnapshotCreationStack extends NestedStack {
                 .timeout(Duration.minutes(1))
                 .logGroup(createLambdaLogGroup(this, "TransactionLogSnapshotCreationLogGroup", creationFunctionName, instanceProperties)));
 
-        coreStacks.grantReadTablesStatus(snapshotCreationTrigger);
-        coreStacks.grantReadTablesMetadata(snapshotCreationLambda);
         Rule rule = Rule.Builder.create(this, "TransactionLogSnapshotCreationSchedule")
                 .ruleName(SleeperScheduleRule.TRANSACTION_LOG_SNAPSHOT_CREATION.buildRuleName(instanceProperties))
                 .schedule(Schedule.rate(Duration.minutes(
@@ -124,11 +122,15 @@ public class TransactionLogSnapshotCreationStack extends NestedStack {
                 deadLetterQueue, topic);
         errorMetrics.add(Utils.createErrorMetric("Transaction Log Snapshot Errors", deadLetterQueue, instanceProperties));
         queue.grantSendMessages(snapshotCreationTrigger);
-        coreStacks.grantInvokeScheduled(snapshotCreationTrigger, queue);
+
         snapshotCreationLambda.addEventSource(SqsEventSource.Builder.create(queue)
                 .batchSize(instanceProperties.getInt(TRANSACTION_LOG_SNAPSHOT_CREATION_BATCH_SIZE)).build());
+
+        coreStacks.grantReadTablesStatus(snapshotCreationTrigger);
+        coreStacks.grantInvokeScheduled(snapshotCreationTrigger, queue);
         coreStacks.grantReadTablesMetadata(snapshotCreationLambda);
         transactionLogStateStoreStack.grantReadWriteSnapshots(snapshotCreationLambda);
+
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 }
