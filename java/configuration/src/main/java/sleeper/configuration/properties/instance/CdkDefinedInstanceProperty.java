@@ -103,19 +103,19 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
     CdkDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_CREATION_QUEUE_URL = Index.propertyBuilder("sleeper.metadata.transactionlog.snapshots.creation.queue.url")
-            .description("URL of the queue for sending batches of transaction log snapshot creation requests.")
+            .description("URL of the queue for transaction log snapshot creation requests.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
     CdkDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_CREATION_QUEUE_ARN = Index.propertyBuilder("sleeper.metadata.transactionlog.snapshots.creation.queue.arn")
-            .description("The ARN of the queue for sending batches of transaction log snapshot creation requests.")
+            .description("The ARN of the queue for transaction log snapshot creation requests.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
     CdkDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_CREATION_DLQ_URL = Index.propertyBuilder("sleeper.metadata.transactionlog.snapshots.creation.dlq.url")
-            .description("The URL of the dead letter queue for sending batches of transaction log snapshot creation requests.")
+            .description("The URL of the dead letter queue for transaction log snapshot creation requests.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
     CdkDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_CREATION_DLQ_ARN = Index.propertyBuilder("sleeper.metadata.transactionlog.snapshots.creation.dlq.arn")
-            .description("The ARN of the dead letter queue for sending batches of transaction log snapshot creation requests.")
+            .description("The ARN of the dead letter queue for transaction log snapshot creation requests.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
     CdkDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_CREATION_RULE = Index.propertyBuilder("sleeper.metadata.transactionlog.snapshots.creation.rule")
