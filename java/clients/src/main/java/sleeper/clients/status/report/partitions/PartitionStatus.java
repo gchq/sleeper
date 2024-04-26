@@ -22,16 +22,22 @@ import sleeper.core.range.Range;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
+import sleeper.splitter.FindPartitionsToSplit;
 import sleeper.splitter.PartitionSplitCheck;
 
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Set;
+import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.toSet;
+import static java.util.stream.Collectors.toUnmodifiableList;
 
 public class PartitionStatus {
 
     private final Partition partition;
     private final List<FileReference> filesInPartition;
-    private final boolean needsSplitting;
+    private final boolean willBeSplit;
+    private final boolean maySplitIfCompacted;
     private final Field splitField;
     private final Object splitValue;
     private final Integer indexInParent;
@@ -39,7 +45,8 @@ public class PartitionStatus {
     private PartitionStatus(Builder builder) {
         partition = builder.partition;
         filesInPartition = builder.filesInPartition;
-        needsSplitting = builder.needsSplitting;
+        willBeSplit = builder.willBeSplit;
+        maySplitIfCompacted = builder.maySplitIfCompacted;
         splitField = builder.splitField;
         splitValue = builder.splitValue;
         indexInParent = builder.indexInParent;
@@ -48,21 +55,28 @@ public class PartitionStatus {
     static PartitionStatus from(
             TableProperties tableProperties, PartitionTree tree, Partition partition, List<FileReference> activeFiles) {
         Schema schema = tableProperties.getSchema();
-        List<FileReference> filesInPartition = activeFiles.stream()
-                .filter(fileReference -> fileReference.getPartitionId().equals(partition.getId()))
-                .collect(Collectors.toList());
-        boolean needsSplitting = PartitionSplitCheck.fromFilesInPartition(tableProperties, filesInPartition).isNeedsSplitting();
+        List<FileReference> filesInPartitionForSplit = FindPartitionsToSplit.getFilesInPartition(partition, activeFiles);
+        List<FileReference> filesInPartitionOrAncestors = getFilesInPartitionOrAncestors(partition, tree, activeFiles);
+        boolean willBeSplit = PartitionSplitCheck.fromFilesInPartition(tableProperties, filesInPartitionForSplit).isNeedsSplitting();
+        boolean maySplitIfCompacted = PartitionSplitCheck.fromFilesInPartition(tableProperties, filesInPartitionOrAncestors).isNeedsSplitting();
         return builder().partition(partition)
-                .filesInPartition(filesInPartition)
-                .needsSplitting(needsSplitting)
+                .filesInPartition(activeFiles.stream()
+                        .filter(file -> file.getPartitionId().equals(partition.getId()))
+                        .collect(toUnmodifiableList()))
+                .willBeSplit(willBeSplit)
+                .maySplitIfCompacted(maySplitIfCompacted)
                 .splitField(splitField(partition, schema))
                 .splitValue(splitValue(partition, tree, schema))
                 .indexInParent(indexInParent(partition, tree))
                 .build();
     }
 
-    public boolean isNeedsSplitting() {
-        return needsSplitting;
+    public boolean willBeSplit() {
+        return willBeSplit;
+    }
+
+    public boolean maySplitIfCompacted() {
+        return maySplitIfCompacted;
     }
 
     public boolean isLeafPartition() {
@@ -133,10 +147,22 @@ public class PartitionStatus {
         return parent.getChildPartitionIds().indexOf(partition.getId());
     }
 
+    private static List<FileReference> getFilesInPartitionOrAncestors(
+            Partition partition, PartitionTree tree, List<FileReference> fileReferences) {
+        Set<String> partitionIds = Stream.concat(
+                Stream.of(partition), tree.ancestorsOf(partition))
+                .map(Partition::getId)
+                .collect(toSet());
+        return fileReferences.stream()
+                .filter(file -> partitionIds.contains(file.getPartitionId()))
+                .collect(toUnmodifiableList());
+    }
+
     public static final class Builder {
         private Partition partition;
         private List<FileReference> filesInPartition;
-        private boolean needsSplitting;
+        private boolean willBeSplit;
+        private boolean maySplitIfCompacted;
         private Field splitField;
         private Object splitValue;
         private Integer indexInParent;
@@ -154,8 +180,13 @@ public class PartitionStatus {
             return this;
         }
 
-        public Builder needsSplitting(boolean needsSplitting) {
-            this.needsSplitting = needsSplitting;
+        public Builder willBeSplit(boolean willBeSplit) {
+            this.willBeSplit = willBeSplit;
+            return this;
+        }
+
+        public Builder maySplitIfCompacted(boolean maySplitIfCompacted) {
+            this.maySplitIfCompacted = maySplitIfCompacted;
             return this;
         }
 

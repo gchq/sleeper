@@ -51,6 +51,12 @@ public class Region {
         this.rowKeyFieldNameToRange = rowKeyFieldNameToRange;
     }
 
+    /**
+     * Gets the range for a field.
+     *
+     * @param  fieldName the field name
+     * @return           the range for the field
+     */
     public Range getRange(String fieldName) {
         return rowKeyFieldNameToRange.get(fieldName);
     }
@@ -65,6 +71,13 @@ public class Region {
         return new ArrayList<>(rowKeyFieldNameToRange.values());
     }
 
+    /**
+     * Checks whether the provided key is contained within this region.
+     *
+     * @param  schema the Sleeper schema
+     * @param  key    the key to check
+     * @return        whether the key is in this range
+     */
     public boolean isKeyInRegion(Schema schema, Key key) {
         if (null == key || key.isEmpty()) {
             throw new IllegalArgumentException("Key must be non-null and not empty");
@@ -86,6 +99,12 @@ public class Region {
         return true;
     }
 
+    /**
+     * Checks whether the provided region overlaps with this region.
+     *
+     * @param  otherRegion the region to check
+     * @return             whether the region overlaps with this region
+     */
     public boolean doesRegionOverlap(Region otherRegion) {
         // Two regions overlap if they overlap in all dimensions
         for (Map.Entry<String, Range> entry : rowKeyFieldNameToRange.entrySet()) {
@@ -99,7 +118,14 @@ public class Region {
         return true;
     }
 
-    public Region childWithRange(Range range) {
+    /**
+     * Creates a copy of this region which contains the provided range. Note that if there is an existing range for the
+     * same field, it will be replaced by the supplied range.
+     *
+     * @param  range the range to add to the copy
+     * @return       a copy of this region which contains the provided range
+     */
+    public Region copyWithRange(Range range) {
         Map<String, Range> newRanges = new HashMap<>(rowKeyFieldNameToRange);
         newRanges.put(range.getFieldName(), range);
         return new Region(newRanges);

@@ -156,10 +156,10 @@ public interface CommonProperty {
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty METRICS_TABLE_BATCH_SIZE = Index.propertyBuilder("sleeper.metrics.batch.size")
-            .description("The number of tables to calculate metrics for in a single invocation. A separate invocation " +
-                    "of the lambda will be made for each batch when there are more tables than the batch size.")
-            .defaultValue("5")
-            .validationPredicate(Utils::isPositiveInteger)
+            .description("The number of tables to calculate metrics for in a single invocation. " +
+                    "This will be the batch size for a lambda as an SQS FIFO event source. This can be a maximum of 10.")
+            .defaultValue("1")
+            .validationPredicate(Utils::isPositiveIntegerLtEq10)
             .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty METRICS_FOR_OFFLINE_TABLES = Index.propertyBuilder("sleeper.metrics.offline.enabled")
             .description("Whether to calculate table metrics for offline tables.")

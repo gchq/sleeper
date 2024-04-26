@@ -22,7 +22,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.stream.Stream;
 
-import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
+import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 
 public class CompactionTaskStatusTestData {
     private CompactionTaskStatusTestData() {

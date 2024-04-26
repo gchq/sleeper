@@ -216,10 +216,10 @@ public class PartitionTreeTest {
         List<String> ancestorsOfL2LOfL1LIds = partitionTree.getAllAncestorIds(L2_LEFT_OF_L1L);
 
         // Then
-        assertThat(ancestorsOfRoot).isEmpty();
         assertThat(ancestorsOfRootIds).isEmpty();
-        assertThat(ancestorsOfL2LOfL1L).containsExactly(l1Left, root);
+        assertThat(ancestorsOfRoot).isEmpty();
         assertThat(ancestorsOfL2LOfL1LIds).containsExactly(l1Left.getId(), root.getId());
+        assertThat(ancestorsOfL2LOfL1L).containsExactly(l1Left, root);
     }
 
     @Test

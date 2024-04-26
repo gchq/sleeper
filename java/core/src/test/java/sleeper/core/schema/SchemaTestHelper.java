@@ -18,15 +18,31 @@ package sleeper.core.schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 
+/**
+ * A test helper for creating schema objects.
+ */
 public class SchemaTestHelper {
 
     private SchemaTestHelper() {
     }
 
+    /**
+     * Creates a Schema with a single row key field. This field is a {@link LongType}.
+     *
+     * @param  key the name of the row key field
+     * @return     a {@link Schema} with one row key field
+     */
     public static Schema schemaWithKey(String key) {
         return schemaWithKey(key, new LongType());
     }
 
+    /**
+     * Creates a Schema with a single row key field.
+     *
+     * @param  key  the name of the row key field
+     * @param  type the type of the row key field
+     * @return      a {@link Schema} with one row key field
+     */
     public static Schema schemaWithKey(String key, PrimitiveType type) {
         return Schema.builder().rowKeyFields(new Field(key, type)).build();
     }

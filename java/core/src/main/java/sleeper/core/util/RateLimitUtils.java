@@ -18,12 +18,20 @@ package sleeper.core.util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Utilities to avoid rate limits in a remote API.
+ */
 public class RateLimitUtils {
     private static final Logger LOGGER = LoggerFactory.getLogger(RateLimitUtils.class);
 
     private RateLimitUtils() {
     }
 
+    /**
+     * Sleeps for a duration in order to achieve a target rate.
+     *
+     * @param ratePerSecond the target rate per second
+     */
     public static void sleepForSustainedRatePerSecond(double ratePerSecond) {
         try {
             long millisecondsToSleep = calculateMillisSleepForSustainedRatePerSecond(ratePerSecond);
@@ -35,6 +43,12 @@ public class RateLimitUtils {
         }
     }
 
+    /**
+     * Calculates how long to sleep in milliseconds in order to achieve the target rate per second.
+     *
+     * @param  ratePerSecond the target rate per second
+     * @return               the number of milliseconds to sleep for
+     */
     public static long calculateMillisSleepForSustainedRatePerSecond(double ratePerSecond) {
         return (long) Math.ceil(1000.0 / ratePerSecond);
     }

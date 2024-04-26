@@ -21,6 +21,9 @@ import org.apache.commons.codec.binary.Hex;
 import java.security.SecureRandom;
 import java.util.Random;
 
+/**
+ * Generates internal IDs for Sleeper tables.
+ */
 public class TableIdGenerator {
 
     private final Random random;
@@ -33,10 +36,23 @@ public class TableIdGenerator {
         random = new Random(seed);
     }
 
+    /**
+     * Creates a generator with a fixed seed for random data generation. This can be used to produce deterministic
+     * results. This should only be used for tests.
+     *
+     * @param  seed the seed for the random generator
+     * @return      an instance of this class
+     */
+
     public static TableIdGenerator fromRandomSeed(int seed) {
         return new TableIdGenerator(seed);
     }
 
+    /**
+     * Generates a random string.
+     *
+     * @return a random string
+     */
     public String generateString() {
         byte[] bytes = new byte[4];
         random.nextBytes(bytes);

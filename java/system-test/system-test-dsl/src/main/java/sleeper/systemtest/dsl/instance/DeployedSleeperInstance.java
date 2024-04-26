@@ -43,14 +43,14 @@ public final class DeployedSleeperInstance {
 
     private final DeployInstanceConfiguration configuration;
     private final InstanceProperties instanceProperties;
-    private final SystemTestDrivers instanceAdminDrivers;
+    private final InstanceAdminDriversWithRefresh instanceAdmin;
 
     private DeployedSleeperInstance(
             DeployInstanceConfiguration configuration, InstanceProperties instanceProperties,
-            SystemTestDrivers instanceAdminDrivers) {
+            InstanceAdminDriversWithRefresh instanceAdmin) {
         this.configuration = configuration;
         this.instanceProperties = instanceProperties;
-        this.instanceAdminDrivers = instanceAdminDrivers;
+        this.instanceAdmin = instanceAdmin;
     }
 
     public static DeployedSleeperInstance loadOrDeployIfNeeded(
@@ -62,10 +62,10 @@ public final class DeployedSleeperInstance {
 
         InstanceProperties instanceProperties = new InstanceProperties();
         driver.loadInstanceProperties(instanceProperties, instanceId);
-        SystemTestDrivers instanceAdminDrivers = assumeRoleDriver.assumeAdminRole(instanceProperties);
 
         DeployedSleeperInstance instance = new DeployedSleeperInstance(
-                configuration, instanceProperties, instanceAdminDrivers);
+                configuration, instanceProperties,
+                new InstanceAdminDriversWithRefresh(instanceProperties, assumeRoleDriver));
         if (!newInstance && instance.isRedeployNeeded(parameters, systemTest)) {
             instance.redeploy(driver, parameters);
         }
@@ -77,12 +77,12 @@ public final class DeployedSleeperInstance {
     }
 
     public SystemTestDrivers getInstanceAdminDrivers() {
-        return instanceAdminDrivers;
+        return instanceAdmin.drivers();
     }
 
     public void redeploy(SleeperInstanceDriver driver, SystemTestParameters parameters) {
         driver.redeploy(instanceProperties,
-                instanceAdminDrivers.tables(parameters).createTablePropertiesProvider(instanceProperties)
+                instanceAdmin.drivers().tables(parameters).createTablePropertiesProvider(instanceProperties)
                         .streamAllTables().collect(toUnmodifiableList()));
     }
 

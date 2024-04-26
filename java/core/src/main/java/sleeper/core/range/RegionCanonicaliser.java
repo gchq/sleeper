@@ -26,6 +26,12 @@ public class RegionCanonicaliser {
     private RegionCanonicaliser() {
     }
 
+    /**
+     * Converts each range in a region into canonical form.
+     *
+     * @param  region the region to canonicalise
+     * @return        a new region with all ranges canonicalised
+     */
     public static Region canonicaliseRegion(Region region) {
         if (isRegionInCanonicalForm(region)) {
             return region;
@@ -40,6 +46,12 @@ public class RegionCanonicaliser {
         return new Region(canonicalisedRanges);
     }
 
+    /**
+     * Checks whether all ranges in a region are in canonical form.
+     *
+     * @param  region the region to check
+     * @return        whether all ranges in the region are in canonical form
+     */
     public static boolean isRegionInCanonicalForm(Region region) {
         for (Range range : region.getRanges()) {
             if (!range.isInCanonicalForm()) {

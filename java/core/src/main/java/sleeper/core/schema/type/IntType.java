@@ -15,6 +15,9 @@
  */
 package sleeper.core.schema.type;
 
+/**
+ * A primitive type that represents an integer.
+ */
 public class IntType extends PrimitiveType {
 
     @Override

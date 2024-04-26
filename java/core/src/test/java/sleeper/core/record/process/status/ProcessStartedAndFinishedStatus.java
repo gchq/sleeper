@@ -20,6 +20,9 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import java.time.Instant;
 import java.util.Objects;
 
+/**
+ * An implementation of a process update that is both the start and finish of a job run. Only used in tests.
+ */
 public class ProcessStartedAndFinishedStatus implements ProcessRunStartedUpdate, ProcessRunFinishedUpdate {
 
     private final Instant updateTime;
@@ -30,6 +33,13 @@ public class ProcessStartedAndFinishedStatus implements ProcessRunStartedUpdate,
         this.summary = Objects.requireNonNull(summary, "summary may not be null");
     }
 
+    /**
+     * Creates an instance of this class.
+     *
+     * @param  updateTime the update time
+     * @param  summary    the records processed summary
+     * @return            an instance of this class
+     */
     public static ProcessStartedAndFinishedStatus updateAndSummary(Instant updateTime, RecordsProcessedSummary summary) {
         return new ProcessStartedAndFinishedStatus(updateTime, summary);
     }
