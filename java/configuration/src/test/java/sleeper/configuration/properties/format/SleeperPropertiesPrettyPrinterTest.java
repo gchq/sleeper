@@ -33,7 +33,7 @@ import sleeper.configuration.properties.table.TablePropertyGroup;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
-import sleeper.core.testutils.printers.ToStringPrintStream;
+import sleeper.core.testutils.printers.ToStringPrintWriter;
 
 import java.io.PrintWriter;
 import java.util.Map;
@@ -393,7 +393,7 @@ class SleeperPropertiesPrettyPrinterTest {
             Function<PrintWriter, SleeperPropertiesPrettyPrinter<T>> printer, SleeperProperties<T> values) {
         // Test against PrintStream as the clients module builds its writer from that.
         // This forces us to ensure the output is flushed to the console before the system continues.
-        ToStringPrintStream out = new ToStringPrintStream();
+        ToStringPrintWriter out = new ToStringPrintWriter();
         printer.apply(out.getPrintWriter()).print(values);
         return out.toString();
     }

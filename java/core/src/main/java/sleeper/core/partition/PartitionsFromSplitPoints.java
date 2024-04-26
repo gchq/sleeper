@@ -62,6 +62,12 @@ public class PartitionsFromSplitPoints {
         this.rangeFactory = new RangeFactory(schema);
     }
 
+    /**
+     * Builds a tree of partitions from the given split points. Adds as many layers of parent partitions as are needed
+     * to join the leaf partitions to a root.
+     *
+     * @return the created partitions
+     */
     public List<Partition> construct() {
         // If there are no split points then create a single root partition, which covers the entire key space, and
         // is a leaf partition.
@@ -169,6 +175,13 @@ public class PartitionsFromSplitPoints {
         return createRootPartitionThatIsLeaf(schema, rangeFactory).build();
     }
 
+    /**
+     * Starts a root partition. This will also be a leaf partition that covers the whole range of all row keys.
+     *
+     * @param  schema       schema of the Sleeper table
+     * @param  rangeFactory a factory to create ranges covering all row keys
+     * @return              a builder for the new partition
+     */
     public static Partition.Builder createRootPartitionThatIsLeaf(Schema schema, RangeFactory rangeFactory) {
         List<Range> ranges = new ArrayList<>();
         for (Field field : schema.getRowKeyFields()) {
@@ -257,6 +270,15 @@ public class PartitionsFromSplitPoints {
         return leafRegionsFromDimensionSplitPoints(schema, 0, splitPoints);
     }
 
+    /**
+     * Creates regions for each leaf partition that is needed to cover the whole range of all row keys. Splits that
+     * range on the given split points for the given row key.
+     *
+     * @param  schema      schema of the Sleeper table
+     * @param  dimension   index in the schema of the row key to split on
+     * @param  splitPoints values to split the range of the row key
+     * @return             regions covering all row keys split on the given key and values
+     */
     public static List<Region> leafRegionsFromDimensionSplitPoints(Schema schema, int dimension, List<Object> splitPoints) {
         RangeFactory rangeFactory = new RangeFactory(schema);
         List<Field> rowKeyFields = schema.getRowKeyFields();
@@ -289,6 +311,13 @@ public class PartitionsFromSplitPoints {
         return leafRegions;
     }
 
+    /**
+     * Creates a partition tree from the given split points, split on the first row key.
+     *
+     * @param  schema      schema of the Sleeper table
+     * @param  splitPoints values of the first row key to split on
+     * @return             the partition tree
+     */
     public static PartitionTree treeFrom(Schema schema, List<Object> splitPoints) {
         return new PartitionTree(new PartitionsFromSplitPoints(schema, splitPoints).construct());
     }

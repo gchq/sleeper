@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessRun;
-import sleeper.core.record.process.status.TestRunStatusUpdates;
+import sleeper.core.record.process.status.ProcessStatusUpdateTestHelper;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -177,7 +177,7 @@ public class AverageRecordRateTest {
     private static AverageRecordRate rateFrom(RecordsProcessedSummary... summaries) {
         return AverageRecordRate.of(Stream.of(summaries)
                 .map(summary -> ProcessRun.finished(DEFAULT_TASK_ID,
-                        TestRunStatusUpdates.startedStatus(summary.getStartTime()),
+                        ProcessStatusUpdateTestHelper.startedStatus(summary.getStartTime()),
                         ProcessFinishedStatus.updateTimeAndSummary(summary.getFinishTime(), summary))));
     }
 

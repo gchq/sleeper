@@ -54,6 +54,9 @@ public class AdditionIterator implements SortedRecordIterator {
         return new AdditionIteratorInternal(input, rowKeyFieldNames, sortKeyFieldNames, valueFieldNames);
     }
 
+    /**
+     * Sums values for identical row and sort keys in the input iterator.
+     */
     public static class AdditionIteratorInternal implements CloseableIterator<Record> {
         private final CloseableIterator<Record> input;
         private final List<String> rowKeyFieldNames;

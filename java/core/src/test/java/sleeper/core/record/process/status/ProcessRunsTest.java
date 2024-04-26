@@ -26,11 +26,13 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
-import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
+import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.core.record.process.status.CustomProcessStatus.notPartOfRunWithUpdateTime;
 import static sleeper.core.record.process.status.CustomProcessStatus.partOfRunWithUpdateTime;
+import static sleeper.core.record.process.status.ProcessRunsTestHelper.runsFromUpdates;
 import static sleeper.core.record.process.status.ProcessStartedStatusWithStartOfRunFlag.startedStatusNotStartOfRun;
-import static sleeper.core.record.process.status.TestProcessRuns.runsFromUpdates;
+import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.finishedStatus;
+import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.startedStatus;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.DEFAULT_TASK_ID;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.TASK_ID_1;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.TASK_ID_2;
@@ -38,8 +40,6 @@ import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forRunOnTask;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.onNoTask;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.onTask;
-import static sleeper.core.record.process.status.TestRunStatusUpdates.finishedStatus;
-import static sleeper.core.record.process.status.TestRunStatusUpdates.startedStatus;
 
 class ProcessRunsTest {
 

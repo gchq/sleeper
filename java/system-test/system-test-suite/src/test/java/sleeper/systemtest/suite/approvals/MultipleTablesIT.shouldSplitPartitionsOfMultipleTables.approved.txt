@@ -1,4 +1,4 @@
-Same for 5 tables
+Same for 200 tables
 Partition at LLL:
 {"key":{"min":"","minInclusive":true,"max":"cm93LTEy","maxInclusive":false},"stringsBase64Encoded":true}
 Partition at LLR:
@@ -31,7 +31,7 @@ Partition at root:
 {"key":{"min":"","minInclusive":true,"max":null,"maxInclusive":false},"stringsBase64Encoded":true}
 
 
-Same for 5 tables
+Same for 200 tables
 Unreferenced files: 7
 Referenced files: 8
 File references: 8

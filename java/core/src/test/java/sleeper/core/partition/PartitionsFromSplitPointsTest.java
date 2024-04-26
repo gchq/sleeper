@@ -157,7 +157,9 @@ public class PartitionsFromSplitPointsTest {
             Partition expectedRootPartition = Partition.builder()
                     .id(rootPartition.getId())
                     .parentPartitionId(null)
-                    .childPartitionIds(levelToPartitions.get(5).get(0).getId(), levelToPartitions.get(5).get(1).getId())
+                    .childPartitionIds(List.of(
+                            levelToPartitions.get(5).get(0).getId(),
+                            levelToPartitions.get(5).get(1).getId()))
                     .dimension(0)
                     .leafPartition(false)
                     .region(expectedRootRegion)

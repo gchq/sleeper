@@ -18,7 +18,7 @@ package sleeper.clients.status.report.ingest.job;
 
 import sleeper.clients.status.report.StatusReporterTestHelper;
 import sleeper.clients.status.report.job.query.JobQuery;
-import sleeper.clients.testutil.ToStringPrintStream;
+import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.ingest.job.status.IngestJobStatus;
 
 import java.util.Collections;
@@ -45,7 +45,7 @@ public class IngestJobStatusReporterTestHelper {
     public static String getStandardReport(
             JobQuery.Type query, List<IngestJobStatus> statusList, int numberInQueue,
             Map<String, Integer> persistentEmrStepCount) {
-        ToStringPrintStream output = new ToStringPrintStream();
+        ToStringConsoleOutput output = new ToStringConsoleOutput();
         new StandardIngestJobStatusReporter(output.getPrintStream()).report(statusList, query,
                 ingestMessageCount(numberInQueue), persistentEmrStepCount);
         return output.toString();
@@ -58,7 +58,7 @@ public class IngestJobStatusReporterTestHelper {
     public static String getJsonReport(
             JobQuery.Type query, List<IngestJobStatus> statusList, int numberInQueue,
             Map<String, Integer> persistentEmrStepCount) {
-        ToStringPrintStream output = new ToStringPrintStream();
+        ToStringConsoleOutput output = new ToStringConsoleOutput();
         new JsonIngestJobStatusReporter(output.getPrintStream()).report(statusList, query,
                 ingestMessageCount(numberInQueue), persistentEmrStepCount);
         return output.toString();

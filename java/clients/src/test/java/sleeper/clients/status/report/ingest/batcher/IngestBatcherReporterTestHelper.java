@@ -17,7 +17,7 @@
 package sleeper.clients.status.report.ingest.batcher;
 
 import sleeper.clients.status.report.StatusReporterTestHelper;
-import sleeper.clients.testutil.ToStringPrintStream;
+import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.core.table.TableIdGenerator;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatus;
@@ -97,14 +97,14 @@ public class IngestBatcherReporterTestHelper {
     }
 
     public static String getStandardReport(TableIndex tableIndex, BatcherQuery.Type queryType, List<FileIngestRequest> fileRequestList) {
-        ToStringPrintStream output = new ToStringPrintStream();
+        ToStringConsoleOutput output = new ToStringConsoleOutput();
         new StandardIngestBatcherReporter(output.getPrintStream())
                 .report(fileRequestList, queryType, new TableStatusProvider(tableIndex));
         return output.toString();
     }
 
     public static String getJsonReport(TableIndex tableIndex, BatcherQuery.Type queryType, List<FileIngestRequest> fileRequestList) {
-        ToStringPrintStream output = new ToStringPrintStream();
+        ToStringConsoleOutput output = new ToStringConsoleOutput();
         new JsonIngestBatcherReporter(output.getPrintStream())
                 .report(fileRequestList, queryType, new TableStatusProvider(tableIndex));
         return output.toString();

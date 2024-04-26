@@ -26,16 +26,15 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class Base64RecordListSerialiserTest {
+public class Base64ResultsBatchSerialiserTest {
 
     @Test
-    public void testWriteRead() throws IOException {
+    public void shouldSerialiseAndDeserialiseResultsBatch() {
         // Given
         String queryId = "query1";
         Schema schema = Schema.builder()
@@ -54,7 +53,7 @@ public class Base64RecordListSerialiserTest {
             record.put("column6", new byte[]{(byte) (i + 8), (byte) (i + 9), (byte) (i + 10), (byte) (i + 11), (byte) (i + 12)});
             records.add(record);
         }
-        Base64RecordListSerialiser serialiser = new Base64RecordListSerialiser(schema);
+        Base64ResultsBatchSerialiser serialiser = new Base64ResultsBatchSerialiser(schema);
         ResultsBatch resultsBatch = new ResultsBatch(queryId, schema, records);
 
         // When

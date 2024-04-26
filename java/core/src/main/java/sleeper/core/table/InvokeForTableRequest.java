@@ -39,12 +39,27 @@ public class InvokeForTableRequest {
         return tableIds;
     }
 
+    /**
+     * Creates batches of tables, and sends a request for each batch.
+     *
+     * @param tables      a stream of tables to batch
+     * @param batchSize   the batch size
+     * @param sendRequest a function to send a request
+     */
     public static void forTables(Stream<TableStatus> tables, int batchSize, Consumer<InvokeForTableRequest> sendRequest) {
         SplitIntoBatches.reusingListOfSize(batchSize,
                 tables.map(TableStatus::getTableUniqueId),
                 tableIds -> sendRequest.accept(new InvokeForTableRequest(tableIds)));
     }
 
+    /**
+     * Loads tables from the table index, creates batches of tables, and sends a request for each batch.
+     *
+     * @param offlineEnabled whether to include offline tables when creating batches
+     * @param tableIndex     the table index
+     * @param batchSize      the batch size
+     * @param sendRequest    a function to send a request
+     */
     public static void forTablesWithOfflineEnabled(
             boolean offlineEnabled, TableIndex tableIndex, int batchSize, Consumer<InvokeForTableRequest> sendRequest) {
         forTables(

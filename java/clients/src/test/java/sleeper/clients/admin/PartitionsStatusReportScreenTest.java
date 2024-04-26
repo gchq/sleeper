@@ -40,6 +40,7 @@ import static sleeper.clients.testutil.TestConsoleInput.CONFIRM_PROMPT;
 import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
 
 class PartitionsStatusReportScreenTest extends AdminClientMockStoreBase {
+
     @Test
     void shouldRunPartitionStatusReport() throws Exception {
         // Given
@@ -62,7 +63,7 @@ class PartitionsStatusReportScreenTest extends AdminClientMockStoreBase {
                 .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
                 .contains("Partitions Status Report:")
                 .contains("There are 3 partitions (2 leaf partitions")
-                .contains("There are 0 leaf partitions that need splitting")
+                .contains("There are 0 leaf partitions that will be split")
                 .contains("Split threshold is 1000000000 records");
         confirmAndVerifyNoMoreInteractions();
     }

@@ -18,8 +18,16 @@ package sleeper.core.record.process.status;
 
 import sleeper.core.record.process.RecordsProcessedSummary;
 
+/**
+ * Interface for a status update that marks the end of a process run.
+ */
 public interface ProcessRunFinishedUpdate extends ProcessStatusUpdate {
 
+    /**
+     * Get records processed by this run.
+     *
+     * @return the records processed
+     */
     RecordsProcessedSummary getSummary();
 
     default boolean isPartOfRun() {

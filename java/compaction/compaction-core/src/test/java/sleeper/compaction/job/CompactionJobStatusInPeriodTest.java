@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.record.process.RecordsProcessedSummaryTestData;
+import sleeper.core.record.process.RecordsProcessedSummaryTestHelper;
 
 import java.time.Instant;
 
@@ -34,7 +34,7 @@ public class CompactionJobStatusInPeriodTest {
     private final CompactionJob job = new CompactionJobTestDataHelper().singleFileCompaction();
 
     private static RecordsProcessedSummary startAndFinishTime(Instant startTime, Instant finishTime) {
-        return RecordsProcessedSummaryTestData.summary(startTime, finishTime, 200, 100);
+        return RecordsProcessedSummaryTestHelper.summary(startTime, finishTime, 200, 100);
     }
 
     @Test

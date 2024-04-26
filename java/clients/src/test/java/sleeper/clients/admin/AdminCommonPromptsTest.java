@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.clients.admin.properties.AdminClientPropertiesStore;
 import sleeper.clients.testutil.TestConsoleInput;
-import sleeper.clients.testutil.ToStringPrintStream;
+import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 
@@ -37,7 +37,7 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_
 import static sleeper.clients.testutil.TestConsoleInput.CONFIRM_PROMPT;
 
 public class AdminCommonPromptsTest {
-    private final ToStringPrintStream out = new ToStringPrintStream();
+    private final ToStringConsoleOutput out = new ToStringConsoleOutput();
     private final TestConsoleInput in = new TestConsoleInput(out.consoleOut());
 
     @DisplayName("Try load instance properties")

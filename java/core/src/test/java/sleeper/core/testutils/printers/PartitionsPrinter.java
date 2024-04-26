@@ -24,17 +24,37 @@ import sleeper.core.schema.Schema;
 import java.io.PrintStream;
 import java.util.Map;
 
+/**
+ * Prints partition trees as text, for readable assertions in tests. Intended to be used in approval tests, for visual
+ * comparison against previously generated values. Uses {@link TablesPrinter} to consolidate the generated output for
+ * multiple tables.
+ */
 public class PartitionsPrinter {
 
     private PartitionsPrinter() {
     }
 
+    /**
+     * Generates a string with information about partitions for all provided tables. The tables must have the same
+     * schema in order to deserialise the partition regions correctly.
+     *
+     * @param  schema            the schema for all tables
+     * @param  partitionsByTable the map of table name to {@link PartitionTree}
+     * @return                   a generated string
+     */
     public static String printTablePartitionsExpectingIdentical(Schema schema, Map<String, PartitionTree> partitionsByTable) {
-        return TablesPrinter.printForAllTables(partitionsByTable.keySet(), table -> printPartitions(schema, partitionsByTable.get(table)));
+        return TablesPrinter.printForAllTablesExcludingNames(partitionsByTable.keySet(), table -> printPartitions(schema, partitionsByTable.get(table)));
     }
 
+    /**
+     * Generates a string with information about partitions.
+     *
+     * @param  schema        the schema for all tables
+     * @param  partitionTree the {@link PartitionTree}
+     * @return               a generated string
+     */
     public static String printPartitions(Schema schema, PartitionTree partitionTree) {
-        ToStringPrintStream printer = new ToStringPrintStream();
+        ToStringPrintWriter printer = new ToStringPrintWriter();
         PrintStream out = printer.getPrintStream();
         RegionSerDe regionSerDe = new RegionSerDe(schema);
         partitionTree.traverseLeavesFirst().forEach(partition -> {
@@ -45,7 +65,7 @@ public class PartitionsPrinter {
         return printer.toString();
     }
 
-    public static String buildPartitionLocationName(Partition partition, PartitionTree tree) {
+    static String buildPartitionLocationName(Partition partition, PartitionTree tree) {
         String parentId = partition.getParentPartitionId();
         if (parentId == null) {
             return "root";
