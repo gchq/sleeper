@@ -21,9 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.InMemoryTableProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesStore;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
@@ -46,7 +44,6 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
     @TempDir
     private Path tempDir;
     private final Schema schema = schemaWithKey("key", new LongType());
-    private final TablePropertiesStore store = InMemoryTableProperties.getStore();
 
     @BeforeEach
     public void setup() {
@@ -138,7 +135,6 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
         tableProperties.set(TABLE_ID, tableId);
         tableProperties.set(TABLE_NAME, tableName);
         tableProperties.set(STATESTORE_CLASSNAME, DynamoDBTransactionLogStateStore.class.getName());
-        store.createTable(tableProperties);
         return tableProperties;
     }
 
