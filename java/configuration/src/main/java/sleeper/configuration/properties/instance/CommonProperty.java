@@ -195,10 +195,10 @@ public interface CommonProperty {
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_CREATION_BATCH_SIZE = Index.propertyBuilder("sleeper.metadata.transactionlog.snapshot.creation.batch.size")
-            .description("The number of tables to create transaction log snapshots for in a single invocation. A separate invocation " +
-                    "of the lambda will be made for each batch when there are more tables than the batch size.")
-            .defaultValue("5")
-            .validationPredicate(Utils::isPositiveInteger)
+            .description("The number of tables to create transaction log snapshots for in a single invocation. This will be the batch size" +
+                    " for a lambda as an SQS FIFO event source. This can be a maximum of 10.")
+            .defaultValue("1")
+            .validationPredicate(Utils::isPositiveIntegerLtEq10)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
     UserDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_CREATION_LAMBDA_PERIOD_IN_MINUTES = Index.propertyBuilder("sleeper.metadata.transactionlog.snapshot.creation.lambda.period.minutes")
