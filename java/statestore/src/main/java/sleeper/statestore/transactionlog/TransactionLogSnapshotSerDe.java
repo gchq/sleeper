@@ -18,31 +18,38 @@ package sleeper.statestore.transactionlog;
 import org.apache.hadoop.conf.Configuration;
 
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.transactionlog.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.StateStorePartitions;
 import sleeper.statestore.StateStoreFileUtils;
 
-public class TransactionLogPartitionsSnapshotSerDe {
+import java.io.IOException;
+
+public class TransactionLogSnapshotSerDe {
     private final Schema sleeperSchema;
     private final StateStoreFileUtils stateStoreFileUtils;
 
-    TransactionLogPartitionsSnapshotSerDe(Schema sleeperSchema, Configuration configuration) {
+    TransactionLogSnapshotSerDe(Schema sleeperSchema, Configuration configuration) {
         this.sleeperSchema = sleeperSchema;
-        this.stateStoreFileUtils = StateStoreFileUtils.forPartitions(configuration);
+        this.stateStoreFileUtils = new StateStoreFileUtils(configuration);
     }
 
-    void save(String basePath, StateStorePartitions state, long lastTransactionNumber) throws StateStoreException {
-        stateStoreFileUtils.savePartitions(createPartitionsPath(basePath, lastTransactionNumber), state, sleeperSchema);
+    void savePartitions(TransactionLogSnapshot snapshot, StateStorePartitions state) throws IOException {
+        stateStoreFileUtils.savePartitions(snapshot.getPath(), state, sleeperSchema);
     }
 
-    StateStorePartitions load(String basePath, long lastTransactionNumber) throws StateStoreException {
+    StateStorePartitions loadPartitions(TransactionLogSnapshot snapshot) throws IOException {
         StateStorePartitions partitions = new StateStorePartitions();
-        stateStoreFileUtils.loadPartitions(createPartitionsPath(basePath, lastTransactionNumber), sleeperSchema, partitions::put);
+        stateStoreFileUtils.loadPartitions(snapshot.getPath(), sleeperSchema, partitions::put);
         return partitions;
     }
 
-    private String createPartitionsPath(String basePath, long lastTransactionNumber) throws StateStoreException {
-        return basePath + "/snapshots/" + lastTransactionNumber + "-partitions.parquet";
+    void saveFiles(TransactionLogSnapshot snapshot, StateStoreFiles state) throws IOException {
+        stateStoreFileUtils.saveFiles(snapshot.getPath(), state);
     }
 
+    StateStoreFiles loadFiles(TransactionLogSnapshot snapshot) throws IOException {
+        StateStoreFiles files = new StateStoreFiles();
+        stateStoreFileUtils.loadFiles(snapshot.getPath(), files::add);
+        return files;
+    }
 }

@@ -50,7 +50,7 @@ public class StateStoreFactory {
             return new S3StateStore(instanceProperties, tableProperties, dynamoDB, configuration);
         }
         if (stateStoreClassName.equals(DynamoDBTransactionLogStateStore.class.getName())) {
-            return new DynamoDBTransactionLogStateStore(instanceProperties, tableProperties, dynamoDB, s3);
+            return new DynamoDBTransactionLogStateStore(instanceProperties, tableProperties, dynamoDB, s3, configuration);
         }
         throw new RuntimeException("Unknown StateStore class: " + stateStoreClassName);
     }

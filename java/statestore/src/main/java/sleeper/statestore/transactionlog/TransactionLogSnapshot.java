@@ -22,12 +22,12 @@ public class TransactionLogSnapshot {
     private final SnapshotType type;
     private final long transactionNumber;
 
-    public static TransactionLogSnapshot forFiles(String path, long transactionNumber) {
-        return new TransactionLogSnapshot(path, SnapshotType.FILES, transactionNumber);
+    public static TransactionLogSnapshot forFiles(String basePath, long transactionNumber) {
+        return new TransactionLogSnapshot(getFilesPath(basePath, transactionNumber), SnapshotType.FILES, transactionNumber);
     }
 
-    public static TransactionLogSnapshot forPartitions(String path, long transactionNumber) {
-        return new TransactionLogSnapshot(path, SnapshotType.PARTITIONS, transactionNumber);
+    public static TransactionLogSnapshot forPartitions(String basePath, long transactionNumber) {
+        return new TransactionLogSnapshot(getPartitionsPath(basePath, transactionNumber), SnapshotType.PARTITIONS, transactionNumber);
     }
 
     public TransactionLogSnapshot(String path, SnapshotType type, long transactionNumber) {
@@ -46,6 +46,14 @@ public class TransactionLogSnapshot {
 
     public long getTransactionNumber() {
         return transactionNumber;
+    }
+
+    private static String getFilesPath(String basePath, long transactionNumber) {
+        return basePath + "/snapshots/" + transactionNumber + "-files.parquet";
+    }
+
+    private static String getPartitionsPath(String basePath, long transactionNumber) {
+        return basePath + "/snapshots/" + transactionNumber + "-partitions.parquet";
     }
 
     @Override

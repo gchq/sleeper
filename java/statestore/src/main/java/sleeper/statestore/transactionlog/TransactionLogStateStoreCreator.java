@@ -29,8 +29,8 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import java.util.List;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.FILE_TRANSACTION_LOG_TABLENAME;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_TRANSACTION_LOG_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_FILES_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_PARTITIONS_TABLENAME;
 
 public class TransactionLogStateStoreCreator {
     private final AmazonDynamoDB dynamoDB;
@@ -44,8 +44,9 @@ public class TransactionLogStateStoreCreator {
     }
 
     public void create() {
-        createTransactionLogTable(instanceProperties.get(FILE_TRANSACTION_LOG_TABLENAME));
-        createTransactionLogTable(instanceProperties.get(PARTITION_TRANSACTION_LOG_TABLENAME));
+        new DynamoDBTransactionLogSnapshotStoreCreator(instanceProperties, dynamoDB).create();
+        createTransactionLogTable(instanceProperties.get(TRANSACTION_LOG_FILES_TABLENAME));
+        createTransactionLogTable(instanceProperties.get(TRANSACTION_LOG_PARTITIONS_TABLENAME));
         s3Client.createBucket(instanceProperties.get(DATA_BUCKET));
     }
 
