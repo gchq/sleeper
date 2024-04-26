@@ -26,9 +26,8 @@ use url::Url;
 /// Implements a Sleeper compaction algorithm in Rust.
 ///
 /// A sequence of Parquet files is read and compacted into a single output Parquet file. The input
-/// files must be individually sorted according to the column numbers specified by `sort_columns`. At least
-/// one sort column must be specified and one row key column number. A sketches file containing
-/// serialised Apache Data Sketches quantiles sketches are written for reach row key column.
+/// files must be individually sorted according to the row key columns and then the sort columns`. A sketches file containing
+/// serialised Apache Data Sketches quantiles sketches is written for reach row key column.
 ///
 #[derive(Parser, Debug)]
 #[command(author, version)]
@@ -50,6 +49,12 @@ struct CmdLineArgs {
     /// Column names for sort columns
     #[arg(short = 's', long)]
     sort_column: Vec<String>,
+    /// Partition region minimum keys (inclusive). Must be one per row key specified.
+    #[arg(short='m',long,required=true,num_args=1..)]
+    region_mins: Vec<String>,
+    /// Partition region maximum keys (exclusive). Must be one per row key specified.
+    #[arg(short='n',long,required=true,num_args=1..)]
+    region_maxs: Vec<String>,
 }
 
 #[tokio::main(flavor = "multi_thread")]
@@ -91,16 +96,25 @@ async fn main() -> color_eyre::Result<()> {
     let output_url = Url::parse(&args.output)
         .or_else(|_e| Url::parse(&("file://".to_owned() + &args.output)))?;
 
+    assert_eq!(args.row_keys.len(), args.region_maxs.len());
+    assert_eq!(args.row_keys.len(), args.region_mins.len());
+
     let mut map = HashMap::new();
-    map.insert(
-        "key".into(),
-        ColRange {
-            lower: compaction::PartitionBound::String("h"),
-            lower_inclusive: true,
-            upper: compaction::PartitionBound::String("m"),
-            upper_inclusive: false,
-        },
-    );
+    for (key, bounds) in args
+        .row_keys
+        .iter()
+        .zip(args.region_mins.iter().zip(args.region_maxs.iter()))
+    {
+        map.insert(
+            key.into(),
+            ColRange {
+                lower: compaction::PartitionBound::String(bounds.0),
+                lower_inclusive: true,
+                upper: compaction::PartitionBound::String(bounds.1),
+                upper_inclusive: false,
+            },
+        );
+    }
     let details = CompactionInput {
         input_files: input_urls,
         output_file: output_url,

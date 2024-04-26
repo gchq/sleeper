@@ -25,16 +25,16 @@ use url::Url;
 
 /// Type safe variant for Sleeper partition boundary
 #[derive(Debug, Copy, Clone)]
-pub enum PartitionBound {
+pub enum PartitionBound<'a> {
     Int32(i32),
     Int64(i64),
-    String(&'static str),
-    ByteArray(&'static [u8]),
+    String(&'a str),
+    ByteArray(&'a [u8]),
 }
 
 /// All the information for a a Sleeper compaction.
 #[derive(Debug)]
-pub struct CompactionInput {
+pub struct CompactionInput<'a> {
     pub input_files: Vec<Url>,
     pub output_file: Url,
     pub row_key_cols: Vec<String>,
@@ -48,15 +48,36 @@ pub struct CompactionInput {
     pub dict_enc_row_keys: bool,
     pub dict_enc_sort_keys: bool,
     pub dict_enc_values: bool,
-    pub region: HashMap<String, ColRange>,
+    pub region: HashMap<String, ColRange<'a>>,
+}
+
+impl Default for CompactionInput<'_> {
+    fn default() -> Self {
+        Self {
+            input_files: Default::default(),
+            output_file: Url::parse("file:///").unwrap(),
+            row_key_cols: Default::default(),
+            sort_key_cols: Default::default(),
+            max_row_group_size: 1_000_000,
+            max_page_size: 65535,
+            compression: "zstd".into(),
+            writer_version: "2.0".into(),
+            column_truncate_length: usize::MAX,
+            stats_truncate_length: usize::MAX,
+            dict_enc_row_keys: true,
+            dict_enc_sort_keys: true,
+            dict_enc_values: true,
+            region: Default::default(),
+        }
+    }
 }
 
 /// Defines a partition range of a single column.
 #[derive(Debug, Copy, Clone)]
-pub struct ColRange {
-    pub lower: PartitionBound,
+pub struct ColRange<'a> {
+    pub lower: PartitionBound<'a>,
     pub lower_inclusive: bool,
-    pub upper: PartitionBound,
+    pub upper: PartitionBound<'a>,
     pub upper_inclusive: bool,
 }
 
@@ -81,19 +102,31 @@ pub struct CompactionResult {
 ///
 /// # Examples
 /// ```no_run
-/// # use arrow::error::ArrowError;
 /// # use url::Url;
 /// # use aws_types::region::Region;
-/// # use crate::compaction::merge_sorted_files;
+/// # use std::collections::HashMap;
+/// # use crate::compaction::{merge_sorted_files, CompactionInput, PartitionBound, ColRange};
+/// let mut compaction_input = CompactionInput::default();
+/// compaction_input.input_files = vec![Url::parse("file:///path/to/file1.parquet").unwrap()];
+/// compaction_input.output_file = Url::parse("file:///path/to/output").unwrap();
+/// compaction_input.row_key_cols = vec!["key".into()];
+/// let mut region : HashMap<String, ColRange<'_>> = HashMap::new();
+/// region.insert("key".into(), ColRange {
+///     lower : PartitionBound::String("a"),
+///     lower_inclusive: true,
+///     upper: PartitionBound::String("h"),
+///     upper_inclusive: true,
+/// });
+///
 /// # tokio_test::block_on(async {
-/// let result = merge_sorted_files(None, &Region::new("eu-west-2"), &vec![Url::parse("file:///path/to/file1.parquet").unwrap()], &Url::parse("file:///path/to/output").unwrap(), 65535, 1_000_000, vec![0], vec![0]).await;
+/// let result = merge_sorted_files(&compaction_input).await;
 /// # })
 /// ```
 ///
 /// # Errors
 /// There must be at least one input file.
 ///
-pub async fn merge_sorted_files(input_data: &CompactionInput) -> Result<CompactionResult> {
+pub async fn merge_sorted_files(input_data: &CompactionInput<'_>) -> Result<CompactionResult> {
     // Read the schema from the first file
     if input_data.input_files.is_empty() {
         Err(eyre!("No input paths supplied"))

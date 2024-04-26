@@ -108,10 +108,10 @@ pub struct FFICompactionParams {
     region_maxs_inclusive: *const *const bool,
 }
 
-impl TryFrom<&FFICompactionParams> for CompactionInput {
+impl<'a, 'b> TryFrom<&'a FFICompactionParams> for CompactionInput<'a> {
     type Error = color_eyre::eyre::Report;
 
-    fn try_from(params: &FFICompactionParams) -> Result<Self, Self::Error> {
+    fn try_from(params: &'a FFICompactionParams) -> Result<CompactionInput<'a>, Self::Error> {
         // We do this separately since we need the values for computing the region
         let row_key_cols = unpack_string_array(params.row_key_cols, params.row_key_cols_len)?
             .into_iter()
@@ -150,10 +150,10 @@ impl TryFrom<&FFICompactionParams> for CompactionInput {
     }
 }
 
-fn compute_region<T: Borrow<str>>(
-    params: &FFICompactionParams,
+fn compute_region<'a, T: Borrow<str>>(
+    params: &'a FFICompactionParams,
     row_key_cols: &[T],
-) -> color_eyre::Result<HashMap<String, ColRange>> {
+) -> color_eyre::Result<HashMap<String, ColRange<'a>>> {
     let region_mins_inclusive = unpack_primitive_array(
         params.region_mins_inclusive,
         params.region_mins_inclusive_len,
@@ -360,11 +360,11 @@ fn unpack_primitive_array<T: Copy>(array_base: *const *const T, len: usize) -> V
 /// If the length of the `schema_types` array doesn't match the length specified.
 ///
 /// Also panics if a negative array length is found in decoding byte arrays or strings.
-fn unpack_variant_array(
+fn unpack_variant_array<'a>(
     array_base: *const *const c_void,
     len: usize,
     schema_types: &[i32],
-) -> Result<Vec<PartitionBound>, Utf8Error> {
+) -> Result<Vec<PartitionBound<'a>>, Utf8Error> {
     assert_eq!(len, schema_types.len());
     unsafe { slice::from_raw_parts(array_base, len) }
         .iter()

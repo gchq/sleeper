@@ -21,7 +21,7 @@ use crate::{
     aws_s3::{CountingObjectStore, ObjectStoreFactory},
     ColRange, CompactionInput, CompactionResult, PartitionBound,
 };
-use arrow::{array::RecordBatch, error::ArrowError, util::pretty::pretty_format_batches};
+use arrow::{error::ArrowError, util::pretty::pretty_format_batches};
 use datafusion::{
     dataframe::DataFrameWriteOptions,
     error::DataFusionError,
@@ -44,7 +44,7 @@ use url::Url;
 /// the output file.
 pub async fn compact(
     store_factory: &ObjectStoreFactory,
-    input_data: &CompactionInput,
+    input_data: &CompactionInput<'_>,
     input_paths: &[Url],
     output_path: &Url,
 ) -> Result<CompactionResult, DataFusionError> {
