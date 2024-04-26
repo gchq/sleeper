@@ -67,6 +67,10 @@ public class DynamoDBTransactionLogSnapshotStore {
     private final AmazonDynamoDB dynamo;
     private final Supplier<Instant> timeSupplier;
 
+    public DynamoDBTransactionLogSnapshotStore(InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamo) {
+        this(instanceProperties, tableProperties, dynamo, Instant::now);
+    }
+
     public DynamoDBTransactionLogSnapshotStore(InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamo, Supplier<Instant> timeSupplier) {
         this.allSnapshotsTable = instanceProperties.get(TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME);
         this.latestSnapshotsTable = instanceProperties.get(TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME);
@@ -75,50 +79,42 @@ public class DynamoDBTransactionLogSnapshotStore {
         this.timeSupplier = timeSupplier;
     }
 
-    public void saveFiles(String snapshotPath, long transactionNumber) throws DuplicateSnapshotException {
-        saveSnapshot(SnapshotType.FILES, snapshotPath, transactionNumber);
-    }
-
-    public void savePartitions(String snapshotPath, long transactionNumber) throws DuplicateSnapshotException {
-        saveSnapshot(SnapshotType.PARTITIONS, snapshotPath, transactionNumber);
-    }
-
-    private void saveSnapshot(SnapshotType snapshotType, String snapshotPath, long transactionNumber) throws DuplicateSnapshotException {
+    public void saveSnapshot(TransactionLogSnapshot snapshot) throws DuplicateSnapshotException {
         Instant updateTime = timeSupplier.get();
         try {
             List<TransactWriteItem> writes = List.of(
                     new TransactWriteItem()
-                            .withPut(putNewSnapshot(snapshotType, snapshotPath, transactionNumber, updateTime)),
+                            .withPut(putNewSnapshot(snapshot, updateTime)),
                     new TransactWriteItem()
-                            .withUpdate(updateLatestSnapshot(snapshotType, snapshotPath, transactionNumber, updateTime)));
+                            .withUpdate(updateLatestSnapshot(snapshot, updateTime)));
             TransactWriteItemsRequest transactWriteItemsRequest = new TransactWriteItemsRequest()
                     .withTransactItems(writes)
                     .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
             dynamo.transactWriteItems(transactWriteItemsRequest);
         } catch (TransactionCanceledException e) {
             if (hasConditionalCheckFailure(e)) {
-                throw new DuplicateSnapshotException(snapshotPath, e);
+                throw new DuplicateSnapshotException(snapshot.getPath(), e);
             }
         }
     }
 
-    private Put putNewSnapshot(SnapshotType snapshotType, String snapshotPath, long transactionNumber, Instant updateTime) {
+    private Put putNewSnapshot(TransactionLogSnapshot snapshot, Instant updateTime) {
         return new Put()
                 .withTableName(allSnapshotsTable)
                 .withItem(new DynamoDBRecordBuilder()
-                        .string(TABLE_ID_AND_SNAPSHOT_TYPE, tableAndType(sleeperTableId, snapshotType))
+                        .string(TABLE_ID_AND_SNAPSHOT_TYPE, tableAndType(sleeperTableId, snapshot.getType()))
                         .string(TABLE_ID, sleeperTableId)
-                        .string(PATH, snapshotPath)
-                        .number(TRANSACTION_NUMBER, transactionNumber)
+                        .string(PATH, snapshot.getPath())
+                        .number(TRANSACTION_NUMBER, snapshot.getTransactionNumber())
                         .number(UPDATE_TIME, updateTime.toEpochMilli())
-                        .string(SNAPSHOT_TYPE, snapshotType.name())
+                        .string(SNAPSHOT_TYPE, snapshot.getType().name())
                         .build());
     }
 
-    private Update updateLatestSnapshot(SnapshotType snapshotType, String snapshotPath, long transactionNumber, Instant updateTime) {
+    private Update updateLatestSnapshot(TransactionLogSnapshot snapshot, Instant updateTime) {
         String pathKey;
         String transactionNumberKey;
-        if (snapshotType == SnapshotType.FILES) {
+        if (snapshot.getType() == SnapshotType.FILES) {
             pathKey = FILES_SNAPSHOT_PATH;
             transactionNumberKey = FILES_TRANSACTION_NUMBER;
         } else {
@@ -138,8 +134,8 @@ public class DynamoDBTransactionLogSnapshotStore {
                         "#TransactionNumber", transactionNumberKey,
                         "#UpdateTime", UPDATE_TIME))
                 .withExpressionAttributeValues(Map.of(
-                        ":path", createStringAttribute(snapshotPath),
-                        ":transaction_number", createNumberAttribute(transactionNumber),
+                        ":path", createStringAttribute(snapshot.getPath()),
+                        ":transaction_number", createNumberAttribute(snapshot.getTransactionNumber()),
                         ":update_time", createNumberAttribute(updateTime.toEpochMilli())));
     }
 

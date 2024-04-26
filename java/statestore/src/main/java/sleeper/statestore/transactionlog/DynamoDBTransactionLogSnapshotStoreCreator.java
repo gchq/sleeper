@@ -44,7 +44,7 @@ public class DynamoDBTransactionLogSnapshotStoreCreator {
         createAllSnapshotsTable();
     }
 
-    public void createLatestSnapshotTable() {
+    private void createLatestSnapshotTable() {
         List<AttributeDefinition> attributeDefinitions = List.of(
                 new AttributeDefinition(DynamoDBTransactionLogSnapshotStore.TABLE_ID, ScalarAttributeType.S));
         List<KeySchemaElement> keySchemaElements = List.of(
@@ -57,7 +57,7 @@ public class DynamoDBTransactionLogSnapshotStoreCreator {
         dynamoDB.createTable(request);
     }
 
-    public void createAllSnapshotsTable() {
+    private void createAllSnapshotsTable() {
         List<AttributeDefinition> attributeDefinitions = List.of(
                 new AttributeDefinition(DynamoDBTransactionLogSnapshotStore.TABLE_ID_AND_SNAPSHOT_TYPE, ScalarAttributeType.S),
                 new AttributeDefinition(DynamoDBTransactionLogSnapshotStore.TRANSACTION_NUMBER, ScalarAttributeType.N));
