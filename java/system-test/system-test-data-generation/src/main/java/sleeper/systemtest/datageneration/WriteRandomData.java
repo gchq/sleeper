@@ -23,7 +23,7 @@ import sleeper.systemtest.configuration.SystemTestPropertyValues;
 import java.util.Iterator;
 import java.util.stream.Stream;
 
-import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_WRITER;
+import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_INGEST;
 
 public class WriteRandomData {
 
@@ -40,7 +40,7 @@ public class WriteRandomData {
         RandomRecordSupplierConfig config = new RandomRecordSupplierConfig(systemTestProperties);
         return Stream
                 .generate(new RandomRecordSupplier(tableProperties.getSchema(), config))
-                .limit(systemTestProperties.getLong(NUMBER_OF_RECORDS_PER_WRITER))
+                .limit(systemTestProperties.getLong(NUMBER_OF_RECORDS_PER_INGEST))
                 .iterator();
     }
 }

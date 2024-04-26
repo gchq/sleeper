@@ -29,7 +29,7 @@ import sleeper.systemtest.configuration.SystemTestProperties;
 import java.io.IOException;
 
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_WRITER;
+import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_INGEST;
 
 public class GenerateRandomDataFiles {
     private final TableProperties tableProperties;
@@ -44,7 +44,7 @@ public class GenerateRandomDataFiles {
 
     private void run() throws IOException {
         SystemTestProperties systemTestProperties = new SystemTestProperties();
-        systemTestProperties.setNumber(NUMBER_OF_RECORDS_PER_WRITER, numberOfRecords);
+        systemTestProperties.setNumber(NUMBER_OF_RECORDS_PER_INGEST, numberOfRecords);
         WriteRandomDataFiles.writeFilesToDirectory(outputDirectory, systemTestProperties,
                 tableProperties, WriteRandomData.createRecordIterator(systemTestProperties, tableProperties));
     }
