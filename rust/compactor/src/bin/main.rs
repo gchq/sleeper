@@ -16,6 +16,7 @@
 
 use chrono::Local;
 use clap::Parser;
+use color_eyre::eyre::bail;
 use compaction::{merge_sorted_files, ColRange, CompactionInput};
 use human_panic::setup_panic;
 use log::info;
@@ -133,12 +134,17 @@ async fn main() -> color_eyre::Result<()> {
     };
 
     let result = merge_sorted_files(&details).await;
-    if let Ok(data) = result {
-        info!(
-            "Compaction read {} rows and wrote {} rows",
-            data.rows_read.to_formatted_string(&Locale::en),
-            data.rows_written.to_formatted_string(&Locale::en)
-        );
-    }
+    match result {
+        Ok(r) => {
+            info!(
+                "Compaction read {} rows and wrote {} rows",
+                r.rows_read.to_formatted_string(&Locale::en),
+                r.rows_written.to_formatted_string(&Locale::en)
+            );
+        }
+        Err(e) => {
+            bail!(e);
+        }
+    };
     Ok(())
 }

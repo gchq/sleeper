@@ -27,7 +27,10 @@ use arrow::util::pretty::pretty_format_batches;
 use datafusion::{
     dataframe::DataFrameWriteOptions,
     error::DataFusionError,
-    execution::{config::SessionConfig, context::SessionContext, options::ParquetReadOptions},
+    execution::{
+        config::SessionConfig, context::SessionContext, options::ParquetReadOptions,
+        FunctionRegistry,
+    },
     logical_expr::ScalarUDF,
     parquet::basic::{BrotliLevel, GzipLevel, ZstdLevel},
     prelude::*,
@@ -73,25 +76,32 @@ pub async fn compact(
     }
 
     // Create the sketch function
-    ctx.register_udf(ScalarUDF::from(udf::SketchUDF::new(
+    let sketch_func = Arc::new(ScalarUDF::from(udf::SketchUDF::new(
         frame.schema(),
         &input_data.row_key_cols,
     )));
+    frame.task_ctx().register_udf(sketch_func.clone())?;
 
     // Extract all column names
     let col_names = frame.schema().clone().strip_qualifiers().field_names();
     info!("All columns in schema {col_names:?}");
 
     let row_key_exprs = input_data.row_key_cols.iter().map(col).collect::<Vec<_>>();
-    let sketch_func = frame.registry().udf("sketch")?;
     info!("Using sketch function {sketch_func:?}");
 
-    let sketch_expr = once(sketch_func.call(row_key_exprs));
+    let sketch_expr = once(
+        sketch_func
+            .call(row_key_exprs)
+            .alias(&input_data.row_key_cols[0]),
+    );
     // Perform sort of row key and sort columns and projection of all columns
     let col_names_expr = sketch_expr
         .chain(col_names.iter().skip(1).map(col)) // 1st column is the sketch function call
         .collect::<Vec<_>>();
 
+    let _no_sketches = col_names.iter().map(col).collect::<Vec<_>>();
+
+    // Build compaction query
     frame = frame.sort(sort_order)?.select(col_names_expr)?;
 
     // Show explanation of plan
@@ -128,10 +138,10 @@ pub async fn compact(
     let binding = sketch_func.inner();
     let inner_function: Option<&SketchUDF> = binding.as_any().downcast_ref();
     if let Some(func) = inner_function {
-        println!(
+        info!(
             "Made {} calls to sketch UDF and processed {} total rows.",
-            func.get_invoke_count(),
-            func.get_row_count(),
+            func.get_invoke_count().to_formatted_string(&Locale::en),
+            func.get_row_count().to_formatted_string(&Locale::en),
         );
 
         rows_written = func.get_row_count();
