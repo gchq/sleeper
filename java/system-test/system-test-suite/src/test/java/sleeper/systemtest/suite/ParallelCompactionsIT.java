@@ -23,6 +23,8 @@ import sleeper.configuration.properties.validation.IngestFileWritingStrategy;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.extension.AfterTestReports;
+import sleeper.systemtest.dsl.reporting.SystemTestReports;
 import sleeper.systemtest.suite.testutil.Expensive;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
@@ -46,8 +48,9 @@ import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.create2048S
 public class ParallelCompactionsIT {
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper) throws Exception {
+    void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) throws Exception {
         sleeper.connectToInstance(PARALLEL_COMPACTIONS);
+        reporting.reportIfTestFailed(SystemTestReports.SystemTestBuilder::compactionTasksAndJobs);
     }
 
     @Test
