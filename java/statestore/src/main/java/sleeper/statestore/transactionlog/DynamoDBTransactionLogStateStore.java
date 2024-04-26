@@ -58,11 +58,11 @@ public class DynamoDBTransactionLogStateStore extends TransactionLogStateStore {
                 .ifPresent(latestSnapshots -> {
                     TransactionLogSnapshotSerDe snapshotSerDe = new TransactionLogSnapshotSerDe(tableProperties.getSchema(), configuration);
                     try {
-                        if (latestSnapshots.getFilesSnapshot().getPath() != null) {
+                        if (latestSnapshots.getFilesSnapshot() != null) {
                             builder.filesState(snapshotSerDe.loadFiles(latestSnapshots.getFilesSnapshot()))
                                     .filesTransactionNumber(latestSnapshots.getFilesSnapshot().getTransactionNumber());
                         }
-                        if (latestSnapshots.getPartitionsSnapshot().getPath() != null) {
+                        if (latestSnapshots.getPartitionsSnapshot() != null) {
                             builder.partitionsState(snapshotSerDe.loadPartitions(latestSnapshots.getPartitionsSnapshot()))
                                     .partitionsTransactionNumber(latestSnapshots.getPartitionsSnapshot().getTransactionNumber());
                         }

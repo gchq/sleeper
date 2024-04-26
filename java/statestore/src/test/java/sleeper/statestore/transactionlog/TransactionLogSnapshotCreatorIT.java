@@ -15,7 +15,6 @@
  */
 package sleeper.statestore.transactionlog;
 
-import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -68,6 +67,10 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
                 .contains(new LatestSnapshots(
                         filesSnapshot(table, 1),
                         partitionsSnapshot(table, 1)));
+        assertThat(snapshotStore(table).getFilesSnapshots())
+                .containsExactly(filesSnapshot(table, 1));
+        assertThat(snapshotStore(table).getPartitionsSnapshots())
+                .containsExactly(partitionsSnapshot(table, 1));
     }
 
     @Test
@@ -122,7 +125,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
 
     private void runSnapshotCreator(TableProperties table) {
         new TransactionLogSnapshotCreator(
-                instanceProperties, table, s3Client, dynamoDBClient, new Configuration())
+                instanceProperties, table, s3Client, dynamoDBClient, configuration)
                 .createSnapshot();
     }
 

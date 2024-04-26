@@ -52,12 +52,23 @@ public class TransactionLogSnapshotCreator {
     public TransactionLogSnapshotCreator(
             InstanceProperties instanceProperties, TableProperties tableProperties,
             AmazonS3 s3Client, AmazonDynamoDB dynamoDB, Configuration configuration) {
+        this(instanceProperties, tableProperties,
+                new DynamoDBTransactionLogStore(instanceProperties.get(TRANSACTION_LOG_FILES_TABLENAME),
+                        instanceProperties, tableProperties, dynamoDB, s3Client),
+                new DynamoDBTransactionLogStore(instanceProperties.get(TRANSACTION_LOG_PARTITIONS_TABLENAME),
+                        instanceProperties, tableProperties, dynamoDB, s3Client),
+                dynamoDB, configuration);
+
+    }
+
+    public TransactionLogSnapshotCreator(
+            InstanceProperties instanceProperties, TableProperties tableProperties,
+            TransactionLogStore filesLogStore, TransactionLogStore partitionsLogStore,
+            AmazonDynamoDB dynamoDB, Configuration configuration) {
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
-        this.filesLogStore = new DynamoDBTransactionLogStore(instanceProperties.get(TRANSACTION_LOG_FILES_TABLENAME),
-                instanceProperties, tableProperties, dynamoDB, s3Client);
-        this.partitionsLogStore = new DynamoDBTransactionLogStore(instanceProperties.get(TRANSACTION_LOG_PARTITIONS_TABLENAME),
-                instanceProperties, tableProperties, dynamoDB, s3Client);
+        this.filesLogStore = filesLogStore;
+        this.partitionsLogStore = partitionsLogStore;
         this.snapshotSerDe = new TransactionLogSnapshotSerDe(tableProperties.getSchema(), configuration);
         this.snapshotStore = new DynamoDBTransactionLogSnapshotStore(instanceProperties, tableProperties, dynamoDB);
     }
