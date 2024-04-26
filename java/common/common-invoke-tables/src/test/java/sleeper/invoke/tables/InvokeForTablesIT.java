@@ -69,16 +69,16 @@ public class InvokeForTablesIT {
     }
 
     @Test
-    void shouldSendMoreMessagesThanFitInABatch() {
-        // Given
+    void shouldSendMoreMessagesThanFitInAnSqsSendMessageBatch() {
+        // Given a FIFO queue
         String queueUrl = createFifoQueueGetUrl();
 
-        // When
+        // When we send more than the SQS hard limit of 10 messages to send in a single batch
         InvokeForTables.sendOneMessagePerTable(sqsClient, queueUrl,
                 IntStream.rangeClosed(1, 11)
                         .mapToObj(i -> uniqueIdAndName("table-id-" + i, "table-name-" + i)));
 
-        // Then
+        // Then we can receive those messages
         assertThat(receiveTableIdMessages(queueUrl, 10)).containsExactly(
                 "table-id-1", "table-id-2", "table-id-3", "table-id-4", "table-id-5",
                 "table-id-6", "table-id-7", "table-id-8", "table-id-9", "table-id-10");
