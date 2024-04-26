@@ -24,8 +24,6 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
-import com.amazonaws.services.sqs.model.SendMessageBatchRequest;
-import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,13 +34,10 @@ import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
-import sleeper.core.util.SplitIntoBatches;
+import sleeper.invoke.tables.InvokeForTables;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
 
 import java.time.Instant;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
@@ -73,7 +68,7 @@ public class TransactionLogSnapshotCreationTriggerLambda implements RequestHandl
         Instant startTime = Instant.now();
         LOGGER.info("Lambda triggered at {}, started at {}", event.getTime(), startTime);
         String queueUrl = instanceProperties.get(TRANSACTION_LOG_SNAPSHOT_CREATION_QUEUE_URL);
-        SplitIntoBatches.reusingListOfSize(10, streamOnlineTransactionLogTables(), tables -> sendMessageBatch(tables, queueUrl));
+        InvokeForTables.sendOneMessagePerTable(sqsClient, queueUrl, streamOnlineTransactionLogTables());
 
         Instant finishTime = Instant.now();
         LOGGER.info("Lambda finished at {} (ran for {})", finishTime, LoggedDuration.withFullOutput(startTime, finishTime));
@@ -87,17 +82,5 @@ public class TransactionLogSnapshotCreationTriggerLambda implements RequestHandl
         return tableIndex.streamOnlineTables()
                 .filter(tableStatus -> DynamoDBTransactionLogStateStore.class.getName()
                         .equals(tablePropertiesProvider.getById(tableStatus.getTableUniqueId()).get(STATESTORE_CLASSNAME)));
-    }
-
-    private void sendMessageBatch(List<TableStatus> tables, String queueUrl) {
-        sqsClient.sendMessageBatch(new SendMessageBatchRequest()
-                .withQueueUrl(queueUrl)
-                .withEntries(tables.stream()
-                        .map(table -> new SendMessageBatchRequestEntry()
-                                .withMessageDeduplicationId(UUID.randomUUID().toString())
-                                .withId(table.getTableUniqueId())
-                                .withMessageGroupId(table.getTableUniqueId())
-                                .withMessageBody(table.getTableUniqueId()))
-                        .collect(Collectors.toUnmodifiableList())));
     }
 }
