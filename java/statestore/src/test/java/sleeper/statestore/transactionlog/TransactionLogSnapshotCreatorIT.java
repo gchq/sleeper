@@ -68,7 +68,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
 
         // Then
         assertThat(snapshotStore(table).getLatestSnapshots())
-                .contains(new LatestSnapshots(
+                .contains(LatestSnapshots.from(
                         filesSnapshot(table, 1),
                         partitionsSnapshot(table, 1)));
     }
@@ -94,11 +94,11 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
 
         // Then
         assertThat(snapshotStore(table1).getLatestSnapshots())
-                .contains(new LatestSnapshots(
+                .contains(LatestSnapshots.from(
                         filesSnapshot(table1, 1),
                         partitionsSnapshot(table1, 1)));
         assertThat(snapshotStore(table2).getLatestSnapshots())
-                .contains(new LatestSnapshots(
+                .contains(LatestSnapshots.from(
                         filesSnapshot(table2, 1),
                         partitionsSnapshot(table2, 1)));
     }
@@ -118,7 +118,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
 
         // Then
         assertThat(snapshotStore(table).getLatestSnapshots())
-                .contains(new LatestSnapshots(
+                .contains(LatestSnapshots.from(
                         filesSnapshot(table, 1),
                         partitionsSnapshot(table, 1)));
     }

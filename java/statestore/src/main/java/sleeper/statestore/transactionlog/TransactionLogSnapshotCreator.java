@@ -66,29 +66,33 @@ public class TransactionLogSnapshotCreator {
         LOGGER.info("Creating snapshot for table {}", tableProperties.getStatus());
         Optional<LatestSnapshots> latestSnapshotsOpt = snapshotStore.getLatestSnapshots();
         StateStoreFiles filesState = latestSnapshotsOpt
+                .filter(latestSnapshot -> latestSnapshot.getFilesSnapshot().isPresent())
                 .map(latestSnapshot -> {
                     try {
-                        return snapshotSerDe.loadFiles(latestSnapshot.getFilesSnapshot());
+                        return snapshotSerDe.loadFiles(latestSnapshot.getFilesSnapshot().get());
                     } catch (IOException e) {
                         throw new UncheckedIOException(e);
                     }
                 })
                 .orElseGet(StateStoreFiles::new);
         long filesTransactionNumberBefore = latestSnapshotsOpt
-                .map(latestSnapshot -> latestSnapshot.getFilesSnapshot().getTransactionNumber())
+                .filter(latestSnapshot -> latestSnapshot.getFilesSnapshot().isPresent())
+                .map(latestSnapshot -> latestSnapshot.getFilesSnapshot().get().getTransactionNumber())
                 .orElse(0L);
 
         StateStorePartitions partitionsState = latestSnapshotsOpt
+                .filter(latestSnapshot -> latestSnapshot.getPartitionsSnapshot().isPresent())
                 .map(latestSnapshot -> {
                     try {
-                        return snapshotSerDe.loadPartitions(latestSnapshot.getPartitionsSnapshot());
+                        return snapshotSerDe.loadPartitions(latestSnapshot.getPartitionsSnapshot().get());
                     } catch (IOException e) {
                         throw new UncheckedIOException(e);
                     }
                 })
                 .orElseGet(StateStorePartitions::new);
         long partitionsTransactionNumberBefore = latestSnapshotsOpt
-                .map(latestSnapshot -> latestSnapshot.getPartitionsSnapshot().getTransactionNumber())
+                .filter(latestSnapshot -> latestSnapshot.getPartitionsSnapshot().isPresent())
+                .map(latestSnapshot -> latestSnapshot.getPartitionsSnapshot().get().getTransactionNumber())
                 .orElse(0L);
         try {
             saveFilesSnapshot(filesState, filesTransactionNumberBefore, snapshotSerDe, snapshotStore);
