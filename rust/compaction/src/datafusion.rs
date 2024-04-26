@@ -19,23 +19,26 @@
 */
 use crate::{
     aws_s3::{CountingObjectStore, ObjectStoreFactory},
+    datafusion::{sketch::serialise_sketches, udf::SketchUDF},
+    details::create_sketch_path,
     ColRange, CompactionInput, CompactionResult, PartitionBound,
 };
-use arrow::{error::ArrowError, util::pretty::pretty_format_batches};
+use arrow::util::pretty::pretty_format_batches;
 use datafusion::{
     dataframe::DataFrameWriteOptions,
     error::DataFusionError,
     execution::{config::SessionConfig, context::SessionContext, options::ParquetReadOptions},
-    parquet::{
-        arrow::{async_reader::ParquetObjectReader, ParquetRecordBatchStreamBuilder},
-        basic::{BrotliLevel, GzipLevel, ZstdLevel},
-    },
+    logical_expr::ScalarUDF,
+    parquet::basic::{BrotliLevel, GzipLevel, ZstdLevel},
     prelude::*,
 };
 use log::{error, info};
 use num_format::{Locale, ToFormattedString};
-use std::{collections::HashMap, sync::Arc};
+use std::{collections::HashMap, iter::once, sync::Arc};
 use url::Url;
+
+mod sketch;
+mod udf;
 
 /// Starts a Sleeper compaction.
 ///
@@ -64,24 +67,31 @@ pub async fn compact(
     let po = ParquetReadOptions::default().file_sort_order(vec![sort_order.clone()]);
     let mut frame = ctx.read_parquet(input_paths.to_owned(), po).await?;
 
-    // Extract all column names
-    let col_names = frame.schema().clone().strip_qualifiers().field_names();
-    info!("All columns in schema {col_names:?}");
-
     // If we have a partition region, apply it first
     if let Some(expr) = region_filter(&input_data.region) {
         frame = frame.filter(expr)?;
     }
 
+    // Create the sketch function
+    ctx.register_udf(ScalarUDF::from(udf::SketchUDF::new(
+        frame.schema(),
+        &input_data.row_key_cols,
+    )));
+
+    // Extract all column names
+    let col_names = frame.schema().clone().strip_qualifiers().field_names();
+    info!("All columns in schema {col_names:?}");
+
+    let row_key_exprs = input_data.row_key_cols.iter().map(col).collect::<Vec<_>>();
+    let sketch_func = frame.registry().udf("sketch")?;
+    info!("Using sketch function {sketch_func:?}");
+
+    let sketch_expr = once(sketch_func.call(row_key_exprs));
     // Perform sort of row key and sort columns and projection of all columns
-    let col_names_expr = frame
-        .schema()
-        .clone()
-        .strip_qualifiers()
-        .field_names()
-        .iter()
-        .map(col)
+    let col_names_expr = sketch_expr
+        .chain(col_names.iter().skip(1).map(col)) // 1st column is the sketch function call
         .collect::<Vec<_>>();
+
     frame = frame.sort(sort_order)?.select(col_names_expr)?;
 
     // Show explanation of plan
@@ -110,6 +120,41 @@ pub async fn compact(
         )
         .await?;
 
+    show_store_stats(store);
+
+    let mut rows_written = 0;
+
+    // Write sketches out to file in Sleeper compatible way
+    let binding = sketch_func.inner();
+    let inner_function: Option<&SketchUDF> = binding.as_any().downcast_ref();
+    if let Some(func) = inner_function {
+        println!(
+            "Made {} calls to sketch UDF and processed {} total rows.",
+            func.get_invoke_count(),
+            func.get_row_count(),
+        );
+
+        rows_written = func.get_row_count();
+
+        // Serialise the sketch
+        serialise_sketches(
+            store_factory,
+            &create_sketch_path(output_path),
+            &*func.get_sketch(),
+        )
+        .map_err(|e| DataFusionError::External(e.into()))?;
+    }
+
+    // The rows read will be same as rows_written.
+    Ok(CompactionResult {
+        rows_read: rows_written,
+        rows_written,
+    })
+}
+
+/// Show some basic statistics from the [`ObjectStore`].
+///
+fn show_store_stats(store: Arc<dyn CountingObjectStore>) {
     info!(
         "Object store read {} bytes from {} GETs",
         store
@@ -121,41 +166,6 @@ pub async fn compact(
             .unwrap_or(0)
             .to_formatted_string(&Locale::en)
     );
-
-    // Find rows just written to output Parquet file
-    let pq_reader = get_parquet_builder(store_factory, output_path)
-        .await
-        .map_err(|e| DataFusionError::External(e.into()))?;
-    let num_rows = pq_reader.metadata().file_metadata().num_rows();
-
-    // The rows read will be same as rows_written.
-    Ok(CompactionResult {
-        rows_read: num_rows as usize,
-        rows_written: num_rows as usize,
-    })
-}
-
-/// Create an asynchronous builder for reading Parquet files from an object store.
-///
-/// The URL must start with a scheme that the object store recognises, e.g. "file" or "s3".
-///
-/// # Errors
-/// This function will return an error if it couldn't connect to S3 or open a valid
-/// Parquet file.
-pub async fn get_parquet_builder(
-    store_factory: &ObjectStoreFactory,
-    src: &Url,
-) -> color_eyre::Result<ParquetRecordBatchStreamBuilder<ParquetObjectReader>> {
-    let store = store_factory.get_object_store(src)?;
-    // HEAD the file to get metadata
-    let path = object_store::path::Path::from(src.path());
-    let object_meta = store
-        .head(&path)
-        .await
-        .map_err(|e| ArrowError::ExternalError(Box::new(e)))?;
-    // Create a reader for the target file, use it to construct a Stream
-    let reader = ParquetObjectReader::new(store.as_object_store(), object_meta);
-    Ok(ParquetRecordBatchStreamBuilder::new(reader).await?)
 }
 
 /// Create the `DataFusion` filtering expression from a Sleeper region.

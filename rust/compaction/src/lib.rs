@@ -24,7 +24,6 @@
 mod aws_s3;
 mod datafusion;
 mod details;
-mod sketch;
 
 use chrono::Local;
 use color_eyre::eyre::eyre;

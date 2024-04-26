@@ -16,11 +16,8 @@
  * limitations under the License.
  */
 use crate::aws_s3::ObjectStoreFactory;
-use arrow::array::{ArrayAccessor, AsArray};
-use arrow::datatypes::{
-    BinaryType, DataType, Int32Type, Int64Type, LargeBinaryType, LargeUtf8Type, Schema, Utf8Type,
-};
-use arrow::record_batch::RecordBatch;
+use arrow::array::ArrayAccessor;
+use arrow::datatypes::DataType;
 use bytes::{BufMut, Bytes};
 use cxx::{Exception, UniquePtr};
 use log::info;
@@ -29,20 +26,26 @@ use rust_sketch::quantiles::byte::{byte_sketch_t, new_byte_sketch};
 use rust_sketch::quantiles::i32::{i32_sketch_t, new_i32_sketch};
 use rust_sketch::quantiles::i64::{i64_sketch_t, new_i64_sketch};
 use rust_sketch::quantiles::str::{new_str_sketch, string_sketch_t};
+use std::fmt::Debug;
 use std::io::Write;
-use std::iter::zip;
 use std::mem::size_of;
-use std::sync::Arc;
 use url::Url;
 
 /// Constant size for quantiles data sketches
-const K: u16 = 1024;
+pub const K: u16 = 1024;
 
 pub enum DataSketchVariant {
     I32(UniquePtr<i32_sketch_t>),
     I64(UniquePtr<i64_sketch_t>),
     Str(DataType, UniquePtr<string_sketch_t>),
     Bytes(DataType, UniquePtr<byte_sketch_t>),
+}
+
+impl Debug for DataSketchVariant {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_tuple(&format!("{}", std::any::type_name::<Self>()))
+            .finish()
+    }
 }
 
 pub trait Item {
@@ -160,7 +163,6 @@ impl Item for &[u8] {
     }
 }
 
-#[allow(dead_code)]
 impl DataSketchVariant {
     /// Updates this sketch variant with the given value.
     ///
@@ -169,7 +171,6 @@ impl DataSketchVariant {
     /// # Panics
     /// If the value provided cannot be converted to the type of this [`DataSketch`], i.e.
     /// if you try to update an i32 sketch with a string.
-    #[allow(clippy::needless_pass_by_value)]
     pub fn update<T>(&mut self, value: T)
     where
         T: Item,
@@ -186,6 +187,7 @@ impl DataSketchVariant {
     ///
     /// # Errors
     /// If the sketch is empty an error is thrown.
+    #[allow(dead_code)]
     pub fn get_min_item(&self) -> Result<Box<dyn Item>, Exception> {
         match self {
             DataSketchVariant::I32(s) => Ok(s.get_min_item().map(Box::new)?),
@@ -199,6 +201,7 @@ impl DataSketchVariant {
     ///
     /// # Errors
     /// If the sketch is empty an error is thrown.
+    #[allow(dead_code)]
     pub fn get_max_item(&self) -> Result<Box<dyn Item>, Exception> {
         match self {
             DataSketchVariant::I32(s) => Ok(s.get_max_item().map(Box::new)?),
@@ -226,6 +229,7 @@ impl DataSketchVariant {
 
     /// Return the underlying Arrow [`DataType`] this sketch is intended for.
     #[must_use]
+    #[allow(dead_code)]
     pub fn data_type(&self) -> DataType {
         match self {
             DataSketchVariant::I32(_) => DataType::Int32,
@@ -302,61 +306,13 @@ pub fn serialise_sketches(
     Ok(())
 }
 
-/// Update the data sketches for the column numbers in row key fields list.
-///
-/// Works through each value in each column indexed by `row_key_fields` and
-/// updates the corresponding data sketch i the array of sketches.
-///
-/// # Panics
-/// Panic if length of sketch array is different to number of row key fields.
-/// Panic if `row_key_fields` contains column number that isn't in schema.
-/// Panic if there is a mismatch between the sketch data type and the column type.
-pub fn update_sketches(
-    b: &RecordBatch,
-    sketches: &mut [DataSketchVariant],
-    row_key_fields: impl AsRef<[usize]>,
-) {
-    assert!(
-        sketches.len() == row_key_fields.as_ref().len(),
-        "Differing number of sketches and row key fields!"
-    );
-    // Take each sketch and row key column in turn, then update the sketch
-    for (sketch, column) in zip(
-        sketches,
-        row_key_fields.as_ref().iter().map(|&index| b.column(index)),
-    ) {
-        // dynamic dispatch. Match the datatype to the type of sketch to update.
-        match column.data_type() {
-            DataType::Int32 => update_sketch(sketch, &column.as_primitive::<Int32Type>()),
-            DataType::Int64 => update_sketch(sketch, &column.as_primitive::<Int64Type>()),
-            DataType::Utf8 => update_sketch(
-                sketch,
-                &column.as_string::<<Utf8Type as arrow::datatypes::ByteArrayType>::Offset>(),
-            ),
-            DataType::LargeUtf8 => update_sketch(
-                sketch,
-                &column.as_string::<<LargeUtf8Type as arrow::datatypes::ByteArrayType>::Offset>(),
-            ),
-            DataType::Binary => update_sketch(
-                sketch,
-                &column.as_binary::<<BinaryType as arrow::datatypes::ByteArrayType>::Offset>(),
-            ),
-            DataType::LargeBinary => update_sketch(
-                sketch,
-                &column.as_binary::<<LargeBinaryType as arrow::datatypes::ByteArrayType>::Offset>(),
-            ),
-            _ => panic!("Row type {} not supported", column.data_type()),
-        }
-    }
-}
-
 /// Update the given sketch from an array.
 ///
 /// The list of values in the given array are updated into the data sketch.
 ///
 /// # Panics
 /// Panic if sketch type is not compatible with the item type of the array.
-fn update_sketch<T: crate::sketch::Item, A: ArrayAccessor<Item = T>>(
+pub fn update_sketch<T: Item, A: ArrayAccessor<Item = T>>(
     sketch: &mut DataSketchVariant,
     array: &A,
 ) {
@@ -365,23 +321,4 @@ fn update_sketch<T: crate::sketch::Item, A: ArrayAccessor<Item = T>>(
             sketch.update(array.value_unchecked(i));
         }
     }
-}
-
-/// Create a vector of Data Sketches.
-///
-/// This creates the appropriate data sketch implementations based on on the row key fields
-/// and the data types in the schema. Each type is wrapped in a [`SketchEnum`] variant type.
-///
-/// # Panics
-/// If a row key field can't be found in the schema.
-///
-pub fn make_sketches_for_schema(
-    schema: &Arc<Schema>,
-    row_key_fields: &impl AsRef<[usize]>,
-) -> Vec<DataSketchVariant> {
-    row_key_fields
-        .as_ref()
-        .iter()
-        .map(|&index| DataSketchVariant::new(schema.field(index).data_type(), K))
-        .collect()
 }
