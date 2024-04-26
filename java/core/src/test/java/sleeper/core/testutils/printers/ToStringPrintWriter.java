@@ -13,16 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.testutil;
-
-import sleeper.clients.util.console.ConsoleOutput;
+package sleeper.core.testutils.printers;
 
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 
-public class ToStringPrintStream {
+/**
+ * A helper class which wraps an output stream. Provides methods for creating a {@link PrintWriter} and calling toString
+ * on the output stream.
+ */
+public class ToStringPrintWriter {
 
     private final OutputStream outputStream = new ByteArrayOutputStream();
 
@@ -30,10 +33,11 @@ public class ToStringPrintStream {
         return new PrintStream(outputStream, false, StandardCharsets.UTF_8);
     }
 
-    public ConsoleOutput consoleOut() {
-        return new ConsoleOutput(getPrintStream());
+    public PrintWriter getPrintWriter() {
+        return new PrintWriter(getPrintStream());
     }
 
+    @Override
     public String toString() {
         return outputStream.toString();
     }

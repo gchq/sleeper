@@ -15,6 +15,9 @@
  */
 package sleeper.core.schema.type;
 
+/**
+ * A primitive type that represents a String.
+ */
 public class StringType extends PrimitiveType {
 
     @Override

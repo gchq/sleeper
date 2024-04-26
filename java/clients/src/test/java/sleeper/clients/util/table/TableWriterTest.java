@@ -17,7 +17,7 @@ package sleeper.clients.util.table;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.clients.testutil.ToStringPrintStream;
+import sleeper.clients.testutil.ToStringConsoleOutput;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.testutil.ClientTestUtils.example;
@@ -30,7 +30,7 @@ class TableWriterTest {
         TableWriterFactory.Builder factoryBuilder = TableWriterFactory.builder();
         TableField field = factoryBuilder.addField("Field");
         TableWriterFactory factory = factoryBuilder.build();
-        ToStringPrintStream output = new ToStringPrintStream();
+        ToStringConsoleOutput output = new ToStringConsoleOutput();
 
         // When
         factory.tableBuilder()
@@ -47,7 +47,7 @@ class TableWriterTest {
         TableWriterFactory.Builder factoryBuilder = TableWriterFactory.builder();
         factoryBuilder.addField("Field");
         TableWriterFactory factory = factoryBuilder.build();
-        ToStringPrintStream output = new ToStringPrintStream();
+        ToStringConsoleOutput output = new ToStringConsoleOutput();
 
         // When
         factory.tableBuilder()
@@ -65,7 +65,7 @@ class TableWriterTest {
         TableWriterFactory.Builder factoryBuilder = TableWriterFactory.builder();
         TableField field = factoryBuilder.addField("Field");
         TableWriterFactory factory = factoryBuilder.build();
-        ToStringPrintStream output = new ToStringPrintStream();
+        ToStringConsoleOutput output = new ToStringConsoleOutput();
 
         // When
         factory.tableBuilder()
@@ -84,7 +84,7 @@ class TableWriterTest {
         factoryBuilder.addField("Tiny");
         factoryBuilder.addField("Very very long");
         TableWriterFactory factory = factoryBuilder.build();
-        ToStringPrintStream output = new ToStringPrintStream();
+        ToStringConsoleOutput output = new ToStringConsoleOutput();
 
         // When
         factory.tableBuilder()

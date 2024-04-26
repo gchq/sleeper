@@ -22,6 +22,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+/**
+ * Information about runs of a job that were tracked in a status store. A job may be run multiple times, potentially in
+ * parallel on different tasks. These are detected by correlating updates stored in the status store.
+ */
 public class ProcessRuns {
     private final List<ProcessRun> latestFirst;
 
@@ -29,10 +33,24 @@ public class ProcessRuns {
         this.latestFirst = Collections.unmodifiableList(Objects.requireNonNull(latestFirst, "latestFirst must not be null"));
     }
 
+    /**
+     * Creates an instance of this class from a list of runs. These must be sorted by the order that each run started,
+     * most recently started run first.
+     *
+     * @param  latestFirst the sorted list of runs
+     * @return             an instance of this class
+     */
     public static ProcessRuns latestFirst(List<ProcessRun> latestFirst) {
         return new ProcessRuns(latestFirst);
     }
 
+    /**
+     * Creates an instance of this class from records in a status store. The records must be sorted by the time of the
+     * update, most recent first. These will be correlated to find which updates occurred in the same run.
+     *
+     * @param  recordList the list of records sorted by latest first
+     * @return            an instance of this class
+     */
     public static ProcessRuns fromRecordsLatestFirst(List<ProcessStatusUpdateRecord> recordList) {
         ProcessRunsBuilder builder = new ProcessRunsBuilder();
         for (int i = recordList.size() - 1; i >= 0; i--) {
@@ -49,14 +67,30 @@ public class ProcessRuns {
         return !latestFirst.isEmpty() && latestFirst.stream().allMatch(ProcessRun::isFinished);
     }
 
+    /**
+     * Checks if any process run was assigned to the provided task ID.
+     *
+     * @param  taskId the task ID to check
+     * @return        whether a process run was assigned to the task ID
+     */
     public boolean isTaskIdAssigned(String taskId) {
         return latestFirst.stream().anyMatch(run -> taskId.equals(run.getTaskId()));
     }
 
+    /**
+     * Gets the latest update time from the most recently started run.
+     *
+     * @return the update time, or an empty optional if there are no runs
+     */
     public Optional<Instant> lastTime() {
         return getLatestRun().map(ProcessRun::getLatestUpdateTime);
     }
 
+    /**
+     * Gets the first update time from the oldest run.
+     *
+     * @return the update time, or an empty optional if there are no runs
+     */
     public Optional<Instant> firstTime() {
         return getFirstRun().map(ProcessRun::getStartUpdateTime);
     }
@@ -65,6 +99,11 @@ public class ProcessRuns {
         return latestFirst.stream().findFirst();
     }
 
+    /**
+     * Gets the oldest process run.
+     *
+     * @return the oldest process run, or an empty optional if there are no runs
+     */
     public Optional<ProcessRun> getFirstRun() {
         if (latestFirst.isEmpty()) {
             return Optional.empty();

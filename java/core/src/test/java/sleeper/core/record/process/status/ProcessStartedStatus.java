@@ -18,6 +18,9 @@ package sleeper.core.record.process.status;
 import java.time.Instant;
 import java.util.Objects;
 
+/**
+ * A test implementation of process run started update. Only used in tests.
+ */
 public class ProcessStartedStatus implements ProcessRunStartedUpdate {
 
     private final Instant updateTime;
@@ -28,6 +31,13 @@ public class ProcessStartedStatus implements ProcessRunStartedUpdate {
         this.startTime = Objects.requireNonNull(startTime, "startTime may not be null");
     }
 
+    /**
+     * Creates an instance of this class.
+     *
+     * @param  updateTime the update time
+     * @param  startTime  the start time
+     * @return            an instance of this class
+     */
     public static ProcessStartedStatus updateAndStartTime(Instant updateTime, Instant startTime) {
         return new ProcessStartedStatus(updateTime, startTime);
     }

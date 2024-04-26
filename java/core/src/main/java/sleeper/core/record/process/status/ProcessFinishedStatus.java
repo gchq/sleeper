@@ -20,6 +20,9 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import java.time.Instant;
 import java.util.Objects;
 
+/**
+ * Represents a process finishing, and stores the records processed summary.
+ */
 public class ProcessFinishedStatus implements ProcessRunFinishedUpdate {
 
     private final Instant updateTime;
@@ -30,6 +33,13 @@ public class ProcessFinishedStatus implements ProcessRunFinishedUpdate {
         this.summary = Objects.requireNonNull(summary, "summary must not be null");
     }
 
+    /**
+     * Creates an instance of this class.
+     *
+     * @param  updateTime the update time to set
+     * @param  summary    the records processed summary to set
+     * @return            an instance of this class
+     */
     public static ProcessFinishedStatus updateTimeAndSummary(Instant updateTime, RecordsProcessedSummary summary) {
         return new ProcessFinishedStatus(updateTime, summary);
     }

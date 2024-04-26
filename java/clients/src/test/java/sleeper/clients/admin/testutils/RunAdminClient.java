@@ -19,7 +19,7 @@ package sleeper.clients.admin.testutils;
 import sleeper.clients.admin.AdminClientStatusStoreFactory;
 import sleeper.clients.admin.properties.UpdatePropertiesWithTextEditor;
 import sleeper.clients.testutil.TestConsoleInput;
-import sleeper.clients.testutil.ToStringPrintStream;
+import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.properties.PropertyGroup;
@@ -37,14 +37,14 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OP
 import static sleeper.task.common.InMemoryQueueMessageCounts.noQueues;
 
 public class RunAdminClient {
-    private final ToStringPrintStream out;
+    private final ToStringConsoleOutput out;
     private final TestConsoleInput in;
     private final AdminConfigStoreTestHarness harness;
     private final AdminClientStatusStoreHolder statusStores = new AdminClientStatusStoreHolder();
     private final UpdatePropertiesWithTextEditor editor;
     private QueueMessageCount.Client queueClient = noQueues();
 
-    RunAdminClient(ToStringPrintStream out, TestConsoleInput in,
+    RunAdminClient(ToStringConsoleOutput out, TestConsoleInput in,
             AdminConfigStoreTestHarness harness,
             UpdatePropertiesWithTextEditor editor) {
         this.out = out;

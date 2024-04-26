@@ -21,6 +21,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.stream.Stream;
 
+/**
+ * Calculates records read and written per second across multiple job runs.
+ */
 public class AverageRecordRate {
 
     private final int runCount;
@@ -48,6 +51,12 @@ public class AverageRecordRate {
         averageJobRecordsWrittenPerSecond = builder.totalRecordsWrittenPerSecond / builder.runsWithRecordsWritten;
     }
 
+    /**
+     * Creates an instance of this class from a stream of job runs.
+     *
+     * @param  runs the stream of {@link ProcessRun}s
+     * @return      an instance of this class
+     */
     public static AverageRecordRate of(Stream<ProcessRun> runs) {
         return builder().summaries(runs
                 .filter(ProcessRun::isFinished)
@@ -104,6 +113,9 @@ public class AverageRecordRate {
                 '}';
     }
 
+    /**
+     * Builder to create a average record rate object.
+     */
     public static final class Builder {
         private Instant startTime;
         private Instant finishTime;
@@ -121,11 +133,23 @@ public class AverageRecordRate {
         private Builder() {
         }
 
+        /**
+         * Calculates the average record rate from a stream of records processed summaries.
+         *
+         * @param  summaries the stream of {@link RecordsProcessedSummary}s
+         * @return           the builder
+         */
         public Builder summaries(Stream<RecordsProcessedSummary> summaries) {
             summaries.forEach(this::summary);
             return this;
         }
 
+        /**
+         * Calculates and updates the average record rate from a records processed summary.
+         *
+         * @param  summary a {@link RecordsProcessedSummary}
+         * @return         the builder
+         */
         public Builder summary(RecordsProcessedSummary summary) {
             runCount++;
             recordsRead += summary.getRecordsRead();
@@ -146,11 +170,23 @@ public class AverageRecordRate {
             return this;
         }
 
+        /**
+         * Sets the start time.
+         *
+         * @param  startTime the start time
+         * @return           the builder
+         */
         public Builder startTime(Instant startTime) {
             this.startTime = startTime;
             return this;
         }
 
+        /**
+         * Sets the finish time.
+         *
+         * @param  finishTime the finish time
+         * @return            the builder
+         */
         public Builder finishTime(Instant finishTime) {
             this.finishTime = finishTime;
             return this;

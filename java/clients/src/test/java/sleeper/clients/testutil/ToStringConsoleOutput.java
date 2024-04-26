@@ -13,15 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.testutils.printers;
+package sleeper.clients.testutil;
+
+import sleeper.clients.util.console.ConsoleOutput;
 
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 
-public class ToStringPrintStream {
+public class ToStringConsoleOutput {
 
     private final OutputStream outputStream = new ByteArrayOutputStream();
 
@@ -29,8 +30,8 @@ public class ToStringPrintStream {
         return new PrintStream(outputStream, false, StandardCharsets.UTF_8);
     }
 
-    public PrintWriter getPrintWriter() {
-        return new PrintWriter(getPrintStream());
+    public ConsoleOutput consoleOut() {
+        return new ConsoleOutput(getPrintStream());
     }
 
     public String toString() {

@@ -31,6 +31,12 @@ public class TableStatusProvider {
         this.tableIndex = tableIndex;
     }
 
+    /**
+     * Get a table status by table ID.
+     *
+     * @param  tableId the table ID
+     * @return         a table status for the table ID, or an empty optional if the table did not exist
+     */
     public Optional<TableStatus> getById(String tableId) {
         if (tableStatusById.containsKey(tableId)) {
             return Optional.ofNullable(tableStatusById.get(tableId));

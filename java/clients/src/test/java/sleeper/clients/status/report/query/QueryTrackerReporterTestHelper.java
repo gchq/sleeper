@@ -16,7 +16,7 @@
 
 package sleeper.clients.status.report.query;
 
-import sleeper.clients.testutil.ToStringPrintStream;
+import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.query.tracker.TrackedQuery;
 
 import java.time.Instant;
@@ -50,14 +50,14 @@ public class QueryTrackerReporterTestHelper {
     }
 
     public static String getStandardReport(TrackerQuery query, List<TrackedQuery> trackedQueries) {
-        ToStringPrintStream output = new ToStringPrintStream();
+        ToStringConsoleOutput output = new ToStringConsoleOutput();
         new StandardQueryTrackerReporter(output.getPrintStream())
                 .report(query, trackedQueries);
         return output.toString();
     }
 
     public static String getJsonReport(TrackerQuery query, List<TrackedQuery> trackedQueries) {
-        ToStringPrintStream output = new ToStringPrintStream();
+        ToStringConsoleOutput output = new ToStringConsoleOutput();
         new JsonQueryTrackerReporter(output.getPrintStream())
                 .report(query, trackedQueries);
         return output.toString();

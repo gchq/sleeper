@@ -29,6 +29,7 @@ import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.table.TableIndex;
@@ -51,20 +52,24 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 public class CreateCompactionJobsTriggerLambda implements RequestHandler<ScheduledEvent, Void> {
     private static final Logger LOGGER = LoggerFactory.getLogger(CreateCompactionJobsTriggerLambda.class);
 
-    private final InstanceProperties instanceProperties = new InstanceProperties();
     private final AmazonDynamoDB dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
     private final AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
+    private final InstanceProperties instanceProperties = new InstanceProperties();
+    private final PropertiesReloader propertiesReloader;
 
     public CreateCompactionJobsTriggerLambda() {
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         String configBucketName = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
         instanceProperties.loadFromS3(s3Client, configBucketName);
+        propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties);
     }
 
     @Override
     public Void handleRequest(ScheduledEvent event, Context context) {
         Instant startTime = Instant.now();
         LOGGER.info("Lambda triggered at {}, started at {}", event.getTime(), startTime);
+        propertiesReloader.reloadIfNeeded();
+
         String queueUrl = instanceProperties.get(COMPACTION_JOB_CREATION_QUEUE_URL);
         TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
         SplitIntoBatches.reusingListOfSize(10,
