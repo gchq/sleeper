@@ -210,7 +210,7 @@
             <outputDirectory>scripts/jars</outputDirectory>
             <destName>cdk-custom-resources-${project.version}.jar</destName>
         </file>
-                <file>
+        <file>
             <source>
                 ${project.basedir}/../statestore-lambda/target/statestore-lambda-${project.version}-utility.jar
             </source>
