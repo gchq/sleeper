@@ -150,7 +150,7 @@ public class DynamoDBTransactionLogSnapshotStoreIT {
         store.saveSnapshot(partitionsSnapshot(3));
 
         // Then
-        assertThat(store.getLatestSnapshots()).contains(
+        assertThat(store.getLatestSnapshots()).isEqualTo(
                 new LatestSnapshots(
                         filesSnapshot(3),
                         partitionsSnapshot(3)));
@@ -190,11 +190,11 @@ public class DynamoDBTransactionLogSnapshotStoreIT {
                 .containsExactly(
                         partitionsSnapshot(table2, 1),
                         partitionsSnapshot(table2, 2));
-        assertThat(snapshotStore1.getLatestSnapshots()).contains(
+        assertThat(snapshotStore1.getLatestSnapshots()).isEqualTo(
                 new LatestSnapshots(
                         filesSnapshot(table1, 2),
                         partitionsSnapshot(table1, 2)));
-        assertThat(snapshotStore2.getLatestSnapshots()).contains(
+        assertThat(snapshotStore2.getLatestSnapshots()).isEqualTo(
                 new LatestSnapshots(
                         filesSnapshot(table2, 2),
                         partitionsSnapshot(table2, 2)));

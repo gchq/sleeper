@@ -33,7 +33,6 @@ import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.Lat
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.Optional;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_FILES_TABLENAME;
@@ -75,36 +74,27 @@ public class TransactionLogSnapshotCreator {
 
     public void createSnapshot() {
         LOGGER.info("Creating snapshot for table {}", tableProperties.getStatus());
-        Optional<LatestSnapshots> latestSnapshotsOpt = snapshotStore.getLatestSnapshots();
-        StateStoreFiles filesState = latestSnapshotsOpt
-                .filter(latestSnapshot -> latestSnapshot.getFilesSnapshot() != null)
-                .map(latestSnapshot -> {
-                    try {
-                        return snapshotSerDe.loadFiles(latestSnapshot.getFilesSnapshot());
-                    } catch (IOException e) {
-                        throw new UncheckedIOException(e);
-                    }
-                })
-                .orElseGet(StateStoreFiles::new);
-        long filesTransactionNumberBefore = latestSnapshotsOpt
-                .filter(latestSnapshot -> latestSnapshot.getFilesSnapshot() != null)
-                .map(latestSnapshot -> latestSnapshot.getFilesSnapshot().getTransactionNumber())
-                .orElse(0L);
-
-        StateStorePartitions partitionsState = latestSnapshotsOpt
-                .filter(latestSnapshot -> latestSnapshot.getPartitionsSnapshot() != null)
-                .map(latestSnapshot -> {
-                    try {
-                        return snapshotSerDe.loadPartitions(latestSnapshot.getPartitionsSnapshot());
-                    } catch (IOException e) {
-                        throw new UncheckedIOException(e);
-                    }
-                })
-                .orElseGet(StateStorePartitions::new);
-        long partitionsTransactionNumberBefore = latestSnapshotsOpt
-                .filter(latestSnapshot -> latestSnapshot.getPartitionsSnapshot() != null)
-                .map(latestSnapshot -> latestSnapshot.getPartitionsSnapshot().getTransactionNumber())
-                .orElse(0L);
+        LatestSnapshots latestSnapshots = snapshotStore.getLatestSnapshots();
+        StateStoreFiles filesState = new StateStoreFiles();
+        long filesTransactionNumberBefore = 0L;
+        if (latestSnapshots.getFilesSnapshot() != null) {
+            try {
+                filesState = snapshotSerDe.loadFiles(latestSnapshots.getFilesSnapshot());
+                filesTransactionNumberBefore = latestSnapshots.getFilesSnapshot().getTransactionNumber();
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+        StateStorePartitions partitionsState = new StateStorePartitions();
+        long partitionsTransactionNumberBefore = 0L;
+        if (latestSnapshots.getPartitionsSnapshot() != null) {
+            try {
+                partitionsState = snapshotSerDe.loadPartitions(latestSnapshots.getPartitionsSnapshot());
+                partitionsTransactionNumberBefore = latestSnapshots.getPartitionsSnapshot().getTransactionNumber();
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
         try {
             saveFilesSnapshot(filesState, filesTransactionNumberBefore, snapshotSerDe, snapshotStore);
             savePartitionsSnapshot(partitionsState, partitionsTransactionNumberBefore, snapshotSerDe, snapshotStore);

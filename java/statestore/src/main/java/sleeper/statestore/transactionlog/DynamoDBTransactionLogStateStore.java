@@ -22,6 +22,7 @@ import org.apache.hadoop.conf.Configuration;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.LatestSnapshots;
 
 import java.io.IOException;
 
@@ -54,21 +55,19 @@ public class DynamoDBTransactionLogStateStore extends TransactionLogStateStore {
     private static void loadLatestSnapshots(
             TransactionLogStateStore.Builder builder, InstanceProperties instanceProperties, TableProperties tableProperties,
             AmazonDynamoDB dynamoDB, Configuration configuration) {
-        new DynamoDBTransactionLogSnapshotStore(instanceProperties, tableProperties, dynamoDB).getLatestSnapshots()
-                .ifPresent(latestSnapshots -> {
-                    TransactionLogSnapshotSerDe snapshotSerDe = new TransactionLogSnapshotSerDe(tableProperties.getSchema(), configuration);
-                    try {
-                        if (latestSnapshots.getFilesSnapshot() != null) {
-                            builder.filesState(snapshotSerDe.loadFiles(latestSnapshots.getFilesSnapshot()))
-                                    .filesTransactionNumber(latestSnapshots.getFilesSnapshot().getTransactionNumber());
-                        }
-                        if (latestSnapshots.getPartitionsSnapshot() != null) {
-                            builder.partitionsState(snapshotSerDe.loadPartitions(latestSnapshots.getPartitionsSnapshot()))
-                                    .partitionsTransactionNumber(latestSnapshots.getPartitionsSnapshot().getTransactionNumber());
-                        }
-                    } catch (IOException e) {
-                        throw new RuntimeException("Failed to load latest snapshots", e);
-                    }
-                });
+        LatestSnapshots latestSnapshots = new DynamoDBTransactionLogSnapshotStore(instanceProperties, tableProperties, dynamoDB).getLatestSnapshots();
+        TransactionLogSnapshotSerDe snapshotSerDe = new TransactionLogSnapshotSerDe(tableProperties.getSchema(), configuration);
+        try {
+            if (latestSnapshots.getFilesSnapshot() != null) {
+                builder.filesState(snapshotSerDe.loadFiles(latestSnapshots.getFilesSnapshot()))
+                        .filesTransactionNumber(latestSnapshots.getFilesSnapshot().getTransactionNumber());
+            }
+            if (latestSnapshots.getPartitionsSnapshot() != null) {
+                builder.partitionsState(snapshotSerDe.loadPartitions(latestSnapshots.getPartitionsSnapshot()))
+                        .partitionsTransactionNumber(latestSnapshots.getPartitionsSnapshot().getTransactionNumber());
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to load latest snapshots", e);
+        }
     }
 }

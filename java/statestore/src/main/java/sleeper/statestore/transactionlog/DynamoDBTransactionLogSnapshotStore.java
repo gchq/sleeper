@@ -35,7 +35,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -162,7 +161,7 @@ public class DynamoDBTransactionLogSnapshotStore {
                 .map(DynamoDBTransactionLogSnapshotStore::getSnapshotFromItem);
     }
 
-    public Optional<LatestSnapshots> getLatestSnapshots() {
+    public LatestSnapshots getLatestSnapshots() {
         QueryResult result = dynamo.query(new QueryRequest()
                 .withTableName(latestSnapshotsTable)
                 .withKeyConditionExpression("#TableId = :table_id")
@@ -171,9 +170,9 @@ public class DynamoDBTransactionLogSnapshotStore {
                         .string(":table_id", sleeperTableId)
                         .build()));
         if (result.getCount() > 0) {
-            return Optional.of(getLatestSnapshotsFromItem(result.getItems().get(0)));
+            return getLatestSnapshotsFromItem(result.getItems().get(0));
         } else {
-            return Optional.empty();
+            return new LatestSnapshots(null, null);
         }
     }
 
