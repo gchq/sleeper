@@ -51,6 +51,7 @@ import static sleeper.configuration.properties.table.TableProperty.TRANSACTION_L
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogStateStoreTestBase {
+    protected static final Instant DEFAULT_UPDATE_TIME = Instant.parse("2024-04-26T13:00:00Z");
     @TempDir
     private Path tempDir;
     private final Schema schema = schemaWithKey("key", new LongType());
@@ -121,7 +122,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
                     .splitToNewChildren("root", "L", "R", 123L)
                     .buildTree();
             initialisePartitionsForSnapshot(tree, 1);
-            FileReferenceFactory factory = FileReferenceFactory.from(tree);
+            FileReferenceFactory factory = factory(tree);
             List<FileReference> files = List.of(
                     factory.rootFile("file1.parquet", 100L),
                     factory.partitionFile("L", "file2.parquet", 25L),
@@ -130,12 +131,12 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
             createSnapshot();
 
             // When
-            StateStore stateStore = createStateStore();
+            StateStore stateStore = stateStore();
+
             // Then
             assertThat(stateStore.getAllPartitions())
                     .containsExactlyElementsOf(tree.getAllPartitions());
             assertThat(stateStore.getFileReferences())
-                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                     .containsExactlyElementsOf(files);
         }
 
@@ -148,7 +149,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
                     .splitToNewChildren("root", "L", "R", 123L)
                     .buildTree();
             initialisePartitionsForSnapshot(tree, 1);
-            FileReferenceFactory factory = FileReferenceFactory.from(tree);
+            FileReferenceFactory factory = factory(tree);
             List<FileReference> files = List.of(
                     factory.rootFile("file1.parquet", 100L),
                     factory.partitionFile("L", "file2.parquet", 25L),
@@ -157,7 +158,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
             createSnapshot();
 
             // When
-            StateStore stateStore = createStateStore();
+            StateStore stateStore = stateStore();
 
             // Then
             assertThat(stateStore.getAllPartitions()).isEmpty();
@@ -167,12 +168,12 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
         @Test
         void shouldExcludePreviousTransactionsWhenLoadingLatestSnapshots() throws Exception {
             // Given
-            StateStore stateStore = createStateStore();
+            StateStore stateStore = stateStore();
             PartitionTree tree1 = new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "A", "B", 123L)
                     .buildTree();
-            FileReferenceFactory factory1 = FileReferenceFactory.from(tree1);
+            FileReferenceFactory factory1 = factory(tree1);
             FileReference file1 = factory1.rootFile("file1.parquet", 123L);
             stateStore.initialise(tree1.getAllPartitions());
             stateStore.addFile(file1);
@@ -181,20 +182,19 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
                     .rootFirst("root")
                     .splitToNewChildren("root", "C", "D", 456L)
                     .buildTree();
-            FileReferenceFactory factory2 = FileReferenceFactory.from(tree2);
+            FileReferenceFactory factory2 = factory(tree2);
             FileReference file2 = factory2.rootFile("file2.parquet", 456L);
             initialisePartitionsForSnapshot(tree2, 1);
             addFilesForSnapshot(List.of(file2), 1);
             createSnapshot();
 
             // When
-            stateStore = createStateStore();
+            stateStore = stateStore();
 
             // Then
             assertThat(stateStore.getAllPartitions())
                     .containsExactlyElementsOf(tree2.getAllPartitions());
             assertThat(stateStore.getFileReferences())
-                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                     .containsExactly(file2);
         }
 
@@ -209,7 +209,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
             createSnapshot();
 
             // When
-            StateStore stateStore = createStateStore();
+            StateStore stateStore = stateStore();
 
             // Then
             assertThat(stateStore.getAllPartitions())
@@ -224,7 +224,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", 123L)
                     .buildTree();
-            FileReferenceFactory factory = FileReferenceFactory.from(tree);
+            FileReferenceFactory factory = factory(tree);
             List<FileReference> files = List.of(
                     factory.rootFile("file1.parquet", 100L),
                     factory.partitionFile("L", "file2.parquet", 25L),
@@ -233,24 +233,23 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
             createSnapshot();
 
             // When
-            StateStore stateStore = createStateStore();
+            StateStore stateStore = stateStore();
 
             // Then
             assertThat(stateStore.getAllPartitions()).isEmpty();
             assertThat(stateStore.getFileReferences())
-                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                     .containsExactlyElementsOf(files);
         }
 
         private void initialisePartitionsForSnapshot(PartitionTree tree, long transactionNumber) throws DuplicateTransactionNumberException {
-            partitionsStore.addTransaction(new TransactionLogEntry(transactionNumber, Instant.now(),
+            partitionsStore.addTransaction(new TransactionLogEntry(transactionNumber, DEFAULT_UPDATE_TIME,
                     new InitialisePartitionsTransaction(tree.getAllPartitions())));
         }
 
         private void addFilesForSnapshot(List<FileReference> files, long transactionNumber) throws DuplicateTransactionNumberException {
-            filesStore.addTransaction(new TransactionLogEntry(transactionNumber, Instant.now(),
+            filesStore.addTransaction(new TransactionLogEntry(transactionNumber, DEFAULT_UPDATE_TIME,
                     new AddFilesTransaction(files.stream()
-                            .map(file -> AllReferencesToAFile.fileWithOneReference(file, Instant.now()))
+                            .map(file -> AllReferencesToAFile.fileWithOneReference(file, DEFAULT_UPDATE_TIME))
                             .collect(Collectors.toList()))));
         }
 
@@ -259,11 +258,25 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
                     instanceProperties, tableProperties, filesStore, partitionsStore, dynamoDBClient, configuration)
                     .createSnapshot();
         }
+
+        private FileReferenceFactory factory(PartitionTree tree) {
+            return FileReferenceFactory.fromUpdatedAt(tree, DEFAULT_UPDATE_TIME);
+        }
+
+        private StateStore stateStore() {
+            StateStore stateStore = createStateStore();
+            stateStore.fixFileUpdateTime(DEFAULT_UPDATE_TIME);
+            stateStore.fixPartitionUpdateTime(DEFAULT_UPDATE_TIME);
+            return stateStore;
+        }
     }
 
     private StateStore createStateStore() {
-        return DynamoDBTransactionLogStateStore.builderFrom(instanceProperties, tableProperties, dynamoDBClient, s3Client, configuration)
+        StateStore stateStore = DynamoDBTransactionLogStateStore.builderFrom(instanceProperties, tableProperties, dynamoDBClient, s3Client, configuration)
                 .maxAddTransactionAttempts(1)
                 .build();
+        stateStore.fixFileUpdateTime(DEFAULT_UPDATE_TIME);
+        stateStore.fixPartitionUpdateTime(DEFAULT_UPDATE_TIME);
+        return stateStore;
     }
 }

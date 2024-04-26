@@ -22,8 +22,11 @@ import org.junit.jupiter.api.io.TempDir;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
+import sleeper.core.partition.PartitionTree;
+import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.LatestSnapshots;
@@ -101,6 +104,43 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
                 .contains(new LatestSnapshots(
                         filesSnapshot(table2, 1),
                         partitionsSnapshot(table2, 1)));
+    }
+
+    @Test
+    void shouldCreateMultipleSnapshotsForOneTable() throws Exception {
+        // Given
+        TableProperties table = createTable("test-table-id-1", "test-table-1");
+        PartitionTree tree = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", 123L)
+                .buildTree();
+        FileReferenceFactory factory = FileReferenceFactory.from(tree);
+        StateStore stateStore = createStateStore(table);
+        stateStore.initialise();
+        FileReference file1 = factory.rootFile(123L);
+        stateStore.addFile(file1);
+        runSnapshotCreator(table);
+
+        // When
+        stateStore.atomicallyUpdatePartitionAndCreateNewOnes(
+                tree.getPartition("root"), tree.getPartition("L"), tree.getPartition("R"));
+        FileReference file2 = factory.partitionFile("L", 456L);
+        stateStore.addFile(file2);
+        runSnapshotCreator(table);
+
+        // Then
+        assertThat(snapshotStore(table).getLatestSnapshots())
+                .contains(new LatestSnapshots(
+                        filesSnapshot(table, 2),
+                        partitionsSnapshot(table, 2)));
+        assertThat(snapshotStore(table).getFilesSnapshots())
+                .containsExactly(
+                        filesSnapshot(table, 1),
+                        filesSnapshot(table, 2));
+        assertThat(snapshotStore(table).getPartitionsSnapshots())
+                .containsExactly(
+                        partitionsSnapshot(table, 1),
+                        partitionsSnapshot(table, 2));
     }
 
     @Test
