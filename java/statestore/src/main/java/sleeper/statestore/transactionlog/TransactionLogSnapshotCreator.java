@@ -119,7 +119,7 @@ public class TransactionLogSnapshotCreator {
         long transactionNumberAfter = TransactionLogSnapshotUtils.updateFilesState(
                 tableProperties.getStatus(), filesState, filesLogStore, transactionNumberBefore);
         if (transactionNumberBefore == transactionNumberAfter) {
-            // Log message
+            LOGGER.info("No changes to files since last snapshot, skipping snapshot creation.");
             return;
         }
         TransactionLogSnapshot snapshot = TransactionLogSnapshot.forFiles(getBasePath(), transactionNumberAfter);
@@ -132,6 +132,7 @@ public class TransactionLogSnapshotCreator {
         long transactionNumberAfter = TransactionLogSnapshotUtils.updatePartitionsState(
                 tableProperties.getStatus(), partitionsState, partitionsLogStore, transactionNumberBefore);
         if (transactionNumberBefore == transactionNumberAfter) {
+            LOGGER.info("No changes to partitions since last snapshot, skipping snapshot creation.");
             return;
         }
         TransactionLogSnapshot snapshot = TransactionLogSnapshot.forPartitions(getBasePath(), transactionNumberAfter);
