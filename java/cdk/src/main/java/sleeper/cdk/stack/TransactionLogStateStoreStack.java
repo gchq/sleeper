@@ -121,7 +121,6 @@ public class TransactionLogStateStoreStack extends NestedStack {
 
     public void grantReadSnapshots(IGrantable grantee) {
         latestSnapshotsTable.grantReadData(grantee);
-        allSnapshotsTable.grantReadData(grantee);
         dataStack.grantRead(grantee);
     }
 
