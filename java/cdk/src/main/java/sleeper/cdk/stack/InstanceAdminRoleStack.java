@@ -17,6 +17,7 @@ package sleeper.cdk.stack;
 
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.iam.AccountRootPrincipal;
+import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.iam.Role;
 import software.constructs.Construct;
 
@@ -38,7 +39,10 @@ public class InstanceAdminRoleStack extends NestedStack {
                 .assumedBy(new AccountRootPrincipal())
                 .roleName("sleeper-admin-" + instanceProperties.get(ID).toLowerCase(Locale.ROOT))
                 .build();
+
         policiesStack.instanceAdminPolicies().forEach(policy -> policy.attachToRole(adminRole));
+        adminRole.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonECSTaskExecutionRolePolicy"));
+
         instanceProperties.set(ADMIN_ROLE_ARN, adminRole.getRoleArn());
     }
 

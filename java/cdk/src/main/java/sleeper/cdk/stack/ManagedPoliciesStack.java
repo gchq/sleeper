@@ -18,7 +18,6 @@ package sleeper.cdk.stack;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.NestedStack;
-import software.amazon.awscdk.services.iam.AccountRootPrincipal;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
@@ -44,7 +43,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.function.Predicate.not;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.ADMIN_ROLE_ARN;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_ROLE;
@@ -79,23 +77,12 @@ public class ManagedPoliciesStack extends NestedStack {
             sourceBuckets.forEach(bucket -> bucket.grantRead(readIngestSourcesPolicy));
         }
 
-        Role adminRole = Role.Builder.create(this, "AdminRole")
-                .assumedBy(new AccountRootPrincipal())
-                .roleName("sleeper-admin-" + instanceProperties.get(ID).toLowerCase(Locale.ROOT))
-                .build();
-        Stream.of(ingestPolicy, queryPolicy, editTablesPolicy, reportingPolicy,
-                purgeQueuesPolicy, invokeCompactionPolicy, invokeSchedulesPolicy)
-                .forEach(policy -> policy.attachToRole(adminRole));
-        instanceProperties.set(ADMIN_ROLE_ARN, adminRole.getRoleArn());
-
         // Allow access to table metrics
         reportingPolicy.addStatements(PolicyStatement.Builder.create()
                 .effect(Effect.ALLOW)
                 .actions(List.of("cloudwatch:GetMetricData"))
                 .resources(List.of("*"))
                 .build());
-
-        adminRole.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonECSTaskExecutionRolePolicy"));
     }
 
     public ManagedPolicy getIngestPolicy() {
