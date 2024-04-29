@@ -180,15 +180,16 @@ public class DynamoDBTransactionLogSnapshotStore {
         }
     }
 
-    public void deleteSnapshots() {
+    public Stream<TransactionLogSnapshot> getOldestSnapshots() {
         long expiryDate = timeSupplier.get().toEpochMilli() - expiryInDays.toMillis();
         LatestSnapshots latestSnapshots = getLatestSnapshots();
-        deleteSnapshotsBefore(latestSnapshots.getFilesTransactionNumber(), SnapshotType.FILES, expiryDate);
-        deleteSnapshotsBefore(latestSnapshots.getPartitionsTransactionNumber(), SnapshotType.PARTITIONS, expiryDate);
+        return Stream.concat(
+                getSnapshotsBefore(latestSnapshots.getFilesTransactionNumber(), SnapshotType.FILES, expiryDate),
+                getSnapshotsBefore(latestSnapshots.getPartitionsTransactionNumber(), SnapshotType.PARTITIONS, expiryDate));
     }
 
-    private void deleteSnapshotsBefore(long latestSnapshotNumber, SnapshotType type, long time) {
-        streamPagedItems(dynamo, new QueryRequest()
+    private Stream<TransactionLogSnapshot> getSnapshotsBefore(long latestSnapshotNumber, SnapshotType type, long time) {
+        return streamPagedItems(dynamo, new QueryRequest()
                 .withTableName(allSnapshotsTable)
                 .withKeyConditionExpression("#TableIdAndType = :table_id_and_type AND #TransactionNumber < :latest_transaction")
                 .withFilterExpression("#UpdateTime < :expiry_time")
@@ -201,9 +202,16 @@ public class DynamoDBTransactionLogSnapshotStore {
                         .number(":expiry_time", time)
                         .number(":latest_transaction", latestSnapshotNumber)
                         .build()))
-                .forEach(item -> dynamo.deleteItem(allSnapshotsTable, Map.of(
-                        TABLE_ID_AND_SNAPSHOT_TYPE, item.get(TABLE_ID_AND_SNAPSHOT_TYPE),
-                        TRANSACTION_NUMBER, item.get(TRANSACTION_NUMBER))));
+                .map(DynamoDBTransactionLogSnapshotStore::getSnapshotFromItem);
+    }
+
+    public void deleteSnapshot(TransactionLogSnapshot snapshot) {
+        dynamo.deleteItem(allSnapshotsTable, getKeyFromSnapshot(snapshot));
+    }
+
+    private Map<String, AttributeValue> getKeyFromSnapshot(TransactionLogSnapshot snapshot) {
+        return Map.of(TABLE_ID_AND_SNAPSHOT_TYPE, new AttributeValue().withS(tableAndType(sleeperTableId, snapshot.getType())),
+                TRANSACTION_NUMBER, new AttributeValue().withN(snapshot.getTransactionNumber() + ""));
     }
 
     private static LatestSnapshots getLatestSnapshotsFromItem(Map<String, AttributeValue> item) {

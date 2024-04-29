@@ -204,10 +204,10 @@ public class DynamoDBTransactionLogSnapshotStoreIT {
     }
 
     @Nested
-    @DisplayName("Delete old snapshots")
-    class DeleteOldSnapshots {
+    @DisplayName("Get oldest snapshots")
+    class GetOldestSnapshots {
         @Test
-        void shouldDeleteSnapshotsThatAreOldEnough() throws Exception {
+        void shouldGetSnapshotsThatAreOldEnough() throws Exception {
             // Given
             tableProperties.setNumber(TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS, 1);
             DynamoDBTransactionLogSnapshotStore snapshotStore = snapshotStore(List.of(
@@ -221,16 +221,13 @@ public class DynamoDBTransactionLogSnapshotStoreIT {
             snapshotStore.saveSnapshot(filesSnapshot(3));
             snapshotStore.saveSnapshot(filesSnapshot(4));
 
-            // When
-            snapshotStore.deleteSnapshots();
-
-            // Then
-            assertThat(snapshotStore.getFilesSnapshots())
-                    .containsExactly(filesSnapshot(3), filesSnapshot(4));
+            // When / Then
+            assertThat(snapshotStore.getOldestSnapshots())
+                    .containsExactly(filesSnapshot(1), filesSnapshot(2));
         }
 
         @Test
-        void shouldNotDeleteLatestSnapshotIfItIsOldEnough() throws Exception {
+        void shouldIgnoreLatestSnapshotIfItIsOldEnough() throws Exception {
             // Given
             tableProperties.setNumber(TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS, 1);
             DynamoDBTransactionLogSnapshotStore snapshotStore = snapshotStore(List.of(
@@ -238,12 +235,9 @@ public class DynamoDBTransactionLogSnapshotStoreIT {
                     Instant.parse("2024-04-26T15:30:00Z")).iterator()::next);
             snapshotStore.saveSnapshot(filesSnapshot(1));
 
-            // When
-            snapshotStore.deleteSnapshots();
-
-            // Then
-            assertThat(snapshotStore.getFilesSnapshots())
-                    .containsExactly(filesSnapshot(1));
+            // When / Then
+            assertThat(snapshotStore.getOldestSnapshots())
+                    .isEmpty();
         }
     }
 

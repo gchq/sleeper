@@ -253,7 +253,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
         }
 
         private void createSnapshot() {
-            new TransactionLogSnapshotCreator(
+            new CreateTransactionLogSnapshot(
                     instanceProperties, tableProperties, filesStore, partitionsStore, dynamoDBClient, configuration, () -> DEFAULT_UPDATE_TIME)
                     .createSnapshot();
         }

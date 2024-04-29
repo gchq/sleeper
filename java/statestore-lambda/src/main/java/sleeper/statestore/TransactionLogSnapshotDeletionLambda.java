@@ -83,7 +83,7 @@ public class TransactionLogSnapshotDeletionLambda implements RequestHandler<SQSE
             LOGGER.info("Deleting old snapshots for table {}", table.getStatus());
             try {
                 new DynamoDBTransactionLogSnapshotStore(instanceProperties, table, dynamoClient)
-                        .deleteSnapshots();
+                        .getOldestSnapshots();
             } catch (RuntimeException e) {
                 LOGGER.error("Failed deleting old snapshots for table {}", table.getStatus(), e);
                 messagesByTableId.get(table.getStatus().getTableUniqueId()).stream()

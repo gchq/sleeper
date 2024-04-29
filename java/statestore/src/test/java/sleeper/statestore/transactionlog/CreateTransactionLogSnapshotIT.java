@@ -42,7 +42,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
-public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTestBase {
+public class CreateTransactionLogSnapshotIT extends TransactionLogStateStoreTestBase {
     @TempDir
     private Path tempDir;
     private final Schema schema = schemaWithKey("key", new LongType());
@@ -164,7 +164,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
     }
 
     private void runSnapshotCreator(TableProperties table) {
-        new TransactionLogSnapshotCreator(
+        new CreateTransactionLogSnapshot(
                 instanceProperties, table, s3Client, dynamoDBClient, configuration)
                 .createSnapshot();
     }
