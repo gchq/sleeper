@@ -74,7 +74,7 @@ public class ParallelCompactionsIT {
                     properties.setNumber(NUMBER_OF_RECORDS_PER_INGEST, 1_000_000);
                 }).generateData(
                         PollWithRetries.intervalAndPollingTimeout(
-                                Duration.ofSeconds(30), Duration.ofMinutes(20)));
+                                Duration.ofSeconds(10), Duration.ofMinutes(5)));
 
         // When we run compaction
         sleeper.compaction()
@@ -84,7 +84,7 @@ public class ParallelCompactionsIT {
                                 Duration.ofSeconds(10), Duration.ofMinutes(5)))
                 .waitForJobs(
                         PollWithRetries.intervalAndPollingTimeout(
-                                Duration.ofSeconds(30), Duration.ofMinutes(40)));
+                                Duration.ofSeconds(10), Duration.ofMinutes(5)));
 
         // Then we have one file per partition
         assertThat(sleeper.tableFiles().references())
