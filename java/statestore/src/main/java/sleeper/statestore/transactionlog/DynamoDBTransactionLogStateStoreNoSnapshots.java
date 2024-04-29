@@ -25,9 +25,9 @@ import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_FILES_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_PARTITIONS_TABLENAME;
 
-public class DynamoDBTransactionLogStateStoreNoShapshots {
+public class DynamoDBTransactionLogStateStoreNoSnapshots {
 
-    private DynamoDBTransactionLogStateStoreNoShapshots() {
+    private DynamoDBTransactionLogStateStoreNoSnapshots() {
     }
 
     public static TransactionLogStateStore create(
