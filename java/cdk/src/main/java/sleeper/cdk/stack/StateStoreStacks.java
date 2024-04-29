@@ -53,7 +53,7 @@ public final class StateStoreStacks {
         s3.grantReadWrite(grantee);
         transactionLog.grantReadWriteFiles(grantee);
         transactionLog.grantReadWritePartitions(grantee);
-        transactionLog.grantReadWriteSnapshots(grantee);
+        transactionLog.grantReadSnapshots(grantee);
     }
 
     public void grantReadActiveFilesReadWritePartitions(IGrantable grantee) {
@@ -62,7 +62,7 @@ public final class StateStoreStacks {
         s3.grantReadWrite(grantee);
         transactionLog.grantReadFiles(grantee);
         transactionLog.grantReadWritePartitions(grantee);
-        transactionLog.grantReadWriteSnapshots(grantee);
+        transactionLog.grantReadSnapshots(grantee);
     }
 
     public void grantReadPartitionsReadWriteActiveFiles(IGrantable grantee) {
@@ -71,7 +71,7 @@ public final class StateStoreStacks {
         s3.grantReadWrite(grantee);
         transactionLog.grantReadPartitions(grantee);
         transactionLog.grantReadWriteFiles(grantee);
-        transactionLog.grantReadWriteSnapshots(grantee);
+        transactionLog.grantReadSnapshots(grantee);
     }
 
     public void grantReadPartitions(IGrantable grantee) {
@@ -86,14 +86,14 @@ public final class StateStoreStacks {
         dynamo.grantReadWriteReadyForGCFileMetadata(grantee);
         s3.grantReadWrite(grantee);
         transactionLog.grantReadWriteFiles(grantee);
-        transactionLog.grantReadWriteSnapshots(grantee);
+        transactionLog.grantReadSnapshots(grantee);
     }
 
     public void grantReadWriteReadyForGCFiles(IGrantable grantee) {
         dynamo.grantReadWriteReadyForGCFileMetadata(grantee);
         s3.grantReadWrite(grantee);
         transactionLog.grantReadWriteFiles(grantee);
-        transactionLog.grantReadWriteSnapshots(grantee);
+        transactionLog.grantReadSnapshots(grantee);
     }
 
     public void grantReadWritePartitions(IGrantable grantee) {
