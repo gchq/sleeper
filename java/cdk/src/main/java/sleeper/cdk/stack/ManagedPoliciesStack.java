@@ -18,10 +18,8 @@ package sleeper.cdk.stack;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.NestedStack;
-import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
-import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.iam.Role;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.s3.Bucket;
@@ -107,14 +105,6 @@ public class ManagedPoliciesStack extends NestedStack {
         // Avoid creating empty policy when we're not deploying compaction stack
         if (invokeCompactionPolicy == null) {
             invokeCompactionPolicy = createManagedPolicy("InvokeCompactionPolicy");
-            // Allow running compaction tasks
-            invokeCompactionPolicy.addStatements(PolicyStatement.Builder.create()
-                    .effect(Effect.ALLOW)
-                    .actions(List.of("ecs:DescribeClusters", "ecs:RunTask", "iam:PassRole",
-                            "ecs:DescribeContainerInstances", "ecs:DescribeTasks", "ecs:ListContainerInstances",
-                            "autoscaling:SetDesiredCapacity", "autoscaling:DescribeAutoScalingGroups"))
-                    .resources(List.of("*"))
-                    .build());
         }
         return invokeCompactionPolicy;
     }
