@@ -75,26 +75,30 @@ public class TransactionLogSnapshotCreator {
     public void createSnapshot() {
         LOGGER.info("Creating snapshot for table {}", tableProperties.getStatus());
         LatestSnapshots latestSnapshots = snapshotStore.getLatestSnapshots();
-        StateStoreFiles filesState = new StateStoreFiles();
-        long filesTransactionNumberBefore = 0L;
-        if (latestSnapshots.getFilesSnapshot() != null) {
-            try {
-                filesState = snapshotSerDe.loadFiles(latestSnapshots.getFilesSnapshot());
-                filesTransactionNumberBefore = latestSnapshots.getFilesSnapshot().getTransactionNumber();
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        }
-        StateStorePartitions partitionsState = new StateStorePartitions();
-        long partitionsTransactionNumberBefore = 0L;
-        if (latestSnapshots.getPartitionsSnapshot() != null) {
-            try {
-                partitionsState = snapshotSerDe.loadPartitions(latestSnapshots.getPartitionsSnapshot());
-                partitionsTransactionNumberBefore = latestSnapshots.getPartitionsSnapshot().getTransactionNumber();
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        }
+        StateStoreFiles filesState = latestSnapshots.getFilesSnapshot()
+                .map(snapshot -> {
+                    try {
+                        return snapshotSerDe.loadFiles(snapshot);
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                })
+                .orElseGet(StateStoreFiles::new);
+        long filesTransactionNumberBefore = latestSnapshots.getFilesSnapshot()
+                .map(TransactionLogSnapshot::getTransactionNumber)
+                .orElse(0L);
+        StateStorePartitions partitionsState = latestSnapshots.getPartitionsSnapshot()
+                .map(snapshot -> {
+                    try {
+                        return snapshotSerDe.loadPartitions(snapshot);
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                })
+                .orElseGet(StateStorePartitions::new);
+        long partitionsTransactionNumberBefore = latestSnapshots.getPartitionsSnapshot()
+                .map(TransactionLogSnapshot::getTransactionNumber)
+                .orElse(0L);
         try {
             saveFilesSnapshot(filesState, filesTransactionNumberBefore, snapshotSerDe, snapshotStore);
             savePartitionsSnapshot(partitionsState, partitionsTransactionNumberBefore, snapshotSerDe, snapshotStore);
