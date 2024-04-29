@@ -32,7 +32,6 @@ import sleeper.core.statestore.transactionlog.TransactionLogStore;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.LatestSnapshots;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_FILES_TABLENAME;
@@ -80,7 +79,7 @@ public class TransactionLogSnapshotCreator {
                     try {
                         return snapshotSerDe.loadFiles(snapshot);
                     } catch (IOException e) {
-                        throw new UncheckedIOException(e);
+                        return null;
                     }
                 })
                 .orElseGet(StateStoreFiles::new);
@@ -92,7 +91,7 @@ public class TransactionLogSnapshotCreator {
                     try {
                         return snapshotSerDe.loadPartitions(snapshot);
                     } catch (IOException e) {
-                        throw new UncheckedIOException(e);
+                        return null;
                     }
                 })
                 .orElseGet(StateStorePartitions::new);
@@ -129,12 +128,13 @@ public class TransactionLogSnapshotCreator {
         long transactionNumberAfter = TransactionLogSnapshotUtils.updatePartitionsState(
                 tableProperties.getStatus(), partitionsState, partitionsLogStore, transactionNumberBefore);
         if (transactionNumberBefore == transactionNumberAfter) {
-            LOGGER.info("No changes to partitions since the last snapshot, skipping snapshot creation.");
+            LOGGER.info("No changes detected since last partitions snapshot with transaction number {}, skipping snapshot creation.",
+                    transactionNumberBefore);
             return;
         }
 
-        LOGGER.info("Changes to partitions have been made since the last snapshot. Creating a new snapshot for transaction number {}.",
-                transactionNumberAfter);
+        LOGGER.info("Latest transaction number of {} is newer than latest partitions snapshot with transaction number {}. Creating a new partitions snapshot from latest transaction.",
+                transactionNumberAfter, transactionNumberBefore);
         TransactionLogSnapshot snapshot = TransactionLogSnapshot.forPartitions(getBasePath(), transactionNumberAfter);
         snapshotSerDe.savePartitions(snapshot, partitionsState);
         snapshotStore.saveSnapshot(snapshot);
