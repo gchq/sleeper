@@ -24,6 +24,7 @@ import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,7 +32,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.util.LoggedDuration;
-import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore;
+import sleeper.statestore.transactionlog.DeleteTransactionLogSnapshots;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -82,8 +83,8 @@ public class TransactionLogSnapshotDeletionLambda implements RequestHandler<SQSE
         for (TableProperties table : tables) {
             LOGGER.info("Deleting old snapshots for table {}", table.getStatus());
             try {
-                new DynamoDBTransactionLogSnapshotStore(instanceProperties, table, dynamoClient)
-                        .getOldestSnapshots();
+                new DeleteTransactionLogSnapshots(instanceProperties, table, dynamoClient, new Configuration(), Instant::now)
+                        .deleteSnapshots();
             } catch (RuntimeException e) {
                 LOGGER.error("Failed deleting old snapshots for table {}", table.getStatus(), e);
                 messagesByTableId.get(table.getStatus().getTableUniqueId()).stream()
