@@ -32,6 +32,7 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.transactionlog.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.StateStorePartitions;
+import sleeper.statestore.StateStoreFactory;
 
 import java.nio.file.Path;
 import java.time.Instant;
@@ -42,7 +43,7 @@ import java.util.stream.LongStream;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.configuration.properties.table.TableProperty.TRANSACTION_LOG_LOAD_LATEST_SNAPSHOTS;
+import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AllReferencesToAFile.fileWithOneReference;
 
@@ -111,6 +112,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
         @Test
         void shouldLoadLatestSnapshotsWhenCreatingStateStore() throws Exception {
             // Given
+            tableProperties.set(STATESTORE_CLASSNAME, DynamoDBTransactionLogStateStore.class.getName());
             PartitionTree tree = new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", 123L)
@@ -124,7 +126,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
             savePartitionsSnapshot(tree, 3);
 
             // When
-            StateStore stateStore = createStateStore();
+            StateStore stateStore = stateStoreFactory().getStateStore(tableProperties);
 
             // Then
             assertThat(stateStore.getAllPartitions())
@@ -135,9 +137,9 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
         }
 
         @Test
-        void shouldNotLoadLatestSnapshotsIfPropertyIsFalse() throws Exception {
+        void shouldNotLoadLatestSnapshotsByClassname() throws Exception {
             // Given
-            tableProperties.set(TRANSACTION_LOG_LOAD_LATEST_SNAPSHOTS, "false");
+            tableProperties.set(STATESTORE_CLASSNAME, DynamoDBTransactionLogStateStoreNoShapshots.class.getName());
             PartitionTree tree = new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", 123L)
@@ -151,7 +153,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
             savePartitionsSnapshot(tree, 3);
 
             // When
-            StateStore stateStore = createStateStore();
+            StateStore stateStore = stateStoreFactory().getStateStore(tableProperties);
 
             // Then
             assertThat(stateStore.getAllPartitions()).isEmpty();
@@ -254,5 +256,9 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
         return DynamoDBTransactionLogStateStore.builderFrom(instanceProperties, tableProperties, dynamoDBClient, s3Client, configuration)
                 .maxAddTransactionAttempts(1)
                 .build();
+    }
+
+    private StateStoreFactory stateStoreFactory() {
+        return new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, configuration);
     }
 }
