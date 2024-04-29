@@ -43,7 +43,7 @@ import java.util.stream.Collectors;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
- * A lambda that receives batches of tables from an SQS queue and creates transaction log snapshots for them.
+ * A lambda that receives batches of tables from an SQS queue and deletes old transaction log snapshots for them.
  */
 public class TransactionLogSnapshotDeletionLambda implements RequestHandler<SQSEvent, SQSBatchResponse> {
     private static final Logger LOGGER = LoggerFactory.getLogger(TransactionLogSnapshotCreationLambda.class);
@@ -70,14 +70,14 @@ public class TransactionLogSnapshotDeletionLambda implements RequestHandler<SQSE
                 .collect(Collectors.groupingBy(SQSEvent.SQSMessage::getBody));
         List<SQSBatchResponse.BatchItemFailure> batchItemFailures = new ArrayList<SQSBatchResponse.BatchItemFailure>();
         List<TableProperties> tables = loadTables(messagesByTableId, batchItemFailures);
-        createSnapshots(tables, messagesByTableId, batchItemFailures);
+        deleteSnapshots(tables, messagesByTableId, batchItemFailures);
 
         Instant finishTime = Instant.now();
         LOGGER.info("Lambda finished at {} (ran for {})", finishTime, LoggedDuration.withFullOutput(startTime, finishTime));
         return null;
     }
 
-    private void createSnapshots(List<TableProperties> tables, Map<String, List<SQSMessage>> messagesByTableId,
+    private void deleteSnapshots(List<TableProperties> tables, Map<String, List<SQSMessage>> messagesByTableId,
             List<SQSBatchResponse.BatchItemFailure> batchItemFailures) {
         for (TableProperties table : tables) {
             LOGGER.info("Deleting old snapshots for table {}", table.getStatus());
