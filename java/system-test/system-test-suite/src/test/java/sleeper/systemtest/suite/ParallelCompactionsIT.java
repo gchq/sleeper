@@ -95,7 +95,7 @@ public class ParallelCompactionsIT {
                         "only contains data for one partition")
                 .allMatch(file -> file.getJobId() == null,
                         "not assigned to any job")
-                .allMatch(file -> file.getNumberOfRecords() > 400 && file.getNumberOfRecords() < 550,
+                .allMatch(file -> file.getNumberOfRecords() > 4000 && file.getNumberOfRecords() < 5500,
                         "contains an even distribution of records for the partition");
     }
 
