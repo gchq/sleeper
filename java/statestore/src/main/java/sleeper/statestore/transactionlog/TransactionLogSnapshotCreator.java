@@ -113,11 +113,12 @@ public class TransactionLogSnapshotCreator {
         long transactionNumberAfter = TransactionLogSnapshotUtils.updateFilesState(
                 tableProperties.getStatus(), filesState, filesLogStore, transactionNumberBefore);
         if (transactionNumberBefore == transactionNumberAfter) {
-            LOGGER.info("No changes to files since last snapshot, skipping snapshot creation.");
+            LOGGER.info("No changes detected since last files snapshot with transaction number {}, skipping snapshot creation.",
+                    transactionNumberBefore);
             return;
         }
-        LOGGER.info("Changes to files have been made since the last snapshot. Creating a new files snapshot for transaction number {}.",
-                transactionNumberAfter);
+        LOGGER.info("Latest transaction number of {} is newer than latest files snapshot with transaction number {}. Creating a new files snapshot from latest transaction.",
+                transactionNumberAfter, transactionNumberBefore);
         TransactionLogSnapshot snapshot = TransactionLogSnapshot.forFiles(getBasePath(), transactionNumberAfter);
         snapshotSerDe.saveFiles(snapshot, filesState);
         snapshotStore.saveSnapshot(snapshot);
