@@ -49,6 +49,7 @@ import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SO
 
 public class ManagedPoliciesStack extends NestedStack {
 
+    private final InstanceProperties instanceProperties;
     private final ManagedPolicy ingestPolicy;
     private final ManagedPolicy queryPolicy;
     private final ManagedPolicy editTablesPolicy;
@@ -60,50 +61,52 @@ public class ManagedPoliciesStack extends NestedStack {
 
     public ManagedPoliciesStack(Construct scope, String id, InstanceProperties instanceProperties) {
         super(scope, id);
+        this.instanceProperties = instanceProperties;
 
-        ingestPolicy = new ManagedPolicy(this, "IngestPolicy");
+        ingestPolicy = createManagedPolicy("IngestPolicy");
         addRoleReferences(this, instanceProperties, INGEST_SOURCE_ROLE, "IngestSourceRole")
                 .forEach(ingestPolicy::attachToRole);
-
-        queryPolicy = new ManagedPolicy(this, "QueryPolicy");
-        editTablesPolicy = new ManagedPolicy(this, "EditTablesPolicy");
-        reportingPolicy = new ManagedPolicy(this, "ReportingPolicy");
+        queryPolicy = createManagedPolicy("QueryPolicy");
+        editTablesPolicy = createManagedPolicy("EditTablesPolicy");
+        reportingPolicy = createManagedPolicy("ReportingPolicy");
 
         List<IBucket> sourceBuckets = addIngestSourceBucketReferences(this, instanceProperties);
         if (sourceBuckets.isEmpty()) { // CDK doesn't allow a managed policy without any grants
             readIngestSourcesPolicy = null;
         } else {
-            readIngestSourcesPolicy = new ManagedPolicy(this, "ReadIngestSourcesPolicy");
+            readIngestSourcesPolicy = createManagedPolicy("ReadIngestSourcesPolicy");
             sourceBuckets.forEach(bucket -> bucket.grantRead(readIngestSourcesPolicy));
         }
     }
 
-    public ManagedPolicy getIngestPolicy() {
+    public ManagedPolicy getIngestPolicyForGrants() {
         return ingestPolicy;
     }
 
-    public ManagedPolicy getQueryPolicy() {
+    public ManagedPolicy getQueryPolicyForGrants() {
         return queryPolicy;
     }
 
-    public ManagedPolicy getEditTablesPolicy() {
+    public ManagedPolicy getEditTablesPolicyForGrants() {
         return editTablesPolicy;
     }
 
-    public ManagedPolicy getReportingPolicy() {
+    public ManagedPolicy getReportingPolicyForGrants() {
         return reportingPolicy;
     }
 
-    public ManagedPolicy getPurgeQueuesPolicy() {
+    public ManagedPolicy getPurgeQueuesPolicyForGrants() {
+        // Avoid creating empty policy when we're not deploying any queues
         if (purgeQueuesPolicy == null) {
-            purgeQueuesPolicy = new ManagedPolicy(this, "PurgeQueuesPolicy");
+            purgeQueuesPolicy = createManagedPolicy("PurgeQueuesPolicy");
         }
         return purgeQueuesPolicy;
     }
 
-    public ManagedPolicy getInvokeCompactionPolicy() {
+    public ManagedPolicy getInvokeCompactionPolicyForGrants() {
+        // Avoid creating empty policy when we're not deploying compaction stack
         if (invokeCompactionPolicy == null) {
-            invokeCompactionPolicy = new ManagedPolicy(this, "InvokeCompactionPolicy");
+            invokeCompactionPolicy = createManagedPolicy("InvokeCompactionPolicy");
             // Allow running compaction tasks
             invokeCompactionPolicy.addStatements(PolicyStatement.Builder.create()
                     .effect(Effect.ALLOW)
@@ -117,8 +120,9 @@ public class ManagedPoliciesStack extends NestedStack {
     }
 
     public void grantInvokeScheduled(IFunction function) {
+        // Avoid creating empty policy when we're not deploying any scheduled rules
         if (invokeSchedulesPolicy == null) {
-            invokeSchedulesPolicy = new ManagedPolicy(this, "InvokeSchedulesPolicy");
+            invokeSchedulesPolicy = createManagedPolicy("InvokeSchedulesPolicy");
         }
         Utils.grantInvokeOnPolicy(function, invokeSchedulesPolicy);
     }
@@ -144,6 +148,12 @@ public class ManagedPoliciesStack extends NestedStack {
         if (readIngestSourcesPolicy != null) {
             readIngestSourcesPolicy.attachToRole(Objects.requireNonNull(role));
         }
+    }
+
+    private ManagedPolicy createManagedPolicy(String id) {
+        return ManagedPolicy.Builder.create(this, id)
+                .managedPolicyName("sleeper-" + instanceProperties.get(ID) + "-" + id)
+                .build();
     }
 
     // WARNING: When assigning grants to these roles, the ID of the role reference is incorrectly used as the name of

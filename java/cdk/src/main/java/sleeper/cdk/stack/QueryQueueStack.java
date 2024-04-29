@@ -78,8 +78,8 @@ public class QueryQueueStack extends NestedStack {
                 .deadLetterQueue(queryDeadLetterQueue)
                 .visibilityTimeout(Duration.seconds(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS)))
                 .build();
-        queryQueue.grantSendMessages(coreStacks.getQueryPolicy());
-        queryQueue.grantPurge(coreStacks.getPurgeQueuesPolicy());
+        queryQueue.grantSendMessages(coreStacks.getQueryPolicyForGrants());
+        queryQueue.grantPurge(coreStacks.getPurgeQueuesPolicyForGrants());
         instanceProperties.set(CdkDefinedInstanceProperty.QUERY_QUEUE_URL, queryQueue.getQueueUrl());
         instanceProperties.set(CdkDefinedInstanceProperty.QUERY_QUEUE_ARN, queryQueue.getQueueArn());
         instanceProperties.set(CdkDefinedInstanceProperty.QUERY_DLQ_URL, queryDlq.getQueueUrl());

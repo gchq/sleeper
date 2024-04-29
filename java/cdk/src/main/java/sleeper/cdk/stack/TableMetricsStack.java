@@ -131,7 +131,7 @@ public class TableMetricsStack extends NestedStack {
         coreStacks.grantReadTablesMetadata(tableMetricsPublisher);
         queue.grantSendMessages(tableMetricsTrigger);
         coreStacks.grantInvokeScheduled(tableMetricsTrigger, queue);
-        coreStacks.getReportingPolicy().addStatements(PolicyStatement.Builder.create()
+        coreStacks.getReportingPolicyForGrants().addStatements(PolicyStatement.Builder.create()
                 .effect(Effect.ALLOW)
                 .actions(List.of("cloudwatch:GetMetricData"))
                 .resources(List.of("*"))

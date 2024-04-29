@@ -104,10 +104,10 @@ public final class DynamoDBIngestStatusStoreResources implements IngestStatusSto
                 .pointInTimeRecovery(false)
                 .build();
 
-        grantWriteJobEvent(coreStacks.getIngestPolicy());
-        updatesTable.grantReadData(coreStacks.getReportingPolicy());
-        jobsTable.grantReadData(coreStacks.getReportingPolicy());
-        tasksTable.grantReadData(coreStacks.getReportingPolicy());
+        grantWriteJobEvent(coreStacks.getIngestPolicyForGrants());
+        updatesTable.grantReadData(coreStacks.getReportingPolicyForGrants());
+        jobsTable.grantReadData(coreStacks.getReportingPolicyForGrants());
+        tasksTable.grantReadData(coreStacks.getReportingPolicyForGrants());
     }
 
     @Override
