@@ -76,13 +76,6 @@ public class ManagedPoliciesStack extends NestedStack {
             readIngestSourcesPolicy = new ManagedPolicy(this, "ReadIngestSourcesPolicy");
             sourceBuckets.forEach(bucket -> bucket.grantRead(readIngestSourcesPolicy));
         }
-
-        // Allow access to table metrics
-        reportingPolicy.addStatements(PolicyStatement.Builder.create()
-                .effect(Effect.ALLOW)
-                .actions(List.of("cloudwatch:GetMetricData"))
-                .resources(List.of("*"))
-                .build());
     }
 
     public ManagedPolicy getIngestPolicy() {

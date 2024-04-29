@@ -124,7 +124,7 @@ public class CoreStacks {
         return policiesStack.getQueryPolicy();
     }
 
-    public IGrantable getReportingPolicy() {
+    public ManagedPolicy getReportingPolicy() {
         return policiesStack.getReportingPolicy();
     }
 
