@@ -210,9 +210,9 @@ public class DynamoDBTransactionLogSnapshotStoreIT {
         void shouldDeleteSnapshotsThatAreOldEnough() throws Exception {
             // Given
             tableProperties.setNumber(TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS, 1);
-            DynamoDBTransactionLogSnapshotStore snapshotStore = snapshotStore(tableProperties, List.of(
+            DynamoDBTransactionLogSnapshotStore snapshotStore = snapshotStore(List.of(
                     Instant.parse("2024-04-24T15:45:00Z"),
-                    Instant.parse("2024-04-25T15::00Z"),
+                    Instant.parse("2024-04-25T15:15:00Z"),
                     Instant.parse("2024-04-26T15:45:00Z"),
                     Instant.parse("2024-04-26T16:00:00Z")).iterator()::next);
             snapshotStore.saveSnapshot(filesSnapshot(1));
@@ -226,6 +226,21 @@ public class DynamoDBTransactionLogSnapshotStoreIT {
             // Then
             assertThat(snapshotStore.getFilesSnapshots())
                     .containsExactly(filesSnapshot(3), filesSnapshot(4));
+        }
+
+        @Test
+        void shouldNotDeleteLatestSnapshotIfItIsOldEnough() throws Exception {
+            // Given
+            tableProperties.setNumber(TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS, 1);
+            DynamoDBTransactionLogSnapshotStore snapshotStore = snapshotStore(() -> Instant.parse("2024-04-24T15:45:00Z"));
+            snapshotStore.saveSnapshot(filesSnapshot(1));
+
+            // When
+            snapshotStore.deleteSnapshots(Instant.parse("2024-04-26T15:30:00Z"));
+
+            // Then
+            assertThat(snapshotStore.getFilesSnapshots())
+                    .containsExactly(filesSnapshot(1));
         }
     }
 
