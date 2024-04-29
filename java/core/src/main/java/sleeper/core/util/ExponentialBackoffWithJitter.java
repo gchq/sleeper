@@ -73,7 +73,13 @@ public class ExponentialBackoffWithJitter {
      * Waits for a number of milliseconds. Implemented by <code>Thread.sleep</code>.
      */
     @FunctionalInterface
-    interface Waiter {
+    public interface Waiter {
+        /**
+         * Wait for the specified period.
+         *
+         * @param  milliseconds         milliseconds to wait for
+         * @throws InterruptedException if the thread is interrupted while waiting
+         */
         void waitForMillis(long milliseconds) throws InterruptedException;
     }
 
