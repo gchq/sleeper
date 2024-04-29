@@ -39,7 +39,7 @@ public class DynamoDBTransactionLogStateStore {
 
     public static TransactionLogStateStore.Builder builderFrom(
             InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamoDB, AmazonS3 s3, Configuration configuration) {
-        TransactionLogStateStore.Builder builder = DynamoDBTransactionLogStateStoreNoShapshots.builderFrom(instanceProperties, tableProperties, dynamoDB, s3);
+        TransactionLogStateStore.Builder builder = DynamoDBTransactionLogStateStoreNoSnapshots.builderFrom(instanceProperties, tableProperties, dynamoDB, s3);
         loadLatestSnapshots(builder, instanceProperties, tableProperties, dynamoDB, configuration);
         return builder;
     }
