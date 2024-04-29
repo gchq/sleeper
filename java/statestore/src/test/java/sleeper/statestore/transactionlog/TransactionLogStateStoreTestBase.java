@@ -46,7 +46,7 @@ public class TransactionLogStateStoreTestBase {
     protected static AmazonDynamoDB dynamoDBClient;
     protected static AmazonS3 s3Client;
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
-    protected Configuration configuration;
+    protected final Configuration configuration = HadoopConfigurationLocalStackUtils.getHadoopConfiguration(localStackContainer);
 
     @BeforeAll
     public static void initDynamoClient() {
@@ -62,7 +62,6 @@ public class TransactionLogStateStoreTestBase {
     @BeforeEach
     void setUpBase() {
         new TransactionLogStateStoreCreator(instanceProperties, dynamoDBClient, s3Client).create();
-        configuration = HadoopConfigurationLocalStackUtils.getHadoopConfiguration(localStackContainer);
     }
 
     public StateStore createStateStore(TableProperties tableProperties) {
