@@ -59,7 +59,6 @@ import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCK
 import static sleeper.configuration.properties.instance.CommonProperty.TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB;
 import static sleeper.configuration.properties.instance.CommonProperty.TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CommonProperty.TRANSACTION_LOG_SNAPSHOT_CREATION_BATCH_SIZE;
-import static sleeper.configuration.properties.instance.CommonProperty.TRANSACTION_LOG_SNAPSHOT_CREATION_LAMBDA_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CommonProperty.TRANSACTION_LOG_SNAPSHOT_DELETION_BATCH_SIZE;
 import static sleeper.configuration.properties.instance.CommonProperty.TRANSACTION_LOG_SNAPSHOT_DELETION_LAMBDA_PERIOD_IN_SECONDS;;
 
@@ -106,7 +105,7 @@ public class TransactionLogSnapshotStack extends NestedStack {
         Rule rule = Rule.Builder.create(this, "TransactionLogSnapshotCreationSchedule")
                 .ruleName(SleeperScheduleRule.TRANSACTION_LOG_SNAPSHOT_CREATION.buildRuleName(instanceProperties))
                 .schedule(Schedule.rate(Duration.minutes(
-                        instanceProperties.getLong(TRANSACTION_LOG_SNAPSHOT_CREATION_LAMBDA_PERIOD_IN_SECONDS))))
+                        instanceProperties.getLong(TRANSACTION_LOG_SNAPSHOT_DELETION_LAMBDA_PERIOD_IN_SECONDS))))
                 .targets(List.of(new LambdaFunction(snapshotCreationTrigger)))
                 .enabled(!shouldDeployPaused(this))
                 .build();
