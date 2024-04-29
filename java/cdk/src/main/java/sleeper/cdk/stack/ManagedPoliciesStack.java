@@ -55,10 +55,10 @@ public class ManagedPoliciesStack extends NestedStack {
     private final ManagedPolicy queryPolicy;
     private final ManagedPolicy editTablesPolicy;
     private final ManagedPolicy reportingPolicy;
-    private final ManagedPolicy invokeSchedulesPolicy;
-    private final ManagedPolicy invokeCompactionPolicy;
     private final ManagedPolicy purgeQueuesPolicy;
     private final ManagedPolicy readIngestSourcesPolicy;
+    private ManagedPolicy invokeCompactionPolicy;
+    private ManagedPolicy invokeSchedulesPolicy;
 
     public ManagedPoliciesStack(Construct scope, String id, InstanceProperties instanceProperties) {
         super(scope, id);
@@ -70,8 +70,6 @@ public class ManagedPoliciesStack extends NestedStack {
         queryPolicy = new ManagedPolicy(this, "QueryPolicy");
         editTablesPolicy = new ManagedPolicy(this, "EditTablesPolicy");
         reportingPolicy = new ManagedPolicy(this, "ReportingPolicy");
-        invokeSchedulesPolicy = new ManagedPolicy(this, "InvokeSchedulesPolicy");
-        invokeCompactionPolicy = new ManagedPolicy(this, "InvokeCompactionPolicy");
         purgeQueuesPolicy = new ManagedPolicy(this, "PurgeQueuesPolicy");
 
         List<IBucket> sourceBuckets = addIngestSourceBucketReferences(this, instanceProperties);
@@ -86,7 +84,8 @@ public class ManagedPoliciesStack extends NestedStack {
                 .assumedBy(new AccountRootPrincipal())
                 .roleName("sleeper-admin-" + instanceProperties.get(ID).toLowerCase(Locale.ROOT))
                 .build();
-        Stream.of(ingestPolicy, queryPolicy, editTablesPolicy, reportingPolicy, invokeSchedulesPolicy, invokeCompactionPolicy, purgeQueuesPolicy)
+        Stream.of(ingestPolicy, queryPolicy, editTablesPolicy, reportingPolicy,
+                purgeQueuesPolicy, invokeCompactionPolicy, invokeSchedulesPolicy)
                 .forEach(policy -> policy.attachToRole(adminRole));
         instanceProperties.set(ADMIN_ROLE_ARN, adminRole.getRoleArn());
 
@@ -97,14 +96,6 @@ public class ManagedPoliciesStack extends NestedStack {
                 .resources(List.of("*"))
                 .build());
 
-        // Allow running compaction tasks
-        invokeCompactionPolicy.addStatements(PolicyStatement.Builder.create()
-                .effect(Effect.ALLOW)
-                .actions(List.of("ecs:DescribeClusters", "ecs:RunTask", "iam:PassRole",
-                        "ecs:DescribeContainerInstances", "ecs:DescribeTasks", "ecs:ListContainerInstances",
-                        "autoscaling:SetDesiredCapacity", "autoscaling:DescribeAutoScalingGroups"))
-                .resources(List.of("*"))
-                .build());
         adminRole.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonECSTaskExecutionRolePolicy"));
     }
 
@@ -124,21 +115,42 @@ public class ManagedPoliciesStack extends NestedStack {
         return reportingPolicy;
     }
 
-    public ManagedPolicy getInvokeCompactionPolicy() {
-        return invokeCompactionPolicy;
-    }
-
     public ManagedPolicy getPurgeQueuesPolicy() {
         return purgeQueuesPolicy;
     }
 
+    public ManagedPolicy getInvokeCompactionPolicy() {
+        if (invokeCompactionPolicy == null) {
+            invokeCompactionPolicy = new ManagedPolicy(this, "InvokeCompactionPolicy");
+            // Allow running compaction tasks
+            invokeCompactionPolicy.addStatements(PolicyStatement.Builder.create()
+                    .effect(Effect.ALLOW)
+                    .actions(List.of("ecs:DescribeClusters", "ecs:RunTask", "iam:PassRole",
+                            "ecs:DescribeContainerInstances", "ecs:DescribeTasks", "ecs:ListContainerInstances",
+                            "autoscaling:SetDesiredCapacity", "autoscaling:DescribeAutoScalingGroups"))
+                    .resources(List.of("*"))
+                    .build());
+        }
+        return invokeCompactionPolicy;
+    }
+
     public void grantInvokeScheduled(IFunction function) {
+        if (invokeSchedulesPolicy == null) {
+            invokeSchedulesPolicy = new ManagedPolicy(this, "InvokeSchedulesPolicy");
+        }
         Utils.grantInvokeOnPolicy(function, invokeSchedulesPolicy);
     }
 
     public void grantInvokeScheduled(IFunction function, IQueue invokeQueue) {
         grantInvokeScheduled(function);
         invokeQueue.grantSendMessages(invokeSchedulesPolicy);
+    }
+
+    public Stream<ManagedPolicy> instanceAdminPolicies() {
+        return Stream.of(
+                ingestPolicy, queryPolicy, editTablesPolicy, reportingPolicy,
+                invokeSchedulesPolicy, invokeCompactionPolicy, purgeQueuesPolicy)
+                .filter(policy -> policy != null);
     }
 
     // The Lambda IFunction.getRole method is annotated as nullable, even though it will never return null in practice.

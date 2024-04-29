@@ -38,6 +38,7 @@ import sleeper.cdk.stack.IngestBatcherStack;
 import sleeper.cdk.stack.IngestStack;
 import sleeper.cdk.stack.IngestStacks;
 import sleeper.cdk.stack.IngestStatusStoreStack;
+import sleeper.cdk.stack.InstanceAdminRoleStack;
 import sleeper.cdk.stack.KeepLambdaWarmStack;
 import sleeper.cdk.stack.ManagedPoliciesStack;
 import sleeper.cdk.stack.PartitionSplittingStack;
@@ -313,6 +314,8 @@ public class SleeperCdkApp extends Stack {
                     coreStacks,
                     queryQueueStack);
         }
+
+        new InstanceAdminRoleStack(this, "InstanceAdminRole", instanceProperties, policiesStack);
 
         this.generateProperties();
         addTags(app);
