@@ -214,7 +214,7 @@ public interface CommonProperty {
             .validationPredicate(Utils::isPositiveIntegerLtEq10)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
-    UserDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_DELETION_LAMBDA_PERIOD_IN_SECONDS = Index.propertyBuilder("sleeper.metadata.transactionlog.snapshot.deletion.lambda.period.seconds")
+    UserDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_DELETION_LAMBDA_PERIOD_IN_MINUTES = Index.propertyBuilder("sleeper.metadata.transactionlog.snapshot.deletion.lambda.period.minutes")
             .description("The frequency in minutes with which the transaction log snapshot deletion lambda is run.")
             .defaultValue("5")
             .validationPredicate(Utils::isPositiveInteger)
