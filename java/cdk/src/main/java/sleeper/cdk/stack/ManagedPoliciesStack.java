@@ -132,7 +132,7 @@ public class ManagedPoliciesStack extends NestedStack {
         invokeQueue.grantSendMessages(invokeSchedulesPolicy);
     }
 
-    public Stream<ManagedPolicy> instanceAdminPolicies() {
+    Stream<ManagedPolicy> instanceAdminPolicies() {
         return Stream.of(
                 ingestPolicy, queryPolicy, editTablesPolicy, reportingPolicy,
                 purgeQueuesPolicy, invokeCompactionPolicy, invokeSchedulesPolicy)
