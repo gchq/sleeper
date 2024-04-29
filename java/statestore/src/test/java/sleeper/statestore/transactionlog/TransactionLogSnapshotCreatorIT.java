@@ -29,11 +29,15 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.LatestSnapshots;
+import sleeper.statestore.transactionlog.TransactionLogSnapshotCreator.SnapshotSaver;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
@@ -163,9 +167,35 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
                         partitionsSnapshot(table, 1)));
     }
 
+    @Test
+    void shouldRemoveSnapshotFilesIfDynamoTransactionFailed() throws Exception {
+        // Given
+        TableProperties table = createTable("test-table-id-1", "test-table-1");
+        StateStore stateStore = createStateStore(table);
+        stateStore.initialise();
+        FileReferenceFactory factory = FileReferenceFactory.from(stateStore);
+        stateStore.addFile(factory.rootFile(123L));
+
+        // When / Then
+        assertThatThrownBy(() -> runSnapshotCreator(table, failedUpdate()))
+                .isInstanceOf(RuntimeException.class);
+        assertThat(snapshotStore(table).getLatestSnapshots())
+                .isEqualTo(new LatestSnapshots(null, null));
+        assertThat(Files.exists(filesSnapshotPath(table, 1))).isFalse();
+        assertThat(Files.exists(partitionsSnapshotPath(table, 1))).isFalse();
+    }
+
     private void runSnapshotCreator(TableProperties table) {
         new TransactionLogSnapshotCreator(
                 instanceProperties, table, s3Client, dynamoDBClient, configuration)
+                .createSnapshot();
+    }
+
+    private void runSnapshotCreator(TableProperties table, SnapshotSaver snapshotSaver) {
+        DynamoDBTransactionLogSnapshotStore snapshotStore = snapshotStore(table);
+        new TransactionLogSnapshotCreator(
+                instanceProperties, table, s3Client, dynamoDBClient, configuration,
+                snapshotStore::getLatestSnapshots, snapshotSaver)
                 .createSnapshot();
     }
 
@@ -189,9 +219,28 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
         return TransactionLogSnapshot.forPartitions(getBasePath(instanceProperties, table), transactionNumber);
     }
 
+    private Path filesSnapshotPath(TableProperties table, long transactionNumber) {
+        return Path.of(TransactionLogSnapshot.forFiles(getBasePathNoFs(instanceProperties, table), 1).getPath());
+    }
+
+    private Path partitionsSnapshotPath(TableProperties table, long transactionNumber) {
+        return Path.of(TransactionLogSnapshot.forPartitions(getBasePathNoFs(instanceProperties, table), 1).getPath());
+    }
+
     private static String getBasePath(InstanceProperties instanceProperties, TableProperties tableProperties) {
         return instanceProperties.get(FILE_SYSTEM)
                 + instanceProperties.get(DATA_BUCKET) + "/"
                 + tableProperties.get(TableProperty.TABLE_ID);
+    }
+
+    private static String getBasePathNoFs(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        return instanceProperties.get(DATA_BUCKET) + "/"
+                + tableProperties.get(TableProperty.TABLE_ID);
+    }
+
+    private SnapshotSaver failedUpdate() {
+        return snapshot -> {
+            throw new StateStoreException("Failure");
+        };
     }
 }

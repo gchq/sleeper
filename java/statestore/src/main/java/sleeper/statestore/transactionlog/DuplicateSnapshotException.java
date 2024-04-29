@@ -15,7 +15,9 @@
  */
 package sleeper.statestore.transactionlog;
 
-public class DuplicateSnapshotException extends Exception {
+import sleeper.core.statestore.StateStoreException;
+
+public class DuplicateSnapshotException extends StateStoreException {
     public DuplicateSnapshotException(String path, Exception cause) {
         super("Snapshot already exists: " + path, cause);
     }

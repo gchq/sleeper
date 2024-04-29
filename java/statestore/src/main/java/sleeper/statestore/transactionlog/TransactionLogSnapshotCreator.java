@@ -18,6 +18,8 @@ package sleeper.statestore.transactionlog;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,8 +46,10 @@ public class TransactionLogSnapshotCreator {
     private final TableProperties tableProperties;
     private final TransactionLogStore filesLogStore;
     private final TransactionLogStore partitionsLogStore;
+    private final Configuration configuration;
     private final TransactionLogSnapshotSerDe snapshotSerDe;
-    private final DynamoDBTransactionLogSnapshotStore snapshotStore;
+    private final LatestSnapshotsLoader latestSnapshotsLoader;
+    private final SnapshotSaver snapshotSaver;
 
     public TransactionLogSnapshotCreator(
             InstanceProperties instanceProperties, TableProperties tableProperties,
@@ -55,25 +59,48 @@ public class TransactionLogSnapshotCreator {
                         instanceProperties, tableProperties, dynamoDB, s3Client),
                 new DynamoDBTransactionLogStore(instanceProperties.get(TRANSACTION_LOG_PARTITIONS_TABLENAME),
                         instanceProperties, tableProperties, dynamoDB, s3Client),
-                dynamoDB, configuration);
+                configuration, new DynamoDBTransactionLogSnapshotStore(instanceProperties, tableProperties, dynamoDB));
 
     }
 
     public TransactionLogSnapshotCreator(
             InstanceProperties instanceProperties, TableProperties tableProperties,
+            AmazonS3 s3Client, AmazonDynamoDB dynamoDB, Configuration configuration,
+            LatestSnapshotsLoader latestSnapshotsLoader, SnapshotSaver snapshotSaver) {
+        this(instanceProperties, tableProperties,
+                new DynamoDBTransactionLogStore(instanceProperties.get(TRANSACTION_LOG_FILES_TABLENAME),
+                        instanceProperties, tableProperties, dynamoDB, s3Client),
+                new DynamoDBTransactionLogStore(instanceProperties.get(TRANSACTION_LOG_PARTITIONS_TABLENAME),
+                        instanceProperties, tableProperties, dynamoDB, s3Client),
+                configuration, latestSnapshotsLoader, snapshotSaver);
+    }
+
+    public TransactionLogSnapshotCreator(
+            InstanceProperties instanceProperties, TableProperties tableProperties,
             TransactionLogStore filesLogStore, TransactionLogStore partitionsLogStore,
-            AmazonDynamoDB dynamoDB, Configuration configuration) {
+            Configuration configuration, DynamoDBTransactionLogSnapshotStore snapshotStore) {
+        this(instanceProperties, tableProperties, filesLogStore, partitionsLogStore, configuration,
+                () -> snapshotStore.getLatestSnapshots(),
+                snapshot -> snapshotStore.saveSnapshot(snapshot));
+    }
+
+    public TransactionLogSnapshotCreator(
+            InstanceProperties instanceProperties, TableProperties tableProperties,
+            TransactionLogStore filesLogStore, TransactionLogStore partitionsLogStore,
+            Configuration configuration, LatestSnapshotsLoader latestSnapshotsLoader, SnapshotSaver snapshotSaver) {
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
         this.filesLogStore = filesLogStore;
         this.partitionsLogStore = partitionsLogStore;
         this.snapshotSerDe = new TransactionLogSnapshotSerDe(tableProperties.getSchema(), configuration);
-        this.snapshotStore = new DynamoDBTransactionLogSnapshotStore(instanceProperties, tableProperties, dynamoDB);
+        this.latestSnapshotsLoader = latestSnapshotsLoader;
+        this.snapshotSaver = snapshotSaver;
+        this.configuration = configuration;
     }
 
     public void createSnapshot() {
         LOGGER.info("Creating snapshot for table {}", tableProperties.getStatus());
-        LatestSnapshots latestSnapshots = snapshotStore.getLatestSnapshots();
+        LatestSnapshots latestSnapshots = latestSnapshotsLoader.load();
         StateStoreFiles filesState = latestSnapshots.getFilesSnapshot()
                 .map(snapshot -> {
                     try {
@@ -99,16 +126,15 @@ public class TransactionLogSnapshotCreator {
                 .map(TransactionLogSnapshot::getTransactionNumber)
                 .orElse(0L);
         try {
-            saveFilesSnapshot(filesState, filesTransactionNumberBefore, snapshotSerDe, snapshotStore);
-            savePartitionsSnapshot(partitionsState, partitionsTransactionNumberBefore, snapshotSerDe, snapshotStore);
-        } catch (DuplicateSnapshotException | StateStoreException | IOException e) {
+            saveFilesSnapshot(filesState, filesTransactionNumberBefore);
+            savePartitionsSnapshot(partitionsState, partitionsTransactionNumberBefore);
+        } catch (StateStoreException | IOException e) {
             LOGGER.error("Failed to create snapshot for table {}", tableProperties.getStatus());
             throw new RuntimeException(e);
         }
     }
 
-    private void saveFilesSnapshot(StateStoreFiles filesState, long transactionNumberBefore,
-            TransactionLogSnapshotSerDe snapshotSerDe, DynamoDBTransactionLogSnapshotStore snapshotStore) throws IOException, StateStoreException, DuplicateSnapshotException {
+    private void saveFilesSnapshot(StateStoreFiles filesState, long transactionNumberBefore) throws IOException, StateStoreException, DuplicateSnapshotException {
         long transactionNumberAfter = TransactionLogSnapshotUtils.updateFilesState(
                 tableProperties.getStatus(), filesState, filesLogStore, transactionNumberBefore);
         if (transactionNumberBefore == transactionNumberAfter) {
@@ -120,11 +146,18 @@ public class TransactionLogSnapshotCreator {
                 transactionNumberAfter, transactionNumberBefore);
         TransactionLogSnapshot snapshot = TransactionLogSnapshot.forFiles(getBasePath(), transactionNumberAfter);
         snapshotSerDe.saveFiles(snapshot, filesState);
-        snapshotStore.saveSnapshot(snapshot);
+        try {
+            snapshotSaver.save(snapshot);
+        } catch (StateStoreException e) {
+            LOGGER.info("Failed to save snapshot to Dynamo DB. Deleting snapshot file.");
+            Path path = new Path(snapshot.getPath());
+            FileSystem fs = path.getFileSystem(configuration);
+            fs.delete(path, false);
+            throw e;
+        }
     }
 
-    private void savePartitionsSnapshot(StateStorePartitions partitionsState, long transactionNumberBefore,
-            TransactionLogSnapshotSerDe snapshotSerDe, DynamoDBTransactionLogSnapshotStore snapshotStore) throws IOException, StateStoreException, DuplicateSnapshotException {
+    private void savePartitionsSnapshot(StateStorePartitions partitionsState, long transactionNumberBefore) throws IOException, StateStoreException, DuplicateSnapshotException {
         long transactionNumberAfter = TransactionLogSnapshotUtils.updatePartitionsState(
                 tableProperties.getStatus(), partitionsState, partitionsLogStore, transactionNumberBefore);
         if (transactionNumberBefore == transactionNumberAfter) {
@@ -137,12 +170,28 @@ public class TransactionLogSnapshotCreator {
                 transactionNumberAfter, transactionNumberBefore);
         TransactionLogSnapshot snapshot = TransactionLogSnapshot.forPartitions(getBasePath(), transactionNumberAfter);
         snapshotSerDe.savePartitions(snapshot, partitionsState);
-        snapshotStore.saveSnapshot(snapshot);
+        try {
+            snapshotSaver.save(snapshot);
+        } catch (StateStoreException e) {
+            LOGGER.info("Failed to save snapshot to Dynamo DB. Deleting snapshot file.");
+            Path path = new Path(snapshot.getPath());
+            FileSystem fs = path.getFileSystem(configuration);
+            fs.delete(path, false);
+            throw e;
+        }
     }
 
     private String getBasePath() {
         return instanceProperties.get(FILE_SYSTEM)
                 + instanceProperties.get(DATA_BUCKET) + "/"
                 + tableProperties.get(TableProperty.TABLE_ID);
+    }
+
+    interface LatestSnapshotsLoader {
+        LatestSnapshots load();
+    }
+
+    public interface SnapshotSaver {
+        void save(TransactionLogSnapshot snapshot) throws DuplicateSnapshotException, StateStoreException;
     }
 }
