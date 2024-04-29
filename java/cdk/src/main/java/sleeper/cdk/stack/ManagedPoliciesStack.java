@@ -132,13 +132,6 @@ public class ManagedPoliciesStack extends NestedStack {
         invokeQueue.grantSendMessages(invokeSchedulesPolicy);
     }
 
-    Stream<ManagedPolicy> instanceAdminPolicies() {
-        return Stream.of(
-                ingestPolicy, queryPolicy, editTablesPolicy, reportingPolicy,
-                purgeQueuesPolicy, invokeCompactionPolicy, invokeSchedulesPolicy)
-                .filter(policy -> policy != null);
-    }
-
     // The Lambda IFunction.getRole method is annotated as nullable, even though it will never return null in practice.
     // This means SpotBugs complains if we pass that role into attachToRole.
     // The role parameter is marked as nullable to convince SpotBugs that it's fine to pass it into this method,
@@ -148,6 +141,13 @@ public class ManagedPoliciesStack extends NestedStack {
         if (readIngestSourcesPolicy != null) {
             readIngestSourcesPolicy.attachToRole(Objects.requireNonNull(role));
         }
+    }
+
+    Stream<ManagedPolicy> instanceAdminPolicies() {
+        return Stream.of(
+                ingestPolicy, queryPolicy, editTablesPolicy, reportingPolicy,
+                purgeQueuesPolicy, invokeCompactionPolicy, invokeSchedulesPolicy)
+                .filter(policy -> policy != null);
     }
 
     private ManagedPolicy createManagedPolicy(String id) {
