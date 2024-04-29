@@ -315,6 +315,7 @@ public class SleeperCdkApp extends Stack {
                     queryQueueStack);
         }
 
+        // Only create instance admin role after we know which policies are deployed in the instance
         new InstanceAdminRoleStack(this, "InstanceAdminRole", instanceProperties, policiesStack);
 
         this.generateProperties();
