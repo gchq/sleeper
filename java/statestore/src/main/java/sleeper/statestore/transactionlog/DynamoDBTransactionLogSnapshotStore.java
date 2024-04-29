@@ -238,7 +238,7 @@ public class DynamoDBTransactionLogSnapshotStore {
 
         @Override
         public String toString() {
-            return "LatestSnapshots{filesSnapshotOpt=" + filesSnapshotOpt + ", partitionsSnapshotOpt=" + filesSnapshotOpt + "}";
+            return "LatestSnapshots{filesSnapshotOpt=" + filesSnapshotOpt + ", partitionsSnapshotOpt=" + partitionsSnapshotOpt + "}";
         }
 
     }
