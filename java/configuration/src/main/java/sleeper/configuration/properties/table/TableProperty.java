@@ -56,6 +56,7 @@ import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_ROW_GROUP_SIZE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_S3A_READAHEAD_RANGE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_STATISTICS_TRUNCATE_LENGTH;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_TRANSACTION_LOG_LOAD_LATEST_SNAPSHOTS;
 import static sleeper.configuration.properties.instance.GarbageCollectionProperty.DEFAULT_GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_ARM_INSTANCE_TYPES;
 import static sleeper.configuration.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE;
@@ -248,6 +249,11 @@ public interface TableProperty extends SleeperProperty {
             .defaultProperty(DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS)
             .description("This specifies whether queries and scans against DynamoDB tables used in the state stores " +
                     "are strongly consistent.")
+            .propertyGroup(TablePropertyGroup.METADATA)
+            .build();
+    TableProperty TRANSACTION_LOG_LOAD_LATEST_SNAPSHOTS = Index.propertyBuilder("sleeper.table.metadata.transactionlog.load.latest.snapshots")
+            .defaultProperty(DEFAULT_TRANSACTION_LOG_LOAD_LATEST_SNAPSHOTS)
+            .description("If set, the transaction log state store will load the latest snapshot from the snapshot store when created.")
             .propertyGroup(TablePropertyGroup.METADATA)
             .build();
     TableProperty BULK_IMPORT_EMR_INSTANCE_ARCHITECTURE = Index.propertyBuilder("sleeper.table.bulk.import.emr.instance.architecture")

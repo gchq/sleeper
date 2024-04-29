@@ -40,6 +40,7 @@ import static sleeper.systemtest.configuration.SystemTestIngestMode.DIRECT;
 import static sleeper.systemtest.configuration.SystemTestIngestMode.GENERATE_ONLY;
 import static sleeper.systemtest.configuration.SystemTestIngestMode.QUEUE;
 import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_MODE;
+import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_INGESTS_PER_WRITER;
 
 /**
  * Entrypoint for SystemTest image. Writes random data to Sleeper using the mechanism (ingestMode) defined in
@@ -49,7 +50,31 @@ public class IngestRandomData {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestRandomData.class);
 
-    private IngestRandomData() {
+    private final InstanceProperties instanceProperties;
+    private final TableProperties tableProperties;
+    private final SystemTestPropertyValues systemTestProperties;
+    private final AmazonS3 s3Client;
+    private final AmazonDynamoDB dynamoClient;
+
+    private IngestRandomData(
+            InstanceProperties instanceProperties, TableProperties tableProperties,
+            SystemTestPropertyValues systemTestProperties, AmazonS3 s3Client, AmazonDynamoDB dynamoClient) {
+        this.instanceProperties = instanceProperties;
+        this.tableProperties = tableProperties;
+        this.systemTestProperties = systemTestProperties;
+        this.s3Client = s3Client;
+        this.dynamoClient = dynamoClient;
+    }
+
+    public void run() throws IOException {
+        Ingester ingester = ingester();
+        int numIngests = systemTestProperties.getInt(NUMBER_OF_INGESTS_PER_WRITER);
+        for (int i = 1; i <= numIngests; i++) {
+            LOGGER.info("Starting ingest {}", i);
+            ingester.ingest();
+            LOGGER.info("Completed ingest {}", i);
+        }
+        LOGGER.info("Finished");
     }
 
     public static void main(String[] args) throws IOException {
@@ -73,29 +98,49 @@ public class IngestRandomData {
             TableProperties tableProperties = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient)
                     .getByName(args[1]);
 
-            SystemTestIngestMode ingestMode = systemTestProperties.getEnumValue(INGEST_MODE, SystemTestIngestMode.class);
-            if (ingestMode == DIRECT) {
-                StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client,
-                        dynamoClient, HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
-                WriteRandomDataDirect.writeWithIngestFactory(instanceProperties, tableProperties, systemTestProperties, stateStoreProvider);
-            } else {
-                String jobId = UUID.randomUUID().toString();
-                String dir = WriteRandomDataFiles.writeToS3GetDirectory(
-                        instanceProperties, tableProperties, systemTestProperties, jobId);
-                if (ingestMode == QUEUE) {
-                    IngestRandomDataViaQueue.sendJob(
-                            jobId, dir, instanceProperties, tableProperties, systemTestProperties);
-                } else if (ingestMode == BATCHER) {
-                    IngestRandomDataViaBatcher.sendRequest(dir, instanceProperties, tableProperties);
-                } else if (ingestMode == GENERATE_ONLY) {
-                    LOGGER.debug("Generate data only, no message was sent");
-                } else {
-                    throw new IllegalArgumentException("Unrecognised ingest mode: " + ingestMode);
-                }
-            }
+            new IngestRandomData(instanceProperties, tableProperties, systemTestProperties, s3Client, dynamoClient)
+                    .run();
         } finally {
             s3Client.shutdown();
             dynamoClient.shutdown();
         }
+    }
+
+    private Ingester ingester() {
+        SystemTestIngestMode ingestMode = systemTestProperties.getEnumValue(INGEST_MODE, SystemTestIngestMode.class);
+        if (ingestMode == DIRECT) {
+            StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client,
+                    dynamoClient, HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
+            return () -> WriteRandomDataDirect.writeWithIngestFactory(instanceProperties, tableProperties, systemTestProperties, stateStoreProvider);
+        }
+        FileIngester ingestFromFile;
+        if (ingestMode == QUEUE) {
+            ingestFromFile = (jobId, dir) -> IngestRandomDataViaQueue.sendJob(
+                    jobId, dir, instanceProperties, tableProperties, systemTestProperties);
+        } else if (ingestMode == BATCHER) {
+            ingestFromFile = (jobId, dir) -> IngestRandomDataViaBatcher.sendRequest(dir, instanceProperties, tableProperties);
+        } else if (ingestMode == GENERATE_ONLY) {
+            ingestFromFile = (jobId, dir) -> LOGGER.debug("Generate data only, no message was sent");
+        } else {
+            throw new IllegalArgumentException("Unrecognised ingest mode: " + ingestMode);
+        }
+        return writeRandomFileAnd(ingestFromFile);
+    }
+
+    private Ingester writeRandomFileAnd(FileIngester ingester) {
+        return () -> {
+            String jobId = UUID.randomUUID().toString();
+            String dir = WriteRandomDataFiles.writeToS3GetDirectory(
+                    instanceProperties, tableProperties, systemTestProperties, jobId);
+            ingester.ingest(jobId, dir);
+        };
+    }
+
+    interface Ingester {
+        void ingest() throws IOException;
+    }
+
+    interface FileIngester {
+        void ingest(String jobId, String dir) throws IOException;
     }
 }

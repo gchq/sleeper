@@ -66,7 +66,7 @@ class S3PartitionStore implements PartitionStore {
                 .loadAndWriteData(this::readPartitionsMapFromParquet, this::writePartitionsMapToParquet)
                 .hadoopConf(conf)
                 .build();
-        stateStoreFileUtils = StateStoreFileUtils.forPartitions(conf);
+        stateStoreFileUtils = new StateStoreFileUtils(conf);
     }
 
     public static Builder builder() {
@@ -204,14 +204,22 @@ class S3PartitionStore implements PartitionStore {
 
     private void writePartitionsToParquet(Collection<Partition> partitions, String path) throws StateStoreException {
         LOGGER.debug("Writing {} partitions to {}", partitions.size(), path);
-        stateStoreFileUtils.savePartitions(path, partitions, tableSchema);
+        try {
+            stateStoreFileUtils.savePartitions(path, partitions, tableSchema);
+        } catch (IOException e) {
+            throw new StateStoreException("Failed to save partitions", e);
+        }
         LOGGER.debug("Wrote {} partitions to {}", partitions.size(), path);
     }
 
     private List<Partition> readPartitionsFromParquet(String path) throws StateStoreException {
         LOGGER.debug("Loading partitions from {}", path);
         List<Partition> partitions = new ArrayList<>();
-        stateStoreFileUtils.loadPartitions(path, tableSchema, partitions::add);
+        try {
+            stateStoreFileUtils.loadPartitions(path, tableSchema, partitions::add);
+        } catch (IOException e) {
+            throw new StateStoreException("Failed to load partitions", e);
+        }
         LOGGER.debug("Loaded {} partitions from {}", partitions.size(), path);
         return partitions;
     }
