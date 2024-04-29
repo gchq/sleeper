@@ -35,6 +35,7 @@ sleeper.table.gc.delay.minutes=15
 
 # The name of the class used for the metadata store. The default is S3StateStore. Options are:
 # sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore
+# sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStoreNoSnapshots
 # sleeper.statestore.s3.S3StateStore
 # sleeper.statestore.dynamodb.DynamoDBStateStore
 sleeper.table.statestore.classname=sleeper.statestore.s3.S3StateStore
