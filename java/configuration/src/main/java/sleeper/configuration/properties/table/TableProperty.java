@@ -247,6 +247,12 @@ public interface TableProperty extends SleeperProperty {
             .description("If set, the transaction log state store will load the latest snapshot from the snapshot store when created.")
             .propertyGroup(TablePropertyGroup.METADATA)
             .build();
+    TableProperty TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS = Index.propertyBuilder("sleeper.table.metadata.transactionlog.snapshot.expiry.days")
+            .description("The length of time transaction log snapshots remain in the snapshot store before being deleted.")
+            .defaultValue("5")
+            .validationPredicate(Utils::isPositiveInteger)
+            .propertyGroup(TablePropertyGroup.METADATA)
+            .build();
     TableProperty BULK_IMPORT_EMR_INSTANCE_ARCHITECTURE = Index.propertyBuilder("sleeper.table.bulk.import.emr.instance.architecture")
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_INSTANCE_ARCHITECTURE)
             .description("(Non-persistent EMR mode only) Which architecture to be used for EC2 instance types " +

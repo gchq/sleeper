@@ -31,6 +31,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +42,7 @@ import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME;
+import static sleeper.configuration.properties.table.TableProperty.TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createNumberAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getLongAttribute;
@@ -64,6 +66,7 @@ public class DynamoDBTransactionLogSnapshotStore {
     private final String latestSnapshotsTable;
     private final String sleeperTableId;
     private final AmazonDynamoDB dynamo;
+    private final Duration expiryInDays;
     private final Supplier<Instant> timeSupplier;
 
     public DynamoDBTransactionLogSnapshotStore(InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamo) {
@@ -75,6 +78,7 @@ public class DynamoDBTransactionLogSnapshotStore {
         this.latestSnapshotsTable = instanceProperties.get(TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME);
         this.sleeperTableId = tableProperties.get(TableProperty.TABLE_ID);
         this.dynamo = dynamo;
+        this.expiryInDays = Duration.ofDays(tableProperties.getLong(TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS));
         this.timeSupplier = timeSupplier;
     }
 
@@ -174,6 +178,32 @@ public class DynamoDBTransactionLogSnapshotStore {
         } else {
             return new LatestSnapshots(null, null);
         }
+    }
+
+    public void deleteSnapshots(Instant time) {
+        long expiryDate = time.toEpochMilli() - expiryInDays.toMillis();
+        deleteSnapshotsBefore(SnapshotType.FILES, expiryDate);
+        deleteSnapshotsBefore(SnapshotType.PARTITIONS, expiryDate);
+    }
+
+    private void deleteSnapshotsBefore(SnapshotType type, long time) {
+        streamPagedItems(dynamo, new QueryRequest()
+                .withTableName(allSnapshotsTable)
+                .withKeyConditionExpression("#TableIdAndType = :table_id_and_type")
+                .withFilterExpression("#UpdateTime < :expiry_time")
+                .withExpressionAttributeNames(Map.of(
+                        "#TableIdAndType", TABLE_ID_AND_SNAPSHOT_TYPE,
+                        "#UpdateTime", UPDATE_TIME))
+                .withExpressionAttributeValues(new DynamoDBRecordBuilder()
+                        .string(":table_id_and_type", tableAndType(sleeperTableId, type))
+                        .number(":expiry_time", time)
+                        .build()))
+                .forEach(item -> {
+                    System.out.println(item);
+                    dynamo.deleteItem(allSnapshotsTable, Map.of(
+                            TABLE_ID_AND_SNAPSHOT_TYPE, item.get(TABLE_ID_AND_SNAPSHOT_TYPE),
+                            TRANSACTION_NUMBER, item.get(TRANSACTION_NUMBER)));
+                });
     }
 
     private static LatestSnapshots getLatestSnapshotsFromItem(Map<String, AttributeValue> item) {

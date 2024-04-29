@@ -33,6 +33,8 @@ import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.Lat
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.time.Instant;
+import java.util.function.Supplier;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_FILES_TABLENAME;
@@ -51,25 +53,31 @@ public class TransactionLogSnapshotCreator {
     public TransactionLogSnapshotCreator(
             InstanceProperties instanceProperties, TableProperties tableProperties,
             AmazonS3 s3Client, AmazonDynamoDB dynamoDB, Configuration configuration) {
+        this(instanceProperties, tableProperties, s3Client, dynamoDB, configuration, Instant::now);
+    }
+
+    public TransactionLogSnapshotCreator(
+            InstanceProperties instanceProperties, TableProperties tableProperties,
+            AmazonS3 s3Client, AmazonDynamoDB dynamoDB, Configuration configuration, Supplier<Instant> timeSupplier) {
         this(instanceProperties, tableProperties,
                 new DynamoDBTransactionLogStore(instanceProperties.get(TRANSACTION_LOG_FILES_TABLENAME),
                         instanceProperties, tableProperties, dynamoDB, s3Client),
                 new DynamoDBTransactionLogStore(instanceProperties.get(TRANSACTION_LOG_PARTITIONS_TABLENAME),
                         instanceProperties, tableProperties, dynamoDB, s3Client),
-                dynamoDB, configuration);
+                dynamoDB, configuration, timeSupplier);
 
     }
 
     public TransactionLogSnapshotCreator(
             InstanceProperties instanceProperties, TableProperties tableProperties,
             TransactionLogStore filesLogStore, TransactionLogStore partitionsLogStore,
-            AmazonDynamoDB dynamoDB, Configuration configuration) {
+            AmazonDynamoDB dynamoDB, Configuration configuration, Supplier<Instant> timeSupplier) {
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
         this.filesLogStore = filesLogStore;
         this.partitionsLogStore = partitionsLogStore;
         this.snapshotSerDe = new TransactionLogSnapshotSerDe(tableProperties.getSchema(), configuration);
-        this.snapshotStore = new DynamoDBTransactionLogSnapshotStore(instanceProperties, tableProperties, dynamoDB);
+        this.snapshotStore = new DynamoDBTransactionLogSnapshotStore(instanceProperties, tableProperties, dynamoDB, timeSupplier);
     }
 
     public void createSnapshot() {

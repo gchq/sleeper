@@ -56,6 +56,8 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
     private Path tempDir;
     private final Schema schema = schemaWithKey("key", new LongType());
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+    private final TransactionLogStore partitionsStore = new InMemoryTransactionLogStore();
+    private final TransactionLogStore filesStore = new InMemoryTransactionLogStore();
 
     @Nested
     @DisplayName("Handle large transactions")
@@ -111,9 +113,6 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
     @Nested
     @DisplayName("Load latest snapshots")
     class LoadLatestSnapshots {
-        private final TransactionLogStore partitionsStore = new InMemoryTransactionLogStore();
-        private final TransactionLogStore filesStore = new InMemoryTransactionLogStore();
-
         @Test
         void shouldLoadLatestSnapshotsWhenCreatingStateStore() throws Exception {
             // Given
@@ -255,7 +254,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
 
         private void createSnapshot() {
             new TransactionLogSnapshotCreator(
-                    instanceProperties, tableProperties, filesStore, partitionsStore, dynamoDBClient, configuration)
+                    instanceProperties, tableProperties, filesStore, partitionsStore, dynamoDBClient, configuration, () -> DEFAULT_UPDATE_TIME)
                     .createSnapshot();
         }
 
