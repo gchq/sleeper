@@ -192,6 +192,6 @@ public class TransactionLogSnapshotCreator {
     }
 
     public interface SnapshotSaver {
-        void save(TransactionLogSnapshot snapshot) throws DuplicateSnapshotException, StateStoreException;
+        void save(TransactionLogSnapshot snapshot) throws StateStoreException;
     }
 }
