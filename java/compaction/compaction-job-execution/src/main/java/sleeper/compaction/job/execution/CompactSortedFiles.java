@@ -211,6 +211,10 @@ public class CompactSortedFiles implements CompactionTask.CompactionRunner {
                 .countApproximate(false)
                 .onlyContainsDataForThisPartition(true)
                 .build();
+
+        // Compaction jobs are sent for execution before updating the state store to assign the input files to the job.
+        // Sometimes the compaction can finish before the job assignment is finished. We wait for the job assignment
+        // rather than immediately failing the job run.
         FileReferenceNotAssignedToJobException failure = null;
         for (int attempts = 0; attempts < jobAssignmentWaitAttempts; attempts++) {
             jobAssignmentWaitBackoff.waitBeforeAttempt(attempts);
