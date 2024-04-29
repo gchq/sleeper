@@ -219,8 +219,8 @@ public class CompactSortedFiles implements CompactionTask.CompactionRunner {
                 LOGGER.debug("Updated file references in state store");
                 return;
             } catch (FileReferenceNotAssignedToJobException e) {
-                LOGGER.warn("Job not yet assigned to input files, {} attempts of {}: {}",
-                        attempts, jobAssignmentWaitAttempts, e.getMessage());
+                LOGGER.warn("Job not yet assigned to input files on attempt {} of {}: {}",
+                        attempts + 1, jobAssignmentWaitAttempts, e.getMessage());
                 failure = e;
             }
         }
