@@ -93,7 +93,7 @@ public class ParallelCompactionsIT {
                         .isEqualTo(10_000_000))
                 .allMatch(file -> file.onlyContainsDataForThisPartition() && !file.isCountApproximate(),
                         "only contains data for one partition")
-                .allMatch(file -> file.getJobId() != null,
+                .allMatch(file -> file.getJobId() == null,
                         "not assigned to any job")
                 .allMatch(file -> file.getNumberOfRecords() > 400 && file.getNumberOfRecords() < 550,
                         "contains an even distribution of records for the partition");
