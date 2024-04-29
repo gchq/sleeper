@@ -180,8 +180,8 @@ public class DynamoDBTransactionLogSnapshotStore {
         }
     }
 
-    public void deleteSnapshots(Instant time) {
-        long expiryDate = time.toEpochMilli() - expiryInDays.toMillis();
+    public void deleteSnapshots() {
+        long expiryDate = timeSupplier.get().toEpochMilli() - expiryInDays.toMillis();
         LatestSnapshots latestSnapshots = getLatestSnapshots();
         deleteSnapshotsBefore(latestSnapshots.getFilesTransactionNumber(), SnapshotType.FILES, expiryDate);
         deleteSnapshotsBefore(latestSnapshots.getPartitionsTransactionNumber(), SnapshotType.PARTITIONS, expiryDate);
