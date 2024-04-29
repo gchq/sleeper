@@ -25,8 +25,6 @@ import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 
 import java.io.IOException;
 
-import static sleeper.configuration.properties.table.TableProperty.TRANSACTION_LOG_LOAD_LATEST_SNAPSHOTS;
-
 public class DynamoDBTransactionLogStateStore {
     public static final String TABLE_ID = "TABLE_ID";
     public static final String TRANSACTION_NUMBER = "TRANSACTION_NUMBER";
@@ -42,9 +40,7 @@ public class DynamoDBTransactionLogStateStore {
     public static TransactionLogStateStore.Builder builderFrom(
             InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamoDB, AmazonS3 s3, Configuration configuration) {
         TransactionLogStateStore.Builder builder = DynamoDBTransactionLogStateStoreNoShapshots.builderFrom(instanceProperties, tableProperties, dynamoDB, s3);
-        if (tableProperties.getBoolean(TRANSACTION_LOG_LOAD_LATEST_SNAPSHOTS)) {
-            loadLatestSnapshots(builder, instanceProperties, tableProperties, dynamoDB, configuration);
-        }
+        loadLatestSnapshots(builder, instanceProperties, tableProperties, dynamoDB, configuration);
         return builder;
     }
 
