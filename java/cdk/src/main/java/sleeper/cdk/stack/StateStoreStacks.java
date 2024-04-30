@@ -32,9 +32,9 @@ public final class StateStoreStacks {
         this.s3 = s3;
         this.transactionLog = transactionLog;
         grantReadPartitionsReadWriteActiveFiles(policiesStack.getDirectIngestPolicy());
-        grantReadActiveFilesAndPartitions(policiesStack.getQueryPolicy());
-        grantReadActiveFilesAndPartitions(policiesStack.getReportingPolicy());
-        grantReadWritePartitions(policiesStack.getEditTablesPolicy());
+        grantReadActiveFilesAndPartitions(policiesStack.getQueryPolicyForGrants());
+        grantReadActiveFilesAndPartitions(policiesStack.getReportingPolicyForGrants());
+        grantReadWritePartitions(policiesStack.getEditTablesPolicyForGrants());
     }
 
     public void grantReadActiveFilesAndPartitions(IGrantable grantee) {

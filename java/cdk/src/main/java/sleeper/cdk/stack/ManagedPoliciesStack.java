@@ -18,11 +18,8 @@ package sleeper.cdk.stack;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.NestedStack;
-import software.amazon.awscdk.services.iam.AccountRootPrincipal;
-import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
-import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.iam.Role;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.s3.Bucket;
@@ -44,73 +41,46 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.function.Predicate.not;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.ADMIN_ROLE_ARN;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_ROLE;
 
 public class ManagedPoliciesStack extends NestedStack {
 
+    private final InstanceProperties instanceProperties;
     private final ManagedPolicy directIngestPolicy;
     private final ManagedPolicy ingestByQueuePolicy;
     private final ManagedPolicy queryPolicy;
     private final ManagedPolicy editTablesPolicy;
     private final ManagedPolicy reportingPolicy;
-    private final ManagedPolicy invokeSchedulesPolicy;
-    private final ManagedPolicy invokeCompactionPolicy;
-    private final ManagedPolicy purgeQueuesPolicy;
     private final ManagedPolicy readIngestSourcesPolicy;
+    private ManagedPolicy purgeQueuesPolicy;
+    private ManagedPolicy invokeCompactionPolicy;
+    private ManagedPolicy invokeSchedulesPolicy;
 
     public ManagedPoliciesStack(Construct scope, String id, InstanceProperties instanceProperties) {
         super(scope, id);
+        this.instanceProperties = instanceProperties;
 
-        directIngestPolicy = new ManagedPolicy(this, "DirectIngestPolicy");
-        ingestByQueuePolicy = new ManagedPolicy(this, "IngestByQueuePolicy");
+        directIngestPolicy = createManagedPolicy("DirectIngestPolicy");
+        ingestByQueuePolicy = createManagedPolicy("IngestByQueuePolicy");
         addRoleReferences(this, instanceProperties, INGEST_SOURCE_ROLE, "IngestSourceRole")
                 .forEach(role -> {
                     directIngestPolicy.attachToRole(role);
                     ingestByQueuePolicy.attachToRole(role);
                 });
 
-        queryPolicy = new ManagedPolicy(this, "QueryPolicy");
-        editTablesPolicy = new ManagedPolicy(this, "EditTablesPolicy");
-        reportingPolicy = new ManagedPolicy(this, "ReportingPolicy");
-        invokeSchedulesPolicy = new ManagedPolicy(this, "InvokeSchedulesPolicy");
-        invokeCompactionPolicy = new ManagedPolicy(this, "InvokeCompactionPolicy");
-        purgeQueuesPolicy = new ManagedPolicy(this, "PurgeQueuesPolicy");
+        queryPolicy = createManagedPolicy("QueryPolicy");
+        editTablesPolicy = createManagedPolicy("EditTablesPolicy");
+        reportingPolicy = createManagedPolicy("ReportingPolicy");
 
         List<IBucket> sourceBuckets = addIngestSourceBucketReferences(this, instanceProperties);
         if (sourceBuckets.isEmpty()) { // CDK doesn't allow a managed policy without any grants
             readIngestSourcesPolicy = null;
         } else {
-            readIngestSourcesPolicy = new ManagedPolicy(this, "ReadIngestSourcesPolicy");
+            readIngestSourcesPolicy = createManagedPolicy("ReadIngestSourcesPolicy");
             sourceBuckets.forEach(bucket -> bucket.grantRead(readIngestSourcesPolicy));
         }
-
-        Role adminRole = Role.Builder.create(this, "AdminRole")
-                .assumedBy(new AccountRootPrincipal())
-                .roleName("sleeper-admin-" + instanceProperties.get(ID).toLowerCase(Locale.ROOT))
-                .build();
-        Stream.of(directIngestPolicy, queryPolicy, editTablesPolicy, reportingPolicy, invokeSchedulesPolicy, invokeCompactionPolicy, purgeQueuesPolicy)
-                .forEach(policy -> policy.attachToRole(adminRole));
-        instanceProperties.set(ADMIN_ROLE_ARN, adminRole.getRoleArn());
-
-        // Allow access to table metrics
-        reportingPolicy.addStatements(PolicyStatement.Builder.create()
-                .effect(Effect.ALLOW)
-                .actions(List.of("cloudwatch:GetMetricData"))
-                .resources(List.of("*"))
-                .build());
-
-        // Allow running compaction tasks
-        invokeCompactionPolicy.addStatements(PolicyStatement.Builder.create()
-                .effect(Effect.ALLOW)
-                .actions(List.of("ecs:DescribeClusters", "ecs:RunTask", "iam:PassRole",
-                        "ecs:DescribeContainerInstances", "ecs:DescribeTasks", "ecs:ListContainerInstances",
-                        "autoscaling:SetDesiredCapacity", "autoscaling:DescribeAutoScalingGroups"))
-                .resources(List.of("*"))
-                .build());
-        adminRole.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonECSTaskExecutionRolePolicy"));
     }
 
     public ManagedPolicy getDirectIngestPolicy() {
@@ -121,27 +91,39 @@ public class ManagedPoliciesStack extends NestedStack {
         return ingestByQueuePolicy;
     }
 
-    public ManagedPolicy getQueryPolicy() {
+    public ManagedPolicy getQueryPolicyForGrants() {
         return queryPolicy;
     }
 
-    public ManagedPolicy getEditTablesPolicy() {
+    public ManagedPolicy getEditTablesPolicyForGrants() {
         return editTablesPolicy;
     }
 
-    public ManagedPolicy getReportingPolicy() {
+    public ManagedPolicy getReportingPolicyForGrants() {
         return reportingPolicy;
     }
 
-    public ManagedPolicy getInvokeCompactionPolicy() {
-        return invokeCompactionPolicy;
-    }
-
-    public ManagedPolicy getPurgeQueuesPolicy() {
+    public ManagedPolicy getPurgeQueuesPolicyForGrants() {
+        // Avoid creating empty policy when we're not deploying any queues
+        if (purgeQueuesPolicy == null) {
+            purgeQueuesPolicy = createManagedPolicy("PurgeQueuesPolicy");
+        }
         return purgeQueuesPolicy;
     }
 
+    public ManagedPolicy getInvokeCompactionPolicyForGrants() {
+        // Avoid creating empty policy when we're not deploying compaction stack
+        if (invokeCompactionPolicy == null) {
+            invokeCompactionPolicy = createManagedPolicy("InvokeCompactionPolicy");
+        }
+        return invokeCompactionPolicy;
+    }
+
     public void grantInvokeScheduled(IFunction function) {
+        // Avoid creating empty policy when we're not deploying any scheduled rules
+        if (invokeSchedulesPolicy == null) {
+            invokeSchedulesPolicy = createManagedPolicy("InvokeSchedulesPolicy");
+        }
         Utils.grantInvokeOnPolicy(function, invokeSchedulesPolicy);
     }
 
@@ -159,6 +141,19 @@ public class ManagedPoliciesStack extends NestedStack {
         if (readIngestSourcesPolicy != null) {
             readIngestSourcesPolicy.attachToRole(Objects.requireNonNull(role));
         }
+    }
+
+    Stream<ManagedPolicy> instanceAdminPolicies() {
+        return Stream.of(
+                ingestPolicy, queryPolicy, editTablesPolicy, reportingPolicy,
+                purgeQueuesPolicy, invokeCompactionPolicy, invokeSchedulesPolicy)
+                .filter(policy -> policy != null);
+    }
+
+    private ManagedPolicy createManagedPolicy(String id) {
+        return ManagedPolicy.Builder.create(this, id)
+                .managedPolicyName("sleeper-" + instanceProperties.get(ID) + "-" + id)
+                .build();
     }
 
     // WARNING: When assigning grants to these roles, the ID of the role reference is incorrectly used as the name of

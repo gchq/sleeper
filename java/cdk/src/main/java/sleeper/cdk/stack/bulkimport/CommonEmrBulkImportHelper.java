@@ -98,7 +98,7 @@ public class CommonEmrBulkImportHelper {
         instanceProperties.set(jobQueueUrl, emrBulkImportJobQueue.getQueueUrl());
         instanceProperties.set(jobQueueArn, emrBulkImportJobQueue.getQueueArn());
         emrBulkImportJobQueue.grantSendMessages(coreStacks.getIngestByQueuePolicy());
-        emrBulkImportJobQueue.grantPurge(coreStacks.getPurgeQueuesPolicy());
+        emrBulkImportJobQueue.grantPurge(coreStacks.getPurgeQueuesPolicyForGrants());
 
         return emrBulkImportJobQueue;
     }

@@ -105,9 +105,9 @@ public final class DynamoDBIngestStatusStoreResources implements IngestStatusSto
                 .build();
 
         grantWriteJobEvent(coreStacks.getDirectIngestPolicy());
-        updatesTable.grantReadData(coreStacks.getReportingPolicy());
-        jobsTable.grantReadData(coreStacks.getReportingPolicy());
-        tasksTable.grantReadData(coreStacks.getReportingPolicy());
+        updatesTable.grantReadData(coreStacks.getReportingPolicyForGrants());
+        jobsTable.grantReadData(coreStacks.getReportingPolicyForGrants());
+        tasksTable.grantReadData(coreStacks.getReportingPolicyForGrants());
     }
 
     @Override

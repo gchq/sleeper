@@ -124,12 +124,12 @@ public class CoreStacks {
         return policiesStack.getIngestByQueuePolicy();
     }
 
-    public IGrantable getQueryPolicy() {
-        return policiesStack.getQueryPolicy();
+    public IGrantable getQueryPolicyForGrants() {
+        return policiesStack.getQueryPolicyForGrants();
     }
 
-    public IGrantable getReportingPolicy() {
-        return policiesStack.getReportingPolicy();
+    public ManagedPolicy getReportingPolicyForGrants() {
+        return policiesStack.getReportingPolicyForGrants();
     }
 
     public void grantInvokeScheduled(IFunction function) {
@@ -140,11 +140,11 @@ public class CoreStacks {
         policiesStack.grantInvokeScheduled(triggerFunction, invokeQueue);
     }
 
-    public ManagedPolicy getInvokeCompactionPolicy() {
-        return policiesStack.getInvokeCompactionPolicy();
+    public ManagedPolicy getInvokeCompactionPolicyForGrants() {
+        return policiesStack.getInvokeCompactionPolicyForGrants();
     }
 
-    public IGrantable getPurgeQueuesPolicy() {
-        return policiesStack.getPurgeQueuesPolicy();
+    public IGrantable getPurgeQueuesPolicyForGrants() {
+        return policiesStack.getPurgeQueuesPolicyForGrants();
     }
 }

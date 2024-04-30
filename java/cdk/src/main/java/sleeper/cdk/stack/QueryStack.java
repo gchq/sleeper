@@ -218,9 +218,9 @@ public class QueryStack extends NestedStack {
 
         attachPolicy(lambda, "LeafPartition");
         setPermissionsForLambda(coreStacks, jarsBucket, lambda, queryTrackingTable, leafPartitionQueryQueue, queryResultsQueue, queryResultsBucket);
-        queryResultsQueue.grantConsumeMessages(coreStacks.getQueryPolicy());
-        queryResultsBucket.grantReadWrite(coreStacks.getQueryPolicy());
-        queryTrackingTable.grantReadData(coreStacks.getQueryPolicy());
+        queryResultsQueue.grantConsumeMessages(coreStacks.getQueryPolicyForGrants());
+        queryResultsBucket.grantReadWrite(coreStacks.getQueryPolicyForGrants());
+        queryTrackingTable.grantReadData(coreStacks.getQueryPolicyForGrants());
 
         SqsEventSourceProps eventSourceProps = SqsEventSourceProps.builder()
                 .batchSize(1)

@@ -93,7 +93,7 @@ public final class TableIndexStack extends NestedStack {
 
         grantRead(policiesStack.getDirectIngestPolicy());
         grantRead(policiesStack.getIngestByQueuePolicy());
-        grantReadWrite(policiesStack.getEditTablesPolicy());
+        grantReadWrite(policiesStack.getEditTablesPolicyForGrants());
     }
 
     public void grantRead(IGrantable grantee) {
