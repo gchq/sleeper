@@ -51,7 +51,8 @@ import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SO
 
 public class ManagedPoliciesStack extends NestedStack {
 
-    private final ManagedPolicy ingestPolicy;
+    private final ManagedPolicy directIngestPolicy;
+    private final ManagedPolicy ingestByQueuePolicy;
     private final ManagedPolicy queryPolicy;
     private final ManagedPolicy editTablesPolicy;
     private final ManagedPolicy reportingPolicy;
@@ -63,9 +64,13 @@ public class ManagedPoliciesStack extends NestedStack {
     public ManagedPoliciesStack(Construct scope, String id, InstanceProperties instanceProperties) {
         super(scope, id);
 
-        ingestPolicy = new ManagedPolicy(this, "IngestPolicy");
+        directIngestPolicy = new ManagedPolicy(this, "DirectIngestPolicy");
+        ingestByQueuePolicy = new ManagedPolicy(this, "IngestByQueuePolicy");
         addRoleReferences(this, instanceProperties, INGEST_SOURCE_ROLE, "IngestSourceRole")
-                .forEach(ingestPolicy::attachToRole);
+                .forEach(role -> {
+                    directIngestPolicy.attachToRole(role);
+                    ingestByQueuePolicy.attachToRole(role);
+                });
 
         queryPolicy = new ManagedPolicy(this, "QueryPolicy");
         editTablesPolicy = new ManagedPolicy(this, "EditTablesPolicy");
@@ -86,7 +91,7 @@ public class ManagedPoliciesStack extends NestedStack {
                 .assumedBy(new AccountRootPrincipal())
                 .roleName("sleeper-admin-" + instanceProperties.get(ID).toLowerCase(Locale.ROOT))
                 .build();
-        Stream.of(ingestPolicy, queryPolicy, editTablesPolicy, reportingPolicy, invokeSchedulesPolicy, invokeCompactionPolicy, purgeQueuesPolicy)
+        Stream.of(directIngestPolicy, queryPolicy, editTablesPolicy, reportingPolicy, invokeSchedulesPolicy, invokeCompactionPolicy, purgeQueuesPolicy)
                 .forEach(policy -> policy.attachToRole(adminRole));
         instanceProperties.set(ADMIN_ROLE_ARN, adminRole.getRoleArn());
 
@@ -108,8 +113,12 @@ public class ManagedPoliciesStack extends NestedStack {
         adminRole.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonECSTaskExecutionRolePolicy"));
     }
 
-    public ManagedPolicy getIngestPolicy() {
-        return ingestPolicy;
+    public ManagedPolicy getDirectIngestPolicy() {
+        return directIngestPolicy;
+    }
+
+    public ManagedPolicy getIngestByQueuePolicy() {
+        return ingestByQueuePolicy;
     }
 
     public ManagedPolicy getQueryPolicy() {
