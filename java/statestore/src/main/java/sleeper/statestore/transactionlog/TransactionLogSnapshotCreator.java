@@ -15,6 +15,8 @@
  */
 package sleeper.statestore.transactionlog;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.s3.AmazonS3;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -34,6 +36,8 @@ import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.Lat
 import java.io.IOException;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_FILES_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_PARTITIONS_TABLENAME;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 
 public class TransactionLogSnapshotCreator {
@@ -46,6 +50,22 @@ public class TransactionLogSnapshotCreator {
     private final TransactionLogSnapshotSerDe snapshotSerDe;
     private final LatestSnapshotsLoader latestSnapshotsLoader;
     private final SnapshotSaver snapshotSaver;
+
+    public static TransactionLogSnapshotCreator from(
+            InstanceProperties instanceProperties, TableProperties tableProperties,
+            AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, Configuration configuration) {
+        TransactionLogStore fileTransactionStore = new DynamoDBTransactionLogStore(
+                instanceProperties.get(TRANSACTION_LOG_FILES_TABLENAME),
+                instanceProperties, tableProperties, dynamoDBClient, s3Client);
+        TransactionLogStore partitionTransactionStore = new DynamoDBTransactionLogStore(
+                instanceProperties.get(TRANSACTION_LOG_PARTITIONS_TABLENAME),
+                instanceProperties, tableProperties, dynamoDBClient, s3Client);
+        DynamoDBTransactionLogSnapshotStore snapshotStore = new DynamoDBTransactionLogSnapshotStore(
+                instanceProperties, tableProperties, dynamoDBClient);
+        return new TransactionLogSnapshotCreator(instanceProperties, tableProperties,
+                fileTransactionStore, partitionTransactionStore, configuration,
+                snapshotStore::getLatestSnapshots, snapshotStore::saveSnapshot);
+    }
 
     public TransactionLogSnapshotCreator(
             InstanceProperties instanceProperties, TableProperties tableProperties,
