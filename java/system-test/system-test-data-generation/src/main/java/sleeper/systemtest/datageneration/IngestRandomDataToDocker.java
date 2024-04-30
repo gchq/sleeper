@@ -39,7 +39,7 @@ import java.io.IOException;
 import java.net.URI;
 
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_WRITER;
+import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_INGEST;
 
 public class IngestRandomDataToDocker {
     private final InstanceProperties instanceProperties;
@@ -60,7 +60,7 @@ public class IngestRandomDataToDocker {
 
     private void run() throws IOException {
         SystemTestProperties systemTestProperties = new SystemTestProperties();
-        systemTestProperties.setNumber(NUMBER_OF_RECORDS_PER_WRITER, numberOfRecords);
+        systemTestProperties.setNumber(NUMBER_OF_RECORDS_PER_INGEST, numberOfRecords);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3,
                 dynamoDB, HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
         WriteRandomDataDirect.writeWithIngestFactory(

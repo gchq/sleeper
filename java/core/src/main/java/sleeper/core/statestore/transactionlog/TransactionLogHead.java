@@ -55,9 +55,9 @@ class TransactionLogHead<T> {
         LOGGER.info("Adding transaction of type {} to table {}",
                 transaction.getClass().getSimpleName(), sleeperTable);
         Exception failure = new IllegalArgumentException("No attempts made");
-        for (int attempt = 0; attempt < maxAddTransactionAttempts; attempt++) {
+        for (int attempts = 0; attempts < maxAddTransactionAttempts; attempts++) {
             try {
-                retryBackoff.waitBeforeAttempt(attempt);
+                retryBackoff.waitBeforeAttempt(attempts);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new StateStoreException("Interrupted while waiting to retry", e);
@@ -68,20 +68,22 @@ class TransactionLogHead<T> {
             try {
                 logStore.addTransaction(new TransactionLogEntry(transactionNumber, updateTime, transaction));
             } catch (Exception e) {
-                LOGGER.warn("Failed adding transaction after {} retries for table {}, failure: {}",
-                        attempt, sleeperTable, e);
+                LOGGER.warn("Failed adding transaction on attempt {} of {} for table {}, failure: {}",
+                        attempts + 1, maxAddTransactionAttempts, sleeperTable, e.toString());
                 failure = e;
                 continue;
             }
             transaction.apply(state, updateTime);
             lastTransactionNumber = transactionNumber;
             failure = null;
-            LOGGER.info("Added transaction of type {} to table {} with {} retries, took {}",
-                    transaction.getClass().getSimpleName(), sleeperTable, attempt,
+            LOGGER.info("Added transaction of type {} to table {} with {} attempts, took {}",
+                    transaction.getClass().getSimpleName(), sleeperTable, attempts + 1,
                     LoggedDuration.withShortOutput(startTime, Instant.now()));
             break;
         }
         if (failure != null) {
+            LOGGER.error("Failed adding transaction with {} attempts, took {}",
+                    maxAddTransactionAttempts, LoggedDuration.withShortOutput(startTime, Instant.now()));
             throw new StateStoreException("Failed adding transaction", failure);
         }
     }

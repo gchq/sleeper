@@ -99,8 +99,11 @@ public interface SystemTestProperty extends InstanceProperty {
     SystemTestProperty NUMBER_OF_WRITERS = Index.propertyBuilder("sleeper.systemtest.writers")
             .description("The number of containers that write random data")
             .defaultValue("1").validationPredicate(Utils::isPositiveInteger).build();
-    SystemTestProperty NUMBER_OF_RECORDS_PER_WRITER = Index.propertyBuilder("sleeper.systemtest.records.per.writer")
-            .description("The number of random records that each container should write")
+    SystemTestProperty NUMBER_OF_INGESTS_PER_WRITER = Index.propertyBuilder("sleeper.systemtest.ingests.per.writer")
+            .description("The number of ingests to run for each writer")
+            .defaultValue("1").validationPredicate(Utils::isPositiveInteger).build();
+    SystemTestProperty NUMBER_OF_RECORDS_PER_INGEST = Index.propertyBuilder("sleeper.systemtest.records.per.ingest")
+            .description("The number of random records that each ingest should write")
             .defaultValue("100").validationPredicate(Utils::isPositiveInteger).build();
     SystemTestProperty MIN_RANDOM_INT = Index.propertyBuilder("sleeper.systemtest.random.int.min")
             .description("The minimum value of integers generated randomly during random record generation")
