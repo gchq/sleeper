@@ -188,7 +188,7 @@ public class DynamoDBTransactionLogSnapshotStoreIT {
     void shouldRetrieveLatestSnapshotsWhenNoSnapshotsArePresent() throws Exception {
         // Given / When / Then
         assertThat(store.getLatestSnapshots()).isEqualTo(
-                new LatestSnapshots(null, null));
+                LatestSnapshots.empty());
     }
 
     @Test

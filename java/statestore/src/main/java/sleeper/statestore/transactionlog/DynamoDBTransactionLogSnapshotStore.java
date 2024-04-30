@@ -173,7 +173,7 @@ public class DynamoDBTransactionLogSnapshotStore {
         if (result.getCount() > 0) {
             return getLatestSnapshotsFromItem(result.getItems().get(0));
         } else {
-            return new LatestSnapshots(null, null);
+            return LatestSnapshots.empty();
         }
     }
 
@@ -203,25 +203,29 @@ public class DynamoDBTransactionLogSnapshotStore {
     }
 
     public static class LatestSnapshots {
-        private final Optional<TransactionLogSnapshot> filesSnapshotOpt;
-        private final Optional<TransactionLogSnapshot> partitionsSnapshotOpt;
+        private final TransactionLogSnapshot filesSnapshot;
+        private final TransactionLogSnapshot partitionsSnapshot;
+
+        public static LatestSnapshots empty() {
+            return new LatestSnapshots(null, null);
+        }
 
         public LatestSnapshots(TransactionLogSnapshot filesSnapshot, TransactionLogSnapshot partitionsSnapshot) {
-            this.filesSnapshotOpt = Optional.ofNullable(filesSnapshot);
-            this.partitionsSnapshotOpt = Optional.ofNullable(partitionsSnapshot);
+            this.filesSnapshot = filesSnapshot;
+            this.partitionsSnapshot = partitionsSnapshot;
         }
 
         public Optional<TransactionLogSnapshot> getFilesSnapshot() {
-            return filesSnapshotOpt;
+            return Optional.ofNullable(filesSnapshot);
         }
 
         public Optional<TransactionLogSnapshot> getPartitionsSnapshot() {
-            return partitionsSnapshotOpt;
+            return Optional.ofNullable(partitionsSnapshot);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(filesSnapshotOpt, partitionsSnapshotOpt);
+            return Objects.hash(filesSnapshot, partitionsSnapshot);
         }
 
         @Override
@@ -233,12 +237,12 @@ public class DynamoDBTransactionLogSnapshotStore {
                 return false;
             }
             LatestSnapshots other = (LatestSnapshots) obj;
-            return Objects.equals(filesSnapshotOpt, other.filesSnapshotOpt) && Objects.equals(partitionsSnapshotOpt, other.partitionsSnapshotOpt);
+            return Objects.equals(filesSnapshot, other.filesSnapshot) && Objects.equals(partitionsSnapshot, other.partitionsSnapshot);
         }
 
         @Override
         public String toString() {
-            return "LatestSnapshots{filesSnapshotOpt=" + filesSnapshotOpt + ", partitionsSnapshotOpt=" + partitionsSnapshotOpt + "}";
+            return "LatestSnapshots{filesSnapshot=" + filesSnapshot + ", partitionsSnapshot=" + partitionsSnapshot + "}";
         }
 
     }

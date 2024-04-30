@@ -208,6 +208,21 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
     }
 
     @Test
+    void shouldNotCreateSnapshotForTableWithNoTransactions() throws Exception {
+        // Given
+        TableProperties table = createTable("test-table-id-1", "test-table-1");
+
+        // When
+        runSnapshotCreator(table);
+
+        // Then
+        assertThat(snapshotStore(table).getLatestSnapshots())
+                .isEqualTo(LatestSnapshots.empty());
+        assertThat(snapshotStore(table).getFilesSnapshots()).isEmpty();
+        assertThat(snapshotStore(table).getPartitionsSnapshots()).isEmpty();
+    }
+
+    @Test
     void shouldRemoveSnapshotFilesIfDynamoTransactionFailed() throws Exception {
         // Given
         TableProperties table = createTable("test-table-id-1", "test-table-1");
@@ -220,7 +235,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
         assertThatThrownBy(() -> runSnapshotCreator(table, failedUpdate()))
                 .isInstanceOf(RuntimeException.class);
         assertThat(snapshotStore(table).getLatestSnapshots())
-                .isEqualTo(new LatestSnapshots(null, null));
+                .isEqualTo(LatestSnapshots.empty());
         assertThat(Files.exists(filesSnapshotPath(table, 1))).isFalse();
         assertThat(Files.exists(partitionsSnapshotPath(table, 1))).isFalse();
     }
@@ -247,15 +262,11 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
     }
 
     private StateStore createStateStoreWithInMemoryTransactionLog(TableProperties table) {
-        TransactionLogStore fileTransactionStore = new InMemoryTransactionLogStore();
-        TransactionLogStore partitionTransactionStore = new InMemoryTransactionLogStore();
-        fileTransactionStoreByTableId.put(table.get(TABLE_ID), fileTransactionStore);
-        partitionTransactionStoreByTableId.put(table.get(TABLE_ID), partitionTransactionStore);
         StateStore stateStore = TransactionLogStateStore.builder()
                 .sleeperTable(table.getStatus())
                 .schema(table.getSchema())
-                .filesLogStore(fileTransactionStore)
-                .partitionsLogStore(partitionTransactionStore)
+                .filesLogStore(fileTransactionStoreByTableId.get(table.get(TABLE_ID)))
+                .partitionsLogStore(partitionTransactionStoreByTableId.get(table.get(TABLE_ID)))
                 .build();
         stateStore.fixFileUpdateTime(DEFAULT_UPDATE_TIME);
         stateStore.fixPartitionUpdateTime(DEFAULT_UPDATE_TIME);
@@ -271,6 +282,8 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
         tableProperties.set(TABLE_ID, tableId);
         tableProperties.set(TABLE_NAME, tableName);
         tableProperties.set(STATESTORE_CLASSNAME, DynamoDBTransactionLogStateStore.class.getName());
+        fileTransactionStoreByTableId.put(tableId, new InMemoryTransactionLogStore());
+        partitionTransactionStoreByTableId.put(tableId, new InMemoryTransactionLogStore());
         return tableProperties;
     }
 
