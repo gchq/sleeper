@@ -34,6 +34,7 @@ import sleeper.core.table.TableIndex;
 import sleeper.ingest.batcher.FileIngestRequest;
 import sleeper.ingest.batcher.IngestBatcherStore;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
+import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 
 import java.time.Instant;
 import java.util.List;
@@ -59,7 +60,8 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
         this.store = new DynamoDBIngestBatcherStore(dynamoDBClient, instanceProperties, tablePropertiesProvider);
         this.propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
-        this.fileIngestRequestSerDe = new FileIngestRequestSerDe(instanceProperties, new Configuration(),
+        this.fileIngestRequestSerDe = new FileIngestRequestSerDe(instanceProperties,
+                HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties),
                 new DynamoDBTableIndex(instanceProperties, dynamoDBClient));
     }
 

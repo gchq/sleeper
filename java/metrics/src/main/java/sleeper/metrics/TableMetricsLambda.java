@@ -25,7 +25,6 @@ import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.cloudwatchlogs.emf.logger.MetricsLogger;
@@ -43,6 +42,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
+import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreProvider;
 
 import java.time.Instant;
@@ -70,7 +70,8 @@ public class TableMetricsLambda implements RequestHandler<SQSEvent, SQSBatchResp
         String configBucketName = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
         instanceProperties.loadFromS3(s3Client, configBucketName);
         tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
-        stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoClient, new Configuration());
+        stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoClient,
+                HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties));
         propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
     }
 
