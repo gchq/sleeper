@@ -33,10 +33,13 @@ import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStore;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.LatestSnapshots;
+import sleeper.statestore.transactionlog.TransactionLogSnapshotCreator.LatestSnapshotsLoader;
 import sleeper.statestore.transactionlog.TransactionLogSnapshotCreator.SnapshotSaver;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -52,8 +55,8 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
     @TempDir
     private Path tempDir;
     private final Schema schema = schemaWithKey("key", new LongType());
-    private final TransactionLogStore partitionTransactionStore = new InMemoryTransactionLogStore();
-    private final TransactionLogStore fileTransactionStore = new InMemoryTransactionLogStore();
+    private final Map<String, TransactionLogStore> partitionTransactionStoreByTableId = new HashMap<>();
+    private final Map<String, TransactionLogStore> fileTransactionStoreByTableId = new HashMap<>();
 
     @BeforeEach
     public void setup() {
@@ -65,7 +68,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
     void shouldCreateSnapshotsForOneTable() throws Exception {
         // Given
         TableProperties table = createTable("test-table-id-1", "test-table-1");
-        StateStore stateStore = createStateStore(table);
+        StateStore stateStore = createStateStoreWithTransactions(table);
         stateStore.initialise();
         FileReferenceFactory factory = FileReferenceFactory.from(stateStore);
         stateStore.addFile(factory.rootFile(123L));
@@ -88,13 +91,13 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
     void shouldCreateSnapshotsForMultipleTables() throws Exception {
         // Given
         TableProperties table1 = createTable("test-table-id-1", "test-table-1");
-        StateStore stateStore1 = createStateStore(table1);
+        StateStore stateStore1 = createStateStoreWithTransactions(table1);
         stateStore1.initialise();
         FileReferenceFactory factory1 = FileReferenceFactory.from(stateStore1);
         stateStore1.addFile(factory1.rootFile(123L));
 
         TableProperties table2 = createTable("test-table-id-2", "test-table-2");
-        StateStore stateStore2 = createStateStore(table2);
+        StateStore stateStore2 = createStateStoreWithTransactions(table2);
         stateStore2.initialise();
         FileReferenceFactory factory2 = FileReferenceFactory.from(stateStore2);
         stateStore2.addFile(factory2.rootFile(456L));
@@ -123,7 +126,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
                 .splitToNewChildren("root", "L", "R", 123L)
                 .buildTree();
         FileReferenceFactory factory = FileReferenceFactory.from(tree);
-        StateStore stateStore = createStateStore(table);
+        StateStore stateStore = createStateStoreWithTransactions(table);
         stateStore.initialise();
         FileReference file1 = factory.rootFile(123L);
         stateStore.addFile(file1);
@@ -155,7 +158,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
     void shouldSkipCreatingSnapshotsIfStateHasNotUpdatedSinceLastSnapshot() throws Exception {
         // Given
         TableProperties table = createTable("test-table-id-1", "test-table-1");
-        StateStore stateStore = createStateStore(table);
+        StateStore stateStore = createStateStoreWithTransactions(table);
         stateStore.initialise();
         FileReferenceFactory factory = FileReferenceFactory.from(stateStore);
         stateStore.addFile(factory.rootFile(123L));
@@ -175,7 +178,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
     void shouldRemoveSnapshotFilesIfDynamoTransactionFailed() throws Exception {
         // Given
         TableProperties table = createTable("test-table-id-1", "test-table-1");
-        StateStore stateStore = createStateStore(table);
+        StateStore stateStore = createStateStoreWithTransactions(table);
         stateStore.initialise();
         FileReferenceFactory factory = FileReferenceFactory.from(stateStore);
         stateStore.addFile(factory.rootFile(123L));
@@ -190,20 +193,31 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
     }
 
     private void runSnapshotCreator(TableProperties table) {
-        new TransactionLogSnapshotCreator(
-                instanceProperties, table, s3Client, dynamoDBClient, configuration)
-                .createSnapshot();
+        DynamoDBTransactionLogSnapshotStore snapshotStore = snapshotStore(table);
+        runSnapshotCreator(table, snapshotStore::getLatestSnapshots, snapshotStore::saveSnapshot);
     }
 
-    private void runSnapshotCreator(TableProperties table, SnapshotSaver snapshotSaver) {
+    private void runSnapshotCreator(
+            TableProperties table, SnapshotSaver snapshotSaver) {
         DynamoDBTransactionLogSnapshotStore snapshotStore = snapshotStore(table);
+        runSnapshotCreator(table, snapshotStore::getLatestSnapshots, snapshotSaver);
+    }
+
+    private void runSnapshotCreator(
+            TableProperties table, LatestSnapshotsLoader latestSnapshotsLoader, SnapshotSaver snapshotSaver) {
         new TransactionLogSnapshotCreator(
-                instanceProperties, table, s3Client, dynamoDBClient, configuration,
-                snapshotStore::getLatestSnapshots, snapshotSaver)
+                instanceProperties, table,
+                fileTransactionStoreByTableId.get(table.get(TABLE_ID)),
+                partitionTransactionStoreByTableId.get(table.get(TABLE_ID)),
+                configuration, latestSnapshotsLoader, snapshotSaver)
                 .createSnapshot();
     }
 
     private StateStore createStateStoreWithTransactions(TableProperties table) {
+        TransactionLogStore fileTransactionStore = new InMemoryTransactionLogStore();
+        TransactionLogStore partitionTransactionStore = new InMemoryTransactionLogStore();
+        fileTransactionStoreByTableId.put(table.get(TABLE_ID), fileTransactionStore);
+        partitionTransactionStoreByTableId.put(table.get(TABLE_ID), partitionTransactionStore);
         return TransactionLogStateStore.builder()
                 .sleeperTable(table.getStatus())
                 .schema(table.getSchema())
