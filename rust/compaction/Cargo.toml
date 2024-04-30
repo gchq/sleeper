@@ -53,3 +53,4 @@ tokio-test = { version = "0.4.2" } # Doc tests
 env_logger = { version = "0.11.3" }
 chrono = { version = "0.4.26" } # Log helper
 color-eyre = { version = "0.6.3" } # Error handling
+num_cpus = { version = "1.16.0" } # Read CPU count

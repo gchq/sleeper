@@ -1032,6 +1032,7 @@ dependencies = [
  "libc",
  "log",
  "num-format",
+ "num_cpus",
  "object_store",
  "rust_sketch",
  "tokio",
