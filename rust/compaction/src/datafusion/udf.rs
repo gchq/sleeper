@@ -49,7 +49,7 @@ pub(crate) struct SketchUDF {
 
 impl Debug for SketchUDF {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Foo")
+        f.debug_struct("SketchUDF")
             .field("signature", &self.signature)
             .field("invoke_count", &self.invoke_count)
             .field("row_count", &self.row_count)
