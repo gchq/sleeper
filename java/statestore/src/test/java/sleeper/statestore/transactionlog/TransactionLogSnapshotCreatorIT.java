@@ -241,11 +241,12 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
     }
 
     @Test
-    void shouldRemoveSnapshotFilesIfDynamoTransactionFailed() throws Exception {
+    void shouldRemoveFilesSnapshotFileIfDynamoTransactionFailed() throws Exception {
         // Given
         TableProperties table = createTable("test-table-id-1", "test-table-1");
         StateStore stateStore = createStateStoreWithInMemoryTransactionLog(table);
         stateStore.initialise();
+        runSnapshotCreator(table);
         FileReferenceFactory factory = FileReferenceFactory.from(stateStore);
         stateStore.addFile(factory.rootFile(123L));
 
@@ -254,9 +255,23 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
         assertThatThrownBy(() -> runSnapshotCreator(table, failedUpdate(exception)))
                 .isInstanceOf(RuntimeException.class)
                 .hasCause(exception);
-        assertThat(snapshotStore(table).getLatestSnapshots())
-                .isEqualTo(LatestSnapshots.empty());
+        assertThat(snapshotStore(table).getFilesSnapshots()).isEmpty();
         assertThat(Files.exists(filesSnapshotPath(table, 1))).isFalse();
+    }
+
+    @Test
+    void shouldRemovePartitionsSnapshotFileIfDynamoTransactionFailed() throws Exception {
+        // Given
+        TableProperties table = createTable("test-table-id-1", "test-table-1");
+        StateStore stateStore = createStateStoreWithInMemoryTransactionLog(table);
+        stateStore.initialise();
+
+        // When / Then
+        DuplicateSnapshotException exception = new DuplicateSnapshotException("test.parquet", new Exception());
+        assertThatThrownBy(() -> runSnapshotCreator(table, failedUpdate(exception)))
+                .isInstanceOf(RuntimeException.class)
+                .hasCause(exception);
+        assertThat(snapshotStore(table).getPartitionsSnapshots()).isEmpty();
         assertThat(Files.exists(partitionsSnapshotPath(table, 1))).isFalse();
     }
 
