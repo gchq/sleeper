@@ -316,9 +316,6 @@ public class SleeperCdkApp extends Stack {
 
         this.generateProperties();
         addTags(app);
-        System.out.println("====== START POLICY ======");
-        System.out.println(policiesStack.getIngestPolicy().getDocument().toJSON());
-        System.out.println("======  END POLICY  ======");
     }
 
     protected InstanceProperties getInstanceProperties() {
