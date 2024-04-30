@@ -124,7 +124,7 @@ async fn main() -> color_eyre::Result<()> {
         column_truncate_length: 1_048_576,
         stats_truncate_length: 1_048_576,
         compression: "zstd".into(),
-        writer_version: "2.0".into(),
+        writer_version: "v2".into(),
         dict_enc_row_keys: true,
         dict_enc_sort_keys: true,
         dict_enc_values: true,

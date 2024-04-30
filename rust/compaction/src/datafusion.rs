@@ -28,7 +28,10 @@ use datafusion::{
     dataframe::DataFrameWriteOptions,
     error::DataFusionError,
     execution::{
-        config::SessionConfig, context::SessionContext, options::ParquetReadOptions,
+        config::SessionConfig,
+        context::SessionContext,
+        options::ParquetReadOptions,
+        runtime_env::{RuntimeConfig, RuntimeEnv},
         FunctionRegistry,
     },
     logical_expr::ScalarUDF,
@@ -57,6 +60,9 @@ pub async fn compact(
     info!("DataFusion compaction of {input_paths:?}");
     info!("Compaction region {:?}", input_data.region);
     let sf = create_session_cfg(input_data);
+    // let lim = std::env::var("LIM").unwrap().parse::<usize>().unwrap();
+    // let rt = RuntimeConfig::new().with_memory_limit(lim, 0.8f64);
+    // let ctx = SessionContext::new_with_config_rt(sf, Arc::new(RuntimeEnv::new(rt)?));
     let ctx = SessionContext::new_with_config(sf);
 
     // Register some object store from first input file and output file
@@ -268,9 +274,21 @@ fn get_compression(compression: &str) -> String {
         "gzip" => format!("gzip({})", GzipLevel::default().compression_level()),
         "brotli" => format!("brotli({})", BrotliLevel::default().compression_level()),
         "zstd" => format!("zstd({})", ZstdLevel::default().compression_level()),
-        _ => {
-            error!("Unknown compression");
-            unimplemented!()
+        x => {
+            error!("Unknown compression {x}, valid values: uncompressed, snappy, lzo, lz4, gzip, brotli, zstd");
+            unimplemented!("Unknown compression {x}, valid values: uncompressed, snappy, lzo, lz4, gzip, brotli, zstd");
+        }
+    }
+}
+
+/// Convert a Sleeper Parquet version to one `DataFusion` understands.
+fn get_parquet_writer_version(version: &str) -> String {
+    match version {
+        "v1" => "1.0".into(),
+        "v2" => "2.0".into(),
+        x => {
+            error!("Parquet writer version invalid {x}, valid values: v1, v2");
+            unimplemented!("Parquet writer version invalid {x}, valid values: v1, v2");
         }
     }
 }
@@ -284,7 +302,8 @@ fn create_session_cfg(input_data: &CompactionInput) -> SessionConfig {
     sf.options_mut().execution.parquet.max_row_group_size = input_data.max_row_group_size;
     sf.options_mut().execution.parquet.data_pagesize_limit = input_data.max_page_size;
     sf.options_mut().execution.parquet.compression = Some(get_compression(&input_data.compression));
-    sf.options_mut().execution.parquet.writer_version = input_data.writer_version.clone();
+    sf.options_mut().execution.parquet.writer_version =
+        get_parquet_writer_version(&input_data.writer_version);
     sf.options_mut()
         .execution
         .parquet
