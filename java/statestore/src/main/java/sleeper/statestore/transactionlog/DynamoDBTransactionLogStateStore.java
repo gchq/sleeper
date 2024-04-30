@@ -25,29 +25,22 @@ import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 
 import java.io.IOException;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_FILES_TABLENAME;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_PARTITIONS_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.TRANSACTION_LOG_LOAD_LATEST_SNAPSHOTS;
-
-public class DynamoDBTransactionLogStateStore extends TransactionLogStateStore {
+public class DynamoDBTransactionLogStateStore {
     public static final String TABLE_ID = "TABLE_ID";
     public static final String TRANSACTION_NUMBER = "TRANSACTION_NUMBER";
 
-    public DynamoDBTransactionLogStateStore(
+    private DynamoDBTransactionLogStateStore() {
+    }
+
+    public static TransactionLogStateStore create(
             InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamoDB, AmazonS3 s3, Configuration configuration) {
-        super(builderFrom(instanceProperties, tableProperties, dynamoDB, s3, configuration));
+        return builderFrom(instanceProperties, tableProperties, dynamoDB, s3, configuration).build();
     }
 
     public static TransactionLogStateStore.Builder builderFrom(
             InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamoDB, AmazonS3 s3, Configuration configuration) {
-        Builder builder = builder()
-                .sleeperTable(tableProperties.getStatus())
-                .schema(tableProperties.getSchema())
-                .filesLogStore(new DynamoDBTransactionLogStore(instanceProperties.get(TRANSACTION_LOG_FILES_TABLENAME), instanceProperties, tableProperties, dynamoDB, s3))
-                .partitionsLogStore(new DynamoDBTransactionLogStore(instanceProperties.get(TRANSACTION_LOG_PARTITIONS_TABLENAME), instanceProperties, tableProperties, dynamoDB, s3));
-        if (tableProperties.getBoolean(TRANSACTION_LOG_LOAD_LATEST_SNAPSHOTS)) {
-            loadLatestSnapshots(builder, instanceProperties, tableProperties, dynamoDB, configuration);
-        }
+        TransactionLogStateStore.Builder builder = DynamoDBTransactionLogStateStoreNoSnapshots.builderFrom(instanceProperties, tableProperties, dynamoDB, s3);
+        loadLatestSnapshots(builder, instanceProperties, tableProperties, dynamoDB, configuration);
         return builder;
     }
 
