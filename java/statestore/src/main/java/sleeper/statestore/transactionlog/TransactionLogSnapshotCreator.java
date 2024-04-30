@@ -84,6 +84,7 @@ public class TransactionLogSnapshotCreator {
     public void createSnapshot() {
         LOGGER.info("Creating snapshot for table {}", tableProperties.getStatus());
         LatestSnapshots latestSnapshots = latestSnapshotsLoader.load();
+        LOGGER.info("Found latest snapshots: {}", latestSnapshots);
         StateStoreFiles filesState = latestSnapshots.getFilesSnapshot()
                 .map(snapshot -> {
                     try {
@@ -120,13 +121,14 @@ public class TransactionLogSnapshotCreator {
     private void saveFilesSnapshot(StateStoreFiles filesState, long transactionNumberBefore) throws IOException, StateStoreException, DuplicateSnapshotException {
         long transactionNumberAfter = TransactionLogSnapshotUtils.updateFilesState(
                 tableProperties.getStatus(), filesState, filesLogStore, transactionNumberBefore);
-        if (transactionNumberBefore == transactionNumberAfter) {
-            LOGGER.info("No changes detected since last files snapshot with transaction number {}, skipping snapshot creation.",
+        if (transactionNumberBefore >= transactionNumberAfter) {
+            LOGGER.info("No new file transactions found after transaction number {}, skipping snapshot creation.",
                     transactionNumberBefore);
             return;
         }
-        LOGGER.info("Latest transaction number of {} is newer than latest files snapshot with transaction number {}. Creating a new files snapshot from latest transaction.",
+        LOGGER.info("Transaction found with transaction number {} is newer than latest files snapshot transaction number {}.",
                 transactionNumberAfter, transactionNumberBefore);
+        LOGGER.info("Creating a new files snapshot from latest transaction.");
         TransactionLogSnapshot snapshot = TransactionLogSnapshot.forFiles(getBasePath(), transactionNumberAfter);
         snapshotSerDe.saveFiles(snapshot, filesState);
         try {
@@ -143,14 +145,15 @@ public class TransactionLogSnapshotCreator {
     private void savePartitionsSnapshot(StateStorePartitions partitionsState, long transactionNumberBefore) throws IOException, StateStoreException, DuplicateSnapshotException {
         long transactionNumberAfter = TransactionLogSnapshotUtils.updatePartitionsState(
                 tableProperties.getStatus(), partitionsState, partitionsLogStore, transactionNumberBefore);
-        if (transactionNumberBefore == transactionNumberAfter) {
-            LOGGER.info("No changes detected since last partitions snapshot with transaction number {}, skipping snapshot creation.",
+        if (transactionNumberBefore >= transactionNumberAfter) {
+            LOGGER.info("No new partition transactions found after transaction number {}, skipping snapshot creation.",
                     transactionNumberBefore);
             return;
         }
 
-        LOGGER.info("Latest transaction number of {} is newer than latest partitions snapshot with transaction number {}. Creating a new partitions snapshot from latest transaction.",
+        LOGGER.info("Transaction found with transaction number {} is newer than latest partitions snapshot transaction number {}.",
                 transactionNumberAfter, transactionNumberBefore);
+        LOGGER.info("Creating a new partitions snapshot from latest transaction.");
         TransactionLogSnapshot snapshot = TransactionLogSnapshot.forPartitions(getBasePath(), transactionNumberAfter);
         snapshotSerDe.savePartitions(snapshot, partitionsState);
         try {
