@@ -99,30 +99,55 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
     void shouldCreateSnapshotsForMultipleTables() throws Exception {
         // Given
         TableProperties table1 = createTable("test-table-id-1", "test-table-1");
-        StateStore stateStore1 = createStateStoreWithInMemoryTransactionLog(table1);
-        stateStore1.initialise();
-        FileReferenceFactory factory1 = FileReferenceFactory.from(stateStore1);
-        stateStore1.addFile(factory1.rootFile(123L));
+        PartitionTree partitions1 = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "A", "B", 123L)
+                .buildTree();
+        FileReference file1 = FileReferenceFactory.fromUpdatedAt(partitions1, DEFAULT_UPDATE_TIME)
+                .rootFile("file1.parquet", 123L);
+        StateStore inMemoryStateStore1 = createStateStoreWithInMemoryTransactionLog(table1);
+        inMemoryStateStore1.initialise(partitions1.getAllPartitions());
+        inMemoryStateStore1.addFile(file1);
 
         TableProperties table2 = createTable("test-table-id-2", "test-table-2");
-        StateStore stateStore2 = createStateStoreWithInMemoryTransactionLog(table2);
-        stateStore2.initialise();
-        FileReferenceFactory factory2 = FileReferenceFactory.from(stateStore2);
-        stateStore2.addFile(factory2.rootFile(456L));
+        PartitionTree partitions2 = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "C", "D", 123L)
+                .buildTree();
+        FileReference file2 = FileReferenceFactory.fromUpdatedAt(partitions2, DEFAULT_UPDATE_TIME)
+                .rootFile("file2.parquet", 123L);
+        StateStore inMemoryStateStore2 = createStateStoreWithInMemoryTransactionLog(table2);
+        inMemoryStateStore2.initialise(partitions2.getAllPartitions());
+        inMemoryStateStore2.addFile(file2);
 
         // When
         runSnapshotCreator(table1);
         runSnapshotCreator(table2);
 
         // Then
+        StateStore stateStore1 = createStateStore(table1);
+        assertThat(stateStore1.getAllPartitions()).isEqualTo(partitions1.getAllPartitions());
+        assertThat(stateStore1.getFileReferences()).containsExactly(file1);
         assertThat(snapshotStore(table1).getLatestSnapshots())
                 .isEqualTo(new LatestSnapshots(
                         filesSnapshot(table1, 1),
                         partitionsSnapshot(table1, 1)));
+        assertThat(snapshotStore(table1).getFilesSnapshots())
+                .containsExactly(filesSnapshot(table1, 1));
+        assertThat(snapshotStore(table1).getPartitionsSnapshots())
+                .containsExactly(partitionsSnapshot(table1, 1));
+
+        StateStore stateStore2 = createStateStore(table2);
+        assertThat(stateStore2.getAllPartitions()).isEqualTo(partitions2.getAllPartitions());
+        assertThat(stateStore2.getFileReferences()).containsExactly(file2);
         assertThat(snapshotStore(table2).getLatestSnapshots())
                 .isEqualTo(new LatestSnapshots(
                         filesSnapshot(table2, 1),
                         partitionsSnapshot(table2, 1)));
+        assertThat(snapshotStore(table2).getFilesSnapshots())
+                .containsExactly(filesSnapshot(table2, 1));
+        assertThat(snapshotStore(table2).getPartitionsSnapshots())
+                .containsExactly(partitionsSnapshot(table2, 1));
     }
 
     @Test
