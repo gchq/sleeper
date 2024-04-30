@@ -131,7 +131,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
             createSnapshot();
 
             // When
-            StateStore stateStore = stateStore();
+            StateStore stateStore = createStateStore();
 
             // Then
             assertThat(stateStore.getAllPartitions())
@@ -158,7 +158,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
             createSnapshot();
 
             // When
-            StateStore stateStore = stateStore();
+            StateStore stateStore = createStateStore();
 
             // Then
             assertThat(stateStore.getAllPartitions()).isEmpty();
@@ -168,7 +168,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
         @Test
         void shouldExcludePreviousTransactionsWhenLoadingLatestSnapshots() throws Exception {
             // Given
-            StateStore stateStore = stateStore();
+            StateStore stateStore = createStateStore();
             PartitionTree tree1 = new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "A", "B", 123L)
@@ -189,7 +189,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
             createSnapshot();
 
             // When
-            stateStore = stateStore();
+            stateStore = createStateStore();
 
             // Then
             assertThat(stateStore.getAllPartitions())
@@ -209,7 +209,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
             createSnapshot();
 
             // When
-            StateStore stateStore = stateStore();
+            StateStore stateStore = createStateStore();
 
             // Then
             assertThat(stateStore.getAllPartitions())
@@ -233,7 +233,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
             createSnapshot();
 
             // When
-            StateStore stateStore = stateStore();
+            StateStore stateStore = createStateStore();
 
             // Then
             assertThat(stateStore.getAllPartitions()).isEmpty();
@@ -262,13 +262,6 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
 
         private FileReferenceFactory factory(PartitionTree tree) {
             return FileReferenceFactory.fromUpdatedAt(tree, DEFAULT_UPDATE_TIME);
-        }
-
-        private StateStore stateStore() {
-            StateStore stateStore = createStateStore();
-            stateStore.fixFileUpdateTime(DEFAULT_UPDATE_TIME);
-            stateStore.fixPartitionUpdateTime(DEFAULT_UPDATE_TIME);
-            return stateStore;
         }
     }
 
