@@ -29,6 +29,9 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStore;
+import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
+import sleeper.core.statestore.transactionlog.TransactionLogStore;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.LatestSnapshots;
 import sleeper.statestore.transactionlog.TransactionLogSnapshotCreator.SnapshotSaver;
 
@@ -49,6 +52,8 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
     @TempDir
     private Path tempDir;
     private final Schema schema = schemaWithKey("key", new LongType());
+    private final TransactionLogStore partitionTransactionStore = new InMemoryTransactionLogStore();
+    private final TransactionLogStore fileTransactionStore = new InMemoryTransactionLogStore();
 
     @BeforeEach
     public void setup() {
@@ -196,6 +201,15 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
                 instanceProperties, table, s3Client, dynamoDBClient, configuration,
                 snapshotStore::getLatestSnapshots, snapshotSaver)
                 .createSnapshot();
+    }
+
+    private StateStore createStateStoreWithTransactions(TableProperties table) {
+        return TransactionLogStateStore.builder()
+                .sleeperTable(table.getStatus())
+                .schema(table.getSchema())
+                .filesLogStore(fileTransactionStore)
+                .partitionsLogStore(partitionTransactionStore)
+                .build();
     }
 
     private DynamoDBTransactionLogSnapshotStore snapshotStore(TableProperties table) {
