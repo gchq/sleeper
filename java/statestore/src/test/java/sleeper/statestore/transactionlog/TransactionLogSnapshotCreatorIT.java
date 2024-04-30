@@ -29,7 +29,6 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.LatestSnapshots;
 import sleeper.statestore.transactionlog.TransactionLogSnapshotCreator.SnapshotSaver;
 
@@ -240,7 +239,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
 
     private SnapshotSaver failedUpdate() {
         return snapshot -> {
-            throw new StateStoreException("Failure");
+            throw new DuplicateSnapshotException("test.parquet", new Exception());
         };
     }
 }

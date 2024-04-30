@@ -128,7 +128,7 @@ public class TransactionLogSnapshotCreator {
         try {
             saveFilesSnapshot(filesState, filesTransactionNumberBefore);
             savePartitionsSnapshot(partitionsState, partitionsTransactionNumberBefore);
-        } catch (StateStoreException | IOException e) {
+        } catch (DuplicateSnapshotException | StateStoreException | IOException e) {
             LOGGER.error("Failed to create snapshot for table {}", tableProperties.getStatus());
             throw new RuntimeException(e);
         }
@@ -148,7 +148,7 @@ public class TransactionLogSnapshotCreator {
         snapshotSerDe.saveFiles(snapshot, filesState);
         try {
             snapshotSaver.save(snapshot);
-        } catch (StateStoreException e) {
+        } catch (DuplicateSnapshotException e) {
             LOGGER.info("Failed to save snapshot to Dynamo DB. Deleting snapshot file.");
             Path path = new Path(snapshot.getPath());
             FileSystem fs = path.getFileSystem(configuration);
@@ -172,7 +172,7 @@ public class TransactionLogSnapshotCreator {
         snapshotSerDe.savePartitions(snapshot, partitionsState);
         try {
             snapshotSaver.save(snapshot);
-        } catch (StateStoreException e) {
+        } catch (DuplicateSnapshotException e) {
             LOGGER.info("Failed to save snapshot to Dynamo DB. Deleting snapshot file.");
             Path path = new Path(snapshot.getPath());
             FileSystem fs = path.getFileSystem(configuration);
@@ -192,6 +192,6 @@ public class TransactionLogSnapshotCreator {
     }
 
     public interface SnapshotSaver {
-        void save(TransactionLogSnapshot snapshot) throws StateStoreException;
+        void save(TransactionLogSnapshot snapshot) throws DuplicateSnapshotException;
     }
 }
