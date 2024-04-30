@@ -89,7 +89,7 @@ public class DeleteTransactionLogSnapshotsIT extends TransactionLogStateStoreTes
     }
 
     private void runSnapshotCreatorAt(TableProperties table, Instant creationTime) {
-        new CreateTransactionLogSnapshot(
+        new TransactionLogSnapshotCreator(
                 instanceProperties, table, s3Client, dynamoDBClient, configuration, () -> creationTime)
                 .createSnapshot();
     }

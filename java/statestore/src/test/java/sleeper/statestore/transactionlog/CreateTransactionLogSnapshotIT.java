@@ -164,7 +164,7 @@ public class CreateTransactionLogSnapshotIT extends TransactionLogStateStoreTest
     }
 
     private void runSnapshotCreator(TableProperties table) {
-        new CreateTransactionLogSnapshot(
+        new TransactionLogSnapshotCreator(
                 instanceProperties, table, s3Client, dynamoDBClient, configuration)
                 .createSnapshot();
     }

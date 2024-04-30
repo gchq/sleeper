@@ -41,8 +41,8 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_PARTITIONS_TABLENAME;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 
-public class CreateTransactionLogSnapshot {
-    public static final Logger LOGGER = LoggerFactory.getLogger(CreateTransactionLogSnapshot.class);
+public class TransactionLogSnapshotCreator {
+    public static final Logger LOGGER = LoggerFactory.getLogger(TransactionLogSnapshotCreator.class);
     private final InstanceProperties instanceProperties;
     private final TableProperties tableProperties;
     private final TransactionLogStore filesLogStore;
@@ -50,13 +50,13 @@ public class CreateTransactionLogSnapshot {
     private final TransactionLogSnapshotSerDe snapshotSerDe;
     private final DynamoDBTransactionLogSnapshotStore snapshotStore;
 
-    public CreateTransactionLogSnapshot(
+    public TransactionLogSnapshotCreator(
             InstanceProperties instanceProperties, TableProperties tableProperties,
             AmazonS3 s3Client, AmazonDynamoDB dynamoDB, Configuration configuration) {
         this(instanceProperties, tableProperties, s3Client, dynamoDB, configuration, Instant::now);
     }
 
-    public CreateTransactionLogSnapshot(
+    public TransactionLogSnapshotCreator(
             InstanceProperties instanceProperties, TableProperties tableProperties,
             AmazonS3 s3Client, AmazonDynamoDB dynamoDB, Configuration configuration, Supplier<Instant> timeSupplier) {
         this(instanceProperties, tableProperties,
@@ -68,7 +68,7 @@ public class CreateTransactionLogSnapshot {
 
     }
 
-    public CreateTransactionLogSnapshot(
+    public TransactionLogSnapshotCreator(
             InstanceProperties instanceProperties, TableProperties tableProperties,
             TransactionLogStore filesLogStore, TransactionLogStore partitionsLogStore,
             AmazonDynamoDB dynamoDB, Configuration configuration, Supplier<Instant> timeSupplier) {
