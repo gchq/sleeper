@@ -70,7 +70,7 @@ public class TransactionLogSnapshotCreator {
                 instanceProperties.get(TRANSACTION_LOG_PARTITIONS_TABLENAME),
                 instanceProperties, tableProperties, dynamoDBClient, s3Client);
         DynamoDBTransactionLogSnapshotStore snapshotStore = new DynamoDBTransactionLogSnapshotStore(
-                instanceProperties, tableProperties, dynamoDBClient);
+                instanceProperties, tableProperties, dynamoDBClient, timeSupplier);
         return new TransactionLogSnapshotCreator(instanceProperties, tableProperties,
                 fileTransactionStore, partitionTransactionStore, configuration,
                 snapshotStore::getLatestSnapshots, snapshotStore::saveSnapshot);

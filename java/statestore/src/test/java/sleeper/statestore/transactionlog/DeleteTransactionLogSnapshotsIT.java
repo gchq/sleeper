@@ -22,11 +22,11 @@ import org.junit.jupiter.api.io.TempDir;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
-import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.LatestSnapshots;
 
 import java.nio.file.Files;
@@ -55,42 +55,40 @@ public class DeleteTransactionLogSnapshotsIT extends TransactionLogStateStoreTes
     }
 
     @Test
-    void shouldDeleteSnapshotsForOneTable() throws Exception {
+    void shouldDeleteOldFilesSnapshotsForOneTable() throws Exception {
         // Given
         TableProperties table = createTable("test-table-id-1", "test-table-1");
         table.setNumber(TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS, 1);
         StateStore stateStore = createStateStore(table);
-
         stateStore.initialise();
-        runSnapshotCreatorAt(table, Instant.parse("2024-04-25T11:24:00Z"));
-        stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root2").buildList());
-        runSnapshotCreatorAt(table, Instant.parse("2024-04-26T11:24:00Z"));
-
         FileReferenceFactory factory = FileReferenceFactory.from(stateStore);
         stateStore.addFile(factory.rootFile("test1.parquet", 123L));
-        runSnapshotCreatorAt(table, Instant.parse("2024-04-25T11:24:00Z"));
+        createSnapshotAt(table, Instant.parse("2024-04-25T11:24:00Z"));
         stateStore.addFile(factory.rootFile("test2.parquet", 456L));
-        runSnapshotCreatorAt(table, Instant.parse("2024-04-26T11:24:00Z"));
+        createSnapshotAt(table, Instant.parse("2024-04-26T15:24:00Z"));
+        stateStore.addFile(factory.rootFile("test3.parquet", 789L));
+        createSnapshotAt(table, Instant.parse("2024-04-27T11:24:00Z"));
 
         // When
-        deleteSnapshotsAt(table, Instant.parse("2024-04-29T11:24:00Z"));
+        deleteSnapshotsAt(table, Instant.parse("2024-04-27T11:24:00Z"));
 
         // Then
         assertThat(snapshotStore(table).getLatestSnapshots())
                 .isEqualTo(new LatestSnapshots(
-                        filesSnapshot(table, 2),
-                        partitionsSnapshot(table, 2)));
+                        filesSnapshot(table, 3),
+                        partitionsSnapshot(table, 1)));
         assertThat(snapshotStore(table).getFilesSnapshots())
-                .containsExactly(filesSnapshot(table, 2));
+                .containsExactly(
+                        filesSnapshot(table, 2),
+                        filesSnapshot(table, 3));
         assertThat(snapshotStore(table).getPartitionsSnapshots())
-                .containsExactly(partitionsSnapshot(table, 2));
+                .containsExactly(partitionsSnapshot(table, 1));
         assertThat(Files.exists(Path.of(filesSnapshot(table, 1).getPath()))).isFalse();
         assertThat(Files.exists(Path.of(partitionsSnapshot(table, 1).getPath()))).isFalse();
     }
 
-    private void runSnapshotCreatorAt(TableProperties table, Instant creationTime) {
-        new TransactionLogSnapshotCreator(
-                instanceProperties, table, s3Client, dynamoDBClient, configuration, () -> creationTime)
+    private void createSnapshotAt(TableProperties table, Instant creationTime) throws Exception {
+        TransactionLogSnapshotCreator.from(instanceProperties, table, s3Client, dynamoDBClient, configuration, () -> creationTime)
                 .createSnapshot();
     }
 
@@ -124,5 +122,9 @@ public class DeleteTransactionLogSnapshotsIT extends TransactionLogStateStoreTes
         return instanceProperties.get(FILE_SYSTEM)
                 + instanceProperties.get(DATA_BUCKET) + "/"
                 + tableProperties.get(TableProperty.TABLE_ID);
+    }
+
+    public interface SetupStateStore {
+        void run(StateStore stateStore) throws StateStoreException;
     }
 }
