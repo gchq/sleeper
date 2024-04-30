@@ -15,6 +15,7 @@
  */
 package sleeper.statestore.transactionlog;
 
+import org.apache.hadoop.fs.FileSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -36,6 +37,8 @@ import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.Lat
 import sleeper.statestore.transactionlog.TransactionLogSnapshotCreator.LatestSnapshotsLoader;
 import sleeper.statestore.transactionlog.TransactionLogSnapshotCreator.SnapshotSaver;
 
+import java.io.FileNotFoundException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -154,21 +157,19 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
     void shouldCreateMultipleSnapshotsForOneTable() throws Exception {
         // Given
         TableProperties table = createTable("test-table-id-1", "test-table-1");
-        PartitionTree tree = new PartitionsBuilder(schema)
-                .rootFirst("root")
-                .splitToNewChildren("root", "L", "R", 123L)
-                .buildTree();
-        FileReferenceFactory factory = FileReferenceFactory.from(tree);
+        PartitionsBuilder partitions = new PartitionsBuilder(schema).singlePartition("root");
         StateStore stateStore = createStateStoreWithInMemoryTransactionLog(table);
         stateStore.initialise();
-        FileReference file1 = factory.rootFile(123L);
+        FileReference file1 = FileReferenceFactory.from(partitions.buildTree())
+                .rootFile(123L);
         stateStore.addFile(file1);
         runSnapshotCreator(table);
 
         // When
-        stateStore.atomicallyUpdatePartitionAndCreateNewOnes(
-                tree.getPartition("root"), tree.getPartition("L"), tree.getPartition("R"));
-        FileReference file2 = factory.partitionFile("L", 456L);
+        partitions.splitToNewChildren("root", "L", "R", 123L)
+                .applySplit(stateStore, "root");
+        FileReference file2 = FileReferenceFactory.from(partitions.buildTree())
+                .partitionFile("L", 456L);
         stateStore.addFile(file2);
         runSnapshotCreator(table);
 
@@ -249,12 +250,69 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
         stateStore.addFile(factory.rootFile(123L));
 
         // When / Then
-        assertThatThrownBy(() -> runSnapshotCreator(table, failedUpdate()))
-                .isInstanceOf(RuntimeException.class);
+        DuplicateSnapshotException exception = new DuplicateSnapshotException("test.parquet", new Exception());
+        assertThatThrownBy(() -> runSnapshotCreator(table, failedUpdate(exception)))
+                .isInstanceOf(RuntimeException.class)
+                .hasCause(exception);
         assertThat(snapshotStore(table).getLatestSnapshots())
                 .isEqualTo(LatestSnapshots.empty());
         assertThat(Files.exists(filesSnapshotPath(table, 1))).isFalse();
         assertThat(Files.exists(partitionsSnapshotPath(table, 1))).isFalse();
+    }
+
+    @Test
+    void shouldNotCreateSnapshotIfLoadingPreviousPartitionSnapshotFails() throws Exception {
+        // Given we delete the partitions file for the last snapshot
+        TableProperties table = createTable("test-table-id-1", "test-table-1");
+        PartitionsBuilder partitions = new PartitionsBuilder(schema).singlePartition("root");
+        StateStore stateStore = createStateStoreWithInMemoryTransactionLog(table);
+        stateStore.initialise(partitions.buildList());
+        runSnapshotCreator(table);
+        TransactionLogSnapshot snapshot = getLatestPartitionsSnapshot(table);
+        deleteSnapshotFile(snapshot);
+        // And we add a transaction that would trigger a new snapshot
+        partitions.splitToNewChildren("root", "L", "R", 123L)
+                .applySplit(stateStore, "root");
+
+        // When / Then
+        assertThatThrownBy(() -> runSnapshotCreator(table))
+                .isInstanceOf(UncheckedIOException.class)
+                .hasCauseInstanceOf(FileNotFoundException.class);
+        assertThat(snapshotStore(table).getPartitionsSnapshots()).containsExactly(snapshot);
+    }
+
+    @Test
+    void shouldNotCreateSnapshotIfLoadingPreviousFileSnapshotFails() throws Exception {
+        // Given we delete the files file for the last snapshot
+        TableProperties table = createTable("test-table-id-1", "test-table-1");
+        StateStore stateStore = createStateStoreWithInMemoryTransactionLog(table);
+        stateStore.initialise();
+        stateStore.addFile(FileReferenceFactory.from(stateStore).rootFile("file1.parquet", 123));
+        runSnapshotCreator(table);
+        TransactionLogSnapshot snapshot = getLatestFilesSnapshot(table);
+        deleteSnapshotFile(snapshot);
+        // And we add a transaction that would trigger a new snapshot
+        stateStore.addFile(FileReferenceFactory.from(stateStore).rootFile("file2.parquet", 456));
+
+        // When / Then
+        assertThatThrownBy(() -> runSnapshotCreator(table))
+                .isInstanceOf(UncheckedIOException.class)
+                .hasCauseInstanceOf(FileNotFoundException.class);
+        assertThat(snapshotStore(table).getFilesSnapshots()).containsExactly(snapshot);
+    }
+
+    private TransactionLogSnapshot getLatestPartitionsSnapshot(TableProperties table) {
+        return snapshotStore(table).getLatestSnapshots().getPartitionsSnapshot().orElseThrow();
+    }
+
+    private TransactionLogSnapshot getLatestFilesSnapshot(TableProperties table) {
+        return snapshotStore(table).getLatestSnapshots().getFilesSnapshot().orElseThrow();
+    }
+
+    private void deleteSnapshotFile(TransactionLogSnapshot snapshot) throws Exception {
+        org.apache.hadoop.fs.Path path = new org.apache.hadoop.fs.Path(snapshot.getPath());
+        FileSystem fs = path.getFileSystem(configuration);
+        fs.delete(path, false);
     }
 
     private void runSnapshotCreator(TableProperties table) {
@@ -331,9 +389,9 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
                 + tableProperties.get(TableProperty.TABLE_ID);
     }
 
-    private SnapshotSaver failedUpdate() {
+    private SnapshotSaver failedUpdate(DuplicateSnapshotException exception) {
         return snapshot -> {
-            throw new DuplicateSnapshotException("test.parquet", new Exception());
+            throw exception;
         };
     }
 }

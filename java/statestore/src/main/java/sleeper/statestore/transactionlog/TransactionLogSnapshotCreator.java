@@ -34,6 +34,7 @@ import sleeper.core.statestore.transactionlog.TransactionLogStore;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.LatestSnapshots;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_FILES_TABLENAME;
@@ -90,7 +91,7 @@ public class TransactionLogSnapshotCreator {
                     try {
                         return snapshotSerDe.loadFiles(snapshot);
                     } catch (IOException e) {
-                        return null;
+                        throw new UncheckedIOException(e);
                     }
                 })
                 .orElseGet(StateStoreFiles::new);
@@ -102,7 +103,7 @@ public class TransactionLogSnapshotCreator {
                     try {
                         return snapshotSerDe.loadPartitions(snapshot);
                     } catch (IOException e) {
-                        return null;
+                        throw new UncheckedIOException(e);
                     }
                 })
                 .orElseGet(StateStorePartitions::new);
