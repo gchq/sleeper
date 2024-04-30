@@ -75,11 +75,11 @@ public class DefaultSelector implements CompactionAlgorithmSelector {
 
         // Is an iterator specifed, if so can we support this?
         if (job.getIteratorClassName() != null && !runner.supportsIterators()) {
-            LOGGER.debug("Table has an iterator set, which compactor %s doesn't support, falling back to default", runner.getClass().getSimpleName());
+            LOGGER.debug("Table has an iterator set, which compactor {} doesn't support, falling back to default", runner.getClass().getSimpleName());
             runner = defaultRunner;
         }
 
-        LOGGER.info("Selecting %s compactor (language %s) for job ID %s table ID %s", runner.getClass().getSimpleName(), runner.implementationLanguage(), job.getId(), job.getTableId());
+        LOGGER.info("Selecting {} compactor (language {}) for job ID {} table ID {}", runner.getClass().getSimpleName(), runner.implementationLanguage(), job.getId(), job.getTableId());
         return runner;
     }
 }

@@ -105,11 +105,6 @@
 	</dependencies>
 	<build>
        <plugins>
-	
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-            </plugin>
         	<!-- Resources plugin to copy all built native libs into JAR file -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -180,7 +175,7 @@
 									</arguments>
 								</configuration>
 							</execution>
-							<!-- <execution>
+							<execution>
 								<id>Invoke Rust Cargo build (Linux Aarch64)</id>
 								<phase>generate-resources</phase>
 								<goals>
@@ -191,15 +186,15 @@
 									<workingDirectory>${maven.multiModuleProjectDirectory}/../rust</workingDirectory>
 									<arguments>
 										<argument>build</argument>
-										<argument>XXrelease</argument>
-										<argument>XXtarget</argument>
+										<argument>--release</argument>
+										<argument>--target</argument>
 										<argument>aarch64-unknown-linux-gnu</argument>
 									</arguments>
 									<environmentVariables>
 										<RUSTFLAGS>-Ctarget-feature=+lse -Ctarget-cpu=neoverse-n1</RUSTFLAGS>
 									</environmentVariables>
 								</configuration>
-							</execution> -->
+							</execution>
 						</executions>
 					</plugin>
 				</plugins>
