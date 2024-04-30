@@ -16,14 +16,30 @@
 package sleeper.compaction.job;
 
 public interface CompactionRunnerDetails {
+    /**
+     * Some compaction implementations may use hardware acceleration such as GPUs.
+     *
+     * @return true iff this compaction implementation uses any sort of hardware acceleration
+     */
     default boolean isHardwareAccelerated() {
         return false;
     }
 
+    /**
+     * What language is this implemented in? If multiple languages are used, the primary
+     * one used for performing the compaction computation should be returned.
+     *
+     * @return the principal implementation language for this compactor
+     */
     default String implementationLanguage() {
         return "Java";
     }
 
+    /**
+     * States whether this compactor compact Sleeper tables that have iterators attached to them.
+     *
+     * @return true if iterators can be processed by this compactor
+     */
     default boolean supportsIterators() {
         return false;
     }

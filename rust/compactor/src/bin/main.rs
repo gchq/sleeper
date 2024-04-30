@@ -44,12 +44,12 @@ struct CmdLineArgs {
     /// List of input Parquet files (must be sorted) as URLs
     #[arg(num_args=1.., required=true)]
     input: Vec<String>,
-    /// Column names for a row key fields
+    /// Column names for a row key columns
     #[arg(short = 'k', long, num_args=1.., required=true)]
     row_keys: Vec<String>,
-    /// Column names for sort columns
+    /// Column names for sort key columns
     #[arg(short = 's', long)]
-    sort_column: Vec<String>,
+    sort_keys: Vec<String>,
     /// Partition region minimum keys (inclusive). Must be one per row key specified.
     #[arg(short='m',long,required=true,num_args=1..)]
     region_mins: Vec<String>,
@@ -130,7 +130,7 @@ async fn main() -> color_eyre::Result<()> {
         dict_enc_values: true,
         region: map,
         row_key_cols: args.row_keys,
-        sort_key_cols: args.sort_column,
+        sort_key_cols: args.sort_keys,
     };
 
     let result = merge_sorted_files(&details).await;

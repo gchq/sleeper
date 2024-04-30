@@ -30,6 +30,8 @@ pub enum PartitionBound<'a> {
     Int64(i64),
     String(&'a str),
     ByteArray(&'a [u8]),
+    /// Represented by a NULL in Java
+    Unbounded,
 }
 
 /// All the information for a a Sleeper compaction.

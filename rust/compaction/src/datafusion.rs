@@ -62,9 +62,9 @@ pub async fn compact(
     // Register some object store from first input file and output file
     let store = register_store(store_factory, input_paths, output_path, &ctx)?;
 
-    // Sort on row key columns then sort columns (nulls last)
+    // Sort on row key columns then sort key columns (nulls last)
     let sort_order = sort_order(input_data);
-    info!("Row key and sort column order {sort_order:?}");
+    info!("Row key and sort key column order {sort_order:?}");
 
     // Tell DataFusion that the row key columns and sort columns are already sorted
     let po = ParquetReadOptions::default().file_sort_order(vec![sort_order.clone()]);
@@ -94,7 +94,7 @@ pub async fn compact(
             .call(row_key_exprs)
             .alias(&input_data.row_key_cols[0]),
     );
-    // Perform sort of row key and sort columns and projection of all columns
+    // Perform sort of row key and sort key columns and projection of all columns
     let col_names_expr = sketch_expr
         .chain(col_names.iter().skip(1).map(col)) // 1st column is the sketch function call
         .collect::<Vec<_>>();
@@ -188,11 +188,18 @@ fn region_filter(region: &HashMap<String, ColRange>) -> Option<Expr> {
     for (name, range) in region {
         let lower_expr = lower_bound_expr(range, name);
         let upper_expr = upper_bound_expr(range, name);
-        let expr = lower_expr.and(upper_expr);
+        let expr = match (lower_expr, upper_expr) {
+            (Some(l), Some(u)) => Some(l.and(u)),
+            (Some(l), None) => Some(l),
+            (None, Some(u)) => Some(u),
+            (None, None) => None,
+        };
         // Combine this column filter with any previous column filter
-        col_expr = match col_expr {
-            Some(original) => Some(original.and(expr)),
-            None => Some(expr),
+        if let Some(e) = expr {
+            col_expr = match col_expr {
+                Some(original) => Some(original.and(e)),
+                None => Some(e),
+            }
         }
     }
     col_expr
@@ -202,30 +209,44 @@ fn region_filter(region: &HashMap<String, ColRange>) -> Option<Expr> {
 ///
 /// This takes into account the inclusive/exclusive nature of the bound.
 ///
-fn upper_bound_expr(range: &ColRange, name: &String) -> Expr {
-    let max_bound = bound_to_lit_expr(&range.upper);
-    if range.upper_inclusive {
-        col(name).lt_eq(max_bound)
+fn upper_bound_expr(range: &ColRange, name: &String) -> Option<Expr> {
+    if let PartitionBound::Unbounded = range.upper {
+        None
     } else {
-        col(name).lt(max_bound)
+        let max_bound = bound_to_lit_expr(&range.upper);
+        if range.upper_inclusive {
+            Some(col(name).lt_eq(max_bound))
+        } else {
+            Some(col(name).lt(max_bound))
+        }
     }
 }
 
 /// Calculate the lower bound expression on a given [`ColRange`].
 ///
+/// Not all bounds are present, so `None` is returned for the unbounded case.
+///
 /// This takes into account the inclusive/exclusive nature of the bound.
 ///
-fn lower_bound_expr(range: &ColRange, name: &String) -> Expr {
-    let min_bound = bound_to_lit_expr(&range.lower);
-    if range.lower_inclusive {
-        col(name).gt_eq(min_bound)
+fn lower_bound_expr(range: &ColRange, name: &String) -> Option<Expr> {
+    if let PartitionBound::Unbounded = range.lower {
+        None
     } else {
-        col(name).gt(min_bound)
+        let min_bound = bound_to_lit_expr(&range.lower);
+        if range.lower_inclusive {
+            Some(col(name).gt_eq(min_bound))
+        } else {
+            Some(col(name).gt(min_bound))
+        }
     }
 }
 
 /// Convert a [`PartitionBound`] to an [`Expr`] that can be
 /// used in a bigger expression.
+///
+/// # Panics
+/// If bound is [`PartitionBound::Unbounded`] as we can't construct
+/// an expression for that.
 ///
 fn bound_to_lit_expr(bound: &PartitionBound) -> Expr {
     match bound {
@@ -233,6 +254,10 @@ fn bound_to_lit_expr(bound: &PartitionBound) -> Expr {
         PartitionBound::Int64(val) => lit(*val),
         PartitionBound::String(val) => lit(val.to_owned()),
         PartitionBound::ByteArray(val) => lit(val.to_owned()),
+        PartitionBound::Unbounded => {
+            error!("Can't create filter expression for unbounded partition range!");
+            panic!("Can't create filter expression for unbounded partition range!");
+        }
     }
 }
 
@@ -270,7 +295,7 @@ fn create_session_cfg(input_data: &CompactionInput) -> SessionConfig {
 
 /// Creates the sort order for a given schema.
 ///
-/// This is a list of the row key columns followed by the sort columns.
+/// This is a list of the row key columns followed by the sort key columns.
 ///
 fn sort_order(input_data: &CompactionInput) -> Vec<Expr> {
     let sort_order = input_data

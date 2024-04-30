@@ -100,6 +100,7 @@ pub struct FFICompactionParams {
     region_mins_len: usize,
     region_mins: *const *const c_void,
     region_maxs_len: usize,
+    // The region_maxs array may contain null pointers!!
     region_maxs: *const *const c_void,
     region_mins_inclusive_len: usize,
     region_mins_inclusive: *const *const bool,
@@ -162,10 +163,18 @@ fn compute_region<'a, T: Borrow<str>>(
         params.region_maxs_inclusive_len,
     );
     let schema_types = unpack_primitive_array(params.row_key_schema, params.row_key_schema_len);
-    let region_mins =
-        unpack_variant_array(params.region_mins, params.region_mins_len, &schema_types)?;
-    let region_maxs =
-        unpack_variant_array(params.region_maxs, params.region_maxs_len, &schema_types)?;
+    let region_mins = unpack_variant_array(
+        params.region_mins,
+        params.region_mins_len,
+        &schema_types,
+        false,
+    )?;
+    let region_maxs = unpack_variant_array(
+        params.region_maxs,
+        params.region_maxs_len,
+        &schema_types,
+        true,
+    )?;
 
     let mut map = HashMap::with_capacity(row_key_cols.len());
     for (idx, row_key) in row_key_cols.iter().enumerate() {
@@ -357,49 +366,65 @@ fn unpack_primitive_array<T: Copy>(array_base: *const *const T, len: usize) -> V
 ///
 /// # Panics
 /// If the length of the `schema_types` array doesn't match the length specified.
+/// If `nulls_present` is false and a null pointer is found.
 ///
 /// Also panics if a negative array length is found in decoding byte arrays or strings.
 fn unpack_variant_array<'a>(
     array_base: *const *const c_void,
     len: usize,
     schema_types: &[i32],
+    nulls_present: bool,
 ) -> Result<Vec<PartitionBound<'a>>, Utf8Error> {
     assert_eq!(len, schema_types.len());
     unsafe { slice::from_raw_parts(array_base, len) }
         .iter()
         .inspect(|p| {
-            if p.is_null() {
+            if !nulls_present && p.is_null() {
                 error!("Found NULL pointer in string array");
             }
         })
         .zip(schema_types.iter())
         .map(|(&bptr, type_id)| match type_id {
-            1 => Ok(PartitionBound::Int32(unsafe { *bptr.cast::<i32>() })),
-            2 => Ok(PartitionBound::Int64(unsafe { *bptr.cast::<i64>() })),
+            1 => Ok(match unsafe { bptr.cast::<i32>().as_ref() } {
+                Some(v) => PartitionBound::Int32(*v),
+                None => PartitionBound::Unbounded,
+            }),
+            2 => Ok(match unsafe { bptr.cast::<i64>().as_ref() } {
+                Some(v) => PartitionBound::Int64(*v),
+                None => PartitionBound::Unbounded,
+            }),
             3 => {
-                //unpack length (signed because it's from Java)
-                let str_len = unsafe { *bptr.cast::<i32>() };
-                if str_len < 0 {
-                    error!("Illegal string length in FFI array: {str_len}");
-                    panic!("Illegal string length in FFI array: {str_len}");
+                match unsafe { bptr.cast::<i32>().as_ref() } {
+                    //unpack length (signed because it's from Java)
+                    Some(str_len) => {
+                        if *str_len < 0 {
+                            error!("Illegal string length in FFI array: {str_len}");
+                            panic!("Illegal string length in FFI array: {str_len}");
+                        }
+                        std::str::from_utf8(unsafe {
+                            #[allow(clippy::cast_sign_loss)]
+                            slice::from_raw_parts(bptr.byte_add(4).cast::<u8>(), *str_len as usize)
+                        })
+                        .map(PartitionBound::String)
+                    }
+                    None => Ok(PartitionBound::Unbounded),
                 }
-                std::str::from_utf8(unsafe {
-                    #[allow(clippy::cast_sign_loss)]
-                    slice::from_raw_parts(bptr.byte_add(4).cast::<u8>(), str_len as usize)
-                })
-                .map(PartitionBound::String)
             }
             4 => {
-                //unpack length (signed because it's from Java)
-                let byte_len = unsafe { *bptr.cast::<i32>() };
-                if byte_len < 0 {
-                    error!("Illegal byte array length in FFI array: {byte_len}");
-                    panic!("Illegal byte array length in FFI array: {byte_len}");
+                match unsafe { bptr.cast::<i32>().as_ref() } {
+                    //unpack length (signed because it's from Java)
+                    Some(byte_len) => {
+                        if *byte_len < 0 {
+                            error!("Illegal byte array length in FFI array: {byte_len}");
+                            panic!("Illegal byte array length in FFI array: {byte_len}");
+                        }
+                        Ok(PartitionBound::ByteArray(unsafe {
+                            #[allow(clippy::cast_sign_loss)]
+                            slice::from_raw_parts(bptr.byte_add(4).cast::<u8>(), *byte_len as usize)
+                        }))
+                    }
+                    None => Ok(PartitionBound::Unbounded),
                 }
-                Ok(PartitionBound::ByteArray(unsafe {
-                    #[allow(clippy::cast_sign_loss)]
-                    slice::from_raw_parts(bptr.byte_add(4).cast::<u8>(), byte_len as usize)
-                }))
             }
             x => {
                 error!("Unexpected type id {x}");

@@ -20,7 +20,6 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionRunner;
-import sleeper.compaction.jobexecution.RustCompaction;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -73,7 +72,7 @@ public class DefaultSelector implements CompactionAlgorithmSelector {
                 break;
         }
 
-        // Is an iterator specifed, if so can we support this?
+        // Is an iterator specifed? If so can we support this?
         if (job.getIteratorClassName() != null && !runner.supportsIterators()) {
             LOGGER.debug("Table has an iterator set, which compactor {} doesn't support, falling back to default", runner.getClass().getSimpleName());
             runner = defaultRunner;

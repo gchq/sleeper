@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.jobexecution;
+package sleeper.compaction.job.execution;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jnr.ffi.LibraryLoader;
@@ -238,22 +238,26 @@ public class RustBridge {
          * A base pointer is allocated pointers set to other
          * dynamically allocated memory containing items from array.
          *
-         * @param arr array data
+         * @param arr          array data
+         * @param nullsAllowed if null pointers are allowed in the data array
          */
-        public void populate(final T[] arr) {
+        public void populate(final T[] arr, boolean nullsAllowed) {
             final jnr.ffi.Runtime r = len.struct().getRuntime();
             // Calculate size needed for array of pointers
             int ptrSize = r.findType(NativeType.ADDRESS).size();
             // Null out zero length arrays
             if (arr.length > 0) {
                 int size = arr.length * ptrSize;
-                // Allocate some memory for string pointers
+                // Allocate some memory for pointers
                 this.basePtr = r.getMemoryManager().allocateDirect(size);
                 this.arrayBase.set(basePtr);
 
                 this.items = new jnr.ffi.Pointer[arr.length];
 
                 for (int i = 0; i < arr.length; i++) {
+                    if (!nullsAllowed && arr[i] == null) {
+                        throw new NullPointerException("Index " + i + " of array is null when nulls aren't allowed here");
+                    }
                     setValue(arr[i], i, r);
                 }
 
@@ -287,9 +291,6 @@ public class RustBridge {
                 if (this.arrayBase.get().address() != this.basePtr.address()) {
                     throw new IllegalStateException("array base pointer and stored base pointer differ!");
                 }
-                for (jnr.ffi.Pointer p : items) {
-                    Objects.requireNonNull(p, "NULL pointer found in pointer array store");
-                }
             }
         }
 
@@ -307,7 +308,9 @@ public class RustBridge {
          * @throws IndexOutOfBoundsException if idx is invalid
          */
         protected <E> void setValue(E item, int idx, jnr.ffi.Runtime r) {
-            if (item instanceof Integer) {
+            if (item == null) {
+                this.items[idx] = jnr.ffi.Pointer.wrap(r, 0);
+            } else if (item instanceof Integer) {
                 int e = (int) item;
                 this.items[idx] = r.getMemoryManager().allocateDirect(r.findType(NativeType.SINT).size());
                 this.items[idx].putInt(0, e);
@@ -321,7 +324,7 @@ public class RustBridge {
                 byte[] utf8string = e.getBytes(StandardCharsets.UTF_8);
                 // Add four for length
                 int stringSize = utf8string.length + 4;
-                // Allocate memory for string and write length then string
+                // Allocate memory for string and write length then the string
                 this.items[idx] = r.getMemoryManager().allocateDirect(stringSize);
                 this.items[idx].putInt(0, utf8string.length);
                 this.items[idx].put(4, utf8string, 0, utf8string.length);

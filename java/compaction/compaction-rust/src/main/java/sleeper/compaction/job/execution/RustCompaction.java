@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.jobexecution;
+package sleeper.compaction.job.execution;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionRunner;
 import sleeper.compaction.job.StateStoreUpdate;
-import sleeper.compaction.jobexecution.RustBridge.FFICompactionParams;
+import sleeper.compaction.job.execution.RustBridge.FFICompactionParams;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.range.Range;
@@ -108,11 +108,11 @@ public class RustCompaction implements CompactionRunner {
     @SuppressWarnings(value = "checkstyle:avoidNestedBlocks")
     public static FFICompactionParams createFFIParams(CompactionJob job, TableProperties tableProperties, Schema schema, Region region, jnr.ffi.Runtime runtime) {
         FFICompactionParams params = new FFICompactionParams(runtime);
-        params.input_files.populate(job.getInputFiles().toArray(new String[0]));
+        params.input_files.populate(job.getInputFiles().toArray(new String[0]), false);
         params.output_file.set(job.getOutputFile());
-        params.row_key_cols.populate(schema.getRowKeyFieldNames().toArray(new String[0]));
-        params.row_key_schema.populate(getKeyTypes(schema.getRowKeyTypes()));
-        params.sort_key_cols.populate(schema.getSortKeyFieldNames().toArray(new String[0]));
+        params.row_key_cols.populate(schema.getRowKeyFieldNames().toArray(new String[0]), false);
+        params.row_key_schema.populate(getKeyTypes(schema.getRowKeyTypes()), false);
+        params.sort_key_cols.populate(schema.getSortKeyFieldNames().toArray(new String[0]), false);
         params.max_row_group_size.set(RUST_MAX_ROW_GROUP_ROWS);
         params.max_page_size.set(tableProperties.getInt(PAGE_SIZE));
         params.compression.set(tableProperties.get(COMPRESSION_CODEC));
@@ -122,22 +122,24 @@ public class RustCompaction implements CompactionRunner {
         params.dict_enc_row_keys.set(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS));
         params.dict_enc_sort_keys.set(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS));
         params.dict_enc_values.set(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_VALUE_FIELDS));
-        // Sanity check: minimise lifetime
+        // Extra braces: Make sure wrong array isn't populated to wrong pointers
         {
+            // This array can't contain nulls
             Object[] regionMins = region.getRanges().stream().map(Range::getMin).toArray();
-            params.region_mins.populate(regionMins);
+            params.region_mins.populate(regionMins, false);
         }
         {
             Boolean[] regionMinInclusives = region.getRanges().stream().map(Range::isMinInclusive).toArray(Boolean[]::new);
-            params.region_mins_inclusive.populate(regionMinInclusives);
+            params.region_mins_inclusive.populate(regionMinInclusives, false);
         }
         {
+            // This array can contain nulls
             Object[] regionMaxs = region.getRanges().stream().map(Range::getMax).toArray();
-            params.region_maxs.populate(regionMaxs);
+            params.region_maxs.populate(regionMaxs, true);
         }
         {
             Boolean[] regionMaxInclusives = region.getRanges().stream().map(Range::isMaxInclusive).toArray(Boolean[]::new);
-            params.region_maxs_inclusive.populate(regionMaxInclusives);
+            params.region_maxs_inclusive.populate(regionMaxInclusives, false);
         }
         params.validate();
         return params;
@@ -203,5 +205,20 @@ public class RustCompaction implements CompactionRunner {
             // Ensure de-allocation
             nativeLib.free_result(compactionData);
         }
+    }
+
+    @Override
+    public String implementationLanguage() {
+        return "Rust";
+    }
+
+    @Override
+    public boolean isHardwareAccelerated() {
+        return false;
+    }
+
+    @Override
+    public boolean supportsIterators() {
+        return false;
     }
 }
