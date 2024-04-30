@@ -64,6 +64,6 @@ public class TransactionLogStateStoreTestBase {
     }
 
     public StateStore createStateStore(TableProperties tableProperties) {
-        return new DynamoDBTransactionLogStateStore(instanceProperties, tableProperties, dynamoDBClient, s3Client, configuration);
+        return DynamoDBTransactionLogStateStore.create(instanceProperties, tableProperties, dynamoDBClient, s3Client, configuration);
     }
 }
