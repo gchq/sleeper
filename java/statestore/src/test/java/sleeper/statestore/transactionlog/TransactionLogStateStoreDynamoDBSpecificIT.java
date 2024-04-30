@@ -108,8 +108,6 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
     @Nested
     @DisplayName("Load latest snapshots")
     class LoadLatestSnapshots {
-        private final TransactionLogStore partitionsStore = new InMemoryTransactionLogStore();
-        private final TransactionLogStore filesStore = new InMemoryTransactionLogStore();
 
         @Test
         void shouldLoadLatestSnapshotsWhenCreatingStateStore() throws Exception {
