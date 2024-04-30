@@ -36,6 +36,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -176,7 +177,7 @@ public class DynamoDBTransactionLogSnapshotStore {
         if (result.getCount() > 0) {
             return getLatestSnapshotsFromItem(result.getItems().get(0));
         } else {
-            return new LatestSnapshots(null, null);
+            return LatestSnapshots.empty();
         }
     }
 
@@ -243,17 +244,21 @@ public class DynamoDBTransactionLogSnapshotStore {
         private final TransactionLogSnapshot filesSnapshot;
         private final TransactionLogSnapshot partitionsSnapshot;
 
+        public static LatestSnapshots empty() {
+            return new LatestSnapshots(null, null);
+        }
+
         public LatestSnapshots(TransactionLogSnapshot filesSnapshot, TransactionLogSnapshot partitionsSnapshot) {
             this.filesSnapshot = filesSnapshot;
             this.partitionsSnapshot = partitionsSnapshot;
         }
 
-        public TransactionLogSnapshot getFilesSnapshot() {
-            return filesSnapshot;
+        public Optional<TransactionLogSnapshot> getFilesSnapshot() {
+            return Optional.ofNullable(filesSnapshot);
         }
 
-        public TransactionLogSnapshot getPartitionsSnapshot() {
-            return partitionsSnapshot;
+        public Optional<TransactionLogSnapshot> getPartitionsSnapshot() {
+            return Optional.ofNullable(partitionsSnapshot);
         }
 
         public long getFilesTransactionNumber() {

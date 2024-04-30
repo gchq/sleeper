@@ -24,7 +24,6 @@ import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,6 +31,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.util.LoggedDuration;
+import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.transactionlog.TransactionLogSnapshotCreator;
 
 import java.time.Instant;
@@ -83,7 +83,8 @@ public class TransactionLogSnapshotCreationLambda implements RequestHandler<SQSE
         for (TableProperties table : tables) {
             LOGGER.info("Creating snapshot for table {}", table.getStatus());
             try {
-                new TransactionLogSnapshotCreator(instanceProperties, table, s3Client, dynamoClient, new Configuration())
+                TransactionLogSnapshotCreator.from(instanceProperties, table, s3Client, dynamoClient,
+                        HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties))
                         .createSnapshot();
             } catch (RuntimeException e) {
                 LOGGER.error("Failed creating snapshot for table {}", table.getStatus(), e);

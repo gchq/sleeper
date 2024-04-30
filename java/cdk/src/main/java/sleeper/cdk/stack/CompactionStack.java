@@ -56,6 +56,7 @@ import software.amazon.awscdk.services.ecs.RuntimePlatform;
 import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
+import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.iam.PolicyStatement;
@@ -192,6 +193,15 @@ public class CompactionStack extends NestedStack {
         // Lambda to create compaction tasks
         lambdaToCreateCompactionTasks(coreStacks, taskCreatorJar, compactionJobsQueue);
 
+        // Allow running compaction tasks
+        coreStacks.getInvokeCompactionPolicyForGrants().addStatements(PolicyStatement.Builder.create()
+                .effect(Effect.ALLOW)
+                .actions(List.of("ecs:DescribeClusters", "ecs:RunTask", "iam:PassRole",
+                        "ecs:DescribeContainerInstances", "ecs:DescribeTasks", "ecs:ListContainerInstances",
+                        "autoscaling:SetDesiredCapacity", "autoscaling:DescribeAutoScalingGroups"))
+                .resources(List.of("*"))
+                .build());
+
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
@@ -214,7 +224,7 @@ public class CompactionStack extends NestedStack {
                 .visibilityTimeout(
                         Duration.seconds(instanceProperties.getInt(COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS)))
                 .build();
-        compactionJobQ.grantPurge(coreStacks.getPurgeQueuesPolicy());
+        compactionJobQ.grantPurge(coreStacks.getPurgeQueuesPolicyForGrants());
         instanceProperties.set(COMPACTION_JOB_QUEUE_URL, compactionJobQ.getQueueUrl());
         instanceProperties.set(COMPACTION_JOB_QUEUE_ARN, compactionJobQ.getQueueArn());
         instanceProperties.set(COMPACTION_JOB_DLQ_URL,
@@ -289,10 +299,10 @@ public class CompactionStack extends NestedStack {
         statusStore.grantWriteJobEvent(handlerFunction);
         compactionJobsQueue.grantSendMessages(handlerFunction);
         coreStacks.grantInvokeScheduled(triggerFunction, jobCreationQueue);
-        statusStore.grantWriteJobEvent(coreStacks.getInvokeCompactionPolicy());
-        coreStacks.grantReadTablesStatus(coreStacks.getInvokeCompactionPolicy());
-        coreStacks.grantCreateCompactionJobs(coreStacks.getInvokeCompactionPolicy());
-        compactionJobsQueue.grantSendMessages(coreStacks.getInvokeCompactionPolicy());
+        statusStore.grantWriteJobEvent(coreStacks.getInvokeCompactionPolicyForGrants());
+        coreStacks.grantReadTablesStatus(coreStacks.getInvokeCompactionPolicyForGrants());
+        coreStacks.grantCreateCompactionJobs(coreStacks.getInvokeCompactionPolicyForGrants());
+        compactionJobsQueue.grantSendMessages(coreStacks.getInvokeCompactionPolicyForGrants());
 
         // Cloudwatch rule to trigger this lambda
         Rule rule = Rule.Builder
@@ -595,8 +605,8 @@ public class CompactionStack extends NestedStack {
         // Grant this function permission to query the queue for number of messages
         compactionJobsQueue.grant(handler, "sqs:GetQueueAttributes");
         compactionJobsQueue.grantSendMessages(handler);
-        compactionJobsQueue.grantSendMessages(coreStacks.getInvokeCompactionPolicy());
-        Utils.grantInvokeOnPolicy(handler, coreStacks.getInvokeCompactionPolicy());
+        compactionJobsQueue.grantSendMessages(coreStacks.getInvokeCompactionPolicyForGrants());
+        Utils.grantInvokeOnPolicy(handler, coreStacks.getInvokeCompactionPolicyForGrants());
         coreStacks.grantInvokeScheduled(handler);
 
         // Grant this function permission to query ECS for the number of tasks, etc

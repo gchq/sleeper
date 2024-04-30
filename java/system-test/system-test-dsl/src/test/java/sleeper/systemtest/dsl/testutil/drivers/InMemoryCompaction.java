@@ -182,6 +182,9 @@ public class InMemoryCompaction {
             CompactSortedFiles.updateStateStoreSuccess(job, recordsProcessed.getRecordsWritten(), stateStore);
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
         }
         Instant finishTime = startTime.plus(Duration.ofMinutes(1));
         return new RecordsProcessedSummary(recordsProcessed, startTime, finishTime);

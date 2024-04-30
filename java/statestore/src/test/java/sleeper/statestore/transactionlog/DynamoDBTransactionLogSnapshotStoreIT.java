@@ -160,6 +160,41 @@ public class DynamoDBTransactionLogSnapshotStoreIT {
     }
 
     @Test
+    void shouldRetrieveLatestSnapshotsWhenNoFilesSnapshotsArePresent() throws Exception {
+        // Given / When
+        store.saveSnapshot(partitionsSnapshot(1));
+        store.saveSnapshot(partitionsSnapshot(2));
+        store.saveSnapshot(partitionsSnapshot(3));
+
+        // Then
+        assertThat(store.getLatestSnapshots()).isEqualTo(
+                new LatestSnapshots(
+                        null,
+                        partitionsSnapshot(3)));
+    }
+
+    @Test
+    void shouldRetrieveLatestSnapshotsWhenNoPartitionsSnapshotsArePresent() throws Exception {
+        // Given / When
+        store.saveSnapshot(filesSnapshot(1));
+        store.saveSnapshot(filesSnapshot(2));
+        store.saveSnapshot(filesSnapshot(3));
+
+        // Then
+        assertThat(store.getLatestSnapshots()).isEqualTo(
+                new LatestSnapshots(
+                        filesSnapshot(3),
+                        null));
+    }
+
+    @Test
+    void shouldRetrieveLatestSnapshotsWhenNoSnapshotsArePresent() throws Exception {
+        // Given / When / Then
+        assertThat(store.getLatestSnapshots()).isEqualTo(
+                LatestSnapshots.empty());
+    }
+
+    @Test
     void shouldSaveAndLoadSnapshotsForMultipleTables() throws Exception {
         TableProperties table1 = createTable();
         TableProperties table2 = createTable();

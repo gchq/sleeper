@@ -25,6 +25,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.s3.S3StateStore;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStoreNoSnapshots;
 
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 
@@ -50,7 +51,10 @@ public class StateStoreFactory {
             return new S3StateStore(instanceProperties, tableProperties, dynamoDB, configuration);
         }
         if (stateStoreClassName.equals(DynamoDBTransactionLogStateStore.class.getName())) {
-            return new DynamoDBTransactionLogStateStore(instanceProperties, tableProperties, dynamoDB, s3, configuration);
+            return DynamoDBTransactionLogStateStore.create(instanceProperties, tableProperties, dynamoDB, s3, configuration);
+        }
+        if (stateStoreClassName.equals(DynamoDBTransactionLogStateStoreNoSnapshots.class.getName())) {
+            return DynamoDBTransactionLogStateStoreNoSnapshots.create(instanceProperties, tableProperties, dynamoDB, s3);
         }
         throw new RuntimeException("Unknown StateStore class: " + stateStoreClassName);
     }

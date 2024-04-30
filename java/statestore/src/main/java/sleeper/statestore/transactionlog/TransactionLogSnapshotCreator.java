@@ -18,6 +18,8 @@ package sleeper.statestore.transactionlog;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,105 +49,144 @@ public class TransactionLogSnapshotCreator {
     private final TableProperties tableProperties;
     private final TransactionLogStore filesLogStore;
     private final TransactionLogStore partitionsLogStore;
+    private final Configuration configuration;
     private final TransactionLogSnapshotSerDe snapshotSerDe;
-    private final DynamoDBTransactionLogSnapshotStore snapshotStore;
+    private final LatestSnapshotsLoader latestSnapshotsLoader;
+    private final SnapshotSaver snapshotSaver;
 
-    public TransactionLogSnapshotCreator(
+    public static TransactionLogSnapshotCreator from(
             InstanceProperties instanceProperties, TableProperties tableProperties,
-            AmazonS3 s3Client, AmazonDynamoDB dynamoDB, Configuration configuration) {
-        this(instanceProperties, tableProperties, s3Client, dynamoDB, configuration, Instant::now);
+            AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, Configuration configuration) {
+        return from(instanceProperties, tableProperties, s3Client, dynamoDBClient, configuration, Instant::now);
     }
 
-    public TransactionLogSnapshotCreator(
+    public static TransactionLogSnapshotCreator from(
             InstanceProperties instanceProperties, TableProperties tableProperties,
-            AmazonS3 s3Client, AmazonDynamoDB dynamoDB, Configuration configuration, Supplier<Instant> timeSupplier) {
-        this(instanceProperties, tableProperties,
-                new DynamoDBTransactionLogStore(instanceProperties.get(TRANSACTION_LOG_FILES_TABLENAME),
-                        instanceProperties, tableProperties, dynamoDB, s3Client),
-                new DynamoDBTransactionLogStore(instanceProperties.get(TRANSACTION_LOG_PARTITIONS_TABLENAME),
-                        instanceProperties, tableProperties, dynamoDB, s3Client),
-                dynamoDB, configuration, timeSupplier);
-
+            AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, Configuration configuration, Supplier<Instant> timeSupplier) {
+        TransactionLogStore fileTransactionStore = new DynamoDBTransactionLogStore(
+                instanceProperties.get(TRANSACTION_LOG_FILES_TABLENAME),
+                instanceProperties, tableProperties, dynamoDBClient, s3Client);
+        TransactionLogStore partitionTransactionStore = new DynamoDBTransactionLogStore(
+                instanceProperties.get(TRANSACTION_LOG_PARTITIONS_TABLENAME),
+                instanceProperties, tableProperties, dynamoDBClient, s3Client);
+        DynamoDBTransactionLogSnapshotStore snapshotStore = new DynamoDBTransactionLogSnapshotStore(
+                instanceProperties, tableProperties, dynamoDBClient);
+        return new TransactionLogSnapshotCreator(instanceProperties, tableProperties,
+                fileTransactionStore, partitionTransactionStore, configuration,
+                snapshotStore::getLatestSnapshots, snapshotStore::saveSnapshot);
     }
 
     public TransactionLogSnapshotCreator(
             InstanceProperties instanceProperties, TableProperties tableProperties,
             TransactionLogStore filesLogStore, TransactionLogStore partitionsLogStore,
-            AmazonDynamoDB dynamoDB, Configuration configuration, Supplier<Instant> timeSupplier) {
+            Configuration configuration, LatestSnapshotsLoader latestSnapshotsLoader, SnapshotSaver snapshotSaver) {
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
         this.filesLogStore = filesLogStore;
         this.partitionsLogStore = partitionsLogStore;
         this.snapshotSerDe = new TransactionLogSnapshotSerDe(tableProperties.getSchema(), configuration);
-        this.snapshotStore = new DynamoDBTransactionLogSnapshotStore(instanceProperties, tableProperties, dynamoDB, timeSupplier);
+        this.configuration = configuration;
+        this.latestSnapshotsLoader = latestSnapshotsLoader;
+        this.snapshotSaver = snapshotSaver;
     }
 
     public void createSnapshot() {
         LOGGER.info("Creating snapshot for table {}", tableProperties.getStatus());
-        LatestSnapshots latestSnapshots = snapshotStore.getLatestSnapshots();
-        StateStoreFiles filesState = new StateStoreFiles();
-        long filesTransactionNumberBefore = 0L;
-        if (latestSnapshots.getFilesSnapshot() != null) {
-            try {
-                filesState = snapshotSerDe.loadFiles(latestSnapshots.getFilesSnapshot());
-                filesTransactionNumberBefore = latestSnapshots.getFilesSnapshot().getTransactionNumber();
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        }
-        StateStorePartitions partitionsState = new StateStorePartitions();
-        long partitionsTransactionNumberBefore = 0L;
-        if (latestSnapshots.getPartitionsSnapshot() != null) {
-            try {
-                partitionsState = snapshotSerDe.loadPartitions(latestSnapshots.getPartitionsSnapshot());
-                partitionsTransactionNumberBefore = latestSnapshots.getPartitionsSnapshot().getTransactionNumber();
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        }
+        LatestSnapshots latestSnapshots = latestSnapshotsLoader.load();
+        LOGGER.info("Found latest snapshots: {}", latestSnapshots);
+        StateStoreFiles filesState = latestSnapshots.getFilesSnapshot()
+                .map(snapshot -> {
+                    try {
+                        return snapshotSerDe.loadFiles(snapshot);
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                })
+                .orElseGet(StateStoreFiles::new);
+        long filesTransactionNumberBefore = latestSnapshots.getFilesSnapshot()
+                .map(TransactionLogSnapshot::getTransactionNumber)
+                .orElse(0L);
+        StateStorePartitions partitionsState = latestSnapshots.getPartitionsSnapshot()
+                .map(snapshot -> {
+                    try {
+                        return snapshotSerDe.loadPartitions(snapshot);
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                })
+                .orElseGet(StateStorePartitions::new);
+        long partitionsTransactionNumberBefore = latestSnapshots.getPartitionsSnapshot()
+                .map(TransactionLogSnapshot::getTransactionNumber)
+                .orElse(0L);
         try {
-            saveFilesSnapshot(filesState, filesTransactionNumberBefore, snapshotSerDe, snapshotStore);
-            savePartitionsSnapshot(partitionsState, partitionsTransactionNumberBefore, snapshotSerDe, snapshotStore);
+            saveFilesSnapshot(filesState, filesTransactionNumberBefore);
+            savePartitionsSnapshot(partitionsState, partitionsTransactionNumberBefore);
         } catch (DuplicateSnapshotException | StateStoreException | IOException e) {
             LOGGER.error("Failed to create snapshot for table {}", tableProperties.getStatus());
             throw new RuntimeException(e);
         }
     }
 
-    private void saveFilesSnapshot(StateStoreFiles filesState, long transactionNumberBefore,
-            TransactionLogSnapshotSerDe snapshotSerDe, DynamoDBTransactionLogSnapshotStore snapshotStore) throws IOException, StateStoreException, DuplicateSnapshotException {
+    private void saveFilesSnapshot(StateStoreFiles filesState, long transactionNumberBefore) throws IOException, StateStoreException, DuplicateSnapshotException {
         long transactionNumberAfter = TransactionLogSnapshotUtils.updateFilesState(
                 tableProperties.getStatus(), filesState, filesLogStore, transactionNumberBefore);
-        if (transactionNumberBefore == transactionNumberAfter) {
-            LOGGER.info("No changes to files since last snapshot, skipping snapshot creation.");
+        if (transactionNumberBefore >= transactionNumberAfter) {
+            LOGGER.info("No new file transactions found after transaction number {}, skipping snapshot creation.",
+                    transactionNumberBefore);
             return;
         }
-        LOGGER.info("Changes to files have been made since the last snapshot. Creating a new files snapshot for transaction number {}.",
-                transactionNumberAfter);
+        LOGGER.info("Transaction found with transaction number {} is newer than latest files snapshot transaction number {}.",
+                transactionNumberAfter, transactionNumberBefore);
+        LOGGER.info("Creating a new files snapshot from latest transaction.");
         TransactionLogSnapshot snapshot = TransactionLogSnapshot.forFiles(getBasePath(), transactionNumberAfter);
         snapshotSerDe.saveFiles(snapshot, filesState);
-        snapshotStore.saveSnapshot(snapshot);
+        try {
+            snapshotSaver.save(snapshot);
+        } catch (Exception e) {
+            LOGGER.info("Failed to save snapshot to Dynamo DB. Deleting snapshot file.");
+            Path path = new Path(snapshot.getPath());
+            FileSystem fs = path.getFileSystem(configuration);
+            fs.delete(path, false);
+            throw e;
+        }
     }
 
-    private void savePartitionsSnapshot(StateStorePartitions partitionsState, long transactionNumberBefore,
-            TransactionLogSnapshotSerDe snapshotSerDe, DynamoDBTransactionLogSnapshotStore snapshotStore) throws IOException, StateStoreException, DuplicateSnapshotException {
+    private void savePartitionsSnapshot(StateStorePartitions partitionsState, long transactionNumberBefore) throws IOException, StateStoreException, DuplicateSnapshotException {
         long transactionNumberAfter = TransactionLogSnapshotUtils.updatePartitionsState(
                 tableProperties.getStatus(), partitionsState, partitionsLogStore, transactionNumberBefore);
-        if (transactionNumberBefore == transactionNumberAfter) {
-            LOGGER.info("No changes to partitions since the last snapshot, skipping snapshot creation.");
+        if (transactionNumberBefore >= transactionNumberAfter) {
+            LOGGER.info("No new partition transactions found after transaction number {}, skipping snapshot creation.",
+                    transactionNumberBefore);
             return;
         }
 
-        LOGGER.info("Changes to partitions have been made since the last snapshot. Creating a new snapshot for transaction number {}.",
-                transactionNumberAfter);
+        LOGGER.info("Transaction found with transaction number {} is newer than latest partitions snapshot transaction number {}.",
+                transactionNumberAfter, transactionNumberBefore);
+        LOGGER.info("Creating a new partitions snapshot from latest transaction.");
         TransactionLogSnapshot snapshot = TransactionLogSnapshot.forPartitions(getBasePath(), transactionNumberAfter);
         snapshotSerDe.savePartitions(snapshot, partitionsState);
-        snapshotStore.saveSnapshot(snapshot);
+        try {
+            snapshotSaver.save(snapshot);
+        } catch (Exception e) {
+            LOGGER.info("Failed to save snapshot to Dynamo DB. Deleting snapshot file.");
+            Path path = new Path(snapshot.getPath());
+            FileSystem fs = path.getFileSystem(configuration);
+            fs.delete(path, false);
+            throw e;
+        }
     }
 
     private String getBasePath() {
         return instanceProperties.get(FILE_SYSTEM)
                 + instanceProperties.get(DATA_BUCKET) + "/"
                 + tableProperties.get(TableProperty.TABLE_ID);
+    }
+
+    interface LatestSnapshotsLoader {
+        LatestSnapshots load();
+    }
+
+    public interface SnapshotSaver {
+        void save(TransactionLogSnapshot snapshot) throws DuplicateSnapshotException;
     }
 }

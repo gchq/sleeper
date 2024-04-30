@@ -153,7 +153,7 @@ public final class WebSocketQueryStack extends NestedStack {
         stage.grantManagementApiAccess(webSocketApiHandler);
         stage.grantManagementApiAccess(queryStack.getQueryExecutorLambda());
         stage.grantManagementApiAccess(queryStack.getLeafPartitionQueryLambda());
-        grantAccessToWebSocketQueryApi(coreStacks.getQueryPolicy());
+        grantAccessToWebSocketQueryApi(coreStacks.getQueryPolicyForGrants());
 
         new CfnOutput(this, "WebSocketApiUrl", CfnOutputProps.builder()
                 .value(stage.getUrl())
