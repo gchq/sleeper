@@ -251,10 +251,9 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
         stateStore.addFile(factory.rootFile(123L));
 
         // When / Then
-        DuplicateSnapshotException exception = new DuplicateSnapshotException("test.parquet", new Exception());
+        IllegalStateException exception = new IllegalStateException();
         assertThatThrownBy(() -> runSnapshotCreator(table, failedUpdate(exception)))
-                .isInstanceOf(RuntimeException.class)
-                .hasCause(exception);
+                .isSameAs(exception);
         assertThat(snapshotStore(table).getFilesSnapshots()).isEmpty();
         assertThat(Files.exists(filesSnapshotPath(table, 1))).isFalse();
     }
@@ -267,10 +266,9 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
         stateStore.initialise();
 
         // When / Then
-        DuplicateSnapshotException exception = new DuplicateSnapshotException("test.parquet", new Exception());
+        IllegalStateException exception = new IllegalStateException();
         assertThatThrownBy(() -> runSnapshotCreator(table, failedUpdate(exception)))
-                .isInstanceOf(RuntimeException.class)
-                .hasCause(exception);
+                .isSameAs(exception);
         assertThat(snapshotStore(table).getPartitionsSnapshots()).isEmpty();
         assertThat(Files.exists(partitionsSnapshotPath(table, 1))).isFalse();
     }
@@ -404,7 +402,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
                 + tableProperties.get(TableProperty.TABLE_ID);
     }
 
-    private SnapshotSaver failedUpdate(DuplicateSnapshotException exception) {
+    private SnapshotSaver failedUpdate(RuntimeException exception) {
         return snapshot -> {
             throw exception;
         };

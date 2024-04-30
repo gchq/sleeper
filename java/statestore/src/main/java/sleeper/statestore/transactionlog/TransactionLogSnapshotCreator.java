@@ -134,7 +134,7 @@ public class TransactionLogSnapshotCreator {
         snapshotSerDe.saveFiles(snapshot, filesState);
         try {
             snapshotSaver.save(snapshot);
-        } catch (DuplicateSnapshotException e) {
+        } catch (Exception e) {
             LOGGER.info("Failed to save snapshot to Dynamo DB. Deleting snapshot file.");
             Path path = new Path(snapshot.getPath());
             FileSystem fs = path.getFileSystem(configuration);
@@ -159,7 +159,7 @@ public class TransactionLogSnapshotCreator {
         snapshotSerDe.savePartitions(snapshot, partitionsState);
         try {
             snapshotSaver.save(snapshot);
-        } catch (DuplicateSnapshotException e) {
+        } catch (Exception e) {
             LOGGER.info("Failed to save snapshot to Dynamo DB. Deleting snapshot file.");
             Path path = new Path(snapshot.getPath());
             FileSystem fs = path.getFileSystem(configuration);
