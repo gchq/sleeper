@@ -223,6 +223,23 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
     }
 
     @Test
+    void shouldNotCreateFileSnapshotForTableWithOnlyPartitionTransactions() throws Exception {
+        // Given
+        TableProperties table = createTable("test-table-id-1", "test-table-1");
+        StateStore stateStore = createStateStoreWithInMemoryTransactionLog(table);
+        stateStore.initialise();
+
+        // When
+        runSnapshotCreator(table);
+
+        // Then
+        assertThat(snapshotStore(table).getLatestSnapshots())
+                .isEqualTo(new LatestSnapshots(null, partitionsSnapshot(table, 1)));
+        assertThat(snapshotStore(table).getFilesSnapshots()).isEmpty();
+        assertThat(snapshotStore(table).getPartitionsSnapshots()).containsExactly(partitionsSnapshot(table, 1));
+    }
+
+    @Test
     void shouldRemoveSnapshotFilesIfDynamoTransactionFailed() throws Exception {
         // Given
         TableProperties table = createTable("test-table-id-1", "test-table-1");
