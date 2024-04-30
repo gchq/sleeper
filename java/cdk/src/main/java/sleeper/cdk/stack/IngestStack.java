@@ -154,8 +154,8 @@ public class IngestStack extends NestedStack {
         instanceProperties.set(INGEST_JOB_QUEUE_ARN, ingestJobQueue.getQueueArn());
         instanceProperties.set(INGEST_JOB_DLQ_URL, ingestJobDeadLetterQueue.getQueue().getQueueUrl());
         instanceProperties.set(INGEST_JOB_DLQ_ARN, ingestJobDeadLetterQueue.getQueue().getQueueArn());
-        ingestJobQueue.grantSendMessages(coreStacks.getIngestPolicy());
-        ingestJobQueue.grantPurge(coreStacks.getPurgeQueuesPolicy());
+        ingestJobQueue.grantSendMessages(coreStacks.getIngestPolicyForGrants());
+        ingestJobQueue.grantPurge(coreStacks.getPurgeQueuesPolicyForGrants());
 
         // Add alarm to send message to SNS if there are any messages on the dead letter queue
         createAlarmForDlq(this, "IngestAlarm",

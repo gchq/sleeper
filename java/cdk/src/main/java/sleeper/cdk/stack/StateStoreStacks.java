@@ -31,10 +31,10 @@ public final class StateStoreStacks {
         this.dynamo = dynamo;
         this.s3 = s3;
         this.transactionLog = transactionLog;
-        grantReadPartitionsReadWriteActiveFiles(policiesStack.getIngestPolicy());
-        grantReadActiveFilesAndPartitions(policiesStack.getQueryPolicy());
-        grantReadActiveFilesAndPartitions(policiesStack.getReportingPolicy());
-        grantReadWritePartitions(policiesStack.getEditTablesPolicy());
+        grantReadPartitionsReadWriteActiveFiles(policiesStack.getIngestPolicyForGrants());
+        grantReadActiveFilesAndPartitions(policiesStack.getQueryPolicyForGrants());
+        grantReadActiveFilesAndPartitions(policiesStack.getReportingPolicyForGrants());
+        grantReadWritePartitions(policiesStack.getEditTablesPolicyForGrants());
     }
 
     public void grantReadActiveFilesAndPartitions(IGrantable grantee) {

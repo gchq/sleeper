@@ -22,6 +22,8 @@ import software.amazon.awscdk.services.cloudwatch.IMetric;
 import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
+import software.amazon.awscdk.services.iam.Effect;
+import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
@@ -89,8 +91,6 @@ public class TableMetricsStack extends NestedStack {
                 .timeout(Duration.minutes(1))
                 .logGroup(createLambdaLogGroup(this, "MetricsPublisherLogGroup", publishFunctionName, instanceProperties)));
 
-        coreStacks.grantReadTablesStatus(tableMetricsTrigger);
-        coreStacks.grantReadTablesMetadata(tableMetricsPublisher);
         instanceProperties.set(TABLE_METRICS_LAMBDA_FUNCTION, tableMetricsTrigger.getFunctionName());
 
         Rule rule = Rule.Builder.create(this, "MetricsPublishSchedule")
@@ -124,10 +124,18 @@ public class TableMetricsStack extends NestedStack {
                 "Alarms if there are any messages on the dead letter queue for the table metrics queue",
                 deadLetterQueue, topic);
         errorMetrics.add(Utils.createErrorMetric("Table Metrics Errors", deadLetterQueue, instanceProperties));
-        queue.grantSendMessages(tableMetricsTrigger);
-        coreStacks.grantInvokeScheduled(tableMetricsTrigger, queue);
         tableMetricsPublisher.addEventSource(SqsEventSource.Builder.create(queue)
                 .batchSize(instanceProperties.getInt(METRICS_TABLE_BATCH_SIZE)).build());
+
+        coreStacks.grantReadTablesStatus(tableMetricsTrigger);
+        coreStacks.grantReadTablesMetadata(tableMetricsPublisher);
+        queue.grantSendMessages(tableMetricsTrigger);
+        coreStacks.grantInvokeScheduled(tableMetricsTrigger, queue);
+        coreStacks.getReportingPolicyForGrants().addStatements(PolicyStatement.Builder.create()
+                .effect(Effect.ALLOW)
+                .actions(List.of("cloudwatch:GetMetricData"))
+                .resources(List.of("*"))
+                .build());
 
         Utils.addStackTagIfSet(this, instanceProperties);
     }
