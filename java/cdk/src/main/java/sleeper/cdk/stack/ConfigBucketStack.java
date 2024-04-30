@@ -54,8 +54,8 @@ public class ConfigBucketStack extends NestedStack {
                 .build();
         instanceProperties.set(CONFIG_BUCKET, configBucket.getBucketName());
 
-        configBucket.grantRead(policiesStack.getDirectIngestPolicy());
-        configBucket.grantRead(policiesStack.getIngestByQueuePolicy());
+        configBucket.grantRead(policiesStack.getDirectIngestPolicyForGrants());
+        configBucket.grantRead(policiesStack.getIngestByQueuePolicyForGrants());
         configBucket.grantReadWrite(policiesStack.getEditTablesPolicyForGrants());
 
         Utils.addStackTagIfSet(this, instanceProperties);

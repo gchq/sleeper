@@ -116,12 +116,12 @@ public class CoreStacks {
         policiesStack.grantReadIngestSources(grantee);
     }
 
-    public IGrantable getDirectIngestPolicy() {
-        return policiesStack.getDirectIngestPolicy();
+    public IGrantable getDirectIngestPolicyForGrants() {
+        return policiesStack.getDirectIngestPolicyForGrants();
     }
 
-    public IGrantable getIngestByQueuePolicy() {
-        return policiesStack.getIngestByQueuePolicy();
+    public IGrantable getIngestByQueuePolicyForGrants() {
+        return policiesStack.getIngestByQueuePolicyForGrants();
     }
 
     public IGrantable getQueryPolicyForGrants() {

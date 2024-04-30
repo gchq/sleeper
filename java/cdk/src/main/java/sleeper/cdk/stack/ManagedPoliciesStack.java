@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package sleeper.cdk.stack;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -83,11 +82,11 @@ public class ManagedPoliciesStack extends NestedStack {
         }
     }
 
-    public ManagedPolicy getDirectIngestPolicy() {
+    public ManagedPolicy getDirectIngestPolicyForGrants() {
         return directIngestPolicy;
     }
 
-    public ManagedPolicy getIngestByQueuePolicy() {
+    public ManagedPolicy getIngestByQueuePolicyForGrants() {
         return ingestByQueuePolicy;
     }
 
@@ -145,7 +144,7 @@ public class ManagedPoliciesStack extends NestedStack {
 
     Stream<ManagedPolicy> instanceAdminPolicies() {
         return Stream.of(
-                ingestPolicy, queryPolicy, editTablesPolicy, reportingPolicy,
+                directIngestPolicy, ingestByQueuePolicy, queryPolicy, editTablesPolicy, reportingPolicy,
                 purgeQueuesPolicy, invokeCompactionPolicy, invokeSchedulesPolicy)
                 .filter(policy -> policy != null);
     }

@@ -31,7 +31,7 @@ public final class StateStoreStacks {
         this.dynamo = dynamo;
         this.s3 = s3;
         this.transactionLog = transactionLog;
-        grantReadPartitionsReadWriteActiveFiles(policiesStack.getDirectIngestPolicy());
+        grantReadPartitionsReadWriteActiveFiles(policiesStack.getDirectIngestPolicyForGrants());
         grantReadActiveFilesAndPartitions(policiesStack.getQueryPolicyForGrants());
         grantReadActiveFilesAndPartitions(policiesStack.getReportingPolicyForGrants());
         grantReadWritePartitions(policiesStack.getEditTablesPolicyForGrants());
