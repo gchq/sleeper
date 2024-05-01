@@ -44,16 +44,15 @@ public class TransactionLogStateStoreStack extends NestedStack {
     public TransactionLogStateStoreStack(
             Construct scope, String id, InstanceProperties instanceProperties, TableDataStack dataStack) {
         super(scope, id);
-
-        partitionsLogTable = createTransactionLogTable(instanceProperties, "TransactionLogPartitionsTable", "transaction-log-partitions");
-        filesLogTable = createTransactionLogTable(instanceProperties, "TransactionLogFilesTable", "transaction-log-files");
+        this.dataStack = dataStack;
+        partitionsLogTable = createTransactionLogTable(instanceProperties, "PartitionTransactionLogTable", "partition-transaction-log");
+        filesLogTable = createTransactionLogTable(instanceProperties, "FileTransactionLogTable", "file-transaction-log");
         latestSnapshotsTable = createLatestSnapshotsTable(instanceProperties, "TransactionLogLatestSnapshotsTable", "transaction-log-latest-snapshots");
         allSnapshotsTable = createAllSnapshotsTable(instanceProperties, "TransactionLogAllSnapshotsTable", "transaction-log-all-snapshots");
         instanceProperties.set(TRANSACTION_LOG_PARTITIONS_TABLENAME, partitionsLogTable.getTableName());
         instanceProperties.set(TRANSACTION_LOG_FILES_TABLENAME, filesLogTable.getTableName());
         instanceProperties.set(TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME, latestSnapshotsTable.getTableName());
         instanceProperties.set(TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME, allSnapshotsTable.getTableName());
-        this.dataStack = dataStack;
     }
 
     private Table createTransactionLogTable(InstanceProperties instanceProperties, String id, String name) {
@@ -125,6 +124,8 @@ public class TransactionLogStateStoreStack extends NestedStack {
     }
 
     public void grantReadWriteSnapshots(IGrantable grantee) {
+        grantReadFiles(grantee);
+        grantReadPartitions(grantee);
         latestSnapshotsTable.grantReadWriteData(grantee);
         allSnapshotsTable.grantReadWriteData(grantee);
         dataStack.grantReadWrite(grantee);

@@ -22,8 +22,10 @@ import org.apache.hadoop.conf.Configuration;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.LatestSnapshots;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 
 public class DynamoDBTransactionLogStateStore {
     public static final String TABLE_ID = "TABLE_ID";
@@ -47,21 +49,27 @@ public class DynamoDBTransactionLogStateStore {
     private static void loadLatestSnapshots(
             TransactionLogStateStore.Builder builder, InstanceProperties instanceProperties, TableProperties tableProperties,
             AmazonDynamoDB dynamoDB, Configuration configuration) {
-        new DynamoDBTransactionLogSnapshotStore(instanceProperties, tableProperties, dynamoDB).getLatestSnapshots()
-                .ifPresent(latestSnapshots -> {
-                    TransactionLogSnapshotSerDe snapshotSerDe = new TransactionLogSnapshotSerDe(tableProperties.getSchema(), configuration);
-                    try {
-                        if (latestSnapshots.getFilesSnapshot().getPath() != null) {
-                            builder.filesState(snapshotSerDe.loadFiles(latestSnapshots.getFilesSnapshot()))
-                                    .filesTransactionNumber(latestSnapshots.getFilesSnapshot().getTransactionNumber());
-                        }
-                        if (latestSnapshots.getPartitionsSnapshot().getPath() != null) {
-                            builder.partitionsState(snapshotSerDe.loadPartitions(latestSnapshots.getPartitionsSnapshot()))
-                                    .partitionsTransactionNumber(latestSnapshots.getPartitionsSnapshot().getTransactionNumber());
-                        }
-                    } catch (IOException e) {
-                        throw new RuntimeException("Failed to load latest snapshots", e);
-                    }
-                });
+        LatestSnapshots latestSnapshots = new DynamoDBTransactionLogSnapshotStore(instanceProperties, tableProperties, dynamoDB).getLatestSnapshots();
+        TransactionLogSnapshotSerDe snapshotSerDe = new TransactionLogSnapshotSerDe(tableProperties.getSchema(), configuration);
+        try {
+            latestSnapshots.getFilesSnapshot().ifPresent(filesSnapshot -> {
+                try {
+                    builder.filesState(snapshotSerDe.loadFiles(filesSnapshot))
+                            .filesTransactionNumber(filesSnapshot.getTransactionNumber());
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            });
+            latestSnapshots.getPartitionsSnapshot().ifPresent(partitionsSnapshot -> {
+                try {
+                    builder.partitionsState(snapshotSerDe.loadPartitions(partitionsSnapshot))
+                            .partitionsTransactionNumber(partitionsSnapshot.getTransactionNumber());
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            });
+        } catch (UncheckedIOException e) {
+            throw new RuntimeException("Failed to load latest snapshots", e);
+        }
     }
 }

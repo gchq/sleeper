@@ -150,10 +150,45 @@ public class DynamoDBTransactionLogSnapshotStoreIT {
         store.saveSnapshot(partitionsSnapshot(3));
 
         // Then
-        assertThat(store.getLatestSnapshots()).contains(
+        assertThat(store.getLatestSnapshots()).isEqualTo(
                 new LatestSnapshots(
                         filesSnapshot(3),
                         partitionsSnapshot(3)));
+    }
+
+    @Test
+    void shouldRetrieveLatestSnapshotsWhenNoFilesSnapshotsArePresent() throws Exception {
+        // Given / When
+        store.saveSnapshot(partitionsSnapshot(1));
+        store.saveSnapshot(partitionsSnapshot(2));
+        store.saveSnapshot(partitionsSnapshot(3));
+
+        // Then
+        assertThat(store.getLatestSnapshots()).isEqualTo(
+                new LatestSnapshots(
+                        null,
+                        partitionsSnapshot(3)));
+    }
+
+    @Test
+    void shouldRetrieveLatestSnapshotsWhenNoPartitionsSnapshotsArePresent() throws Exception {
+        // Given / When
+        store.saveSnapshot(filesSnapshot(1));
+        store.saveSnapshot(filesSnapshot(2));
+        store.saveSnapshot(filesSnapshot(3));
+
+        // Then
+        assertThat(store.getLatestSnapshots()).isEqualTo(
+                new LatestSnapshots(
+                        filesSnapshot(3),
+                        null));
+    }
+
+    @Test
+    void shouldRetrieveLatestSnapshotsWhenNoSnapshotsArePresent() throws Exception {
+        // Given / When / Then
+        assertThat(store.getLatestSnapshots()).isEqualTo(
+                LatestSnapshots.empty());
     }
 
     @Test
@@ -190,11 +225,11 @@ public class DynamoDBTransactionLogSnapshotStoreIT {
                 .containsExactly(
                         partitionsSnapshot(table2, 1),
                         partitionsSnapshot(table2, 2));
-        assertThat(snapshotStore1.getLatestSnapshots()).contains(
+        assertThat(snapshotStore1.getLatestSnapshots()).isEqualTo(
                 new LatestSnapshots(
                         filesSnapshot(table1, 2),
                         partitionsSnapshot(table1, 2)));
-        assertThat(snapshotStore2.getLatestSnapshots()).contains(
+        assertThat(snapshotStore2.getLatestSnapshots()).isEqualTo(
                 new LatestSnapshots(
                         filesSnapshot(table2, 2),
                         partitionsSnapshot(table2, 2)));
