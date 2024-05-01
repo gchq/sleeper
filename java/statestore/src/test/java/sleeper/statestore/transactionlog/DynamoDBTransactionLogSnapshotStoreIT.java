@@ -250,7 +250,7 @@ public class DynamoDBTransactionLogSnapshotStoreIT {
                     Instant.parse("2024-04-25T15:15:00Z"),
                     Instant.parse("2024-04-26T15:45:00Z"),
                     Instant.parse("2024-04-26T16:00:00Z"),
-                    Instant.parse("2024-04-26T15:30:00Z")).iterator()::next);
+                    Instant.parse("2024-04-26T16:30:00Z")).iterator()::next);
             snapshotStore.saveSnapshot(filesSnapshot(1));
             snapshotStore.saveSnapshot(filesSnapshot(2));
             snapshotStore.saveSnapshot(filesSnapshot(3));
@@ -267,7 +267,7 @@ public class DynamoDBTransactionLogSnapshotStoreIT {
             tableProperties.setNumber(TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS, 1);
             DynamoDBTransactionLogSnapshotStore snapshotStore = snapshotStore(List.of(
                     Instant.parse("2024-04-24T15:45:00Z"),
-                    Instant.parse("2024-04-26T15:30:00Z")).iterator()::next);
+                    Instant.parse("2024-04-26T16:00:00Z")).iterator()::next);
             snapshotStore.saveSnapshot(filesSnapshot(1));
 
             // When / Then
