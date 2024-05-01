@@ -21,6 +21,7 @@ import sleeper.configuration.properties.table.InMemoryTableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TablePropertiesStore;
+import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
@@ -39,19 +40,22 @@ import java.util.function.DoubleSupplier;
 
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
-import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.noJitter;
+import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.fixJitterSeed;
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.recordWaits;
 
 public class CompactionJobCompletionTestBase {
 
     private static final Instant INPUT_UPDATE_TIME = Instant.parse("2024-05-01T10:00:00Z");
+    private static final RecordsProcessedSummary DEFAULT_SUMMARY = new RecordsProcessedSummary(
+            new RecordsProcessed(120, 100),
+            Instant.parse("2024-05-01T10:58:00Z"), Duration.ofMinutes(1));
 
     private final TablePropertiesStore tablePropertiesStore = InMemoryTableProperties.getStore();
-    protected final Map<String, StateStore> stateStoreByTableName = new HashMap<>();
+    protected final Map<String, StateStore> stateStoreByTableId = new HashMap<>();
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
     protected final InMemoryCompactionJobStatusStore statusStore = new InMemoryCompactionJobStatusStore();
     protected final TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, tablePropertiesStore);
@@ -62,7 +66,7 @@ public class CompactionJobCompletionTestBase {
     protected TableProperties createTable() {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
         tablePropertiesStore.createTable(tableProperties);
-        stateStoreByTableName.put(tableProperties.get(TABLE_NAME), inMemoryStateStoreWithFixedSinglePartition(tableProperties.getSchema()));
+        stateStoreByTableId.put(tableProperties.get(TABLE_ID), inMemoryStateStoreWithFixedSinglePartition(tableProperties.getSchema()));
         lastTable = tableProperties;
         return tableProperties;
     }
@@ -104,27 +108,21 @@ public class CompactionJobCompletionTestBase {
         return job;
     }
 
+    protected CompactionJobRunCompleted runCompactionJobOnTask(String taskId, CompactionJob job) throws Exception {
+        return runCompactionJobOnTask(taskId, job, DEFAULT_SUMMARY);
+    }
+
     protected CompactionJobRunCompleted runCompactionJobOnTask(String taskId, CompactionJob job, RecordsProcessedSummary summary) throws Exception {
         statusStore.jobStarted(job, summary.getStartTime(), taskId);
         return new CompactionJobRunCompleted(job, taskId, summary);
     }
 
-    protected CompactionJobCompletion completionWithUpdateTime(Instant updateTime) {
-        return completionWithUpdateTime(statusStore, stateStore(), updateTime);
+    protected CompactionJobCompletion jobCompletion() {
+        return jobCompletion(fixJitterSeed());
     }
 
-    protected CompactionJobCompletion completionWithUpdateTime(Instant updateTime, DoubleSupplier randomJitter) {
-        return completionWithUpdateTime(statusStore, stateStore(), updateTime, randomJitter);
-    }
-
-    protected CompactionJobCompletion completionWithUpdateTime(CompactionJobStatusStore statusStore, StateStore stateStore, Instant updateTime) {
-        return completionWithUpdateTime(statusStore, stateStore, updateTime, noJitter());
-    }
-
-    protected CompactionJobCompletion completionWithUpdateTime(
-            CompactionJobStatusStore statusStore, StateStore stateStore, Instant updateTime, DoubleSupplier randomJitter) {
-        stateStore.fixFileUpdateTime(updateTime);
-        return new CompactionJobCompletion(statusStore, stateStore,
+    protected CompactionJobCompletion jobCompletion(DoubleSupplier randomJitter) {
+        return new CompactionJobCompletion(statusStore, stateStoreByTableId::get,
                 CompactionJobCompletion.JOB_ASSIGNMENT_WAIT_ATTEMPTS, backoff(randomJitter));
     }
 
@@ -142,7 +140,7 @@ public class CompactionJobCompletionTestBase {
     }
 
     protected StateStore stateStore(TableProperties table) {
-        return stateStoreByTableName.get(table.get(TABLE_NAME));
+        return stateStoreByTableId.get(table.get(TABLE_ID));
     }
 
     protected void actionOnWait(WaitAction action) throws Exception {

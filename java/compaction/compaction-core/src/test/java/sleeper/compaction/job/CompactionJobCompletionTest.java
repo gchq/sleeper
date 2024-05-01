@@ -15,13 +15,11 @@
  */
 package sleeper.compaction.job;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.record.process.RecordsProcessed;
-import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
@@ -42,25 +40,26 @@ public class CompactionJobCompletionTest extends CompactionJobCompletionTestBase
     @DisplayName("Retry state store update")
     class RetryStateStoreUpdate {
 
-        TableProperties table = createTable();
+        @BeforeEach
+        void setUp() {
+            createTable();
+        }
 
         @Test
         void shouldRetryStateStoreUpdateWhenFilesNotAssignedToJob() throws Exception {
             // Given
             FileReference file = addInputFile("file.parquet", 123);
             CompactionJob job = createCompactionJobForOneFileNoJobAssignment(file);
-            RecordsProcessedSummary summary = new RecordsProcessedSummary(
-                    new RecordsProcessed(120, 100),
-                    Instant.parse("2024-05-01T10:58:00Z"), Duration.ofMinutes(1));
-            CompactionJobRunCompleted completion = runCompactionJobOnTask("test-task", job, summary);
+            CompactionJobRunCompleted completion = runCompactionJobOnTask("test-task", job);
             actionOnWait(() -> {
                 stateStore().assignJobIds(List.of(AssignJobIdRequest.assignJobOnPartitionToFiles(
                         job.getId(), file.getPartitionId(), List.of(file.getFilename()))));
             });
+            Instant updateTime = Instant.parse("2024-05-01T10:59:30Z");
+            stateStore().fixFileUpdateTime(updateTime);
 
             // When
-            Instant updateTime = Instant.parse("2024-05-01T10:59:30Z");
-            completionWithUpdateTime(updateTime, noJitter()).applyCompletedJob(completion);
+            jobCompletion(noJitter()).applyCompletedJob(completion);
 
             // Then
             assertThat(stateStore().getFileReferences()).containsExactly(
@@ -74,14 +73,10 @@ public class CompactionJobCompletionTest extends CompactionJobCompletionTestBase
             // Given
             FileReference file = addInputFile("file.parquet", 123);
             CompactionJob job = createCompactionJobForOneFileNoJobAssignment(file);
-            RecordsProcessedSummary summary = new RecordsProcessedSummary(
-                    new RecordsProcessed(120, 100),
-                    Instant.parse("2024-05-01T10:58:00Z"), Duration.ofMinutes(1));
-            CompactionJobRunCompleted completion = runCompactionJobOnTask("test-task", job, summary);
+            CompactionJobRunCompleted completion = runCompactionJobOnTask("test-task", job);
 
             // When
-            Instant updateTime = Instant.parse("2024-05-01T10:59:30Z");
-            assertThatThrownBy(() -> completionWithUpdateTime(updateTime, noJitter()).applyCompletedJob(completion))
+            assertThatThrownBy(() -> jobCompletion(noJitter()).applyCompletedJob(completion))
                     .isInstanceOf(TimedOutWaitingForFileAssignmentsException.class)
                     .hasCauseInstanceOf(FileReferenceNotAssignedToJobException.class);
 
@@ -104,14 +99,10 @@ public class CompactionJobCompletionTest extends CompactionJobCompletionTestBase
             // Given
             FileReference file = inputFileFactory().rootFile("file.parquet", 123);
             CompactionJob job = createCompactionJobForOneFileNoJobAssignment(file);
-            RecordsProcessedSummary summary = new RecordsProcessedSummary(
-                    new RecordsProcessed(120, 100),
-                    Instant.parse("2024-05-01T10:58:00Z"), Duration.ofMinutes(1));
-            CompactionJobRunCompleted completion = runCompactionJobOnTask("test-task", job, summary);
+            CompactionJobRunCompleted completion = runCompactionJobOnTask("test-task", job);
 
             // When
-            Instant updateTime = Instant.parse("2024-05-01T10:59:30Z");
-            assertThatThrownBy(() -> completionWithUpdateTime(updateTime, noJitter()).applyCompletedJob(completion))
+            assertThatThrownBy(() -> jobCompletion(noJitter()).applyCompletedJob(completion))
                     .isInstanceOf(FileNotFoundException.class);
 
             // Then

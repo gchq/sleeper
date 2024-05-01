@@ -26,12 +26,12 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 
 import sleeper.compaction.job.CompactionJobCompletion;
+import sleeper.compaction.job.CompactionJobCompletion.GetStateStore;
 import sleeper.compaction.job.CompactionJobCompletionRequest;
 import sleeper.compaction.job.CompactionJobRunCompleted;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
@@ -42,10 +42,8 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 
 public class CompactionJobCompletionLambda implements RequestHandler<SQSEvent, SQSBatchResponse> {
 
-    private final TablePropertiesProvider tablePropertiesProvider;
-    private final StateStoreProvider stateStoreProvider;
     private final CompactionJobStatusStore statusStore;
-    private final CompactionJobCompletionConstructor completionConstructor;
+    private final CompactionJobCompletion compactionJobCompletion;
 
     public CompactionJobCompletionLambda() {
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
@@ -56,19 +54,17 @@ public class CompactionJobCompletionLambda implements RequestHandler<SQSEvent, S
         instanceProperties.loadFromS3(s3Client, s3Bucket);
         Configuration hadoopConf = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
 
-        tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
-        stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, hadoopConf);
+        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, hadoopConf);
         statusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
-        completionConstructor = CompactionJobCompletion::new;
+        compactionJobCompletion = new CompactionJobCompletion(
+                statusStore, stateStoreProviderForCompletion(tablePropertiesProvider, stateStoreProvider));
     }
 
     public CompactionJobCompletionLambda(
-            TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider,
-            CompactionJobStatusStore statusStore, CompactionJobCompletionConstructor completionConstructor) {
-        this.tablePropertiesProvider = tablePropertiesProvider;
-        this.stateStoreProvider = stateStoreProvider;
+            CompactionJobStatusStore statusStore, CompactionJobCompletion compactionJobCompletion) {
         this.statusStore = statusStore;
-        this.completionConstructor = completionConstructor;
+        this.compactionJobCompletion = compactionJobCompletion;
     }
 
     interface CompactionJobCompletionConstructor {
@@ -82,10 +78,13 @@ public class CompactionJobCompletionLambda implements RequestHandler<SQSEvent, S
 
     public void completeJobs(CompactionJobCompletionRequest request) throws StateStoreException, InterruptedException {
         for (CompactionJobRunCompleted jobRun : request.getFinishedJobRuns()) {
-            TableProperties tableProperties = tablePropertiesProvider.getById(jobRun.getJob().getTableId());
-            StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-            completionConstructor.jobCompletion(statusStore, stateStore).applyCompletedJob(jobRun);
+            compactionJobCompletion.applyCompletedJob(jobRun);
         }
+    }
+
+    public static GetStateStore stateStoreProviderForCompletion(
+            TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider) {
+        return tableId -> stateStoreProvider.getStateStore(tablePropertiesProvider.getById(tableId));
     }
 
 }

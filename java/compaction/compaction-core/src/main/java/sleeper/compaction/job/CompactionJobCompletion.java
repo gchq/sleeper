@@ -32,21 +32,21 @@ public class CompactionJobCompletion {
     public static final WaitRange JOB_ASSIGNMENT_WAIT_RANGE = WaitRange.firstAndMaxWaitCeilingSecs(2, 60);
 
     private final CompactionJobStatusStore statusStore;
-    private final StateStore stateStore;
+    private final GetStateStore stateStoreProvider;
     private final int jobAssignmentWaitAttempts;
     private final ExponentialBackoffWithJitter jobAssignmentWaitBackoff;
 
     public CompactionJobCompletion(
-            CompactionJobStatusStore statusStore, StateStore stateStore) {
-        this(statusStore, stateStore, JOB_ASSIGNMENT_WAIT_ATTEMPTS,
+            CompactionJobStatusStore statusStore, GetStateStore stateStoreProvider) {
+        this(statusStore, stateStoreProvider, JOB_ASSIGNMENT_WAIT_ATTEMPTS,
                 new ExponentialBackoffWithJitter(JOB_ASSIGNMENT_WAIT_RANGE));
     }
 
     public CompactionJobCompletion(
-            CompactionJobStatusStore statusStore, StateStore stateStore,
+            CompactionJobStatusStore statusStore, GetStateStore stateStoreProvider,
             int jobAssignmentWaitAttempts, ExponentialBackoffWithJitter jobAssignmentWaitBackoff) {
         this.statusStore = statusStore;
-        this.stateStore = stateStore;
+        this.stateStoreProvider = stateStoreProvider;
         this.jobAssignmentWaitAttempts = jobAssignmentWaitAttempts;
         this.jobAssignmentWaitBackoff = jobAssignmentWaitBackoff;
     }
@@ -58,6 +58,7 @@ public class CompactionJobCompletion {
     }
 
     private void updateStateStoreSuccess(CompactionJob job, long recordsWritten) throws StateStoreException, InterruptedException {
+        StateStore stateStore = stateStoreProvider.getByTableId(job.getTableId());
         FileReference fileReference = FileReference.builder()
                 .filename(job.getOutputFile())
                 .partitionId(job.getPartitionId())
@@ -83,5 +84,10 @@ public class CompactionJobCompletion {
             }
         }
         throw new TimedOutWaitingForFileAssignmentsException(failure);
+    }
+
+    @FunctionalInterface
+    public interface GetStateStore {
+        StateStore getByTableId(String tableId);
     }
 }

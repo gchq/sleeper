@@ -17,7 +17,6 @@ package sleeper.compaction.completion.lambda;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.compaction.completion.lambda.CompactionJobCompletionLambda.CompactionJobCompletionConstructor;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobCompletionRequest;
 import sleeper.compaction.job.CompactionJobCompletionTestBase;
@@ -28,11 +27,9 @@ import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
-import sleeper.statestore.FixedStateStoreProvider;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Iterator;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -58,10 +55,11 @@ public class CompactionJobCompletionLambdaTest extends CompactionJobCompletionTe
                 Instant.parse("2024-05-01T10:58:30Z"), Duration.ofMinutes(1));
         CompactionJobRunCompleted completion1 = runCompactionJobOnTask("task-1", job1, summary1);
         CompactionJobRunCompleted completion2 = runCompactionJobOnTask("task-2", job2, summary2);
+        stateStore(table1).fixFileUpdateTime(Instant.parse("2024-05-01T11:00:00Z"));
+        stateStore(table2).fixFileUpdateTime(Instant.parse("2024-05-01T11:00:30Z"));
 
         // When
-        lambdaWithUpdateTimes(List.of(Instant.parse("2024-05-01T11:00:00Z"), Instant.parse("2024-05-01T11:00:30Z")))
-                .completeJobs(new CompactionJobCompletionRequest(List.of(completion1, completion2)));
+        lambda().completeJobs(new CompactionJobCompletionRequest(List.of(completion1, completion2)));
 
         // Then
         StateStore state1 = stateStore(table1);
@@ -82,16 +80,8 @@ public class CompactionJobCompletionLambdaTest extends CompactionJobCompletionTe
                         .rootFile(job2.getOutputFile(), 400));
     }
 
-    private CompactionJobCompletionLambda lambdaWithUpdateTimes(List<Instant> updateTimes) {
-        return new CompactionJobCompletionLambda(tablePropertiesProvider,
-                new FixedStateStoreProvider(stateStoreByTableName), statusStore, completionWithUpdateTimes(updateTimes));
-    }
-
-    private CompactionJobCompletionConstructor completionWithUpdateTimes(List<Instant> updateTimes) {
-        Iterator<Instant> timeIterator = updateTimes.iterator();
-        return (statusStore, stateStore) -> {
-            return completionWithUpdateTime(statusStore, stateStore, timeIterator.next());
-        };
+    private CompactionJobCompletionLambda lambda() {
+        return new CompactionJobCompletionLambda(statusStore, jobCompletion());
     }
 
 }
