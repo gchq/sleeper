@@ -196,18 +196,17 @@ public class DynamoDBTransactionLogSnapshotStore {
     private Stream<TransactionLogSnapshot> getSnapshotsBefore(long latestSnapshotNumber, SnapshotType type, long time) {
         return streamPagedItems(dynamo, new QueryRequest()
                 .withTableName(allSnapshotsTable)
-                .withKeyConditionExpression("#TableIdAndType = :table_id_and_type AND #TransactionNumber <> :latest_transaction")
+                .withKeyConditionExpression("#TableIdAndType = :table_id_and_type")
                 .withFilterExpression("#UpdateTime < :expiry_time")
                 .withExpressionAttributeNames(Map.of(
                         "#TableIdAndType", TABLE_ID_AND_SNAPSHOT_TYPE,
-                        "#UpdateTime", UPDATE_TIME,
-                        "#TransactionNumber", TRANSACTION_NUMBER))
+                        "#UpdateTime", UPDATE_TIME))
                 .withExpressionAttributeValues(new DynamoDBRecordBuilder()
                         .string(":table_id_and_type", tableAndType(sleeperTableId, type))
                         .number(":expiry_time", time)
-                        .number(":latest_transaction", latestSnapshotNumber)
                         .build()))
-                .map(DynamoDBTransactionLogSnapshotStore::getSnapshotFromItem);
+                .map(DynamoDBTransactionLogSnapshotStore::getSnapshotFromItem)
+                .filter(snapshot -> snapshot.getTransactionNumber() != latestSnapshotNumber);
     }
 
     public void deleteSnapshot(TransactionLogSnapshot snapshot) {
