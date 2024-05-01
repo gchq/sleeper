@@ -59,10 +59,9 @@ public class CompactionJobCompletionTestBase {
         return tableProperties;
     }
 
-    protected FileReference addInputFile(TableProperties table, String filename, long records, Instant updateTime) throws Exception {
+    protected FileReference addInputFile(TableProperties table, String filename, long records) throws Exception {
         StateStore stateStore = stateStoreProvider.getStateStore(table);
-        FileReference fileReference = FileReferenceFactory.fromUpdatedAt(stateStore, updateTime).rootFile(filename, records);
-        stateStore.fixFileUpdateTime(updateTime);
+        FileReference fileReference = FileReferenceFactory.from(stateStore).rootFile(filename, records);
         stateStore.addFile(fileReference);
         return fileReference;
     }

@@ -45,8 +45,8 @@ public class CompactionJobCompletionLambdaTest extends CompactionJobCompletionTe
         // Given
         TableProperties table1 = createTable();
         TableProperties table2 = createTable();
-        FileReference file1 = addInputFile(table1, "file1.parquet", 123, Instant.parse("2024-05-01T10:42:00Z"));
-        FileReference file2 = addInputFile(table2, "file2.parquet", 456, Instant.parse("2024-05-01T10:42:30Z"));
+        FileReference file1 = addInputFile(table1, "file1.parquet", 123);
+        FileReference file2 = addInputFile(table2, "file2.parquet", 456);
         CompactionJob job1 = createCompactionJobForOneFile(table1, file1, "job-1", Instant.parse("2024-05-01T10:50:00Z"));
         CompactionJob job2 = createCompactionJobForOneFile(table2, file2, "job-2", Instant.parse("2024-05-01T10:50:30Z"));
         RecordsProcessedSummary summary1 = new RecordsProcessedSummary(
