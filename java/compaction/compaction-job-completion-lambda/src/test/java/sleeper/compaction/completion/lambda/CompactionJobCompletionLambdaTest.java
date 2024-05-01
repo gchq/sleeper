@@ -81,7 +81,7 @@ public class CompactionJobCompletionLambdaTest extends CompactionJobCompletionTe
     }
 
     private CompactionJobCompletionLambda lambda() {
-        return new CompactionJobCompletionLambda(statusStore, jobCompletion());
+        return new CompactionJobCompletionLambda(jobCompletion());
     }
 
 }

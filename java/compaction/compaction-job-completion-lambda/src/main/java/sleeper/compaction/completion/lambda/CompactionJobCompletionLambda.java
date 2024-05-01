@@ -33,7 +33,6 @@ import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreProvider;
@@ -42,33 +41,14 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 
 public class CompactionJobCompletionLambda implements RequestHandler<SQSEvent, SQSBatchResponse> {
 
-    private final CompactionJobStatusStore statusStore;
     private final CompactionJobCompletion compactionJobCompletion;
 
     public CompactionJobCompletionLambda() {
-        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
-        String s3Bucket = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
-
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.loadFromS3(s3Client, s3Bucket);
-        Configuration hadoopConf = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
-
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, hadoopConf);
-        statusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
-        compactionJobCompletion = new CompactionJobCompletion(
-                statusStore, stateStoreProviderForCompletion(tablePropertiesProvider, stateStoreProvider));
+        this(connectToAws());
     }
 
-    public CompactionJobCompletionLambda(
-            CompactionJobStatusStore statusStore, CompactionJobCompletion compactionJobCompletion) {
-        this.statusStore = statusStore;
+    public CompactionJobCompletionLambda(CompactionJobCompletion compactionJobCompletion) {
         this.compactionJobCompletion = compactionJobCompletion;
-    }
-
-    interface CompactionJobCompletionConstructor {
-        CompactionJobCompletion jobCompletion(CompactionJobStatusStore statusStore, StateStore stateStore);
     }
 
     @Override
@@ -82,7 +62,23 @@ public class CompactionJobCompletionLambda implements RequestHandler<SQSEvent, S
         }
     }
 
-    public static GetStateStore stateStoreProviderForCompletion(
+    private static CompactionJobCompletion connectToAws() {
+        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+        AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
+        String s3Bucket = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
+
+        InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.loadFromS3(s3Client, s3Bucket);
+        Configuration hadoopConf = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
+
+        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, hadoopConf);
+        CompactionJobStatusStore statusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
+        return new CompactionJobCompletion(
+                statusStore, stateStoreProviderForCompletion(tablePropertiesProvider, stateStoreProvider));
+    }
+
+    private static GetStateStore stateStoreProviderForCompletion(
             TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider) {
         return tableId -> stateStoreProvider.getStateStore(tablePropertiesProvider.getById(tableId));
     }
