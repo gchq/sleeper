@@ -48,9 +48,12 @@ public class DeleteTransactionLogSnapshots {
                     .forEach(snapshot -> {
                         LOGGER.info("Deleting snapshot {}", snapshot);
                         try {
-                            fs.delete(new Path(snapshot.getPath()), false);
+                            boolean deleted = fs.delete(new Path(snapshot.getPath()), false);
+                            if (!deleted) {
+                                LOGGER.warn("Failed to delete file. File has already been deleted: {}", snapshot.getPath());
+                            }
                         } catch (IOException e) {
-                            LOGGER.error("Failed to delete file {}", snapshot.getPath(), e);
+                            LOGGER.error("Failed to delete file: {}", snapshot.getPath(), e);
                         }
                         snapshotStore.deleteSnapshot(snapshot);
                     });

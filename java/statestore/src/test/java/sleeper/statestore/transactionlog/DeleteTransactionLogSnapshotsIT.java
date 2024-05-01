@@ -15,6 +15,8 @@
  */
 package sleeper.statestore.transactionlog;
 
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -27,11 +29,9 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.LatestSnapshots;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.io.IOException;
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -46,13 +46,15 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class DeleteTransactionLogSnapshotsIT extends TransactionLogStateStoreTestBase {
     @TempDir
-    private Path tempDir;
+    private java.nio.file.Path tempDir;
     private final Schema schema = schemaWithKey("key", new LongType());
+    private FileSystem fs;
 
     @BeforeEach
-    public void setup() {
+    public void setup() throws IOException {
         instanceProperties.set(FILE_SYSTEM, "file://");
         instanceProperties.set(DATA_BUCKET, tempDir.toString());
+        fs = FileSystem.get(configuration);
     }
 
     @Test
@@ -65,12 +67,12 @@ public class DeleteTransactionLogSnapshotsIT extends TransactionLogStateStoreTes
         stateStore.initialise(partitionsBuilder.buildList());
         FileReferenceFactory factory = FileReferenceFactory.from(stateStore);
         stateStore.addFile(factory.rootFile("test1.parquet", 123L));
-        createSnapshotAt(table, Instant.parse("2024-04-25T11:24:00Z"));
+        createSnapshotsAt(table, Instant.parse("2024-04-25T11:24:00Z"));
         stateStore.clearFileData();
         stateStore.initialise(partitionsBuilder.splitToNewChildren("root", "L", "R", 123L).buildList());
         factory = FileReferenceFactory.from(stateStore);
         stateStore.addFile(factory.rootFile("test3.parquet", 789L));
-        createSnapshotAt(table, Instant.parse("2024-04-27T11:24:00Z"));
+        createSnapshotsAt(table, Instant.parse("2024-04-27T11:24:00Z"));
 
         // When
         deleteSnapshotsAt(table, Instant.parse("2024-04-27T11:24:00Z"));
@@ -84,8 +86,8 @@ public class DeleteTransactionLogSnapshotsIT extends TransactionLogStateStoreTes
                 .containsExactly(filesSnapshot(table, 3));
         assertThat(snapshotStore(table).getPartitionsSnapshots())
                 .containsExactly(partitionsSnapshot(table, 2));
-        assertThat(filesSnapshotFileExists(table, 1)).isFalse();
-        assertThat(partitionsSnapshotFileExists(table, 1)).isFalse();
+        assertThat(fs.exists(new Path(filesSnapshot(table, 1).getPath()))).isFalse();
+        assertThat(fs.exists(new Path(partitionsSnapshot(table, 1).getPath()))).isFalse();
     }
 
     @Test
@@ -97,7 +99,7 @@ public class DeleteTransactionLogSnapshotsIT extends TransactionLogStateStoreTes
         stateStore.initialise();
         FileReferenceFactory factory = FileReferenceFactory.from(stateStore);
         stateStore.addFile(factory.rootFile("test1.parquet", 123L));
-        createSnapshotAt(table, Instant.parse("2024-04-25T11:24:00Z"));
+        createSnapshotsAt(table, Instant.parse("2024-04-25T11:24:00Z"));
 
         // When
         deleteSnapshotsAt(table, Instant.parse("2024-04-27T11:24:00Z"));
@@ -111,17 +113,45 @@ public class DeleteTransactionLogSnapshotsIT extends TransactionLogStateStoreTes
                 .containsExactly(filesSnapshot(table, 1));
         assertThat(snapshotStore(table).getPartitionsSnapshots())
                 .containsExactly(partitionsSnapshot(table, 1));
+        assertThat(fs.exists(new Path(filesSnapshot(table, 1).getPath()))).isTrue();
+        assertThat(fs.exists(new Path(partitionsSnapshot(table, 1).getPath()))).isTrue();
     }
 
-    private boolean filesSnapshotFileExists(TableProperties table, long transactionNumber) {
-        return Files.exists(Path.of(filesSnapshot(table, 1).getPath()));
+    @Test
+    void shouldDeleteOldSnapshotsIfSnapshotFilesHaveAlreadyBeenDeleted() throws Exception {
+        // Given
+        TableProperties table = createTable("test-table-id-1", "test-table-1");
+        table.setNumber(TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS, 1);
+        StateStore stateStore = createStateStore(table);
+        PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema).rootFirst("root");
+        stateStore.initialise(partitionsBuilder.buildList());
+        FileReferenceFactory factory = FileReferenceFactory.from(stateStore);
+        stateStore.addFile(factory.rootFile("test1.parquet", 123L));
+        createSnapshotsAt(table, Instant.parse("2024-04-24T11:24:00Z"));
+        stateStore.clearFileData();
+        stateStore.initialise(partitionsBuilder.splitToNewChildren("root", "L", "R", 123L).buildList());
+        factory = FileReferenceFactory.from(stateStore);
+        stateStore.addFile(factory.rootFile("test3.parquet", 789L));
+        createSnapshotsAt(table, Instant.parse("2024-04-25T11:24:00Z"));
+        // Delete files for snapshots that are eligible for deletion
+        deleteFilesSnapshotFile(table, 1);
+        deletePartitionsSnapshotFile(table, 1);
+
+        // When
+        deleteSnapshotsAt(table, Instant.parse("2024-04-27T11:24:00Z"));
+
+        // Then
+        assertThat(snapshotStore(table).getLatestSnapshots())
+                .isEqualTo(new LatestSnapshots(
+                        filesSnapshot(table, 3),
+                        partitionsSnapshot(table, 2)));
+        assertThat(snapshotStore(table).getFilesSnapshots())
+                .containsExactly(filesSnapshot(table, 3));
+        assertThat(snapshotStore(table).getPartitionsSnapshots())
+                .containsExactly(partitionsSnapshot(table, 2));
     }
 
-    private boolean partitionsSnapshotFileExists(TableProperties table, long transactionNumber) {
-        return Files.exists(Path.of(partitionsSnapshot(table, 1).getPath()));
-    }
-
-    private void createSnapshotAt(TableProperties table, Instant creationTime) throws Exception {
+    private void createSnapshotsAt(TableProperties table, Instant creationTime) throws Exception {
         CreateTransactionLogSnapshots.from(instanceProperties, table, s3Client, dynamoDBClient, configuration, () -> creationTime)
                 .createSnapshot();
     }
@@ -158,7 +188,11 @@ public class DeleteTransactionLogSnapshotsIT extends TransactionLogStateStoreTes
                 + tableProperties.get(TableProperty.TABLE_ID);
     }
 
-    public interface SetupStateStore {
-        void run(StateStore stateStore) throws StateStoreException;
+    private void deleteFilesSnapshotFile(TableProperties table, long transactionNumber) throws Exception {
+        fs.delete(new Path(filesSnapshot(table, transactionNumber).getPath()), false);
+    }
+
+    private void deletePartitionsSnapshotFile(TableProperties table, long transactionNumber) throws Exception {
+        fs.delete(new org.apache.hadoop.fs.Path(partitionsSnapshot(table, transactionNumber).getPath()), false);
     }
 }
