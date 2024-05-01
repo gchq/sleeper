@@ -53,7 +53,7 @@ public class InvokeForTables {
     }
 
     private static void sendMessageBatch(AmazonSQS sqsClient, String queueUrl, List<TableStatus> tablesBatch) {
-        LOGGER.info("Sending table batch of {} to SQS queue {}", tablesBatch, queueUrl);
+        LOGGER.info("Sending table batch of size {} to SQS queue {}: {}", tablesBatch.size(), queueUrl, tablesBatch);
         sqsClient.sendMessageBatch(new SendMessageBatchRequest()
                 .withQueueUrl(queueUrl)
                 .withEntries(tablesBatch.stream()
