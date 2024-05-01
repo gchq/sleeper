@@ -254,7 +254,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
             setupState.run(stateStore);
 
             DynamoDBTransactionLogSnapshotStore snapshotStore = new DynamoDBTransactionLogSnapshotStore(
-                    instanceProperties, tableProperties, dynamoDBClient, () -> DEFAULT_UPDATE_TIME);
+                    instanceProperties, tableProperties, dynamoDBClient);
             new CreateTransactionLogSnapshots(
                     instanceProperties, tableProperties,
                     fileTransactions, partitionTransactions,
