@@ -22,6 +22,7 @@ import org.junit.jupiter.api.io.TempDir;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
+import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReferenceFactory;
@@ -60,12 +61,14 @@ public class DeleteTransactionLogSnapshotsIT extends TransactionLogStateStoreTes
         TableProperties table = createTable("test-table-id-1", "test-table-1");
         table.setNumber(TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS, 1);
         StateStore stateStore = createStateStore(table);
-        stateStore.initialise();
+        PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema).rootFirst("root");
+        stateStore.initialise(partitionsBuilder.buildList());
         FileReferenceFactory factory = FileReferenceFactory.from(stateStore);
         stateStore.addFile(factory.rootFile("test1.parquet", 123L));
         createSnapshotAt(table, Instant.parse("2024-04-25T11:24:00Z"));
-        stateStore.addFile(factory.rootFile("test2.parquet", 456L));
-        createSnapshotAt(table, Instant.parse("2024-04-26T15:24:00Z"));
+        stateStore.clearFileData();
+        stateStore.initialise(partitionsBuilder.splitToNewChildren("root", "L", "R", 123L).buildList());
+        factory = FileReferenceFactory.from(stateStore);
         stateStore.addFile(factory.rootFile("test3.parquet", 789L));
         createSnapshotAt(table, Instant.parse("2024-04-27T11:24:00Z"));
 
@@ -76,15 +79,46 @@ public class DeleteTransactionLogSnapshotsIT extends TransactionLogStateStoreTes
         assertThat(snapshotStore(table).getLatestSnapshots())
                 .isEqualTo(new LatestSnapshots(
                         filesSnapshot(table, 3),
+                        partitionsSnapshot(table, 2)));
+        assertThat(snapshotStore(table).getFilesSnapshots())
+                .containsExactly(filesSnapshot(table, 3));
+        assertThat(snapshotStore(table).getPartitionsSnapshots())
+                .containsExactly(partitionsSnapshot(table, 2));
+        assertThat(filesSnapshotFileExists(table, 1)).isFalse();
+        assertThat(partitionsSnapshotFileExists(table, 1)).isFalse();
+    }
+
+    @Test
+    void shouldNotDeleteOldSnapshotsIfTheyAreAlsoLatestSnapshots() throws Exception {
+        // Given
+        TableProperties table = createTable("test-table-id-1", "test-table-1");
+        table.setNumber(TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS, 1);
+        StateStore stateStore = createStateStore(table);
+        stateStore.initialise();
+        FileReferenceFactory factory = FileReferenceFactory.from(stateStore);
+        stateStore.addFile(factory.rootFile("test1.parquet", 123L));
+        createSnapshotAt(table, Instant.parse("2024-04-25T11:24:00Z"));
+
+        // When
+        deleteSnapshotsAt(table, Instant.parse("2024-04-27T11:24:00Z"));
+
+        // Then
+        assertThat(snapshotStore(table).getLatestSnapshots())
+                .isEqualTo(new LatestSnapshots(
+                        filesSnapshot(table, 1),
                         partitionsSnapshot(table, 1)));
         assertThat(snapshotStore(table).getFilesSnapshots())
-                .containsExactly(
-                        filesSnapshot(table, 2),
-                        filesSnapshot(table, 3));
+                .containsExactly(filesSnapshot(table, 1));
         assertThat(snapshotStore(table).getPartitionsSnapshots())
                 .containsExactly(partitionsSnapshot(table, 1));
-        assertThat(Files.exists(Path.of(filesSnapshot(table, 1).getPath()))).isFalse();
-        assertThat(Files.exists(Path.of(partitionsSnapshot(table, 1).getPath()))).isFalse();
+    }
+
+    private boolean filesSnapshotFileExists(TableProperties table, long transactionNumber) {
+        return Files.exists(Path.of(filesSnapshot(table, 1).getPath()));
+    }
+
+    private boolean partitionsSnapshotFileExists(TableProperties table, long transactionNumber) {
+        return Files.exists(Path.of(partitionsSnapshot(table, 1).getPath()));
     }
 
     private void createSnapshotAt(TableProperties table, Instant creationTime) throws Exception {
