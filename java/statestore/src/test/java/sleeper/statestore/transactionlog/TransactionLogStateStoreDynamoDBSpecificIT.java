@@ -36,7 +36,6 @@ import sleeper.core.statestore.transactionlog.TransactionLogStore;
 import sleeper.statestore.StateStoreFactory;
 
 import java.nio.file.Path;
-import java.time.Instant;
 import java.util.List;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
@@ -46,15 +45,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
 
 public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogStateStoreTestBase {
-    protected static final Instant DEFAULT_UPDATE_TIME = Instant.parse("2024-04-26T13:00:00Z");
     @TempDir
     private Path tempDir;
     private final Schema schema = schemaWithKey("key", new LongType());
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-    private final TransactionLogStore partitionsStore = new InMemoryTransactionLogStore();
-    private final TransactionLogStore filesStore = new InMemoryTransactionLogStore();
 
     @Nested
     @DisplayName("Handle large transactions")
