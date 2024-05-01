@@ -131,7 +131,7 @@ public final class EksBulkImportStack extends NestedStack {
 
         instanceProperties.set(BULK_IMPORT_EKS_JOB_QUEUE_URL, bulkImportJobQueue.getQueueUrl());
         instanceProperties.set(BULK_IMPORT_EKS_JOB_QUEUE_ARN, bulkImportJobQueue.getQueueArn());
-        bulkImportJobQueue.grantSendMessages(coreStacks.getIngestPolicyForGrants());
+        bulkImportJobQueue.grantSendMessages(coreStacks.getIngestByQueuePolicyForGrants());
         bulkImportJobQueue.grantPurge(coreStacks.getPurgeQueuesPolicyForGrants());
 
         Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);

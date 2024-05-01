@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package sleeper.cdk.stack;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -48,7 +47,8 @@ import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SO
 public class ManagedPoliciesStack extends NestedStack {
 
     private final InstanceProperties instanceProperties;
-    private final ManagedPolicy ingestPolicy;
+    private final ManagedPolicy directIngestPolicy;
+    private final ManagedPolicy ingestByQueuePolicy;
     private final ManagedPolicy queryPolicy;
     private final ManagedPolicy editTablesPolicy;
     private final ManagedPolicy reportingPolicy;
@@ -61,9 +61,14 @@ public class ManagedPoliciesStack extends NestedStack {
         super(scope, id);
         this.instanceProperties = instanceProperties;
 
-        ingestPolicy = createManagedPolicy("IngestPolicy");
+        directIngestPolicy = createManagedPolicy("DirectIngestPolicy");
+        ingestByQueuePolicy = createManagedPolicy("IngestByQueuePolicy");
         addRoleReferences(this, instanceProperties, INGEST_SOURCE_ROLE, "IngestSourceRole")
-                .forEach(ingestPolicy::attachToRole);
+                .forEach(role -> {
+                    directIngestPolicy.attachToRole(role);
+                    ingestByQueuePolicy.attachToRole(role);
+                });
+
         queryPolicy = createManagedPolicy("QueryPolicy");
         editTablesPolicy = createManagedPolicy("EditTablesPolicy");
         reportingPolicy = createManagedPolicy("ReportingPolicy");
@@ -77,8 +82,12 @@ public class ManagedPoliciesStack extends NestedStack {
         }
     }
 
-    public ManagedPolicy getIngestPolicyForGrants() {
-        return ingestPolicy;
+    public ManagedPolicy getDirectIngestPolicyForGrants() {
+        return directIngestPolicy;
+    }
+
+    public ManagedPolicy getIngestByQueuePolicyForGrants() {
+        return ingestByQueuePolicy;
     }
 
     public ManagedPolicy getQueryPolicyForGrants() {
@@ -135,7 +144,7 @@ public class ManagedPoliciesStack extends NestedStack {
 
     Stream<ManagedPolicy> instanceAdminPolicies() {
         return Stream.of(
-                ingestPolicy, queryPolicy, editTablesPolicy, reportingPolicy,
+                directIngestPolicy, ingestByQueuePolicy, queryPolicy, editTablesPolicy, reportingPolicy,
                 purgeQueuesPolicy, invokeCompactionPolicy, invokeSchedulesPolicy)
                 .filter(policy -> policy != null);
     }

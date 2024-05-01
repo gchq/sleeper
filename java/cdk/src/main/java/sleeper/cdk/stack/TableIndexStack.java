@@ -91,7 +91,8 @@ public final class TableIndexStack extends NestedStack {
                 .build();
         instanceProperties.set(TABLE_ONLINE_INDEX_DYNAMO_TABLENAME, indexByOnlineDynamoTable.getTableName());
 
-        grantRead(policiesStack.getIngestPolicyForGrants());
+        grantRead(policiesStack.getDirectIngestPolicyForGrants());
+        grantRead(policiesStack.getIngestByQueuePolicyForGrants());
         grantReadWrite(policiesStack.getEditTablesPolicyForGrants());
     }
 

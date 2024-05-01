@@ -55,7 +55,7 @@ public class TableDataStack extends NestedStack {
 
         instanceProperties.set(DATA_BUCKET, dataBucket.getBucketName());
 
-        dataBucket.grantReadWrite(policiesStack.getIngestPolicyForGrants());
+        dataBucket.grantReadWrite(policiesStack.getDirectIngestPolicyForGrants());
     }
 
     public IBucket getDataBucket() {

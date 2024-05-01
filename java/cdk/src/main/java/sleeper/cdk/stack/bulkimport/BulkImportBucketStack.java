@@ -45,7 +45,7 @@ public class BulkImportBucketStack extends NestedStack {
                 .removalPolicy(RemovalPolicy.DESTROY)
                 .encryption(BucketEncryption.S3_MANAGED)
                 .build();
-        importBucket.grantWrite(coreStacks.getIngestPolicyForGrants());
+        importBucket.grantWrite(coreStacks.getIngestByQueuePolicyForGrants());
         instanceProperties.set(BULK_IMPORT_BUCKET, importBucket.getBucketName());
     }
 
