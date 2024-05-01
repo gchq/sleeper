@@ -196,7 +196,7 @@ public class DynamoDBTransactionLogSnapshotStore {
     private Stream<TransactionLogSnapshot> getSnapshotsBefore(long latestSnapshotNumber, SnapshotType type, long time) {
         return streamPagedItems(dynamo, new QueryRequest()
                 .withTableName(allSnapshotsTable)
-                .withKeyConditionExpression("#TableIdAndType = :table_id_and_type AND #TransactionNumber < :latest_transaction")
+                .withKeyConditionExpression("#TableIdAndType = :table_id_and_type AND #TransactionNumber <> :latest_transaction")
                 .withFilterExpression("#UpdateTime < :expiry_time")
                 .withExpressionAttributeNames(Map.of(
                         "#TableIdAndType", TABLE_ID_AND_SNAPSHOT_TYPE,
