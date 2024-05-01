@@ -33,9 +33,9 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStore;
+import sleeper.statestore.transactionlog.CreateTransactionLogSnapshots.LatestSnapshotsLoader;
+import sleeper.statestore.transactionlog.CreateTransactionLogSnapshots.SnapshotSaver;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.LatestSnapshots;
-import sleeper.statestore.transactionlog.TransactionLogSnapshotCreator.LatestSnapshotsLoader;
-import sleeper.statestore.transactionlog.TransactionLogSnapshotCreator.SnapshotSaver;
 
 import java.io.FileNotFoundException;
 import java.io.UncheckedIOException;
@@ -341,7 +341,7 @@ public class CreateTransactionLogSnapshotIT extends TransactionLogStateStoreTest
 
     private void runSnapshotCreator(
             TableProperties table, LatestSnapshotsLoader latestSnapshotsLoader, SnapshotSaver snapshotSaver) {
-        new TransactionLogSnapshotCreator(
+        new CreateTransactionLogSnapshots(
                 instanceProperties, table,
                 fileTransactionStoreByTableId.get(table.get(TABLE_ID)),
                 partitionTransactionStoreByTableId.get(table.get(TABLE_ID)),
