@@ -47,7 +47,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
  * A lambda that receives batches of tables from an SQS queue and deletes old transaction log snapshots for them.
  */
 public class TransactionLogSnapshotDeletionLambda implements RequestHandler<SQSEvent, SQSBatchResponse> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(TransactionLogSnapshotCreationLambda.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(TransactionLogSnapshotDeletionLambda.class);
 
     private final AmazonS3 s3Client;
     private final AmazonDynamoDB dynamoClient;
