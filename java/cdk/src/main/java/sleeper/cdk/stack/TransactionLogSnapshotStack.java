@@ -210,7 +210,7 @@ public class TransactionLogSnapshotStack extends NestedStack {
 
         coreStacks.grantReadTablesStatus(snapshotDeletionTrigger);
         coreStacks.grantInvokeScheduled(snapshotDeletionTrigger, queue);
-        coreStacks.grantReadTablesMetadata(snapshotDeletionLambda);
+        coreStacks.grantReadTablesStatus(snapshotDeletionLambda);
         transactionLogStateStoreStack.grantReadWriteSnapshots(snapshotDeletionLambda);
     }
 }
