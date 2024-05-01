@@ -56,6 +56,7 @@ import software.amazon.awscdk.services.ecs.RuntimePlatform;
 import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
+import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.iam.PolicyStatement;
@@ -192,6 +193,15 @@ public class CompactionStack extends NestedStack {
         // Lambda to create compaction tasks
         lambdaToCreateCompactionTasks(coreStacks, taskCreatorJar, compactionJobsQueue);
 
+        // Allow running compaction tasks
+        coreStacks.getInvokeCompactionPolicyForGrants().addStatements(PolicyStatement.Builder.create()
+                .effect(Effect.ALLOW)
+                .actions(List.of("ecs:DescribeClusters", "ecs:RunTask", "iam:PassRole",
+                        "ecs:DescribeContainerInstances", "ecs:DescribeTasks", "ecs:ListContainerInstances",
+                        "autoscaling:SetDesiredCapacity", "autoscaling:DescribeAutoScalingGroups"))
+                .resources(List.of("*"))
+                .build());
+
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
@@ -226,7 +236,7 @@ public class CompactionStack extends NestedStack {
                 "Alarms if there are any messages on the dead letter queue for the compactions queue",
                 compactionDLQ, topic);
         errorMetrics.add(Utils.createErrorMetric("Compaction Errors", compactionDLQ, instanceProperties));
-        compactionJobQ.grantPurge(coreStacks.getPurgeQueuesPolicy());
+        compactionJobQ.grantPurge(coreStacks.getPurgeQueuesPolicyForGrants());
 
         CfnOutputProps compactionJobDefinitionsQueueProps = new CfnOutputProps.Builder()
                 .value(compactionJobQ.getQueueUrl())
@@ -289,10 +299,10 @@ public class CompactionStack extends NestedStack {
         statusStore.grantWriteJobEvent(handlerFunction);
         compactionJobsQueue.grantSendMessages(handlerFunction);
         coreStacks.grantInvokeScheduled(triggerFunction, jobCreationQueue);
-        statusStore.grantWriteJobEvent(coreStacks.getInvokeCompactionPolicy());
-        coreStacks.grantReadTablesStatus(coreStacks.getInvokeCompactionPolicy());
-        coreStacks.grantCreateCompactionJobs(coreStacks.getInvokeCompactionPolicy());
-        compactionJobsQueue.grantSendMessages(coreStacks.getInvokeCompactionPolicy());
+        statusStore.grantWriteJobEvent(coreStacks.getInvokeCompactionPolicyForGrants());
+        coreStacks.grantReadTablesStatus(coreStacks.getInvokeCompactionPolicyForGrants());
+        coreStacks.grantCreateCompactionJobs(coreStacks.getInvokeCompactionPolicyForGrants());
+        compactionJobsQueue.grantSendMessages(coreStacks.getInvokeCompactionPolicyForGrants());
 
         // Cloudwatch rule to trigger this lambda
         Rule rule = Rule.Builder
@@ -334,7 +344,7 @@ public class CompactionStack extends NestedStack {
                 "Alarms if there are any messages on the dead letter queue for compaction job creation",
                 deadLetterQueue, topic);
         errorMetrics.add(Utils.createErrorMetric("Compaction Batching Errors", deadLetterQueue, instanceProperties));
-        queue.grantPurge(coreStacks.getPurgeQueuesPolicy());
+        queue.grantPurge(coreStacks.getPurgeQueuesPolicyForGrants());
         return queue;
     }
 
@@ -596,8 +606,8 @@ public class CompactionStack extends NestedStack {
         // Grant this function permission to query the queue for number of messages
         compactionJobsQueue.grant(handler, "sqs:GetQueueAttributes");
         compactionJobsQueue.grantSendMessages(handler);
-        compactionJobsQueue.grantSendMessages(coreStacks.getInvokeCompactionPolicy());
-        Utils.grantInvokeOnPolicy(handler, coreStacks.getInvokeCompactionPolicy());
+        compactionJobsQueue.grantSendMessages(coreStacks.getInvokeCompactionPolicyForGrants());
+        Utils.grantInvokeOnPolicy(handler, coreStacks.getInvokeCompactionPolicyForGrants());
         coreStacks.grantInvokeScheduled(handler);
 
         // Grant this function permission to query ECS for the number of tasks, etc

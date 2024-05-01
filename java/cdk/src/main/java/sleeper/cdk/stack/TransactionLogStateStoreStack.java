@@ -39,9 +39,10 @@ public class TransactionLogStateStoreStack extends NestedStack {
     private final Table filesLogTable;
     private final Table latestSnapshotsTable;
     private final Table allSnapshotsTable;
+    private final TableDataStack dataStack;
 
     public TransactionLogStateStoreStack(
-            Construct scope, String id, InstanceProperties instanceProperties) {
+            Construct scope, String id, InstanceProperties instanceProperties, TableDataStack dataStack) {
         super(scope, id);
 
         partitionsLogTable = createTransactionLogTable(instanceProperties, "TransactionLogPartitionsTable", "transaction-log-partitions");
@@ -52,6 +53,7 @@ public class TransactionLogStateStoreStack extends NestedStack {
         instanceProperties.set(TRANSACTION_LOG_FILES_TABLENAME, filesLogTable.getTableName());
         instanceProperties.set(TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME, latestSnapshotsTable.getTableName());
         instanceProperties.set(TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME, allSnapshotsTable.getTableName());
+        this.dataStack = dataStack;
     }
 
     private Table createTransactionLogTable(InstanceProperties instanceProperties, String id, String name) {
@@ -115,5 +117,16 @@ public class TransactionLogStateStoreStack extends NestedStack {
 
     public void grantReadWritePartitions(IGrantable grantee) {
         partitionsLogTable.grantReadWriteData(grantee);
+    }
+
+    public void grantReadSnapshots(IGrantable grantee) {
+        latestSnapshotsTable.grantReadData(grantee);
+        dataStack.grantRead(grantee);
+    }
+
+    public void grantReadWriteSnapshots(IGrantable grantee) {
+        latestSnapshotsTable.grantReadWriteData(grantee);
+        allSnapshotsTable.grantReadWriteData(grantee);
+        dataStack.grantReadWrite(grantee);
     }
 }
