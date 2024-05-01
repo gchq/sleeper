@@ -48,7 +48,7 @@ public class CompactionJobCompletionTest extends CompactionJobCompletionTestBase
         void shouldRetryStateStoreUpdateWhenFilesNotAssignedToJob() throws Exception {
             // Given
             FileReference file = addInputFile("file.parquet", 123);
-            CompactionJob job = createCompactionJobForOneFile(file);
+            CompactionJob job = createCompactionJobForOneFileNoJobAssignment(file);
             RecordsProcessedSummary summary = new RecordsProcessedSummary(
                     new RecordsProcessed(120, 100),
                     Instant.parse("2024-05-01T10:58:00Z"), Duration.ofMinutes(1));
@@ -65,7 +65,7 @@ public class CompactionJobCompletionTest extends CompactionJobCompletionTestBase
             // Then
             assertThat(stateStore().getFileReferences()).containsExactly(
                     FileReferenceFactory.fromUpdatedAt(stateStore(), updateTime)
-                            .rootFile(job.getOutputFile(), 123));
+                            .rootFile(job.getOutputFile(), 100));
             assertThat(foundWaits).containsExactly(Duration.ofSeconds(2));
         }
 
@@ -73,7 +73,7 @@ public class CompactionJobCompletionTest extends CompactionJobCompletionTestBase
         void shouldFailAfterMaxAttemptsWhenFilesNotAssignedToJob() throws Exception {
             // Given
             FileReference file = addInputFile("file.parquet", 123);
-            CompactionJob job = createCompactionJobForOneFile(file);
+            CompactionJob job = createCompactionJobForOneFileNoJobAssignment(file);
             RecordsProcessedSummary summary = new RecordsProcessedSummary(
                     new RecordsProcessed(120, 100),
                     Instant.parse("2024-05-01T10:58:00Z"), Duration.ofMinutes(1));
@@ -100,10 +100,10 @@ public class CompactionJobCompletionTest extends CompactionJobCompletionTestBase
         }
 
         @Test
-        void shouldFailWithNoRetriesWhenFileDoesNotExist() throws Exception {
+        void shouldFailWithNoRetriesWhenFileDoesNotExistInStateStore() throws Exception {
             // Given
-            FileReference file = addInputFile("file.parquet", 123);
-            CompactionJob job = createCompactionJobForOneFile(file);
+            FileReference file = inputFileFactory().rootFile("file.parquet", 123);
+            CompactionJob job = createCompactionJobForOneFileNoJobAssignment(file);
             RecordsProcessedSummary summary = new RecordsProcessedSummary(
                     new RecordsProcessed(120, 100),
                     Instant.parse("2024-05-01T10:58:00Z"), Duration.ofMinutes(1));

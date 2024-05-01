@@ -28,6 +28,7 @@ import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
+import sleeper.statestore.FixedStateStoreProvider;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -63,8 +64,8 @@ public class CompactionJobCompletionLambdaTest extends CompactionJobCompletionTe
                 .completeJobs(new CompactionJobCompletionRequest(List.of(completion1, completion2)));
 
         // Then
-        StateStore state1 = stateStoreProvider.getStateStore(table1);
-        StateStore state2 = stateStoreProvider.getStateStore(table2);
+        StateStore state1 = stateStore(table1);
+        StateStore state2 = stateStore(table2);
         CompactionJobStatus status1 = statusStore.getJob(job1.getId()).orElseThrow();
         CompactionJobStatus status2 = statusStore.getJob(job2.getId()).orElseThrow();
         assertThat(status1).isEqualTo(jobCreated(job1,
@@ -82,7 +83,8 @@ public class CompactionJobCompletionLambdaTest extends CompactionJobCompletionTe
     }
 
     private CompactionJobCompletionLambda lambdaWithUpdateTimes(List<Instant> updateTimes) {
-        return new CompactionJobCompletionLambda(tablePropertiesProvider, stateStoreProvider, statusStore, completionWithUpdateTimes(updateTimes));
+        return new CompactionJobCompletionLambda(tablePropertiesProvider,
+                new FixedStateStoreProvider(stateStoreByTableName), statusStore, completionWithUpdateTimes(updateTimes));
     }
 
     private CompactionJobCompletionConstructor completionWithUpdateTimes(List<Instant> updateTimes) {

@@ -27,8 +27,6 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ExponentialBackoffWithJitter.Waiter;
-import sleeper.statestore.FixedStateStoreProvider;
-import sleeper.statestore.StateStoreProvider;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -50,12 +48,13 @@ import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.recordWai
 
 public class CompactionJobCompletionTestBase {
 
+    private static final Instant INPUT_UPDATE_TIME = Instant.parse("2024-05-01T10:00:00Z");
+
     private final TablePropertiesStore tablePropertiesStore = InMemoryTableProperties.getStore();
-    private final Map<String, StateStore> stateStoreByTableName = new HashMap<>();
+    protected final Map<String, StateStore> stateStoreByTableName = new HashMap<>();
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
     protected final InMemoryCompactionJobStatusStore statusStore = new InMemoryCompactionJobStatusStore();
     protected final TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, tablePropertiesStore);
-    protected final StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(stateStoreByTableName);
     protected final List<Duration> foundWaits = new ArrayList<>();
     private Waiter waiter = recordWaits(foundWaits);
     private TableProperties lastTable;
@@ -73,8 +72,9 @@ public class CompactionJobCompletionTestBase {
     }
 
     protected FileReference addInputFile(TableProperties table, String filename, long records) throws Exception {
-        StateStore stateStore = stateStoreProvider.getStateStore(table);
-        FileReference fileReference = FileReferenceFactory.from(stateStore).rootFile(filename, records);
+        StateStore stateStore = stateStore(table);
+        FileReference fileReference = FileReferenceFactory.fromUpdatedAt(stateStore, INPUT_UPDATE_TIME).rootFile(filename, records);
+        stateStore.fixFileUpdateTime(INPUT_UPDATE_TIME);
         stateStore.addFile(fileReference);
         return fileReference;
     }
@@ -83,16 +83,20 @@ public class CompactionJobCompletionTestBase {
         return createCompactionJobForOneFile(lastTable, file, UUID.randomUUID().toString(), Instant.now());
     }
 
+    protected CompactionJob createCompactionJobForOneFileNoJobAssignment(FileReference file) throws Exception {
+        return createCompactionJobForOneFileNoJobAssignment(lastTable, file, UUID.randomUUID().toString(), Instant.now());
+    }
+
     protected CompactionJob createCompactionJobForOneFile(TableProperties table, FileReference file, String jobId, Instant updateTime) throws Exception {
         CompactionJob job = createCompactionJobForOneFileNoJobAssignment(table, file, jobId, updateTime);
-        StateStore stateStore = stateStoreProvider.getStateStore(table);
+        StateStore stateStore = stateStore(table);
         stateStore.fixFileUpdateTime(updateTime);
         stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles(jobId, file.getPartitionId(), List.of(file.getFilename()))));
         return job;
     }
 
     protected CompactionJob createCompactionJobForOneFileNoJobAssignment(TableProperties table, FileReference file, String jobId, Instant updateTime) {
-        CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, table, () -> jobId);
+        CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, table, List.of(jobId).iterator()::next);
         CompactionJob job = jobFactory.createCompactionJob(List.of(file), file.getPartitionId());
         statusStore.fixUpdateTime(updateTime);
         statusStore.jobCreated(job);
@@ -125,12 +129,20 @@ public class CompactionJobCompletionTestBase {
     }
 
     protected FileReferenceFactory fileFactory(TableProperties table, Instant updateTime) {
-        StateStore stateStore = stateStoreProvider.getStateStore(table);
+        StateStore stateStore = stateStore(table);
         return FileReferenceFactory.fromUpdatedAt(stateStore, updateTime);
     }
 
+    protected FileReferenceFactory inputFileFactory() {
+        return FileReferenceFactory.fromUpdatedAt(stateStore(), INPUT_UPDATE_TIME);
+    }
+
     protected StateStore stateStore() {
-        return stateStoreProvider.getStateStore(lastTable);
+        return stateStore(lastTable);
+    }
+
+    protected StateStore stateStore(TableProperties table) {
+        return stateStoreByTableName.get(table.get(TABLE_NAME));
     }
 
     protected void actionOnWait(WaitAction action) throws Exception {
