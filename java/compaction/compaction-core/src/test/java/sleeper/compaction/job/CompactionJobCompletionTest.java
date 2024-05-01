@@ -13,18 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.job.execution;
+package sleeper.compaction.job;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionJobFactory;
-import sleeper.compaction.job.TimedOutWaitingForFileAssignmentsException;
+import sleeper.compaction.testutils.InMemoryCompactionJobStatusStore;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
@@ -50,7 +49,7 @@ import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStat
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.noJitter;
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.recordWaits;
 
-public class CompactSortedFilesRetryStateStoreTest {
+public class CompactionJobCompletionTest {
 
     private static final Instant UPDATE_TIME = Instant.parse("2024-04-26T14:06:00Z");
 
@@ -61,6 +60,7 @@ public class CompactSortedFilesRetryStateStoreTest {
     private final StateStore stateStore = inMemoryStateStoreWithFixedPartitions(partitions.getAllPartitions());
     private final FileReferenceFactory fileFactory = FileReferenceFactory.fromUpdatedAt(partitions, UPDATE_TIME);
     private final CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
+    private final CompactionJobStatusStore statusStore = new InMemoryCompactionJobStatusStore();
     private final List<Duration> foundWaits = new ArrayList<>();
     private Waiter waiter = recordWaits(foundWaits);
 
@@ -130,9 +130,9 @@ public class CompactSortedFilesRetryStateStoreTest {
         assertThat(foundWaits).isEmpty();
     }
 
-    private void updateStateStoreSuccess(CompactionJob job, long recordsWritten, DoubleSupplier randomJitter) throws Exception {
-        CompactSortedFiles.updateStateStoreSuccess(job, 123, stateStore,
-                CompactSortedFiles.JOB_ASSIGNMENT_WAIT_ATTEMPTS, backoff(randomJitter));
+    private void updateStateStoreSuccess(CompactionJob job, long recordsProcessed, DoubleSupplier randomJitter) throws Exception {
+        new CompactionJobCompletion(statusStore, stateStore, CompactionJobCompletion.JOB_ASSIGNMENT_WAIT_ATTEMPTS, backoff(randomJitter), () -> UPDATE_TIME)
+                .applyCompletedJob(new CompactionJobCompletionRequest(job, "test-task-id", UPDATE_TIME, new RecordsProcessed(recordsProcessed, recordsProcessed)));
     }
 
     private void actionOnWait(WaitAction action) throws Exception {
@@ -153,7 +153,7 @@ public class CompactSortedFilesRetryStateStoreTest {
 
     private ExponentialBackoffWithJitter backoff(DoubleSupplier randomJitter) {
         return new ExponentialBackoffWithJitter(
-                CompactSortedFiles.JOB_ASSIGNMENT_WAIT_RANGE,
+                CompactionJobCompletion.JOB_ASSIGNMENT_WAIT_RANGE,
                 randomJitter, waiter);
     }
 
