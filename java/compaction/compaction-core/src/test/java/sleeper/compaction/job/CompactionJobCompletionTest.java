@@ -20,9 +20,14 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.record.process.RecordsProcessed;
+import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.exception.FileNotFoundException;
 import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
 
@@ -32,9 +37,55 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
+import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.noJitter;
 
 public class CompactionJobCompletionTest extends CompactionJobCompletionTestBase {
+
+    @Test
+    void shouldCompleteCompactionJobsOnDifferentTables() throws Exception {
+        // Given
+        TableProperties table1 = createTable();
+        TableProperties table2 = createTable();
+        FileReference file1 = addInputFile(table1, "file1.parquet", 123);
+        FileReference file2 = addInputFile(table2, "file2.parquet", 456);
+        CompactionJob job1 = createCompactionJobForOneFile(table1, file1, "job-1", Instant.parse("2024-05-01T10:50:00Z"));
+        CompactionJob job2 = createCompactionJobForOneFile(table2, file2, "job-2", Instant.parse("2024-05-01T10:50:30Z"));
+        RecordsProcessedSummary summary1 = new RecordsProcessedSummary(
+                new RecordsProcessed(120, 100),
+                Instant.parse("2024-05-01T10:58:00Z"), Duration.ofMinutes(1));
+        RecordsProcessedSummary summary2 = new RecordsProcessedSummary(
+                new RecordsProcessed(450, 400),
+                Instant.parse("2024-05-01T10:58:30Z"), Duration.ofMinutes(1));
+        CompactionJobRunCompleted completion1 = runCompactionJobOnTask("task-1", job1, summary1);
+        CompactionJobRunCompleted completion2 = runCompactionJobOnTask("task-2", job2, summary2);
+        stateStore(table1).fixFileUpdateTime(Instant.parse("2024-05-01T11:00:00Z"));
+        stateStore(table2).fixFileUpdateTime(Instant.parse("2024-05-01T11:00:30Z"));
+
+        // When
+        CompactionJobCompletion jobCompletion = jobCompletion();
+        jobCompletion.applyCompletedJob(completion1);
+        jobCompletion.applyCompletedJob(completion2);
+
+        // Then
+        StateStore state1 = stateStore(table1);
+        StateStore state2 = stateStore(table2);
+        CompactionJobStatus status1 = statusStore.getJob(job1.getId()).orElseThrow();
+        CompactionJobStatus status2 = statusStore.getJob(job2.getId()).orElseThrow();
+        assertThat(status1).isEqualTo(jobCreated(job1,
+                Instant.parse("2024-05-01T10:50:00Z"),
+                finishedCompactionRun("task-1", summary1)));
+        assertThat(status2).isEqualTo(jobCreated(job2,
+                Instant.parse("2024-05-01T10:50:30Z"),
+                finishedCompactionRun("task-2", summary2)));
+        assertThat(state1.getFileReferences()).containsExactly(
+                fileFactory(table1, Instant.parse("2024-05-01T11:00:00Z"))
+                        .rootFile(job1.getOutputFile(), 100));
+        assertThat(state2.getFileReferences()).containsExactly(
+                fileFactory(table2, Instant.parse("2024-05-01T11:00:30Z"))
+                        .rootFile(job2.getOutputFile(), 400));
+    }
 
     @Nested
     @DisplayName("Retry state store update")
