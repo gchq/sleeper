@@ -15,19 +15,77 @@
  */
 package sleeper.compaction.job;
 
-import java.util.List;
+import sleeper.core.record.process.RecordsProcessed;
+import sleeper.core.record.process.RecordsProcessedSummary;
+
+import java.time.Instant;
 import java.util.Objects;
 
 public class CompactionJobCompletionRequest {
 
-    private final List<CompactionJobRunCompleted> finishedJobRuns;
+    private final CompactionJob job;
+    private final String taskId;
+    private final Instant startTime;
+    private final Instant finishTime;
+    private final long recordsRead;
+    private final long recordsWritten;
 
-    public CompactionJobCompletionRequest(List<CompactionJobRunCompleted> finishedJobRuns) {
-        this.finishedJobRuns = Objects.requireNonNull(finishedJobRuns, "finishedJobRuns must not be null");
+    public CompactionJobCompletionRequest(
+            CompactionJob job, String taskId, RecordsProcessedSummary recordsProcessed) {
+        this.job = job;
+        this.taskId = taskId;
+        this.startTime = recordsProcessed.getStartTime();
+        this.finishTime = recordsProcessed.getFinishTime();
+        this.recordsRead = recordsProcessed.getRecordsRead();
+        this.recordsWritten = recordsProcessed.getRecordsWritten();
     }
 
-    public List<CompactionJobRunCompleted> getFinishedJobRuns() {
-        return finishedJobRuns;
+    public CompactionJob getJob() {
+        return job;
+    }
+
+    public String getTaskId() {
+        return taskId;
+    }
+
+    public Instant getStartTime() {
+        return startTime;
+    }
+
+    public long getRecordsWritten() {
+        return recordsWritten;
+    }
+
+    public RecordsProcessed buildRecordsProcessed() {
+        return new RecordsProcessed(recordsRead, recordsWritten);
+    }
+
+    public RecordsProcessedSummary buildRecordsProcessedSummary() {
+        return new RecordsProcessedSummary(buildRecordsProcessed(), startTime, finishTime);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(job, taskId, startTime, finishTime, recordsRead, recordsWritten);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof CompactionJobCompletionRequest)) {
+            return false;
+        }
+        CompactionJobCompletionRequest other = (CompactionJobCompletionRequest) obj;
+        return Objects.equals(job, other.job) && Objects.equals(taskId, other.taskId) && Objects.equals(startTime, other.startTime) && Objects.equals(finishTime, other.finishTime)
+                && recordsRead == other.recordsRead && recordsWritten == other.recordsWritten;
+    }
+
+    @Override
+    public String toString() {
+        return "CompactionJobCompletionRequest{job=" + job + ", taskId=" + taskId + ", startTime=" + startTime + ", finishTime=" + finishTime + ", recordsRead=" + recordsRead + ", recordsWritten="
+                + recordsWritten + "}";
     }
 
 }

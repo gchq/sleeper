@@ -83,23 +83,19 @@ public class CompactionJobCompletionTestBase {
         return fileReference;
     }
 
-    protected CompactionJob createCompactionJobForOneFile(FileReference file) throws Exception {
-        return createCompactionJobForOneFile(lastTable, file, UUID.randomUUID().toString(), Instant.now());
+    protected CompactionJob createCompactionJobForOneFileAndRecordStatus(FileReference file) throws Exception {
+        return createCompactionJobForOneFileAndRecordStatus(lastTable, file, UUID.randomUUID().toString(), Instant.now());
     }
 
-    protected CompactionJob createCompactionJobForOneFileNoJobAssignment(FileReference file) throws Exception {
-        return createCompactionJobForOneFileNoJobAssignment(lastTable, file, UUID.randomUUID().toString(), Instant.now());
-    }
-
-    protected CompactionJob createCompactionJobForOneFile(TableProperties table, FileReference file, String jobId, Instant updateTime) throws Exception {
-        CompactionJob job = createCompactionJobForOneFileNoJobAssignment(table, file, jobId, updateTime);
+    protected CompactionJob createCompactionJobForOneFileAndAssign(TableProperties table, FileReference file, String jobId, Instant updateTime) throws Exception {
+        CompactionJob job = createCompactionJobForOneFileAndRecordStatus(table, file, jobId, updateTime);
         StateStore stateStore = stateStore(table);
         stateStore.fixFileUpdateTime(updateTime);
         stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles(jobId, file.getPartitionId(), List.of(file.getFilename()))));
         return job;
     }
 
-    protected CompactionJob createCompactionJobForOneFileNoJobAssignment(TableProperties table, FileReference file, String jobId, Instant updateTime) {
+    protected CompactionJob createCompactionJobForOneFileAndRecordStatus(TableProperties table, FileReference file, String jobId, Instant updateTime) {
         CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, table, List.of(jobId).iterator()::next);
         CompactionJob job = jobFactory.createCompactionJob(List.of(file), file.getPartitionId());
         statusStore.fixUpdateTime(updateTime);
@@ -108,13 +104,13 @@ public class CompactionJobCompletionTestBase {
         return job;
     }
 
-    protected CompactionJobRunCompleted runCompactionJobOnTask(String taskId, CompactionJob job) throws Exception {
+    protected CompactionJobCompletionRequest runCompactionJobOnTask(String taskId, CompactionJob job) throws Exception {
         return runCompactionJobOnTask(taskId, job, DEFAULT_SUMMARY);
     }
 
-    protected CompactionJobRunCompleted runCompactionJobOnTask(String taskId, CompactionJob job, RecordsProcessedSummary summary) throws Exception {
+    protected CompactionJobCompletionRequest runCompactionJobOnTask(String taskId, CompactionJob job, RecordsProcessedSummary summary) throws Exception {
         statusStore.jobStarted(job, summary.getStartTime(), taskId);
-        return new CompactionJobRunCompleted(job, taskId, summary);
+        return new CompactionJobCompletionRequest(job, taskId, summary);
     }
 
     protected CompactionJobCompletion jobCompletion() {

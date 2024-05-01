@@ -51,10 +51,10 @@ public class CompactionJobCompletion {
         this.jobAssignmentWaitBackoff = jobAssignmentWaitBackoff;
     }
 
-    public void applyCompletedJob(CompactionJobRunCompleted jobRun) throws StateStoreException, InterruptedException {
-        CompactionJob job = jobRun.getJob();
-        updateStateStoreSuccess(job, jobRun.getRecordsWritten());
-        statusStore.jobFinished(job, jobRun.buildRecordsProcessedSummary(), jobRun.getTaskId());
+    public void apply(CompactionJobCompletionRequest request) throws StateStoreException, InterruptedException {
+        CompactionJob job = request.getJob();
+        updateStateStoreSuccess(job, request.getRecordsWritten());
+        statusStore.jobFinished(job, request.buildRecordsProcessedSummary(), request.getTaskId());
     }
 
     private void updateStateStoreSuccess(CompactionJob job, long recordsWritten) throws StateStoreException, InterruptedException {

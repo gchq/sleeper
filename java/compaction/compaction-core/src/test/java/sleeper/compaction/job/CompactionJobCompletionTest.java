@@ -50,23 +50,23 @@ public class CompactionJobCompletionTest extends CompactionJobCompletionTestBase
         TableProperties table2 = createTable();
         FileReference file1 = addInputFile(table1, "file1.parquet", 123);
         FileReference file2 = addInputFile(table2, "file2.parquet", 456);
-        CompactionJob job1 = createCompactionJobForOneFile(table1, file1, "job-1", Instant.parse("2024-05-01T10:50:00Z"));
-        CompactionJob job2 = createCompactionJobForOneFile(table2, file2, "job-2", Instant.parse("2024-05-01T10:50:30Z"));
+        CompactionJob job1 = createCompactionJobForOneFileAndAssign(table1, file1, "job-1", Instant.parse("2024-05-01T10:50:00Z"));
+        CompactionJob job2 = createCompactionJobForOneFileAndAssign(table2, file2, "job-2", Instant.parse("2024-05-01T10:50:30Z"));
         RecordsProcessedSummary summary1 = new RecordsProcessedSummary(
                 new RecordsProcessed(120, 100),
                 Instant.parse("2024-05-01T10:58:00Z"), Duration.ofMinutes(1));
         RecordsProcessedSummary summary2 = new RecordsProcessedSummary(
                 new RecordsProcessed(450, 400),
                 Instant.parse("2024-05-01T10:58:30Z"), Duration.ofMinutes(1));
-        CompactionJobRunCompleted completion1 = runCompactionJobOnTask("task-1", job1, summary1);
-        CompactionJobRunCompleted completion2 = runCompactionJobOnTask("task-2", job2, summary2);
+        CompactionJobCompletionRequest completion1 = runCompactionJobOnTask("task-1", job1, summary1);
+        CompactionJobCompletionRequest completion2 = runCompactionJobOnTask("task-2", job2, summary2);
         stateStore(table1).fixFileUpdateTime(Instant.parse("2024-05-01T11:00:00Z"));
         stateStore(table2).fixFileUpdateTime(Instant.parse("2024-05-01T11:00:30Z"));
 
         // When
         CompactionJobCompletion jobCompletion = jobCompletion();
-        jobCompletion.applyCompletedJob(completion1);
-        jobCompletion.applyCompletedJob(completion2);
+        jobCompletion.apply(completion1);
+        jobCompletion.apply(completion2);
 
         // Then
         StateStore state1 = stateStore(table1);
@@ -100,8 +100,8 @@ public class CompactionJobCompletionTest extends CompactionJobCompletionTestBase
         void shouldRetryStateStoreUpdateWhenFilesNotAssignedToJob() throws Exception {
             // Given
             FileReference file = addInputFile("file.parquet", 123);
-            CompactionJob job = createCompactionJobForOneFileNoJobAssignment(file);
-            CompactionJobRunCompleted completion = runCompactionJobOnTask("test-task", job);
+            CompactionJob job = createCompactionJobForOneFileAndRecordStatus(file);
+            CompactionJobCompletionRequest completion = runCompactionJobOnTask("test-task", job);
             actionOnWait(() -> {
                 stateStore().assignJobIds(List.of(AssignJobIdRequest.assignJobOnPartitionToFiles(
                         job.getId(), file.getPartitionId(), List.of(file.getFilename()))));
@@ -110,7 +110,7 @@ public class CompactionJobCompletionTest extends CompactionJobCompletionTestBase
             stateStore().fixFileUpdateTime(updateTime);
 
             // When
-            jobCompletion(noJitter()).applyCompletedJob(completion);
+            jobCompletion(noJitter()).apply(completion);
 
             // Then
             assertThat(stateStore().getFileReferences()).containsExactly(
@@ -123,11 +123,11 @@ public class CompactionJobCompletionTest extends CompactionJobCompletionTestBase
         void shouldFailAfterMaxAttemptsWhenFilesNotAssignedToJob() throws Exception {
             // Given
             FileReference file = addInputFile("file.parquet", 123);
-            CompactionJob job = createCompactionJobForOneFileNoJobAssignment(file);
-            CompactionJobRunCompleted completion = runCompactionJobOnTask("test-task", job);
+            CompactionJob job = createCompactionJobForOneFileAndRecordStatus(file);
+            CompactionJobCompletionRequest completion = runCompactionJobOnTask("test-task", job);
 
             // When
-            assertThatThrownBy(() -> jobCompletion(noJitter()).applyCompletedJob(completion))
+            assertThatThrownBy(() -> jobCompletion(noJitter()).apply(completion))
                     .isInstanceOf(TimedOutWaitingForFileAssignmentsException.class)
                     .hasCauseInstanceOf(FileReferenceNotAssignedToJobException.class);
 
@@ -149,11 +149,11 @@ public class CompactionJobCompletionTest extends CompactionJobCompletionTestBase
         void shouldFailWithNoRetriesWhenFileDoesNotExistInStateStore() throws Exception {
             // Given
             FileReference file = inputFileFactory().rootFile("file.parquet", 123);
-            CompactionJob job = createCompactionJobForOneFileNoJobAssignment(file);
-            CompactionJobRunCompleted completion = runCompactionJobOnTask("test-task", job);
+            CompactionJob job = createCompactionJobForOneFileAndRecordStatus(file);
+            CompactionJobCompletionRequest completion = runCompactionJobOnTask("test-task", job);
 
             // When
-            assertThatThrownBy(() -> jobCompletion(noJitter()).applyCompletedJob(completion))
+            assertThatThrownBy(() -> jobCompletion(noJitter()).apply(completion))
                     .isInstanceOf(FileNotFoundException.class);
 
             // Then
