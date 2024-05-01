@@ -19,53 +19,26 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.completion.lambda.CompactionJobCompletionLambda.CompactionJobCompletionConstructor;
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionJobCompletion;
 import sleeper.compaction.job.CompactionJobCompletionRequest;
-import sleeper.compaction.job.CompactionJobFactory;
+import sleeper.compaction.job.CompactionJobCompletionTestBase;
 import sleeper.compaction.job.CompactionJobRunCompleted;
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.compaction.testutils.InMemoryCompactionJobStatusStore;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.InMemoryTableProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.properties.table.TablePropertiesStore;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.util.ExponentialBackoffWithJitter;
-import sleeper.statestore.FixedStateStoreProvider;
-import sleeper.statestore.StateStoreProvider;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
-import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
-import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.noJitter;
-import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.noWaits;
 
-public class CompactionJobCompletionLambdaTest {
-
-    private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final Map<String, StateStore> stateStoreByTableName = new HashMap<>();
-    private final InMemoryCompactionJobStatusStore statusStore = new InMemoryCompactionJobStatusStore();
-    private final TablePropertiesStore tablePropertiesStore = InMemoryTableProperties.getStore();
-    private final TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, tablePropertiesStore);
-    private final StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(stateStoreByTableName);
+public class CompactionJobCompletionLambdaTest extends CompactionJobCompletionTestBase {
 
     @Test
     void shouldCompleteCompactionJobsOnDifferentTables() throws Exception {
@@ -108,43 +81,6 @@ public class CompactionJobCompletionLambdaTest {
                         .rootFile(job2.getOutputFile(), 400));
     }
 
-    private TableProperties createTable() {
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
-        tablePropertiesStore.createTable(tableProperties);
-        stateStoreByTableName.put(tableProperties.get(TABLE_NAME), inMemoryStateStoreWithFixedSinglePartition(tableProperties.getSchema()));
-        return tableProperties;
-    }
-
-    private FileReference addInputFile(TableProperties table, String filename, long records, Instant updateTime) throws Exception {
-        StateStore stateStore = stateStoreProvider.getStateStore(table);
-        FileReference fileReference = FileReferenceFactory.fromUpdatedAt(stateStore, updateTime).rootFile(filename, records);
-        stateStore.fixFileUpdateTime(updateTime);
-        stateStore.addFile(fileReference);
-        return fileReference;
-    }
-
-    private CompactionJob createCompactionJobForOneFile(TableProperties table, FileReference file, String jobId, Instant updateTime) throws Exception {
-        CompactionJob job = createCompactionJobForOneFileNoJobAssignment(table, file, jobId, updateTime);
-        StateStore stateStore = stateStoreProvider.getStateStore(table);
-        stateStore.fixFileUpdateTime(updateTime);
-        stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles(jobId, file.getPartitionId(), List.of(file.getFilename()))));
-        return job;
-    }
-
-    private CompactionJob createCompactionJobForOneFileNoJobAssignment(TableProperties table, FileReference file, String jobId, Instant updateTime) {
-        CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, table, () -> jobId);
-        CompactionJob job = jobFactory.createCompactionJob(List.of(file), file.getPartitionId());
-        statusStore.fixUpdateTime(updateTime);
-        statusStore.jobCreated(job);
-        statusStore.fixUpdateTime(null);
-        return job;
-    }
-
-    private CompactionJobRunCompleted runCompactionJobOnTask(String taskId, CompactionJob job, RecordsProcessedSummary summary) throws Exception {
-        statusStore.jobStarted(job, summary.getStartTime(), taskId);
-        return new CompactionJobRunCompleted(job, taskId, summary);
-    }
-
     private CompactionJobCompletionLambda lambdaWithUpdateTimes(List<Instant> updateTimes) {
         return new CompactionJobCompletionLambda(tablePropertiesProvider, stateStoreProvider, statusStore, completionWithUpdateTimes(updateTimes));
     }
@@ -152,19 +88,8 @@ public class CompactionJobCompletionLambdaTest {
     private CompactionJobCompletionConstructor completionWithUpdateTimes(List<Instant> updateTimes) {
         Iterator<Instant> timeIterator = updateTimes.iterator();
         return (statusStore, stateStore) -> {
-            Instant updateTime = timeIterator.next();
-            stateStore.fixFileUpdateTime(updateTime);
-            return new CompactionJobCompletion(statusStore, stateStore,
-                    CompactionJobCompletion.JOB_ASSIGNMENT_WAIT_ATTEMPTS, new ExponentialBackoffWithJitter(
-                            CompactionJobCompletion.JOB_ASSIGNMENT_WAIT_RANGE,
-                            noJitter(), noWaits()),
-                    () -> updateTime);
+            return completionWithUpdateTime(statusStore, stateStore, timeIterator.next());
         };
-    }
-
-    private FileReferenceFactory fileFactory(TableProperties table, Instant updateTime) {
-        StateStore stateStore = stateStoreProvider.getStateStore(table);
-        return FileReferenceFactory.fromUpdatedAt(stateStore, updateTime);
     }
 
 }

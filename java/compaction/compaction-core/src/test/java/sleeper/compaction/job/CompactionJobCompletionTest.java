@@ -132,7 +132,7 @@ public class CompactionJobCompletionTest {
     }
 
     private void updateStateStoreSuccess(CompactionJob job, long recordsProcessed, DoubleSupplier randomJitter) throws Exception {
-        new CompactionJobCompletion(statusStore, stateStore, CompactionJobCompletion.JOB_ASSIGNMENT_WAIT_ATTEMPTS, backoff(randomJitter), () -> UPDATE_TIME)
+        new CompactionJobCompletion(statusStore, stateStore, CompactionJobCompletion.JOB_ASSIGNMENT_WAIT_ATTEMPTS, backoff(randomJitter))
                 .applyCompletedJob(new CompactionJobRunCompleted(job, "test-task-id",
                         new RecordsProcessedSummary(new RecordsProcessed(recordsProcessed, recordsProcessed), UPDATE_TIME, UPDATE_TIME)));
     }

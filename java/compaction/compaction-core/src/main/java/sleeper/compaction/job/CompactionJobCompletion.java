@@ -25,9 +25,6 @@ import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
 
-import java.time.Instant;
-import java.util.function.Supplier;
-
 public class CompactionJobCompletion {
     public static final Logger LOGGER = LoggerFactory.getLogger(CompactionJobCompletion.class);
 
@@ -38,22 +35,20 @@ public class CompactionJobCompletion {
     private final StateStore stateStore;
     private final int jobAssignmentWaitAttempts;
     private final ExponentialBackoffWithJitter jobAssignmentWaitBackoff;
-    private final Supplier<Instant> clock;
 
     public CompactionJobCompletion(
             CompactionJobStatusStore statusStore, StateStore stateStore) {
         this(statusStore, stateStore, JOB_ASSIGNMENT_WAIT_ATTEMPTS,
-                new ExponentialBackoffWithJitter(JOB_ASSIGNMENT_WAIT_RANGE), Instant::now);
+                new ExponentialBackoffWithJitter(JOB_ASSIGNMENT_WAIT_RANGE));
     }
 
     public CompactionJobCompletion(
             CompactionJobStatusStore statusStore, StateStore stateStore,
-            int jobAssignmentWaitAttempts, ExponentialBackoffWithJitter jobAssignmentWaitBackoff, Supplier<Instant> clock) {
+            int jobAssignmentWaitAttempts, ExponentialBackoffWithJitter jobAssignmentWaitBackoff) {
         this.statusStore = statusStore;
         this.stateStore = stateStore;
         this.jobAssignmentWaitAttempts = jobAssignmentWaitAttempts;
         this.jobAssignmentWaitBackoff = jobAssignmentWaitBackoff;
-        this.clock = clock;
     }
 
     public void applyCompletedJob(CompactionJobRunCompleted jobRun) throws StateStoreException, InterruptedException {
