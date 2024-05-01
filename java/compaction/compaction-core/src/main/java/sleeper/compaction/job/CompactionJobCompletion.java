@@ -18,8 +18,6 @@ package sleeper.compaction.job;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.core.record.process.RecordsProcessed;
-import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
@@ -58,12 +56,10 @@ public class CompactionJobCompletion {
         this.clock = clock;
     }
 
-    public void applyCompletedJob(CompactionJobCompletionRequest request) throws StateStoreException, InterruptedException {
-        CompactionJob job = request.getJob();
-        RecordsProcessed recordsProcessed = request.getRecordsProcessed();
-        updateStateStoreSuccess(job, recordsProcessed.getRecordsWritten());
-        RecordsProcessedSummary summary = new RecordsProcessedSummary(recordsProcessed, request.getStartTime(), clock.get());
-        statusStore.jobFinished(job, summary, request.getTaskId());
+    public void applyCompletedJob(CompactionJobRunCompleted jobRun) throws StateStoreException, InterruptedException {
+        CompactionJob job = jobRun.getJob();
+        updateStateStoreSuccess(job, jobRun.getRecordsWritten());
+        statusStore.jobFinished(job, jobRun.buildRecordsProcessedSummary(), jobRun.getTaskId());
     }
 
     private void updateStateStoreSuccess(CompactionJob job, long recordsWritten) throws StateStoreException, InterruptedException {

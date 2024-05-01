@@ -24,6 +24,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.process.RecordsProcessed;
+import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
@@ -132,7 +133,8 @@ public class CompactionJobCompletionTest {
 
     private void updateStateStoreSuccess(CompactionJob job, long recordsProcessed, DoubleSupplier randomJitter) throws Exception {
         new CompactionJobCompletion(statusStore, stateStore, CompactionJobCompletion.JOB_ASSIGNMENT_WAIT_ATTEMPTS, backoff(randomJitter), () -> UPDATE_TIME)
-                .applyCompletedJob(new CompactionJobCompletionRequest(job, "test-task-id", UPDATE_TIME, new RecordsProcessed(recordsProcessed, recordsProcessed)));
+                .applyCompletedJob(new CompactionJobRunCompleted(job, "test-task-id",
+                        new RecordsProcessedSummary(new RecordsProcessed(recordsProcessed, recordsProcessed), UPDATE_TIME, UPDATE_TIME)));
     }
 
     private void actionOnWait(WaitAction action) throws Exception {

@@ -15,39 +15,19 @@
  */
 package sleeper.compaction.job;
 
-import sleeper.core.record.process.RecordsProcessed;
-
-import java.time.Instant;
+import java.util.List;
+import java.util.Objects;
 
 public class CompactionJobCompletionRequest {
 
-    private final CompactionJob job;
-    private final String taskId;
-    private final Instant startTime;
-    private final RecordsProcessed recordsProcessed;
+    private final List<CompactionJobRunCompleted> finishedJobRuns;
 
-    public CompactionJobCompletionRequest(
-            CompactionJob job, String taskId, Instant startTime, RecordsProcessed recordsProcessed) {
-        this.job = job;
-        this.taskId = taskId;
-        this.startTime = startTime;
-        this.recordsProcessed = recordsProcessed;
+    public CompactionJobCompletionRequest(List<CompactionJobRunCompleted> finishedJobRuns) {
+        this.finishedJobRuns = Objects.requireNonNull(finishedJobRuns, "finishedJobRuns must not be null");
     }
 
-    public CompactionJob getJob() {
-        return job;
-    }
-
-    public String getTaskId() {
-        return taskId;
-    }
-
-    public Instant getStartTime() {
-        return startTime;
-    }
-
-    public RecordsProcessed getRecordsProcessed() {
-        return recordsProcessed;
+    public List<CompactionJobRunCompleted> getFinishedJobRuns() {
+        return finishedJobRuns;
     }
 
 }

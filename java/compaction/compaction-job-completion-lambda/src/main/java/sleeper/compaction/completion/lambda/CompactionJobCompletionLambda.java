@@ -17,12 +17,17 @@ package sleeper.compaction.completion.lambda;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import com.amazonaws.services.lambda.runtime.Context;
+import com.amazonaws.services.lambda.runtime.RequestHandler;
+import com.amazonaws.services.lambda.runtime.events.SQSBatchResponse;
+import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 
 import sleeper.compaction.job.CompactionJobCompletion;
 import sleeper.compaction.job.CompactionJobCompletionRequest;
+import sleeper.compaction.job.CompactionJobRunCompleted;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -33,11 +38,9 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreProvider;
 
-import java.util.List;
-
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
-public class CompactionJobCompletionLambda {
+public class CompactionJobCompletionLambda implements RequestHandler<SQSEvent, SQSBatchResponse> {
 
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
@@ -72,11 +75,16 @@ public class CompactionJobCompletionLambda {
         CompactionJobCompletion jobCompletion(CompactionJobStatusStore statusStore, StateStore stateStore);
     }
 
-    public void completeJobs(List<CompactionJobCompletionRequest> requests) throws StateStoreException, InterruptedException {
-        for (CompactionJobCompletionRequest request : requests) {
-            TableProperties tableProperties = tablePropertiesProvider.getById(request.getJob().getTableId());
+    @Override
+    public SQSBatchResponse handleRequest(SQSEvent event, Context context) {
+        return new SQSBatchResponse();
+    }
+
+    public void completeJobs(CompactionJobCompletionRequest request) throws StateStoreException, InterruptedException {
+        for (CompactionJobRunCompleted jobRun : request.getFinishedJobRuns()) {
+            TableProperties tableProperties = tablePropertiesProvider.getById(jobRun.getJob().getTableId());
             StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-            completionConstructor.jobCompletion(statusStore, stateStore).applyCompletedJob(request);
+            completionConstructor.jobCompletion(statusStore, stateStore).applyCompletedJob(jobRun);
         }
     }
 
