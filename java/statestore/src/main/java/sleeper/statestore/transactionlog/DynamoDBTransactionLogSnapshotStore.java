@@ -185,8 +185,12 @@ public class DynamoDBTransactionLogSnapshotStore {
         long expiryDate = timeSupplier.get().toEpochMilli() - expiryInDays.toMillis();
         LatestSnapshots latestSnapshots = getLatestSnapshots();
         return Stream.concat(
-                getSnapshotsBefore(latestSnapshots.getFilesTransactionNumber(), SnapshotType.FILES, expiryDate),
-                getSnapshotsBefore(latestSnapshots.getPartitionsTransactionNumber(), SnapshotType.PARTITIONS, expiryDate));
+                getSnapshotsBefore(latestSnapshots.getFilesSnapshot()
+                        .map(TransactionLogSnapshot::getTransactionNumber)
+                        .orElse(0L), SnapshotType.FILES, expiryDate),
+                getSnapshotsBefore(latestSnapshots.getPartitionsSnapshot()
+                        .map(TransactionLogSnapshot::getTransactionNumber)
+                        .orElse(0L), SnapshotType.PARTITIONS, expiryDate));
     }
 
     private Stream<TransactionLogSnapshot> getSnapshotsBefore(long latestSnapshotNumber, SnapshotType type, long time) {
@@ -259,14 +263,6 @@ public class DynamoDBTransactionLogSnapshotStore {
 
         public Optional<TransactionLogSnapshot> getPartitionsSnapshot() {
             return Optional.ofNullable(partitionsSnapshot);
-        }
-
-        public long getFilesTransactionNumber() {
-            return filesSnapshot != null ? filesSnapshot.getTransactionNumber() : 0L;
-        }
-
-        public long getPartitionsTransactionNumber() {
-            return partitionsSnapshot != null ? partitionsSnapshot.getTransactionNumber() : 0L;
         }
 
         @Override
