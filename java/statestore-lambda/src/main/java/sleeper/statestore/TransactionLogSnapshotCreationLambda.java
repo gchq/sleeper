@@ -32,7 +32,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.util.LoggedDuration;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
-import sleeper.statestore.transactionlog.CreateTransactionLogSnapshot;
+import sleeper.statestore.transactionlog.CreateTransactionLogSnapshots;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -83,7 +83,7 @@ public class TransactionLogSnapshotCreationLambda implements RequestHandler<SQSE
         for (TableProperties table : tables) {
             LOGGER.info("Creating snapshot for table {}", table.getStatus());
             try {
-                CreateTransactionLogSnapshot.from(instanceProperties, table, s3Client, dynamoClient,
+                CreateTransactionLogSnapshots.from(instanceProperties, table, s3Client, dynamoClient,
                         HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties))
                         .createSnapshot();
             } catch (RuntimeException e) {
