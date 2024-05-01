@@ -26,13 +26,18 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.util.ExponentialBackoffWithJitter;
+import sleeper.core.util.ExponentialBackoffWithJitter.Waiter;
 import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.StateStoreProvider;
 
+import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.function.DoubleSupplier;
 
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
@@ -41,7 +46,7 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.noJitter;
-import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.noWaits;
+import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.recordWaits;
 
 public class CompactionJobCompletionTestBase {
 
@@ -51,12 +56,20 @@ public class CompactionJobCompletionTestBase {
     protected final InMemoryCompactionJobStatusStore statusStore = new InMemoryCompactionJobStatusStore();
     protected final TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, tablePropertiesStore);
     protected final StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(stateStoreByTableName);
+    protected final List<Duration> foundWaits = new ArrayList<>();
+    private Waiter waiter = recordWaits(foundWaits);
+    private TableProperties lastTable;
 
     protected TableProperties createTable() {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
         tablePropertiesStore.createTable(tableProperties);
         stateStoreByTableName.put(tableProperties.get(TABLE_NAME), inMemoryStateStoreWithFixedSinglePartition(tableProperties.getSchema()));
+        lastTable = tableProperties;
         return tableProperties;
+    }
+
+    protected FileReference addInputFile(String filename, long records) throws Exception {
+        return addInputFile(lastTable, filename, records);
     }
 
     protected FileReference addInputFile(TableProperties table, String filename, long records) throws Exception {
@@ -64,6 +77,10 @@ public class CompactionJobCompletionTestBase {
         FileReference fileReference = FileReferenceFactory.from(stateStore).rootFile(filename, records);
         stateStore.addFile(fileReference);
         return fileReference;
+    }
+
+    protected CompactionJob createCompactionJobForOneFile(FileReference file) throws Exception {
+        return createCompactionJobForOneFile(lastTable, file, UUID.randomUUID().toString(), Instant.now());
     }
 
     protected CompactionJob createCompactionJobForOneFile(TableProperties table, FileReference file, String jobId, Instant updateTime) throws Exception {
@@ -88,21 +105,53 @@ public class CompactionJobCompletionTestBase {
         return new CompactionJobRunCompleted(job, taskId, summary);
     }
 
-    protected CompactionJobCompletion completionWithUpdateTime(TableProperties table, Instant updateTime) {
-        StateStore stateStore = stateStoreProvider.getStateStore(table);
-        return completionWithUpdateTime(statusStore, stateStore, updateTime);
+    protected CompactionJobCompletion completionWithUpdateTime(Instant updateTime) {
+        return completionWithUpdateTime(statusStore, stateStore(), updateTime);
+    }
+
+    protected CompactionJobCompletion completionWithUpdateTime(Instant updateTime, DoubleSupplier randomJitter) {
+        return completionWithUpdateTime(statusStore, stateStore(), updateTime, randomJitter);
     }
 
     protected CompactionJobCompletion completionWithUpdateTime(CompactionJobStatusStore statusStore, StateStore stateStore, Instant updateTime) {
+        return completionWithUpdateTime(statusStore, stateStore, updateTime, noJitter());
+    }
+
+    protected CompactionJobCompletion completionWithUpdateTime(
+            CompactionJobStatusStore statusStore, StateStore stateStore, Instant updateTime, DoubleSupplier randomJitter) {
         stateStore.fixFileUpdateTime(updateTime);
         return new CompactionJobCompletion(statusStore, stateStore,
-                CompactionJobCompletion.JOB_ASSIGNMENT_WAIT_ATTEMPTS, new ExponentialBackoffWithJitter(
-                        CompactionJobCompletion.JOB_ASSIGNMENT_WAIT_RANGE,
-                        noJitter(), noWaits()));
+                CompactionJobCompletion.JOB_ASSIGNMENT_WAIT_ATTEMPTS, backoff(randomJitter));
     }
 
     protected FileReferenceFactory fileFactory(TableProperties table, Instant updateTime) {
         StateStore stateStore = stateStoreProvider.getStateStore(table);
         return FileReferenceFactory.fromUpdatedAt(stateStore, updateTime);
+    }
+
+    protected StateStore stateStore() {
+        return stateStoreProvider.getStateStore(lastTable);
+    }
+
+    protected void actionOnWait(WaitAction action) throws Exception {
+        Waiter wrapWaiter = waiter;
+        waiter = millis -> {
+            try {
+                action.run();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            wrapWaiter.waitForMillis(millis);
+        };
+    }
+
+    private ExponentialBackoffWithJitter backoff(DoubleSupplier randomJitter) {
+        return new ExponentialBackoffWithJitter(
+                CompactionJobCompletion.JOB_ASSIGNMENT_WAIT_RANGE,
+                randomJitter, waiter);
+    }
+
+    protected interface WaitAction {
+        void run() throws Exception;
     }
 }
