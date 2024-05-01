@@ -55,7 +55,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
 
-public class CreateTransactionLogSnapshotIT extends TransactionLogStateStoreTestBase {
+public class CreateTransactionLogSnapshotsIT extends TransactionLogStateStoreTestBase {
     @TempDir
     private Path tempDir;
     private final Schema schema = schemaWithKey("key", new LongType());
