@@ -156,7 +156,7 @@ public class PartitionSplittingStack extends NestedStack {
                         .build())
                 .visibilityTimeout(Duration.seconds(instanceProperties.getInt(SPLIT_PARTITIONS_TIMEOUT_IN_SECONDS))) // TODO Needs to be >= function timeout
                 .build();
-        partitionSplittingJobQueue.grantPurge(coreStacks.getPurgeQueuesPolicy());
+        partitionSplittingJobQueue.grantPurge(coreStacks.getPurgeQueuesPolicyForGrants());
         instanceProperties.set(PARTITION_SPLITTING_JOB_QUEUE_URL, partitionSplittingJobQueue.getQueueUrl());
         instanceProperties.set(PARTITION_SPLITTING_JOB_QUEUE_ARN, partitionSplittingJobQueue.getQueueArn());
         instanceProperties.set(PARTITION_SPLITTING_JOB_DLQ_URL, partitionSplittingJobDlq.getQueueUrl());

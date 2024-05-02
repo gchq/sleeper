@@ -20,7 +20,6 @@ use aws_config::{BehaviorVersion, Region};
 use aws_credential_types::provider::ProvideCredentials;
 use color_eyre::eyre::{eyre, Result};
 
-use log::info;
 use std::{collections::HashMap, path::PathBuf};
 use url::Url;
 

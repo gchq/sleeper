@@ -39,13 +39,14 @@ public class TransactionLogStateStoreStack extends NestedStack {
     private final Table filesLogTable;
     private final Table latestSnapshotsTable;
     private final Table allSnapshotsTable;
+    private final TableDataStack dataStack;
 
     public TransactionLogStateStoreStack(
-            Construct scope, String id, InstanceProperties instanceProperties) {
+            Construct scope, String id, InstanceProperties instanceProperties, TableDataStack dataStack) {
         super(scope, id);
-
-        partitionsLogTable = createTransactionLogTable(instanceProperties, "TransactionLogPartitionsTable", "transaction-log-partitions");
-        filesLogTable = createTransactionLogTable(instanceProperties, "TransactionLogFilesTable", "transaction-log-files");
+        this.dataStack = dataStack;
+        partitionsLogTable = createTransactionLogTable(instanceProperties, "PartitionTransactionLogTable", "partition-transaction-log");
+        filesLogTable = createTransactionLogTable(instanceProperties, "FileTransactionLogTable", "file-transaction-log");
         latestSnapshotsTable = createLatestSnapshotsTable(instanceProperties, "TransactionLogLatestSnapshotsTable", "transaction-log-latest-snapshots");
         allSnapshotsTable = createAllSnapshotsTable(instanceProperties, "TransactionLogAllSnapshotsTable", "transaction-log-all-snapshots");
         instanceProperties.set(TRANSACTION_LOG_PARTITIONS_TABLENAME, partitionsLogTable.getTableName());
@@ -115,5 +116,18 @@ public class TransactionLogStateStoreStack extends NestedStack {
 
     public void grantReadWritePartitions(IGrantable grantee) {
         partitionsLogTable.grantReadWriteData(grantee);
+    }
+
+    public void grantReadSnapshots(IGrantable grantee) {
+        latestSnapshotsTable.grantReadData(grantee);
+        dataStack.grantRead(grantee);
+    }
+
+    public void grantReadWriteSnapshots(IGrantable grantee) {
+        grantReadFiles(grantee);
+        grantReadPartitions(grantee);
+        latestSnapshotsTable.grantReadWriteData(grantee);
+        allSnapshotsTable.grantReadWriteData(grantee);
+        dataStack.grantReadWrite(grantee);
     }
 }

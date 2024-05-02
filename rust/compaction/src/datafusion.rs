@@ -30,9 +30,7 @@ use datafusion::{
     execution::{
         config::SessionConfig,
         context::SessionContext,
-        memory_pool::FairSpillPool,
         options::ParquetReadOptions,
-        runtime_env::{RuntimeConfig, RuntimeEnv},
         FunctionRegistry,
     },
     logical_expr::ScalarUDF,
@@ -59,11 +57,9 @@ pub async fn compact(
     output_path: &Url,
 ) -> Result<CompactionResult, DataFusionError> {
     info!("DataFusion compaction of {input_paths:?}");
-    info!("Compaction region {:?}", input_data.region);
+    info!("Compaction partition region {:?}", input_data.region);
 
-    let mut sf = create_session_cfg(input_data);
-    sf.options_mut().execution.target_partitions = 22;
-
+    let sf = create_session_cfg(input_data);
     let ctx = SessionContext::new_with_config(sf);
 
     // Register some object store from first input file and output file
@@ -298,6 +294,9 @@ fn get_parquet_writer_version(version: &str) -> String {
 ///
 fn create_session_cfg(input_data: &CompactionInput) -> SessionConfig {
     let mut sf = SessionConfig::new();
+    // In order to avoid a costly "Sort" stage in the physical plan, we must make
+    // sure the target partitions as at least as big as number of input files.
+    sf.options_mut().execution.target_partitions = std::cmp::max(sf.options().execution.target_partitions, input_data.input_files.len());
     sf.options_mut().execution.parquet.max_row_group_size = input_data.max_row_group_size;
     sf.options_mut().execution.parquet.data_pagesize_limit = input_data.max_page_size;
     sf.options_mut().execution.parquet.compression = Some(get_compression(&input_data.compression));

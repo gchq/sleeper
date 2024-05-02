@@ -32,6 +32,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.statestore.StateStore;
+import sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils;
 
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
@@ -45,7 +46,7 @@ public class TransactionLogStateStoreTestBase {
     protected static AmazonDynamoDB dynamoDBClient;
     protected static AmazonS3 s3Client;
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
-    protected final Configuration configuration = new Configuration();
+    protected final Configuration configuration = HadoopConfigurationLocalStackUtils.getHadoopConfiguration(localStackContainer);
 
     @BeforeAll
     public static void initDynamoClient() {
@@ -64,6 +65,6 @@ public class TransactionLogStateStoreTestBase {
     }
 
     public StateStore createStateStore(TableProperties tableProperties) {
-        return new DynamoDBTransactionLogStateStore(instanceProperties, tableProperties, dynamoDBClient, s3Client, configuration);
+        return DynamoDBTransactionLogStateStore.create(instanceProperties, tableProperties, dynamoDBClient, s3Client, configuration);
     }
 }

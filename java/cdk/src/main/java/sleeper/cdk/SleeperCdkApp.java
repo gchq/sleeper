@@ -38,6 +38,7 @@ import sleeper.cdk.stack.IngestBatcherStack;
 import sleeper.cdk.stack.IngestStack;
 import sleeper.cdk.stack.IngestStacks;
 import sleeper.cdk.stack.IngestStatusStoreStack;
+import sleeper.cdk.stack.InstanceAdminRoleStack;
 import sleeper.cdk.stack.KeepLambdaWarmStack;
 import sleeper.cdk.stack.ManagedPoliciesStack;
 import sleeper.cdk.stack.PartitionSplittingStack;
@@ -50,6 +51,7 @@ import sleeper.cdk.stack.TableDataStack;
 import sleeper.cdk.stack.TableIndexStack;
 import sleeper.cdk.stack.TableMetricsStack;
 import sleeper.cdk.stack.TopicStack;
+import sleeper.cdk.stack.TransactionLogSnapshotCreationStack;
 import sleeper.cdk.stack.TransactionLogStateStoreStack;
 import sleeper.cdk.stack.VpcStack;
 import sleeper.cdk.stack.WebSocketQueryStack;
@@ -141,15 +143,18 @@ public class SleeperCdkApp extends Stack {
         // Stacks for tables
         ManagedPoliciesStack policiesStack = new ManagedPoliciesStack(this, "Policies", instanceProperties);
         TableDataStack dataStack = new TableDataStack(this, "TableData", instanceProperties, policiesStack);
+        TransactionLogStateStoreStack transactionLogStateStoreStack = new TransactionLogStateStoreStack(
+                this, "TransactionLogStateStore", instanceProperties, dataStack);
         StateStoreStacks stateStoreStacks = new StateStoreStacks(
                 new DynamoDBStateStoreStack(this, "DynamoDBStateStore", instanceProperties),
                 new S3StateStoreStack(this, "S3StateStore", instanceProperties, dataStack),
-                new TransactionLogStateStoreStack(dataStack, "TransactionLogStateStore", instanceProperties),
-                policiesStack);
+                transactionLogStateStoreStack, policiesStack);
         coreStacks = new CoreStacks(
                 new ConfigBucketStack(this, "Configuration", instanceProperties, policiesStack),
                 new TableIndexStack(this, "TableIndex", instanceProperties, policiesStack),
                 policiesStack, stateStoreStacks, dataStack);
+        new TransactionLogSnapshotCreationStack(this, "TransactionLogSnapshotCreation",
+                instanceProperties, jars, coreStacks, transactionLogStateStoreStack, topicStack.getTopic(), errorMetrics);
         if (optionalStacks.contains(TableMetricsStack.class.getSimpleName())) {
             new TableMetricsStack(this, "TableMetrics", instanceProperties, jars, topicStack.getTopic(), coreStacks, errorMetrics);
         }
@@ -313,6 +318,9 @@ public class SleeperCdkApp extends Stack {
                     coreStacks,
                     queryQueueStack);
         }
+
+        // Only create instance admin role after we know which policies are deployed in the instance
+        new InstanceAdminRoleStack(this, "InstanceAdminRole", instanceProperties, policiesStack);
 
         this.generateProperties();
         addTags(app);
