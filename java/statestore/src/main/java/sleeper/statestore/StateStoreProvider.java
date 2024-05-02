@@ -26,39 +26,42 @@ import sleeper.core.statestore.StateStore;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Function;
 
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
 /**
  * Caches Sleeper table state store objects. An instance of this class cannot be used concurrently in multiple threads,
  * as the cache is not thread-safe.
  */
 public class StateStoreProvider {
-    private final Function<TableProperties, StateStore> stateStoreFactory;
-    private final Map<String, StateStore> tableNameToStateStoreCache;
+    private final StateStoreLoader stateStoreFactory;
+    private final Map<String, StateStore> tableIdToStateStoreCache;
 
     public StateStoreProvider(
             InstanceProperties instanceProperties, AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, Configuration configuration) {
         this(new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, configuration)::getStateStore);
     }
 
-    protected StateStoreProvider(Function<TableProperties, StateStore> stateStoreFactory) {
+    protected StateStoreProvider(StateStoreLoader stateStoreFactory) {
         this.stateStoreFactory = stateStoreFactory;
-        this.tableNameToStateStoreCache = new HashMap<>();
+        this.tableIdToStateStoreCache = new HashMap<>();
     }
 
     public StateStore getStateStore(String tableName, TablePropertiesProvider tablePropertiesProvider) {
-        TableProperties tableProperties = tablePropertiesProvider.getByName(tableName);
+        TableProperties tableProperties = tablePropertiesProvider.getById(tableName);
         return getStateStore(tableProperties);
     }
 
     public StateStore getStateStore(TableProperties tableProperties) {
-        String tableName = tableProperties.get(TABLE_NAME);
-        if (!tableNameToStateStoreCache.containsKey(tableName)) {
-            StateStore stateStore = stateStoreFactory.apply(tableProperties);
-            tableNameToStateStoreCache.put(tableName, stateStore);
+        String tableId = tableProperties.get(TABLE_ID);
+        if (!tableIdToStateStoreCache.containsKey(tableId)) {
+            StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
+            tableIdToStateStoreCache.put(tableId, stateStore);
         }
-        return tableNameToStateStoreCache.get(tableName);
+        return tableIdToStateStoreCache.get(tableId);
+    }
+
+    interface StateStoreLoader {
+        StateStore getStateStore(TableProperties tableProperties);
     }
 }
