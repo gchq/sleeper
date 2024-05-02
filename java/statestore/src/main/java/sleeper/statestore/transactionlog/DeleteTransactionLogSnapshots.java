@@ -42,23 +42,20 @@ public class DeleteTransactionLogSnapshots {
     }
 
     public void deleteSnapshots() {
-        try {
-            FileSystem fs = FileSystem.get(configuration);
-            snapshotStore.getOldestSnapshots()
-                    .forEach(snapshot -> {
-                        LOGGER.info("Deleting snapshot {}", snapshot);
-                        try {
-                            boolean deleted = fs.delete(new Path(snapshot.getPath()), false);
-                            if (!deleted) {
-                                LOGGER.warn("Failed to delete file. File has already been deleted: {}", snapshot.getPath());
-                            }
-                        } catch (IOException e) {
-                            LOGGER.error("Failed to delete file: {}", snapshot.getPath(), e);
+        snapshotStore.getOldestSnapshots()
+                .forEach(snapshot -> {
+                    LOGGER.info("Deleting snapshot {}", snapshot);
+                    try {
+                        Path path = new Path(snapshot.getPath());
+                        FileSystem fs = path.getFileSystem(configuration);
+                        boolean deleted = fs.delete(path, false);
+                        if (!deleted) {
+                            LOGGER.warn("Failed to delete file. File has already been deleted: {}", snapshot.getPath());
                         }
-                        snapshotStore.deleteSnapshot(snapshot);
-                    });
-        } catch (IOException e) {
-            LOGGER.error("Failed to initialise file system");
-        }
+                    } catch (IOException e) {
+                        LOGGER.error("Failed to delete file: {}", snapshot.getPath(), e);
+                    }
+                    snapshotStore.deleteSnapshot(snapshot);
+                });
     }
 }
