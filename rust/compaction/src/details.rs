@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 use crate::aws_s3::ObjectStoreFactory;
-use aws_config::BehaviorVersion;
+use aws_config::{BehaviorVersion, Region};
 use aws_credential_types::provider::ProvideCredentials;
 use color_eyre::eyre::{eyre, Result};
 
@@ -159,17 +159,19 @@ pub async fn merge_sorted_files(input_data: &CompactionInput<'_>) -> Result<Comp
         }
 
         let config = aws_config::defaults(BehaviorVersion::latest()).load().await;
-        let region = config
-            .region()
-            .ok_or(eyre!("Couldn't retrieve AWS region"))?;
-        let creds: aws_credential_types::Credentials = config
-            .credentials_provider()
-            .ok_or(eyre!("Couldn't retrieve AWS credentials"))?
-            .provide_credentials()
-            .await?;
+        // let region = config
+        //     .region()
+        //     .ok_or(eyre!("Couldn't retrieve AWS region"))?;
+        // let creds: aws_credential_types::Credentials = config
+        //     .credentials_provider()
+        //     .ok_or(eyre!("Couldn't retrieve AWS credentials"))?
+        //     .provide_credentials()
+        //     .await?;
+        let region = Region::from_static("eu-west-2");
+        let region = &region;
 
         // Create our object store factory
-        let store_factory = ObjectStoreFactory::new(Some(creds), region);
+        let store_factory = ObjectStoreFactory::new(None, region);
 
         crate::datafusion::compact(
             &store_factory,

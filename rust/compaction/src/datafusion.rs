@@ -30,6 +30,7 @@ use datafusion::{
     execution::{
         config::SessionConfig,
         context::SessionContext,
+        memory_pool::FairSpillPool,
         options::ParquetReadOptions,
         runtime_env::{RuntimeConfig, RuntimeEnv},
         FunctionRegistry,
@@ -59,11 +60,23 @@ pub async fn compact(
 ) -> Result<CompactionResult, DataFusionError> {
     info!("DataFusion compaction of {input_paths:?}");
     info!("Compaction region {:?}", input_data.region);
-    let sf = create_session_cfg(input_data);
-    // let lim = std::env::var("LIM").unwrap().parse::<usize>().unwrap();
-    // let rt = RuntimeConfig::new().with_memory_limit(lim, 0.8f64);
-    // let ctx = SessionContext::new_with_config_rt(sf, Arc::new(RuntimeEnv::new(rt)?));
+
+    let lim = std::env::var("LIM")
+        .unwrap_or("104857600".into())
+        .parse::<usize>()
+        .unwrap();
+
+    let mut sf = create_session_cfg(input_data);
+    sf.options_mut().execution.target_partitions = 11;
+    info!(
+        "Set memory limit to {} bytes",
+        lim.to_formatted_string(&Locale::en)
+    );
+
+    let fmm = FairSpillPool::new(lim);
+    let rt = RuntimeConfig::new().with_memory_pool(Arc::new(fmm));
     let ctx = SessionContext::new_with_config(sf);
+    // let ctx = SessionContext::new_with_config_rt(sf, Arc::new(RuntimeEnv::new(rt)?));
 
     // Register some object store from first input file and output file
     let store = register_store(store_factory, input_paths, output_path, &ctx)?;
