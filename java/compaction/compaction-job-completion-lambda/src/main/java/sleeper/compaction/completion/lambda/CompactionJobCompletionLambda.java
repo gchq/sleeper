@@ -29,11 +29,11 @@ import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.compaction.job.CompactionJobCompletion;
-import sleeper.compaction.job.CompactionJobCompletion.GetStateStore;
-import sleeper.compaction.job.CompactionJobCompletionRequest;
-import sleeper.compaction.job.CompactionJobCompletionRequestSerDe;
 import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.job.completion.CompactionJobCompletion;
+import sleeper.compaction.job.completion.CompactionJobCompletion.GetStateStore;
+import sleeper.compaction.job.completion.CompactionJobCompletionRequest;
+import sleeper.compaction.job.completion.CompactionJobCompletionRequestSerDe;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;

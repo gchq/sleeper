@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.job;
+package sleeper.compaction.job.completion;
 
+import sleeper.compaction.job.CompactionJob;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 

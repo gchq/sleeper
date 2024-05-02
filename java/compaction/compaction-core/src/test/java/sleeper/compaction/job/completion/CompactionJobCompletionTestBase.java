@@ -13,8 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.job;
+package sleeper.compaction.job.completion;
 
+import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.compaction.testutils.InMemoryCompactionJobStatusStore;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.InMemoryTableProperties;

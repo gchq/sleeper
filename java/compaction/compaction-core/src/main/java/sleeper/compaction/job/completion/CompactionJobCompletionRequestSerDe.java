@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.job;
+package sleeper.compaction.job.completion;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -25,6 +25,8 @@ import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
+import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.CompactionJobSerDe;
 import sleeper.core.util.GsonConfig;
 
 import java.io.IOException;

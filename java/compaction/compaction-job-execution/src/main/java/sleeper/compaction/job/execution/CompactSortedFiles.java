@@ -25,7 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.TimedOutWaitingForFileAssignmentsException;
+import sleeper.compaction.job.completion.TimedOutWaitingForFileAssignmentsException;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;

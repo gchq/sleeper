@@ -13,11 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.job;
+package sleeper.compaction.job.completion;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;

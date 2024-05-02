@@ -13,13 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.job;
+package sleeper.compaction.job.completion;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.process.RecordsProcessed;
