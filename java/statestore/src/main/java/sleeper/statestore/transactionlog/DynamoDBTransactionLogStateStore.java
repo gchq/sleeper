@@ -58,6 +58,11 @@ public class DynamoDBTransactionLogStateStore {
             AmazonDynamoDB dynamoDB, Configuration configuration) {
         LatestSnapshots latestSnapshots = new DynamoDBTransactionLogSnapshotStore(instanceProperties, tableProperties, dynamoDB).getLatestSnapshots();
         TransactionLogSnapshotSerDe snapshotSerDe = new TransactionLogSnapshotSerDe(tableProperties.getSchema(), configuration);
+        loadLatestFilesSnapshot(builder, snapshotSerDe, latestSnapshots);
+        loadLatestPartitionsSnapshot(builder, snapshotSerDe, latestSnapshots);
+    }
+
+    private static void loadLatestFilesSnapshot(TransactionLogStateStore.Builder builder, TransactionLogSnapshotSerDe snapshotSerDe, LatestSnapshots latestSnapshots) {
         if (latestSnapshots.getFilesSnapshot().isPresent()) {
             TransactionLogSnapshot filesSnapshot = latestSnapshots.getFilesSnapshot().get();
             LOGGER.info("Found latest files snapshot with last transaction number {}. Creating file reference store using this snapshot.",
@@ -75,6 +80,9 @@ public class DynamoDBTransactionLogStateStore {
         } else {
             LOGGER.info("Could not find latest files snapshot. Creating empty file reference store.");
         }
+    }
+
+    private static void loadLatestPartitionsSnapshot(TransactionLogStateStore.Builder builder, TransactionLogSnapshotSerDe snapshotSerDe, LatestSnapshots latestSnapshots) {
         if (latestSnapshots.getPartitionsSnapshot().isPresent()) {
             TransactionLogSnapshot partitionsSnapshot = latestSnapshots.getPartitionsSnapshot().get();
             LOGGER.info("Found latest partitions snapshot with last transaction number {}. Creating partitions store using this snapshot.",
