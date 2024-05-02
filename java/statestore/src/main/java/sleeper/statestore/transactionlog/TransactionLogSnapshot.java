@@ -49,11 +49,11 @@ public class TransactionLogSnapshot {
     }
 
     private static String getFilesPath(String basePath, long transactionNumber) {
-        return basePath + "/snapshots/" + transactionNumber + "-files.parquet";
+        return basePath + "/statestore/snapshots/" + transactionNumber + "-files.parquet";
     }
 
     private static String getPartitionsPath(String basePath, long transactionNumber) {
-        return basePath + "/snapshots/" + transactionNumber + "-partitions.parquet";
+        return basePath + "/statestore/snapshots/" + transactionNumber + "-partitions.parquet";
     }
 
     @Override
