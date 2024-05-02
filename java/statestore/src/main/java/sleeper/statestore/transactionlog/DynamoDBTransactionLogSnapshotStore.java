@@ -162,7 +162,7 @@ public class DynamoDBTransactionLogSnapshotStore {
                 .map(DynamoDBTransactionLogSnapshotStore::getSnapshotFromItem);
     }
 
-    public Optional<LatestSnapshots> getLatestSnapshots() {
+    public LatestSnapshots getLatestSnapshots() {
         QueryResult result = dynamo.query(new QueryRequest()
                 .withTableName(latestSnapshotsTable)
                 .withKeyConditionExpression("#TableId = :table_id")
@@ -171,24 +171,26 @@ public class DynamoDBTransactionLogSnapshotStore {
                         .string(":table_id", sleeperTableId)
                         .build()));
         if (result.getCount() > 0) {
-            return Optional.of(getLatestSnapshotsFromItem(result.getItems().get(0)));
+            return getLatestSnapshotsFromItem(result.getItems().get(0));
         } else {
-            return Optional.empty();
+            return LatestSnapshots.empty();
         }
     }
 
     private static LatestSnapshots getLatestSnapshotsFromItem(Map<String, AttributeValue> item) {
-        return new LatestSnapshots(getFilesSnapshotFromItem(item), getPartitionsSnapshotFromItem(item));
-    }
-
-    private static TransactionLogSnapshot getFilesSnapshotFromItem(Map<String, AttributeValue> item) {
-        return new TransactionLogSnapshot(getStringAttribute(item, FILES_SNAPSHOT_PATH), SnapshotType.FILES,
-                getLongAttribute(item, FILES_TRANSACTION_NUMBER, 0));
-    }
-
-    private static TransactionLogSnapshot getPartitionsSnapshotFromItem(Map<String, AttributeValue> item) {
-        return new TransactionLogSnapshot(getStringAttribute(item, PARTITIONS_SNAPSHOT_PATH), SnapshotType.PARTITIONS,
-                getLongAttribute(item, PARTITIONS_TRANSACTION_NUMBER, 0));
+        TransactionLogSnapshot filesSnapshot = null;
+        String filesSnapshotPath = getStringAttribute(item, FILES_SNAPSHOT_PATH);
+        if (filesSnapshotPath != null) {
+            filesSnapshot = new TransactionLogSnapshot(filesSnapshotPath, SnapshotType.FILES,
+                    getLongAttribute(item, FILES_TRANSACTION_NUMBER, 0));
+        }
+        TransactionLogSnapshot partitionsSnapshot = null;
+        String partitionsSnapshotPath = getStringAttribute(item, PARTITIONS_SNAPSHOT_PATH);
+        if (partitionsSnapshotPath != null) {
+            partitionsSnapshot = new TransactionLogSnapshot(partitionsSnapshotPath, SnapshotType.PARTITIONS,
+                    getLongAttribute(item, PARTITIONS_TRANSACTION_NUMBER, 0));
+        }
+        return new LatestSnapshots(filesSnapshot, partitionsSnapshot);
     }
 
     private static String tableAndType(String table, SnapshotType type) {
@@ -201,20 +203,24 @@ public class DynamoDBTransactionLogSnapshotStore {
     }
 
     public static class LatestSnapshots {
-        TransactionLogSnapshot filesSnapshot;
-        TransactionLogSnapshot partitionsSnapshot;
+        private final TransactionLogSnapshot filesSnapshot;
+        private final TransactionLogSnapshot partitionsSnapshot;
+
+        public static LatestSnapshots empty() {
+            return new LatestSnapshots(null, null);
+        }
 
         public LatestSnapshots(TransactionLogSnapshot filesSnapshot, TransactionLogSnapshot partitionsSnapshot) {
             this.filesSnapshot = filesSnapshot;
             this.partitionsSnapshot = partitionsSnapshot;
         }
 
-        public TransactionLogSnapshot getFilesSnapshot() {
-            return filesSnapshot;
+        public Optional<TransactionLogSnapshot> getFilesSnapshot() {
+            return Optional.ofNullable(filesSnapshot);
         }
 
-        public TransactionLogSnapshot getPartitionsSnapshot() {
-            return partitionsSnapshot;
+        public Optional<TransactionLogSnapshot> getPartitionsSnapshot() {
+            return Optional.ofNullable(partitionsSnapshot);
         }
 
         @Override
@@ -232,6 +238,11 @@ public class DynamoDBTransactionLogSnapshotStore {
             }
             LatestSnapshots other = (LatestSnapshots) obj;
             return Objects.equals(filesSnapshot, other.filesSnapshot) && Objects.equals(partitionsSnapshot, other.partitionsSnapshot);
+        }
+
+        @Override
+        public String toString() {
+            return "LatestSnapshots{filesSnapshot=" + filesSnapshot + ", partitionsSnapshot=" + partitionsSnapshot + "}";
         }
 
     }
