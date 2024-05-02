@@ -36,7 +36,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
-public class StateStoreProviderTest {
+public class StateStoreProviderWithSizeTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = schemaWithKey("key");
     private final Map<String, StateStore> tableIdToStateStore = new HashMap<>();
@@ -48,7 +48,7 @@ public class StateStoreProviderTest {
         TableProperties table = createStateStore("test-table-id", "test-table");
 
         // When
-        StateStoreProvider provider = provider();
+        StateStoreProviderWithSize provider = provider();
         provider.getStateStore(table);
         provider.getStateStore(table);
         provider.getStateStore(table);
@@ -66,7 +66,7 @@ public class StateStoreProviderTest {
         TableProperties table3 = createStateStore("table-id-3", "test-table-3");
 
         // When
-        StateStoreProvider provider = provider();
+        StateStoreProviderWithSize provider = provider();
         provider.getStateStore(table1);
         provider.getStateStore(table2);
         // Cache size has been reached, oldest state store will be removed from cache
@@ -90,8 +90,8 @@ public class StateStoreProviderTest {
         return tableProperties;
     }
 
-    private StateStoreProvider provider() {
-        return new StateStoreProvider(instanceProperties, tableProperties -> {
+    private StateStoreProviderWithSize provider() {
+        return new StateStoreProviderWithSize(instanceProperties, tableProperties -> {
             tablesLoaded.add(tableProperties.get(TABLE_ID));
             return tableIdToStateStore.get(tableProperties.get(TABLE_ID));
         });
