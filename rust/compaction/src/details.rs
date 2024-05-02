@@ -130,11 +130,6 @@ pub struct CompactionResult {
 /// There must be at least one input file.
 ///
 pub async fn merge_sorted_files(input_data: &CompactionInput<'_>) -> Result<CompactionResult> {
-    info!(
-        "Environment has {} CPUs available {} cores",
-        num_cpus::get_physical(),
-        num_cpus::get()
-    );
     // Read the schema from the first file
     if input_data.input_files.is_empty() {
         Err(eyre!("No input paths supplied"))

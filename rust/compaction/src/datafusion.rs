@@ -61,22 +61,10 @@ pub async fn compact(
     info!("DataFusion compaction of {input_paths:?}");
     info!("Compaction region {:?}", input_data.region);
 
-    let lim = std::env::var("LIM")
-        .unwrap_or("104857600".into())
-        .parse::<usize>()
-        .unwrap();
-
     let mut sf = create_session_cfg(input_data);
-    sf.options_mut().execution.target_partitions = 11;
-    info!(
-        "Set memory limit to {} bytes",
-        lim.to_formatted_string(&Locale::en)
-    );
+    sf.options_mut().execution.target_partitions = 22;
 
-    let fmm = FairSpillPool::new(lim);
-    let rt = RuntimeConfig::new().with_memory_pool(Arc::new(fmm));
     let ctx = SessionContext::new_with_config(sf);
-    // let ctx = SessionContext::new_with_config_rt(sf, Arc::new(RuntimeEnv::new(rt)?));
 
     // Register some object store from first input file and output file
     let store = register_store(store_factory, input_paths, output_path, &ctx)?;
@@ -117,8 +105,6 @@ pub async fn compact(
     let col_names_expr = sketch_expr
         .chain(col_names.iter().skip(1).map(col)) // 1st column is the sketch function call
         .collect::<Vec<_>>();
-
-    let _no_sketches = col_names.iter().map(col).collect::<Vec<_>>();
 
     // Build compaction query
     frame = frame.sort(sort_order)?.select(col_names_expr)?;
