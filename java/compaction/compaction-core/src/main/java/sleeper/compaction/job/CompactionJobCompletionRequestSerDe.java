@@ -59,7 +59,7 @@ public class CompactionJobCompletionRequestSerDe {
     /**
      * A GSON plugin to serialise/deserialise a compaction job.
      */
-    private class CompactionJobJsonSerDe implements JsonSerializer<CompactionJob>, JsonDeserializer<CompactionJob> {
+    private static class CompactionJobJsonSerDe implements JsonSerializer<CompactionJob>, JsonDeserializer<CompactionJob> {
         @Override
         public CompactionJob deserialize(JsonElement element, Type type, JsonDeserializationContext context) throws JsonParseException {
             try {
