@@ -30,6 +30,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.instance.CommonProperty.STATESTORE_PROVIDER_CACHE_SIZE;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
@@ -56,6 +57,30 @@ public class StateStoreProviderTest {
         assertThat(tablesLoaded).containsExactly("test-table-id");
     }
 
+    @Test
+    void shouldRemoveOldestCacheEntryWhenLimitHasBeenReached() {
+        // Given
+        instanceProperties.setNumber(STATESTORE_PROVIDER_CACHE_SIZE, 2);
+        TableProperties table1 = createStateStore("table-id-1", "test-table-1");
+        TableProperties table2 = createStateStore("table-id-2", "test-table-2");
+        TableProperties table3 = createStateStore("table-id-3", "test-table-3");
+
+        // When
+        StateStoreProvider provider = provider();
+        provider.getStateStore(table1);
+        provider.getStateStore(table2);
+        // Cache size has been reached, oldest state store will be removed from cache
+        provider.getStateStore(table3);
+        provider.getStateStore(table1);
+
+        // Then
+        assertThat(tablesLoaded).containsExactly(
+                "table-id-1",
+                "table-id-2",
+                "table-id-3",
+                "table-id-1");
+    }
+
     private TableProperties createStateStore(String tableId, String tableName) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         tableProperties.set(TABLE_ID, tableId);
@@ -66,7 +91,7 @@ public class StateStoreProviderTest {
     }
 
     private StateStoreProvider provider() {
-        return new StateStoreProvider(tableProperties -> {
+        return new StateStoreProvider(instanceProperties, tableProperties -> {
             tablesLoaded.add(tableProperties.get(TABLE_ID));
             return tableIdToStateStore.get(tableProperties.get(TABLE_ID));
         });

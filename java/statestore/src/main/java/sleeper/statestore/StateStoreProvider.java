@@ -18,6 +18,7 @@ package sleeper.statestore;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
 import org.apache.hadoop.conf.Configuration;
+import org.jboss.threads.ArrayQueue;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -26,7 +27,9 @@ import sleeper.core.statestore.StateStore;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Queue;
 
+import static sleeper.configuration.properties.instance.CommonProperty.STATESTORE_PROVIDER_CACHE_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
 /**
@@ -34,17 +37,21 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
  * as the cache is not thread-safe.
  */
 public class StateStoreProvider {
+    private final int cacheSize;
     private final StateStoreLoader stateStoreFactory;
     private final Map<String, StateStore> tableIdToStateStoreCache;
+    private final Queue<String> tableIds;
 
     public StateStoreProvider(
             InstanceProperties instanceProperties, AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, Configuration configuration) {
-        this(new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, configuration)::getStateStore);
+        this(instanceProperties, new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, configuration)::getStateStore);
     }
 
-    protected StateStoreProvider(StateStoreLoader stateStoreFactory) {
+    protected StateStoreProvider(InstanceProperties instanceProperties, StateStoreLoader stateStoreFactory) {
+        this.cacheSize = instanceProperties.getInt(STATESTORE_PROVIDER_CACHE_SIZE);
         this.stateStoreFactory = stateStoreFactory;
         this.tableIdToStateStoreCache = new HashMap<>();
+        this.tableIds = new ArrayQueue<>(cacheSize);
     }
 
     public StateStore getStateStore(String tableName, TablePropertiesProvider tablePropertiesProvider) {
@@ -55,8 +62,12 @@ public class StateStoreProvider {
     public StateStore getStateStore(TableProperties tableProperties) {
         String tableId = tableProperties.get(TABLE_ID);
         if (!tableIdToStateStoreCache.containsKey(tableId)) {
+            if (tableIdToStateStoreCache.size() == cacheSize) {
+                tableIdToStateStoreCache.remove(tableIds.poll());
+            }
             StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
             tableIdToStateStoreCache.put(tableId, stateStore);
+            tableIds.add(tableId);
         }
         return tableIdToStateStoreCache.get(tableId);
     }

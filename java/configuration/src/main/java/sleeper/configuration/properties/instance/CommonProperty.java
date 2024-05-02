@@ -180,6 +180,12 @@ public interface CommonProperty {
                     "We may add the ability to use this in the CDK in the future.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .editable(false).build();
+    UserDefinedInstanceProperty STATESTORE_PROVIDER_CACHE_SIZE = Index.propertyBuilder("sleeper.metadata.statestore.provider.cache.size")
+            .description("The maximum size of state store providers. If a state store is needed and the cache is full, the oldest state store in the cache will be removed to make space.")
+            .defaultValue("10")
+            .validationPredicate(Utils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
     UserDefinedInstanceProperty DYNAMO_STATE_STORE_POINT_IN_TIME_RECOVERY = Index.propertyBuilder("sleeper.metadata.dynamo.pointintimerecovery")
             .description("This specifies whether point in time recovery is enabled for the DynamoDB state store. " +
                     "This is set on the DynamoDB tables.")
