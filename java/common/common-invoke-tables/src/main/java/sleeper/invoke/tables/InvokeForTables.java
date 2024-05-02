@@ -18,6 +18,8 @@ package sleeper.invoke.tables;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequest;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableNotFoundException;
@@ -31,6 +33,7 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 public class InvokeForTables {
+    public static final Logger LOGGER = LoggerFactory.getLogger(InvokeForTables.class);
 
     private InvokeForTables() {
     }
@@ -50,6 +53,7 @@ public class InvokeForTables {
     }
 
     private static void sendMessageBatch(AmazonSQS sqsClient, String queueUrl, List<TableStatus> tablesBatch) {
+        LOGGER.info("Sending table batch of size {} to SQS queue {}: {}", tablesBatch.size(), queueUrl, tablesBatch);
         sqsClient.sendMessageBatch(new SendMessageBatchRequest()
                 .withQueueUrl(queueUrl)
                 .withEntries(tablesBatch.stream()
