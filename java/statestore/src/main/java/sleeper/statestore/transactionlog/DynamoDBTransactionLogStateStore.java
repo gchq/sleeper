@@ -23,11 +23,15 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.statestore.transactionlog.StateStoreFiles;
+import sleeper.core.statestore.transactionlog.StateStorePartitions;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
+import sleeper.core.util.LoggedDuration;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.LatestSnapshots;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.time.Instant;
 
 public class DynamoDBTransactionLogStateStore {
     public static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBTransactionLogStateStore.class);
@@ -59,7 +63,11 @@ public class DynamoDBTransactionLogStateStore {
             LOGGER.info("Found latest files snapshot with last transaction number {}. Creating file reference store using this snapshot.",
                     filesSnapshot.getTransactionNumber());
             try {
-                builder.filesState(snapshotSerDe.loadFiles(filesSnapshot))
+                Instant startTime = Instant.now();
+                StateStoreFiles filesState = snapshotSerDe.loadFiles(filesSnapshot);
+                LOGGER.info("Finished loading and deserialising files snapshot, took {}",
+                        LoggedDuration.withShortOutput(startTime, Instant.now()));
+                builder.filesState(filesState)
                         .filesTransactionNumber(filesSnapshot.getTransactionNumber());
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
@@ -72,7 +80,11 @@ public class DynamoDBTransactionLogStateStore {
             LOGGER.info("Found latest partitions snapshot with last transaction number {}. Creating partitions store using this snapshot.",
                     partitionsSnapshot.getTransactionNumber());
             try {
-                builder.partitionsState(snapshotSerDe.loadPartitions(partitionsSnapshot))
+                Instant startTime = Instant.now();
+                StateStorePartitions partitionsState = snapshotSerDe.loadPartitions(partitionsSnapshot);
+                LOGGER.info("Finished loading and deserialising partitions snapshot, took {}",
+                        LoggedDuration.withShortOutput(startTime, Instant.now()));
+                builder.partitionsState(partitionsState)
                         .partitionsTransactionNumber(partitionsSnapshot.getTransactionNumber());
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
