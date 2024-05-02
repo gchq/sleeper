@@ -126,7 +126,7 @@ public class DeleteTableIT {
                 .filter(key -> key.startsWith(tablePrefix(table, "statestore/partitions"))))
                 .hasSize(1);
         assertThat(tableFilesInS3.stream()
-                .filter(key -> key.startsWith(tablePrefix(table, "partition_root")))
+                .filter(key -> key.startsWith(tablePrefix(table, "data/partition_root")))
                 .map(FilenameUtils::getName))
                 .containsExactly(
                         FilenameUtils.getName(rootFile.getFilename()),
@@ -160,7 +160,7 @@ public class DeleteTableIT {
                 .filter(key -> key.startsWith(tablePrefix(table1, "statestore/partitions"))))
                 .hasSize(1);
         assertThat(tableFilesInS3.stream()
-                .filter(key -> key.startsWith(tablePrefix(table1, "partition_root")))
+                .filter(key -> key.startsWith(tablePrefix(table1, "data/partition_root")))
                 .map(FilenameUtils::getName))
                 .containsExactly(
                         FilenameUtils.getName(rootFile.getFilename()),
