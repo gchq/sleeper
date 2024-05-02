@@ -54,35 +54,31 @@ public class DynamoDBTransactionLogStateStore {
             AmazonDynamoDB dynamoDB, Configuration configuration) {
         LatestSnapshots latestSnapshots = new DynamoDBTransactionLogSnapshotStore(instanceProperties, tableProperties, dynamoDB).getLatestSnapshots();
         TransactionLogSnapshotSerDe snapshotSerDe = new TransactionLogSnapshotSerDe(tableProperties.getSchema(), configuration);
-        try {
-            if (latestSnapshots.getFilesSnapshot().isPresent()) {
-                TransactionLogSnapshot filesSnapshot = latestSnapshots.getFilesSnapshot().get();
-                LOGGER.info("Found latest files snapshot with last transaction number {}. Creating file reference store using this snapshot.",
-                        filesSnapshot.getTransactionNumber());
-                try {
-                    builder.filesState(snapshotSerDe.loadFiles(filesSnapshot))
-                            .filesTransactionNumber(filesSnapshot.getTransactionNumber());
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
-                }
-            } else {
-                LOGGER.info("Could not find latest files snapshot. Creating empty file reference store.");
+        if (latestSnapshots.getFilesSnapshot().isPresent()) {
+            TransactionLogSnapshot filesSnapshot = latestSnapshots.getFilesSnapshot().get();
+            LOGGER.info("Found latest files snapshot with last transaction number {}. Creating file reference store using this snapshot.",
+                    filesSnapshot.getTransactionNumber());
+            try {
+                builder.filesState(snapshotSerDe.loadFiles(filesSnapshot))
+                        .filesTransactionNumber(filesSnapshot.getTransactionNumber());
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
             }
-            if (latestSnapshots.getPartitionsSnapshot().isPresent()) {
-                TransactionLogSnapshot partitionsSnapshot = latestSnapshots.getPartitionsSnapshot().get();
-                LOGGER.info("Found latest partitions snapshot with last transaction number {}. Creating partitions store using this snapshot.",
-                        partitionsSnapshot.getTransactionNumber());
-                try {
-                    builder.partitionsState(snapshotSerDe.loadPartitions(partitionsSnapshot))
-                            .partitionsTransactionNumber(partitionsSnapshot.getTransactionNumber());
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
-                }
-            } else {
-                LOGGER.info("Could not find latest partitions snapshot. Creating empty partitions store.");
+        } else {
+            LOGGER.info("Could not find latest files snapshot. Creating empty file reference store.");
+        }
+        if (latestSnapshots.getPartitionsSnapshot().isPresent()) {
+            TransactionLogSnapshot partitionsSnapshot = latestSnapshots.getPartitionsSnapshot().get();
+            LOGGER.info("Found latest partitions snapshot with last transaction number {}. Creating partitions store using this snapshot.",
+                    partitionsSnapshot.getTransactionNumber());
+            try {
+                builder.partitionsState(snapshotSerDe.loadPartitions(partitionsSnapshot))
+                        .partitionsTransactionNumber(partitionsSnapshot.getTransactionNumber());
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
             }
-        } catch (UncheckedIOException e) {
-            throw new RuntimeException("Failed to load latest snapshots", e);
+        } else {
+            LOGGER.info("Could not find latest partitions snapshot. Creating empty partitions store.");
         }
     }
 }
