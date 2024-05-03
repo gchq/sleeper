@@ -22,7 +22,6 @@ import org.jboss.threads.ArrayQueue;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
 
 import java.util.HashMap;
@@ -52,11 +51,6 @@ public class StateStoreProviderWithSize {
         this.stateStoreFactory = stateStoreFactory;
         this.tableIdToStateStoreCache = new HashMap<>();
         this.tableIds = new ArrayQueue<>(cacheSize);
-    }
-
-    public StateStore getStateStore(String tableName, TablePropertiesProvider tablePropertiesProvider) {
-        TableProperties tableProperties = tablePropertiesProvider.getById(tableName);
-        return getStateStore(tableProperties);
     }
 
     public StateStore getStateStore(TableProperties tableProperties) {
