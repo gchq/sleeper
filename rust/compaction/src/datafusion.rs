@@ -148,9 +148,9 @@ pub async fn compact(
             "Made {} calls to sketch UDF and processed {} rows. Quantile sketch column 0 retained {} out of {} values (K value = {}).",
             func.get_invoke_count().to_formatted_string(&Locale::en),
             func.get_row_count().to_formatted_string(&Locale::en),
-            first_sketch.get_num_retained(),
-            first_sketch.get_n(),
-            first_sketch.get_k()
+            first_sketch.get_num_retained().to_formatted_string(&Locale::en),
+            first_sketch.get_n().to_formatted_string(&Locale::en),
+            first_sketch.get_k().to_formatted_string(&Locale::en)
         );
         }
 
