@@ -80,10 +80,10 @@ public class TransactionLogSnapshotStack extends NestedStack {
 
     private void createSnapshotCreationLambda(InstanceProperties instanceProperties, LambdaCode statestoreJar, CoreStacks coreStacks,
             TransactionLogStateStoreStack transactionLogStateStoreStack, Topic topic, List<IMetric> errorMetrics) {
-        String triggerFunctionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "transaction-log-snapshot-creation-trigger"));
-        String creationFunctionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "transaction-log-snapshot-creation"));
+        String triggerFunctionName = String.join("-", "sleeper",
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "tl-snapshot-creation-trigger");
+        String creationFunctionName = String.join("-", "sleeper",
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "tl-snapshot-creation");
         IFunction snapshotCreationTrigger = statestoreJar.buildFunction(this, "TransactionLogSnapshotCreationTrigger", builder -> builder
                 .functionName(triggerFunctionName)
                 .description("Creates batches of Sleeper tables to create transaction log snapshots for and puts them on a queue to be processed")
@@ -149,10 +149,10 @@ public class TransactionLogSnapshotStack extends NestedStack {
 
     private void createSnapshotDeletionLambda(InstanceProperties instanceProperties, LambdaCode statestoreJar, CoreStacks coreStacks,
             TransactionLogStateStoreStack transactionLogStateStoreStack, Topic topic, List<IMetric> errorMetrics) {
-        String triggerFunctionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "transaction-log-snapshot-deletion-trigger"));
-        String deletionFunctionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "transaction-log-snapshot-deletion"));
+        String triggerFunctionName = String.join("-", "sleeper",
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "tl-snapshot-deletion-trigger");
+        String deletionFunctionName = String.join("-", "sleeper",
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "tl-snapshot-deletion");
         IFunction snapshotDeletionTrigger = statestoreJar.buildFunction(this, "TransactionLogSnapshotDeletionTrigger", builder -> builder
                 .functionName(triggerFunctionName)
                 .description("Creates batches of Sleeper tables to delete old transaction log snapshots for and puts them on a queue to be processed")
