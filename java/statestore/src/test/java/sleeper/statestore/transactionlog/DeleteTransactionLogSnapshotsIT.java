@@ -58,7 +58,7 @@ public class DeleteTransactionLogSnapshotsIT extends TransactionLogStateStoreTes
     }
 
     @Test
-    void shouldDeleteOldFilesSnapshotsForOneTable() throws Exception {
+    void shouldDeleteOldSnapshotsForOneTable() throws Exception {
         // Given
         TableProperties table = createTable("test-table-id-1", "test-table-1");
         table.setNumber(TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS, 1);
@@ -68,6 +68,7 @@ public class DeleteTransactionLogSnapshotsIT extends TransactionLogStateStoreTes
         FileReferenceFactory factory = FileReferenceFactory.from(stateStore);
         stateStore.addFile(factory.rootFile("test1.parquet", 123L));
         createSnapshotsAt(table, Instant.parse("2024-04-25T11:24:00Z"));
+
         stateStore.clearFileData();
         stateStore.initialise(partitionsBuilder.splitToNewChildren("root", "L", "R", 123L).buildList());
         factory = FileReferenceFactory.from(stateStore);
@@ -86,8 +87,50 @@ public class DeleteTransactionLogSnapshotsIT extends TransactionLogStateStoreTes
                 .containsExactly(filesSnapshot(table, 3));
         assertThat(snapshotStore(table).getPartitionsSnapshots())
                 .containsExactly(partitionsSnapshot(table, 2));
-        assertThat(fs.exists(new Path(filesSnapshot(table, 1).getPath()))).isFalse();
-        assertThat(fs.exists(new Path(partitionsSnapshot(table, 1).getPath()))).isFalse();
+        assertThat(filesSnapshotFileExists(table, 3)).isTrue();
+        assertThat(filesSnapshotFileExists(table, 1)).isFalse();
+        assertThat(partitionsSnapshotFileExists(table, 2)).isTrue();
+        assertThat(partitionsSnapshotFileExists(table, 1)).isFalse();
+    }
+
+    @Test
+    void shouldNotDeleteOldSnapshotsIfTheyAreNotOldEnoughForOneTable() throws Exception {
+        // Given
+        TableProperties table = createTable("test-table-id-1", "test-table-1");
+        table.setNumber(TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS, 1);
+        StateStore stateStore = createStateStore(table);
+        PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema).rootFirst("root");
+        stateStore.initialise(partitionsBuilder.buildList());
+        FileReferenceFactory factory = FileReferenceFactory.from(stateStore);
+        stateStore.addFile(factory.rootFile("test1.parquet", 123L));
+        createSnapshotsAt(table, Instant.parse("2024-04-27T11:23:00Z"));
+
+        stateStore.clearFileData();
+        stateStore.initialise(partitionsBuilder.splitToNewChildren("root", "L", "R", 123L).buildList());
+        factory = FileReferenceFactory.from(stateStore);
+        stateStore.addFile(factory.rootFile("test3.parquet", 789L));
+        createSnapshotsAt(table, Instant.parse("2024-04-27T11:24:00Z"));
+
+        // When
+        deleteSnapshotsAt(table, Instant.parse("2024-04-27T11:25:00Z"));
+
+        // Then
+        assertThat(snapshotStore(table).getLatestSnapshots())
+                .isEqualTo(new LatestSnapshots(
+                        filesSnapshot(table, 3),
+                        partitionsSnapshot(table, 2)));
+        assertThat(snapshotStore(table).getFilesSnapshots())
+                .containsExactly(
+                        filesSnapshot(table, 3),
+                        filesSnapshot(table, 1));
+        assertThat(snapshotStore(table).getPartitionsSnapshots())
+                .containsExactly(
+                        partitionsSnapshot(table, 2),
+                        partitionsSnapshot(table, 1));
+        assertThat(filesSnapshotFileExists(table, 3)).isTrue();
+        assertThat(filesSnapshotFileExists(table, 1)).isTrue();
+        assertThat(partitionsSnapshotFileExists(table, 2)).isTrue();
+        assertThat(partitionsSnapshotFileExists(table, 1)).isTrue();
     }
 
     @Test
@@ -113,8 +156,8 @@ public class DeleteTransactionLogSnapshotsIT extends TransactionLogStateStoreTes
                 .containsExactly(filesSnapshot(table, 1));
         assertThat(snapshotStore(table).getPartitionsSnapshots())
                 .containsExactly(partitionsSnapshot(table, 1));
-        assertThat(fs.exists(new Path(filesSnapshot(table, 1).getPath()))).isTrue();
-        assertThat(fs.exists(new Path(partitionsSnapshot(table, 1).getPath()))).isTrue();
+        assertThat(filesSnapshotFileExists(table, 1)).isTrue();
+        assertThat(partitionsSnapshotFileExists(table, 1)).isTrue();
     }
 
     @Test
@@ -180,6 +223,14 @@ public class DeleteTransactionLogSnapshotsIT extends TransactionLogStateStoreTes
 
     private TransactionLogSnapshot partitionsSnapshot(TableProperties table, long transactionNumber) {
         return TransactionLogSnapshot.forPartitions(getBasePath(instanceProperties, table), transactionNumber);
+    }
+
+    private boolean filesSnapshotFileExists(TableProperties table, long transactionNumber) throws IOException {
+        return fs.exists(new Path(filesSnapshot(table, transactionNumber).getPath()));
+    }
+
+    private boolean partitionsSnapshotFileExists(TableProperties table, long transactionNumber) throws IOException {
+        return fs.exists(new Path(partitionsSnapshot(table, transactionNumber).getPath()));
     }
 
     private static String getBasePath(InstanceProperties instanceProperties, TableProperties tableProperties) {
