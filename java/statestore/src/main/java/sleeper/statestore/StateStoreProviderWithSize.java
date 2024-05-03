@@ -36,6 +36,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
  * as the cache is not thread-safe.
  */
 public class StateStoreProviderWithSize {
+    private static final int DEFAULT_CACHE_SIZE = 10;
     private final int cacheSize;
     private final StateStoreLoader stateStoreFactory;
     private final Map<String, StateStore> tableIdToStateStoreCache;
@@ -43,11 +44,15 @@ public class StateStoreProviderWithSize {
 
     public StateStoreProviderWithSize(
             InstanceProperties instanceProperties, AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, Configuration configuration) {
-        this(instanceProperties, new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, configuration)::getStateStore);
+        this(instanceProperties.getInt(STATESTORE_PROVIDER_CACHE_SIZE), new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, configuration)::getStateStore);
     }
 
-    protected StateStoreProviderWithSize(InstanceProperties instanceProperties, StateStoreLoader stateStoreFactory) {
-        this.cacheSize = instanceProperties.getInt(STATESTORE_PROVIDER_CACHE_SIZE);
+    protected StateStoreProviderWithSize(StateStoreLoader stateStoreFactory) {
+        this(DEFAULT_CACHE_SIZE, stateStoreFactory);
+    }
+
+    private StateStoreProviderWithSize(int cacheSize, StateStoreLoader stateStoreFactory) {
+        this.cacheSize = cacheSize;
         this.stateStoreFactory = stateStoreFactory;
         this.tableIdToStateStoreCache = new HashMap<>();
         this.tableIds = new ArrayQueue<>(cacheSize);
