@@ -97,7 +97,7 @@ public interface DefaultProperty {
             .propertyGroup(InstancePropertyGroup.DEFAULT)
             .build();
     UserDefinedInstanceProperty DEFAULT_TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS = Index.propertyBuilder("sleeper.default.metadata.transactionlog.snapshot.expiry.days")
-            .description("The length of time transaction log snapshots remain in the snapshot store before being deleted.")
+            .description("The number of days that transaction log snapshots remain in the snapshot store before being deleted.")
             .defaultValue("2")
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.DEFAULT)

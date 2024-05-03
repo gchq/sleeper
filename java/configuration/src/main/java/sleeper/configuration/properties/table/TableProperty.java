@@ -248,7 +248,7 @@ public interface TableProperty extends SleeperProperty {
             .build();
     TableProperty TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS = Index.propertyBuilder("sleeper.table.metadata.transactionlog.snapshot.expiry.days")
             .defaultProperty(DEFAULT_TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS)
-            .description("The length of time transaction log snapshots remain in the snapshot store before being deleted.")
+            .description("The number of days that transaction log snapshots remain in the snapshot store before being deleted.")
             .propertyGroup(TablePropertyGroup.METADATA)
             .build();
     TableProperty BULK_IMPORT_EMR_INSTANCE_ARCHITECTURE = Index.propertyBuilder("sleeper.table.bulk.import.emr.instance.architecture")
