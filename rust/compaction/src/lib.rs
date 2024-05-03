@@ -215,7 +215,7 @@ pub extern "C" fn allocate_result() -> *const FFICompactionResult {
         rows_read: 0,
         rows_written: 0,
     }));
-    info!("Compaction result allocated @ {:p}", p);
+    info!("Compaction result allocated at address {:p}", p);
     p
 }
 
@@ -443,7 +443,7 @@ fn unpack_variant_array<'a>(
 pub extern "C" fn free_result(ob: *mut FFICompactionResult) {
     maybe_cfg_log();
     if !ob.is_null() {
-        info!("Compaction result destructed at {:p}", ob);
+        info!("Compaction result at address {:p} destructed", ob);
         let _ = unsafe { Box::from_raw(ob) };
     }
 }

@@ -182,6 +182,45 @@ impl DataSketchVariant {
         }
     }
 
+    /// Gets the 'k' parameter of the quantile sketch.
+    ///
+    /// Please see Apache data sketch C++ documentation for full explanation.
+    pub fn get_k(&self) -> u16 {
+        match self {
+            DataSketchVariant::I32(s) => s.get_k(),
+            DataSketchVariant::I64(s) => s.get_k(),
+            DataSketchVariant::Str(_, s) => s.get_k(),
+            DataSketchVariant::Bytes(_, s) => s.get_k(),
+        }
+    }
+
+    /// Gets the total number of items in this sketch.
+    ///
+    /// Note that as this sketches are approximate, only a fraction of this amount
+    /// is retained by the sketch. Please see [`get_num_retained`].
+    ///
+    /// Please see Apache data sketch C++ documentation for full explanation.
+    pub fn get_n(&self) -> u64 {
+        match self {
+            DataSketchVariant::I32(s) => s.get_n(),
+            DataSketchVariant::I64(s) => s.get_n(),
+            DataSketchVariant::Str(_, s) => s.get_n(),
+            DataSketchVariant::Bytes(_, s) => s.get_n(),
+        }
+    }
+
+    /// Gets the number of individual items retained by the sketch.
+    ///
+    /// Please see Apache data sketch C++ documentation for full explanation.
+    pub fn get_num_retained(&self) -> u32 {
+        match self {
+            DataSketchVariant::I32(s) => s.get_num_retained(),
+            DataSketchVariant::I64(s) => s.get_num_retained(),
+            DataSketchVariant::Str(_, s) => s.get_num_retained(),
+            DataSketchVariant::Bytes(_, s) => s.get_num_retained(),
+        }
+    }
+
     /// Get the minimum item from this sketch.
     ///
     /// # Errors

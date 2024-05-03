@@ -28,9 +28,7 @@ use datafusion::{
     dataframe::DataFrameWriteOptions,
     error::DataFusionError,
     execution::{
-        config::SessionConfig,
-        context::SessionContext,
-        options::ParquetReadOptions,
+        config::SessionConfig, context::SessionContext, options::ParquetReadOptions,
         FunctionRegistry,
     },
     logical_expr::ScalarUDF,
@@ -56,10 +54,14 @@ pub async fn compact(
     input_paths: &[Url],
     output_path: &Url,
 ) -> Result<CompactionResult, DataFusionError> {
-    info!("DataFusion compaction of {input_paths:?}");
+    info!(
+        "DataFusion compaction of files {:?}",
+        input_paths.iter().map(Url::as_str).collect::<Vec<_>>()
+    );
+    info!("DataFusion output file {}", output_path.as_str());
     info!("Compaction partition region {:?}", input_data.region);
 
-    let sf = create_session_cfg(input_data);
+    let sf = create_session_cfg(input_data, input_paths);
     let ctx = SessionContext::new_with_config(sf);
 
     // Register some object store from first input file and output file
@@ -139,10 +141,14 @@ pub async fn compact(
     let binding = sketch_func.inner();
     let inner_function: Option<&SketchUDF> = binding.as_any().downcast_ref();
     if let Some(func) = inner_function {
+        let first_sketch = &func.get_sketch()[0];
         info!(
-            "Made {} calls to sketch UDF and processed {} total rows.",
+            "Made {} calls to sketch UDF and processed {} total rows. Quantile sketch column 0 retained {} out of {} values (K value = {}).",
             func.get_invoke_count().to_formatted_string(&Locale::en),
             func.get_row_count().to_formatted_string(&Locale::en),
+            first_sketch.get_num_retained(),
+            first_sketch.get_n(),
+            first_sketch.get_k()
         );
 
         rows_written = func.get_row_count();
@@ -292,11 +298,12 @@ fn get_parquet_writer_version(version: &str) -> String {
 ///
 /// This sets as many parameters as possible from the given input data.
 ///
-fn create_session_cfg(input_data: &CompactionInput) -> SessionConfig {
+fn create_session_cfg<T>(input_data: &CompactionInput, input_paths: &[T]) -> SessionConfig {
     let mut sf = SessionConfig::new();
     // In order to avoid a costly "Sort" stage in the physical plan, we must make
     // sure the target partitions as at least as big as number of input files.
-    sf.options_mut().execution.target_partitions = std::cmp::max(sf.options().execution.target_partitions, input_data.input_files.len());
+    sf.options_mut().execution.target_partitions =
+        std::cmp::max(sf.options().execution.target_partitions, input_paths.len());
     sf.options_mut().execution.parquet.max_row_group_size = input_data.max_row_group_size;
     sf.options_mut().execution.parquet.data_pagesize_limit = input_data.max_page_size;
     sf.options_mut().execution.parquet.compression = Some(get_compression(&input_data.compression));

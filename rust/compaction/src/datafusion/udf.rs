@@ -171,7 +171,6 @@ impl ScalarUDFImpl for SketchUDF {
                         ),
                         _ => return internal_err!("Row type {} not supported for Sleeper row key field", array.data_type()),
                     }
-                    *self.row_count.lock().unwrap() += array.len();
                 }
 
                 ColumnarValue::Scalar(
