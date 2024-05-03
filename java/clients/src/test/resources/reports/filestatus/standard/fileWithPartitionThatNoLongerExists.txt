@@ -1,0 +1,22 @@
+
+Files Status Report:
+--------------------------
+There are 1 leaf partitions and 0 non-leaf partitions
+Number of files: 2
+Number of files with references: 2
+Number of files with no references, which will be garbage collected: 0
+Number of references to files: 2
+Number of file references in leaf partitions: 0
+Number of file references in non-leaf partitions: 0
+Number of records referenced in partitions: 3K (3,000)
+Number of records in non-leaf partitions: 0
+Number of records in leaf partitions: 0
+Percentage of records in leaf partitions: 0.0
+
+Files with no references: none
+
+Files with references:
+file1.parquet, 1 reference total, last updated at 2022-08-22T14:20:00.001Z
+	Reference in partition A, 1000 records, last updated at 2022-08-22T14:20:00.001Z
+file2.parquet, 1 reference total, last updated at 2022-08-22T14:20:00.001Z
+	Reference in partition A, 2000 records, last updated at 2022-08-22T14:20:00.001Z
