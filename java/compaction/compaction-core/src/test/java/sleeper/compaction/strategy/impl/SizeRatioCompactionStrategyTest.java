@@ -176,7 +176,7 @@ public class SizeRatioCompactionStrategyTest {
                 .jobId(job.getId()) // Job id is a UUID so we don't know what it will be
                 .partitionId("root")
                 .inputFiles(files)
-                .outputFile("file://databucket/table-id/partition_root/" + job.getId() + ".parquet")
+                .outputFile("file://databucket/table-id/data/partition_root/" + job.getId() + ".parquet")
                 .iteratorClassName(null)
                 .iteratorConfig(null)
                 .build();

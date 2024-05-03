@@ -177,8 +177,8 @@ class FileWritingIteratorIT {
         assertThat(fileWritingIterator).toIterable()
                 .extracting(row -> row.getString(1))
                 .containsExactly(
-                        "file://" + tempFolder + "/" + tableProperties.get(TABLE_ID) + "/partition_a/file1.parquet",
-                        "file://" + tempFolder + "/" + tableProperties.get(TABLE_ID) + "/partition_b/file2.parquet");
+                        "file://" + tempFolder + "/" + tableProperties.get(TABLE_ID) + "/data/partition_a/file1.parquet",
+                        "file://" + tempFolder + "/" + tableProperties.get(TABLE_ID) + "/data/partition_b/file2.parquet");
     }
 
     private FileWritingIterator createIteratorFrom(Iterator<Row> input) {
