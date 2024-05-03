@@ -216,7 +216,7 @@ public interface CommonProperty {
             .build();
     UserDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_DELETION_LAMBDA_PERIOD_IN_MINUTES = Index.propertyBuilder("sleeper.metadata.transactionlog.snapshot.deletion.lambda.period.minutes")
             .description("The frequency in minutes with which the transaction log snapshot deletion lambda is run.")
-            .defaultValue("5")
+            .defaultValue("60")
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
