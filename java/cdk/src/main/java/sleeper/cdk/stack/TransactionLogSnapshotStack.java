@@ -159,6 +159,7 @@ public class TransactionLogSnapshotStack extends NestedStack {
                 .runtime(Runtime.JAVA_11)
                 .handler("sleeper.statestore.TransactionLogSnapshotDeletionTriggerLambda::handleRequest")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
+                .reservedConcurrentExecutions(1)
                 .memorySize(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS)))
                 .logGroup(createLambdaLogGroup(this, "TransactionLogSnapshotDeletionTriggerLogGroup", triggerFunctionName, instanceProperties)));
