@@ -52,7 +52,7 @@ public class DefaultSelector implements CompactionAlgorithmSelector {
     public CompactionRunner chooseCompactor(CompactionJob job) {
         TableProperties tableProperties = tablePropertiesProvider
                 .getById(job.getTableId());
-        String method = tableProperties.get(TableProperty.COMPACTION_METHOD);
+        String method = tableProperties.get(TableProperty.COMPACTION_METHOD).toUpperCase();
 
         // Convert to enum value and default to Java
         CompactionMethod desired;
