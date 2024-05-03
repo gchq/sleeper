@@ -44,14 +44,18 @@ public class StateStoreProviderWithSize {
 
     public StateStoreProviderWithSize(
             InstanceProperties instanceProperties, AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, Configuration configuration) {
-        this(instanceProperties.getInt(STATESTORE_PROVIDER_CACHE_SIZE), new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, configuration)::getStateStore);
+        this(instanceProperties, new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, configuration)::getStateStore);
+    }
+
+    protected StateStoreProviderWithSize(InstanceProperties instanceProperties, StateStoreLoader stateStoreFactory) {
+        this(instanceProperties.getInt(STATESTORE_PROVIDER_CACHE_SIZE), stateStoreFactory);
     }
 
     protected StateStoreProviderWithSize(StateStoreLoader stateStoreFactory) {
         this(DEFAULT_CACHE_SIZE, stateStoreFactory);
     }
 
-    private StateStoreProviderWithSize(int cacheSize, StateStoreLoader stateStoreFactory) {
+    protected StateStoreProviderWithSize(int cacheSize, StateStoreLoader stateStoreFactory) {
         this.cacheSize = cacheSize;
         this.stateStoreFactory = stateStoreFactory;
         this.tableIdToStateStoreCache = new HashMap<>();
