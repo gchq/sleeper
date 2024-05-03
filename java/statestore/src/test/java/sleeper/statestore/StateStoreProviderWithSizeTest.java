@@ -27,7 +27,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -46,16 +45,19 @@ public class StateStoreProviderWithSizeTest {
     @Test
     void shouldCacheStateStore() {
         // Given
-        TableProperties table = createStateStore("test-table-id", "test-table");
+        TableProperties table = createTable("test-table-id", "test-table");
+        StateStore store = createStateStore(table);
 
         // When
-        Stream<StateStore> stateStores = providerGettingStores(table, table, table);
+        StateStoreProviderWithSize provider = provider();
+        StateStore retrievedStore1 = provider.getStateStore(table);
+        StateStore retrievedStore2 = provider.getStateStore(table);
+        StateStore retrievedStore3 = provider.getStateStore(table);
 
         // Then
-        assertThat(stateStores).containsExactly(
-                stateStore(table),
-                stateStore(table),
-                stateStore(table));
+        assertThat(retrievedStore1).isEqualTo(store);
+        assertThat(retrievedStore2).isEqualTo(store);
+        assertThat(retrievedStore3).isEqualTo(store);
         assertThat(tablesLoaded).containsExactly("test-table-id");
     }
 
@@ -63,24 +65,26 @@ public class StateStoreProviderWithSizeTest {
     void shouldRemoveOldestCacheEntryWhenLimitHasBeenReached() {
         // Given
         instanceProperties.setNumber(STATESTORE_PROVIDER_CACHE_SIZE, 2);
-        TableProperties table1 = createStateStore("table-id-1", "test-table-1");
-        TableProperties table2 = createStateStore("table-id-2", "test-table-2");
-        TableProperties table3 = createStateStore("table-id-3", "test-table-3");
+        TableProperties table1 = createTable("table-id-1", "test-table-1");
+        StateStore store1 = createStateStore(table1);
+        TableProperties table2 = createTable("table-id-2", "test-table-2");
+        StateStore store2 = createStateStore(table2);
+        TableProperties table3 = createTable("table-id-3", "test-table-3");
+        StateStore store3 = createStateStore(table3);
 
         // When
-        Stream<StateStore> stateStores = providerGettingStores(
-                table1,
-                table2,
-                // Cache size has been reached, oldest state store will be removed from cache
-                table3,
-                table1);
+        StateStoreProviderWithSize provider = provider();
+        StateStore retrievedStore1 = provider.getStateStore(table1);
+        StateStore retrievedStore2 = provider.getStateStore(table2);
+        // Cache size has been reached, oldest state store will be removed from cache
+        StateStore retrievedStore3 = provider.getStateStore(table3);
+        StateStore retrievedStore4 = provider.getStateStore(table1);
 
         // Then
-        assertThat(stateStores).containsExactly(
-                stateStore(table1),
-                stateStore(table2),
-                stateStore(table3),
-                stateStore(table1));
+        assertThat(retrievedStore1).isEqualTo(store1);
+        assertThat(retrievedStore2).isEqualTo(store2);
+        assertThat(retrievedStore3).isEqualTo(store3);
+        assertThat(retrievedStore4).isEqualTo(store1);
         assertThat(tablesLoaded).containsExactly(
                 "table-id-1",
                 "table-id-2",
@@ -88,13 +92,17 @@ public class StateStoreProviderWithSizeTest {
                 "table-id-1");
     }
 
-    private TableProperties createStateStore(String tableId, String tableName) {
+    private TableProperties createTable(String tableId, String tableName) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         tableProperties.set(TABLE_ID, tableId);
         tableProperties.set(TABLE_NAME, tableName);
-        StateStore stateStore = StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition(schema);
-        tableIdToStateStore.put(tableId, stateStore);
         return tableProperties;
+    }
+
+    private StateStore createStateStore(TableProperties table) {
+        StateStore stateStore = StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition(schema);
+        tableIdToStateStore.put(table.get(TABLE_ID), stateStore);
+        return stateStore;
     }
 
     private StateStoreProviderWithSize provider() {
@@ -102,14 +110,5 @@ public class StateStoreProviderWithSizeTest {
             tablesLoaded.add(tableProperties.get(TABLE_ID));
             return tableIdToStateStore.get(tableProperties.get(TABLE_ID));
         });
-    }
-
-    private Stream<StateStore> providerGettingStores(TableProperties... tables) {
-        StateStoreProviderWithSize provider = provider();
-        return Stream.of(tables).map(provider::getStateStore);
-    }
-
-    private StateStore stateStore(TableProperties tableProperties) {
-        return tableIdToStateStore.get(tableProperties.get(TABLE_ID));
     }
 }
