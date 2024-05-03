@@ -21,8 +21,14 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
+import sleeper.core.util.ExponentialBackoffWithJitter;
+import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
 
 public class StateStoreUpdate {
+    public static final int JOB_ASSIGNMENT_WAIT_ATTEMPTS = 10;
+    public static final WaitRange JOB_ASSIGNMENT_WAIT_RANGE = WaitRange.firstAndMaxWaitCeilingSecs(2, 60);
+
     private StateStoreUpdate() {
     }
 
@@ -31,7 +37,18 @@ public class StateStoreUpdate {
     public static void updateStateStoreSuccess(
             CompactionJob job,
             long recordsWritten,
-            StateStore stateStore) throws StateStoreException {
+            StateStore stateStore) throws StateStoreException, InterruptedException {
+        updateStateStoreSuccess(job, recordsWritten, stateStore,
+                JOB_ASSIGNMENT_WAIT_ATTEMPTS,
+                new ExponentialBackoffWithJitter(JOB_ASSIGNMENT_WAIT_RANGE));
+    }
+
+    public static void updateStateStoreSuccess(
+            CompactionJob job,
+            long recordsWritten,
+            StateStore stateStore,
+            int jobAssignmentWaitAttempts,
+            ExponentialBackoffWithJitter jobAssignmentWaitBackoff) throws StateStoreException, InterruptedException {
         FileReference fileReference = FileReference.builder()
                 .filename(job.getOutputFile())
                 .partitionId(job.getPartitionId())
@@ -39,12 +56,23 @@ public class StateStoreUpdate {
                 .countApproximate(false)
                 .onlyContainsDataForThisPartition(true)
                 .build();
-        try {
-            stateStore.atomicallyReplaceFileReferencesWithNewOne(job.getId(), job.getPartitionId(), job.getInputFiles(), fileReference);
-            LOGGER.debug("Updated file references in state store");
-        } catch (StateStoreException e) {
-            LOGGER.error("Exception updating StateStore (moving input files to ready for GC and creating new active file): {}", e.getMessage());
-            throw e;
+
+        // Compaction jobs are sent for execution before updating the state store to assign the input files to the job.
+        // Sometimes the compaction can finish before the job assignment is finished. We wait for the job assignment
+        // rather than immediately failing the job run.
+        FileReferenceNotAssignedToJobException failure = null;
+        for (int attempts = 0; attempts < jobAssignmentWaitAttempts; attempts++) {
+            jobAssignmentWaitBackoff.waitBeforeAttempt(attempts);
+            try {
+                stateStore.atomicallyReplaceFileReferencesWithNewOne(job.getId(), job.getPartitionId(), job.getInputFiles(), fileReference);
+                LOGGER.debug("Updated file references in state store");
+                return;
+            } catch (FileReferenceNotAssignedToJobException e) {
+                LOGGER.warn("Job not yet assigned to input files on attempt {} of {}: {}",
+                        attempts + 1, jobAssignmentWaitAttempts, e.getMessage());
+                failure = e;
+            }
         }
+        throw new TimedOutWaitingForFileAssignmentsException(failure);
     }
 }
