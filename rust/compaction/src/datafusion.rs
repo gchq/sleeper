@@ -141,8 +141,10 @@ pub async fn compact(
     let binding = sketch_func.inner();
     let inner_function: Option<&SketchUDF> = binding.as_any().downcast_ref();
     if let Some(func) = inner_function {
-        let first_sketch = &func.get_sketch()[0];
-        info!(
+        {
+            // Limit scope of MutexGuard
+            let first_sketch = &func.get_sketch()[0];
+            info!(
             "Made {} calls to sketch UDF and processed {} total rows. Quantile sketch column 0 retained {} out of {} values (K value = {}).",
             func.get_invoke_count().to_formatted_string(&Locale::en),
             func.get_row_count().to_formatted_string(&Locale::en),
@@ -150,6 +152,7 @@ pub async fn compact(
             first_sketch.get_n(),
             first_sketch.get_k()
         );
+        }
 
         rows_written = func.get_row_count();
 
