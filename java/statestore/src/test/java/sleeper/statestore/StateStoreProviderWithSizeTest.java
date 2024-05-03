@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -48,12 +49,13 @@ public class StateStoreProviderWithSizeTest {
         TableProperties table = createStateStore("test-table-id", "test-table");
 
         // When
-        StateStoreProviderWithSize provider = provider();
-        provider.getStateStore(table);
-        provider.getStateStore(table);
-        provider.getStateStore(table);
+        Stream<StateStore> stateStores = providerGettingStores(table, table, table);
 
         // Then
+        assertThat(stateStores).containsExactly(
+                stateStore(table),
+                stateStore(table),
+                stateStore(table));
         assertThat(tablesLoaded).containsExactly("test-table-id");
     }
 
@@ -66,14 +68,19 @@ public class StateStoreProviderWithSizeTest {
         TableProperties table3 = createStateStore("table-id-3", "test-table-3");
 
         // When
-        StateStoreProviderWithSize provider = provider();
-        provider.getStateStore(table1);
-        provider.getStateStore(table2);
-        // Cache size has been reached, oldest state store will be removed from cache
-        provider.getStateStore(table3);
-        provider.getStateStore(table1);
+        Stream<StateStore> stateStores = providerGettingStores(
+                table1,
+                table2,
+                // Cache size has been reached, oldest state store will be removed from cache
+                table3,
+                table1);
 
         // Then
+        assertThat(stateStores).containsExactly(
+                stateStore(table1),
+                stateStore(table2),
+                stateStore(table3),
+                stateStore(table1));
         assertThat(tablesLoaded).containsExactly(
                 "table-id-1",
                 "table-id-2",
@@ -95,5 +102,14 @@ public class StateStoreProviderWithSizeTest {
             tablesLoaded.add(tableProperties.get(TABLE_ID));
             return tableIdToStateStore.get(tableProperties.get(TABLE_ID));
         });
+    }
+
+    private Stream<StateStore> providerGettingStores(TableProperties... tables) {
+        StateStoreProviderWithSize provider = provider();
+        return Stream.of(tables).map(provider::getStateStore);
+    }
+
+    private StateStore stateStore(TableProperties tableProperties) {
+        return tableIdToStateStore.get(tableProperties.get(TABLE_ID));
     }
 }
