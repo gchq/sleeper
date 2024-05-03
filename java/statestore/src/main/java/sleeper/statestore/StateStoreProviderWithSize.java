@@ -36,7 +36,6 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
  * as the cache is not thread-safe.
  */
 public class StateStoreProviderWithSize {
-    private static final int DEFAULT_CACHE_SIZE = 10;
     private final int cacheSize;
     private final StateStoreLoader stateStoreFactory;
     private final Map<String, StateStore> tableIdToStateStoreCache;
@@ -51,11 +50,7 @@ public class StateStoreProviderWithSize {
         this(instanceProperties.getInt(STATESTORE_PROVIDER_CACHE_SIZE), stateStoreFactory);
     }
 
-    protected StateStoreProviderWithSize(StateStoreLoader stateStoreFactory) {
-        this(DEFAULT_CACHE_SIZE, stateStoreFactory);
-    }
-
-    protected StateStoreProviderWithSize(int cacheSize, StateStoreLoader stateStoreFactory) {
+    private StateStoreProviderWithSize(int cacheSize, StateStoreLoader stateStoreFactory) {
         this.cacheSize = cacheSize;
         this.stateStoreFactory = stateStoreFactory;
         this.tableIdToStateStoreCache = new HashMap<>();
