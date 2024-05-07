@@ -31,7 +31,7 @@ VPC=$1
 SUBNETS=$2
 RESULTS_BUCKET=$3
 START_TIMESTAMP=$(record_time)
-TEST_NAME=QucikSystemTests
+TEST_NAME=QuickSystemTests
 OUTPUT_DIR="/tmp/sleeper/${TEST_SUITE_NAME}Tests/$START_TIME"
 SHORT_ID="i-$(uuidgen -t | cut -d'-' -f 1)"
 
