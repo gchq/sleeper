@@ -458,7 +458,9 @@ public class CompactionTaskTest {
             Supplier<Instant> timeSupplier,
             String taskId) throws Exception {
         new CompactionTask(instanceProperties, PropertiesReloader.neverReload(),
-                messageReceiver, compactor, jobStore, taskStore, taskId, timeSupplier, sleeps::add)
+                messageReceiver, compactor, (job, summary) -> {
+                    jobStore.jobFinished(job, summary, taskId);
+                }, jobStore, taskStore, taskId, timeSupplier, sleeps::add)
                 .run();
     }
 

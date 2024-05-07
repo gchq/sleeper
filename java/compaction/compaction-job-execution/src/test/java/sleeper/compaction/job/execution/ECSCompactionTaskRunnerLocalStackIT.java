@@ -343,7 +343,8 @@ public class ECSCompactionTaskRunnerLocalStackIT {
                 ObjectFactory.noUserJars());
         CompactionTask task = new CompactionTask(instanceProperties, PropertiesReloader.neverReload(),
                 new SqsCompactionQueueHandler(sqs, instanceProperties),
-                compactSortedFiles, jobStatusStore, taskStatusStore, taskId);
+                compactSortedFiles, (job, summary) -> jobStatusStore.jobFinished(job, summary, taskId),
+                jobStatusStore, taskStatusStore, taskId);
         return task;
     }
 
