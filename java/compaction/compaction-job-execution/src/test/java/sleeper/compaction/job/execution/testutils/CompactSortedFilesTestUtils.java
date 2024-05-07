@@ -16,12 +16,18 @@
 package sleeper.compaction.job.execution.testutils;
 
 import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.completion.TimedOutWaitingForFileAssignmentsException;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.Type;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
+import sleeper.core.util.ExponentialBackoffWithJitter;
+import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
 
 import java.util.stream.Stream;
 
@@ -29,6 +35,8 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 
 public class CompactSortedFilesTestUtils {
+    public static final int JOB_ASSIGNMENT_WAIT_ATTEMPTS = 10;
+    public static final WaitRange JOB_ASSIGNMENT_WAIT_RANGE = WaitRange.firstAndMaxWaitCeilingSecs(2, 60);
 
     private CompactSortedFilesTestUtils() {
     }
@@ -63,5 +71,44 @@ public class CompactSortedFilesTestUtils {
         stateStore.assignJobIds(Stream.of(jobs)
                 .map(job -> assignJobOnPartitionToFiles(job.getId(), job.getPartitionId(), job.getInputFiles()))
                 .collect(toUnmodifiableList()));
+    }
+
+    public static void updateStateStoreSuccess(
+            CompactionJob job,
+            long recordsWritten,
+            StateStore stateStore) throws StateStoreException, InterruptedException {
+        updateStateStoreSuccess(job, recordsWritten, stateStore,
+                JOB_ASSIGNMENT_WAIT_ATTEMPTS,
+                new ExponentialBackoffWithJitter(JOB_ASSIGNMENT_WAIT_RANGE));
+    }
+
+    public static void updateStateStoreSuccess(
+            CompactionJob job,
+            long recordsWritten,
+            StateStore stateStore,
+            int jobAssignmentWaitAttempts,
+            ExponentialBackoffWithJitter jobAssignmentWaitBackoff) throws StateStoreException, InterruptedException {
+        FileReference fileReference = FileReference.builder()
+                .filename(job.getOutputFile())
+                .partitionId(job.getPartitionId())
+                .numberOfRecords(recordsWritten)
+                .countApproximate(false)
+                .onlyContainsDataForThisPartition(true)
+                .build();
+
+        // Compaction jobs are sent for execution before updating the state store to assign the input files to the job.
+        // Sometimes the compaction can finish before the job assignment is finished. We wait for the job assignment
+        // rather than immediately failing the job run.
+        FileReferenceNotAssignedToJobException failure = null;
+        for (int attempts = 0; attempts < jobAssignmentWaitAttempts; attempts++) {
+            jobAssignmentWaitBackoff.waitBeforeAttempt(attempts);
+            try {
+                stateStore.atomicallyReplaceFileReferencesWithNewOne(job.getId(), job.getPartitionId(), job.getInputFiles(), fileReference);
+                return;
+            } catch (FileReferenceNotAssignedToJobException e) {
+                failure = e;
+            }
+        }
+        throw new TimedOutWaitingForFileAssignmentsException(failure);
     }
 }

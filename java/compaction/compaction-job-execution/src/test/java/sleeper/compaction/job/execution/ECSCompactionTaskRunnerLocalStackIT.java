@@ -39,6 +39,8 @@ import org.testcontainers.utility.DockerImageName;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobSerDe;
 import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.job.completion.CompactionJobCompletion;
+import sleeper.compaction.job.completion.CompactionJobCompletionRequest;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStoreCreator;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
@@ -341,9 +343,11 @@ public class ECSCompactionTaskRunnerLocalStackIT {
         CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties,
                 tablePropertiesProvider, stateStoreProvider,
                 ObjectFactory.noUserJars());
+        CompactionJobCompletion compactionJobCompletion = new CompactionJobCompletion(jobStatusStore,
+                table -> stateStoreProvider.getStateStore(tablePropertiesProvider.getById(table)));
         CompactionTask task = new CompactionTask(instanceProperties, PropertiesReloader.neverReload(),
                 new SqsCompactionQueueHandler(sqs, instanceProperties),
-                compactSortedFiles, (job, summary) -> jobStatusStore.jobFinished(job, summary, taskId),
+                compactSortedFiles, (job, summary) -> compactionJobCompletion.apply(new CompactionJobCompletionRequest(job, taskId, summary)),
                 jobStatusStore, taskStatusStore, taskId);
         return task;
     }
