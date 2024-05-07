@@ -51,12 +51,6 @@ public interface CompactionProperty {
                     "queue and can be processed again.")
             .defaultValue("0")
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
-    UserDefinedInstanceProperty COMPACTION_JOB_COMPLETION_ASYNC = Index.propertyBuilder("sleeper.compaction.job.completion.async")
-            .description("If true, compaction job completion requests will be sent to the compaction job completion lambda " +
-                    "to be performed asynchronously. If false, compaction jobs will be completed inside compaction tasks.")
-            .defaultValue("false")
-            .validationPredicate(Utils::isTrueOrFalse)
-            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_TASK_WAIT_TIME_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.task.wait.time.seconds")
             .description("The time in seconds for a compaction task to wait for a compaction job to appear on the " +
                     "SQS queue (must be <= 20).\n" +
