@@ -47,26 +47,31 @@ runMavenQuickSystemTests() {
     echo "-------------------------------------------------------------------------------"
 
     "$SCRIPTS_DIR/test/maven/buildDeployTest.sh" "$SHORT_ID" "$VPC" "$SUBNETS" > "$OUTPUT_DIR/$TEST_NAME.log"
+    echo -e "Test run complet \nSee "$OUTPUT_DIR/$TEST_NAME.log for results"
 
     EXIT_CODE=$?
     if [ $EXIT_CODE -ne 0 ]; then
         END_EXIT_CODE=$EXIT_CODE
     fi
 
-    INSTANCE_IDS=()
-    #read_instance_ids_to_array "$OUTPUT_DIR/instanceIds.txt" INSTANCE_IDS
     echo "-------------------------------------------------------------------------------"
     echo "Tearing down instance $SHORT_ID"
     echo "-------------------------------------------------------------------------------"
-    #"$SCRIPTS_DIR/test/maven/tearDown.sh" "$SHORT_ID" "${INSTANCE_IDS[@]}" > "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
     "$SCRIPTS_DIR/test/tearDown.sh" "$SHORT_ID" > "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
+    echo "Tearing down for instance $SHORT_ID-main complete"
+
+    echo "-------------------------------------------------------------------------------"
+    echo "Tearing down instance $SHORT_ID-main"
+    echo "-------------------------------------------------------------------------------"
     "$SCRIPTS_DIR/test/tearDown.sh" "$SHORT_ID-main" >> "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
+    echo "Tearing down for instance $SHORT_ID-main complete"
 
     echo "-------------------------------------------------------------------------------"
     echo "[$(time_str)] Uploading test output"
     echo "-------------------------------------------------------------------------------"
     java -cp "${SYSTEM_TEST_JAR}" \
     sleeper.systemtest.drivers.nightly.RecordNightlyTestOutput "$RESULTS_BUCKET" "$START_TIMESTAMP" "$OUTPUT_DIR"
+    echo "Upload complete"
 }
 
 runMavenQuickSystemTests
