@@ -37,10 +37,10 @@ public class TableUtils {
     }
 
     public static String constructPartitionParquetFilePath(String filePathPrefix, String partitionId, String fileName) {
-        return String.format("%s/partition_%s/%s.parquet", filePathPrefix, partitionId, fileName);
+        return String.format("%s/data/partition_%s/%s.parquet", filePathPrefix, partitionId, fileName);
     }
 
     public static String constructQuantileSketchesFilePath(String filePathPrefix, Partition partition, String fileName) {
-        return String.format("%s/partition_%s/%s.sketches", filePathPrefix, partition.getId(), fileName);
+        return String.format("%s/data/partition_%s/%s.sketches", filePathPrefix, partition.getId(), fileName);
     }
 }
