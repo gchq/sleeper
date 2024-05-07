@@ -39,9 +39,11 @@ public class TableFilesStatistics {
                 .flatMap(file -> file.getInternalReferences().stream())
                 .collect(Collectors.toUnmodifiableList());
         List<FileReference> fileReferencesInLeafPartitions = fileReferences.stream()
+                .filter(f -> partitionById.containsKey(f.getPartitionId()))
                 .filter(f -> partitionById.get(f.getPartitionId()).isLeafPartition())
                 .collect(Collectors.toList());
         List<FileReference> fileReferencesInNonLeafPartitions = fileReferences.stream()
+                .filter(f -> partitionById.containsKey(f.getPartitionId()))
                 .filter(f -> !partitionById.get(f.getPartitionId()).isLeafPartition())
                 .collect(Collectors.toList());
 
