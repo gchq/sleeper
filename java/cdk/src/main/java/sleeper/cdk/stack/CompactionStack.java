@@ -448,7 +448,7 @@ public class CompactionStack extends NestedStack {
         createAlarmForDlq(this, "CompactionJobCompletionAlarm",
                 "Alarms if there are any messages on the dead letter queue for compaction job completion",
                 deadLetterQueue, topic);
-        errorMetrics.add(Utils.createErrorMetric("Compaction Batching Errors", deadLetterQueue, instanceProperties));
+        errorMetrics.add(Utils.createErrorMetric("Compaction Completion Errors", deadLetterQueue, instanceProperties));
         return queue;
     }
 
