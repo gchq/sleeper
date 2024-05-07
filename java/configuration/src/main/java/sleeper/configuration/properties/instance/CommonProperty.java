@@ -194,6 +194,19 @@ public interface CommonProperty {
             .validationPredicate(Utils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_CREATION_BATCH_SIZE = Index.propertyBuilder("sleeper.metadata.transactionlog.snapshot.creation.batch.size")
+            .description("The number of tables to create transaction log snapshots for in a single invocation. This will be the batch size" +
+                    " for a lambda as an SQS FIFO event source. This can be a maximum of 10.")
+            .defaultValue("1")
+            .validationPredicate(Utils::isPositiveIntegerLtEq10)
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+    UserDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_CREATION_LAMBDA_PERIOD_IN_MINUTES = Index.propertyBuilder("sleeper.metadata.transactionlog.snapshot.creation.lambda.period.minutes")
+            .description("The frequency in minutes with which the transaction log snapshot creation lambda is run.")
+            .defaultValue("5")
+            .validationPredicate(Utils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
     UserDefinedInstanceProperty TABLE_INDEX_DYNAMO_POINT_IN_TIME_RECOVERY = Index.propertyBuilder("sleeper.tables.index.dynamo.pointintimerecovery")
             .description("This specifies whether point in time recovery is enabled for the Sleeper table index. " +
                     "This is set on the DynamoDB tables.")

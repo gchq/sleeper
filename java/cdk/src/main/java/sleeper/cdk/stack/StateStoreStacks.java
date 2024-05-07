@@ -100,6 +100,6 @@ public final class StateStoreStacks {
         dynamo.grantReadWritePartitionMetadata(grantee);
         s3.grantReadWrite(grantee);
         transactionLog.grantReadWritePartitions(grantee);
-        transactionLog.grantReadWriteSnapshots(grantee);
+        transactionLog.grantReadSnapshots(grantee);
     }
 }

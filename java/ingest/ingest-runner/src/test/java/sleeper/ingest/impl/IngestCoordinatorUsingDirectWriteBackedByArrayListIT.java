@@ -122,8 +122,8 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
-        FileReference leftFile = fileReferenceFactory.partitionFile("left", "s3a://" + dataBucketName + "/partition_left/leftFile.parquet", 100);
-        FileReference rightFile = fileReferenceFactory.partitionFile("right", "s3a://" + dataBucketName + "/partition_right/rightFile.parquet", 100);
+        FileReference leftFile = fileReferenceFactory.partitionFile("left", "s3a://" + dataBucketName + "/data/partition_left/leftFile.parquet", 100);
+        FileReference rightFile = fileReferenceFactory.partitionFile("right", "s3a://" + dataBucketName + "/data/partition_right/rightFile.parquet", 100);
         List<Record> leftRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, leftFile, hadoopConfiguration);
         List<Record> rightRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rightFile, hadoopConfiguration);
         List<Record> allRecords = Stream.of(leftRecords, rightRecords).flatMap(List::stream).collect(Collectors.toUnmodifiableList());
@@ -155,8 +155,8 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
-        FileReference firstLeftFile = fileReferenceFactory.partitionFile("left", "s3a://" + dataBucketName + "/partition_left/file0.parquet", 5);
-        FileReference firstRightFile = fileReferenceFactory.partitionFile("right", "s3a://" + dataBucketName + "/partition_right/file1.parquet", 5);
+        FileReference firstLeftFile = fileReferenceFactory.partitionFile("left", "s3a://" + dataBucketName + "/data/partition_left/file0.parquet", 5);
+        FileReference firstRightFile = fileReferenceFactory.partitionFile("right", "s3a://" + dataBucketName + "/data/partition_right/file1.parquet", 5);
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
         List<Record> firstLeftFileRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, firstLeftFile, hadoopConfiguration);
         List<Record> firstRightFileRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, firstRightFile, hadoopConfiguration);
