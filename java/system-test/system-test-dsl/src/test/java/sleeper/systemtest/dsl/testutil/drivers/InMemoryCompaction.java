@@ -62,7 +62,7 @@ import java.util.TreeMap;
 import java.util.UUID;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
-import static sleeper.compaction.job.execution.testutils.CompactSortedFilesTestUtils.updateStateStoreSuccess;
+import static sleeper.compaction.job.completion.CompactionJobCompletionUtils.updateStateStoreSuccess;
 
 public class InMemoryCompaction {
     private final Map<String, CompactionJob> queuedJobsById = new TreeMap<>();

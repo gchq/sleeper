@@ -43,7 +43,7 @@ import java.util.function.DoubleSupplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.compaction.job.execution.testutils.CompactSortedFilesTestUtils.updateStateStoreSuccess;
+import static sleeper.compaction.job.completion.CompactionJobCompletionUtils.updateStateStoreSuccess;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
