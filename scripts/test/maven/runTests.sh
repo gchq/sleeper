@@ -47,7 +47,7 @@ runMavenQuickSystemTests() {
     echo "-------------------------------------------------------------------------------"
 
     "$SCRIPTS_DIR/test/maven/buildDeployTest.sh" "$SHORT_ID" "$VPC" "$SUBNETS" > "$OUTPUT_DIR/$TEST_NAME.log"
-    echo -e "Test run complet \nSee "$OUTPUT_DIR/$TEST_NAME.log for results"
+    echo -e "Test run complet \nSee $OUTPUT_DIR/$TEST_NAME.log for results"
 
     EXIT_CODE=$?
     if [ $EXIT_CODE -ne 0 ]; then
@@ -70,7 +70,8 @@ runMavenQuickSystemTests() {
     echo "[$(time_str)] Uploading test output"
     echo "-------------------------------------------------------------------------------"
     java -cp "${SYSTEM_TEST_JAR}" \
-    sleeper.systemtest.drivers.nightly.RecordNightlyTestOutput "$RESULTS_BUCKET" "$START_TIMESTAMP" "$OUTPUT_DIR"
+        "sleeper.systemtest.drivers.nightly.RecordNightlyTestOutput" "$RESULTS_BUCKET" "$START_TIMESTAMP" "$OUTPUT_DIR"
+    
     echo "Upload complete"
 }
 
