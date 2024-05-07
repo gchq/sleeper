@@ -77,7 +77,7 @@ public class CompactionJobCompletion {
             jobAssignmentWaitBackoff.waitBeforeAttempt(attempts);
             try {
                 stateStore.atomicallyReplaceFileReferencesWithNewOne(job.getId(), job.getPartitionId(), job.getInputFiles(), fileReference);
-                LOGGER.debug("Updated file references in state store");
+                LOGGER.info("Atomically replaced {} file references in state store with file reference {}.", job.getInputFiles(), fileReference);
                 return;
             } catch (FileReferenceNotAssignedToJobException e) {
                 LOGGER.warn("Job not yet assigned to input files on attempt {} of {}: {}",
