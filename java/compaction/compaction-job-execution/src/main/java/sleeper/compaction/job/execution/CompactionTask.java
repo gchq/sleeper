@@ -37,6 +37,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_COMPLETION_ASYNC;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS;
@@ -61,6 +62,7 @@ public class CompactionTask {
     private final PropertiesReloader propertiesReloader;
     private int numConsecutiveFailures = 0;
     private int totalNumberOfMessagesProcessed = 0;
+    private boolean compactionAsync;
     private CompactionCompleter compactionCompleter;
 
     public CompactionTask(InstanceProperties instanceProperties, PropertiesReloader propertiesReloader,
@@ -83,6 +85,7 @@ public class CompactionTask {
         this.jobStatusStore = jobStore;
         this.taskStatusStore = taskStore;
         this.taskId = taskId;
+        this.compactionAsync = instanceProperties.getBoolean(COMPACTION_JOB_COMPLETION_ASYNC);
         this.compactionCompleter = compactionCompleter;
     }
 
@@ -152,7 +155,9 @@ public class CompactionTask {
         RecordsProcessed recordsProcessed = compactor.compact(job);
         Instant jobFinishTime = timeSupplier.get();
         RecordsProcessedSummary summary = new RecordsProcessedSummary(recordsProcessed, jobStartTime, jobFinishTime);
-        compactionCompleter.complete(job, summary);
+        if (!compactionAsync) {
+            compactionCompleter.complete(job, summary);
+        }
         logMetrics(job, summary);
         return summary;
     }
