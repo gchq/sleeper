@@ -13,11 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-<<<<<<<< HEAD:java/compaction/compaction-core/src/main/java/sleeper/compaction/job/TimedOutWaitingForFileAssignmentsException.java
-package sleeper.compaction.job;
-========
 package sleeper.compaction.job.completion;
->>>>>>>> develop:java/compaction/compaction-core/src/main/java/sleeper/compaction/job/completion/TimedOutWaitingForFileAssignmentsException.java
 
 public class TimedOutWaitingForFileAssignmentsException extends RuntimeException {
 
