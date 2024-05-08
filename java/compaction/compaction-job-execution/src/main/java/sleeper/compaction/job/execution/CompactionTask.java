@@ -21,8 +21,8 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.job.completion.CompactionJobCommitRequest;
-import sleeper.compaction.job.completion.CompactionJobCommitter;
+import sleeper.compaction.job.commit.CompactionJobCommitRequest;
+import sleeper.compaction.job.commit.CompactionJobCommitter;
 import sleeper.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusStore;

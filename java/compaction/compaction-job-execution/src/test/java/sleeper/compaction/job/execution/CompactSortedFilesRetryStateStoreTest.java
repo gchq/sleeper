@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobFactory;
-import sleeper.compaction.job.completion.TimedOutWaitingForFileAssignmentsException;
+import sleeper.compaction.job.commit.TimedOutWaitingForFileAssignmentsException;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionTree;
@@ -43,7 +43,7 @@ import java.util.function.DoubleSupplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.compaction.job.completion.CompactionJobCommitterUtils.updateStateStoreSuccess;
+import static sleeper.compaction.job.commit.CompactionJobCommitterUtils.updateStateStoreSuccess;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;

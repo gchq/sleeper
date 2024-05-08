@@ -39,7 +39,7 @@ import org.testcontainers.utility.DockerImageName;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobSerDe;
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.job.completion.CompactionJobCommitter;
+import sleeper.compaction.job.commit.CompactionJobCommitter;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStoreCreator;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;

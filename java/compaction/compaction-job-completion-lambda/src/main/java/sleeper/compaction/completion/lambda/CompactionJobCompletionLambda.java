@@ -30,10 +30,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.job.completion.CompactionJobCommitRequest;
-import sleeper.compaction.job.completion.CompactionJobCommitRequestSerDe;
-import sleeper.compaction.job.completion.CompactionJobCommitter;
-import sleeper.compaction.job.completion.CompactionJobCommitter.GetStateStore;
+import sleeper.compaction.job.commit.CompactionJobCommitRequest;
+import sleeper.compaction.job.commit.CompactionJobCommitRequestSerDe;
+import sleeper.compaction.job.commit.CompactionJobCommitter;
+import sleeper.compaction.job.commit.CompactionJobCommitter.GetStateStore;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;

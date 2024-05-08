@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.completion.CompactionJobCommitter;
+import sleeper.compaction.job.commit.CompactionJobCommitter;
 import sleeper.compaction.job.execution.CompactionTask.CompactionRunner;
 import sleeper.compaction.job.execution.CompactionTask.MessageHandle;
 import sleeper.compaction.job.execution.CompactionTask.MessageReceiver;

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.job.completion;
+package sleeper.compaction.job.commit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +25,7 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
 
-import static sleeper.compaction.job.completion.CompactionJobCommitterUtils.updateStateStoreSuccess;
+import static sleeper.compaction.job.commit.CompactionJobCommitterUtils.updateStateStoreSuccess;
 
 public class CompactionJobCommitter {
     public static final Logger LOGGER = LoggerFactory.getLogger(CompactionJobCommitter.class);
