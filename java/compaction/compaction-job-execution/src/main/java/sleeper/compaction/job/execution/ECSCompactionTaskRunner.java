@@ -92,7 +92,7 @@ public class ECSCompactionTaskRunner {
             ObjectFactory objectFactory = new ObjectFactory(instanceProperties, s3Client, "/tmp");
             CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties,
                     tablePropertiesProvider, stateStoreProvider, objectFactory);
-            CompactionTask task = new CompactionTask(instanceProperties, propertiesReloader,
+            CompactionTask task = new CompactionTask(instanceProperties, tablePropertiesProvider, propertiesReloader,
                     new SqsCompactionQueueHandler(sqsClient, instanceProperties), compactSortedFiles,
                     new CompactionJobCompletion(jobStatusStore, table -> stateStoreProvider.getStateStore(tablePropertiesProvider.getById(table))),
                     jobStatusStore, taskStatusStore, taskId);

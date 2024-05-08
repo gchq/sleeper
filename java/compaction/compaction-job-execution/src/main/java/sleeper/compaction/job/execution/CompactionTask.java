@@ -28,6 +28,7 @@ import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.util.LoggedDuration;
@@ -39,10 +40,10 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_COMPLETION_ASYNC;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS;
+import static sleeper.configuration.properties.table.TableProperty.COMPACTION_JOB_COMPLETION_ASYNC;
 import static sleeper.core.metrics.MetricsLogger.METRICS_LOGGER;
 
 /**
@@ -62,18 +63,18 @@ public class CompactionTask {
     private final CompactionTaskStatusStore taskStatusStore;
     private final String taskId;
     private final PropertiesReloader propertiesReloader;
+    private final TablePropertiesProvider tablePropertiesProvider;
     private int numConsecutiveFailures = 0;
     private int totalNumberOfMessagesProcessed = 0;
-    private boolean compactionAsync;
     private CompactionJobCompletion jobCompleter;
 
-    public CompactionTask(InstanceProperties instanceProperties, PropertiesReloader propertiesReloader,
+    public CompactionTask(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, PropertiesReloader propertiesReloader,
             MessageReceiver messageReceiver, CompactionRunner compactor, CompactionJobCompletion jobCompleter,
             CompactionJobStatusStore jobStore, CompactionTaskStatusStore taskStore, String taskId) {
-        this(instanceProperties, propertiesReloader, messageReceiver, compactor, jobCompleter, jobStore, taskStore, taskId, Instant::now, threadSleep());
+        this(instanceProperties, tablePropertiesProvider, propertiesReloader, messageReceiver, compactor, jobCompleter, jobStore, taskStore, taskId, Instant::now, threadSleep());
     }
 
-    public CompactionTask(InstanceProperties instanceProperties, PropertiesReloader propertiesReloader,
+    public CompactionTask(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, PropertiesReloader propertiesReloader,
             MessageReceiver messageReceiver, CompactionRunner compactor, CompactionJobCompletion jobCompleter, CompactionJobStatusStore jobStore,
             CompactionTaskStatusStore taskStore, String taskId, Supplier<Instant> timeSupplier, Consumer<Duration> sleepForTime) {
         maxIdleTime = Duration.ofSeconds(instanceProperties.getInt(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS));
@@ -87,8 +88,8 @@ public class CompactionTask {
         this.jobStatusStore = jobStore;
         this.taskStatusStore = taskStore;
         this.taskId = taskId;
-        this.compactionAsync = instanceProperties.getBoolean(COMPACTION_JOB_COMPLETION_ASYNC);
         this.jobCompleter = jobCompleter;
+        this.tablePropertiesProvider = tablePropertiesProvider;
     }
 
     public void run() throws IOException {
@@ -157,7 +158,11 @@ public class CompactionTask {
         RecordsProcessed recordsProcessed = compactor.compact(job);
         Instant jobFinishTime = timeSupplier.get();
         RecordsProcessedSummary summary = new RecordsProcessedSummary(recordsProcessed, jobStartTime, jobFinishTime);
-        if (!compactionAsync) {
+        if (tablePropertiesProvider.getById(job.getTableId()).getBoolean(COMPACTION_JOB_COMPLETION_ASYNC)) {
+            LOGGER.info("Sending compaction job to queue for asynchronous completion");
+            // TODO implement sending to queue
+        } else {
+            LOGGER.info("Completing compaction job syncronously inside compaction task");
             jobCompleter.apply(new CompactionJobCompletionRequest(job, taskId, summary));
         }
         logMetrics(job, summary);

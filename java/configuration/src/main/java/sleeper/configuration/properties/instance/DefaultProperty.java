@@ -178,6 +178,12 @@ public interface DefaultProperty {
                     "is large.")
             .defaultValue("async")
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
+    UserDefinedInstanceProperty DEFAULT_COMPACTION_JOB_COMPLETION_ASYNC = Index.propertyBuilder("sleeper.default.compaction.job.completion.async")
+            .description("If true, compaction job completion requests will be sent to the compaction job completion lambda " +
+                    "to be performed asynchronously. If false, compaction jobs will be completed synchronously by compaction tasks.")
+            .defaultValue("false")
+            .validationPredicate(Utils::isTrueOrFalse)
+            .propertyGroup(InstancePropertyGroup.DEFAULT).build();
 
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();

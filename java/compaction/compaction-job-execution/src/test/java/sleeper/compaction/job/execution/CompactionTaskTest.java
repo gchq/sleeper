@@ -33,6 +33,8 @@ import sleeper.compaction.testutils.InMemoryCompactionJobStatusStore;
 import sleeper.compaction.testutils.InMemoryCompactionTaskStatusStore;
 import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
@@ -59,6 +61,8 @@ import static sleeper.configuration.properties.InstancePropertiesTestHelper.crea
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
@@ -70,6 +74,7 @@ public class CompactionTaskTest {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = schemaWithKey("key");
+    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
     private final StateStore stateStore = inMemoryStateStoreWithSinglePartition(schema);
     private final FileReferenceFactory factory = FileReferenceFactory.from(stateStore);
     private final Queue<CompactionJob> jobsOnQueue = new LinkedList<>();
@@ -83,6 +88,7 @@ public class CompactionTaskTest {
     void setUp() {
         instanceProperties.setNumber(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS, 0);
         instanceProperties.setNumber(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES, 10);
+        tableProperties.set(TABLE_ID, DEFAULT_TABLE_ID);
     }
 
     @Nested
@@ -467,7 +473,8 @@ public class CompactionTaskTest {
             CompactionRunner compactor,
             Supplier<Instant> timeSupplier,
             String taskId) throws Exception {
-        new CompactionTask(instanceProperties, PropertiesReloader.neverReload(), messageReceiver, compactor,
+        new CompactionTask(instanceProperties, new FixedTablePropertiesProvider(tableProperties),
+                PropertiesReloader.neverReload(), messageReceiver, compactor,
                 new CompactionJobCompletion(jobStore, tableId -> stateStore),
                 jobStore, taskStore, taskId, timeSupplier, sleeps::add)
                 .run();
