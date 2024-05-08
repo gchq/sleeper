@@ -32,7 +32,7 @@ SUBNETS=$2
 RESULTS_BUCKET=$3
 START_TIMESTAMP=$(record_time)
 TEST_NAME=QuickSystemTests
-OUTPUT_DIR="/tmp/sleeper/${TEST_SUITE_NAME}Tests/$START_TIME"
+OUTPUT_DIR="/tmp/sleeper/SystemTests/$START_TIME"
 SHORT_ID="i-$(uuidgen -t | cut -d'-' -f 1)"
 
 mkdir -p "$OUTPUT_DIR"
@@ -47,9 +47,9 @@ runMavenQuickSystemTests() {
     echo "-------------------------------------------------------------------------------"
 
     "$SCRIPTS_DIR/test/maven/buildDeployTest.sh" "$SHORT_ID" "$VPC" "$SUBNETS" > "$OUTPUT_DIR/$TEST_NAME.log"
-    echo -e "Test run complet \nSee $OUTPUT_DIR/$TEST_NAME.log for results"
-
     EXIT_CODE=$?
+    echo -e "Test run complete \nSee $OUTPUT_DIR/$TEST_NAME.log for results"
+
     if [ $EXIT_CODE -ne 0 ]; then
         END_EXIT_CODE=$EXIT_CODE
     fi
@@ -57,13 +57,13 @@ runMavenQuickSystemTests() {
     echo "-------------------------------------------------------------------------------"
     echo "Tearing down instance $SHORT_ID"
     echo "-------------------------------------------------------------------------------"
-    "$SCRIPTS_DIR/test/tearDown.sh" "$SHORT_ID" > "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
+    "$SCRIPTS_DIR/test/maven/tearDown.sh" "$SHORT_ID" > "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
     echo "Tearing down for instance $SHORT_ID-main complete"
 
     echo "-------------------------------------------------------------------------------"
     echo "Tearing down instance $SHORT_ID-main"
     echo "-------------------------------------------------------------------------------"
-    "$SCRIPTS_DIR/test/tearDown.sh" "$SHORT_ID-main" >> "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
+    "$SCRIPTS_DIR/test/maven/tearDown.sh" "$SHORT_ID-main" >> "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
     echo "Tearing down for instance $SHORT_ID-main complete"
 
     echo "-------------------------------------------------------------------------------"
