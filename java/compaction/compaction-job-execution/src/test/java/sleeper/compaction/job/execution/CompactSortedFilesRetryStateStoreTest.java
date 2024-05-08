@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.compaction.job.StateStoreUpdate;
-import sleeper.compaction.job.TimedOutWaitingForFileAssignmentsException;
+import sleeper.compaction.job.completion.TimedOutWaitingForFileAssignmentsException;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionTree;
