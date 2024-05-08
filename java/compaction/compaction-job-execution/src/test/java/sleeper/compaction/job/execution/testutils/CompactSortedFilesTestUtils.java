@@ -29,6 +29,7 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 
 public class CompactSortedFilesTestUtils {
+
     private CompactSortedFilesTestUtils() {
     }
 
