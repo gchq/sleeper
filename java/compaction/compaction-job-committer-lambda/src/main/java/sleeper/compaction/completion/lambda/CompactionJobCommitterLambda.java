@@ -97,10 +97,10 @@ public class CompactionJobCommitterLambda implements RequestHandler<SQSEvent, SQ
         StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, hadoopConf);
         CompactionJobStatusStore statusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
         return new CompactionJobCommitter(
-                statusStore, stateStoreProviderForCompletion(tablePropertiesProvider, stateStoreProvider));
+                statusStore, stateStoreProviderForCommitter(tablePropertiesProvider, stateStoreProvider));
     }
 
-    private static GetStateStore stateStoreProviderForCompletion(
+    private static GetStateStore stateStoreProviderForCommitter(
             TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider) {
         return tableId -> stateStoreProvider.getStateStore(tablePropertiesProvider.getById(tableId));
     }

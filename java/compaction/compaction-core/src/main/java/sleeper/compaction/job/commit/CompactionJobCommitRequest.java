@@ -85,7 +85,7 @@ public class CompactionJobCommitRequest {
 
     @Override
     public String toString() {
-        return "CompactionJobCompletionRequest{job=" + job + ", taskId=" + taskId + ", startTime=" + startTime + ", finishTime=" + finishTime + ", recordsRead=" + recordsRead + ", recordsWritten="
+        return "CompactionJobCommitRequest{job=" + job + ", taskId=" + taskId + ", startTime=" + startTime + ", finishTime=" + finishTime + ", recordsRead=" + recordsRead + ", recordsWritten="
                 + recordsWritten + "}";
     }
 
