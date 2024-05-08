@@ -83,6 +83,7 @@ public class CompactionTaskTest {
     private final InMemoryCompactionJobStatusStore jobStore = new InMemoryCompactionJobStatusStore();
     private final CompactionTaskStatusStore taskStore = new InMemoryCompactionTaskStatusStore();
     private final List<Duration> sleeps = new ArrayList<>();
+    private final List<CompactionJob> jobsOnCommitQueue = new ArrayList<>();
 
     @BeforeEach
     void setUp() {
@@ -473,10 +474,14 @@ public class CompactionTaskTest {
             CompactionRunner compactor,
             Supplier<Instant> timeSupplier,
             String taskId) throws Exception {
-        new CompactionTask(instanceProperties, new FixedTablePropertiesProvider(tableProperties),
-                PropertiesReloader.neverReload(), messageReceiver, compactor,
+        CompactionJobCommitHandler commitHandler = new CompactionJobCommitHandler(
+                new FixedTablePropertiesProvider(tableProperties),
                 new CompactionJobCommitter(jobStore, tableId -> stateStore),
-                jobStore, taskStore, taskId, timeSupplier, sleeps::add)
+                (request) -> {
+                });
+        new CompactionTask(instanceProperties,
+                PropertiesReloader.neverReload(), messageReceiver, compactor,
+                commitHandler, jobStore, taskStore, taskId, timeSupplier, sleeps::add)
                 .run();
     }
 
