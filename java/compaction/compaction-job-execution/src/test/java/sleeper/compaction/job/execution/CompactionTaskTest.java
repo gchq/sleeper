@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.completion.CompactionJobCompletion;
 import sleeper.compaction.job.execution.CompactionTask.CompactionRunner;
 import sleeper.compaction.job.execution.CompactionTask.MessageHandle;
 import sleeper.compaction.job.execution.CompactionTask.MessageReceiver;
@@ -34,6 +35,9 @@ import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.schema.Schema;
+import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.core.statestore.StateStore;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -55,6 +59,9 @@ import static sleeper.configuration.properties.InstancePropertiesTestHelper.crea
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
+import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
 
 public class CompactionTaskTest {
     private static final String DEFAULT_TABLE_ID = "test-table-id";
@@ -62,6 +69,9 @@ public class CompactionTaskTest {
     private static final Instant DEFAULT_CREATED_TIME = Instant.parse("2024-03-04T10:50:00Z");
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
+    private final Schema schema = schemaWithKey("key");
+    private final StateStore stateStore = inMemoryStateStoreWithSinglePartition(schema);
+    private final FileReferenceFactory factory = FileReferenceFactory.from(stateStore);
     private final Queue<CompactionJob> jobsOnQueue = new LinkedList<>();
     private final List<CompactionJob> successfulJobs = new ArrayList<>();
     private final List<CompactionJob> failedJobs = new ArrayList<>();
@@ -457,25 +467,30 @@ public class CompactionTaskTest {
             CompactionRunner compactor,
             Supplier<Instant> timeSupplier,
             String taskId) throws Exception {
-        new CompactionTask(instanceProperties, PropertiesReloader.neverReload(),
-                messageReceiver, compactor, jobStore, taskStore, taskId, timeSupplier, sleeps::add)
+        new CompactionTask(instanceProperties, PropertiesReloader.neverReload(), messageReceiver, compactor,
+                new CompactionJobCompletion(jobStore, tableId -> stateStore),
+                jobStore, taskStore, taskId, timeSupplier, sleeps::add)
                 .run();
     }
 
-    private CompactionJob createJobOnQueue(String jobId) {
+    private CompactionJob createJobOnQueue(String jobId) throws Exception {
         CompactionJob job = createJob(jobId);
         jobsOnQueue.add(job);
         jobStore.jobCreated(job, DEFAULT_CREATED_TIME);
         return job;
     }
 
-    private CompactionJob createJob(String jobId) {
-        return CompactionJob.builder()
+    private CompactionJob createJob(String jobId) throws Exception {
+        String inputFile = UUID.randomUUID().toString();
+        CompactionJob job = CompactionJob.builder()
                 .tableId(DEFAULT_TABLE_ID)
                 .jobId(jobId)
                 .partitionId("root")
-                .inputFiles(List.of(UUID.randomUUID().toString()))
+                .inputFiles(List.of(inputFile))
                 .outputFile(UUID.randomUUID().toString()).build();
+        stateStore.addFile(factory.rootFile(inputFile, 123L));
+        stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles(jobId, job.getPartitionId(), job.getInputFiles())));
+        return job;
     }
 
     private void send(CompactionJob job) {
