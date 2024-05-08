@@ -23,7 +23,6 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.completion.CompactionJobCompletion;
-import sleeper.compaction.job.completion.CompactionJobCompletionRequest;
 import sleeper.compaction.job.execution.CompactionTask.CompactionRunner;
 import sleeper.compaction.job.execution.CompactionTask.MessageHandle;
 import sleeper.compaction.job.execution.CompactionTask.MessageReceiver;
@@ -468,9 +467,8 @@ public class CompactionTaskTest {
             CompactionRunner compactor,
             Supplier<Instant> timeSupplier,
             String taskId) throws Exception {
-        CompactionJobCompletion jobCompletion = new CompactionJobCompletion(jobStore, tableId -> stateStore);
         new CompactionTask(instanceProperties, PropertiesReloader.neverReload(), messageReceiver, compactor,
-                (job, summary) -> jobCompletion.apply(new CompactionJobCompletionRequest(job, taskId, summary)),
+                new CompactionJobCompletion(jobStore, tableId -> stateStore),
                 jobStore, taskStore, taskId, timeSupplier, sleeps::add)
                 .run();
     }

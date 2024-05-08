@@ -29,7 +29,6 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.completion.CompactionJobCompletion;
-import sleeper.compaction.job.completion.CompactionJobCompletionRequest;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
 import sleeper.compaction.task.CompactionTaskStatusStore;
@@ -93,11 +92,9 @@ public class ECSCompactionTaskRunner {
             ObjectFactory objectFactory = new ObjectFactory(instanceProperties, s3Client, "/tmp");
             CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties,
                     tablePropertiesProvider, stateStoreProvider, objectFactory);
-            CompactionJobCompletion compactionJobCompletion = new CompactionJobCompletion(jobStatusStore,
-                    table -> stateStoreProvider.getStateStore(tablePropertiesProvider.getById(table)));
             CompactionTask task = new CompactionTask(instanceProperties, propertiesReloader,
                     new SqsCompactionQueueHandler(sqsClient, instanceProperties), compactSortedFiles,
-                    (job, summary) -> compactionJobCompletion.apply(new CompactionJobCompletionRequest(job, taskId, summary)),
+                    new CompactionJobCompletion(jobStatusStore, table -> stateStoreProvider.getStateStore(tablePropertiesProvider.getById(table))),
                     jobStatusStore, taskStatusStore, taskId);
             task.run();
         } finally {
