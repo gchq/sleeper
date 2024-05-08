@@ -48,18 +48,18 @@ import java.util.List;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
-public class CompactionJobCompletionLambda implements RequestHandler<SQSEvent, SQSBatchResponse> {
-    public static final Logger LOGGER = LoggerFactory.getLogger(CompactionJobCompletionLambda.class);
+public class CompactionJobCommitterLambda implements RequestHandler<SQSEvent, SQSBatchResponse> {
+    public static final Logger LOGGER = LoggerFactory.getLogger(CompactionJobCommitterLambda.class);
 
-    private final CompactionJobCommitter compactionJobCompletion;
+    private final CompactionJobCommitter compactionJobCommitter;
     private final CompactionJobCommitRequestSerDe serDe = new CompactionJobCommitRequestSerDe();
 
-    public CompactionJobCompletionLambda() {
+    public CompactionJobCommitterLambda() {
         this(connectToAws());
     }
 
-    public CompactionJobCompletionLambda(CompactionJobCommitter compactionJobCompletion) {
-        this.compactionJobCompletion = compactionJobCompletion;
+    public CompactionJobCommitterLambda(CompactionJobCommitter compactionJobCommitter) {
+        this.compactionJobCommitter = compactionJobCommitter;
     }
 
     @Override
@@ -71,10 +71,10 @@ public class CompactionJobCompletionLambda implements RequestHandler<SQSEvent, S
             try {
                 LOGGER.info("Found message: {}", message.getBody());
                 CompactionJobCommitRequest request = serDe.fromJson(message.getBody());
-                compactionJobCompletion.apply(request);
-                LOGGER.info("Completed");
+                compactionJobCommitter.apply(request);
+                LOGGER.info("Successfully committed compaction job {}", request.getJob());
             } catch (RuntimeException | StateStoreException | InterruptedException e) {
-                LOGGER.error("Failed completing compaction job", e);
+                LOGGER.error("Failed committing compaction job", e);
                 batchItemFailures.add(new BatchItemFailure(message.getMessageId()));
             }
         }
