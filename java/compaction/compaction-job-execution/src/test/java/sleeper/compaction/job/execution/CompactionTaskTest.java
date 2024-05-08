@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobCommitter;
 import sleeper.compaction.job.execution.CompactionTask.CompactionRunner;
 import sleeper.compaction.job.execution.CompactionTask.MessageHandle;
@@ -62,6 +63,7 @@ import static sleeper.configuration.properties.instance.CompactionProperty.COMPA
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.configuration.properties.table.TableProperty.COMPACTION_JOB_COMPLETION_ASYNC;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
@@ -83,7 +85,7 @@ public class CompactionTaskTest {
     private final InMemoryCompactionJobStatusStore jobStore = new InMemoryCompactionJobStatusStore();
     private final CompactionTaskStatusStore taskStore = new InMemoryCompactionTaskStatusStore();
     private final List<Duration> sleeps = new ArrayList<>();
-    private final List<CompactionJob> jobsOnCommitQueue = new ArrayList<>();
+    private final List<CompactionJobCommitRequest> commitRequestsOnQueue = new ArrayList<>();
 
     @BeforeEach
     void setUp() {
@@ -450,6 +452,45 @@ public class CompactionTaskTest {
         }
     }
 
+    @Nested
+    @DisplayName("Send commits to queue")
+    class SendCommitsToQueue {
+
+        @BeforeEach
+        public void setup() {
+            tableProperties.set(COMPACTION_JOB_COMPLETION_ASYNC, "true");
+        }
+
+        @Test
+        void shouldSendJobCommitRequestToQueue() throws Exception {
+            // Given
+            Queue<Instant> times = new LinkedList<>(List.of(
+                    Instant.parse("2024-02-22T13:50:00Z"),   // Start
+                    Instant.parse("2024-02-22T13:50:01Z"),   // Job started
+                    Instant.parse("2024-02-22T13:50:02Z"),   // Job completed
+                    Instant.parse("2024-02-22T13:50:05Z"))); // Finish
+            CompactionJob job1 = createJobOnQueue("job1");
+            RecordsProcessed job1Summary = new RecordsProcessed(10L, 5L);
+
+            // When
+            runTask(processJobs(jobSucceeds(job1Summary)), times::poll);
+
+            // Then
+            assertThat(successfulJobs).containsExactly(job1);
+            assertThat(failedJobs).isEmpty();
+            assertThat(jobsOnQueue).isEmpty();
+            assertThat(commitRequestsOnQueue).containsExactly(
+                    commitRequestFor(job1,
+                            new RecordsProcessedSummary(job1Summary,
+                                    Instant.parse("2024-02-22T13:50:01Z"),
+                                    Instant.parse("2024-02-22T13:50:02Z"))));
+        }
+
+        private CompactionJobCommitRequest commitRequestFor(CompactionJob job, RecordsProcessedSummary summary) {
+            return new CompactionJobCommitRequest(job, DEFAULT_TASK_ID, summary);
+        }
+    }
+
     private void runTask(CompactionRunner compactor) throws Exception {
         runTask(compactor, Instant::now);
     }
@@ -477,8 +518,7 @@ public class CompactionTaskTest {
         CompactionJobCommitHandler commitHandler = new CompactionJobCommitHandler(
                 new FixedTablePropertiesProvider(tableProperties),
                 new CompactionJobCommitter(jobStore, tableId -> stateStore),
-                (request) -> {
-                });
+                commitRequestsOnQueue::add);
         new CompactionTask(instanceProperties,
                 PropertiesReloader.neverReload(), messageReceiver, compactor,
                 commitHandler, jobStore, taskStore, taskId, timeSupplier, sleeps::add)
