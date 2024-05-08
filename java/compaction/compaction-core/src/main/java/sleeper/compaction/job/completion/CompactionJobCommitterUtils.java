@@ -23,11 +23,11 @@ import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
 
-public class CompactionJobCompletionUtils {
+public class CompactionJobCommitterUtils {
     public static final int JOB_ASSIGNMENT_WAIT_ATTEMPTS = 10;
     public static final WaitRange JOB_ASSIGNMENT_WAIT_RANGE = WaitRange.firstAndMaxWaitCeilingSecs(2, 60);
 
-    private CompactionJobCompletionUtils() {
+    private CompactionJobCommitterUtils() {
     }
 
     public static void updateStateStoreSuccess(

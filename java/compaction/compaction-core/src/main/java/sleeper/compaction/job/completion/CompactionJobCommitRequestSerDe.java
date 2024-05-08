@@ -33,12 +33,12 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.reflect.Type;
 
-public class CompactionJobCompletionRequestSerDe {
+public class CompactionJobCommitRequestSerDe {
 
     private final Gson gson;
     private final Gson gsonPrettyPrint;
 
-    public CompactionJobCompletionRequestSerDe() {
+    public CompactionJobCommitRequestSerDe() {
         GsonBuilder builder = GsonConfig.standardBuilder()
                 .registerTypeAdapter(CompactionJob.class, new CompactionJobJsonSerDe())
                 .serializeNulls();
@@ -46,16 +46,16 @@ public class CompactionJobCompletionRequestSerDe {
         gsonPrettyPrint = builder.setPrettyPrinting().create();
     }
 
-    public String toJson(CompactionJobCompletionRequest jobRun) {
+    public String toJson(CompactionJobCommitRequest jobRun) {
         return gson.toJson(jobRun);
     }
 
-    public String toJsonPrettyPrint(CompactionJobCompletionRequest jobRun) {
+    public String toJsonPrettyPrint(CompactionJobCommitRequest jobRun) {
         return gsonPrettyPrint.toJson(jobRun);
     }
 
-    public CompactionJobCompletionRequest fromJson(String json) {
-        return gson.fromJson(json, CompactionJobCompletionRequest.class);
+    public CompactionJobCommitRequest fromJson(String json) {
+        return gson.fromJson(json, CompactionJobCommitRequest.class);
     }
 
     /**

@@ -22,7 +22,7 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import java.time.Instant;
 import java.util.Objects;
 
-public class CompactionJobCompletionRequest {
+public class CompactionJobCommitRequest {
 
     private final CompactionJob job;
     private final String taskId;
@@ -31,7 +31,7 @@ public class CompactionJobCompletionRequest {
     private final long recordsRead;
     private final long recordsWritten;
 
-    public CompactionJobCompletionRequest(
+    public CompactionJobCommitRequest(
             CompactionJob job, String taskId, RecordsProcessedSummary recordsProcessed) {
         this.job = job;
         this.taskId = taskId;
@@ -75,10 +75,10 @@ public class CompactionJobCompletionRequest {
         if (this == obj) {
             return true;
         }
-        if (!(obj instanceof CompactionJobCompletionRequest)) {
+        if (!(obj instanceof CompactionJobCommitRequest)) {
             return false;
         }
-        CompactionJobCompletionRequest other = (CompactionJobCompletionRequest) obj;
+        CompactionJobCommitRequest other = (CompactionJobCommitRequest) obj;
         return Objects.equals(job, other.job) && Objects.equals(taskId, other.taskId) && Objects.equals(startTime, other.startTime) && Objects.equals(finishTime, other.finishTime)
                 && recordsRead == other.recordsRead && recordsWritten == other.recordsWritten;
     }

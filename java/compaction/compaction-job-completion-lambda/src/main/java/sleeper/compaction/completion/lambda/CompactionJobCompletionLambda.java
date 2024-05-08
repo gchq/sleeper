@@ -30,10 +30,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.job.completion.CompactionJobCompletion;
-import sleeper.compaction.job.completion.CompactionJobCompletion.GetStateStore;
-import sleeper.compaction.job.completion.CompactionJobCompletionRequest;
-import sleeper.compaction.job.completion.CompactionJobCompletionRequestSerDe;
+import sleeper.compaction.job.completion.CompactionJobCommitRequest;
+import sleeper.compaction.job.completion.CompactionJobCommitRequestSerDe;
+import sleeper.compaction.job.completion.CompactionJobCommitter;
+import sleeper.compaction.job.completion.CompactionJobCommitter.GetStateStore;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
@@ -51,14 +51,14 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 public class CompactionJobCompletionLambda implements RequestHandler<SQSEvent, SQSBatchResponse> {
     public static final Logger LOGGER = LoggerFactory.getLogger(CompactionJobCompletionLambda.class);
 
-    private final CompactionJobCompletion compactionJobCompletion;
-    private final CompactionJobCompletionRequestSerDe serDe = new CompactionJobCompletionRequestSerDe();
+    private final CompactionJobCommitter compactionJobCompletion;
+    private final CompactionJobCommitRequestSerDe serDe = new CompactionJobCommitRequestSerDe();
 
     public CompactionJobCompletionLambda() {
         this(connectToAws());
     }
 
-    public CompactionJobCompletionLambda(CompactionJobCompletion compactionJobCompletion) {
+    public CompactionJobCompletionLambda(CompactionJobCommitter compactionJobCompletion) {
         this.compactionJobCompletion = compactionJobCompletion;
     }
 
@@ -70,7 +70,7 @@ public class CompactionJobCompletionLambda implements RequestHandler<SQSEvent, S
         for (SQSMessage message : event.getRecords()) {
             try {
                 LOGGER.info("Found message: {}", message.getBody());
-                CompactionJobCompletionRequest request = serDe.fromJson(message.getBody());
+                CompactionJobCommitRequest request = serDe.fromJson(message.getBody());
                 compactionJobCompletion.apply(request);
                 LOGGER.info("Completed");
             } catch (RuntimeException | StateStoreException | InterruptedException e) {
@@ -84,7 +84,7 @@ public class CompactionJobCompletionLambda implements RequestHandler<SQSEvent, S
         return new SQSBatchResponse(batchItemFailures);
     }
 
-    private static CompactionJobCompletion connectToAws() {
+    private static CompactionJobCommitter connectToAws() {
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
         String s3Bucket = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
@@ -96,7 +96,7 @@ public class CompactionJobCompletionLambda implements RequestHandler<SQSEvent, S
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, hadoopConf);
         CompactionJobStatusStore statusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
-        return new CompactionJobCompletion(
+        return new CompactionJobCommitter(
                 statusStore, stateStoreProviderForCompletion(tablePropertiesProvider, stateStoreProvider));
     }
 

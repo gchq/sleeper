@@ -49,7 +49,7 @@ import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStat
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.fixJitterSeed;
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.recordWaits;
 
-public class CompactionJobCompletionTestBase {
+public class CompactionJobCommitterTestBase {
 
     private static final Instant INPUT_UPDATE_TIME = Instant.parse("2024-05-01T10:00:00Z");
     private static final RecordsProcessedSummary DEFAULT_SUMMARY = new RecordsProcessedSummary(
@@ -106,22 +106,22 @@ public class CompactionJobCompletionTestBase {
         return job;
     }
 
-    protected CompactionJobCompletionRequest runCompactionJobOnTask(String taskId, CompactionJob job) throws Exception {
+    protected CompactionJobCommitRequest runCompactionJobOnTask(String taskId, CompactionJob job) throws Exception {
         return runCompactionJobOnTask(taskId, job, DEFAULT_SUMMARY);
     }
 
-    protected CompactionJobCompletionRequest runCompactionJobOnTask(String taskId, CompactionJob job, RecordsProcessedSummary summary) throws Exception {
+    protected CompactionJobCommitRequest runCompactionJobOnTask(String taskId, CompactionJob job, RecordsProcessedSummary summary) throws Exception {
         statusStore.jobStarted(job, summary.getStartTime(), taskId);
-        return new CompactionJobCompletionRequest(job, taskId, summary);
+        return new CompactionJobCommitRequest(job, taskId, summary);
     }
 
-    protected CompactionJobCompletion jobCompletion() {
-        return jobCompletion(fixJitterSeed());
+    protected CompactionJobCommitter jobCommitter() {
+        return jobCommitter(fixJitterSeed());
     }
 
-    protected CompactionJobCompletion jobCompletion(DoubleSupplier randomJitter) {
-        return new CompactionJobCompletion(statusStore, stateStoreByTableId::get,
-                CompactionJobCompletion.JOB_ASSIGNMENT_WAIT_ATTEMPTS, backoff(randomJitter));
+    protected CompactionJobCommitter jobCommitter(DoubleSupplier randomJitter) {
+        return new CompactionJobCommitter(statusStore, stateStoreByTableId::get,
+                CompactionJobCommitter.JOB_ASSIGNMENT_WAIT_ATTEMPTS, backoff(randomJitter));
     }
 
     protected FileReferenceFactory fileFactory(TableProperties table, Instant updateTime) {
@@ -155,7 +155,7 @@ public class CompactionJobCompletionTestBase {
 
     private ExponentialBackoffWithJitter backoff(DoubleSupplier randomJitter) {
         return new ExponentialBackoffWithJitter(
-                CompactionJobCompletion.JOB_ASSIGNMENT_WAIT_RANGE,
+                CompactionJobCommitter.JOB_ASSIGNMENT_WAIT_RANGE,
                 randomJitter, waiter);
     }
 

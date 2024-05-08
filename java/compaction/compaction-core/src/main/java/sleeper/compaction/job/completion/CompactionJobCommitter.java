@@ -25,10 +25,10 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
 
-import static sleeper.compaction.job.completion.CompactionJobCompletionUtils.updateStateStoreSuccess;
+import static sleeper.compaction.job.completion.CompactionJobCommitterUtils.updateStateStoreSuccess;
 
-public class CompactionJobCompletion {
-    public static final Logger LOGGER = LoggerFactory.getLogger(CompactionJobCompletion.class);
+public class CompactionJobCommitter {
+    public static final Logger LOGGER = LoggerFactory.getLogger(CompactionJobCommitter.class);
 
     public static final int JOB_ASSIGNMENT_WAIT_ATTEMPTS = 10;
     public static final WaitRange JOB_ASSIGNMENT_WAIT_RANGE = WaitRange.firstAndMaxWaitCeilingSecs(2, 60);
@@ -38,13 +38,13 @@ public class CompactionJobCompletion {
     private final int jobAssignmentWaitAttempts;
     private final ExponentialBackoffWithJitter jobAssignmentWaitBackoff;
 
-    public CompactionJobCompletion(
+    public CompactionJobCommitter(
             CompactionJobStatusStore statusStore, GetStateStore stateStoreProvider) {
         this(statusStore, stateStoreProvider, JOB_ASSIGNMENT_WAIT_ATTEMPTS,
                 new ExponentialBackoffWithJitter(JOB_ASSIGNMENT_WAIT_RANGE));
     }
 
-    public CompactionJobCompletion(
+    public CompactionJobCommitter(
             CompactionJobStatusStore statusStore, GetStateStore stateStoreProvider,
             int jobAssignmentWaitAttempts, ExponentialBackoffWithJitter jobAssignmentWaitBackoff) {
         this.statusStore = statusStore;
@@ -53,7 +53,7 @@ public class CompactionJobCompletion {
         this.jobAssignmentWaitBackoff = jobAssignmentWaitBackoff;
     }
 
-    public void apply(CompactionJobCompletionRequest request) throws StateStoreException, InterruptedException {
+    public void apply(CompactionJobCommitRequest request) throws StateStoreException, InterruptedException {
         CompactionJob job = request.getJob();
         updateStateStoreSuccess(job, request.getRecordsWritten(), stateStoreProvider.getByTableId(job.getTableId()),
                 jobAssignmentWaitAttempts, jobAssignmentWaitBackoff);
