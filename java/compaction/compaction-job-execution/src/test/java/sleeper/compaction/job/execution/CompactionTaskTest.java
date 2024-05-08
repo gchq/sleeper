@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.completion.CompactionJobCompletion;
+import sleeper.compaction.job.commit.CompactionJobCommitter;
 import sleeper.compaction.job.execution.CompactionTask.CompactionRunner;
 import sleeper.compaction.job.execution.CompactionTask.MessageHandle;
 import sleeper.compaction.job.execution.CompactionTask.MessageReceiver;
@@ -475,7 +475,7 @@ public class CompactionTaskTest {
             String taskId) throws Exception {
         new CompactionTask(instanceProperties, new FixedTablePropertiesProvider(tableProperties),
                 PropertiesReloader.neverReload(), messageReceiver, compactor,
-                new CompactionJobCompletion(jobStore, tableId -> stateStore),
+                new CompactionJobCommitter(jobStore, tableId -> stateStore),
                 jobStore, taskStore, taskId, timeSupplier, sleeps::add)
                 .run();
     }

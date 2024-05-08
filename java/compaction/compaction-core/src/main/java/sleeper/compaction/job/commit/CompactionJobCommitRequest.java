@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.job.completion;
+package sleeper.compaction.job.commit;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.core.record.process.RecordsProcessed;
@@ -22,7 +22,7 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import java.time.Instant;
 import java.util.Objects;
 
-public class CompactionJobCompletionRequest {
+public class CompactionJobCommitRequest {
 
     private final CompactionJob job;
     private final String taskId;
@@ -31,7 +31,7 @@ public class CompactionJobCompletionRequest {
     private final long recordsRead;
     private final long recordsWritten;
 
-    public CompactionJobCompletionRequest(
+    public CompactionJobCommitRequest(
             CompactionJob job, String taskId, RecordsProcessedSummary recordsProcessed) {
         this.job = job;
         this.taskId = taskId;
@@ -75,17 +75,17 @@ public class CompactionJobCompletionRequest {
         if (this == obj) {
             return true;
         }
-        if (!(obj instanceof CompactionJobCompletionRequest)) {
+        if (!(obj instanceof CompactionJobCommitRequest)) {
             return false;
         }
-        CompactionJobCompletionRequest other = (CompactionJobCompletionRequest) obj;
+        CompactionJobCommitRequest other = (CompactionJobCommitRequest) obj;
         return Objects.equals(job, other.job) && Objects.equals(taskId, other.taskId) && Objects.equals(startTime, other.startTime) && Objects.equals(finishTime, other.finishTime)
                 && recordsRead == other.recordsRead && recordsWritten == other.recordsWritten;
     }
 
     @Override
     public String toString() {
-        return "CompactionJobCompletionRequest{job=" + job + ", taskId=" + taskId + ", startTime=" + startTime + ", finishTime=" + finishTime + ", recordsRead=" + recordsRead + ", recordsWritten="
+        return "CompactionJobCommitRequest{job=" + job + ", taskId=" + taskId + ", startTime=" + startTime + ", finishTime=" + finishTime + ", recordsRead=" + recordsRead + ", recordsWritten="
                 + recordsWritten + "}";
     }
 
