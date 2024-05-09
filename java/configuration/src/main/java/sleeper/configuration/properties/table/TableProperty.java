@@ -221,7 +221,7 @@ public interface TableProperty extends SleeperProperty {
     TableProperty COMPACTION_JOB_COMMIT_ASYNC = Index.propertyBuilder("sleeper.table.compaction.job.commit.async")
             .defaultProperty(DEFAULT_COMPACTION_JOB_COMMIT_ASYNC)
             .description("If true, compaction job commit requests will be sent to the compaction job committer lambda " +
-                    "to be performed asynchronously. If false, compaction jobs will be completed synchronously by compaction tasks.")
+                    "to be performed asynchronously. If false, compaction jobs will be committed synchronously by compaction tasks.")
             .propertyGroup(TablePropertyGroup.COMPACTION)
             .build();
     TableProperty SIZE_RATIO_COMPACTION_STRATEGY_RATIO = Index.propertyBuilder("sleeper.table.compaction.strategy.sizeratio.ratio")
