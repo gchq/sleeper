@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.job.completion;
+package sleeper.compaction.job.commit;
 
 import org.approvaltests.Approvals;
 import org.junit.jupiter.api.Test;
@@ -28,12 +28,12 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class CompactionJobCompletionRequestSerDeTest {
+public class CompactionJobCommitRequestSerDeTest {
 
-    private final CompactionJobCompletionRequestSerDe serDe = new CompactionJobCompletionRequestSerDe();
+    private final CompactionJobCommitRequestSerDe serDe = new CompactionJobCommitRequestSerDe();
 
     @Test
-    void shouldSerialiseCompactionJobCompletion() throws Exception {
+    void shouldSerialiseCompactionJobCommitRequest() throws Exception {
         // Given
         CompactionJob job = CompactionJob.builder()
                 .tableId("test-table")
@@ -42,16 +42,16 @@ public class CompactionJobCompletionRequestSerDeTest {
                 .outputFile("test-output.parquet")
                 .partitionId("test-partition-id")
                 .build();
-        CompactionJobCompletionRequest completion = new CompactionJobCompletionRequest(job, "test-task",
+        CompactionJobCommitRequest commit = new CompactionJobCommitRequest(job, "test-task",
                 new RecordsProcessedSummary(
                         new RecordsProcessed(120, 100),
                         Instant.parse("2024-05-01T10:58:00Z"), Duration.ofMinutes(1)));
 
         // When
-        String json = serDe.toJsonPrettyPrint(completion);
+        String json = serDe.toJsonPrettyPrint(commit);
 
         // Then
-        assertThat(serDe.fromJson(json)).isEqualTo(completion);
+        assertThat(serDe.fromJson(json)).isEqualTo(commit);
         Approvals.verify(json);
     }
 }
