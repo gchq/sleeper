@@ -22,6 +22,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.commit.CompactionJobCommitRequest;
+import sleeper.compaction.job.commit.CompactionJobCommitRequestSerDe;
+import sleeper.compaction.job.commit.CompactionJobCommitRequestSerDe;
 import sleeper.compaction.job.commit.CompactionJobCommitter;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
@@ -75,7 +77,7 @@ public class CompactionJobCommitHandler {
                             .withMessageDeduplicationId(UUID.randomUUID().toString())
                             .withId(tableId)
                             .withMessageGroupId(tableId)
-                            .withMessageBody(tableId)));
+                            .withMessageBody(new CompactionJobCommitRequestSerDe().toJson(request))));
         };
     }
 }
