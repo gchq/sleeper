@@ -279,7 +279,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
                                 Instant.parse("2024-05-09T12:55:00Z"),
                                 Instant.parse("2024-05-09T12:56:00Z"))));
         // - Check new output file has been created with the correct records
-        assertThat(readRecords(tempDir.resolve("output1.parquet").toString(), schema))
+        assertThat(readRecords("output1.parquet", schema))
                 .containsExactlyElementsOf(expectedRecords);
         // - Check DynamoDBStateStore does not yet have correct file references
         assertThat(stateStore.getFileReferences())
@@ -499,7 +499,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
     }
 
     private List<Record> readRecords(String filename, Schema schema) {
-        try (ParquetReader<Record> reader = new ParquetRecordReader(new Path(filename), schema)) {
+        try (ParquetReader<Record> reader = new ParquetRecordReader(new Path(tempDir.resolve(filename).toString()), schema)) {
             List<Record> records = new ArrayList<>();
             for (Record record = reader.read(); record != null; record = reader.read()) {
                 records.add(new Record(record));
