@@ -124,6 +124,13 @@
             <outputDirectory>scripts/jars</outputDirectory>
             <destName>lambda-jobSpecCreationLambda-${project.version}.jar</destName>
         </file>
+                <file>
+            <source>
+                ${project.basedir}/../compaction/compaction-job-completion-lambda/target/compaction-job-completion-lambda-${project.version}-utility.jar
+            </source>
+            <outputDirectory>scripts/jars</outputDirectory>
+            <destName>lambda-jobCompletionLambda-${project.version}.jar</destName>
+        </file>
         <file>
             <source>${project.basedir}/../garbage-collector/target/garbage-collector-${project.version}-utility.jar
             </source>
