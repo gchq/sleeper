@@ -95,6 +95,7 @@ public class ECSCompactionTaskRunner {
             CompactionJobCommitHandler commitHandler = new CompactionJobCommitHandler(tablePropertiesProvider,
                     new CompactionJobCommitter(jobStatusStore, tableId -> stateStoreProvider.getStateStore(tablePropertiesProvider.getById(tableId))),
                     (request) -> {
+                        // TODO once infrastructure is deployed by CDK
                     });
             CompactionTask task = new CompactionTask(instanceProperties, propertiesReloader,
                     new SqsCompactionQueueHandler(sqsClient, instanceProperties), compactSortedFiles,
