@@ -15,14 +15,18 @@
  */
 package sleeper.compaction.job.execution;
 
+import com.amazonaws.services.sqs.AmazonSQS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.commit.CompactionJobCommitRequest;
+import sleeper.compaction.job.commit.CompactionJobCommitRequestSerDe;
 import sleeper.compaction.job.commit.CompactionJobCommitter;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreException;
 
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_COMMITTER_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_JOB_COMMIT_ASYNC;
 
 public class CompactionJobCommitHandler {
@@ -31,6 +35,11 @@ public class CompactionJobCommitHandler {
     private TablePropertiesProvider tablePropertiesProvider;
     private CompactionJobCommitter jobCommitter;
     private CommitQueueSender jobCommitQueueSender;
+
+    public CompactionJobCommitHandler(TablePropertiesProvider tablePropertiesProvider,
+            CompactionJobCommitter jobCommitter, InstanceProperties instanceProperties, AmazonSQS sqsClient) {
+        this(tablePropertiesProvider, jobCommitter, CompactionJobCommitHandler.sqsSender(instanceProperties, sqsClient));
+    }
 
     public CompactionJobCommitHandler(TablePropertiesProvider tablePropertiesProvider,
             CompactionJobCommitter jobCommitter, CommitQueueSender jobCommitQueueSender) {
@@ -51,5 +60,12 @@ public class CompactionJobCommitHandler {
 
     interface CommitQueueSender {
         void send(CompactionJobCommitRequest commitRequest);
+    }
+
+    public static CommitQueueSender sqsSender(InstanceProperties instanceProperties, AmazonSQS sqsClient) {
+        return request -> {
+            String queueUrl = instanceProperties.get(COMPACTION_JOB_COMMITTER_QUEUE_URL);
+            sqsClient.sendMessage(queueUrl, new CompactionJobCommitRequestSerDe().toJson(request));
+        };
     }
 }

@@ -27,6 +27,8 @@ import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
 import com.amazonaws.services.sqs.model.SetQueueAttributesRequest;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.parquet.hadoop.ParquetReader;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,6 +41,8 @@ import org.testcontainers.utility.DockerImageName;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobSerDe;
 import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.job.commit.CompactionJobCommitRequest;
+import sleeper.compaction.job.commit.CompactionJobCommitRequestSerDe;
 import sleeper.compaction.job.commit.CompactionJobCommitter;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStoreCreator;
@@ -56,6 +60,8 @@ import sleeper.configuration.properties.table.TablePropertiesStore;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.record.Record;
+import sleeper.core.record.process.RecordsProcessed;
+import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
@@ -64,16 +70,23 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.IngestFactory;
 import sleeper.ingest.impl.IngestCoordinator;
+import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.s3.S3StateStoreCreator;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.UUID;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -83,6 +96,8 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static sleeper.compaction.job.execution.testutils.CompactSortedFilesTestUtils.assignJobIdsToInputFiles;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_COMMITTER_DLQ_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_COMMITTER_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
@@ -95,6 +110,7 @@ import static sleeper.configuration.properties.instance.CompactionProperty.COMPA
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.COMPACTION_JOB_COMMIT_ASYNC;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
@@ -227,6 +243,67 @@ public class ECSCompactionTaskRunnerLocalStackIT {
     }
 
     @Test
+    void shouldSendCommitRequestToQueueIfAsyncCommitsEnabled() throws Exception {
+        // Given
+        tableProperties.set(COMPACTION_JOB_COMMIT_ASYNC, "true");
+        tablePropertiesStore.save(tableProperties);
+        configureJobQueuesWithMaxReceiveCount(1);
+        StateStore stateStore = getStateStore();
+        FileReference fileReference = ingestFileWith100Records();
+        List<Record> expectedRecords = IntStream.range(0, 100)
+                .mapToObj(defaultRecordCreator()::apply)
+                .collect(Collectors.toList());
+        CompactionJob job = compactionJobForFiles("job1", "output1.parquet", fileReference);
+        assignJobIdsToInputFiles(stateStore, job);
+        SendMessageRequest sendMessageRequest = new SendMessageRequest()
+                .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
+                .withMessageBody(CompactionJobSerDe.serialiseToString(job));
+        sqs.sendMessage(sendMessageRequest);
+        Queue<Instant> times = new LinkedList<>(List.of(
+                Instant.parse("2024-05-09T12:52:00Z"),      // Start task
+                Instant.parse("2024-05-09T12:55:00Z"),      // Job started
+                Instant.parse("2024-05-09T12:56:00Z"),      // Job finished
+                Instant.parse("2024-05-09T12:58:00Z")));    // Finished task
+
+        // When
+        createTaskWithTimes("task-id", times::poll).run();
+
+        // Then
+        // - The compaction job should not be on the input queue or DLQ
+        assertThat(messagesOnQueue(COMPACTION_JOB_QUEUE_URL)).isEmpty();
+        assertThat(messagesOnQueue(COMPACTION_JOB_DLQ_URL)).isEmpty();
+        // - A compaction commit request should be on the job commit queue
+        assertThat(messagesOnQueue(COMPACTION_JOB_COMMITTER_QUEUE_URL))
+                .containsExactly(commitRequestOnQueue(job, "task-id",
+                        new RecordsProcessedSummary(new RecordsProcessed(100, 100),
+                                Instant.parse("2024-05-09T12:55:00Z"),
+                                Instant.parse("2024-05-09T12:56:00Z"))));
+        // - Check new output file has been created with the correct records
+        assertThat(readRecords(tempDir.resolve("output1.parquet").toString(), schema))
+                .containsExactlyElementsOf(expectedRecords);
+        // - Check DynamoDBStateStore does not yet have correct file references
+        assertThat(stateStore.getFileReferences())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
+                .containsExactly(onJob(job, fileReference));
+    }
+
+    private FileReference onJob(CompactionJob job, FileReference reference) {
+        return reference.toBuilder().jobId(job.getId()).build();
+    }
+
+    private List<Record> readRecords(String filename, Schema schema) {
+        try (ParquetReader<Record> reader = new ParquetRecordReader(new Path(filename), schema)) {
+            List<Record> records = new ArrayList<>();
+            for (Record record = reader.read(); record != null; record = reader.read()) {
+                records.add(new Record(record));
+            }
+            return records;
+        } catch (IOException e) {
+            throw new RuntimeException("Failed reading records", e);
+        }
+    }
+
+    @Test
     void shouldPutMessageBackOnSQSQueueIfJobFailed() throws Exception {
         // Given
         configureJobQueuesWithMaxReceiveCount(2);
@@ -332,32 +409,51 @@ public class ECSCompactionTaskRunnerLocalStackIT {
                         "{\"maxReceiveCount\":\"" + maxReceiveCount + "\", " + "\"deadLetterTargetArn\":\"" + jobDlqArn + "\"}"));
         instanceProperties.set(COMPACTION_JOB_QUEUE_URL, jobQueueUrl);
         instanceProperties.set(COMPACTION_JOB_DLQ_URL, jobDlqUrl);
+        configureJobCommiterQueues();
+    }
+
+    private void configureJobCommiterQueues() {
+        String jobCommitQueueUrl = sqs.createQueue(UUID.randomUUID().toString()).getQueueUrl();
+        String jobCommitDlqUrl = sqs.createQueue(UUID.randomUUID().toString()).getQueueUrl();
+        instanceProperties.set(COMPACTION_JOB_COMMITTER_QUEUE_URL, jobCommitQueueUrl);
+        instanceProperties.set(COMPACTION_JOB_COMMITTER_DLQ_URL, jobCommitDlqUrl);
+    }
+
+    private CompactionTask createTaskWithTimes(String taskId, Supplier<Instant> timeSupplier) {
+        return createTask(taskId, stateStoreProvider, timeSupplier);
     }
 
     private CompactionTask createTask(String taskId) {
-        return createTask(taskId, stateStoreProvider);
+        return createTask(taskId, stateStoreProvider, Instant::now);
     }
 
     private CompactionTask createTask(String taskId, StateStoreProvider stateStoreProvider) {
+        return createTask(taskId, stateStoreProvider, Instant::now);
+    }
+
+    private CompactionTask createTask(String taskId, StateStoreProvider stateStoreProvider, Supplier<Instant> timeSupplier) {
         CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties,
                 tablePropertiesProvider, stateStoreProvider,
                 ObjectFactory.noUserJars());
         CompactionJobCommitHandler commitHandler = new CompactionJobCommitHandler(tablePropertiesProvider,
                 new CompactionJobCommitter(jobStatusStore, tableId -> stateStoreProvider.getStateStore(tablePropertiesProvider.getById(tableId))),
-                (request) -> {
-                    // TODO send to SQS and test once infrastructure is deployed by CDK
-                });
+                instanceProperties, sqs);
         CompactionTask task = new CompactionTask(instanceProperties,
                 PropertiesReloader.neverReload(), new SqsCompactionQueueHandler(sqs, instanceProperties), compactSortedFiles,
-                commitHandler, jobStatusStore, taskStatusStore, taskId);
+                commitHandler, jobStatusStore, taskStatusStore, taskId, timeSupplier, duration -> {
+                });
         return task;
     }
 
-    private FileReference ingestFileWith100Records() throws Exception {
-        return ingestFileWith100Records(i -> new Record(Map.of(
+    private Function<Integer, Record> defaultRecordCreator() {
+        return i -> new Record(Map.of(
                 "key", (long) 2 * i,
                 "value1", (long) 2 * i,
-                "value2", 987654321L)));
+                "value2", 987654321L));
+    }
+
+    private FileReference ingestFileWith100Records() throws Exception {
+        return ingestFileWith100Records(defaultRecordCreator());
     }
 
     private FileReference ingestFileWith100Records(Function<Integer, Record> recordCreator) throws Exception {
@@ -408,5 +504,9 @@ public class ECSCompactionTaskRunnerLocalStackIT {
                 .partitionId("root")
                 .inputFiles(inputFilenames)
                 .outputFile(tempDir + "/" + outputFilename).build();
+    }
+
+    private String commitRequestOnQueue(CompactionJob job, String taskId, RecordsProcessedSummary summary) {
+        return new CompactionJobCommitRequestSerDe().toJson(new CompactionJobCommitRequest(job, taskId, summary));
     }
 }
