@@ -195,14 +195,17 @@ public class CompactionStack extends NestedStack {
         // Lambda to periodically check for compaction jobs that should be created
         lambdaToCreateCompactionJobsBatchedViaSQS(coreStacks, topic, errorMetrics, jarsBucket, jobCreatorJar, compactionJobsQueue);
 
+        // SQS queue for compaction jobs commit requests
+        Queue jobCommitterQueue = sqsQueueForCompactionJobCommitter(topic, errorMetrics);
+
+        // Lambda to asynchronously commit compaction jobs
+        lambdaToCommitCompactionJobs(coreStacks, topic, errorMetrics, jarsBucket, jobCommitterJar, jobCommitterQueue);
+
         // ECS cluster for compaction tasks
-        ecsClusterForCompactionTasks(coreStacks, jarsBucket, taskCreatorJar, compactionJobsQueue);
+        ecsClusterForCompactionTasks(coreStacks, jarsBucket, taskCreatorJar, compactionJobsQueue, jobCommitterQueue);
 
         // Lambda to create compaction tasks
         lambdaToCreateCompactionTasks(coreStacks, taskCreatorJar, compactionJobsQueue);
-
-        // Lambda to asynchronously commit compaction jobs
-        lambdaToCommitCompactionJobs(coreStacks, topic, errorMetrics, jarsBucket, jobCommitterJar);
 
         // Allow running compaction tasks
         coreStacks.getInvokeCompactionPolicyForGrants().addStatements(PolicyStatement.Builder.create()
@@ -359,7 +362,7 @@ public class CompactionStack extends NestedStack {
     }
 
     private void ecsClusterForCompactionTasks(
-            CoreStacks coreStacks, IBucket jarsBucket, LambdaCode taskCreatorJar, Queue compactionJobsQueue) {
+            CoreStacks coreStacks, IBucket jarsBucket, LambdaCode taskCreatorJar, Queue compactionJobsQueue, Queue jobCommitQueue) {
         VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
                 .vpcId(instanceProperties.get(VPC_ID))
                 .build();
@@ -394,6 +397,7 @@ public class CompactionStack extends NestedStack {
                     .build());
 
             compactionJobsQueue.grantConsumeMessages(taskDef.getTaskRole());
+            jobCommitQueue.grantSendMessages(taskDef.getTaskRole());
         };
 
         String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
@@ -454,7 +458,7 @@ public class CompactionStack extends NestedStack {
 
     private void lambdaToCommitCompactionJobs(
             CoreStacks coreStacks, Topic topic, List<IMetric> errorMetrics,
-            IBucket jarsBucket, LambdaCode jobCommitterJar) {
+            IBucket jarsBucket, LambdaCode jobCommitterJar, Queue jobCommitterQueue) {
         Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
 
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
@@ -470,11 +474,11 @@ public class CompactionStack extends NestedStack {
                 .environment(environmentVariables)
                 .logGroup(createLambdaLogGroup(this, "CompactionJobCommitterLogGroup", functionName, instanceProperties)));
 
-        Queue jobCommitterQueue = sqsQueueForCompactionJobCommitter(topic, errorMetrics);
         handlerFunction.addEventSource(SqsEventSource.Builder.create(jobCommitterQueue)
                 .batchSize(instanceProperties.getInt(COMPACTION_JOB_COMMITTER_BATCH_SIZE))
                 .build());
 
+        jobCommitterQueue.grantSendMessages(handlerFunction);
         coreStacks.grantRunCompactionJobs(handlerFunction);
         jarsBucket.grantRead(handlerFunction);
         statusStore.grantWriteJobEvent(handlerFunction);
