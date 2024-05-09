@@ -50,10 +50,10 @@ public class CompactionJobCommitHandler {
 
     public void commit(CompactionJobCommitRequest commitRequest) throws StateStoreException, InterruptedException {
         if (tablePropertiesProvider.getById(commitRequest.getJob().getTableId()).getBoolean(COMPACTION_JOB_COMMIT_ASYNC)) {
-            LOGGER.info("Sending compaction job to queue to be commit asynchronously");
+            LOGGER.info("Sending compaction job {} to queue to be commit asynchronously", commitRequest.getJob().getId());
             jobCommitQueueSender.send(commitRequest);
         } else {
-            LOGGER.info("Committing compaction job syncronously inside compaction task");
+            LOGGER.info("Committing compaction job {} inside compaction task", commitRequest.getJob().getId());
             jobCommitter.apply(commitRequest);
         }
     }
