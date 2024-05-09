@@ -287,22 +287,6 @@ public class ECSCompactionTaskRunnerLocalStackIT {
                 .containsExactly(onJob(job, fileReference));
     }
 
-    private FileReference onJob(CompactionJob job, FileReference reference) {
-        return reference.toBuilder().jobId(job.getId()).build();
-    }
-
-    private List<Record> readRecords(String filename, Schema schema) {
-        try (ParquetReader<Record> reader = new ParquetRecordReader(new Path(filename), schema)) {
-            List<Record> records = new ArrayList<>();
-            for (Record record = reader.read(); record != null; record = reader.read()) {
-                records.add(new Record(record));
-            }
-            return records;
-        } catch (IOException e) {
-            throw new RuntimeException("Failed reading records", e);
-        }
-    }
-
     @Test
     void shouldPutMessageBackOnSQSQueueIfJobFailed() throws Exception {
         // Given
@@ -509,4 +493,21 @@ public class ECSCompactionTaskRunnerLocalStackIT {
     private String commitRequestOnQueue(CompactionJob job, String taskId, RecordsProcessedSummary summary) {
         return new CompactionJobCommitRequestSerDe().toJson(new CompactionJobCommitRequest(job, taskId, summary));
     }
+
+    private FileReference onJob(CompactionJob job, FileReference reference) {
+        return reference.toBuilder().jobId(job.getId()).build();
+    }
+
+    private List<Record> readRecords(String filename, Schema schema) {
+        try (ParquetReader<Record> reader = new ParquetRecordReader(new Path(filename), schema)) {
+            List<Record> records = new ArrayList<>();
+            for (Record record = reader.read(); record != null; record = reader.read()) {
+                records.add(new Record(record));
+            }
+            return records;
+        } catch (IOException e) {
+            throw new RuntimeException("Failed reading records", e);
+        }
+    }
+
 }
