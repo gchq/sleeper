@@ -201,8 +201,8 @@ public class CompactionStack extends NestedStack {
         // Lambda to create compaction tasks
         lambdaToCreateCompactionTasks(coreStacks, taskCreatorJar, compactionJobsQueue);
 
-        // Lambda to asynchronously complete compaction jobs
-        lambdaToCompleteCompactionJobs(coreStacks, topic, errorMetrics, jarsBucket, jobCommitterJar);
+        // Lambda to asynchronously commit compaction jobs
+        lambdaToCommitCompactionJobs(coreStacks, topic, errorMetrics, jarsBucket, jobCommitterJar);
 
         // Allow running compaction tasks
         coreStacks.getInvokeCompactionPolicyForGrants().addStatements(PolicyStatement.Builder.create()
@@ -452,7 +452,7 @@ public class CompactionStack extends NestedStack {
         return queue;
     }
 
-    private void lambdaToCompleteCompactionJobs(
+    private void lambdaToCommitCompactionJobs(
             CoreStacks coreStacks, Topic topic, List<IMetric> errorMetrics,
             IBucket jarsBucket, LambdaCode jobCommitterJar) {
         Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
