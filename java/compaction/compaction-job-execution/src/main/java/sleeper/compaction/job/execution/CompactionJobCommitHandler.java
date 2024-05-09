@@ -38,10 +38,10 @@ public class CompactionJobCommitHandler {
 
     public CompactionJobCommitHandler(TablePropertiesProvider tablePropertiesProvider,
             CompactionJobCommitter jobCommitter, InstanceProperties instanceProperties, AmazonSQS sqsClient) {
-        this(tablePropertiesProvider, jobCommitter, CompactionJobCommitHandler.sqsSender(instanceProperties, sqsClient));
+        this(tablePropertiesProvider, jobCommitter, sendToSqs(instanceProperties, sqsClient));
     }
 
-    public CompactionJobCommitHandler(TablePropertiesProvider tablePropertiesProvider,
+    protected CompactionJobCommitHandler(TablePropertiesProvider tablePropertiesProvider,
             CompactionJobCommitter jobCommitter, CommitQueueSender jobCommitQueueSender) {
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.jobCommitter = jobCommitter;
@@ -62,7 +62,7 @@ public class CompactionJobCommitHandler {
         void send(CompactionJobCommitRequest commitRequest);
     }
 
-    public static CommitQueueSender sqsSender(InstanceProperties instanceProperties, AmazonSQS sqsClient) {
+    public static CommitQueueSender sendToSqs(InstanceProperties instanceProperties, AmazonSQS sqsClient) {
         return request -> {
             String queueUrl = instanceProperties.get(COMPACTION_JOB_COMMITTER_QUEUE_URL);
             sqsClient.sendMessage(queueUrl, new CompactionJobCommitRequestSerDe().toJson(request));
