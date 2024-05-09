@@ -42,8 +42,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionRun;
-import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_COMPACTION_JOB_COMPLETION_ASYNC;
-import static sleeper.configuration.properties.table.TableProperty.COMPACTION_JOB_COMPLETION_ASYNC;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_COMPACTION_JOB_COMMIT_ASYNC;
+import static sleeper.configuration.properties.table.TableProperty.COMPACTION_JOB_COMMIT_ASYNC;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
 
@@ -60,7 +60,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
     class SendCommitsToQueue {
         @BeforeEach
         public void setup() {
-            instanceProperties.set(DEFAULT_COMPACTION_JOB_COMPLETION_ASYNC, "true");
+            instanceProperties.set(DEFAULT_COMPACTION_JOB_COMMIT_ASYNC, "true");
         }
 
         @Test
@@ -139,7 +139,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
         @Test
         void shouldOnlySendJobCommitRequestsForTablesConfiguredForAsyncCommit() throws Exception {
             // Given
-            table2.set(COMPACTION_JOB_COMPLETION_ASYNC, "false");
+            table2.set(COMPACTION_JOB_COMMIT_ASYNC, "false");
             Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"),   // Start
                     Instant.parse("2024-02-22T13:50:01Z"),   // Job 1 started

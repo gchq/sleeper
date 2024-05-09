@@ -35,7 +35,7 @@ import static sleeper.configuration.properties.instance.CompactionProperty.DEFAU
 import static sleeper.configuration.properties.instance.CompactionProperty.DEFAULT_SIZERATIO_COMPACTION_STRATEGY_RATIO;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_COLUMN_INDEX_TRUNCATE_LENGTH;
-import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_COMPACTION_JOB_COMPLETION_ASYNC;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_COMPACTION_JOB_COMMIT_ASYNC;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_COMPRESSION_CODEC;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS;
@@ -218,9 +218,9 @@ public interface TableProperty extends SleeperProperty {
                     "assign job IDs to the input files.")
             .propertyGroup(TablePropertyGroup.COMPACTION)
             .build();
-    TableProperty COMPACTION_JOB_COMPLETION_ASYNC = Index.propertyBuilder("sleeper.table.compaction.job.completion.async")
-            .defaultProperty(DEFAULT_COMPACTION_JOB_COMPLETION_ASYNC)
-            .description("If true, compaction job completion requests will be sent to the compaction job completion lambda " +
+    TableProperty COMPACTION_JOB_COMMIT_ASYNC = Index.propertyBuilder("sleeper.table.compaction.job.commit.async")
+            .defaultProperty(DEFAULT_COMPACTION_JOB_COMMIT_ASYNC)
+            .description("If true, compaction job commit requests will be sent to the compaction job committer lambda " +
                     "to be performed asynchronously. If false, compaction jobs will be completed synchronously by compaction tasks.")
             .propertyGroup(TablePropertyGroup.COMPACTION)
             .build();

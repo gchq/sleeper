@@ -23,7 +23,7 @@ import sleeper.compaction.job.commit.CompactionJobCommitter;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreException;
 
-import static sleeper.configuration.properties.table.TableProperty.COMPACTION_JOB_COMPLETION_ASYNC;
+import static sleeper.configuration.properties.table.TableProperty.COMPACTION_JOB_COMMIT_ASYNC;
 
 public class CompactionJobCommitHandler {
     public static final Logger LOGGER = LoggerFactory.getLogger(CompactionJobCommitHandler.class);
@@ -40,7 +40,7 @@ public class CompactionJobCommitHandler {
     }
 
     public void commit(CompactionJobCommitRequest commitRequest) throws StateStoreException, InterruptedException {
-        if (tablePropertiesProvider.getById(commitRequest.getJob().getTableId()).getBoolean(COMPACTION_JOB_COMPLETION_ASYNC)) {
+        if (tablePropertiesProvider.getById(commitRequest.getJob().getTableId()).getBoolean(COMPACTION_JOB_COMMIT_ASYNC)) {
             LOGGER.info("Sending compaction job to queue to be commit asynchronously");
             jobCommitQueueSender.send(commitRequest);
         } else {
