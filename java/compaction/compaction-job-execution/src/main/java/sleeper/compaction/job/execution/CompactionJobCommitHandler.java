@@ -23,7 +23,6 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobCommitRequestSerDe;
-import sleeper.compaction.job.commit.CompactionJobCommitRequestSerDe;
 import sleeper.compaction.job.commit.CompactionJobCommitter;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
@@ -75,7 +74,7 @@ public class CompactionJobCommitHandler {
                     .withQueueUrl(queueUrl)
                     .withEntries(new SendMessageBatchRequestEntry()
                             .withMessageDeduplicationId(UUID.randomUUID().toString())
-                            .withId(tableId)
+                            .withId(request.getJob().getId())
                             .withMessageGroupId(tableId)
                             .withMessageBody(new CompactionJobCommitRequestSerDe().toJson(request))));
         };
