@@ -16,7 +16,6 @@
 package sleeper.compaction.job.execution;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -25,14 +24,17 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.compaction.task.CompactionTaskStatus;
+import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.StateStore;
+import sleeper.statestore.FixedStateStoreProvider;
 
 import java.time.Instant;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 import java.util.stream.Stream;
 
@@ -40,7 +42,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionRun;
-import static sleeper.configuration.properties.table.TableProperty.COMPACTION_JOB_COMPLETION_ASYNC;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_COMPACTION_JOB_COMPLETION_ASYNC;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
 
 public class CompactionTaskCommitTest extends CompactionTaskTestBase {
@@ -50,7 +52,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
 
         @BeforeEach
         public void setup() {
-            tableProperties.set(COMPACTION_JOB_COMPLETION_ASYNC, "true");
+            instanceProperties.set(DEFAULT_COMPACTION_JOB_COMPLETION_ASYNC, "true");
         }
 
         @Test
@@ -79,11 +81,10 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
         }
 
         @Test
-        @Disabled("TODO")
         void shouldSendJobCommitRequestsForDifferentTablesToQueue() throws Exception {
             // Given
-            TableProperties table1 = createTable("test-table-1");
-            TableProperties table2 = createTable("test-table-1");
+            TableProperties table1 = createTable("test-table-1-id", "test-table-1");
+            TableProperties table2 = createTable("test-table-2-id", "test-table-2");
             StateStore store1 = inMemoryStateStoreWithSinglePartition(schema);
             StateStore store2 = inMemoryStateStoreWithSinglePartition(schema);
 
@@ -94,21 +95,31 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                     Instant.parse("2024-02-22T13:50:03Z"),   // Job 2 started
                     Instant.parse("2024-02-22T13:50:04Z"),   // Job 2 completed
                     Instant.parse("2024-02-22T13:50:07Z"))); // Finish
-            CompactionJob job1 = createJobOnQueue("job1");
-            RecordsProcessed job1Summary = new RecordsProcessed(10L, 5L);
+            CompactionJob job1 = createJobOnQueue("job1", table1, store1);
+            RecordsProcessed job1Summary = new RecordsProcessed(10L, 10L);
+            CompactionJob job2 = createJobOnQueue("job2", table2, store2);
+            RecordsProcessed job2Summary = new RecordsProcessed(20L, 20L);
 
             // When
-            runTask(processJobs(jobSucceeds(job1Summary)), times::poll);
+            runTask(processJobs(
+                    jobSucceeds(job1Summary),
+                    jobSucceeds(job2Summary)), times::poll,
+                    new FixedTablePropertiesProvider(List.of(table1, table2)),
+                    new FixedStateStoreProvider(Map.of("test-table-1", store1, "test-table-2", store2)));
 
             // Then
-            assertThat(successfulJobs).containsExactly(job1);
+            assertThat(successfulJobs).containsExactly(job1, job2);
             assertThat(failedJobs).isEmpty();
             assertThat(jobsOnQueue).isEmpty();
             assertThat(commitRequestsOnQueue).containsExactly(
                     commitRequestFor(job1,
                             new RecordsProcessedSummary(job1Summary,
                                     Instant.parse("2024-02-22T13:50:01Z"),
-                                    Instant.parse("2024-02-22T13:50:02Z"))));
+                                    Instant.parse("2024-02-22T13:50:02Z"))),
+                    commitRequestFor(job2,
+                            new RecordsProcessedSummary(job2Summary,
+                                    Instant.parse("2024-02-22T13:50:03Z"),
+                                    Instant.parse("2024-02-22T13:50:04Z"))));
         }
 
         private CompactionJobCommitRequest commitRequestFor(CompactionJob job, RecordsProcessedSummary summary) {

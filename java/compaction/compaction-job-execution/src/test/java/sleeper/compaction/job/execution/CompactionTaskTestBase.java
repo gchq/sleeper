@@ -55,18 +55,20 @@ import static sleeper.configuration.properties.instance.CompactionProperty.COMPA
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
 
 public class CompactionTaskTestBase {
     protected static final String DEFAULT_TABLE_ID = "test-table-id";
+    protected static final String DEFAULT_TABLE_NAME = "test-table-name";
     protected static final String DEFAULT_TASK_ID = "test-task-id";
     protected static final Instant DEFAULT_CREATED_TIME = Instant.parse("2024-03-04T10:50:00Z");
 
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
     protected final Schema schema = schemaWithKey("key");
-    protected final TableProperties tableProperties = createTable(DEFAULT_TABLE_ID);
+    protected final TableProperties tableProperties = createTable(DEFAULT_TABLE_ID, DEFAULT_TABLE_NAME);
     protected final StateStore stateStore = inMemoryStateStoreWithSinglePartition(schema);
     protected final FileReferenceFactory factory = FileReferenceFactory.from(stateStore);
     protected final Queue<CompactionJob> jobsOnQueue = new LinkedList<>();
@@ -83,9 +85,10 @@ public class CompactionTaskTestBase {
         instanceProperties.setNumber(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES, 10);
     }
 
-    protected TableProperties createTable(String tableId) {
+    protected TableProperties createTable(String tableId, String tableName) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         tableProperties.set(TABLE_ID, tableId);
+        tableProperties.set(TABLE_NAME, tableName);
         return tableProperties;
     }
 
@@ -141,23 +144,33 @@ public class CompactionTaskTestBase {
     }
 
     protected CompactionJob createJobOnQueue(String jobId) throws Exception {
-        CompactionJob job = createJob(jobId);
+        return createJobOnQueue(jobId, tableProperties, stateStore);
+    }
+
+    protected CompactionJob createJobOnQueue(String jobId, TableProperties tableProperties, StateStore stateStore) throws Exception {
+        CompactionJob job = createJob(jobId, tableProperties, stateStore);
         jobsOnQueue.add(job);
         jobStore.jobCreated(job, DEFAULT_CREATED_TIME);
         return job;
     }
 
-    protected CompactionJob createJob(String jobId) throws Exception {
+    protected CompactionJob createJob(String jobId, TableProperties tableProperties, StateStore stateStore) throws Exception {
         String inputFile = UUID.randomUUID().toString();
         CompactionJob job = CompactionJob.builder()
-                .tableId(DEFAULT_TABLE_ID)
+                .tableId(tableProperties.get(TABLE_ID))
                 .jobId(jobId)
                 .partitionId("root")
                 .inputFiles(List.of(inputFile))
                 .outputFile(UUID.randomUUID().toString()).build();
-        stateStore.addFile(factory.rootFile(inputFile, 123L));
-        stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles(jobId, job.getPartitionId(), job.getInputFiles())));
+        assignFilesToJob(job, stateStore);
         return job;
+    }
+
+    protected void assignFilesToJob(CompactionJob job, StateStore stateStore) throws Exception {
+        for (String inputFile : job.getInputFiles()) {
+            stateStore.addFile(factory.rootFile(inputFile, 123L));
+        }
+        stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles(job.getId(), job.getPartitionId(), job.getInputFiles())));
     }
 
     protected void send(CompactionJob job) {
