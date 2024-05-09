@@ -177,10 +177,6 @@ public class CompactionTask {
         RecordsProcessed compact(CompactionJob job) throws Exception;
     }
 
-    interface CommitQueueSender {
-        void send(CompactionJobCommitRequest commitRequest);
-    }
-
     interface MessageHandle extends AutoCloseable {
         CompactionJob getJob();
 
