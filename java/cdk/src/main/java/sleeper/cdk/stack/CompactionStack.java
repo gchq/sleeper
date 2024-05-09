@@ -93,10 +93,10 @@ import static sleeper.cdk.Utils.createLambdaLogGroup;
 import static sleeper.cdk.Utils.shouldDeployPaused;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_AUTO_SCALING_GROUP;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_CLUSTER;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_COMPLETION_DLQ_ARN;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_COMPLETION_DLQ_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_COMPLETION_QUEUE_ARN;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_COMPLETION_QUEUE_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_COMMITTER_DLQ_ARN;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_COMMITTER_DLQ_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_COMMITTER_QUEUE_ARN;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_COMMITTER_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_DLQ_ARN;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_DLQ_URL;
@@ -126,9 +126,9 @@ import static sleeper.configuration.properties.instance.CompactionProperty.COMPA
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_EC2_ROOT_SIZE;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_EC2_TYPE;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_COMPLETION_BATCH_SIZE;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_COMPLETION_LAMBDA_MEMORY_IN_MB;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_COMPLETION_LAMBDA_TIMEOUT_IN_SECONDS;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_COMMITTER_BATCH_SIZE;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_COMMITTER_LAMBDA_MEMORY_IN_MB;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_COMMITTER_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_BATCH_SIZE;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LAMBDA_MEMORY_IN_MB;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES;
@@ -438,12 +438,12 @@ public class CompactionStack extends NestedStack {
                         .build())
                 .fifo(true)
                 .visibilityTimeout(
-                        Duration.seconds(instanceProperties.getInt(COMPACTION_JOB_COMPLETION_LAMBDA_TIMEOUT_IN_SECONDS)))
+                        Duration.seconds(instanceProperties.getInt(COMPACTION_JOB_COMMITTER_LAMBDA_TIMEOUT_IN_SECONDS)))
                 .build();
-        instanceProperties.set(COMPACTION_JOB_COMPLETION_QUEUE_URL, queue.getQueueUrl());
-        instanceProperties.set(COMPACTION_JOB_COMPLETION_QUEUE_ARN, queue.getQueueArn());
-        instanceProperties.set(COMPACTION_JOB_COMPLETION_DLQ_URL, deadLetterQueue.getQueueUrl());
-        instanceProperties.set(COMPACTION_JOB_COMPLETION_DLQ_ARN, deadLetterQueue.getQueueArn());
+        instanceProperties.set(COMPACTION_JOB_COMMITTER_QUEUE_URL, queue.getQueueUrl());
+        instanceProperties.set(COMPACTION_JOB_COMMITTER_QUEUE_ARN, queue.getQueueArn());
+        instanceProperties.set(COMPACTION_JOB_COMMITTER_DLQ_URL, deadLetterQueue.getQueueUrl());
+        instanceProperties.set(COMPACTION_JOB_COMMITTER_DLQ_ARN, deadLetterQueue.getQueueArn());
 
         createAlarmForDlq(this, "CompactionJobCompletionAlarm",
                 "Alarms if there are any messages on the dead letter queue for compaction job completion",
@@ -464,15 +464,15 @@ public class CompactionStack extends NestedStack {
                 .functionName(functionName)
                 .description("Applies the results of a compaction job to the state store and updates the status store.")
                 .runtime(JAVA_11)
-                .memorySize(instanceProperties.getInt(COMPACTION_JOB_COMPLETION_LAMBDA_MEMORY_IN_MB))
-                .timeout(Duration.seconds(instanceProperties.getInt(COMPACTION_JOB_COMPLETION_LAMBDA_TIMEOUT_IN_SECONDS)))
+                .memorySize(instanceProperties.getInt(COMPACTION_JOB_COMMITTER_LAMBDA_MEMORY_IN_MB))
+                .timeout(Duration.seconds(instanceProperties.getInt(COMPACTION_JOB_COMMITTER_LAMBDA_TIMEOUT_IN_SECONDS)))
                 .handler("sleeper.compaction.completion.lambda.CompactionJobCompletionLambda::handleRequest")
                 .environment(environmentVariables)
                 .logGroup(createLambdaLogGroup(this, "CompactionJobCompletionLogGroup", functionName, instanceProperties)));
 
         Queue jobCompletionQueue = sqsQueueForCompactionJobCompletion(topic, errorMetrics);
         handlerFunction.addEventSource(SqsEventSource.Builder.create(jobCompletionQueue)
-                .batchSize(instanceProperties.getInt(COMPACTION_JOB_COMPLETION_BATCH_SIZE))
+                .batchSize(instanceProperties.getInt(COMPACTION_JOB_COMMITTER_BATCH_SIZE))
                 .build());
 
         coreStacks.grantRunCompactionJobs(handlerFunction);
