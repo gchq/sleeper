@@ -28,7 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.job.completion.CompactionJobCompletion;
+import sleeper.compaction.job.commit.CompactionJobCommitter;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
 import sleeper.compaction.task.CompactionTaskStatusStore;
@@ -94,7 +94,7 @@ public class ECSCompactionTaskRunner {
                     tablePropertiesProvider, stateStoreProvider, objectFactory);
             CompactionTask task = new CompactionTask(instanceProperties, propertiesReloader,
                     new SqsCompactionQueueHandler(sqsClient, instanceProperties), compactSortedFiles,
-                    new CompactionJobCompletion(jobStatusStore, table -> stateStoreProvider.getStateStore(tablePropertiesProvider.getById(table))),
+                    new CompactionJobCommitter(jobStatusStore, table -> stateStoreProvider.getStateStore(tablePropertiesProvider.getById(table))),
                     jobStatusStore, taskStatusStore, taskId);
             task.run();
         } finally {
