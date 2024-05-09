@@ -187,7 +187,7 @@ public class CompactionStack extends NestedStack {
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
         LambdaCode jobCreatorJar = jars.lambdaCode(BuiltJar.COMPACTION_JOB_CREATOR, jarsBucket);
         LambdaCode taskCreatorJar = jars.lambdaCode(BuiltJar.COMPACTION_TASK_CREATOR, jarsBucket);
-        LambdaCode jobCompletionJar = jars.lambdaCode(BuiltJar.COMPACTION_JOB_COMPLETION, jarsBucket);
+        LambdaCode jobCommitterJar = jars.lambdaCode(BuiltJar.COMPACTION_JOB_COMMITTER, jarsBucket);
 
         // SQS queue for the compaction jobs
         Queue compactionJobsQueue = sqsQueueForCompactionJobs(coreStacks, topic, errorMetrics);
@@ -202,7 +202,7 @@ public class CompactionStack extends NestedStack {
         lambdaToCreateCompactionTasks(coreStacks, taskCreatorJar, compactionJobsQueue);
 
         // Lambda to asynchronously complete compaction jobs
-        lambdaToCompleteCompactionJobs(coreStacks, topic, errorMetrics, jarsBucket, jobCompletionJar);
+        lambdaToCompleteCompactionJobs(coreStacks, topic, errorMetrics, jarsBucket, jobCommitterJar);
 
         // Allow running compaction tasks
         coreStacks.getInvokeCompactionPolicyForGrants().addStatements(PolicyStatement.Builder.create()
@@ -423,15 +423,15 @@ public class CompactionStack extends NestedStack {
         new CfnOutput(this, COMPACTION_CLUSTER_NAME, compactionClusterProps);
     }
 
-    private Queue sqsQueueForCompactionJobCompletion(Topic topic, List<IMetric> errorMetrics) {
+    private Queue sqsQueueForCompactionJobCommitter(Topic topic, List<IMetric> errorMetrics) {
         Queue deadLetterQueue = Queue.Builder
-                .create(this, "CompactionJobCompletionDLQ")
-                .queueName(String.join("-", "sleeper", instanceProperties.get(ID), "CompactionJobCompletionDLQ.fifo"))
+                .create(this, "CompactionJobCommitterDLQ")
+                .queueName(String.join("-", "sleeper", instanceProperties.get(ID), "CompactionJobCommitterDLQ.fifo"))
                 .fifo(true)
                 .build();
         Queue queue = Queue.Builder
-                .create(this, "CompactionJobCompletionQueue")
-                .queueName(String.join("-", "sleeper", instanceProperties.get(ID), "CompactionJobCompletionQ.fifo"))
+                .create(this, "CompactionJobCommitterQueue")
+                .queueName(String.join("-", "sleeper", instanceProperties.get(ID), "CompactionJobCommitterQ.fifo"))
                 .deadLetterQueue(DeadLetterQueue.builder()
                         .maxReceiveCount(1)
                         .queue(deadLetterQueue)
@@ -445,33 +445,33 @@ public class CompactionStack extends NestedStack {
         instanceProperties.set(COMPACTION_JOB_COMMITTER_DLQ_URL, deadLetterQueue.getQueueUrl());
         instanceProperties.set(COMPACTION_JOB_COMMITTER_DLQ_ARN, deadLetterQueue.getQueueArn());
 
-        createAlarmForDlq(this, "CompactionJobCompletionAlarm",
-                "Alarms if there are any messages on the dead letter queue for compaction job completion",
+        createAlarmForDlq(this, "CompactionJobCommitterAlarm",
+                "Alarms if there are any messages on the dead letter queue for the compaction job committer lambda",
                 deadLetterQueue, topic);
-        errorMetrics.add(Utils.createErrorMetric("Compaction Completion Errors", deadLetterQueue, instanceProperties));
+        errorMetrics.add(Utils.createErrorMetric("Compaction Committer Errors", deadLetterQueue, instanceProperties));
         return queue;
     }
 
     private void lambdaToCompleteCompactionJobs(
             CoreStacks coreStacks, Topic topic, List<IMetric> errorMetrics,
-            IBucket jarsBucket, LambdaCode jobCompletionJar) {
+            IBucket jarsBucket, LambdaCode jobCommitterJar) {
         Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
 
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "compaction-job-completion"));
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "compaction-job-committer"));
 
-        IFunction handlerFunction = jobCompletionJar.buildFunction(this, "CompactionJobCompletion", builder -> builder
+        IFunction handlerFunction = jobCommitterJar.buildFunction(this, "CompactionJobCommitter", builder -> builder
                 .functionName(functionName)
                 .description("Applies the results of a compaction job to the state store and updates the status store.")
                 .runtime(JAVA_11)
                 .memorySize(instanceProperties.getInt(COMPACTION_JOB_COMMITTER_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(COMPACTION_JOB_COMMITTER_LAMBDA_TIMEOUT_IN_SECONDS)))
-                .handler("sleeper.compaction.completion.lambda.CompactionJobCompletionLambda::handleRequest")
+                .handler("sleeper.compaction.committer.lambda.CompactionJobCommitterLambda::handleRequest")
                 .environment(environmentVariables)
-                .logGroup(createLambdaLogGroup(this, "CompactionJobCompletionLogGroup", functionName, instanceProperties)));
+                .logGroup(createLambdaLogGroup(this, "CompactionJobCommitterLogGroup", functionName, instanceProperties)));
 
-        Queue jobCompletionQueue = sqsQueueForCompactionJobCompletion(topic, errorMetrics);
-        handlerFunction.addEventSource(SqsEventSource.Builder.create(jobCompletionQueue)
+        Queue jobCommitterQueue = sqsQueueForCompactionJobCommitter(topic, errorMetrics);
+        handlerFunction.addEventSource(SqsEventSource.Builder.create(jobCommitterQueue)
                 .batchSize(instanceProperties.getInt(COMPACTION_JOB_COMMITTER_BATCH_SIZE))
                 .build());
 
