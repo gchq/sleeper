@@ -154,6 +154,10 @@ public class CompactionTaskTestBase {
         return job;
     }
 
+    protected CompactionJob createJob(String jobId) throws Exception {
+        return createJob(jobId, tableProperties, stateStore);
+    }
+
     protected CompactionJob createJob(String jobId, TableProperties tableProperties, StateStore stateStore) throws Exception {
         String inputFile = UUID.randomUUID().toString();
         CompactionJob job = CompactionJob.builder()
