@@ -30,10 +30,13 @@ import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
+import sleeper.statestore.FixedStateStoreProvider;
+import sleeper.statestore.StateStoreProvider;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -63,7 +66,7 @@ public class CompactionTaskTestBase {
 
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
     protected final Schema schema = schemaWithKey("key");
-    protected final TableProperties tableProperties = createTable();
+    protected final TableProperties tableProperties = createTable(DEFAULT_TABLE_ID);
     protected final StateStore stateStore = inMemoryStateStoreWithSinglePartition(schema);
     protected final FileReferenceFactory factory = FileReferenceFactory.from(stateStore);
     protected final Queue<CompactionJob> jobsOnQueue = new LinkedList<>();
@@ -80,9 +83,9 @@ public class CompactionTaskTestBase {
         instanceProperties.setNumber(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES, 10);
     }
 
-    private TableProperties createTable() {
+    protected TableProperties createTable(String tableId) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        tableProperties.set(TABLE_ID, DEFAULT_TABLE_ID);
+        tableProperties.set(TABLE_ID, tableId);
         return tableProperties;
     }
 
@@ -92,6 +95,11 @@ public class CompactionTaskTestBase {
 
     protected void runTask(CompactionRunner compactor, Supplier<Instant> timeSupplier) throws Exception {
         runTask(pollQueue(), compactor, timeSupplier, DEFAULT_TASK_ID);
+    }
+
+    protected void runTask(CompactionRunner compactor, Supplier<Instant> timeSupplier,
+            TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider) throws Exception {
+        runTask(pollQueue(), compactor, timeSupplier, DEFAULT_TASK_ID, tablePropertiesProvider, stateStoreProvider);
     }
 
     protected void runTask(String taskId, CompactionRunner compactor, Supplier<Instant> timeSupplier) throws Exception {
@@ -110,9 +118,21 @@ public class CompactionTaskTestBase {
             CompactionRunner compactor,
             Supplier<Instant> timeSupplier,
             String taskId) throws Exception {
-        CompactionJobCommitHandler commitHandler = new CompactionJobCommitHandler(
+        runTask(messageReceiver, compactor, timeSupplier, taskId,
                 new FixedTablePropertiesProvider(tableProperties),
-                new CompactionJobCommitter(jobStore, tableId -> stateStore),
+                new FixedStateStoreProvider(tableProperties, stateStore));
+    }
+
+    private void runTask(
+            MessageReceiver messageReceiver,
+            CompactionRunner compactor,
+            Supplier<Instant> timeSupplier,
+            String taskId,
+            TablePropertiesProvider tablePropertiesProvider,
+            StateStoreProvider stateStoreProvider) throws Exception {
+        CompactionJobCommitHandler commitHandler = new CompactionJobCommitHandler(
+                tablePropertiesProvider,
+                new CompactionJobCommitter(jobStore, tableId -> stateStoreProvider.getStateStore(tablePropertiesProvider.getById(tableId))),
                 commitRequestsOnQueue::add);
         new CompactionTask(instanceProperties,
                 PropertiesReloader.neverReload(), messageReceiver, compactor,
