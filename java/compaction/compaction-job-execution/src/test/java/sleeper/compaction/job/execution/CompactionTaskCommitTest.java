@@ -44,6 +44,7 @@ import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionRun;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_COMPACTION_JOB_COMPLETION_ASYNC;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_JOB_COMPLETION_ASYNC;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
 
 public class CompactionTaskCommitTest extends CompactionTaskTestBase {
@@ -85,6 +86,10 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                             new RecordsProcessedSummary(job1Summary,
                                     Instant.parse("2024-02-22T13:50:01Z"),
                                     Instant.parse("2024-02-22T13:50:02Z"))));
+            assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
+                    jobCreated(job1, DEFAULT_CREATED_TIME,
+                            startedCompactionRun(DEFAULT_TASK_ID,
+                                    Instant.parse("2024-02-22T13:50:01Z"))));
         }
 
         @Test
@@ -121,6 +126,14 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                             new RecordsProcessedSummary(job2Summary,
                                     Instant.parse("2024-02-22T13:50:03Z"),
                                     Instant.parse("2024-02-22T13:50:04Z"))));
+            assertThat(jobStore.getAllJobs(table1.get(TABLE_ID))).containsExactly(
+                    jobCreated(job1, DEFAULT_CREATED_TIME,
+                            startedCompactionRun(DEFAULT_TASK_ID,
+                                    Instant.parse("2024-02-22T13:50:01Z"))));
+            assertThat(jobStore.getAllJobs(table2.get(TABLE_ID))).containsExactly(
+                    jobCreated(job2, DEFAULT_CREATED_TIME,
+                            startedCompactionRun(DEFAULT_TASK_ID,
+                                    Instant.parse("2024-02-22T13:50:03Z"))));
         }
 
         @Test
@@ -154,6 +167,15 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                             new RecordsProcessedSummary(job1Summary,
                                     Instant.parse("2024-02-22T13:50:01Z"),
                                     Instant.parse("2024-02-22T13:50:02Z"))));
+            assertThat(jobStore.getAllJobs(table1.get(TABLE_ID))).containsExactly(
+                    jobCreated(job1, DEFAULT_CREATED_TIME,
+                            startedCompactionRun(DEFAULT_TASK_ID,
+                                    Instant.parse("2024-02-22T13:50:01Z"))));
+            assertThat(jobStore.getAllJobs(table2.get(TABLE_ID))).containsExactly(
+                    jobCreated(job2, DEFAULT_CREATED_TIME,
+                            finishedCompactionRun(DEFAULT_TASK_ID, new RecordsProcessedSummary(job2Summary,
+                                    Instant.parse("2024-02-22T13:50:03Z"),
+                                    Instant.parse("2024-02-22T13:50:04Z")))));
         }
 
         private CompactionJobCommitRequest commitRequestFor(CompactionJob job, RecordsProcessedSummary summary) {
