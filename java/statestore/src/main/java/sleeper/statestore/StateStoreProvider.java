@@ -21,7 +21,6 @@ import org.apache.hadoop.conf.Configuration;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
 
 import java.util.HashMap;
@@ -46,11 +45,6 @@ public class StateStoreProvider {
     protected StateStoreProvider(Function<TableProperties, StateStore> stateStoreFactory) {
         this.stateStoreFactory = stateStoreFactory;
         this.tableNameToStateStoreCache = new HashMap<>();
-    }
-
-    public StateStore getStateStore(String tableName, TablePropertiesProvider tablePropertiesProvider) {
-        TableProperties tableProperties = tablePropertiesProvider.getByName(tableName);
-        return getStateStore(tableProperties);
     }
 
     public StateStore getStateStore(TableProperties tableProperties) {
