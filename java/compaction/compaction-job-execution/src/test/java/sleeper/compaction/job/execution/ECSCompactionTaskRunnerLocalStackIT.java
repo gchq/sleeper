@@ -21,6 +21,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import com.amazonaws.services.sqs.model.CreateQueueRequest;
 import com.amazonaws.services.sqs.model.GetQueueAttributesRequest;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
@@ -393,12 +394,21 @@ public class ECSCompactionTaskRunnerLocalStackIT {
                         "{\"maxReceiveCount\":\"" + maxReceiveCount + "\", " + "\"deadLetterTargetArn\":\"" + jobDlqArn + "\"}"));
         instanceProperties.set(COMPACTION_JOB_QUEUE_URL, jobQueueUrl);
         instanceProperties.set(COMPACTION_JOB_DLQ_URL, jobDlqUrl);
-        configureJobCommiterQueues();
+        configureJobCommiterQueues(maxReceiveCount);
     }
 
-    private void configureJobCommiterQueues() {
-        String jobCommitQueueUrl = sqs.createQueue(UUID.randomUUID().toString()).getQueueUrl();
+    private void configureJobCommiterQueues(int maxReceiveCount) {
+        String jobCommitQueueUrl = sqs.createQueue(new CreateQueueRequest()
+                .withQueueName(UUID.randomUUID().toString() + ".fifo")
+                .withAttributes(Map.of("FifoQueue", "true"))).getQueueUrl();
         String jobCommitDlqUrl = sqs.createQueue(UUID.randomUUID().toString()).getQueueUrl();
+        String jobCommitDlqArn = sqs.getQueueAttributes(new GetQueueAttributesRequest()
+                .withQueueUrl(jobCommitDlqUrl)
+                .withAttributeNames("QueueArn")).getAttributes().get("QueueArn");
+        sqs.setQueueAttributes(new SetQueueAttributesRequest()
+                .withQueueUrl(jobCommitQueueUrl)
+                .addAttributesEntry("RedrivePolicy",
+                        "{\"maxReceiveCount\":\"" + maxReceiveCount + "\", " + "\"deadLetterTargetArn\":\"" + jobCommitDlqArn + "\"}"));
         instanceProperties.set(COMPACTION_JOB_COMMITTER_QUEUE_URL, jobCommitQueueUrl);
         instanceProperties.set(COMPACTION_JOB_COMMITTER_DLQ_URL, jobCommitDlqUrl);
     }
