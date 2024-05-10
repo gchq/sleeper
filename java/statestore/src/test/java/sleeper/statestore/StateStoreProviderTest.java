@@ -36,7 +36,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
-public class StateStoreProviderWithSizeTest {
+public class StateStoreProviderTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = schemaWithKey("key");
     private final Map<String, StateStore> tableIdToStateStore = new HashMap<>();
