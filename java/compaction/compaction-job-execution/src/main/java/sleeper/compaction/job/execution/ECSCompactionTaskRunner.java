@@ -37,6 +37,7 @@ import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.LoggedDuration;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.job.common.EC2ContainerMetadata;
@@ -92,10 +93,19 @@ public class ECSCompactionTaskRunner {
             ObjectFactory objectFactory = new ObjectFactory(instanceProperties, s3Client, "/tmp");
             CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties,
                     tablePropertiesProvider, stateStoreProvider, objectFactory);
+            CompactionJobCommitter committer = new CompactionJobCommitter(jobStatusStore, tableId -> stateStoreProvider.getStateStore(tablePropertiesProvider.getById(tableId)));
+            CompactionJobCommitHandler commitHandler = new CompactionJobCommitHandler(tablePropertiesProvider, committer,
+                    (request) -> {
+                        // TODO send to SQS queue once infrastructure is deployed by CDK
+                        try {
+                            committer.apply(request);
+                        } catch (StateStoreException | InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
             CompactionTask task = new CompactionTask(instanceProperties, propertiesReloader,
                     new SqsCompactionQueueHandler(sqsClient, instanceProperties), compactSortedFiles,
-                    new CompactionJobCommitter(jobStatusStore, table -> stateStoreProvider.getStateStore(tablePropertiesProvider.getById(table))),
-                    jobStatusStore, taskStatusStore, taskId);
+                    commitHandler, jobStatusStore, taskStatusStore, taskId);
             task.run();
         } finally {
             sqsClient.shutdown();

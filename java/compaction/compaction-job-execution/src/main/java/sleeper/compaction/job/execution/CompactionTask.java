@@ -22,7 +22,6 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.commit.CompactionJobCommitRequest;
-import sleeper.compaction.job.commit.CompactionJobCommitter;
 import sleeper.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusStore;
@@ -63,17 +62,17 @@ public class CompactionTask {
     private final PropertiesReloader propertiesReloader;
     private int numConsecutiveFailures = 0;
     private int totalNumberOfMessagesProcessed = 0;
-    private CompactionJobCommitter jobCommitter;
+    private CompactionJobCommitHandler jobCommitHandler;
 
     public CompactionTask(InstanceProperties instanceProperties, PropertiesReloader propertiesReloader,
-            MessageReceiver messageReceiver, CompactionRunner compactor, CompactionJobCommitter jobCommitter,
+            MessageReceiver messageReceiver, CompactionRunner compactor, CompactionJobCommitHandler jobCommitHandler,
             CompactionJobStatusStore jobStore, CompactionTaskStatusStore taskStore, String taskId) {
-        this(instanceProperties, propertiesReloader, messageReceiver, compactor, jobCommitter, jobStore, taskStore, taskId, Instant::now, threadSleep());
+        this(instanceProperties, propertiesReloader, messageReceiver, compactor, jobCommitHandler, jobStore, taskStore, taskId, Instant::now, threadSleep());
     }
 
     public CompactionTask(InstanceProperties instanceProperties, PropertiesReloader propertiesReloader,
-            MessageReceiver messageReceiver, CompactionRunner compactor, CompactionJobCommitter jobCommitter, CompactionJobStatusStore jobStore,
-            CompactionTaskStatusStore taskStore, String taskId, Supplier<Instant> timeSupplier, Consumer<Duration> sleepForTime) {
+            MessageReceiver messageReceiver, CompactionRunner compactor, CompactionJobCommitHandler jobCommitHandler,
+            CompactionJobStatusStore jobStore, CompactionTaskStatusStore taskStore, String taskId, Supplier<Instant> timeSupplier, Consumer<Duration> sleepForTime) {
         maxIdleTime = Duration.ofSeconds(instanceProperties.getInt(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS));
         maxConsecutiveFailures = instanceProperties.getInt(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES);
         delayBeforeRetry = Duration.ofSeconds(instanceProperties.getInt(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS));
@@ -85,7 +84,7 @@ public class CompactionTask {
         this.jobStatusStore = jobStore;
         this.taskStatusStore = taskStore;
         this.taskId = taskId;
-        this.jobCommitter = jobCommitter;
+        this.jobCommitHandler = jobCommitHandler;
     }
 
     public void run() throws IOException {
@@ -154,7 +153,7 @@ public class CompactionTask {
         RecordsProcessed recordsProcessed = compactor.compact(job);
         Instant jobFinishTime = timeSupplier.get();
         RecordsProcessedSummary summary = new RecordsProcessedSummary(recordsProcessed, jobStartTime, jobFinishTime);
-        jobCommitter.apply(new CompactionJobCommitRequest(job, taskId, summary));
+        jobCommitHandler.commit(new CompactionJobCommitRequest(job, taskId, summary));
         logMetrics(job, summary);
         return summary;
     }
