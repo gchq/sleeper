@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobFactory;
+import sleeper.compaction.job.commit.TimedOutWaitingForFileAssignmentsException;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionTree;
@@ -42,6 +43,7 @@ import java.util.function.DoubleSupplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.compaction.job.commit.CompactionJobCommitterUtils.updateStateStoreSuccess;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
@@ -80,7 +82,7 @@ public class CompactSortedFilesRetryStateStoreTest {
         });
 
         // When
-        updateStateStoreSuccess(job, 123, noJitter());
+        updateStateStore(job, 123, noJitter());
 
         // Then
         assertThat(stateStore.getFileReferences()).containsExactly(
@@ -96,7 +98,7 @@ public class CompactSortedFilesRetryStateStoreTest {
         CompactionJob job = createCompactionJobForOneFile(file);
 
         // When
-        assertThatThrownBy(() -> updateStateStoreSuccess(job, 123, noJitter()))
+        assertThatThrownBy(() -> updateStateStore(job, 123, noJitter()))
                 .isInstanceOf(TimedOutWaitingForFileAssignmentsException.class)
                 .hasCauseInstanceOf(FileReferenceNotAssignedToJobException.class);
 
@@ -121,7 +123,7 @@ public class CompactSortedFilesRetryStateStoreTest {
         CompactionJob job = createCompactionJobForOneFile(file);
 
         // When
-        assertThatThrownBy(() -> updateStateStoreSuccess(job, 123, noJitter()))
+        assertThatThrownBy(() -> updateStateStore(job, 123, noJitter()))
                 .isInstanceOf(FileNotFoundException.class);
 
         // Then
@@ -129,8 +131,8 @@ public class CompactSortedFilesRetryStateStoreTest {
         assertThat(foundWaits).isEmpty();
     }
 
-    private void updateStateStoreSuccess(CompactionJob job, long recordsWritten, DoubleSupplier randomJitter) throws Exception {
-        CompactSortedFiles.updateStateStoreSuccess(job, 123, stateStore,
+    private void updateStateStore(CompactionJob job, long recordsWritten, DoubleSupplier randomJitter) throws Exception {
+        updateStateStoreSuccess(job, 123, stateStore,
                 CompactSortedFiles.JOB_ASSIGNMENT_WAIT_ATTEMPTS, backoff(randomJitter));
     }
 
