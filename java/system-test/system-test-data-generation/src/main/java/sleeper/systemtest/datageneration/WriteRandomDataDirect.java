@@ -27,7 +27,7 @@ import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.IngestFactory;
-import sleeper.statestore.StateStoreProvider;
+import sleeper.statestore.StateStoreProviderWithSize;
 import sleeper.systemtest.configuration.SystemTestPropertyValues;
 
 import java.io.IOException;
@@ -42,7 +42,7 @@ public class WriteRandomDataDirect {
 
     public static void writeWithIngestFactory(
             InstanceProperties instanceProperties, TableProperties tableProperties,
-            SystemTestPropertyValues systemTestProperties, StateStoreProvider stateStoreProvider) throws IOException {
+            SystemTestPropertyValues systemTestProperties, StateStoreProviderWithSize stateStoreProvider) throws IOException {
         writeWithIngestFactory(
                 IngestFactory.builder()
                         .objectFactory(ObjectFactory.noUserJars())

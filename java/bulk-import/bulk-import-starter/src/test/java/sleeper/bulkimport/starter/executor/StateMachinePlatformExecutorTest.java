@@ -32,7 +32,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.ingest.job.status.InMemoryIngestJobStatusStore;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.statestore.FixedStateStoreProvider;
-import sleeper.statestore.StateStoreProvider;
+import sleeper.statestore.StateStoreProviderWithSize;
 
 import java.time.Instant;
 import java.util.List;
@@ -65,7 +65,7 @@ class StateMachinePlatformExecutorTest {
     private final AtomicReference<StartExecutionRequest> requested = new AtomicReference<>();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
-    private final StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tableProperties,
+    private final StateStoreProviderWithSize stateStoreProvider = new FixedStateStoreProvider(tableProperties,
             inMemoryStateStoreWithFixedSinglePartition(tableProperties.getSchema()));
     private final IngestJobStatusStore ingestJobStatusStore = new InMemoryIngestJobStatusStore();
 

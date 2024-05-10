@@ -48,7 +48,7 @@ import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.io.parquet.utils.RangeQueryUtils;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
-import sleeper.statestore.StateStoreProvider;
+import sleeper.statestore.StateStoreProviderWithSize;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -69,11 +69,11 @@ public class CompactSortedFiles implements CompactionTask.CompactionRunner {
     private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final ObjectFactory objectFactory;
-    private final StateStoreProvider stateStoreProvider;
+    private final StateStoreProviderWithSize stateStoreProvider;
 
     public CompactSortedFiles(
             InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
-            StateStoreProvider stateStoreProvider, ObjectFactory objectFactory) {
+            StateStoreProviderWithSize stateStoreProvider, ObjectFactory objectFactory) {
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.objectFactory = objectFactory;

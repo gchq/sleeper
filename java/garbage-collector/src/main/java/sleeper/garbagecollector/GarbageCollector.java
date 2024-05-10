@@ -28,7 +28,7 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
 import sleeper.garbagecollector.FailedGarbageCollectionException.TableFailures;
-import sleeper.statestore.StateStoreProvider;
+import sleeper.statestore.StateStoreProviderWithSize;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -49,18 +49,18 @@ public class GarbageCollector {
 
     private final DeleteFile deleteFile;
     private final InstanceProperties instanceProperties;
-    private final StateStoreProvider stateStoreProvider;
+    private final StateStoreProviderWithSize stateStoreProvider;
 
     public GarbageCollector(Configuration conf,
             InstanceProperties instanceProperties,
-            StateStoreProvider stateStoreProvider) {
+            StateStoreProviderWithSize stateStoreProvider) {
         this(filename -> deleteFileAndSketches(filename, conf),
                 instanceProperties, stateStoreProvider);
     }
 
     public GarbageCollector(DeleteFile deleteFile,
             InstanceProperties instanceProperties,
-            StateStoreProvider stateStoreProvider) {
+            StateStoreProviderWithSize stateStoreProvider) {
         this.deleteFile = deleteFile;
         this.instanceProperties = instanceProperties;
         this.stateStoreProvider = stateStoreProvider;

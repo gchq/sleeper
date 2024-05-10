@@ -50,7 +50,7 @@ public class StateStoreProviderWithSize {
         this(instanceProperties.getInt(STATESTORE_PROVIDER_CACHE_SIZE), stateStoreFactory);
     }
 
-    private StateStoreProviderWithSize(int cacheSize, StateStoreLoader stateStoreFactory) {
+    protected StateStoreProviderWithSize(int cacheSize, StateStoreLoader stateStoreFactory) {
         this.cacheSize = cacheSize;
         this.stateStoreFactory = stateStoreFactory;
         this.tableIdToStateStoreCache = new HashMap<>();

@@ -34,7 +34,7 @@ import sleeper.ingest.IngestResult;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
-import sleeper.statestore.StateStoreProvider;
+import sleeper.statestore.StateStoreProviderWithSize;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -80,7 +80,7 @@ public class IngestRecordsTestDataHelper {
         return instanceProperties;
     }
 
-    public static IngestFactory createIngestFactory(String localDir, StateStoreProvider stateStoreProvider, InstanceProperties instanceProperties) {
+    public static IngestFactory createIngestFactory(String localDir, StateStoreProviderWithSize stateStoreProvider, InstanceProperties instanceProperties) {
         return IngestFactory.builder()
                 .objectFactory(ObjectFactory.noUserJars())
                 .localDir(localDir)

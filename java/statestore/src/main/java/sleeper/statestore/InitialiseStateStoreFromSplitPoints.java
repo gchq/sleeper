@@ -43,17 +43,17 @@ import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
  * {@link Partition} is created.
  */
 public class InitialiseStateStoreFromSplitPoints {
-    private final StateStoreProvider stateStoreProvider;
+    private final StateStoreProviderWithSize stateStoreProvider;
     private final TableProperties tableProperties;
     private final List<Object> splitPoints;
 
     public InitialiseStateStoreFromSplitPoints(
-            StateStoreProvider stateStoreProvider, TableProperties tableProperties) throws IOException {
+            StateStoreProviderWithSize stateStoreProvider, TableProperties tableProperties) throws IOException {
         this(stateStoreProvider, tableProperties, readSplitPoints(tableProperties));
     }
 
     public InitialiseStateStoreFromSplitPoints(
-            StateStoreProvider stateStoreProvider, TableProperties tableProperties, List<Object> splitPoints) {
+            StateStoreProviderWithSize stateStoreProvider, TableProperties tableProperties, List<Object> splitPoints) {
         this.stateStoreProvider = stateStoreProvider;
         this.tableProperties = tableProperties;
         this.splitPoints = splitPoints;
@@ -92,7 +92,7 @@ public class InitialiseStateStoreFromSplitPoints {
             }
 
             Configuration conf = HadoopConfigurationProvider.getConfigurationForClient();
-            StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, conf);
+            StateStoreProviderWithSize stateStoreProvider = new StateStoreProviderWithSize(instanceProperties, s3Client, dynamoDBClient, conf);
 
             new InitialiseStateStoreFromSplitPoints(stateStoreProvider, tableProperties, splitPoints).run();
         } finally {

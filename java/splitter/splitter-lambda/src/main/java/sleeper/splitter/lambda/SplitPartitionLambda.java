@@ -36,7 +36,7 @@ import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.splitter.SplitPartition;
 import sleeper.splitter.SplitPartitionJobDefinition;
 import sleeper.splitter.SplitPartitionJobDefinitionSerDe;
-import sleeper.statestore.StateStoreProvider;
+import sleeper.statestore.StateStoreProviderWithSize;
 
 import java.io.IOException;
 
@@ -50,7 +50,7 @@ public class SplitPartitionLambda implements RequestHandler<SQSEvent, Void> {
     private final PropertiesReloader propertiesReloader;
     private final Configuration conf;
     private static final Logger LOGGER = LoggerFactory.getLogger(SplitPartitionLambda.class);
-    private final StateStoreProvider stateStoreProvider;
+    private final StateStoreProviderWithSize stateStoreProvider;
     private final TablePropertiesProvider tablePropertiesProvider;
 
     public SplitPartitionLambda() {
@@ -65,7 +65,7 @@ public class SplitPartitionLambda implements RequestHandler<SQSEvent, Void> {
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
         this.conf = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
         this.tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
-        this.stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, conf);
+        this.stateStoreProvider = new StateStoreProviderWithSize(instanceProperties, s3Client, dynamoDBClient, conf);
         this.propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
     }
 

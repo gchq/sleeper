@@ -39,7 +39,7 @@ import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.table.TableIndex;
 import sleeper.core.util.PollWithRetries;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
-import sleeper.statestore.StateStoreProvider;
+import sleeper.statestore.StateStoreProviderWithSize;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.s3.S3StateStore;
 import sleeper.systemtest.drivers.util.SystemTestClients;
@@ -120,8 +120,8 @@ public class AwsSleeperTablesDriver implements SleeperTablesDriver {
         return new TablePropertiesProvider(instanceProperties, s3, dynamoDB);
     }
 
-    public StateStoreProvider createStateStoreProvider(InstanceProperties instanceProperties) {
-        return new StateStoreProvider(instanceProperties, s3, dynamoDB, hadoopConfiguration);
+    public StateStoreProviderWithSize createStateStoreProvider(InstanceProperties instanceProperties) {
+        return new StateStoreProviderWithSize(instanceProperties, s3, dynamoDB, hadoopConfiguration);
     }
 
     public TableIndex tableIndex(InstanceProperties instanceProperties) {

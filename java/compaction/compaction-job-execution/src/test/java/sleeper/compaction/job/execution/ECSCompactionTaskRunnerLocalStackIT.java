@@ -65,7 +65,7 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.IngestFactory;
 import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.statestore.FixedStateStoreProvider;
-import sleeper.statestore.StateStoreProvider;
+import sleeper.statestore.StateStoreProviderWithSize;
 import sleeper.statestore.s3.S3StateStoreCreator;
 
 import java.io.IOException;
@@ -111,7 +111,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
     private final AmazonSQS sqs = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.SQS, AmazonSQSClientBuilder.standard());
     private final InstanceProperties instanceProperties = createInstance();
     private final Configuration configuration = getHadoopConfiguration(localStackContainer);
-    private final StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3, dynamoDB, configuration);
+    private final StateStoreProviderWithSize stateStoreProvider = new StateStoreProviderWithSize(instanceProperties, s3, dynamoDB, configuration);
     private final TablePropertiesStore tablePropertiesStore = S3TableProperties.getStore(instanceProperties, s3, dynamoDB);
     private final TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3, dynamoDB);
     private final Schema schema = createSchema();
@@ -299,7 +299,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
         String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", fileReference1, fileReference2);
 
         // When
-        StateStoreProvider provider = new FixedStateStoreProvider(tableProperties, stateStore);
+        StateStoreProviderWithSize provider = new FixedStateStoreProvider(tableProperties, stateStore);
         createTask("task-id", provider).run();
 
         // Then
@@ -338,7 +338,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
         return createTask(taskId, stateStoreProvider);
     }
 
-    private CompactionTask createTask(String taskId, StateStoreProvider stateStoreProvider) {
+    private CompactionTask createTask(String taskId, StateStoreProviderWithSize stateStoreProvider) {
         CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties,
                 tablePropertiesProvider, stateStoreProvider,
                 ObjectFactory.noUserJars());

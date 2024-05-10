@@ -42,7 +42,7 @@ import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.query.model.Query;
 import sleeper.query.model.QueryException;
 import sleeper.query.runner.recordretrieval.QueryExecutor;
-import sleeper.statestore.StateStoreProvider;
+import sleeper.statestore.StateStoreProviderWithSize;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -62,7 +62,7 @@ import static sleeper.io.parquet.utils.HadoopConfigurationProvider.getConfigurat
 public class QueryClient extends QueryCommandLineClient {
 
     private final ObjectFactory objectFactory;
-    private final StateStoreProvider stateStoreProvider;
+    private final StateStoreProviderWithSize stateStoreProvider;
     private final ExecutorService executorService;
     private final Map<String, QueryExecutor> cachedQueryExecutors = new HashMap<>();
 
@@ -70,18 +70,18 @@ public class QueryClient extends QueryCommandLineClient {
             ConsoleInput in, ConsoleOutput out) throws ObjectFactoryException {
         this(s3Client, instanceProperties, dynamoDBClient, in, out,
                 new ObjectFactory(instanceProperties, s3Client, "/tmp"),
-                new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, conf));
+                new StateStoreProviderWithSize(instanceProperties, s3Client, dynamoDBClient, conf));
     }
 
     public QueryClient(AmazonS3 s3Client, InstanceProperties instanceProperties, AmazonDynamoDB dynamoDBClient,
-            ConsoleInput in, ConsoleOutput out, ObjectFactory objectFactory, StateStoreProvider stateStoreProvider) {
+            ConsoleInput in, ConsoleOutput out, ObjectFactory objectFactory, StateStoreProviderWithSize stateStoreProvider) {
         this(instanceProperties, new DynamoDBTableIndex(instanceProperties, dynamoDBClient),
                 new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient),
                 in, out, objectFactory, stateStoreProvider);
     }
 
     public QueryClient(InstanceProperties instanceProperties, TableIndex tableIndex, TablePropertiesProvider tablePropertiesProvider,
-            ConsoleInput in, ConsoleOutput out, ObjectFactory objectFactory, StateStoreProvider stateStoreProvider) {
+            ConsoleInput in, ConsoleOutput out, ObjectFactory objectFactory, StateStoreProviderWithSize stateStoreProvider) {
         super(instanceProperties, tableIndex, tablePropertiesProvider, in, out);
         this.objectFactory = objectFactory;
         this.stateStoreProvider = stateStoreProvider;
