@@ -25,7 +25,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.completion.TimedOutWaitingForFileAssignmentsException;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -39,11 +38,8 @@ import sleeper.core.partition.Partition;
 import sleeper.core.record.Record;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
-import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
@@ -55,7 +51,6 @@ import sleeper.sketches.s3.SketchesSerDeToS3;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -141,10 +136,6 @@ public class CompactSortedFiles implements CompactionTask.CompactionRunner {
         }
 
         LOGGER.info("Compaction job {}: Read {} records and wrote {} records", compactionJob.getId(), totalNumberOfRecordsRead, recordsWritten);
-
-        updateStateStoreSuccess(compactionJob, recordsWritten, stateStore);
-        LOGGER.info("Compaction job {}: compaction committed to state store at {}", compactionJob.getId(), LocalDateTime.now());
-
         return new RecordsProcessed(totalNumberOfRecordsRead, recordsWritten);
     }
 
@@ -188,47 +179,5 @@ public class CompactSortedFiles implements CompactionTask.CompactionRunner {
 
     private Configuration getConfiguration() {
         return HadoopConfigurationProvider.getConfigurationForECS(instanceProperties);
-    }
-
-    public static void updateStateStoreSuccess(
-            CompactionJob job,
-            long recordsWritten,
-            StateStore stateStore) throws StateStoreException, InterruptedException {
-        updateStateStoreSuccess(job, recordsWritten, stateStore,
-                JOB_ASSIGNMENT_WAIT_ATTEMPTS,
-                new ExponentialBackoffWithJitter(JOB_ASSIGNMENT_WAIT_RANGE));
-    }
-
-    public static void updateStateStoreSuccess(
-            CompactionJob job,
-            long recordsWritten,
-            StateStore stateStore,
-            int jobAssignmentWaitAttempts,
-            ExponentialBackoffWithJitter jobAssignmentWaitBackoff) throws StateStoreException, InterruptedException {
-        FileReference fileReference = FileReference.builder()
-                .filename(job.getOutputFile())
-                .partitionId(job.getPartitionId())
-                .numberOfRecords(recordsWritten)
-                .countApproximate(false)
-                .onlyContainsDataForThisPartition(true)
-                .build();
-
-        // Compaction jobs are sent for execution before updating the state store to assign the input files to the job.
-        // Sometimes the compaction can finish before the job assignment is finished. We wait for the job assignment
-        // rather than immediately failing the job run.
-        FileReferenceNotAssignedToJobException failure = null;
-        for (int attempts = 0; attempts < jobAssignmentWaitAttempts; attempts++) {
-            jobAssignmentWaitBackoff.waitBeforeAttempt(attempts);
-            try {
-                stateStore.atomicallyReplaceFileReferencesWithNewOne(job.getId(), job.getPartitionId(), job.getInputFiles(), fileReference);
-                LOGGER.debug("Updated file references in state store");
-                return;
-            } catch (FileReferenceNotAssignedToJobException e) {
-                LOGGER.warn("Job not yet assigned to input files on attempt {} of {}: {}",
-                        attempts + 1, jobAssignmentWaitAttempts, e.getMessage());
-                failure = e;
-            }
-        }
-        throw new TimedOutWaitingForFileAssignmentsException(failure);
     }
 }
