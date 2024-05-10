@@ -32,7 +32,8 @@ import static sleeper.configuration.properties.instance.CommonProperty.STATESTOR
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
 /**
- * Caches Sleeper table state store objects. An instance of this class cannot be used concurrently in multiple threads,
+ * Caches Sleeper table state store objects up to a maximum size. If the cache is full, the oldest state store objects
+ * be removed from the cache. An instance of this class cannot be used concurrently in multiple threads,
  * as the cache is not thread-safe.
  */
 public class StateStoreProviderWithSize {
