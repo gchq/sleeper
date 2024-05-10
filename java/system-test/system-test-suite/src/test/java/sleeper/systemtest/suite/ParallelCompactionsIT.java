@@ -97,6 +97,10 @@ public class ParallelCompactionsIT {
                         "not assigned to any job")
                 .allMatch(file -> file.getNumberOfRecords() > 4000 && file.getNumberOfRecords() < 5500,
                         "contains an even distribution of records for the partition");
+        // And all jobs have finished and only ran once
+        assertThat(sleeper.reporting().compactionJobs().finishedStatistics())
+                .matches(statistics -> statistics.isAllFinishedOneRunEach(2048),
+                        "all jobs finished and ran once");
     }
 
 }
