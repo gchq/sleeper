@@ -49,7 +49,7 @@ public class StateStoreProviderWithSizeTest {
         StateStore store = createStateStore(table);
 
         // When
-        StateStoreProviderWithSize provider = provider();
+        StateStoreProvider provider = provider();
         StateStore retrievedStore1 = provider.getStateStore(table);
         StateStore retrievedStore2 = provider.getStateStore(table);
         StateStore retrievedStore3 = provider.getStateStore(table);
@@ -73,7 +73,7 @@ public class StateStoreProviderWithSizeTest {
         StateStore store3 = createStateStore(table3);
 
         // When
-        StateStoreProviderWithSize provider = provider();
+        StateStoreProvider provider = provider();
         StateStore retrievedStore1 = provider.getStateStore(table1);
         StateStore retrievedStore2 = provider.getStateStore(table2);
         // Cache size has been reached, oldest state store will be removed from cache
@@ -105,8 +105,8 @@ public class StateStoreProviderWithSizeTest {
         return stateStore;
     }
 
-    private StateStoreProviderWithSize provider() {
-        return new StateStoreProviderWithSize(instanceProperties, tableProperties -> {
+    private StateStoreProvider provider() {
+        return new StateStoreProvider(instanceProperties, tableProperties -> {
             tablesLoaded.add(tableProperties.get(TABLE_ID));
             return tableIdToStateStore.get(tableProperties.get(TABLE_ID));
         });

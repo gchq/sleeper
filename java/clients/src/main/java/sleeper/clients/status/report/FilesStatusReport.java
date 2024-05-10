@@ -31,7 +31,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.statestore.StateStoreProviderWithSize;
+import sleeper.statestore.StateStoreProvider;
 
 import java.util.HashMap;
 import java.util.Locale;
@@ -120,7 +120,7 @@ public class FilesStatusReport {
         try {
             InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(s3Client, instanceId);
             TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
-            StateStoreProviderWithSize stateStoreProvider = new StateStoreProviderWithSize(instanceProperties, s3Client, dynamoDBClient, getConfigurationForClient());
+            StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, getConfigurationForClient());
             StateStore stateStore = stateStoreProvider.getStateStore(tablePropertiesProvider.getByName(tableName));
             new FilesStatusReport(stateStore, maxFilesWithNoReferences, verbose, reporterType).run();
         } finally {

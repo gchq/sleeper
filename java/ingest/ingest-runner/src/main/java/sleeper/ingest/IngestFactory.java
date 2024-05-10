@@ -34,7 +34,7 @@ import sleeper.ingest.impl.recordbatch.RecordBatchFactory;
 import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
-import sleeper.statestore.StateStoreProviderWithSize;
+import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -49,7 +49,7 @@ public class IngestFactory {
 
     private final ObjectFactory objectFactory;
     private final String localDir;
-    private final StateStoreProviderWithSize stateStoreProvider;
+    private final StateStoreProvider stateStoreProvider;
     private final InstanceProperties instanceProperties;
     private final Configuration hadoopConfiguration;
     private final S3AsyncClient s3AsyncClient;
@@ -135,7 +135,7 @@ public class IngestFactory {
     public static final class Builder {
         private ObjectFactory objectFactory;
         private String localDir;
-        private StateStoreProviderWithSize stateStoreProvider;
+        private StateStoreProvider stateStoreProvider;
         private InstanceProperties instanceProperties;
         private Configuration hadoopConfiguration;
         private S3AsyncClient s3AsyncClient;
@@ -157,7 +157,7 @@ public class IngestFactory {
             return this;
         }
 
-        public Builder stateStoreProvider(StateStoreProviderWithSize stateStoreProvider) {
+        public Builder stateStoreProvider(StateStoreProvider stateStoreProvider) {
             this.stateStoreProvider = stateStoreProvider;
             return this;
         }

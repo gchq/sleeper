@@ -23,7 +23,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.schema.Schema;
-import sleeper.statestore.StateStoreProviderWithSize;
+import sleeper.statestore.StateStoreProvider;
 
 import java.util.List;
 import java.util.Map;
@@ -40,7 +40,7 @@ public final class DeployedSleeperTablesForTest {
     private final InstanceProperties instanceProperties;
     private final Map<String, TableProperties> tableByName = new TreeMap<>();
     private final TablePropertiesProvider tablePropertiesProvider;
-    private final StateStoreProviderWithSize stateStoreProvider;
+    private final StateStoreProvider stateStoreProvider;
     private TableProperties currentTable = null;
 
     public DeployedSleeperTablesForTest(InstanceProperties instanceProperties, SleeperTablesDriver driver) {
@@ -80,7 +80,7 @@ public final class DeployedSleeperTablesForTest {
         return tablePropertiesProvider;
     }
 
-    public StateStoreProviderWithSize getStateStoreProvider() {
+    public StateStoreProvider getStateStoreProvider() {
         return stateStoreProvider;
     }
 

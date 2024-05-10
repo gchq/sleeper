@@ -43,7 +43,7 @@ import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
 import sleeper.ingest.task.IngestTask;
 import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
-import sleeper.statestore.StateStoreProviderWithSize;
+import sleeper.statestore.StateStoreProvider;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -105,7 +105,7 @@ public class ECSIngestTaskRunner {
             AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, AmazonSQS sqsClient, AmazonCloudWatch cloudWatchClient,
             S3AsyncClient s3AsyncClient, Configuration hadoopConfiguration) {
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
-        StateStoreProviderWithSize stateStoreProvider = new StateStoreProviderWithSize(instanceProperties, s3Client, dynamoDBClient, hadoopConfiguration);
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, hadoopConfiguration);
         IngestTaskStatusStore taskStore = IngestTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
         IngestJobStatusStore jobStore = IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
         PropertiesReloader propertiesReloader = PropertiesReloader.ifConfigured(

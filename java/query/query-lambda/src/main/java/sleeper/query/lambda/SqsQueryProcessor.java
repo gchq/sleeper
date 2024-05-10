@@ -40,7 +40,7 @@ import sleeper.query.output.ResultsOutputInfo;
 import sleeper.query.runner.recordretrieval.QueryExecutor;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 import sleeper.query.runner.tracker.QueryStatusReportListeners;
-import sleeper.statestore.StateStoreProviderWithSize;
+import sleeper.statestore.StateStoreProvider;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -62,7 +62,7 @@ public class SqsQueryProcessor {
     private final InstanceProperties instanceProperties;
     private final AmazonSQS sqsClient;
     private final TablePropertiesProvider tablePropertiesProvider;
-    private final StateStoreProviderWithSize stateStoreProvider;
+    private final StateStoreProvider stateStoreProvider;
     private final ObjectFactory objectFactory;
     private final DynamoDBQueryTracker queryTracker;
     private final Map<String, QueryExecutor> queryExecutorCache = new HashMap<>();
@@ -78,7 +78,7 @@ public class SqsQueryProcessor {
         // The following Configuration is only used in StateStoreProviderWithSize for reading from S3 if the S3StateStore is used,
         // so use the standard Configuration rather than the one for query lambdas which is specific to the table.
         Configuration confForStateStore = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
-        stateStoreProvider = new StateStoreProviderWithSize(instanceProperties, builder.s3Client, builder.dynamoClient, confForStateStore);
+        stateStoreProvider = new StateStoreProvider(instanceProperties, builder.s3Client, builder.dynamoClient, confForStateStore);
     }
 
     public static Builder builder() {

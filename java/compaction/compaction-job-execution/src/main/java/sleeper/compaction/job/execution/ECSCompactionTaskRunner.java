@@ -41,7 +41,7 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.LoggedDuration;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.job.common.EC2ContainerMetadata;
-import sleeper.statestore.StateStoreProviderWithSize;
+import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -82,7 +82,7 @@ public class ECSCompactionTaskRunner {
 
             TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
             PropertiesReloader propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
-            StateStoreProviderWithSize stateStoreProvider = new StateStoreProviderWithSize(instanceProperties, s3Client, dynamoDBClient,
+            StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient,
                     HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
             CompactionJobStatusStore jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient,
                     instanceProperties);

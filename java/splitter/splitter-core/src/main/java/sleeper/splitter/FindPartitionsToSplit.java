@@ -25,7 +25,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.TableStatus;
-import sleeper.statestore.StateStoreProviderWithSize;
+import sleeper.statestore.StateStoreProvider;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,12 +43,12 @@ import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPL
 public class FindPartitionsToSplit {
     private static final Logger LOGGER = LoggerFactory.getLogger(FindPartitionsToSplit.class);
     private final InstanceProperties instanceProperties;
-    private final StateStoreProviderWithSize stateStoreProvider;
+    private final StateStoreProvider stateStoreProvider;
     private final JobSender jobSender;
 
     public FindPartitionsToSplit(
             InstanceProperties instanceProperties,
-            StateStoreProviderWithSize stateStoreProvider,
+            StateStoreProvider stateStoreProvider,
             JobSender jobSender) {
         this.instanceProperties = instanceProperties;
         this.stateStoreProvider = stateStoreProvider;

@@ -18,6 +18,7 @@ package sleeper.statestore;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
 import org.apache.hadoop.conf.Configuration;
+import org.jboss.threads.ArrayQueue;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -25,34 +26,52 @@ import sleeper.core.statestore.StateStore;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Function;
+import java.util.Queue;
 
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.configuration.properties.instance.CommonProperty.STATESTORE_PROVIDER_CACHE_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
 /**
- * Caches Sleeper table state store objects. An instance of this class cannot be used concurrently in multiple threads,
+ * Caches Sleeper table state store objects up to a maximum size. If the cache is full, the oldest state store objects
+ * be removed from the cache. An instance of this class cannot be used concurrently in multiple threads,
  * as the cache is not thread-safe.
  */
 public class StateStoreProvider {
-    private final Function<TableProperties, StateStore> stateStoreFactory;
-    private final Map<String, StateStore> tableNameToStateStoreCache;
+    private final int cacheSize;
+    private final StateStoreLoader stateStoreFactory;
+    private final Map<String, StateStore> tableIdToStateStoreCache;
+    private final Queue<String> tableIds;
 
     public StateStoreProvider(
             InstanceProperties instanceProperties, AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, Configuration configuration) {
-        this(new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, configuration)::getStateStore);
+        this(instanceProperties, new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, configuration)::getStateStore);
     }
 
-    protected StateStoreProvider(Function<TableProperties, StateStore> stateStoreFactory) {
+    protected StateStoreProvider(InstanceProperties instanceProperties, StateStoreLoader stateStoreFactory) {
+        this(instanceProperties.getInt(STATESTORE_PROVIDER_CACHE_SIZE), stateStoreFactory);
+    }
+
+    protected StateStoreProvider(int cacheSize, StateStoreLoader stateStoreFactory) {
+        this.cacheSize = cacheSize;
         this.stateStoreFactory = stateStoreFactory;
-        this.tableNameToStateStoreCache = new HashMap<>();
+        this.tableIdToStateStoreCache = new HashMap<>();
+        this.tableIds = new ArrayQueue<>(cacheSize);
     }
 
     public StateStore getStateStore(TableProperties tableProperties) {
-        String tableName = tableProperties.get(TABLE_NAME);
-        if (!tableNameToStateStoreCache.containsKey(tableName)) {
-            StateStore stateStore = stateStoreFactory.apply(tableProperties);
-            tableNameToStateStoreCache.put(tableName, stateStore);
+        String tableId = tableProperties.get(TABLE_ID);
+        if (!tableIdToStateStoreCache.containsKey(tableId)) {
+            if (tableIdToStateStoreCache.size() == cacheSize) {
+                tableIdToStateStoreCache.remove(tableIds.poll());
+            }
+            StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
+            tableIdToStateStoreCache.put(tableId, stateStore);
+            tableIds.add(tableId);
         }
-        return tableNameToStateStoreCache.get(tableName);
+        return tableIdToStateStoreCache.get(tableId);
+    }
+
+    interface StateStoreLoader {
+        StateStore getStateStore(TableProperties tableProperties);
     }
 }

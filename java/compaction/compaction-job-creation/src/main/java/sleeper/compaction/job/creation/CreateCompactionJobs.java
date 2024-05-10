@@ -32,7 +32,7 @@ import sleeper.core.statestore.SplitFileReferences;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.TableStatus;
-import sleeper.statestore.StateStoreProviderWithSize;
+import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -62,13 +62,13 @@ public class CreateCompactionJobs {
     private final ObjectFactory objectFactory;
     private final InstanceProperties instanceProperties;
     private final JobSender jobSender;
-    private final StateStoreProviderWithSize stateStoreProvider;
+    private final StateStoreProvider stateStoreProvider;
     private final CompactionJobStatusStore jobStatusStore;
     private final Mode mode;
 
     public CreateCompactionJobs(ObjectFactory objectFactory,
             InstanceProperties instanceProperties,
-            StateStoreProviderWithSize stateStoreProvider,
+            StateStoreProvider stateStoreProvider,
             JobSender jobSender,
             CompactionJobStatusStore jobStatusStore,
             Mode mode) {

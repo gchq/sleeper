@@ -29,7 +29,7 @@ import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.statestore.StateStoreProviderWithSize;
+import sleeper.statestore.StateStoreProvider;
 
 import static sleeper.clients.util.BucketUtils.deleteAllObjectsInBucketWithPrefix;
 import static sleeper.clients.util.ClientUtils.optionalArgument;
@@ -43,14 +43,14 @@ public class DeleteTable {
     private final AmazonS3 s3Client;
     private final InstanceProperties instanceProperties;
     private final TablePropertiesStore tablePropertiesStore;
-    private final StateStoreProviderWithSize stateStoreProvider;
+    private final StateStoreProvider stateStoreProvider;
 
     public DeleteTable(AmazonS3 s3Client, AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties) {
         this(instanceProperties, s3Client, S3TableProperties.getStore(instanceProperties, s3Client, dynamoDB),
-                new StateStoreProviderWithSize(instanceProperties, s3Client, dynamoDB, getConfigurationForClient()));
+                new StateStoreProvider(instanceProperties, s3Client, dynamoDB, getConfigurationForClient()));
     }
 
-    public DeleteTable(InstanceProperties instanceProperties, AmazonS3 s3Client, TablePropertiesStore tablePropertiesStore, StateStoreProviderWithSize stateStoreProvider) {
+    public DeleteTable(InstanceProperties instanceProperties, AmazonS3 s3Client, TablePropertiesStore tablePropertiesStore, StateStoreProvider stateStoreProvider) {
         this.s3Client = s3Client;
         this.instanceProperties = instanceProperties;
         this.tablePropertiesStore = tablePropertiesStore;

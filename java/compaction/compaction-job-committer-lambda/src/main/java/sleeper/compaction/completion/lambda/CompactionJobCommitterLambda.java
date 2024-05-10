@@ -40,7 +40,7 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.LoggedDuration;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
-import sleeper.statestore.StateStoreProviderWithSize;
+import sleeper.statestore.StateStoreProvider;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -94,14 +94,14 @@ public class CompactionJobCommitterLambda implements RequestHandler<SQSEvent, SQ
         Configuration hadoopConf = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
 
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
-        StateStoreProviderWithSize stateStoreProvider = new StateStoreProviderWithSize(instanceProperties, s3Client, dynamoDBClient, hadoopConf);
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, hadoopConf);
         CompactionJobStatusStore statusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
         return new CompactionJobCommitter(
                 statusStore, stateStoreProviderForCommitter(tablePropertiesProvider, stateStoreProvider));
     }
 
     private static GetStateStore stateStoreProviderForCommitter(
-            TablePropertiesProvider tablePropertiesProvider, StateStoreProviderWithSize stateStoreProvider) {
+            TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider) {
         return tableId -> stateStoreProvider.getStateStore(tablePropertiesProvider.getById(tableId));
     }
 

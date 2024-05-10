@@ -39,7 +39,7 @@ import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
-import sleeper.statestore.StateStoreProviderWithSize;
+import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -62,13 +62,13 @@ public class BulkImportJobDriver {
 
     private final SessionRunner sessionRunner;
     private final TablePropertiesProvider tablePropertiesProvider;
-    private final StateStoreProviderWithSize stateStoreProvider;
+    private final StateStoreProvider stateStoreProvider;
     private final IngestJobStatusStore statusStore;
     private final Supplier<Instant> getTime;
 
     public BulkImportJobDriver(SessionRunner sessionRunner,
             TablePropertiesProvider tablePropertiesProvider,
-            StateStoreProviderWithSize stateStoreProvider,
+            StateStoreProvider stateStoreProvider,
             IngestJobStatusStore statusStore,
             Supplier<Instant> getTime) {
         this.sessionRunner = sessionRunner;
@@ -89,7 +89,7 @@ public class BulkImportJobDriver {
             IngestJobStatusStore statusStore,
             Supplier<Instant> getTime) {
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
-        StateStoreProviderWithSize stateStoreProvider = new StateStoreProviderWithSize(instanceProperties, s3Client, dynamoClient, conf);
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoClient, conf);
         return new BulkImportJobDriver(new BulkImportSparkSessionRunner(
                 jobRunner, instanceProperties, tablePropertiesProvider, stateStoreProvider),
                 tablePropertiesProvider, stateStoreProvider, statusStore, getTime);

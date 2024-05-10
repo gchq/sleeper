@@ -27,7 +27,7 @@ import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
 import sleeper.query.runner.recordretrieval.InMemoryDataStore;
 import sleeper.statestore.FixedStateStoreProvider;
-import sleeper.statestore.StateStoreProviderWithSize;
+import sleeper.statestore.StateStoreProvider;
 import sleeper.systemtest.dsl.instance.SleeperTablesDriver;
 
 import java.time.Instant;
@@ -90,7 +90,7 @@ public class InMemorySleeperTablesDriver implements SleeperTablesDriver {
     }
 
     @Override
-    public StateStoreProviderWithSize createStateStoreProvider(InstanceProperties instanceProperties) {
+    public StateStoreProvider createStateStoreProvider(InstanceProperties instanceProperties) {
         String instanceId = instanceProperties.get(ID);
         addInstanceIfNotPresent(instanceId);
         return new FixedStateStoreProvider(stateStoresByInstanceId.get(instanceId));

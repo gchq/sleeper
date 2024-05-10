@@ -36,7 +36,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.statestore.FixedStateStoreProvider;
-import sleeper.statestore.StateStoreProviderWithSize;
+import sleeper.statestore.StateStoreProvider;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -101,7 +101,7 @@ public class CompactionTaskTestBase {
     }
 
     protected void runTask(CompactionRunner compactor, Supplier<Instant> timeSupplier,
-            TablePropertiesProvider tablePropertiesProvider, StateStoreProviderWithSize stateStoreProvider) throws Exception {
+            TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider) throws Exception {
         runTask(pollQueue(), compactor, timeSupplier, DEFAULT_TASK_ID, tablePropertiesProvider, stateStoreProvider);
     }
 
@@ -132,7 +132,7 @@ public class CompactionTaskTestBase {
             Supplier<Instant> timeSupplier,
             String taskId,
             TablePropertiesProvider tablePropertiesProvider,
-            StateStoreProviderWithSize stateStoreProvider) throws Exception {
+            StateStoreProvider stateStoreProvider) throws Exception {
         CompactionJobCommitHandler commitHandler = new CompactionJobCommitHandler(
                 tablePropertiesProvider,
                 new CompactionJobCommitter(jobStore, tableId -> stateStoreProvider.getStateStore(tablePropertiesProvider.getById(tableId))),

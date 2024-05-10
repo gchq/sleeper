@@ -26,7 +26,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
-import sleeper.statestore.StateStoreProviderWithSize;
+import sleeper.statestore.StateStoreProvider;
 import sleeper.systemtest.configuration.SystemTestIngestMode;
 import sleeper.systemtest.configuration.SystemTestProperties;
 import sleeper.systemtest.configuration.SystemTestPropertyValues;
@@ -109,7 +109,7 @@ public class IngestRandomData {
     private Ingester ingester() {
         SystemTestIngestMode ingestMode = systemTestProperties.getEnumValue(INGEST_MODE, SystemTestIngestMode.class);
         if (ingestMode == DIRECT) {
-            StateStoreProviderWithSize stateStoreProvider = new StateStoreProviderWithSize(instanceProperties, s3Client,
+            StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client,
                     dynamoClient, HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
             return () -> WriteRandomDataDirect.writeWithIngestFactory(instanceProperties, tableProperties, systemTestProperties, stateStoreProvider);
         }

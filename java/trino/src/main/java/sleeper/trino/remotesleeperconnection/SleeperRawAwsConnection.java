@@ -47,7 +47,7 @@ import sleeper.query.model.Query;
 import sleeper.query.model.QueryException;
 import sleeper.query.runner.recordretrieval.QueryExecutor;
 import sleeper.statestore.StateStoreFactory;
-import sleeper.statestore.StateStoreProviderWithSize;
+import sleeper.statestore.StateStoreProvider;
 import sleeper.trino.SleeperConfig;
 import sleeper.trino.ingest.BespokeIngestCoordinator;
 
@@ -99,7 +99,7 @@ public class SleeperRawAwsConnection implements AutoCloseable {
     private final AmazonDynamoDB dynamoDbClient;
     private final HadoopConfigurationProvider hadoopConfigurationProvider;
     private final InstanceProperties instanceProperties;
-    private final StateStoreProviderWithSize stateStoreProvider;
+    private final StateStoreProvider stateStoreProvider;
     private final StateStoreFactory stateStoreFactory;
     private final List<String> tableNames;
     private final TablePropertiesProvider tablePropertiesProvider;
@@ -125,7 +125,7 @@ public class SleeperRawAwsConnection implements AutoCloseable {
         // will be used to create a new state store for each thread.
         this.instanceProperties = new InstanceProperties();
         this.instanceProperties.loadFromS3(this.s3Client, sleeperConfig.getConfigBucket());
-        this.stateStoreProvider = new StateStoreProviderWithSize(this.instanceProperties, this.s3Client, this.dynamoDbClient,
+        this.stateStoreProvider = new StateStoreProvider(this.instanceProperties, this.s3Client, this.dynamoDbClient,
                 this.hadoopConfigurationProvider.getHadoopConfiguration(instanceProperties));
         this.stateStoreFactory = new StateStoreFactory(this.instanceProperties, this.s3Client, this.dynamoDbClient,
                 this.hadoopConfigurationProvider.getHadoopConfiguration(instanceProperties));

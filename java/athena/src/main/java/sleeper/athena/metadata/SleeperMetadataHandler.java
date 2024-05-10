@@ -71,7 +71,7 @@ import sleeper.core.schema.type.Type;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatus;
-import sleeper.statestore.StateStoreProviderWithSize;
+import sleeper.statestore.StateStoreProvider;
 
 import java.util.List;
 import java.util.Map;
@@ -95,7 +95,7 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
     private final InstanceProperties instanceProperties;
     private final TableIndex tableIndex;
     private final TablePropertiesProvider tablePropertiesProvider;
-    private final StateStoreProviderWithSize stateStoreProvider;
+    private final StateStoreProvider stateStoreProvider;
 
     public SleeperMetadataHandler() {
         this(AmazonS3ClientBuilder.defaultClient(), AmazonDynamoDBClientBuilder.defaultClient(), System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
@@ -107,7 +107,7 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
         this.instanceProperties.loadFromS3(s3Client, configBucket);
         this.tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDBClient);
         this.tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
-        this.stateStoreProvider = new StateStoreProviderWithSize(instanceProperties, s3Client, dynamoDBClient, new Configuration());
+        this.stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, new Configuration());
     }
 
     public SleeperMetadataHandler(
@@ -119,7 +119,7 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
         this.instanceProperties.loadFromS3(s3Client, configBucket);
         this.tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDBClient);
         this.tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
-        this.stateStoreProvider = new StateStoreProviderWithSize(instanceProperties, s3Client, dynamoDBClient, new Configuration());
+        this.stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, new Configuration());
     }
 
     /**

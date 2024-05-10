@@ -20,7 +20,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.table.TableIndex;
-import sleeper.statestore.StateStoreProviderWithSize;
+import sleeper.statestore.StateStoreProvider;
 
 public interface SleeperTablesDriver {
 
@@ -32,7 +32,7 @@ public interface SleeperTablesDriver {
 
     TablePropertiesProvider createTablePropertiesProvider(InstanceProperties instanceProperties);
 
-    StateStoreProviderWithSize createStateStoreProvider(InstanceProperties instanceProperties);
+    StateStoreProvider createStateStoreProvider(InstanceProperties instanceProperties);
 
     TableIndex tableIndex(InstanceProperties instanceProperties);
 }

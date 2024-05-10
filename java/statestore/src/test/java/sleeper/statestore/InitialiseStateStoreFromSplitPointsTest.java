@@ -36,7 +36,7 @@ public class InitialiseStateStoreFromSplitPointsTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = schemaWithKey("key");
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-    private final StateStoreProviderWithSize stateStoreProvider = new FixedStateStoreProvider(tableProperties,
+    private final StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tableProperties,
             inMemoryStateStoreWithNoPartitions());
 
     @Test

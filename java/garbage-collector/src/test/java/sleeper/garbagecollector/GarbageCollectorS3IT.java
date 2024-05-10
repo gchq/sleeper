@@ -40,7 +40,7 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils;
 import sleeper.statestore.FixedStateStoreProvider;
-import sleeper.statestore.StateStoreProviderWithSize;
+import sleeper.statestore.StateStoreProvider;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -68,7 +68,7 @@ public class GarbageCollectorS3IT {
     private static final String TEST_BUCKET = "test-bucket";
     private final AmazonS3 s3Client = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
     private TableProperties tableProperties;
-    private StateStoreProviderWithSize stateStoreProvider;
+    private StateStoreProvider stateStoreProvider;
     private static final Schema TEST_SCHEMA = getSchema();
     private static final String TEST_TABLE_NAME = "test-table";
 
@@ -141,7 +141,7 @@ public class GarbageCollectorS3IT {
         return tableProperties;
     }
 
-    private GarbageCollector createGarbageCollector(InstanceProperties instanceProperties, StateStoreProviderWithSize stateStoreProvider) {
+    private GarbageCollector createGarbageCollector(InstanceProperties instanceProperties, StateStoreProvider stateStoreProvider) {
         return new GarbageCollector(configuration, instanceProperties, stateStoreProvider);
     }
 

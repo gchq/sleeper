@@ -24,7 +24,7 @@ import java.util.Objects;
 
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
-public class FixedStateStoreProvider extends StateStoreProviderWithSize {
+public class FixedStateStoreProvider extends StateStoreProvider {
 
     public FixedStateStoreProvider(TableProperties singleTableProperties, StateStore stateStore) {
         super(10, tableProperties -> {

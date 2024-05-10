@@ -44,7 +44,7 @@ import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStoreCreator;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.statestore.FixedStateStoreProvider;
-import sleeper.statestore.StateStoreProviderWithSize;
+import sleeper.statestore.StateStoreProvider;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -266,7 +266,7 @@ class BulkImportExecutorIT {
 
         private BulkImportExecutor bulkImportExecutor() {
             TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(tableProperties);
-            StateStoreProviderWithSize stateStoreProvider = new FixedStateStoreProvider(tableProperties,
+            StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tableProperties,
                     inMemoryStateStoreWithFixedSinglePartition(SCHEMA));
             return new BulkImportExecutor(instanceProperties, tablePropertiesProvider, stateStoreProvider,
                     ingestJobStatusStore, s3, this, List.of(validationTime).iterator()::next);

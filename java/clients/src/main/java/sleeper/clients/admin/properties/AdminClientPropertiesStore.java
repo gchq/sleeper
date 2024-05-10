@@ -37,7 +37,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.table.TableNotFoundException;
-import sleeper.statestore.StateStoreProviderWithSize;
+import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -172,7 +172,7 @@ public class AdminClientPropertiesStore {
 
     public StateStore loadStateStore(String instanceId, TableProperties tableProperties) {
         InstanceProperties instanceProperties = loadInstanceProperties(instanceId);
-        StateStoreProviderWithSize stateStoreProvider = new StateStoreProviderWithSize(instanceProperties, s3, dynamoDB, new Configuration());
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3, dynamoDB, new Configuration());
         return stateStoreProvider.getStateStore(tableProperties);
     }
 

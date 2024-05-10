@@ -27,7 +27,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.ingest.job.status.IngestJobStatusStore;
-import sleeper.statestore.StateStoreProviderWithSize;
+import sleeper.statestore.StateStoreProvider;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -47,7 +47,7 @@ public class BulkImportExecutor {
 
     protected final InstanceProperties instanceProperties;
     protected final TablePropertiesProvider tablePropertiesProvider;
-    protected final StateStoreProviderWithSize stateStoreProvider;
+    protected final StateStoreProvider stateStoreProvider;
     protected final IngestJobStatusStore ingestJobStatusStore;
     protected final AmazonS3 s3Client;
     protected final PlatformExecutor platformExecutor;
@@ -55,7 +55,7 @@ public class BulkImportExecutor {
 
     public BulkImportExecutor(
             InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
-            StateStoreProviderWithSize stateStoreProvider, IngestJobStatusStore ingestJobStatusStore, AmazonS3 s3Client,
+            StateStoreProvider stateStoreProvider, IngestJobStatusStore ingestJobStatusStore, AmazonS3 s3Client,
             PlatformExecutor platformExecutor, Supplier<Instant> validationTimeSupplier) {
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;

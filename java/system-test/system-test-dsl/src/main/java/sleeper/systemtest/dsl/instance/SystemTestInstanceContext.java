@@ -25,7 +25,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatus;
-import sleeper.statestore.StateStoreProviderWithSize;
+import sleeper.statestore.StateStoreProvider;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.sourcedata.GenerateNumberedRecords;
 import sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides;
@@ -153,7 +153,7 @@ public class SystemTestInstanceContext {
         });
     }
 
-    public StateStoreProviderWithSize getStateStoreProvider() {
+    public StateStoreProvider getStateStoreProvider() {
         return currentTables.getStateStoreProvider();
     }
 

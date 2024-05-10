@@ -41,7 +41,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.statestore.StateStoreProviderWithSize;
+import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -57,11 +57,11 @@ public class BulkImportSparkSessionRunner implements BulkImportJobDriver.Session
     private final BulkImportJobRunner jobRunner;
     private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
-    private final StateStoreProviderWithSize stateStoreProvider;
+    private final StateStoreProvider stateStoreProvider;
 
     public BulkImportSparkSessionRunner(
             BulkImportJobRunner jobRunner, InstanceProperties instanceProperties,
-            TablePropertiesProvider tablePropertiesProvider, StateStoreProviderWithSize stateStoreProvider) {
+            TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider) {
         this.jobRunner = jobRunner;
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;

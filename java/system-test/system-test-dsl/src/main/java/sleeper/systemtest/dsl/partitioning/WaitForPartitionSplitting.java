@@ -27,7 +27,7 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.PollWithRetries;
 import sleeper.splitter.FindPartitionToSplitResult;
 import sleeper.splitter.FindPartitionsToSplit;
-import sleeper.statestore.StateStoreProviderWithSize;
+import sleeper.statestore.StateStoreProvider;
 
 import java.time.Duration;
 import java.util.List;
@@ -52,24 +52,24 @@ public class WaitForPartitionSplitting {
     }
 
     public static WaitForPartitionSplitting forCurrentPartitionsNeedingSplitting(
-            TablePropertiesProvider propertiesProvider, StateStoreProviderWithSize stateStoreProvider) {
+            TablePropertiesProvider propertiesProvider, StateStoreProvider stateStoreProvider) {
         return new WaitForPartitionSplitting(getResults(propertiesProvider, stateStoreProvider));
     }
 
-    public void pollUntilFinished(TablePropertiesProvider propertiesProvider, StateStoreProviderWithSize stateStoreProvider) throws InterruptedException {
+    public void pollUntilFinished(TablePropertiesProvider propertiesProvider, StateStoreProvider stateStoreProvider) throws InterruptedException {
         LOGGER.info("Waiting for splits, expecting partitions to be split: {}", partitionIdsByTableId);
         WAIT_FOR_SPLITS.pollUntil("partition splits finished", () -> new FinishedCheck(propertiesProvider, stateStoreProvider).isFinished());
     }
 
-    public boolean isSplitFinished(TablePropertiesProvider propertiesProvider, StateStoreProviderWithSize stateStoreProvider) {
+    public boolean isSplitFinished(TablePropertiesProvider propertiesProvider, StateStoreProvider stateStoreProvider) {
         return new FinishedCheck(propertiesProvider, stateStoreProvider).isFinished();
     }
 
     private class FinishedCheck {
         private final TablePropertiesProvider propertiesProvider;
-        private final StateStoreProviderWithSize stateStoreProvider;
+        private final StateStoreProvider stateStoreProvider;
 
-        FinishedCheck(TablePropertiesProvider propertiesProvider, StateStoreProviderWithSize stateStoreProvider) {
+        FinishedCheck(TablePropertiesProvider propertiesProvider, StateStoreProvider stateStoreProvider) {
             this.propertiesProvider = propertiesProvider;
             this.stateStoreProvider = stateStoreProvider;
         }
@@ -102,7 +102,7 @@ public class WaitForPartitionSplitting {
     }
 
     private static List<FindPartitionToSplitResult> getResults(
-            TablePropertiesProvider propertiesProvider, StateStoreProviderWithSize stateStoreProvider) {
+            TablePropertiesProvider propertiesProvider, StateStoreProvider stateStoreProvider) {
 
         // Collect all table properties and state stores first to avoid concurrency problems with providers
         List<TableProperties> tableProperties = propertiesProvider.streamAllTables()

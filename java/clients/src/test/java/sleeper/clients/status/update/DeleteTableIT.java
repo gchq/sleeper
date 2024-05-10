@@ -49,7 +49,7 @@ import sleeper.core.table.TableStatus;
 import sleeper.ingest.IngestFactory;
 import sleeper.ingest.IngestRecords;
 import sleeper.ingest.IngestResult;
-import sleeper.statestore.StateStoreProviderWithSize;
+import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.s3.S3StateStore;
 import sleeper.statestore.s3.S3StateStoreCreator;
 
@@ -89,7 +89,7 @@ public class DeleteTableIT {
     private final Schema schema = schemaWithKey("key1");
     private final TablePropertiesStore propertiesStore = S3TableProperties.getStore(instanceProperties, s3, dynamoDB);
     private final Configuration conf = getHadoopConfiguration(localStackContainer);
-    private final StateStoreProviderWithSize stateStoreProvider = new StateStoreProviderWithSize(instanceProperties, s3, dynamoDB, conf);
+    private final StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3, dynamoDB, conf);
     private String inputFolderName;
 
     @BeforeEach
