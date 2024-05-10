@@ -43,7 +43,7 @@ import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_MODE;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_INGEST;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRITERS;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.PARALLEL_COMPACTIONS;
-import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.create2048StringPartitions;
+import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.create8192StringPartitions;
 
 @SystemTest
 @Expensive
@@ -59,7 +59,7 @@ public class ParallelCompactionsIT {
     @Test
     void shouldApplyOneCompactionPerPartition(SleeperSystemTest sleeper) {
         // Given we configure to compact many partitions
-        sleeper.partitioning().setPartitions(create2048StringPartitions(sleeper));
+        sleeper.partitioning().setPartitions(create8192StringPartitions(sleeper));
         sleeper.updateTableProperties(Map.of(
                 COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
                 COMPACTION_FILES_BATCH_SIZE, "10",
@@ -77,7 +77,7 @@ public class ParallelCompactionsIT {
         // When we run compaction
         sleeper.compaction()
                 .forceStartTasks(300)
-                .createJobs(2048,
+                .createJobs(8192,
                         PollWithRetries.intervalAndPollingTimeout(
                                 Duration.ofSeconds(10), Duration.ofMinutes(5)))
                 .waitForJobs(
@@ -86,7 +86,7 @@ public class ParallelCompactionsIT {
 
         // Then we have one file per partition
         assertThat(sleeper.tableFiles().references())
-                .hasSize(2048)
+                .hasSize(8192)
                 .satisfies(files -> assertThat(files.stream().mapToLong(FileReference::getNumberOfRecords).sum())
                         .isEqualTo(10_000_000))
                 .allMatch(file -> file.onlyContainsDataForThisPartition() && !file.isCountApproximate(),
@@ -97,7 +97,7 @@ public class ParallelCompactionsIT {
                         "contains an even distribution of records for the partition");
         // And all jobs have finished and only ran once
         assertThat(sleeper.reporting().compactionJobs().finishedStatistics())
-                .matches(statistics -> statistics.isAllFinishedOneRunEach(2048),
+                .matches(statistics -> statistics.isAllFinishedOneRunEach(8192),
                         "all jobs finished and ran once");
     }
 

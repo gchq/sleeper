@@ -42,8 +42,8 @@ public class PartitionsTestHelper {
         return createStringPartitionsFromSplitPointsDirectory(sleeper, "512-partitions.txt");
     }
 
-    public static PartitionTree create2048StringPartitions(SleeperSystemTest sleeper) {
-        return createStringPartitionsFromSplitPointsDirectory(sleeper, "2048-partitions.txt");
+    public static PartitionTree create8192StringPartitions(SleeperSystemTest sleeper) {
+        return createStringPartitionsFromSplitPointsDirectory(sleeper, "8192-partitions.txt");
     }
 
     public static PartitionTree createStringPartitionsFromSplitPointsDirectory(
