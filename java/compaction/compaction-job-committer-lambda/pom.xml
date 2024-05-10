@@ -23,7 +23,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>compaction-job-completion-lambda</artifactId>
+    <artifactId>compaction-job-committer-lambda</artifactId>
 
     <dependencies>
         <dependency>

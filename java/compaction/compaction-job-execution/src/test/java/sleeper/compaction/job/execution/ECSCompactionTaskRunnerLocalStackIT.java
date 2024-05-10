@@ -39,6 +39,7 @@ import org.testcontainers.utility.DockerImageName;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobSerDe;
 import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.job.commit.CompactionJobCommitter;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStoreCreator;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
@@ -341,9 +342,14 @@ public class ECSCompactionTaskRunnerLocalStackIT {
         DefaultSelector compactSortedFiles = new DefaultSelector(instanceProperties,
                 tablePropertiesProvider, stateStoreProvider,
                 ObjectFactory.noUserJars());
-        CompactionTask task = new CompactionTask(instanceProperties, PropertiesReloader.neverReload(),
-                new SqsCompactionQueueHandler(sqs, instanceProperties),
-                compactSortedFiles, jobStatusStore, taskStatusStore, taskId);
+        CompactionJobCommitHandler commitHandler = new CompactionJobCommitHandler(tablePropertiesProvider,
+                new CompactionJobCommitter(jobStatusStore, tableId -> stateStoreProvider.getStateStore(tablePropertiesProvider.getById(tableId))),
+                (request) -> {
+                    // TODO send to SQS and test once infrastructure is deployed by CDK
+                });
+        CompactionTask task = new CompactionTask(instanceProperties,
+                PropertiesReloader.neverReload(), new SqsCompactionQueueHandler(sqs, instanceProperties), compactSortedFiles,
+                commitHandler, jobStatusStore, taskStatusStore, taskId);
         return task;
     }
 

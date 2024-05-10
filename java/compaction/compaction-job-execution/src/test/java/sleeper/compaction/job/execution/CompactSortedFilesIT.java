@@ -15,7 +15,6 @@
  */
 package sleeper.compaction.job.execution;
 
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -32,9 +31,7 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.FileReferenceFactory;
 
-import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -68,17 +65,7 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
         List<Record> expectedResults = CompactSortedFilesTestData.combineSortedBySingleKey(data1, data2);
         assertThat(summary.getRecordsRead()).isEqualTo(expectedResults.size());
         assertThat(summary.getRecordsWritten()).isEqualTo(expectedResults.size());
-        Assertions.assertThat(CompactSortedFilesTestData.readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
-
-        // - Check DynamoDBStateStore has correct ready for GC files
-        assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
-                .containsExactlyInAnyOrder(file1.getFilename(), file2.getFilename());
-
-        // - Check DynamoDBStateStore has correct file references
-        assertThat(stateStore.getFileReferences())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactly(FileReferenceFactory.from(stateStore)
-                        .rootFile(compactionJob.getOutputFile(), 200L));
+        assertThat(CompactSortedFilesTestData.readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
     }
 
     @Nested
@@ -126,17 +113,7 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
             List<Record> expectedResults = CompactSortedFilesTestData.combineSortedBySingleKey(data1, data2);
             assertThat(summary.getRecordsRead()).isEqualTo(expectedResults.size());
             assertThat(summary.getRecordsWritten()).isEqualTo(expectedResults.size());
-            Assertions.assertThat(CompactSortedFilesTestData.readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
-
-            // - Check DynamoDBStateStore has correct ready for GC files
-            assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
-                    .containsExactlyInAnyOrder(file1.getFilename(), file2.getFilename());
-
-            // - Check DynamoDBStateStore has correct file references
-            assertThat(stateStore.getFileReferences())
-                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                    .containsExactly(FileReferenceFactory.from(stateStore)
-                            .rootFile(compactionJob.getOutputFile(), 200L));
+            assertThat(CompactSortedFilesTestData.readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
         }
     }
 
@@ -191,17 +168,7 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
             List<Record> expectedResults = CompactSortedFilesTestData.combineSortedBySingleByteArrayKey(data1, data2);
             assertThat(summary.getRecordsRead()).isEqualTo(expectedResults.size());
             assertThat(summary.getRecordsWritten()).isEqualTo(expectedResults.size());
-            Assertions.assertThat(CompactSortedFilesTestData.readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
-
-            // - Check DynamoDBStateStore has correct ready for GC files
-            assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
-                    .containsExactlyInAnyOrder(file1.getFilename(), file2.getFilename());
-
-            // - Check DynamoDBStateStore has correct file references
-            assertThat(stateStore.getFileReferences())
-                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                    .containsExactly(FileReferenceFactory.from(stateStore)
-                            .rootFile(compactionJob.getOutputFile(), 200L));
+            assertThat(CompactSortedFilesTestData.readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
         }
     }
 }

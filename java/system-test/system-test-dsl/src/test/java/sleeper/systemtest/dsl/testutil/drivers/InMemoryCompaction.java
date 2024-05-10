@@ -65,7 +65,6 @@ import java.util.UUID;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 public class InMemoryCompaction {
-
     private final Map<String, CompactionJob> queuedJobsById = new TreeMap<>();
     private final List<CompactionTaskStatus> runningTasks = new ArrayList<>();
     private final CompactionJobStatusStore jobStore = new InMemoryCompactionJobStatusStore();

@@ -26,7 +26,6 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionRunner;
-import sleeper.compaction.job.StateStoreUpdate;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -52,7 +51,6 @@ import sleeper.sketches.s3.SketchesSerDeToS3;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -137,15 +135,7 @@ public class StandardCompactor implements CompactionRunner {
         }
 
         LOGGER.info("Compaction job {}: Read {} records and wrote {} records", compactionJob.getId(), totalNumberOfRecordsRead, recordsWritten);
-
-        StateStoreUpdate.updateStateStoreSuccess(compactionJob, recordsWritten, stateStore);
-        LOGGER.info("Compaction job {}: compaction committed to state store at {}", compactionJob.getId(), LocalDateTime.now());
-
         return new RecordsProcessed(totalNumberOfRecordsRead, recordsWritten);
-    }
-
-    private Configuration getConfiguration() {
-        return HadoopConfigurationProvider.getConfigurationForECS(instanceProperties);
     }
 
     private List<CloseableIterator<Record>> createInputIterators(CompactionJob compactionJob, Partition partition, Schema schema, Configuration conf) throws IOException {
@@ -186,5 +176,9 @@ public class StandardCompactor implements CompactionRunner {
             mergingIterator = iterator.apply(mergingIterator);
         }
         return mergingIterator;
+    }
+
+    private Configuration getConfiguration() {
+        return HadoopConfigurationProvider.getConfigurationForECS(instanceProperties);
     }
 }

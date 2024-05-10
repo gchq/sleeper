@@ -13,13 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.job.completion;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+package sleeper.compaction.job.commit;
 
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
@@ -27,40 +23,28 @@ import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
 
-public class CompactionJobCompletion {
-    public static final Logger LOGGER = LoggerFactory.getLogger(CompactionJobCompletion.class);
-
+public class CompactionJobCommitterUtils {
     public static final int JOB_ASSIGNMENT_WAIT_ATTEMPTS = 10;
     public static final WaitRange JOB_ASSIGNMENT_WAIT_RANGE = WaitRange.firstAndMaxWaitCeilingSecs(2, 60);
 
-    private final CompactionJobStatusStore statusStore;
-    private final GetStateStore stateStoreProvider;
-    private final int jobAssignmentWaitAttempts;
-    private final ExponentialBackoffWithJitter jobAssignmentWaitBackoff;
+    private CompactionJobCommitterUtils() {
+    }
 
-    public CompactionJobCompletion(
-            CompactionJobStatusStore statusStore, GetStateStore stateStoreProvider) {
-        this(statusStore, stateStoreProvider, JOB_ASSIGNMENT_WAIT_ATTEMPTS,
+    public static void updateStateStoreSuccess(
+            CompactionJob job,
+            long recordsWritten,
+            StateStore stateStore) throws StateStoreException, InterruptedException {
+        updateStateStoreSuccess(job, recordsWritten, stateStore,
+                JOB_ASSIGNMENT_WAIT_ATTEMPTS,
                 new ExponentialBackoffWithJitter(JOB_ASSIGNMENT_WAIT_RANGE));
     }
 
-    public CompactionJobCompletion(
-            CompactionJobStatusStore statusStore, GetStateStore stateStoreProvider,
-            int jobAssignmentWaitAttempts, ExponentialBackoffWithJitter jobAssignmentWaitBackoff) {
-        this.statusStore = statusStore;
-        this.stateStoreProvider = stateStoreProvider;
-        this.jobAssignmentWaitAttempts = jobAssignmentWaitAttempts;
-        this.jobAssignmentWaitBackoff = jobAssignmentWaitBackoff;
-    }
-
-    public void apply(CompactionJobCompletionRequest request) throws StateStoreException, InterruptedException {
-        CompactionJob job = request.getJob();
-        updateStateStoreSuccess(job, request.getRecordsWritten());
-        statusStore.jobFinished(job, request.buildRecordsProcessedSummary(), request.getTaskId());
-    }
-
-    private void updateStateStoreSuccess(CompactionJob job, long recordsWritten) throws StateStoreException, InterruptedException {
-        StateStore stateStore = stateStoreProvider.getByTableId(job.getTableId());
+    public static void updateStateStoreSuccess(
+            CompactionJob job,
+            long recordsWritten,
+            StateStore stateStore,
+            int jobAssignmentWaitAttempts,
+            ExponentialBackoffWithJitter jobAssignmentWaitBackoff) throws StateStoreException, InterruptedException {
         FileReference fileReference = FileReference.builder()
                 .filename(job.getOutputFile())
                 .partitionId(job.getPartitionId())
@@ -77,19 +61,11 @@ public class CompactionJobCompletion {
             jobAssignmentWaitBackoff.waitBeforeAttempt(attempts);
             try {
                 stateStore.atomicallyReplaceFileReferencesWithNewOne(job.getId(), job.getPartitionId(), job.getInputFiles(), fileReference);
-                LOGGER.info("Atomically replaced {} file references in state store with file reference {}.", job.getInputFiles(), fileReference);
                 return;
             } catch (FileReferenceNotAssignedToJobException e) {
-                LOGGER.warn("Job not yet assigned to input files on attempt {} of {}: {}",
-                        attempts + 1, jobAssignmentWaitAttempts, e.getMessage());
                 failure = e;
             }
         }
         throw new TimedOutWaitingForFileAssignmentsException(failure);
-    }
-
-    @FunctionalInterface
-    public interface GetStateStore {
-        StateStore getByTableId(String tableId);
     }
 }
