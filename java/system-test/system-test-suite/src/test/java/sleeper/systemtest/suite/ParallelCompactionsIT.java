@@ -93,7 +93,7 @@ public class ParallelCompactionsIT {
                         "only contains data for one partition")
                 .allMatch(file -> file.getJobId() == null,
                         "not assigned to any job")
-                .allMatch(file -> file.getNumberOfRecords() > 4000 && file.getNumberOfRecords() < 5500,
+                .allMatch(file -> file.getNumberOfRecords() > 800 && file.getNumberOfRecords() < 1600,
                         "contains an even distribution of records for the partition");
         // And all jobs have finished and only ran once
         assertThat(sleeper.reporting().compactionJobs().finishedStatistics())
