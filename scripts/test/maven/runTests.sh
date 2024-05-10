@@ -32,7 +32,7 @@ SUBNETS=$2
 RESULTS_BUCKET=$3
 START_TIMESTAMP=$(record_time)
 TEST_NAME=QuickSystemTests
-OUTPUT_DIR="/tmp/sleeper/SystemTests/$START_TIME"
+OUTPUT_DIR="/tmp/sleeper/SystemTests/$START_TIMESTAMP"
 SHORT_ID="i-$(uuidgen -t | cut -d'-' -f 1)"
 
 mkdir -p "$OUTPUT_DIR"
@@ -55,16 +55,10 @@ runMavenQuickSystemTests() {
     fi
 
     echo "-------------------------------------------------------------------------------"
-    echo "Tearing down instance $SHORT_ID"
+    echo "Tearing down instance "$SHORT_ID" and "$SHORT_ID-main"
     echo "-------------------------------------------------------------------------------"
-    "$SCRIPTS_DIR/test/maven/tearDown.sh" "$SHORT_ID" > "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
-    echo "Tearing down for instance $SHORT_ID-main complete"
-
-    echo "-------------------------------------------------------------------------------"
-    echo "Tearing down instance $SHORT_ID-main"
-    echo "-------------------------------------------------------------------------------"
-    "$SCRIPTS_DIR/test/maven/tearDown.sh" "$SHORT_ID-main" >> "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
-    echo "Tearing down for instance $SHORT_ID-main complete"
+    "$SCRIPTS_DIR/test/maven/tearDown.sh" "$SHORT_ID" "$SHORT_ID-main" > "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
+    echo "Tearing down for instance "$SHORT_ID" and "$SHORT_ID-main complete"
 
     echo "-------------------------------------------------------------------------------"
     echo "[$(time_str)] Uploading test output"
