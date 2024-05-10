@@ -405,10 +405,10 @@ public class ECSCompactionTaskRunnerLocalStackIT {
                         "{\"maxReceiveCount\":\"" + maxReceiveCount + "\", " + "\"deadLetterTargetArn\":\"" + jobDlqArn + "\"}"));
         instanceProperties.set(COMPACTION_JOB_QUEUE_URL, jobQueueUrl);
         instanceProperties.set(COMPACTION_JOB_DLQ_URL, jobDlqUrl);
-        configureJobCommiterQueues(maxReceiveCount);
+        configureJobCommitterQueues(maxReceiveCount);
     }
 
-    private void configureJobCommiterQueues(int maxReceiveCount) {
+    private void configureJobCommitterQueues(int maxReceiveCount) {
         String jobCommitQueueUrl = sqs.createQueue(new CreateQueueRequest()
                 .withQueueName(UUID.randomUUID().toString() + ".fifo")
                 .withAttributes(Map.of("FifoQueue", "true"))).getQueueUrl();
