@@ -348,8 +348,8 @@ public class ECSCompactionTaskRunnerLocalStackIT {
                     // TODO send to SQS and test once infrastructure is deployed by CDK
                 });
         CompactionTask task = new CompactionTask(instanceProperties,
-                PropertiesReloader.neverReload(), new SqsCompactionQueueHandler(sqs, instanceProperties), compactSortedFiles,
-                commitHandler, jobStatusStore, taskStatusStore, taskId);
+                PropertiesReloader.neverReload(), new SqsCompactionQueueHandler(sqs, instanceProperties),
+                commitHandler, jobStatusStore, taskStatusStore, compactSortedFiles, taskId);
         return task;
     }
 

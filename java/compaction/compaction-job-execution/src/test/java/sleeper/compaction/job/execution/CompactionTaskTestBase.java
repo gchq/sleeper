@@ -18,9 +18,9 @@ package sleeper.compaction.job.execution;
 import org.junit.jupiter.api.BeforeEach;
 
 import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.CompactionRunner;
 import sleeper.compaction.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobCommitter;
-import sleeper.compaction.job.execution.CompactionTask.CompactionRunner;
 import sleeper.compaction.job.execution.CompactionTask.MessageHandle;
 import sleeper.compaction.job.execution.CompactionTask.MessageReceiver;
 import sleeper.compaction.task.CompactionTaskStatusStore;
@@ -133,13 +133,15 @@ public class CompactionTaskTestBase {
             String taskId,
             TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider) throws Exception {
+
         CompactionJobCommitHandler commitHandler = new CompactionJobCommitHandler(
                 tablePropertiesProvider,
                 new CompactionJobCommitter(jobStore, tableId -> stateStoreProvider.getStateStore(tablePropertiesProvider.getById(tableId))),
                 commitRequestsOnQueue::add);
+        CompactionAlgorithmSelector selector = job -> compactor;
         new CompactionTask(instanceProperties,
-                PropertiesReloader.neverReload(), messageReceiver, compactor,
-                commitHandler, jobStore, taskStore, taskId, timeSupplier, sleeps::add)
+                PropertiesReloader.neverReload(), messageReceiver,
+                commitHandler, jobStore, taskStore, selector, taskId, timeSupplier, sleeps::add)
                 .run();
     }
 

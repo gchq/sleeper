@@ -18,7 +18,7 @@ package sleeper.compaction.job;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.compaction.job.completion.TimedOutWaitingForFileAssignmentsException;
+import sleeper.compaction.job.commit.TimedOutWaitingForFileAssignmentsException;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;

@@ -66,13 +66,13 @@ public class CompactionTask {
     private CompactionJobCommitHandler jobCommitHandler;
 
     public CompactionTask(InstanceProperties instanceProperties, PropertiesReloader propertiesReloader,
-            MessageReceiver messageReceiver, CompactionRunner compactor, CompactionJobCommitHandler jobCommitHandler,
+            MessageReceiver messageReceiver, CompactionJobCommitHandler jobCommitHandler,
             CompactionJobStatusStore jobStore, CompactionTaskStatusStore taskStore, CompactionAlgorithmSelector selector, String taskId) {
-        this(instanceProperties, propertiesReloader, messageReceiver, compactor, jobCommitHandler, jobStore, taskStore, selector, taskId, Instant::now, threadSleep());
+        this(instanceProperties, propertiesReloader, messageReceiver, jobCommitHandler, jobStore, taskStore, selector, taskId, Instant::now, threadSleep());
     }
 
     public CompactionTask(InstanceProperties instanceProperties, PropertiesReloader propertiesReloader,
-            MessageReceiver messageReceiver, CompactionRunner compactor, CompactionJobCommitHandler jobCommitHandler,
+            MessageReceiver messageReceiver, CompactionJobCommitHandler jobCommitHandler,
             CompactionJobStatusStore jobStore, CompactionTaskStatusStore taskStore, CompactionAlgorithmSelector selector, String taskId, Supplier<Instant> timeSupplier,
             Consumer<Duration> sleepForTime) {
         maxIdleTime = Duration.ofSeconds(instanceProperties.getInt(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS));
