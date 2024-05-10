@@ -44,7 +44,6 @@ import static sleeper.configuration.properties.instance.CompactionProperty.COMPA
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_X86_CPU;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_X86_MEMORY;
 import static sleeper.configuration.properties.instance.CompactionProperty.MAXIMUM_CONCURRENT_COMPACTION_TASKS;
-import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_COMPACTION_JOB_COMMIT_ASYNC;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_RECORD_BATCH_TYPE;
@@ -101,7 +100,6 @@ public class SystemTestInstance {
         properties.set(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY, "1");
         properties.set(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY, "1");
         properties.set(METRICS_TABLE_BATCH_SIZE, "2");
-        properties.set(DEFAULT_COMPACTION_JOB_COMMIT_ASYNC, "true");
         properties.setTags(Map.of(
                 "Description", "Sleeper Maven system test main instance",
                 "Environment", "DEV",

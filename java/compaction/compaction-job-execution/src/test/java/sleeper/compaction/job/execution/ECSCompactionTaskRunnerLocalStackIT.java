@@ -197,6 +197,11 @@ public class ECSCompactionTaskRunnerLocalStackIT {
     @Nested
     @DisplayName("Handle messages on job queue")
     class HandleMessagesOnJobQueue {
+        @BeforeEach
+        void setup() {
+            tableProperties.set(COMPACTION_JOB_COMMIT_ASYNC, "false");
+            tablePropertiesStore.save(tableProperties);
+        }
 
         @Test
         void shouldDeleteMessagesIfJobSuccessful() throws Exception {
