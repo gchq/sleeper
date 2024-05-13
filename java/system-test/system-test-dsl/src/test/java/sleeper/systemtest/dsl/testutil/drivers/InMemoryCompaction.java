@@ -62,9 +62,9 @@ import java.util.TreeMap;
 import java.util.UUID;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
+import static sleeper.compaction.job.commit.CompactionJobCommitterUtils.updateStateStoreSuccess;
 
 public class InMemoryCompaction {
-
     private final Map<String, CompactionJob> queuedJobsById = new TreeMap<>();
     private final List<CompactionTaskStatus> runningTasks = new ArrayList<>();
     private final CompactionJobStatusStore jobStore = new InMemoryCompactionJobStatusStore();
@@ -179,7 +179,7 @@ public class InMemoryCompaction {
         Partition partition = getPartitionForJob(stateStore, job);
         RecordsProcessed recordsProcessed = mergeInputFiles(job, partition, schema);
         try {
-            CompactSortedFiles.updateStateStoreSuccess(job, recordsProcessed.getRecordsWritten(), stateStore);
+            updateStateStoreSuccess(job, recordsProcessed.getRecordsWritten(), stateStore);
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
         } catch (InterruptedException e) {
