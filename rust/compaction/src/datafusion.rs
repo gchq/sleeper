@@ -136,7 +136,7 @@ pub async fn compact(
         logical_plan,
         output_path.as_str().into(),
         FormatOptions::PARQUET(pqo),
-        Default::default(),
+        HashMap::default(),
         Vec::new(),
     )?
     .build()?;
@@ -177,18 +177,10 @@ pub async fn compact(
     Ok(CompactionResult::from(&stats))
 }
 
+#[derive(Default)]
 struct RowCounts {
     rows_read: usize,
     rows_written: usize,
-}
-
-impl Default for RowCounts {
-    fn default() -> Self {
-        Self {
-            rows_read: Default::default(),
-            rows_written: Default::default(),
-        }
-    }
 }
 
 impl From<&RowCounts> for CompactionResult {
@@ -208,14 +200,12 @@ impl ExecutionPlanVisitor for RowCounts {
         let maybe_coalesce = plan
             .as_any()
             .downcast_ref::<CoalescePartitionsExec>()
-            .map(ExecutionPlan::metrics)
-            .flatten();
+            .and_then(ExecutionPlan::metrics);
         // read input records from here
         let maybe_parq_read = plan
             .as_any()
             .downcast_ref::<FilterExec>()
-            .map(ExecutionPlan::metrics)
-            .flatten();
+            .and_then(ExecutionPlan::metrics);
         if let Some(m) = maybe_coalesce {
             self.rows_written = m.output_rows().unwrap_or_default();
         }
