@@ -124,7 +124,7 @@
             <outputDirectory>scripts/jars</outputDirectory>
             <destName>lambda-jobSpecCreationLambda-${project.version}.jar</destName>
         </file>
-                <file>
+        <file>
             <source>
                 ${project.basedir}/../compaction/compaction-job-committer-lambda/target/compaction-job-committer-lambda-${project.version}-utility.jar
             </source>
