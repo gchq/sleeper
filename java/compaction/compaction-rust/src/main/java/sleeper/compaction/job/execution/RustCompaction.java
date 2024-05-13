@@ -76,7 +76,8 @@ public class RustCompaction implements CompactionRunner {
                 .findFirst().orElseThrow(() -> new NoSuchElementException("Partition not found for compaction job"))
                 .getRegion();
 
-        // Obtain native library. This throws an exception if native library can't be loaded and
+        // Obtain native library. This throws an exception if native library can't be
+        // loaded and
         // linked
         RustBridge.Compaction nativeLib = RustBridge.getRustCompactor();
         jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(nativeLib);
@@ -91,9 +92,11 @@ public class RustCompaction implements CompactionRunner {
     }
 
     /**
-     * Creates the input struct that contains all the information needed by the Rust side of the compaction.
+     * Creates the input struct that contains all the information needed by the Rust
+     * side of the compaction.
      *
-     * This includes all Parquet writer settings as well as compaction data such as input files, compaction
+     * This includes all Parquet writer settings as well as compaction data such as
+     * input files, compaction
      * region etc.
      *
      * @param  job             compaction job
@@ -104,7 +107,8 @@ public class RustCompaction implements CompactionRunner {
      * @return                 object to pass to FFI layer
      */
     @SuppressWarnings(value = "checkstyle:avoidNestedBlocks")
-    public static FFICompactionParams createFFIParams(CompactionJob job, TableProperties tableProperties, Schema schema, Region region, jnr.ffi.Runtime runtime) {
+    public static FFICompactionParams createFFIParams(CompactionJob job, TableProperties tableProperties, Schema schema,
+            Region region, jnr.ffi.Runtime runtime) {
         FFICompactionParams params = new FFICompactionParams(runtime);
         params.input_files.populate(job.getInputFiles().toArray(new String[0]), false);
         params.output_file.set(job.getOutputFile());
@@ -127,7 +131,8 @@ public class RustCompaction implements CompactionRunner {
             params.region_mins.populate(regionMins, false);
         }
         {
-            Boolean[] regionMinInclusives = region.getRanges().stream().map(Range::isMinInclusive).toArray(Boolean[]::new);
+            Boolean[] regionMinInclusives = region.getRanges().stream().map(Range::isMinInclusive)
+                    .toArray(Boolean[]::new);
             params.region_mins_inclusive.populate(regionMinInclusives, false);
         }
         {
@@ -136,7 +141,8 @@ public class RustCompaction implements CompactionRunner {
             params.region_maxs.populate(regionMaxs, true);
         }
         {
-            Boolean[] regionMaxInclusives = region.getRanges().stream().map(Range::isMaxInclusive).toArray(Boolean[]::new);
+            Boolean[] regionMaxInclusives = region.getRanges().stream().map(Range::isMaxInclusive)
+                    .toArray(Boolean[]::new);
             params.region_maxs_inclusive.populate(regionMaxInclusives, false);
         }
         params.validate();
@@ -144,7 +150,8 @@ public class RustCompaction implements CompactionRunner {
     }
 
     /**
-     * Convert a list of Sleeper primitive types to a number indicating their type for FFI translation.
+     * Convert a list of Sleeper primitive types to a number indicating their type
+     * for FFI translation.
      *
      * @param  keyTypes              list of primitive types of columns
      * @return                       array of type IDs
@@ -168,7 +175,8 @@ public class RustCompaction implements CompactionRunner {
     }
 
     /**
-     * Take the compaction parameters and invoke the Rust compactor using the FFI bridge.
+     * Take the compaction parameters and invoke the Rust compactor using the FFI
+     * bridge.
      *
      * @param  job              the compaction job
      * @param  nativeLib        the native library implement the FFI bridge
