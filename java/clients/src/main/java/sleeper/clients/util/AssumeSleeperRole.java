@@ -22,6 +22,7 @@ import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.model.AssumeRoleRequest;
 import com.amazonaws.services.securitytoken.model.AssumeRoleResult;
 import com.amazonaws.services.securitytoken.model.Credentials;
+import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
@@ -31,11 +32,14 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.regions.providers.AwsRegionProvider;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperty;
 
 import java.util.Map;
 import java.util.UUID;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.ADMIN_ROLE_ARN;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_BY_QUEUE_ROLE_ARN;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_DIRECT_ROLE_ARN;
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 
 public class AssumeSleeperRole {
@@ -56,13 +60,28 @@ public class AssumeSleeperRole {
         this.credentialsV2 = credentialsV2;
     }
 
+    public static AssumeSleeperRole ingestByQueue(
+            AWSSecurityTokenService sts, InstanceProperties instanceProperties) {
+        return fromArnProperty(sts, instanceProperties, INGEST_BY_QUEUE_ROLE_ARN);
+    }
+
+    public static AssumeSleeperRole directIngest(
+            AWSSecurityTokenService sts, InstanceProperties instanceProperties) {
+        return fromArnProperty(sts, instanceProperties, INGEST_DIRECT_ROLE_ARN);
+    }
+
     public static AssumeSleeperRole instanceAdmin(
             AWSSecurityTokenService sts, InstanceProperties instanceProperties) {
+        return fromArnProperty(sts, instanceProperties, ADMIN_ROLE_ARN);
+    }
+
+    private static AssumeSleeperRole fromArnProperty(
+            AWSSecurityTokenService sts, InstanceProperties instanceProperties, InstanceProperty roleArnProperty) {
         String region = instanceProperties.get(REGION);
-        String adminRoleArn = instanceProperties.get(ADMIN_ROLE_ARN);
-        LOGGER.info("Assuming instance admin role: {}", adminRoleArn);
+        String roleArn = instanceProperties.get(roleArnProperty);
+        LOGGER.info("Assuming instance role: {}", roleArn);
         AssumeRoleResult result = sts.assumeRole(new AssumeRoleRequest()
-                .withRoleArn(adminRoleArn)
+                .withRoleArn(roleArn)
                 .withRoleSessionName(UUID.randomUUID().toString()));
         Credentials credentials = result.getCredentials();
 
@@ -79,6 +98,14 @@ public class AssumeSleeperRole {
 
     public <T, B extends software.amazon.awssdk.awscore.client.builder.AwsClientBuilder<B, T>> T v2Client(B builder) {
         return builder.credentialsProvider(credentialsV2).region(Region.of(region)).build();
+    }
+
+    public Configuration setInHadoopForS3A(Configuration configuration) {
+        configuration.set("fs.s3a.aws.credentials.provider", "org.apache.hadoop.fs.s3a.TemporaryAWSCredentialsProvider");
+        configuration.set("fs.s3a.access.key", credentials.getAccessKeyId());
+        configuration.set("fs.s3a.secret.key", credentials.getSecretAccessKey());
+        configuration.set("fs.s3a.session.token", credentials.getSessionToken());
+        return configuration;
     }
 
     public AwsRegionProvider v2RegionProvider() {
