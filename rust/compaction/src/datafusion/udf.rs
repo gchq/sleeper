@@ -43,7 +43,6 @@ use super::sketch::{update_sketch, DataSketchVariant, K};
 pub(crate) struct SketchUDF {
     signature: Signature,
     invoke_count: Mutex<usize>,
-    row_count: Mutex<usize>,
     sketch: Mutex<Vec<DataSketchVariant>>,
 }
 
@@ -52,7 +51,6 @@ impl Debug for SketchUDF {
         f.debug_struct("SketchUDF")
             .field("signature", &self.signature)
             .field("invoke_count", &self.invoke_count)
-            .field("row_count", &self.row_count)
             .field("sketch", &self.sketch)
             .finish()
     }
@@ -65,7 +63,6 @@ impl SketchUDF {
         Self {
             signature: Signature::exact(get_row_key_types(schema, row_keys), Volatility::Immutable),
             invoke_count: Mutex::default(),
-            row_count: Mutex::default(),
             sketch: Mutex::new(make_sketches_for_schema(schema, row_keys)),
         }
     }
@@ -76,10 +73,6 @@ impl SketchUDF {
 
     pub fn get_invoke_count(&self) -> usize {
         *self.invoke_count.lock().unwrap()
-    }
-
-    pub fn get_row_count(&self) -> usize {
-        *self.row_count.lock().unwrap()
     }
 }
 
@@ -197,12 +190,6 @@ impl ScalarUDFImpl for SketchUDF {
                 }
             }
         }
-
-        // All columns are same length so lookup row count from first one
-        *self.row_count.lock().unwrap() += match &columns[0] {
-            ColumnarValue::Array(array) => array.len(),
-            ColumnarValue::Scalar(_) => 1,
-        };
 
         Ok(columns[0].clone())
     }

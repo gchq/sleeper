@@ -25,14 +25,18 @@ use crate::{
 };
 use arrow::util::pretty::pretty_format_batches;
 use datafusion::{
-    dataframe::DataFrameWriteOptions,
+    config::FormatOptions,
     error::DataFusionError,
     execution::{
         config::SessionConfig, context::SessionContext, options::ParquetReadOptions,
         FunctionRegistry,
     },
-    logical_expr::ScalarUDF,
+    logical_expr::{LogicalPlanBuilder, ScalarUDF},
     parquet::basic::{BrotliLevel, GzipLevel, ZstdLevel},
+    physical_plan::{
+        accept, coalesce_partitions::CoalescePartitionsExec, collect, filter::FilterExec,
+        ExecutionPlan, ExecutionPlanVisitor,
+    },
     prelude::*,
 };
 use log::{error, info};
@@ -125,17 +129,24 @@ pub async fn compact(
         col_opts.dictionary_enabled = Some(dict_encode);
     }
 
-    let _ = frame
-        .write_parquet(
-            output_path.as_str(),
-            DataFrameWriteOptions::new(),
-            Some(pqo),
-        )
-        .await?;
+    // Deconstruct frame into parts, we need to do this so we can extract the physical plan before executing it.
+    let task_ctx = frame.task_ctx();
+    let (session_state, logical_plan) = frame.into_parts();
+    let logical_plan = LogicalPlanBuilder::copy_to(
+        logical_plan,
+        output_path.as_str().into(),
+        FormatOptions::PARQUET(pqo),
+        Default::default(),
+        Vec::new(),
+    )?
+    .build()?;
+    // Create physical plan for query
+    let physical_plan = session_state.create_physical_plan(&logical_plan).await?;
+    let _ = collect(physical_plan.clone(), Arc::new(task_ctx)).await?;
+    let mut stats = RowCounts::default();
+    accept(physical_plan.as_ref(), &mut stats)?;
 
     show_store_stats(&store);
-
-    let mut rows_written = 0;
 
     // Write sketches out to file in Sleeper compatible way
     let binding = sketch_func.inner();
@@ -147,14 +158,12 @@ pub async fn compact(
             info!(
             "Made {} calls to sketch UDF and processed {} rows. Quantile sketch column 0 retained {} out of {} values (K value = {}).",
             func.get_invoke_count().to_formatted_string(&Locale::en),
-            func.get_row_count().to_formatted_string(&Locale::en),
+            stats.rows_written.to_formatted_string(&Locale::en),
             first_sketch.get_num_retained().to_formatted_string(&Locale::en),
             first_sketch.get_n().to_formatted_string(&Locale::en),
             first_sketch.get_k().to_formatted_string(&Locale::en)
         );
         }
-
-        rows_written = func.get_row_count();
 
         // Serialise the sketch
         serialise_sketches(
@@ -165,11 +174,56 @@ pub async fn compact(
         .map_err(|e| DataFusionError::External(e.into()))?;
     }
 
-    // The rows read will be same as rows_written.
-    Ok(CompactionResult {
-        rows_read: rows_written,
-        rows_written,
-    })
+    Ok(CompactionResult::from(&stats))
+}
+
+struct RowCounts {
+    rows_read: usize,
+    rows_written: usize,
+}
+
+impl Default for RowCounts {
+    fn default() -> Self {
+        Self {
+            rows_read: Default::default(),
+            rows_written: Default::default(),
+        }
+    }
+}
+
+impl From<&RowCounts> for CompactionResult {
+    fn from(value: &RowCounts) -> Self {
+        Self {
+            rows_read: value.rows_read,
+            rows_written: value.rows_written,
+        }
+    }
+}
+
+impl ExecutionPlanVisitor for RowCounts {
+    type Error = DataFusionError;
+
+    fn pre_visit(&mut self, plan: &dyn ExecutionPlan) -> Result<bool, Self::Error> {
+        // read output records from here
+        let maybe_coalesce = plan
+            .as_any()
+            .downcast_ref::<CoalescePartitionsExec>()
+            .map(ExecutionPlan::metrics)
+            .flatten();
+        // read input records from here
+        let maybe_parq_read = plan
+            .as_any()
+            .downcast_ref::<FilterExec>()
+            .map(ExecutionPlan::metrics)
+            .flatten();
+        if let Some(m) = maybe_coalesce {
+            self.rows_written = m.output_rows().unwrap_or_default();
+        }
+        if let Some(m) = maybe_parq_read {
+            self.rows_read = m.output_rows().unwrap_or_default();
+        }
+        Ok(true)
+    }
 }
 
 /// Show some basic statistics from the [`ObjectStore`].
