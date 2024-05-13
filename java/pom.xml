@@ -156,7 +156,7 @@
         <jakarta.xml.bind.version>2.3.3</jakarta.xml.bind.version>
         <jungrapht-visualization.version>1.4</jungrapht-visualization.version>
         <jgrapht.version>1.5.2</jgrapht.version>
-        <apfloat.version>1.13.0</apfloat.version>
+        <apfloat.version>1.14.0</apfloat.version>
         <joda-time.version>2.12.7</joda-time.version>
         <!-- Testing -->
         <junit.version>5.10.2</junit.version>
