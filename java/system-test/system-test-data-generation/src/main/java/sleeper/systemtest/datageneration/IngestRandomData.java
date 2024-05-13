@@ -116,56 +116,36 @@ public class IngestRandomData {
             return () -> {
                 AssumeSleeperRole assumeRole = AssumeSleeperRole.directIngest(stsClient, instanceProperties);
                 try (AssumedRoleClients clients = new AssumedRoleClients(assumeRole)) {
-                    TableProperties tableProperties = clients.loadTableProperties();
                     StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties,
                             clients.s3Client, clients.dynamoClient, clients.configuration);
-                    WriteRandomDataDirect.writeWithIngestFactory(instanceProperties, tableProperties, systemTestProperties, stateStoreProvider);
+                    WriteRandomDataDirect.writeWithIngestFactory(instanceProperties, clients.tableProperties,
+                            systemTestProperties, stateStoreProvider);
                 }
             };
         }
-        AssumeSleeperRole assumeRole = AssumeSleeperRole.ingestByQueue(stsClient, instanceProperties);
-        AmazonS3 s3Client = assumeRole.v1Client(AmazonS3ClientBuilder.standard());
-        AmazonDynamoDB dynamoClient = assumeRole.v1Client(AmazonDynamoDBClientBuilder.standard());
-        try {
-            TableProperties tableProperties = tableProperties(s3Client, dynamoClient);
-            FileIngester ingestFromFile;
-            if (ingestMode == QUEUE) {
-                ingestFromFile = (jobId, dir) -> IngestRandomDataViaQueue.sendJob(
-                        jobId, dir, instanceProperties, tableProperties, systemTestProperties);
-            } else if (ingestMode == BATCHER) {
-                ingestFromFile = (jobId, dir) -> IngestRandomDataViaBatcher.sendRequest(dir, instanceProperties, tableProperties);
-            } else if (ingestMode == GENERATE_ONLY) {
-                ingestFromFile = (jobId, dir) -> LOGGER.debug("Generate data only, no message was sent");
-            } else {
-                throw new IllegalArgumentException("Unrecognised ingest mode: " + ingestMode);
-            }
-            return writeRandomFileAnd(tableProperties, ingestFromFile);
-        } finally {
-            s3Client.shutdown();
-            dynamoClient.shutdown();
-        }
-    }
-
-    private Ingester writeRandomFileAnd(TableProperties tableProperties, FileIngester ingester) {
         return () -> {
-            String jobId = UUID.randomUUID().toString();
-            String dir = WriteRandomDataFiles.writeToS3GetDirectory(
-                    instanceProperties, tableProperties, systemTestProperties, jobId);
-            ingester.ingest(jobId, dir);
-        };
-    }
+            AssumeSleeperRole assumeRole = AssumeSleeperRole.ingestByQueue(stsClient, instanceProperties);
+            try (AssumedRoleClients clients = new AssumedRoleClients(assumeRole)) {
+                TableProperties tableProperties = clients.tableProperties;
+                String jobId = UUID.randomUUID().toString();
+                String dir = WriteRandomDataFiles.writeToS3GetDirectory(
+                        instanceProperties, tableProperties, systemTestProperties, jobId);
 
-    private TableProperties tableProperties(AmazonS3 s3Client, AmazonDynamoDB dynamoClient) {
-        return new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient)
-                .getByName(tableName);
+                if (ingestMode == QUEUE) {
+                    IngestRandomDataViaQueue.sendJob(jobId, dir, instanceProperties, clients.tableProperties, systemTestProperties);
+                } else if (ingestMode == BATCHER) {
+                    IngestRandomDataViaBatcher.sendRequest(dir, instanceProperties, clients.tableProperties);
+                } else if (ingestMode == GENERATE_ONLY) {
+                    LOGGER.debug("Generate data only, no message was sent");
+                } else {
+                    throw new IllegalArgumentException("Unrecognised ingest mode: " + ingestMode);
+                }
+            }
+        };
     }
 
     interface Ingester {
         void ingest() throws IOException;
-    }
-
-    interface FileIngester {
-        void ingest(String jobId, String dir) throws IOException;
     }
 
     private class AssumedRoleClients implements AutoCloseable {
@@ -173,12 +153,14 @@ public class IngestRandomData {
         AmazonDynamoDB dynamoClient;
         AmazonSQS sqsClient;
         Configuration configuration;
+        TableProperties tableProperties;
 
         private AssumedRoleClients(AssumeSleeperRole role) {
             this.s3Client = role.v1Client(AmazonS3ClientBuilder.standard());
             this.dynamoClient = role.v1Client(AmazonDynamoDBClientBuilder.standard());
             this.sqsClient = role.v1Client(AmazonSQSClientBuilder.standard());
             this.configuration = role.setInHadoopForS3A(HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
+            this.tableProperties = loadTableProperties();
         }
 
         private TableProperties loadTableProperties() {
