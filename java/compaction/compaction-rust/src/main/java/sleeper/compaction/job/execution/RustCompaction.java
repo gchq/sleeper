@@ -20,7 +20,6 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionRunner;
-import sleeper.compaction.job.StateStoreUpdate;
 import sleeper.compaction.job.execution.RustBridge.FFICompactionParams;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
@@ -85,7 +84,6 @@ public class RustCompaction implements CompactionRunner {
         FFICompactionParams params = createFFIParams(job, tableProperties, schema, region, runtime);
 
         RecordsProcessed result = invokeRustFFI(job, nativeLib, params);
-        StateStoreUpdate.updateStateStoreSuccess(job, result.getRecordsWritten(), stateStore);
 
         LOGGER.info("Compaction job {}: compaction finished at {}", job.getId(),
                 LocalDateTime.now());
