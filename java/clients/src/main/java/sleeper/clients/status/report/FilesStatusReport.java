@@ -121,7 +121,7 @@ public class FilesStatusReport {
             InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(s3Client, instanceId);
             TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
             StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, getConfigurationForClient());
-            StateStore stateStore = stateStoreProvider.getStateStore(tableName, tablePropertiesProvider);
+            StateStore stateStore = stateStoreProvider.getStateStore(tablePropertiesProvider.getByName(tableName));
             new FilesStatusReport(stateStore, maxFilesWithNoReferences, verbose, reporterType).run();
         } finally {
             s3Client.shutdown();

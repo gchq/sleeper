@@ -25,9 +25,10 @@ import java.util.Objects;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class FixedStateStoreProvider extends StateStoreProvider {
+    private static final int DEFAULT_STATESTORE_CACHE_SIZE = 10;
 
     public FixedStateStoreProvider(TableProperties singleTableProperties, StateStore stateStore) {
-        super(tableProperties -> {
+        super(DEFAULT_STATESTORE_CACHE_SIZE, tableProperties -> {
             TableStatus requestedTable = tableProperties.getStatus();
             if (!Objects.equals(requestedTable, singleTableProperties.getStatus())) {
                 throw new IllegalArgumentException("Table not found: " + requestedTable);
@@ -37,7 +38,7 @@ public class FixedStateStoreProvider extends StateStoreProvider {
     }
 
     public FixedStateStoreProvider(Map<String, StateStore> stateStoreByTableName) {
-        super(tableProperties -> {
+        super(DEFAULT_STATESTORE_CACHE_SIZE, tableProperties -> {
             String tableName = tableProperties.get(TABLE_NAME);
             if (!stateStoreByTableName.containsKey(tableName)) {
                 throw new IllegalArgumentException("Table not found: " + tableName);
