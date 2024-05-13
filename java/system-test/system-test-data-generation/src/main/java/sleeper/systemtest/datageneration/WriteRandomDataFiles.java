@@ -40,15 +40,13 @@ public class WriteRandomDataFiles {
     }
 
     public static String writeToS3GetDirectory(
-            InstanceProperties instanceProperties, TableProperties tableProperties,
-            SystemTestPropertyValues systemTestProperties, String jobId) throws IOException {
+            SystemTestPropertyValues systemTestProperties, AssumedRoleClients clients, String jobId) throws IOException {
 
         String dir = systemTestProperties.get(SYSTEM_TEST_BUCKET_NAME) + "/ingest/" + jobId;
 
-        Configuration conf = HadoopConfigurationProvider.getConfigurationForECS(instanceProperties);
-
-        writeToPath(dir, "s3a://", tableProperties,
-                WriteRandomData.createRecordIterator(systemTestProperties, tableProperties), conf);
+        writeToPath(dir, "s3a://", clients.tableProperties(),
+                WriteRandomData.createRecordIterator(systemTestProperties, clients.tableProperties()),
+                clients.hadoopConfiguration());
         return dir;
     }
 

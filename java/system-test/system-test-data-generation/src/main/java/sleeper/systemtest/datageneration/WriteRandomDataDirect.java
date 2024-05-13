@@ -15,11 +15,7 @@
  */
 package sleeper.systemtest.datageneration;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-
 import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorException;
@@ -27,7 +23,6 @@ import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.IngestFactory;
-import sleeper.statestore.StateStoreProvider;
 import sleeper.systemtest.configuration.SystemTestPropertyValues;
 
 import java.io.IOException;
@@ -41,22 +36,20 @@ public class WriteRandomDataDirect {
     }
 
     public static void writeWithIngestFactory(
-            InstanceProperties instanceProperties, TableProperties tableProperties,
-            SystemTestPropertyValues systemTestProperties, StateStoreProvider stateStoreProvider) throws IOException {
+            SystemTestPropertyValues systemTestProperties, AssumedRoleClients clients) throws IOException {
         writeWithIngestFactory(
                 IngestFactory.builder()
                         .objectFactory(ObjectFactory.noUserJars())
                         .localDir("/mnt/scratch")
-                        .stateStoreProvider(stateStoreProvider)
-                        .instanceProperties(instanceProperties)
+                        .stateStoreProvider(clients.createStateStoreProvider())
+                        .instanceProperties(clients.instanceProperties())
+                        .hadoopConfiguration(clients.hadoopConfiguration())
                         .build(),
-                systemTestProperties, tableProperties);
+                systemTestProperties, clients.tableProperties());
     }
 
     public static void writeWithIngestFactory(
             IngestFactory ingestFactory, SystemTestPropertyValues properties, TableProperties tableProperties) throws IOException {
-        AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
-
         CloseableIterator<Record> recordIterator = new WrappedIterator<>(
                 WriteRandomData.createRecordIterator(properties, tableProperties));
 
@@ -65,7 +58,5 @@ public class WriteRandomDataDirect {
         } catch (StateStoreException | IteratorException e) {
             throw new IOException("Failed to write records using iterator", e);
         }
-
-        dynamoDBClient.shutdown();
     }
 }

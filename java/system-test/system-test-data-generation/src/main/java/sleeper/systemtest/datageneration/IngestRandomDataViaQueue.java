@@ -15,13 +15,9 @@
  */
 package sleeper.systemtest.datageneration;
 
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.validation.IngestQueue;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.IngestJobSerDe;
@@ -39,21 +35,17 @@ public class IngestRandomDataViaQueue {
     }
 
     public static void sendJob(
-            String jobId, String dir, InstanceProperties instanceProperties, TableProperties tableProperties,
-            SystemTestPropertyValues systemTestProperties) {
-
-        AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
+            String jobId, String dir, SystemTestPropertyValues systemTestProperties, AssumedRoleClients clients) {
 
         IngestJob ingestJob = IngestJob.builder()
-                .tableName(tableProperties.get(TABLE_NAME))
+                .tableName(clients.tableProperties().get(TABLE_NAME))
                 .id(jobId)
                 .files(Collections.singletonList(dir))
                 .build();
         String jsonJob = new IngestJobSerDe().toJson(ingestJob);
         IngestQueue ingestQueue = systemTestProperties.getEnumValue(INGEST_QUEUE, IngestQueue.class);
-        String queueUrl = ingestQueue.getJobQueueUrl(instanceProperties);
+        String queueUrl = ingestQueue.getJobQueueUrl(clients.instanceProperties());
         LOGGER.debug("Sending message to ingest queue {}: {}", queueUrl, jsonJob);
-        sqsClient.sendMessage(queueUrl, jsonJob);
-        sqsClient.shutdown();
+        clients.sqs().sendMessage(queueUrl, jsonJob);
     }
 }

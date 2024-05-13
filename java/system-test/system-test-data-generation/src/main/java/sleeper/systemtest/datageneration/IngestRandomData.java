@@ -21,18 +21,11 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
-import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.clients.util.AssumeSleeperRole;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.io.parquet.utils.HadoopConfigurationProvider;
-import sleeper.statestore.StateStoreProvider;
 import sleeper.systemtest.configuration.SystemTestIngestMode;
 import sleeper.systemtest.configuration.SystemTestProperties;
 import sleeper.systemtest.configuration.SystemTestPropertyValues;
@@ -115,26 +108,21 @@ public class IngestRandomData {
         if (ingestMode == DIRECT) {
             return () -> {
                 AssumeSleeperRole assumeRole = AssumeSleeperRole.directIngest(stsClient, instanceProperties);
-                try (AssumedRoleClients clients = new AssumedRoleClients(assumeRole)) {
-                    StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties,
-                            clients.s3Client, clients.dynamoClient, clients.configuration);
-                    WriteRandomDataDirect.writeWithIngestFactory(instanceProperties, clients.tableProperties,
-                            systemTestProperties, stateStoreProvider);
+                try (AssumedRoleClients clients = new AssumedRoleClients(assumeRole, instanceProperties, tableName)) {
+                    WriteRandomDataDirect.writeWithIngestFactory(systemTestProperties, clients);
                 }
             };
         }
         return () -> {
             AssumeSleeperRole assumeRole = AssumeSleeperRole.ingestByQueue(stsClient, instanceProperties);
-            try (AssumedRoleClients clients = new AssumedRoleClients(assumeRole)) {
-                TableProperties tableProperties = clients.tableProperties;
+            try (AssumedRoleClients clients = new AssumedRoleClients(assumeRole, instanceProperties, tableName)) {
                 String jobId = UUID.randomUUID().toString();
-                String dir = WriteRandomDataFiles.writeToS3GetDirectory(
-                        instanceProperties, tableProperties, systemTestProperties, jobId);
+                String dir = WriteRandomDataFiles.writeToS3GetDirectory(systemTestProperties, clients, jobId);
 
                 if (ingestMode == QUEUE) {
-                    IngestRandomDataViaQueue.sendJob(jobId, dir, instanceProperties, clients.tableProperties, systemTestProperties);
+                    IngestRandomDataViaQueue.sendJob(jobId, dir, systemTestProperties, clients);
                 } else if (ingestMode == BATCHER) {
-                    IngestRandomDataViaBatcher.sendRequest(dir, instanceProperties, clients.tableProperties);
+                    IngestRandomDataViaBatcher.sendRequest(dir, clients);
                 } else if (ingestMode == GENERATE_ONLY) {
                     LOGGER.debug("Generate data only, no message was sent");
                 } else {
@@ -146,34 +134,5 @@ public class IngestRandomData {
 
     interface Ingester {
         void ingest() throws IOException;
-    }
-
-    private class AssumedRoleClients implements AutoCloseable {
-        AmazonS3 s3Client;
-        AmazonDynamoDB dynamoClient;
-        AmazonSQS sqsClient;
-        Configuration configuration;
-        TableProperties tableProperties;
-
-        private AssumedRoleClients(AssumeSleeperRole role) {
-            this.s3Client = role.v1Client(AmazonS3ClientBuilder.standard());
-            this.dynamoClient = role.v1Client(AmazonDynamoDBClientBuilder.standard());
-            this.sqsClient = role.v1Client(AmazonSQSClientBuilder.standard());
-            this.configuration = role.setInHadoopForS3A(HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
-            this.tableProperties = loadTableProperties();
-        }
-
-        private TableProperties loadTableProperties() {
-            return new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient)
-                    .getByName(tableName);
-        }
-
-        @Override
-        public void close() {
-            s3Client.shutdown();
-            dynamoClient.shutdown();
-            sqsClient.shutdown();
-        }
-
     }
 }
