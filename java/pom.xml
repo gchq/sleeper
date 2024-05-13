@@ -161,7 +161,7 @@
         <!-- Testing -->
         <junit.version>5.10.2</junit.version>
         <junit.platform.version>1.10.2</junit.platform.version>
-        <mockito.version>5.11.0</mockito.version>
+        <mockito.version>5.12.0</mockito.version>
         <testcontainers.version>1.19.8</testcontainers.version>
         <wiremock.version>2.35.2</wiremock.version>
         <assertj.version>3.25.3</assertj.version>
