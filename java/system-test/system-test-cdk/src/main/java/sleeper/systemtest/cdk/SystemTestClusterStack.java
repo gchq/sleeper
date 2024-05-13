@@ -63,7 +63,6 @@ import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_RE
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_TASK_CPU;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_TASK_MEMORY;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_VPC_ID;
-import static sleeper.systemtest.configuration.SystemTestProperty.WRITE_DATA_ROLE_NAME;
 import static sleeper.systemtest.configuration.SystemTestProperty.WRITE_DATA_TASK_DEFINITION_FAMILY;
 
 public class SystemTestClusterStack extends NestedStack {
@@ -119,7 +118,6 @@ public class SystemTestClusterStack extends NestedStack {
                 .build();
         IRole taskRole = taskDefinition.getTaskRole();
         propertySetter.set(WRITE_DATA_TASK_DEFINITION_FAMILY, taskDefinition.getFamily());
-        propertySetter.set(WRITE_DATA_ROLE_NAME, taskRole.getRoleName());
         CfnOutputProps taskDefinitionFamilyOutputProps = new CfnOutputProps.Builder()
                 .value(taskDefinition.getFamily())
                 .build();
