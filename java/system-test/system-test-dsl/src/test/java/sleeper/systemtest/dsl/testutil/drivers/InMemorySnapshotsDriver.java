@@ -22,10 +22,10 @@ public class InMemorySnapshotsDriver implements SnapshotsDriver {
     }
 
     @Override
-    public void enableSnapshots() {
+    public void enableCreation() {
     }
 
     @Override
-    public void disableSnapshots() {
+    public void disableCreation() {
     }
 }

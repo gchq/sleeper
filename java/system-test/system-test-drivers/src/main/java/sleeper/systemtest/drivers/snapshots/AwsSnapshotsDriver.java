@@ -39,14 +39,14 @@ public class AwsSnapshotsDriver implements SnapshotsDriver {
     }
 
     @Override
-    public void enableSnapshots() {
+    public void enableCreation() {
         LOGGER.info("Enabling transaction log snapshot creation");
         cwClient.enableRule(new EnableRuleRequest()
                 .withName(instanceProperties.get(TRANSACTION_LOG_SNAPSHOT_CREATION_RULE)));
     }
 
     @Override
-    public void disableSnapshots() {
+    public void disableCreation() {
         LOGGER.info("Disabling transaction log snapshot creation");
         cwClient.disableRule(new DisableRuleRequest()
                 .withName(instanceProperties.get(TRANSACTION_LOG_SNAPSHOT_CREATION_RULE)));

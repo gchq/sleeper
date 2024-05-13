@@ -16,7 +16,7 @@
 package sleeper.systemtest.dsl.snapshot;
 
 public interface SnapshotsDriver {
-    void enableSnapshots();
+    void enableCreation();
 
-    void disableSnapshots();
+    void disableCreation();
 }
