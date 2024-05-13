@@ -215,7 +215,7 @@ public class PartitionSplittingStack extends NestedStack {
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "find-partitions-to-split"));
         IFunction findPartitionsToSplitLambda = splitterJar.buildFunction(this, "FindPartitionsToSplitLambda", builder -> builder
                 .functionName(functionName)
-                .description("Scan DynamoDB looking for partitions that need splitting")
+                .description("Scan the state stores of the provided tables looking for partitions that need splitting")
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .memorySize(instanceProperties.getInt(FIND_PARTITIONS_TO_SPLIT_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(FIND_PARTITIONS_TO_SPLIT_TIMEOUT_IN_SECONDS)))
