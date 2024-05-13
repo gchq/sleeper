@@ -21,6 +21,8 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -113,16 +115,11 @@ public class IngestRandomData {
         if (ingestMode == DIRECT) {
             return () -> {
                 AssumeSleeperRole assumeRole = AssumeSleeperRole.directIngest(stsClient, instanceProperties);
-                AmazonS3 s3Client = assumeRole.v1Client(AmazonS3ClientBuilder.standard());
-                AmazonDynamoDB dynamoClient = assumeRole.v1Client(AmazonDynamoDBClientBuilder.standard());
-                Configuration conf = assumeRole.setInHadoopForS3A(HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
-                try {
-                    TableProperties tableProperties = tableProperties(s3Client, dynamoClient);
-                    StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoClient, conf);
+                try (AssumedRoleClients clients = new AssumedRoleClients(assumeRole)) {
+                    TableProperties tableProperties = clients.loadTableProperties();
+                    StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties,
+                            clients.s3Client, clients.dynamoClient, clients.configuration);
                     WriteRandomDataDirect.writeWithIngestFactory(instanceProperties, tableProperties, systemTestProperties, stateStoreProvider);
-                } finally {
-                    s3Client.shutdown();
-                    dynamoClient.shutdown();
                 }
             };
         }
@@ -169,5 +166,32 @@ public class IngestRandomData {
 
     interface FileIngester {
         void ingest(String jobId, String dir) throws IOException;
+    }
+
+    private class AssumedRoleClients implements AutoCloseable {
+        AmazonS3 s3Client;
+        AmazonDynamoDB dynamoClient;
+        AmazonSQS sqsClient;
+        Configuration configuration;
+
+        private AssumedRoleClients(AssumeSleeperRole role) {
+            this.s3Client = role.v1Client(AmazonS3ClientBuilder.standard());
+            this.dynamoClient = role.v1Client(AmazonDynamoDBClientBuilder.standard());
+            this.sqsClient = role.v1Client(AmazonSQSClientBuilder.standard());
+            this.configuration = role.setInHadoopForS3A(HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
+        }
+
+        private TableProperties loadTableProperties() {
+            return new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient)
+                    .getByName(tableName);
+        }
+
+        @Override
+        public void close() {
+            s3Client.shutdown();
+            dynamoClient.shutdown();
+            sqsClient.shutdown();
+        }
+
     }
 }
