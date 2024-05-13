@@ -156,13 +156,13 @@ pub async fn compact(
             // Limit scope of MutexGuard
             let first_sketch = &func.get_sketch()[0];
             info!(
-            "Made {} calls to sketch UDF and processed {} rows. Quantile sketch column 0 retained {} out of {} values (K value = {}).",
-            func.get_invoke_count().to_formatted_string(&Locale::en),
-            stats.rows_written.to_formatted_string(&Locale::en),
-            first_sketch.get_num_retained().to_formatted_string(&Locale::en),
-            first_sketch.get_n().to_formatted_string(&Locale::en),
-            first_sketch.get_k().to_formatted_string(&Locale::en)
-        );
+                "Made {} calls to sketch UDF and processed {} rows. Quantile sketch column 0 retained {} out of {} values (K value = {}).",
+                func.get_invoke_count().to_formatted_string(&Locale::en),
+                stats.rows_written.to_formatted_string(&Locale::en),
+                first_sketch.get_num_retained().to_formatted_string(&Locale::en),
+                first_sketch.get_n().to_formatted_string(&Locale::en),
+                first_sketch.get_k().to_formatted_string(&Locale::en)
+            );
         }
 
         // Serialise the sketch
