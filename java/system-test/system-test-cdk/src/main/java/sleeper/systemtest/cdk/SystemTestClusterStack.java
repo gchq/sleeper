@@ -68,8 +68,6 @@ import static sleeper.systemtest.configuration.SystemTestProperty.WRITE_DATA_TAS
 
 public class SystemTestClusterStack extends NestedStack {
 
-    private IRole taskRole;
-
     public SystemTestClusterStack(
             Construct scope, String id, SystemTestStandaloneProperties properties, SystemTestBucketStack bucketStack) {
         super(scope, id);
@@ -88,12 +86,6 @@ public class SystemTestClusterStack extends NestedStack {
             CoreStacks coreStacks, IngestStacks ingestStacks, IngestBatcherStack ingestBatcherStack) {
         super(scope, id);
         createSystemTestCluster(properties.testPropertiesOnly(), properties::set, properties, bucketStack);
-
-        coreStacks.grantIngest(taskRole);
-        ingestStacks.ingestQueues().forEach(queue -> queue.grantSendMessages(taskRole));
-        if (null != ingestBatcherStack) {
-            ingestBatcherStack.getSubmitQueue().grantSendMessages(taskRole);
-        }
         Utils.addStackTagIfSet(this, properties);
     }
 
@@ -125,7 +117,7 @@ public class SystemTestClusterStack extends NestedStack {
                 .cpu(properties.getInt(SYSTEM_TEST_TASK_CPU))
                 .memoryLimitMiB(properties.getInt(SYSTEM_TEST_TASK_MEMORY))
                 .build();
-        taskRole = taskDefinition.getTaskRole();
+        IRole taskRole = taskDefinition.getTaskRole();
         propertySetter.set(WRITE_DATA_TASK_DEFINITION_FAMILY, taskDefinition.getFamily());
         propertySetter.set(WRITE_DATA_ROLE_NAME, taskRole.getRoleName());
         CfnOutputProps taskDefinitionFamilyOutputProps = new CfnOutputProps.Builder()
