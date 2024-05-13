@@ -129,22 +129,8 @@ pub async fn compact(
         col_opts.dictionary_enabled = Some(dict_encode);
     }
 
-    // Deconstruct frame into parts, we need to do this so we can extract the physical plan before executing it.
-    let task_ctx = frame.task_ctx();
-    let (session_state, logical_plan) = frame.into_parts();
-    let logical_plan = LogicalPlanBuilder::copy_to(
-        logical_plan,
-        output_path.as_str().into(),
-        FormatOptions::PARQUET(pqo),
-        HashMap::default(),
-        Vec::new(),
-    )?
-    .build()?;
-    // Create physical plan for query
-    let physical_plan = session_state.create_physical_plan(&logical_plan).await?;
-    let _ = collect(physical_plan.clone(), Arc::new(task_ctx)).await?;
-    let mut stats = RowCounts::default();
-    accept(physical_plan.as_ref(), &mut stats)?;
+    // Write the frame out and collect stats
+    let stats = collect_stats(frame, output_path, pqo).await?;
 
     show_store_stats(&store);
 
@@ -177,6 +163,36 @@ pub async fn compact(
     Ok(CompactionResult::from(&stats))
 }
 
+/// Write the frame out to the output path and collect statistics.
+///
+/// The rows read and written are returned in the [`RowCount`] object.
+/// These are read from different stages in the physical plan, rows read
+/// are determined by the number of filtered rows, output rows are determined
+/// from the number of rows coalsced before being written.
+async fn collect_stats(
+    frame: DataFrame,
+    output_path: &Url,
+    pqo: datafusion::config::TableParquetOptions,
+) -> Result<RowCounts, DataFusionError> {
+    // Deconstruct frame into parts, we need to do this so we can extract the physical plan before executing it.
+    let task_ctx = frame.task_ctx();
+    let (session_state, logical_plan) = frame.into_parts();
+    let logical_plan = LogicalPlanBuilder::copy_to(
+        logical_plan,
+        output_path.as_str().into(),
+        FormatOptions::PARQUET(pqo),
+        HashMap::default(),
+        Vec::new(),
+    )?
+    .build()?;
+    let physical_plan = session_state.create_physical_plan(&logical_plan).await?;
+    let _ = collect(physical_plan.clone(), Arc::new(task_ctx)).await?;
+    let mut stats = RowCounts::default();
+    accept(physical_plan.as_ref(), &mut stats)?;
+    Ok(stats)
+}
+
+/// Simple struct used for storing the collected statistics from an execution plan.
 #[derive(Default)]
 struct RowCounts {
     rows_read: usize,
