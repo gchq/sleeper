@@ -70,7 +70,8 @@ public class FindPartitionsToSplitLambda implements RequestHandler<SQSEvent, SQS
         instanceProperties.loadFromS3(s3Client, s3Bucket);
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
         AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties));
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient,
+                HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties));
         tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
         propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
         findPartitionsToSplit = new FindPartitionsToSplit(instanceProperties, stateStoreProvider,

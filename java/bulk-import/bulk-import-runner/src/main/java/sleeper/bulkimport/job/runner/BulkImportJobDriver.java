@@ -113,7 +113,7 @@ public class BulkImportJobDriver {
         }
 
         try {
-            stateStoreProvider.getStateStore(job.getTableName(), tablePropertiesProvider)
+            stateStoreProvider.getStateStore(tablePropertiesProvider.getByName(job.getTableName()))
                     .addFiles(output.fileReferences());
             LOGGER.info("Added {} files to statestore for job {}", output.numFiles(), job.getId());
         } catch (Exception e) {
