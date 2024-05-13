@@ -275,7 +275,7 @@ public class CompactionStack extends NestedStack {
 
         IFunction handlerFunction = jobCreatorJar.buildFunction(this, "CompactionJobsCreationHandler", builder -> builder
                 .functionName(functionName)
-                .description("Scan DynamoDB looking for files that need compacting and create appropriate job specs in DynamoDB")
+                .description("Scan the state stores of the provided tables looking for compaction jobs to create")
                 .runtime(JAVA_11)
                 .memorySize(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS)))
