@@ -36,16 +36,16 @@ public class WriteRandomDataDirect {
     }
 
     public static void writeWithIngestFactory(
-            SystemTestPropertyValues systemTestProperties, AssumedRoleClients clients) throws IOException {
+            SystemTestPropertyValues systemTestProperties, InstanceIngestSession session) throws IOException {
         writeWithIngestFactory(
                 IngestFactory.builder()
                         .objectFactory(ObjectFactory.noUserJars())
                         .localDir("/mnt/scratch")
-                        .stateStoreProvider(clients.createStateStoreProvider())
-                        .instanceProperties(clients.instanceProperties())
-                        .hadoopConfiguration(clients.hadoopConfiguration())
+                        .stateStoreProvider(session.createStateStoreProvider())
+                        .instanceProperties(session.instanceProperties())
+                        .hadoopConfiguration(session.hadoopConfiguration())
                         .build(),
-                systemTestProperties, clients.tableProperties());
+                systemTestProperties, session.tableProperties());
     }
 
     public static void writeWithIngestFactory(

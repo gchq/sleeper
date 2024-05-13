@@ -35,17 +35,17 @@ public class IngestRandomDataViaQueue {
     }
 
     public static void sendJob(
-            String jobId, String dir, SystemTestPropertyValues systemTestProperties, AssumedRoleClients clients) {
+            String jobId, String dir, SystemTestPropertyValues systemTestProperties, InstanceIngestSession session) {
 
         IngestJob ingestJob = IngestJob.builder()
-                .tableName(clients.tableProperties().get(TABLE_NAME))
+                .tableName(session.tableProperties().get(TABLE_NAME))
                 .id(jobId)
                 .files(Collections.singletonList(dir))
                 .build();
         String jsonJob = new IngestJobSerDe().toJson(ingestJob);
         IngestQueue ingestQueue = systemTestProperties.getEnumValue(INGEST_QUEUE, IngestQueue.class);
-        String queueUrl = ingestQueue.getJobQueueUrl(clients.instanceProperties());
+        String queueUrl = ingestQueue.getJobQueueUrl(session.instanceProperties());
         LOGGER.debug("Sending message to ingest queue {}: {}", queueUrl, jsonJob);
-        clients.sqs().sendMessage(queueUrl, jsonJob);
+        session.sqs().sendMessage(queueUrl, jsonJob);
     }
 }

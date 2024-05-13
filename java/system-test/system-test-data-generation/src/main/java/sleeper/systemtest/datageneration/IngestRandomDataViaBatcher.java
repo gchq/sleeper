@@ -33,10 +33,10 @@ public class IngestRandomDataViaBatcher {
     private IngestRandomDataViaBatcher() {
     }
 
-    public static void sendRequest(String dir, AssumedRoleClients clients) {
-        String queueUrl = clients.instanceProperties().get(INGEST_BATCHER_SUBMIT_QUEUE_URL);
-        String jsonRequest = FileIngestRequestSerDe.toJson(List.of(dir), clients.tableProperties().get(TABLE_NAME));
+    public static void sendRequest(String dir, InstanceIngestSession session) {
+        String queueUrl = session.instanceProperties().get(INGEST_BATCHER_SUBMIT_QUEUE_URL);
+        String jsonRequest = FileIngestRequestSerDe.toJson(List.of(dir), session.tableProperties().get(TABLE_NAME));
         LOGGER.debug("Sending message to ingest batcher queue {}: {}", queueUrl, jsonRequest);
-        clients.sqs().sendMessage(queueUrl, jsonRequest);
+        session.sqs().sendMessage(queueUrl, jsonRequest);
     }
 }

@@ -100,7 +100,7 @@ public class AssumeSleeperRole {
         return builder.credentialsProvider(credentialsV2).region(Region.of(region)).build();
     }
 
-    public Configuration setInHadoopForS3A(Configuration configuration) {
+    public Configuration setS3ACredentials(Configuration configuration) {
         configuration.set("fs.s3a.aws.credentials.provider", "org.apache.hadoop.fs.s3a.TemporaryAWSCredentialsProvider");
         configuration.set("fs.s3a.access.key", credentials.getAccessKeyId());
         configuration.set("fs.s3a.secret.key", credentials.getSecretAccessKey());

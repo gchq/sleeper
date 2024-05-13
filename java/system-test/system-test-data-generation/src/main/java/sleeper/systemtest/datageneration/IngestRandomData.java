@@ -108,21 +108,21 @@ public class IngestRandomData {
         if (ingestMode == DIRECT) {
             return () -> {
                 AssumeSleeperRole assumeRole = AssumeSleeperRole.directIngest(stsClient, instanceProperties);
-                try (AssumedRoleClients clients = new AssumedRoleClients(assumeRole, instanceProperties, tableName)) {
-                    WriteRandomDataDirect.writeWithIngestFactory(systemTestProperties, clients);
+                try (InstanceIngestSession session = new InstanceIngestSession(assumeRole, instanceProperties, tableName)) {
+                    WriteRandomDataDirect.writeWithIngestFactory(systemTestProperties, session);
                 }
             };
         }
         return () -> {
             AssumeSleeperRole assumeRole = AssumeSleeperRole.ingestByQueue(stsClient, instanceProperties);
-            try (AssumedRoleClients clients = new AssumedRoleClients(assumeRole, instanceProperties, tableName)) {
+            try (InstanceIngestSession session = new InstanceIngestSession(assumeRole, instanceProperties, tableName)) {
                 String jobId = UUID.randomUUID().toString();
-                String dir = WriteRandomDataFiles.writeToS3GetDirectory(systemTestProperties, clients, jobId);
+                String dir = WriteRandomDataFiles.writeToS3GetDirectory(systemTestProperties, session, jobId);
 
                 if (ingestMode == QUEUE) {
-                    IngestRandomDataViaQueue.sendJob(jobId, dir, systemTestProperties, clients);
+                    IngestRandomDataViaQueue.sendJob(jobId, dir, systemTestProperties, session);
                 } else if (ingestMode == BATCHER) {
-                    IngestRandomDataViaBatcher.sendRequest(dir, clients);
+                    IngestRandomDataViaBatcher.sendRequest(dir, session);
                 } else if (ingestMode == GENERATE_ONLY) {
                     LOGGER.debug("Generate data only, no message was sent");
                 } else {

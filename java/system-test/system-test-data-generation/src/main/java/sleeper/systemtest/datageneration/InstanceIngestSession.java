@@ -30,7 +30,7 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreProvider;
 
-public class AssumedRoleClients implements AutoCloseable {
+public class InstanceIngestSession implements AutoCloseable {
     private final AmazonS3 s3;
     private final AmazonDynamoDB dynamo;
     private final AmazonSQS sqs;
@@ -38,11 +38,11 @@ public class AssumedRoleClients implements AutoCloseable {
     private final InstanceProperties instanceProperties;
     private final TableProperties tableProperties;
 
-    public AssumedRoleClients(AssumeSleeperRole role, InstanceProperties instanceProperties, String tableName) {
+    public InstanceIngestSession(AssumeSleeperRole role, InstanceProperties instanceProperties, String tableName) {
         this.s3 = role.v1Client(AmazonS3ClientBuilder.standard());
         this.dynamo = role.v1Client(AmazonDynamoDBClientBuilder.standard());
         this.sqs = role.v1Client(AmazonSQSClientBuilder.standard());
-        this.hadoopConfiguration = role.setInHadoopForS3A(HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
+        this.hadoopConfiguration = role.setS3ACredentials(HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
         this.instanceProperties = instanceProperties;
         this.tableProperties = new TablePropertiesProvider(instanceProperties, s3, dynamo)
                 .getByName(tableName);
