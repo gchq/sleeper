@@ -20,7 +20,6 @@ import org.apache.datasketches.quantiles.ItemsSketch;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.job.StateStoreUpdate;
 import sleeper.compaction.job.creation.CreateCompactionJobs;
 import sleeper.compaction.job.creation.CreateCompactionJobs.Mode;
 import sleeper.compaction.job.execution.StandardCompactor;
@@ -63,6 +62,7 @@ import java.util.TreeMap;
 import java.util.UUID;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
+import static sleeper.compaction.job.commit.CompactionJobCommitterUtils.updateStateStoreSuccess;
 
 public class InMemoryCompaction {
     private final Map<String, CompactionJob> queuedJobsById = new TreeMap<>();
@@ -179,7 +179,7 @@ public class InMemoryCompaction {
         Partition partition = getPartitionForJob(stateStore, job);
         RecordsProcessed recordsProcessed = mergeInputFiles(job, partition, schema);
         try {
-            StateStoreUpdate.updateStateStoreSuccess(job, recordsProcessed.getRecordsWritten(), stateStore);
+            updateStateStoreSuccess(job, recordsProcessed.getRecordsWritten(), stateStore);
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
         } catch (InterruptedException e) {

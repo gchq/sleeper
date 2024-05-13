@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobFactory;
-import sleeper.compaction.job.StateStoreUpdate;
+import sleeper.compaction.job.commit.CompactionJobCommitter;
 import sleeper.compaction.job.commit.TimedOutWaitingForFileAssignmentsException;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -134,7 +134,7 @@ public class CompactSortedFilesRetryStateStoreTest {
 
     private void updateStateStore(CompactionJob job, long recordsWritten, DoubleSupplier randomJitter) throws Exception {
         updateStateStoreSuccess(job, 123, stateStore,
-                StateStoreUpdate.JOB_ASSIGNMENT_WAIT_ATTEMPTS, backoff(randomJitter));
+                CompactionJobCommitter.JOB_ASSIGNMENT_WAIT_ATTEMPTS, backoff(randomJitter));
     }
 
     private void actionOnWait(WaitAction action) throws Exception {
@@ -155,7 +155,7 @@ public class CompactSortedFilesRetryStateStoreTest {
 
     private ExponentialBackoffWithJitter backoff(DoubleSupplier randomJitter) {
         return new ExponentialBackoffWithJitter(
-                StateStoreUpdate.JOB_ASSIGNMENT_WAIT_RANGE,
+                CompactionJobCommitter.JOB_ASSIGNMENT_WAIT_RANGE,
                 randomJitter, waiter);
     }
 

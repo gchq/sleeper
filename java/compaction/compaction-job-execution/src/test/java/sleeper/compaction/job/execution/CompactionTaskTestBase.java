@@ -133,7 +133,6 @@ public class CompactionTaskTestBase {
             String taskId,
             TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider) throws Exception {
-
         CompactionJobCommitHandler commitHandler = new CompactionJobCommitHandler(
                 tablePropertiesProvider,
                 new CompactionJobCommitter(jobStore, tableId -> stateStoreProvider.getStateStore(tablePropertiesProvider.getById(tableId))),

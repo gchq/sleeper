@@ -105,9 +105,8 @@ public class ECSCompactionTaskRunner {
                             throw new RuntimeException(e);
                         }
                     });
-            CompactionTask task = new CompactionTask(instanceProperties, propertiesReloader,
-                    new SqsCompactionQueueHandler(sqsClient, instanceProperties), commitHandler, jobStatusStore,
-                    taskStatusStore, compactionSelector, taskId);
+            CompactionTask task = new CompactionTask(instanceProperties, propertiesReloader, new SqsCompactionQueueHandler(sqsClient, instanceProperties),
+                    commitHandler, jobStatusStore, taskStatusStore, compactionSelector, taskId);
             task.run();
         } finally {
             sqsClient.shutdown();
