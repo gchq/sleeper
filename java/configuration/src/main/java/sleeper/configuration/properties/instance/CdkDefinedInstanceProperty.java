@@ -405,6 +405,14 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .description("The name of the cluster used for ingest.")
             .propertyGroup(InstancePropertyGroup.INGEST)
             .build();
+    CdkDefinedInstanceProperty INGEST_BY_QUEUE_ROLE_ARN = Index.propertyBuilder("sleeper.ingest.by.queue.role.arn")
+            .description("The ARN of a role that has permissions to perform an ingest by queue for the instance.")
+            .propertyGroup(InstancePropertyGroup.INGEST)
+            .build();
+    CdkDefinedInstanceProperty INGEST_DIRECT_ROLE_ARN = Index.propertyBuilder("sleeper.ingest.direct.role.arn")
+            .description("The ARN of a role that has permissions to perform a direct ingest for the instance.")
+            .propertyGroup(InstancePropertyGroup.INGEST)
+            .build();
 
     // Bulk import
     CdkDefinedInstanceProperty BULK_IMPORT_BUCKET = Index.propertyBuilder("sleeper.bulk.import.bucket")
