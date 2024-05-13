@@ -17,6 +17,7 @@ package sleeper.cdk.stack;
 
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.iam.AccountRootPrincipal;
+import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.iam.Role;
 import software.constructs.Construct;
 
@@ -24,18 +25,32 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.Locale;
 
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.ADMIN_ROLE_ARN;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_BY_QUEUE_ROLE_ARN;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_DIRECT_ROLE_ARN;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
-public class InstanceIngestRolesStack extends NestedStack {
-    public InstanceIngestRolesStack(
+public class InstanceRolesStack extends NestedStack {
+    public InstanceRolesStack(
             Construct scope, String id, InstanceProperties instanceProperties,
             ManagedPoliciesStack policiesStack) {
         super(scope, id);
 
+        createAdminRole(instanceProperties, policiesStack);
         createIngestByQueueRole(instanceProperties, policiesStack);
         createDirectIngestRole(instanceProperties, policiesStack);
+    }
+
+    private void createAdminRole(InstanceProperties instanceProperties, ManagedPoliciesStack policiesStack) {
+        Role adminRole = Role.Builder.create(this, "AdminRole")
+                .assumedBy(new AccountRootPrincipal())
+                .roleName("sleeper-admin-" + instanceProperties.get(ID).toLowerCase(Locale.ROOT))
+                .build();
+
+        policiesStack.instanceAdminPolicies().forEach(policy -> policy.attachToRole(adminRole));
+        adminRole.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonECSTaskExecutionRolePolicy"));
+
+        instanceProperties.set(ADMIN_ROLE_ARN, adminRole.getRoleArn());
     }
 
     private void createIngestByQueueRole(InstanceProperties instanceProperties, ManagedPoliciesStack policiesStack) {
