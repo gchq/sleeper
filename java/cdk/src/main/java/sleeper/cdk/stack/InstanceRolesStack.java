@@ -26,15 +26,22 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import java.util.Locale;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.ADMIN_ROLE_ARN;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_BY_QUEUE_ROLE_ARN;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_DIRECT_ROLE_ARN;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
-public class InstanceAdminRoleStack extends NestedStack {
-
-    public InstanceAdminRoleStack(
+public class InstanceRolesStack extends NestedStack {
+    public InstanceRolesStack(
             Construct scope, String id, InstanceProperties instanceProperties,
             ManagedPoliciesStack policiesStack) {
         super(scope, id);
 
+        createAdminRole(instanceProperties, policiesStack);
+        createIngestByQueueRole(instanceProperties, policiesStack);
+        createDirectIngestRole(instanceProperties, policiesStack);
+    }
+
+    private void createAdminRole(InstanceProperties instanceProperties, ManagedPoliciesStack policiesStack) {
         Role adminRole = Role.Builder.create(this, "AdminRole")
                 .assumedBy(new AccountRootPrincipal())
                 .roleName("sleeper-admin-" + instanceProperties.get(ID).toLowerCase(Locale.ROOT))
@@ -46,4 +53,21 @@ public class InstanceAdminRoleStack extends NestedStack {
         instanceProperties.set(ADMIN_ROLE_ARN, adminRole.getRoleArn());
     }
 
+    private void createIngestByQueueRole(InstanceProperties instanceProperties, ManagedPoliciesStack policiesStack) {
+        Role ingestRole = Role.Builder.create(this, "IngestByQueueRole")
+                .assumedBy(new AccountRootPrincipal())
+                .roleName("sleeper-ingest-by-queue-" + instanceProperties.get(ID).toLowerCase(Locale.ROOT))
+                .build();
+        policiesStack.getIngestByQueuePolicyForGrants().attachToRole(ingestRole);
+        instanceProperties.set(INGEST_BY_QUEUE_ROLE_ARN, ingestRole.getRoleArn());
+    }
+
+    private void createDirectIngestRole(InstanceProperties instanceProperties, ManagedPoliciesStack policiesStack) {
+        Role ingestRole = Role.Builder.create(this, "DirectIngestRole")
+                .assumedBy(new AccountRootPrincipal())
+                .roleName("sleeper-ingest-direct-" + instanceProperties.get(ID).toLowerCase(Locale.ROOT))
+                .build();
+        policiesStack.getDirectIngestPolicyForGrants().attachToRole(ingestRole);
+        instanceProperties.set(INGEST_DIRECT_ROLE_ARN, ingestRole.getRoleArn());
+    }
 }
