@@ -16,8 +16,7 @@
 package sleeper.compaction.job.execution;
 
 import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.model.SendMessageBatchRequest;
-import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
+import com.amazonaws.services.sqs.model.SendMessageRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,13 +69,11 @@ public class CompactionJobCommitHandler {
         return request -> {
             String queueUrl = instanceProperties.get(COMPACTION_JOB_COMMITTER_QUEUE_URL);
             String tableId = request.getJob().getTableId();
-            sqsClient.sendMessageBatch(new SendMessageBatchRequest()
+            sqsClient.sendMessage(new SendMessageRequest()
                     .withQueueUrl(queueUrl)
-                    .withEntries(new SendMessageBatchRequestEntry()
-                            .withMessageDeduplicationId(UUID.randomUUID().toString())
-                            .withId(request.getJob().getId())
-                            .withMessageGroupId(tableId)
-                            .withMessageBody(new CompactionJobCommitRequestSerDe().toJson(request))));
+                    .withMessageDeduplicationId(UUID.randomUUID().toString())
+                    .withMessageGroupId(tableId)
+                    .withMessageBody(new CompactionJobCommitRequestSerDe().toJson(request)));
         };
     }
 }
