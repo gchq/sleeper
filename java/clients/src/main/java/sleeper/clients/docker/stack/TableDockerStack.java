@@ -84,7 +84,7 @@ public class TableDockerStack implements DockerStack {
         instanceProperties.set(TRANSACTION_LOG_PARTITIONS_TABLENAME, String.join("-", "sleeper", instanceId, "-ptl"));
         instanceProperties.set(TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME, String.join("-", "sleeper", instanceId, "-tlas"));
         instanceProperties.set(TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME, String.join("-", "sleeper", instanceId, "-tlls"));
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoDB, s3Client).create();
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoDB).create();
     }
 
     public void tearDown() {

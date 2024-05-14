@@ -95,7 +95,7 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
     void setUp() {
         instanceProperties.resetAndValidate(createTestInstanceProperties().getProperties());
         s3Client.createBucket(instanceProperties.get(DATA_BUCKET));
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoDBClient, s3Client).create();
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoDBClient).create();
         DynamoDBCompactionJobStatusStoreCreator.create(instanceProperties, dynamoDBClient);
     }
 

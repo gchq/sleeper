@@ -78,7 +78,7 @@ public class AddTableIT {
     void setUp() {
         s3.createBucket(instanceProperties.get(CONFIG_BUCKET));
         s3.createBucket(instanceProperties.get(DATA_BUCKET));
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoDB, s3).create();
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoDB).create();
         DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
     }
 

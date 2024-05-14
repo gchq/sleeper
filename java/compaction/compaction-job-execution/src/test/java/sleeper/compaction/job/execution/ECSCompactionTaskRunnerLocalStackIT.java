@@ -150,7 +150,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
         s3.createBucket(instanceProperties.get(DATA_BUCKET));
         instanceProperties.saveToS3(s3);
         DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoDB, s3).create();
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoDB).create();
 
         return instanceProperties;
     }

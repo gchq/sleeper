@@ -97,7 +97,7 @@ public class PartitionsStatusReportIT {
         InstanceProperties properties = createTestInstanceProperties(s3);
         s3.createBucket(properties.get(DATA_BUCKET));
         DynamoDBTableIndexCreator.create(dynamoDB, properties);
-        new TransactionLogStateStoreCreator(properties, dynamoDB, s3).create();
+        new TransactionLogStateStoreCreator(properties, dynamoDB).create();
         return properties;
     }
 

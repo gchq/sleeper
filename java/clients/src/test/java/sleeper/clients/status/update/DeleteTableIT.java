@@ -98,7 +98,7 @@ public class DeleteTableIT {
         s3.createBucket(instanceProperties.get(CONFIG_BUCKET));
         s3.createBucket(instanceProperties.get(DATA_BUCKET));
         DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
-        TransactionLogStateStoreCreator stateStoreCreator = new TransactionLogStateStoreCreator(instanceProperties, dynamoDB, s3);
+        TransactionLogStateStoreCreator stateStoreCreator = new TransactionLogStateStoreCreator(instanceProperties, dynamoDB);
         stateStoreCreator.create();
         inputFolderName = createTempDirectory(tempDir, null).toString();
     }

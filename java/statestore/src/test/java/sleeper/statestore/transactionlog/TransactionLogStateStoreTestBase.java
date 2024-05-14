@@ -35,6 +35,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils;
 
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
 @Testcontainers
@@ -61,7 +62,8 @@ public class TransactionLogStateStoreTestBase {
 
     @BeforeEach
     void setUpBase() {
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoDBClient, s3Client).create();
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoDBClient).create();
+        s3Client.createBucket(instanceProperties.get(DATA_BUCKET));
     }
 
     public StateStore createStateStore(TableProperties tableProperties) {
