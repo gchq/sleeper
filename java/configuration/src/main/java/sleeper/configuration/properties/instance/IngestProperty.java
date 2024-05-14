@@ -78,10 +78,6 @@ public interface IngestProperty {
                     "and bulk import stacks will be given read access to these buckets so that they can consume data from them.")
             .propertyGroup(InstancePropertyGroup.INGEST)
             .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty INGEST_SOURCE_ROLE = Index.propertyBuilder("sleeper.ingest.source.role")
-            .description("A comma-separated list of role names which should be able to ingest data into Sleeper.")
-            .propertyGroup(InstancePropertyGroup.INGEST)
-            .runCdkDeployWhenChanged(true).build();
 
     UserDefinedInstanceProperty INGEST_STATUS_STORE_ENABLED = IngestProperty.Index.propertyBuilder("sleeper.ingest.status.store.enabled")
             .description("Flag to enable/disable storage of tracking information for ingest jobs and tasks.")

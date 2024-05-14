@@ -226,9 +226,6 @@ sleeper.ingest.partition.refresh.period=120
 # they can consume data from them.
 # sleeper.ingest.source.bucket=
 
-# A comma-separated list of role names which should be able to ingest data into Sleeper.
-# sleeper.ingest.source.role=
-
 # Flag to enable/disable storage of tracking information for ingest jobs and tasks.
 sleeper.ingest.status.store.enabled=true
 
