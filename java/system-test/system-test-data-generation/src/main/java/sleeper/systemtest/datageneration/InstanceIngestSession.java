@@ -19,6 +19,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.hadoop.conf.Configuration;
@@ -40,7 +41,7 @@ public class InstanceIngestSession implements AutoCloseable {
     private final InstanceProperties instanceProperties;
     private final TableProperties tableProperties;
 
-    public InstanceIngestSession(AssumeSleeperRole role, InstanceProperties instanceProperties, String tableName) {
+    private InstanceIngestSession(AssumeSleeperRole role, InstanceProperties instanceProperties, String tableName) {
         this.s3 = role.v1Client(AmazonS3ClientBuilder.standard());
         this.dynamo = role.v1Client(AmazonDynamoDBClientBuilder.standard());
         this.sqs = role.v1Client(AmazonSQSClientBuilder.standard());
@@ -51,16 +52,18 @@ public class InstanceIngestSession implements AutoCloseable {
                 .getByName(tableName);
     }
 
-    public AmazonS3 s3() {
-        return s3;
+    public static InstanceIngestSession direct(AWSSecurityTokenService stsClient, InstanceProperties instanceProperties, String tableName) {
+        AssumeSleeperRole assumeRole = AssumeSleeperRole.directIngest(stsClient, instanceProperties);
+        return new InstanceIngestSession(assumeRole, instanceProperties, tableName);
+    }
+
+    public static InstanceIngestSession byQueue(AWSSecurityTokenService stsClient, InstanceProperties instanceProperties, String tableName) {
+        AssumeSleeperRole assumeRole = AssumeSleeperRole.ingestByQueue(stsClient, instanceProperties);
+        return new InstanceIngestSession(assumeRole, instanceProperties, tableName);
     }
 
     public S3AsyncClient s3Async() {
         return s3Async;
-    }
-
-    public AmazonDynamoDB dynamo() {
-        return dynamo;
     }
 
     public AmazonSQS sqs() {
