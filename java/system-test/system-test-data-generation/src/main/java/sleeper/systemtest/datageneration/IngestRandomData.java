@@ -15,8 +15,6 @@
  */
 package sleeper.systemtest.datageneration;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
@@ -75,30 +73,22 @@ public class IngestRandomData {
     }
 
     public static void main(String[] args) throws IOException {
-        InstanceProperties instanceProperties;
-        SystemTestPropertyValues systemTestProperties;
-        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        AmazonDynamoDB dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
         AWSSecurityTokenService stsClient = AWSSecurityTokenServiceClientBuilder.defaultClient();
         try {
-            if (args.length == 2) {
-                SystemTestProperties properties = new SystemTestProperties();
-                properties.loadFromS3(s3Client, args[0]);
-                instanceProperties = properties;
-                systemTestProperties = properties.testPropertiesOnly();
+            CommandLineFactory factory = new CommandLineFactory(stsClient);
+            IngestRandomData ingestRandomData;
+            if (args.length == 4) {
+                ingestRandomData = factory.standalone(args[0], args[1], args[2], args[3]);
             } else if (args.length == 3) {
-                instanceProperties = new InstanceProperties();
-                instanceProperties.loadFromS3(s3Client, args[0]);
-                systemTestProperties = SystemTestStandaloneProperties.fromS3(s3Client, args[2]);
+                ingestRandomData = factory.withLoadConfigRole(args[0], args[1], args[2]);
+            } else if (args.length == 2) {
+                ingestRandomData = factory.noLoadConfigRole(args[0], args[1]);
             } else {
-                throw new RuntimeException("Wrong number of arguments detected. Usage: IngestRandomData <S3 bucket> <Table name> <optional system test bucket>");
+                throw new RuntimeException("Wrong number of arguments detected. Usage: IngestRandomData <S3 bucket> <Table name> <optional role ARN to load config as> <optional system test bucket>");
             }
 
-            new IngestRandomData(instanceProperties, systemTestProperties, args[1], stsClient)
-                    .run();
+            ingestRandomData.run();
         } finally {
-            s3Client.shutdown();
-            dynamoClient.shutdown();
             stsClient.shutdown();
         }
     }
@@ -134,5 +124,51 @@ public class IngestRandomData {
 
     interface Ingester {
         void ingest() throws IOException;
+    }
+
+    private static class CommandLineFactory {
+        private final AWSSecurityTokenService stsClient;
+
+        CommandLineFactory(AWSSecurityTokenService stsClient) {
+            this.stsClient = stsClient;
+        }
+
+        IngestRandomData noLoadConfigRole(String configBucket, String tableName) {
+            AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+            try {
+                return combinedInstance(configBucket, tableName, s3Client);
+            } finally {
+                s3Client.shutdown();
+            }
+        }
+
+        IngestRandomData withLoadConfigRole(String configBucket, String tableName, String loadConfigRoleArn) {
+            AmazonS3 s3Client = AssumeSleeperRole.fromArn(stsClient, loadConfigRoleArn).v1Client(AmazonS3ClientBuilder.standard());
+            try {
+                return combinedInstance(configBucket, tableName, s3Client);
+            } finally {
+                s3Client.shutdown();
+            }
+        }
+
+        IngestRandomData standalone(String configBucket, String tableName, String loadConfigRoleArn, String systemTestBucket) {
+            AmazonS3 instanceS3Client = AssumeSleeperRole.fromArn(stsClient, loadConfigRoleArn).v1Client(AmazonS3ClientBuilder.standard());
+            AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+            try {
+                SystemTestStandaloneProperties systemTestProperties = SystemTestStandaloneProperties.fromS3(s3Client, systemTestBucket);
+                InstanceProperties instanceProperties = new InstanceProperties();
+                instanceProperties.loadFromS3(instanceS3Client, configBucket);
+                return new IngestRandomData(instanceProperties, systemTestProperties, tableName, stsClient);
+            } finally {
+                s3Client.shutdown();
+                instanceS3Client.shutdown();
+            }
+        }
+
+        IngestRandomData combinedInstance(String configBucket, String tableName, AmazonS3 s3Client) {
+            SystemTestProperties properties = new SystemTestProperties();
+            properties.loadFromS3(s3Client, configBucket);
+            return new IngestRandomData(properties, properties.testPropertiesOnly(), tableName, stsClient);
+        }
     }
 }
