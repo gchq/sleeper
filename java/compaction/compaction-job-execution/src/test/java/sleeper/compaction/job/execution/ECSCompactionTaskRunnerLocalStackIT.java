@@ -75,7 +75,7 @@ import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.statestore.s3.S3StateStoreCreator;
+import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -150,7 +150,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
         s3.createBucket(instanceProperties.get(DATA_BUCKET));
         instanceProperties.saveToS3(s3);
         DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
-        new S3StateStoreCreator(instanceProperties, dynamoDB).create();
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoDB, s3).create();
 
         return instanceProperties;
     }
