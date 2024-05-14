@@ -30,6 +30,7 @@ import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.regions.providers.AwsRegionProvider;
+import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.InstanceProperty;
@@ -79,6 +80,15 @@ public class AssumeSleeperRole {
             AWSSecurityTokenService sts, InstanceProperties instanceProperties, InstanceProperty roleArnProperty) {
         String region = instanceProperties.get(REGION);
         String roleArn = instanceProperties.get(roleArnProperty);
+        return fromRegionAndArn(sts, region, roleArn);
+    }
+
+    public static AssumeSleeperRole fromArn(AWSSecurityTokenService sts, String roleArn) {
+        String region = new DefaultAwsRegionProviderChain().getRegion().id();
+        return fromRegionAndArn(sts, region, roleArn);
+    }
+
+    public static AssumeSleeperRole fromRegionAndArn(AWSSecurityTokenService sts, String region, String roleArn) {
         LOGGER.info("Assuming instance role: {}", roleArn);
         AssumeRoleResult result = sts.assumeRole(new AssumeRoleRequest()
                 .withRoleArn(roleArn)
