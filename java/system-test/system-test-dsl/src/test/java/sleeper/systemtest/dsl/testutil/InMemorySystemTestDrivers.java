@@ -186,7 +186,7 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
     }
 
     @Override
-    public SnapshotsDriver snapshots(SystemTestContext context) {
+    public SnapshotsDriver snapshots() {
         return new InMemorySnapshotsDriver();
     }
 }

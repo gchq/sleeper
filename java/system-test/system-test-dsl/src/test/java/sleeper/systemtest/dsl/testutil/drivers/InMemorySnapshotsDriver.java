@@ -15,6 +15,7 @@
  */
 package sleeper.systemtest.dsl.testutil.drivers;
 
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
 
 public class InMemorySnapshotsDriver implements SnapshotsDriver {
@@ -22,10 +23,10 @@ public class InMemorySnapshotsDriver implements SnapshotsDriver {
     }
 
     @Override
-    public void enableCreation() {
+    public void enableCreation(InstanceProperties instanceProperties) {
     }
 
     @Override
-    public void disableCreation() {
+    public void disableCreation(InstanceProperties instanceProperties) {
     }
 }

@@ -115,5 +115,5 @@ public interface SystemTestDrivers {
 
     PurgeQueueDriver purgeQueues(SystemTestContext context);
 
-    SnapshotsDriver snapshots(SystemTestContext context);
+    SnapshotsDriver snapshots();
 }

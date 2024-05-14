@@ -15,8 +15,10 @@
  */
 package sleeper.systemtest.dsl.snapshot;
 
-public interface SnapshotsDriver {
-    void enableCreation();
+import sleeper.configuration.properties.instance.InstanceProperties;
 
-    void disableCreation();
+public interface SnapshotsDriver {
+    void enableCreation(InstanceProperties instanceProperties);
+
+    void disableCreation(InstanceProperties instanceProperties);
 }

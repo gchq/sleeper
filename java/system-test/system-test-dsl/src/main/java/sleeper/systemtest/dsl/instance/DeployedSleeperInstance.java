@@ -27,6 +27,7 @@ import sleeper.configuration.properties.instance.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.SleeperVersion;
 import sleeper.systemtest.dsl.SystemTestDrivers;
+import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
 
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -34,7 +35,6 @@ import java.util.Objects;
 import java.util.Set;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_SNAPSHOT_CREATION_RULE;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.instance.CommonProperty.TAGS;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_ROLE;
@@ -57,15 +57,16 @@ public final class DeployedSleeperInstance {
     public static DeployedSleeperInstance loadOrDeployIfNeeded(
             String instanceId, SystemTestInstanceConfiguration configuration,
             SystemTestParameters parameters, DeployedSystemTestResources systemTest,
-            SleeperInstanceDriver driver, AssumeAdminRoleDriver assumeRoleDriver) {
+            SleeperInstanceDriver driver, AssumeAdminRoleDriver assumeRoleDriver, SnapshotsDriver snapshotsDriver) {
         DeployInstanceConfiguration deployConfig = configuration.buildDeployConfig(parameters, systemTest);
         boolean newInstance = driver.deployInstanceIfNotPresent(instanceId, deployConfig);
 
         InstanceProperties instanceProperties = new InstanceProperties();
         driver.loadInstanceProperties(instanceProperties, instanceId);
-        if (newInstance && configuration.shouldEnableTransactionLogSnapshots()) {
-            instanceProperties.set(TRANSACTION_LOG_SNAPSHOT_CREATION_RULE, "true");
-            driver.saveInstanceProperties(instanceProperties);
+        if (configuration.shouldEnableTransactionLogSnapshots()) {
+            snapshotsDriver.enableCreation(instanceProperties);
+        } else {
+            snapshotsDriver.disableCreation(instanceProperties);
         }
 
         DeployedSleeperInstance instance = new DeployedSleeperInstance(

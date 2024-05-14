@@ -22,31 +22,27 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_SNAPSHOT_CREATION_RULE;
 
 public class AwsSnapshotsDriver implements SnapshotsDriver {
     public static final Logger LOGGER = LoggerFactory.getLogger(AwsSnapshotsDriver.class);
-
-    private final InstanceProperties instanceProperties;
     private final AmazonCloudWatchEvents cwClient;
 
-    public AwsSnapshotsDriver(SystemTestInstanceContext instance, AmazonCloudWatchEvents cwClient) {
-        this.instanceProperties = instance.getInstanceProperties();
+    public AwsSnapshotsDriver(AmazonCloudWatchEvents cwClient) {
         this.cwClient = cwClient;
     }
 
     @Override
-    public void enableCreation() {
+    public void enableCreation(InstanceProperties instanceProperties) {
         LOGGER.info("Enabling transaction log snapshot creation");
         cwClient.enableRule(new EnableRuleRequest()
                 .withName(instanceProperties.get(TRANSACTION_LOG_SNAPSHOT_CREATION_RULE)));
     }
 
     @Override
-    public void disableCreation() {
+    public void disableCreation(InstanceProperties instanceProperties) {
         LOGGER.info("Disabling transaction log snapshot creation");
         cwClient.disableRule(new DisableRuleRequest()
                 .withName(instanceProperties.get(TRANSACTION_LOG_SNAPSHOT_CREATION_RULE)));
