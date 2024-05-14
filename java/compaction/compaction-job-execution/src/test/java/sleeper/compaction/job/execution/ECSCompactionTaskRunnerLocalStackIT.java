@@ -46,7 +46,6 @@ import sleeper.compaction.job.CompactionJobSerDe;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobCommitRequestSerDe;
-import sleeper.compaction.job.commit.CompactionJobCommitter;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStoreCreator;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
@@ -444,8 +443,8 @@ public class ECSCompactionTaskRunnerLocalStackIT {
         CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties,
                 tablePropertiesProvider, stateStoreProvider,
                 ObjectFactory.noUserJars());
-        CompactionJobCommitterOrSendToLambda committer = new CompactionJobCommitterOrSendToLambda(tablePropertiesProvider,
-                new CompactionJobCommitter(jobStatusStore, tableId -> stateStoreProvider.getStateStore(tablePropertiesProvider.getById(tableId))),
+        CompactionJobCommitterOrSendToLambda committer = new CompactionJobCommitterOrSendToLambda(
+                tablePropertiesProvider, stateStoreProvider, jobStatusStore,
                 instanceProperties, sqs);
         CompactionTask task = new CompactionTask(instanceProperties,
                 PropertiesReloader.neverReload(), new SqsCompactionQueueHandler(sqs, instanceProperties), compactSortedFiles,
