@@ -118,7 +118,7 @@ public interface CompactionProperty {
     UserDefinedInstanceProperty COMPACTION_JOB_COMMITTER_BATCH_SIZE = Index.propertyBuilder("sleeper.compaction.job.committer.batch.size")
             .description("The number of compacton jobs to be sent to the committer lambda in one invocation. " +
                     "This will be the batch size for a lambda as an SQS FIFO event source. This can be a maximum of 10.")
-            .defaultValue("1")
+            .defaultValue("10")
             .validationPredicate(Utils::isPositiveIntegerLtEq10)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty MAXIMUM_CONCURRENT_COMPACTION_TASKS = Index.propertyBuilder("sleeper.compaction.max.concurrent.tasks")
