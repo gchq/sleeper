@@ -93,7 +93,7 @@ public class ECSCompactionTaskRunner {
             CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties,
                     tablePropertiesProvider, stateStoreProvider, objectFactory);
             CompactionJobCommitter committer = new CompactionJobCommitter(jobStatusStore, tableId -> stateStoreProvider.getStateStore(tablePropertiesProvider.getById(tableId)));
-            CompactionJobCommitHandler commitHandler = new CompactionJobCommitHandler(tablePropertiesProvider, committer,
+            CompactionJobCommitterOrSendToLambda commitHandler = new CompactionJobCommitterOrSendToLambda(tablePropertiesProvider, committer,
                     instanceProperties, sqsClient);
             CompactionTask task = new CompactionTask(instanceProperties, propertiesReloader,
                     new SqsCompactionQueueHandler(sqsClient, instanceProperties), compactSortedFiles,

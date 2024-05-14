@@ -32,19 +32,19 @@ import java.util.UUID;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_COMMITTER_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_JOB_COMMIT_ASYNC;
 
-public class CompactionJobCommitHandler {
-    public static final Logger LOGGER = LoggerFactory.getLogger(CompactionJobCommitHandler.class);
+public class CompactionJobCommitterOrSendToLambda {
+    public static final Logger LOGGER = LoggerFactory.getLogger(CompactionJobCommitterOrSendToLambda.class);
 
     private TablePropertiesProvider tablePropertiesProvider;
     private CompactionJobCommitter jobCommitter;
     private CommitQueueSender jobCommitQueueSender;
 
-    public CompactionJobCommitHandler(TablePropertiesProvider tablePropertiesProvider,
+    public CompactionJobCommitterOrSendToLambda(TablePropertiesProvider tablePropertiesProvider,
             CompactionJobCommitter jobCommitter, InstanceProperties instanceProperties, AmazonSQS sqsClient) {
         this(tablePropertiesProvider, jobCommitter, sendToSqs(instanceProperties, sqsClient));
     }
 
-    protected CompactionJobCommitHandler(TablePropertiesProvider tablePropertiesProvider,
+    protected CompactionJobCommitterOrSendToLambda(TablePropertiesProvider tablePropertiesProvider,
             CompactionJobCommitter jobCommitter, CommitQueueSender jobCommitQueueSender) {
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.jobCommitter = jobCommitter;
@@ -65,7 +65,7 @@ public class CompactionJobCommitHandler {
         void send(CompactionJobCommitRequest commitRequest);
     }
 
-    public static CommitQueueSender sendToSqs(InstanceProperties instanceProperties, AmazonSQS sqsClient) {
+    private static CommitQueueSender sendToSqs(InstanceProperties instanceProperties, AmazonSQS sqsClient) {
         return request -> {
             String queueUrl = instanceProperties.get(COMPACTION_JOB_COMMITTER_QUEUE_URL);
             String tableId = request.getJob().getTableId();

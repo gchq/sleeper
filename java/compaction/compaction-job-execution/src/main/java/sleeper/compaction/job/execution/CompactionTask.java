@@ -62,16 +62,16 @@ public class CompactionTask {
     private final PropertiesReloader propertiesReloader;
     private int numConsecutiveFailures = 0;
     private int totalNumberOfMessagesProcessed = 0;
-    private CompactionJobCommitHandler jobCommitHandler;
+    private CompactionJobCommitterOrSendToLambda jobCommitHandler;
 
     public CompactionTask(InstanceProperties instanceProperties, PropertiesReloader propertiesReloader,
-            MessageReceiver messageReceiver, CompactionRunner compactor, CompactionJobCommitHandler jobCommitHandler,
+            MessageReceiver messageReceiver, CompactionRunner compactor, CompactionJobCommitterOrSendToLambda jobCommitHandler,
             CompactionJobStatusStore jobStore, CompactionTaskStatusStore taskStore, String taskId) {
         this(instanceProperties, propertiesReloader, messageReceiver, compactor, jobCommitHandler, jobStore, taskStore, taskId, Instant::now, threadSleep());
     }
 
     public CompactionTask(InstanceProperties instanceProperties, PropertiesReloader propertiesReloader,
-            MessageReceiver messageReceiver, CompactionRunner compactor, CompactionJobCommitHandler jobCommitHandler,
+            MessageReceiver messageReceiver, CompactionRunner compactor, CompactionJobCommitterOrSendToLambda jobCommitHandler,
             CompactionJobStatusStore jobStore, CompactionTaskStatusStore taskStore, String taskId, Supplier<Instant> timeSupplier, Consumer<Duration> sleepForTime) {
         maxIdleTime = Duration.ofSeconds(instanceProperties.getInt(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS));
         maxConsecutiveFailures = instanceProperties.getInt(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES);

@@ -444,7 +444,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
         CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties,
                 tablePropertiesProvider, stateStoreProvider,
                 ObjectFactory.noUserJars());
-        CompactionJobCommitHandler commitHandler = new CompactionJobCommitHandler(tablePropertiesProvider,
+        CompactionJobCommitterOrSendToLambda commitHandler = new CompactionJobCommitterOrSendToLambda(tablePropertiesProvider,
                 new CompactionJobCommitter(jobStatusStore, tableId -> stateStoreProvider.getStateStore(tablePropertiesProvider.getById(tableId))),
                 instanceProperties, sqs);
         CompactionTask task = new CompactionTask(instanceProperties,
