@@ -22,6 +22,7 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.hadoop.conf.Configuration;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.clients.util.AssumeSleeperRole;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -34,6 +35,7 @@ public class InstanceIngestSession implements AutoCloseable {
     private final AmazonS3 s3;
     private final AmazonDynamoDB dynamo;
     private final AmazonSQS sqs;
+    private final S3AsyncClient s3Async;
     private final Configuration hadoopConfiguration;
     private final InstanceProperties instanceProperties;
     private final TableProperties tableProperties;
@@ -42,6 +44,7 @@ public class InstanceIngestSession implements AutoCloseable {
         this.s3 = role.v1Client(AmazonS3ClientBuilder.standard());
         this.dynamo = role.v1Client(AmazonDynamoDBClientBuilder.standard());
         this.sqs = role.v1Client(AmazonSQSClientBuilder.standard());
+        this.s3Async = role.v2Client(S3AsyncClient.builder());
         this.hadoopConfiguration = role.setS3ACredentials(HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
         this.instanceProperties = instanceProperties;
         this.tableProperties = new TablePropertiesProvider(instanceProperties, s3, dynamo)
@@ -50,6 +53,10 @@ public class InstanceIngestSession implements AutoCloseable {
 
     public AmazonS3 s3() {
         return s3;
+    }
+
+    public S3AsyncClient s3Async() {
+        return s3Async;
     }
 
     public AmazonDynamoDB dynamo() {
@@ -81,5 +88,6 @@ public class InstanceIngestSession implements AutoCloseable {
         s3.shutdown();
         dynamo.shutdown();
         sqs.shutdown();
+        s3Async.close();
     }
 }
