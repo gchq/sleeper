@@ -42,7 +42,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionRun;
-import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_COMPACTION_JOB_COMMIT_ASYNC;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_JOB_COMMIT_ASYNC;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
@@ -58,10 +57,6 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
     @Nested
     @DisplayName("Send commits to queue")
     class SendCommitsToQueue {
-        @BeforeEach
-        public void setup() {
-            instanceProperties.set(DEFAULT_COMPACTION_JOB_COMMIT_ASYNC, "true");
-        }
 
         @Test
         void shouldSendJobCommitRequestToQueue() throws Exception {
@@ -186,6 +181,11 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
     @Nested
     @DisplayName("Update status stores")
     class UpdateStatusStores {
+        @BeforeEach
+        void setup() {
+            tableProperties.set(COMPACTION_JOB_COMMIT_ASYNC, "false");
+        }
+
         @Test
         void shouldSaveTaskAndJobWhenOneJobSucceeds() throws Exception {
             // Given
