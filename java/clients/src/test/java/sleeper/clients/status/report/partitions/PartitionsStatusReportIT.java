@@ -37,7 +37,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
 import sleeper.statestore.StateStoreFactory;
-import sleeper.statestore.s3.S3StateStoreCreator;
+import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.util.function.Consumer;
 
@@ -97,7 +97,7 @@ public class PartitionsStatusReportIT {
         InstanceProperties properties = createTestInstanceProperties(s3);
         s3.createBucket(properties.get(DATA_BUCKET));
         DynamoDBTableIndexCreator.create(dynamoDB, properties);
-        new S3StateStoreCreator(properties, dynamoDB).create();
+        new TransactionLogStateStoreCreator(properties, dynamoDB, s3).create();
         return properties;
     }
 
