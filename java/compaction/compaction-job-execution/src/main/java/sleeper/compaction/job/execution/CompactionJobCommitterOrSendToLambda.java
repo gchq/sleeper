@@ -20,31 +20,36 @@ import com.amazonaws.services.sqs.model.SendMessageRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobCommitRequestSerDe;
 import sleeper.compaction.job.commit.CompactionJobCommitter;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.statestore.StateStoreProvider;
 
 import java.util.UUID;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_COMMITTER_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_JOB_COMMIT_ASYNC;
 
-public class CompactionJobCommitHandler {
-    public static final Logger LOGGER = LoggerFactory.getLogger(CompactionJobCommitHandler.class);
+public class CompactionJobCommitterOrSendToLambda {
+    public static final Logger LOGGER = LoggerFactory.getLogger(CompactionJobCommitterOrSendToLambda.class);
 
-    private TablePropertiesProvider tablePropertiesProvider;
-    private CompactionJobCommitter jobCommitter;
-    private CommitQueueSender jobCommitQueueSender;
+    private final TablePropertiesProvider tablePropertiesProvider;
+    private final CompactionJobCommitter jobCommitter;
+    private final CommitQueueSender jobCommitQueueSender;
 
-    public CompactionJobCommitHandler(TablePropertiesProvider tablePropertiesProvider,
-            CompactionJobCommitter jobCommitter, InstanceProperties instanceProperties, AmazonSQS sqsClient) {
-        this(tablePropertiesProvider, jobCommitter, sendToSqs(instanceProperties, sqsClient));
+    public CompactionJobCommitterOrSendToLambda(
+            TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider,
+            CompactionJobStatusStore jobStatusStore, InstanceProperties instanceProperties, AmazonSQS sqsClient) {
+        this(tablePropertiesProvider,
+                committer(tablePropertiesProvider, stateStoreProvider, jobStatusStore),
+                sendToSqs(instanceProperties, sqsClient));
     }
 
-    protected CompactionJobCommitHandler(TablePropertiesProvider tablePropertiesProvider,
+    protected CompactionJobCommitterOrSendToLambda(TablePropertiesProvider tablePropertiesProvider,
             CompactionJobCommitter jobCommitter, CommitQueueSender jobCommitQueueSender) {
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.jobCommitter = jobCommitter;
@@ -65,7 +70,14 @@ public class CompactionJobCommitHandler {
         void send(CompactionJobCommitRequest commitRequest);
     }
 
-    public static CommitQueueSender sendToSqs(InstanceProperties instanceProperties, AmazonSQS sqsClient) {
+    private static CompactionJobCommitter committer(
+            TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider,
+            CompactionJobStatusStore jobStatusStore) {
+        return new CompactionJobCommitter(jobStatusStore,
+                tableId -> stateStoreProvider.getStateStore(tablePropertiesProvider.getById(tableId)));
+    }
+
+    private static CommitQueueSender sendToSqs(InstanceProperties instanceProperties, AmazonSQS sqsClient) {
         return request -> {
             String queueUrl = instanceProperties.get(COMPACTION_JOB_COMMITTER_QUEUE_URL);
             String tableId = request.getJob().getTableId();
