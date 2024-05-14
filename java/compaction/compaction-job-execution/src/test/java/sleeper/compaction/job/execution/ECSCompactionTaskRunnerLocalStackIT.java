@@ -444,12 +444,12 @@ public class ECSCompactionTaskRunnerLocalStackIT {
         CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties,
                 tablePropertiesProvider, stateStoreProvider,
                 ObjectFactory.noUserJars());
-        CompactionJobCommitterOrSendToLambda commitHandler = new CompactionJobCommitterOrSendToLambda(tablePropertiesProvider,
+        CompactionJobCommitterOrSendToLambda committer = new CompactionJobCommitterOrSendToLambda(tablePropertiesProvider,
                 new CompactionJobCommitter(jobStatusStore, tableId -> stateStoreProvider.getStateStore(tablePropertiesProvider.getById(tableId))),
                 instanceProperties, sqs);
         CompactionTask task = new CompactionTask(instanceProperties,
                 PropertiesReloader.neverReload(), new SqsCompactionQueueHandler(sqs, instanceProperties), compactSortedFiles,
-                commitHandler, jobStatusStore, taskStatusStore, taskId, timeSupplier, duration -> {
+                committer, jobStatusStore, taskStatusStore, taskId, timeSupplier, duration -> {
                 });
         return task;
     }

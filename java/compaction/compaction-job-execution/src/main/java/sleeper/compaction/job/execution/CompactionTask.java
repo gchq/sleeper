@@ -58,20 +58,20 @@ public class CompactionTask {
     private final CompactionRunner compactor;
     private final CompactionJobStatusStore jobStatusStore;
     private final CompactionTaskStatusStore taskStatusStore;
+    private final CompactionJobCommitterOrSendToLambda jobCommitter;
     private final String taskId;
     private final PropertiesReloader propertiesReloader;
     private int numConsecutiveFailures = 0;
     private int totalNumberOfMessagesProcessed = 0;
-    private CompactionJobCommitterOrSendToLambda jobCommitHandler;
 
     public CompactionTask(InstanceProperties instanceProperties, PropertiesReloader propertiesReloader,
-            MessageReceiver messageReceiver, CompactionRunner compactor, CompactionJobCommitterOrSendToLambda jobCommitHandler,
+            MessageReceiver messageReceiver, CompactionRunner compactor, CompactionJobCommitterOrSendToLambda jobCommitter,
             CompactionJobStatusStore jobStore, CompactionTaskStatusStore taskStore, String taskId) {
-        this(instanceProperties, propertiesReloader, messageReceiver, compactor, jobCommitHandler, jobStore, taskStore, taskId, Instant::now, threadSleep());
+        this(instanceProperties, propertiesReloader, messageReceiver, compactor, jobCommitter, jobStore, taskStore, taskId, Instant::now, threadSleep());
     }
 
     public CompactionTask(InstanceProperties instanceProperties, PropertiesReloader propertiesReloader,
-            MessageReceiver messageReceiver, CompactionRunner compactor, CompactionJobCommitterOrSendToLambda jobCommitHandler,
+            MessageReceiver messageReceiver, CompactionRunner compactor, CompactionJobCommitterOrSendToLambda jobCommitter,
             CompactionJobStatusStore jobStore, CompactionTaskStatusStore taskStore, String taskId, Supplier<Instant> timeSupplier, Consumer<Duration> sleepForTime) {
         maxIdleTime = Duration.ofSeconds(instanceProperties.getInt(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS));
         maxConsecutiveFailures = instanceProperties.getInt(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES);
@@ -84,7 +84,7 @@ public class CompactionTask {
         this.jobStatusStore = jobStore;
         this.taskStatusStore = taskStore;
         this.taskId = taskId;
-        this.jobCommitHandler = jobCommitHandler;
+        this.jobCommitter = jobCommitter;
     }
 
     public void run() throws IOException {
@@ -153,7 +153,7 @@ public class CompactionTask {
         RecordsProcessed recordsProcessed = compactor.compact(job);
         Instant jobFinishTime = timeSupplier.get();
         RecordsProcessedSummary summary = new RecordsProcessedSummary(recordsProcessed, jobStartTime, jobFinishTime);
-        jobCommitHandler.commit(new CompactionJobCommitRequest(job, taskId, summary));
+        jobCommitter.commit(new CompactionJobCommitRequest(job, taskId, summary));
         logMetrics(job, summary);
         return summary;
     }
