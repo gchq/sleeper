@@ -44,6 +44,7 @@ public class WriteRandomDataDirect {
                         .stateStoreProvider(session.createStateStoreProvider())
                         .instanceProperties(session.instanceProperties())
                         .hadoopConfiguration(session.hadoopConfiguration())
+                        .s3AsyncClient(session.s3Async())
                         .build(),
                 systemTestProperties, session.tableProperties());
     }
