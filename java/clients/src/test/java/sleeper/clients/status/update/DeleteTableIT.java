@@ -49,8 +49,8 @@ import sleeper.core.table.TableStatus;
 import sleeper.ingest.IngestFactory;
 import sleeper.ingest.IngestRecords;
 import sleeper.ingest.IngestResult;
+import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.IOException;
@@ -190,7 +190,7 @@ public class DeleteTableIT {
     }
 
     private StateStore createStateStore(TableProperties tableProperties) {
-        return DynamoDBTransactionLogStateStore.create(instanceProperties, tableProperties, dynamoDB, s3, conf);
+        return new StateStoreFactory(instanceProperties, s3, dynamoDB, conf).getStateStore(tableProperties);
     }
 
     private IngestResult ingestRecords(TableProperties tableProperties, List<Record> records) throws Exception {
