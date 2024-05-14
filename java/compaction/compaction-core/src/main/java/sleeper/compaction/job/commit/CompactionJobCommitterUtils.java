@@ -16,10 +16,8 @@
 package sleeper.compaction.job.commit;
 
 import sleeper.compaction.job.CompactionJob;
-import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
 
@@ -34,38 +32,8 @@ public class CompactionJobCommitterUtils {
             CompactionJob job,
             long recordsWritten,
             StateStore stateStore) throws StateStoreException, InterruptedException {
-        updateStateStoreSuccess(job, recordsWritten, stateStore,
+        CompactionJobCommitter.updateStateStoreSuccess(job, recordsWritten, stateStore,
                 JOB_ASSIGNMENT_WAIT_ATTEMPTS,
                 new ExponentialBackoffWithJitter(JOB_ASSIGNMENT_WAIT_RANGE));
-    }
-
-    public static void updateStateStoreSuccess(
-            CompactionJob job,
-            long recordsWritten,
-            StateStore stateStore,
-            int jobAssignmentWaitAttempts,
-            ExponentialBackoffWithJitter jobAssignmentWaitBackoff) throws StateStoreException, InterruptedException {
-        FileReference fileReference = FileReference.builder()
-                .filename(job.getOutputFile())
-                .partitionId(job.getPartitionId())
-                .numberOfRecords(recordsWritten)
-                .countApproximate(false)
-                .onlyContainsDataForThisPartition(true)
-                .build();
-
-        // Compaction jobs are sent for execution before updating the state store to assign the input files to the job.
-        // Sometimes the compaction can finish before the job assignment is finished. We wait for the job assignment
-        // rather than immediately failing the job run.
-        FileReferenceNotAssignedToJobException failure = null;
-        for (int attempts = 0; attempts < jobAssignmentWaitAttempts; attempts++) {
-            jobAssignmentWaitBackoff.waitBeforeAttempt(attempts);
-            try {
-                stateStore.atomicallyReplaceFileReferencesWithNewOne(job.getId(), job.getPartitionId(), job.getInputFiles(), fileReference);
-                return;
-            } catch (FileReferenceNotAssignedToJobException e) {
-                failure = e;
-            }
-        }
-        throw new TimedOutWaitingForFileAssignmentsException(failure);
     }
 }
