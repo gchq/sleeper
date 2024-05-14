@@ -47,7 +47,7 @@ import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
 import sleeper.statestore.StateStoreFactory;
-import sleeper.statestore.s3.S3StateStoreCreator;
+import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -95,15 +95,16 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
             .rootFirst("root")
             .splitToNewChildren("root", "left", "right", 0L)
             .buildTree();
-    private final StateStore stateStore = createStateStore(recordListAndSchema.sleeperSchema);
+    private StateStore stateStore;
 
     @BeforeEach
     public void before() throws StateStoreException {
         s3.createBucket(instanceProperties.get(DATA_BUCKET));
-        new S3StateStoreCreator(instanceProperties, dynamoDB).create();
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoDB).create();
+        tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
+        stateStore = createStateStore(recordListAndSchema.sleeperSchema);
         stateStore.initialise(tree.getAllPartitions());
         stateStore.fixFileUpdateTime(stateStoreUpdateTime);
-        tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
     }
 
     private StateStore createStateStore(Schema schema) {
