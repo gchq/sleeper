@@ -50,8 +50,8 @@ import sleeper.ingest.IngestFactory;
 import sleeper.ingest.IngestRecords;
 import sleeper.ingest.IngestResult;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.statestore.s3.S3StateStore;
-import sleeper.statestore.s3.S3StateStoreCreator;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
+import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -98,7 +98,7 @@ public class DeleteTableIT {
         s3.createBucket(instanceProperties.get(CONFIG_BUCKET));
         s3.createBucket(instanceProperties.get(DATA_BUCKET));
         DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
-        S3StateStoreCreator stateStoreCreator = new S3StateStoreCreator(instanceProperties, dynamoDB);
+        TransactionLogStateStoreCreator stateStoreCreator = new TransactionLogStateStoreCreator(instanceProperties, dynamoDB, s3);
         stateStoreCreator.create();
         inputFolderName = createTempDirectory(tempDir, null).toString();
     }
@@ -119,12 +119,6 @@ public class DeleteTableIT {
         List<String> tableFilesInS3 = streamTableObjects(table)
                 .map(S3ObjectSummary::getKey)
                 .collect(Collectors.toList());
-        assertThat(tableFilesInS3.stream()
-                .filter(key -> key.startsWith(tablePrefix(table, "statestore/files"))))
-                .hasSize(2);
-        assertThat(tableFilesInS3.stream()
-                .filter(key -> key.startsWith(tablePrefix(table, "statestore/partitions"))))
-                .hasSize(1);
         assertThat(tableFilesInS3.stream()
                 .filter(key -> key.startsWith(tablePrefix(table, "data/partition_root")))
                 .map(FilenameUtils::getName))
@@ -154,12 +148,6 @@ public class DeleteTableIT {
                 .map(S3ObjectSummary::getKey)
                 .collect(Collectors.toList());
         assertThat(tableFilesInS3.stream()
-                .filter(key -> key.startsWith(tablePrefix(table1, "statestore/files"))))
-                .hasSize(2);
-        assertThat(tableFilesInS3.stream()
-                .filter(key -> key.startsWith(tablePrefix(table1, "statestore/partitions"))))
-                .hasSize(1);
-        assertThat(tableFilesInS3.stream()
                 .filter(key -> key.startsWith(tablePrefix(table1, "data/partition_root")))
                 .map(FilenameUtils::getName))
                 .containsExactly(
@@ -168,6 +156,7 @@ public class DeleteTableIT {
         TableProperties table2 = createTable(uniqueIdAndName("test-table-2", "table-2"));
         StateStore stateStore2 = createStateStore(table2);
         stateStore2.initialise();
+        ingestRecords(table2, List.of(new Record(Map.of("key1", 25L))));
 
         // When
         deleteTable("table-1");
@@ -201,7 +190,7 @@ public class DeleteTableIT {
     }
 
     private StateStore createStateStore(TableProperties tableProperties) {
-        return new S3StateStore(instanceProperties, tableProperties, dynamoDB, conf);
+        return DynamoDBTransactionLogStateStore.create(instanceProperties, tableProperties, dynamoDB, s3, conf);
     }
 
     private IngestResult ingestRecords(TableProperties tableProperties, List<Record> records) throws Exception {
