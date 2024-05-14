@@ -19,7 +19,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
-import software.amazon.awscdk.services.iam.Role;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
@@ -28,12 +27,10 @@ import software.constructs.Construct;
 
 import sleeper.cdk.Utils;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.InstanceProperty;
 
 import javax.annotation.Nullable;
 
 import java.util.List;
-import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -149,33 +146,11 @@ public class ManagedPoliciesStack extends NestedStack {
                 .build();
     }
 
-    // WARNING: When assigning grants to these roles, the ID of the role reference is incorrectly used as the name of
-    //          the IAM policy. This means the resulting ID must be unique within your AWS account. This is a bug in
-    //          the CDK.
-    //          The result is that in order to have more than one instance of Sleeper deployed to the same AWS account,
-    //          we include the instance ID in the CDK logical IDs for the ingest source roles.
-    //          This should not be necessary with a managed policy, but when you use the CDK's grantX methods directly,
-    //          it adds separate policies against the roles. That may still be desirable in the future.
-    private static List<IRole> addRoleReferences(
-            Construct scope, InstanceProperties instanceProperties, InstanceProperty property, String roleId) {
-        AtomicInteger index = new AtomicInteger(1);
-        return instanceProperties.getList(property).stream()
-                .filter(not(String::isBlank))
-                .map(name -> Role.fromRoleName(scope, roleReferenceId(instanceProperties, roleId, index), name))
-                .collect(Collectors.toUnmodifiableList());
-    }
-
     private static List<IBucket> addIngestSourceBucketReferences(Construct scope, InstanceProperties instanceProperties) {
         AtomicInteger index = new AtomicInteger(1);
         return instanceProperties.getList(INGEST_SOURCE_BUCKET).stream()
                 .filter(not(String::isBlank))
                 .map(bucketName -> Bucket.fromBucketName(scope, "SourceBucket" + index.getAndIncrement(), bucketName))
                 .collect(Collectors.toList());
-    }
-
-    private static String roleReferenceId(InstanceProperties instanceProperties, String roleId, AtomicInteger index) {
-        return Utils.truncateTo64Characters(String.join("-",
-                instanceProperties.get(ID).toLowerCase(Locale.ROOT),
-                String.valueOf(index.getAndIncrement()), roleId));
     }
 }
