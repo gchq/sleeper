@@ -42,7 +42,6 @@ import java.util.stream.Stream;
 import static java.util.function.Predicate.not;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_ROLE;
 
 public class ManagedPoliciesStack extends NestedStack {
 
@@ -63,11 +62,6 @@ public class ManagedPoliciesStack extends NestedStack {
 
         directIngestPolicy = createManagedPolicy("DirectIngestPolicy");
         ingestByQueuePolicy = createManagedPolicy("IngestByQueuePolicy");
-        addRoleReferences(this, instanceProperties, INGEST_SOURCE_ROLE, "IngestSourceRole")
-                .forEach(role -> {
-                    directIngestPolicy.attachToRole(role);
-                    ingestByQueuePolicy.attachToRole(role);
-                });
 
         queryPolicy = createManagedPolicy("QueryPolicy");
         editTablesPolicy = createManagedPolicy("EditTablesPolicy");
