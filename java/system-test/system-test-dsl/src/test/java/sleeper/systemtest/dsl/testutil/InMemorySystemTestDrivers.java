@@ -34,6 +34,7 @@ import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import sleeper.systemtest.dsl.metrics.TableMetricsDriver;
 import sleeper.systemtest.dsl.partitioning.PartitionSplittingDriver;
 import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
+import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryCompaction;
@@ -48,6 +49,7 @@ import sleeper.systemtest.dsl.testutil.drivers.InMemoryQueryByQueueDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySketchesStore;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySleeperInstanceDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySleeperTablesDriver;
+import sleeper.systemtest.dsl.testutil.drivers.InMemorySnapshotsDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySourceFilesDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySystemTestDeploymentDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryTableMetrics;
@@ -181,5 +183,10 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
 
     public InMemoryDataStore data() {
         return data;
+    }
+
+    @Override
+    public SnapshotsDriver snapshots() {
+        return new InMemorySnapshotsDriver();
     }
 }

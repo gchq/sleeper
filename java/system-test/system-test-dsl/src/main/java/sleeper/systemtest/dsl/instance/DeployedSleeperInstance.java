@@ -27,6 +27,7 @@ import sleeper.configuration.properties.instance.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.SleeperVersion;
 import sleeper.systemtest.dsl.SystemTestDrivers;
+import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
 
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -54,17 +55,22 @@ public final class DeployedSleeperInstance {
     }
 
     public static DeployedSleeperInstance loadOrDeployIfNeeded(
-            String instanceId, DeployInstanceConfiguration configuration,
+            String instanceId, SystemTestInstanceConfiguration configuration,
             SystemTestParameters parameters, DeployedSystemTestResources systemTest,
-            SleeperInstanceDriver driver, AssumeAdminRoleDriver assumeRoleDriver) {
-
-        boolean newInstance = driver.deployInstanceIfNotPresent(instanceId, configuration);
+            SleeperInstanceDriver driver, AssumeAdminRoleDriver assumeRoleDriver, SnapshotsDriver snapshotsDriver) {
+        DeployInstanceConfiguration deployConfig = configuration.buildDeployConfig(parameters, systemTest);
+        boolean newInstance = driver.deployInstanceIfNotPresent(instanceId, deployConfig);
 
         InstanceProperties instanceProperties = new InstanceProperties();
         driver.loadInstanceProperties(instanceProperties, instanceId);
+        if (configuration.shouldEnableTransactionLogSnapshots()) {
+            snapshotsDriver.enableCreation(instanceProperties);
+        } else {
+            snapshotsDriver.disableCreation(instanceProperties);
+        }
 
         DeployedSleeperInstance instance = new DeployedSleeperInstance(
-                configuration, instanceProperties,
+                deployConfig, instanceProperties,
                 new InstanceAdminDriversWithRefresh(instanceProperties, assumeRoleDriver));
         if (!newInstance && instance.isRedeployNeeded(parameters, systemTest)) {
             instance.redeploy(driver, parameters);
