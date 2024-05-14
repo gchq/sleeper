@@ -29,15 +29,12 @@ import sleeper.core.SleeperVersion;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
 
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.instance.CommonProperty.TAGS;
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_ROLE;
 
 public final class DeployedSleeperInstance {
     private static final Logger LOGGER = LoggerFactory.getLogger(DeployedSleeperInstance.class);
@@ -103,15 +100,6 @@ public final class DeployedSleeperInstance {
 
     private boolean isRedeployNeeded(SystemTestParameters parameters, DeployedSystemTestResources systemTest) {
         boolean redeployNeeded = false;
-
-        Set<String> ingestRoles = new LinkedHashSet<>(instanceProperties.getList(INGEST_SOURCE_ROLE));
-        if (systemTest.isSystemTestClusterEnabled() &&
-                !ingestRoles.contains(systemTest.getSystemTestWriterRoleName())) {
-            ingestRoles.add(systemTest.getSystemTestWriterRoleName());
-            instanceProperties.set(INGEST_SOURCE_ROLE, String.join(",", ingestRoles));
-            redeployNeeded = true;
-            LOGGER.info("Redeploy required to give system test cluster access to the instance");
-        }
 
         if (!SleeperVersion.getVersion().equals(instanceProperties.get(VERSION))) {
             redeployNeeded = true;

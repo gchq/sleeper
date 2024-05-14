@@ -15,18 +15,17 @@
  */
 package sleeper.systemtest.datageneration;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
+import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
+import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.clients.util.AssumeSleeperRole;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
-import sleeper.statestore.StateStoreProvider;
 import sleeper.systemtest.configuration.SystemTestIngestMode;
 import sleeper.systemtest.configuration.SystemTestProperties;
 import sleeper.systemtest.configuration.SystemTestPropertyValues;
@@ -51,19 +50,19 @@ public class IngestRandomData {
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestRandomData.class);
 
     private final InstanceProperties instanceProperties;
-    private final TableProperties tableProperties;
     private final SystemTestPropertyValues systemTestProperties;
-    private final AmazonS3 s3Client;
-    private final AmazonDynamoDB dynamoClient;
+    private final String tableName;
+    private final AWSSecurityTokenService stsClient;
+    private final Configuration hadoopConf;
 
     private IngestRandomData(
-            InstanceProperties instanceProperties, TableProperties tableProperties,
-            SystemTestPropertyValues systemTestProperties, AmazonS3 s3Client, AmazonDynamoDB dynamoClient) {
+            InstanceProperties instanceProperties, SystemTestPropertyValues systemTestProperties, String tableName,
+            AWSSecurityTokenService stsClient, Configuration hadoopConf) {
         this.instanceProperties = instanceProperties;
-        this.tableProperties = tableProperties;
         this.systemTestProperties = systemTestProperties;
-        this.s3Client = s3Client;
-        this.dynamoClient = dynamoClient;
+        this.tableName = tableName;
+        this.stsClient = stsClient;
+        this.hadoopConf = hadoopConf;
     }
 
     public void run() throws IOException {
@@ -78,61 +77,50 @@ public class IngestRandomData {
     }
 
     public static void main(String[] args) throws IOException {
-        InstanceProperties instanceProperties;
-        SystemTestPropertyValues systemTestProperties;
-        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        AmazonDynamoDB dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
+        AWSSecurityTokenService stsClient = AWSSecurityTokenServiceClientBuilder.defaultClient();
         try {
-            if (args.length == 2) {
-                SystemTestProperties properties = new SystemTestProperties();
-                properties.loadFromS3(s3Client, args[0]);
-                instanceProperties = properties;
-                systemTestProperties = properties.testPropertiesOnly();
+            CommandLineFactory factory = new CommandLineFactory(stsClient);
+            IngestRandomData ingestRandomData;
+            if (args.length == 4) {
+                ingestRandomData = factory.standalone(args[0], args[1], args[2], args[3]);
             } else if (args.length == 3) {
-                instanceProperties = new InstanceProperties();
-                instanceProperties.loadFromS3(s3Client, args[0]);
-                systemTestProperties = SystemTestStandaloneProperties.fromS3(s3Client, args[2]);
+                ingestRandomData = factory.withLoadConfigRole(args[0], args[1], args[2]);
+            } else if (args.length == 2) {
+                ingestRandomData = factory.noLoadConfigRole(args[0], args[1]);
             } else {
-                throw new RuntimeException("Wrong number of arguments detected. Usage: IngestRandomData <S3 bucket> <Table name> <optional system test bucket>");
+                throw new RuntimeException("Wrong number of arguments detected. Usage: IngestRandomData <S3 bucket> <Table name> <optional role ARN to load config as> <optional system test bucket>");
             }
-            TableProperties tableProperties = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient)
-                    .getByName(args[1]);
 
-            new IngestRandomData(instanceProperties, tableProperties, systemTestProperties, s3Client, dynamoClient)
-                    .run();
+            ingestRandomData.run();
         } finally {
-            s3Client.shutdown();
-            dynamoClient.shutdown();
+            stsClient.shutdown();
         }
     }
 
     private Ingester ingester() {
         SystemTestIngestMode ingestMode = systemTestProperties.getEnumValue(INGEST_MODE, SystemTestIngestMode.class);
         if (ingestMode == DIRECT) {
-            StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client,
-                    dynamoClient, HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
-            return () -> WriteRandomDataDirect.writeWithIngestFactory(instanceProperties, tableProperties, systemTestProperties, stateStoreProvider);
+            return () -> {
+                try (InstanceIngestSession session = InstanceIngestSession.direct(stsClient, instanceProperties, tableName)) {
+                    WriteRandomDataDirect.writeWithIngestFactory(systemTestProperties, session);
+                }
+            };
         }
-        FileIngester ingestFromFile;
-        if (ingestMode == QUEUE) {
-            ingestFromFile = (jobId, dir) -> IngestRandomDataViaQueue.sendJob(
-                    jobId, dir, instanceProperties, tableProperties, systemTestProperties);
-        } else if (ingestMode == BATCHER) {
-            ingestFromFile = (jobId, dir) -> IngestRandomDataViaBatcher.sendRequest(dir, instanceProperties, tableProperties);
-        } else if (ingestMode == GENERATE_ONLY) {
-            ingestFromFile = (jobId, dir) -> LOGGER.debug("Generate data only, no message was sent");
-        } else {
-            throw new IllegalArgumentException("Unrecognised ingest mode: " + ingestMode);
-        }
-        return writeRandomFileAnd(ingestFromFile);
-    }
-
-    private Ingester writeRandomFileAnd(FileIngester ingester) {
         return () -> {
-            String jobId = UUID.randomUUID().toString();
-            String dir = WriteRandomDataFiles.writeToS3GetDirectory(
-                    instanceProperties, tableProperties, systemTestProperties, jobId);
-            ingester.ingest(jobId, dir);
+            try (InstanceIngestSession session = InstanceIngestSession.byQueue(stsClient, instanceProperties, tableName)) {
+                String jobId = UUID.randomUUID().toString();
+                String dir = WriteRandomDataFiles.writeToS3GetDirectory(systemTestProperties, session.tableProperties(), hadoopConf, jobId);
+
+                if (ingestMode == QUEUE) {
+                    IngestRandomDataViaQueue.sendJob(jobId, dir, systemTestProperties, session);
+                } else if (ingestMode == BATCHER) {
+                    IngestRandomDataViaBatcher.sendRequest(dir, session);
+                } else if (ingestMode == GENERATE_ONLY) {
+                    LOGGER.debug("Generate data only, no message was sent");
+                } else {
+                    throw new IllegalArgumentException("Unrecognised ingest mode: " + ingestMode);
+                }
+            }
         };
     }
 
@@ -140,7 +128,54 @@ public class IngestRandomData {
         void ingest() throws IOException;
     }
 
-    interface FileIngester {
-        void ingest(String jobId, String dir) throws IOException;
+    private static class CommandLineFactory {
+        private final AWSSecurityTokenService stsClient;
+
+        CommandLineFactory(AWSSecurityTokenService stsClient) {
+            this.stsClient = stsClient;
+        }
+
+        IngestRandomData noLoadConfigRole(String configBucket, String tableName) {
+            AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+            try {
+                return combinedInstance(configBucket, tableName, s3Client);
+            } finally {
+                s3Client.shutdown();
+            }
+        }
+
+        IngestRandomData withLoadConfigRole(String configBucket, String tableName, String loadConfigRoleArn) {
+            AmazonS3 instanceS3Client = AssumeSleeperRole.fromArn(stsClient, loadConfigRoleArn).v1Client(AmazonS3ClientBuilder.standard());
+            try {
+                return combinedInstance(configBucket, tableName, instanceS3Client);
+            } finally {
+                instanceS3Client.shutdown();
+            }
+        }
+
+        IngestRandomData standalone(String configBucket, String tableName, String loadConfigRoleArn, String systemTestBucket) {
+            AmazonS3 instanceS3Client = AssumeSleeperRole.fromArn(stsClient, loadConfigRoleArn).v1Client(AmazonS3ClientBuilder.standard());
+            AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+            try {
+                SystemTestStandaloneProperties systemTestProperties = SystemTestStandaloneProperties.fromS3(s3Client, systemTestBucket);
+                InstanceProperties instanceProperties = new InstanceProperties();
+                instanceProperties.loadFromS3(instanceS3Client, configBucket);
+                return ingestRandomData(instanceProperties, systemTestProperties, tableName);
+            } finally {
+                s3Client.shutdown();
+                instanceS3Client.shutdown();
+            }
+        }
+
+        IngestRandomData combinedInstance(String configBucket, String tableName, AmazonS3 s3Client) {
+            SystemTestProperties properties = new SystemTestProperties();
+            properties.loadFromS3(s3Client, configBucket);
+            return ingestRandomData(properties, properties.testPropertiesOnly(), tableName);
+        }
+
+        IngestRandomData ingestRandomData(InstanceProperties instanceProperties, SystemTestPropertyValues systemTestProperties, String tableName) {
+            return new IngestRandomData(instanceProperties, systemTestProperties, tableName, stsClient,
+                    HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
+        }
     }
 }
