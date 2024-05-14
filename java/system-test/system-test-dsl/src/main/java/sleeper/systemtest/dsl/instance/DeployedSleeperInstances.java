@@ -16,8 +16,6 @@
 
 package sleeper.systemtest.dsl.instance;
 
-import sleeper.configuration.deploy.DeployInstanceConfiguration;
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -59,8 +57,7 @@ public class DeployedSleeperInstances {
     private DeployedSleeperInstance createInstanceIfMissing(String identifier, SystemTestInstanceConfiguration configuration) {
         String instanceId = parameters.buildInstanceId(identifier);
         OutputInstanceIds.addInstanceIdToOutput(instanceId, parameters);
-        DeployInstanceConfiguration deployConfig = configuration.buildDeployConfig(parameters, systemTest);
         return DeployedSleeperInstance.loadOrDeployIfNeeded(
-                instanceId, deployConfig, parameters, systemTest, instanceDriver, assumeRoleDriver);
+                instanceId, configuration, parameters, systemTest, instanceDriver, assumeRoleDriver);
     }
 }

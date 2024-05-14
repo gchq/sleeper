@@ -34,6 +34,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_SNAPSHOT_CREATION_RULE;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.instance.CommonProperty.TAGS;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_ROLE;
@@ -54,17 +55,21 @@ public final class DeployedSleeperInstance {
     }
 
     public static DeployedSleeperInstance loadOrDeployIfNeeded(
-            String instanceId, DeployInstanceConfiguration configuration,
+            String instanceId, SystemTestInstanceConfiguration configuration,
             SystemTestParameters parameters, DeployedSystemTestResources systemTest,
             SleeperInstanceDriver driver, AssumeAdminRoleDriver assumeRoleDriver) {
-
-        boolean newInstance = driver.deployInstanceIfNotPresent(instanceId, configuration);
+        DeployInstanceConfiguration deployConfig = configuration.buildDeployConfig(parameters, systemTest);
+        boolean newInstance = driver.deployInstanceIfNotPresent(instanceId, deployConfig);
 
         InstanceProperties instanceProperties = new InstanceProperties();
         driver.loadInstanceProperties(instanceProperties, instanceId);
+        if (newInstance && configuration.shouldEnableTransactionLogSnapshots()) {
+            instanceProperties.set(TRANSACTION_LOG_SNAPSHOT_CREATION_RULE, "true");
+            driver.saveInstanceProperties(instanceProperties);
+        }
 
         DeployedSleeperInstance instance = new DeployedSleeperInstance(
-                configuration, instanceProperties,
+                deployConfig, instanceProperties,
                 new InstanceAdminDriversWithRefresh(instanceProperties, assumeRoleDriver));
         if (!newInstance && instance.isRedeployNeeded(parameters, systemTest)) {
             instance.redeploy(driver, parameters);
