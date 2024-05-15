@@ -51,6 +51,10 @@ public class WaitForPartitionSplitting {
                         Collectors.mapping(split -> split.getPartition().getId(), Collectors.toSet())));
     }
 
+    public static WaitForPartitionSplitting forCurrentPartitionsNeedingSplitting(SystemTestInstanceContext instance) {
+        return forCurrentPartitionsNeedingSplitting(instance.streamTableProperties(), instance::getStateStore);
+    }
+
     public static WaitForPartitionSplitting forCurrentPartitionsNeedingSplitting(
             Stream<TableProperties> tablePropertiesStream, Function<TableProperties, StateStore> getStateStore) {
         return new WaitForPartitionSplitting(getResults(tablePropertiesStream, getStateStore));
