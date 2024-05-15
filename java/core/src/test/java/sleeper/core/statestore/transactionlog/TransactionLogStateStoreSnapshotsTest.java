@@ -60,6 +60,21 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
     }
 
     @Test
+    void shouldLoadPartitionsFromSnapshotWhenNotInLog() throws Exception {
+        // Given
+        partitions.splitToNewChildren("root", "L", "R", "abc");
+
+        // When
+        createSnapshotWithFreshState(stateStore -> {
+            stateStore.initialise(partitions.buildList());
+        });
+
+        // Then
+        assertThat(stateStore().getAllPartitions())
+                .containsExactlyInAnyOrderElementsOf(partitions.buildList());
+    }
+
+    @Test
     void shouldSetPartitionsStateWhenCreatingStateStore() throws Exception {
         // Given
         StateStorePartitions partitionsState = new StateStorePartitions();
