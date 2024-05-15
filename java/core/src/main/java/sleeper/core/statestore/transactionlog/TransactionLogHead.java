@@ -92,6 +92,11 @@ class TransactionLogHead<T> {
         try {
             Instant startTime = Instant.now();
             long transactionNumberBefore = lastTransactionNumber;
+            // TODO replace state from snapshot if there's one worth loading
+            // snapshots.loadIfShouldUpdateFromTransaction(transactionNumberBefore).ifPresent(snapshot -> {
+            //     state = snapshot.getState();
+            //     lastTransactionNumber = snapshot.getTransactionNumber();
+            // });
             logStore.readTransactionsAfter(lastTransactionNumber)
                     .forEach(this::applyTransaction);
             LOGGER.info("Updated {}, read {} transactions, took {}, last transaction number is {}",
