@@ -24,7 +24,6 @@ import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.LoggedDuration;
 
 import java.time.Instant;
-import java.util.Optional;
 
 class TransactionLogHead<T> {
     public static final Logger LOGGER = LoggerFactory.getLogger(TransactionLogHead.class);
@@ -34,7 +33,7 @@ class TransactionLogHead<T> {
     private final int maxAddTransactionAttempts;
     private final ExponentialBackoffWithJitter retryBackoff;
     private final Class<? extends StateStoreTransaction<T>> transactionType;
-    private final TransactionLogSnapshotLoader snapshots;
+    private final TransactionLogSnapshotLoader snapshotLoader;
     private T state;
     private long lastTransactionNumber;
 
@@ -44,7 +43,7 @@ class TransactionLogHead<T> {
         this.maxAddTransactionAttempts = builder.maxAddTransactionAttempts;
         this.retryBackoff = builder.retryBackoff;
         this.transactionType = builder.transactionType;
-        this.snapshots = transactionNumber -> Optional.empty();
+        this.snapshotLoader = builder.snapshotLoader;
         this.state = builder.state;
         this.lastTransactionNumber = builder.lastTransactionNumber;
     }
@@ -95,7 +94,7 @@ class TransactionLogHead<T> {
         try {
             Instant startTime = Instant.now();
             long transactionNumberBefore = lastTransactionNumber;
-            snapshots.loadLatestSnapshotIfLaterThan(transactionNumberBefore).ifPresent(snapshot -> {
+            snapshotLoader.loadLatestSnapshotIfLaterThan(transactionNumberBefore).ifPresent(snapshot -> {
                 state = snapshot.getState();
                 lastTransactionNumber = snapshot.getTransactionNumber();
             });
@@ -134,6 +133,7 @@ class TransactionLogHead<T> {
         private int maxAddTransactionAttempts;
         private ExponentialBackoffWithJitter retryBackoff;
         private Class<? extends StateStoreTransaction<T>> transactionType;
+        private TransactionLogSnapshotLoader snapshotLoader = TransactionLogSnapshotLoader.neverLoad();
         private T state;
         private long lastTransactionNumber = 0;
 
@@ -163,6 +163,11 @@ class TransactionLogHead<T> {
         public <N> Builder<N> transactionType(Class<? extends StateStoreTransaction<N>> transactionType) {
             this.transactionType = (Class<? extends StateStoreTransaction<T>>) transactionType;
             return (Builder<N>) this;
+        }
+
+        public Builder<T> snapshotLoader(TransactionLogSnapshotLoader snapshotLoader) {
+            this.snapshotLoader = snapshotLoader;
+            return this;
         }
 
         public Builder<T> state(T state) {

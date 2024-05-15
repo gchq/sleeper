@@ -16,7 +16,6 @@
 package sleeper.core.statestore.transactionlog;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionTree;
@@ -47,7 +46,6 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
     }
 
     @Test
-    @Disabled("TODO")
     void shouldLoadFilesFromSnapshotWhenNotInLog() throws Exception {
         // Given
         FileReference file = fileFactory().rootFile(123);

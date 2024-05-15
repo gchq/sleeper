@@ -19,5 +19,9 @@ import java.util.Optional;
 
 @FunctionalInterface
 public interface TransactionLogSnapshotLoader {
+    static TransactionLogSnapshotLoader neverLoad() {
+        return transactionNumber -> Optional.empty();
+    }
+
     Optional<TransactionLogSnapshot> loadLatestSnapshotIfLaterThan(long transactionNumber);
 }

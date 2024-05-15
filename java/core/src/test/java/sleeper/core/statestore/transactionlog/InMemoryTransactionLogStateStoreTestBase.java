@@ -71,7 +71,9 @@ public class InMemoryTransactionLogStateStoreTestBase {
                 .sleeperTable(sleeperTable)
                 .schema(schema)
                 .filesLogStore(filesLogStore)
+                .filesSnapshotLoader(fileSnapshots)
                 .partitionsLogStore(partitionsLogStore)
+                .partitionsSnapshotLoader(partitionSnapshots)
                 .maxAddTransactionAttempts(10)
                 .retryBackoff(new ExponentialBackoffWithJitter(
                         TransactionLogStateStore.RETRY_WAIT_RANGE,
