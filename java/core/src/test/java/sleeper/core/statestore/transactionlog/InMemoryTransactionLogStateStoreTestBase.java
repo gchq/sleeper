@@ -20,6 +20,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.table.TableStatus;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 
 import java.time.Duration;
@@ -33,10 +34,13 @@ import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.recordWai
 
 public class InMemoryTransactionLogStateStoreTestBase {
 
+    protected final TableStatus sleeperTable = uniqueIdAndName("test-table-id", "test-table");
     private PartitionsBuilder partitions;
     protected FileReferenceFactory factory;
     protected InMemoryTransactionLogStore filesLogStore = new InMemoryTransactionLogStore();
     protected InMemoryTransactionLogStore partitionsLogStore = new InMemoryTransactionLogStore();
+    protected InMemoryTransactionLogSnapshots fileSnapshots = new InMemoryTransactionLogSnapshots();
+    protected InMemoryTransactionLogSnapshots partitionSnapshots = new InMemoryTransactionLogSnapshots();
     protected StateStore store;
     protected final List<Duration> retryWaits = new ArrayList<>();
 
@@ -64,7 +68,7 @@ public class InMemoryTransactionLogStateStoreTestBase {
 
     protected TransactionLogStateStore.Builder stateStoreBuilder(Schema schema) {
         return TransactionLogStateStore.builder()
-                .sleeperTable(uniqueIdAndName("test-table-id", "test-table"))
+                .sleeperTable(sleeperTable)
                 .schema(schema)
                 .filesLogStore(filesLogStore)
                 .partitionsLogStore(partitionsLogStore)

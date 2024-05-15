@@ -17,11 +17,24 @@ package sleeper.core.statestore.transactionlog;
 
 public class TransactionLogSnapshot {
 
+    private final Object state;
+    private final long transactionNumber;
+
+    public TransactionLogSnapshot(StateStoreFiles state, long transactionNumber) {
+        this.state = state;
+        this.transactionNumber = transactionNumber;
+    }
+
+    public TransactionLogSnapshot(StateStorePartitions state, long transactionNumber) {
+        this.state = state;
+        this.transactionNumber = transactionNumber;
+    }
+
     public <T> T getState() {
-        throw new UnsupportedOperationException("Unimplemented method 'getState'");
+        return (T) state;
     }
 
     public long getTransactionNumber() {
-        throw new UnsupportedOperationException("Unimplemented method 'getTransactionNumber'");
+        return transactionNumber;
     }
 }

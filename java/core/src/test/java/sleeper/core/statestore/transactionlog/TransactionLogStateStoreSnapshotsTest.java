@@ -16,6 +16,7 @@
 package sleeper.core.statestore.transactionlog;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionTree;
@@ -25,12 +26,15 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 
 import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
+import static sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshots.createFilesSnapshot;
+import static sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshots.createPartitionsSnapshot;
 
 public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLogStateStoreTestBase {
 
@@ -39,7 +43,22 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
 
     @BeforeEach
     void setUp() throws Exception {
-        stateStore().initialise(partitions.buildList());
+        initialiseWithPartitions(partitions);
+    }
+
+    @Test
+    @Disabled("TODO")
+    void shouldLoadFilesFromSnapshotWhenNotInLog() throws Exception {
+        // Given
+        FileReference file = fileFactory().rootFile(123);
+
+        // When
+        createSnapshotWithFreshState(stateStore -> {
+            stateStore.addFile(file);
+        });
+
+        // Then
+        assertThat(store.getFileReferences()).containsExactly(file);
     }
 
     @Test
@@ -113,6 +132,26 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
 
     private FileReferenceFactory fileFactory() {
         return FileReferenceFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
+    }
+
+    protected void createSnapshotWithFreshState(SetupStateStore setupState) throws Exception {
+        InMemoryTransactionLogStore fileTransactions = new InMemoryTransactionLogStore();
+        InMemoryTransactionLogStore partitionTransactions = new InMemoryTransactionLogStore();
+        StateStore stateStore = TransactionLogStateStore.builder()
+                .sleeperTable(sleeperTable)
+                .schema(schema)
+                .filesLogStore(fileTransactions)
+                .partitionsLogStore(partitionTransactions)
+                .build();
+        stateStore.fixFileUpdateTime(DEFAULT_UPDATE_TIME);
+        stateStore.fixPartitionUpdateTime(DEFAULT_UPDATE_TIME);
+        setupState.run(stateStore);
+        fileSnapshots.setLatestSnapshot(createFilesSnapshot(sleeperTable, fileTransactions));
+        partitionSnapshots.setLatestSnapshot(createPartitionsSnapshot(sleeperTable, partitionTransactions));
+    }
+
+    public interface SetupStateStore {
+        void run(StateStore stateStore) throws StateStoreException;
     }
 
 }
