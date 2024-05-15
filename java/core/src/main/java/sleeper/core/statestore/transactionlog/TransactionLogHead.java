@@ -33,7 +33,8 @@ class TransactionLogHead<T> {
     private final int maxAddTransactionAttempts;
     private final ExponentialBackoffWithJitter retryBackoff;
     private final Class<? extends StateStoreTransaction<T>> transactionType;
-    private final T state;
+    private final TransactionLogSnapshotLoader snapshots;
+    private T state;
     private long lastTransactionNumber;
 
     private TransactionLogHead(Builder<T> builder) {
@@ -42,6 +43,7 @@ class TransactionLogHead<T> {
         this.maxAddTransactionAttempts = builder.maxAddTransactionAttempts;
         this.retryBackoff = builder.retryBackoff;
         this.transactionType = builder.transactionType;
+        this.snapshots = new TransactionLogSnapshotLoader();
         this.state = builder.state;
         this.lastTransactionNumber = builder.lastTransactionNumber;
     }
@@ -92,11 +94,10 @@ class TransactionLogHead<T> {
         try {
             Instant startTime = Instant.now();
             long transactionNumberBefore = lastTransactionNumber;
-            // TODO replace state from snapshot if there's one worth loading
-            // snapshots.loadIfShouldUpdateFromTransaction(transactionNumberBefore).ifPresent(snapshot -> {
-            //     state = snapshot.getState();
-            //     lastTransactionNumber = snapshot.getTransactionNumber();
-            // });
+            snapshots.loadIfShouldUpdateFromTransaction(transactionNumberBefore).ifPresent(snapshot -> {
+                state = snapshot.getState();
+                lastTransactionNumber = snapshot.getTransactionNumber();
+            });
             logStore.readTransactionsAfter(lastTransactionNumber)
                     .forEach(this::applyTransaction);
             LOGGER.info("Updated {}, read {} transactions, took {}, last transaction number is {}",
