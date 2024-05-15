@@ -120,7 +120,6 @@ public class DeleteTableIT {
                 .map(S3ObjectSummary::getKey)
                 .collect(Collectors.toList());
         assertThat(tableFilesInS3.stream()
-                .filter(key -> key.startsWith(tablePrefix(table, "data/partition_root")))
                 .map(FilenameUtils::getName))
                 .containsExactly(
                         FilenameUtils.getName(rootFile.getFilename()),
@@ -148,7 +147,6 @@ public class DeleteTableIT {
                 .map(S3ObjectSummary::getKey)
                 .collect(Collectors.toList());
         assertThat(tableFilesInS3.stream()
-                .filter(key -> key.startsWith(tablePrefix(table1, "data/partition_root")))
                 .map(FilenameUtils::getName))
                 .containsExactly(
                         FilenameUtils.getName(rootFile.getFilename()),
