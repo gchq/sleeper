@@ -67,6 +67,7 @@ import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 import sleeper.statestore.s3.S3StateStore;
 import sleeper.statestore.s3.S3StateStoreCreator;
+import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -174,6 +175,7 @@ class BulkImportJobDriverIT {
         DynamoDBTableIndexCreator.create(dynamoDBClient, instanceProperties);
         new DynamoDBStateStoreCreator(instanceProperties, dynamoDBClient).create();
         new S3StateStoreCreator(instanceProperties, dynamoDBClient).create();
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoDBClient).create();
 
         return instanceProperties;
     }
