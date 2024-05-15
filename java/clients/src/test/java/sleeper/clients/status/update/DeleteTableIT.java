@@ -207,10 +207,6 @@ public class DeleteTableIT {
         return ingestRecords.close();
     }
 
-    private String tablePrefix(TableProperties tableProperties, String prefix) {
-        return tableProperties.get(TABLE_ID) + "/" + prefix;
-    }
-
     private Stream<S3ObjectSummary> streamTableObjects(TableProperties tableProperties) {
         return s3.listObjects(new ListObjectsRequest()
                 .withBucketName(instanceProperties.get(DATA_BUCKET))
