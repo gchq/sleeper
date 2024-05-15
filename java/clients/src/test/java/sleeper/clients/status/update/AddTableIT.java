@@ -41,7 +41,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.statestore.StateStoreFactory;
-import sleeper.statestore.s3.S3StateStoreCreator;
+import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -78,7 +78,7 @@ public class AddTableIT {
     void setUp() {
         s3.createBucket(instanceProperties.get(CONFIG_BUCKET));
         s3.createBucket(instanceProperties.get(DATA_BUCKET));
-        new S3StateStoreCreator(instanceProperties, dynamoDB).create();
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoDB).create();
         DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
     }
 

@@ -83,7 +83,7 @@ import sleeper.query.tracker.QueryStatusReportListener;
 import sleeper.query.tracker.QueryTrackerStore;
 import sleeper.query.tracker.TrackedQuery;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.statestore.s3.S3StateStoreCreator;
+import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.IOException;
 import java.sql.Timestamp;
@@ -828,7 +828,7 @@ public class SqsQueryProcessorLambdaIT {
         instanceProperties.saveToS3(s3Client);
 
         DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
-        new S3StateStoreCreator(instanceProperties, dynamoClient).create();
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
 
         return instanceProperties;
     }
