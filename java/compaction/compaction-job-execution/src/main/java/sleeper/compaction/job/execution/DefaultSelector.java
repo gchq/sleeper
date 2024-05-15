@@ -27,6 +27,8 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.statestore.StateStoreProvider;
 
+import java.util.Locale;
+
 /**
  * Determines which compaction algorithm should be run based on the table and instance configuration properties and
  * other environmental information.
@@ -52,7 +54,7 @@ public class DefaultSelector implements CompactionAlgorithmSelector {
     public CompactionRunner chooseCompactor(CompactionJob job) {
         TableProperties tableProperties = tablePropertiesProvider
                 .getById(job.getTableId());
-        String method = tableProperties.get(TableProperty.COMPACTION_METHOD).toUpperCase();
+        String method = tableProperties.get(TableProperty.COMPACTION_METHOD).toUpperCase(Locale.UK);
 
         // Convert to enum value and default to Java
         CompactionMethod desired;
