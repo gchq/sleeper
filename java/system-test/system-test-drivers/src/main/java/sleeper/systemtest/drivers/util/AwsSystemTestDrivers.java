@@ -42,6 +42,7 @@ import sleeper.systemtest.drivers.query.DirectQueryDriver;
 import sleeper.systemtest.drivers.query.S3ResultsDriver;
 import sleeper.systemtest.drivers.query.SQSQueryDriver;
 import sleeper.systemtest.drivers.query.WebSocketQueryDriver;
+import sleeper.systemtest.drivers.snapshots.AwsSnapshotsDriver;
 import sleeper.systemtest.drivers.sourcedata.AwsGeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.drivers.sourcedata.AwsIngestSourceFilesDriver;
 import sleeper.systemtest.dsl.SystemTestContext;
@@ -69,6 +70,7 @@ import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
 import sleeper.systemtest.dsl.reporting.CompactionReportsDriver;
 import sleeper.systemtest.dsl.reporting.IngestReportsDriver;
 import sleeper.systemtest.dsl.reporting.PartitionReportDriver;
+import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
 import sleeper.systemtest.dsl.sourcedata.DataGenerationTasksDriver;
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
@@ -240,4 +242,10 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
     public PurgeQueueDriver purgeQueues(SystemTestContext context) {
         return new AwsPurgeQueueDriver(context.instance(), clients.getSqs());
     }
+
+    @Override
+    public SnapshotsDriver snapshots() {
+        return new AwsSnapshotsDriver(clients.getCloudWatchEvents());
+    }
+
 }

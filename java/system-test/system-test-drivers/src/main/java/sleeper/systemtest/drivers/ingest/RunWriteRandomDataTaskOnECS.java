@@ -47,6 +47,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_BY_QUEUE_ROLE_ARN;
 import static sleeper.configuration.properties.instance.CommonProperty.FARGATE_VERSION;
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
@@ -73,10 +74,12 @@ public class RunWriteRandomDataTaskOnECS {
         this.ecsClient = ecsClient;
         this.args = List.of(
                 instanceProperties.get(CONFIG_BUCKET),
-                tableProperties.get(TABLE_NAME));
+                tableProperties.get(TABLE_NAME),
+                instanceProperties.get(INGEST_BY_QUEUE_ROLE_ARN));
     }
 
-    public RunWriteRandomDataTaskOnECS(InstanceProperties instanceProperties, TableProperties tableProperties,
+    public RunWriteRandomDataTaskOnECS(
+            InstanceProperties instanceProperties, TableProperties tableProperties,
             SystemTestStandaloneProperties systemTestProperties, AmazonECS ecsClient) {
         this.instanceProperties = instanceProperties;
         this.systemTestProperties = systemTestProperties;
@@ -84,6 +87,7 @@ public class RunWriteRandomDataTaskOnECS {
         this.args = List.of(
                 instanceProperties.get(CONFIG_BUCKET),
                 tableProperties.get(TABLE_NAME),
+                instanceProperties.get(INGEST_BY_QUEUE_ROLE_ARN),
                 systemTestProperties.get(SYSTEM_TEST_BUCKET_NAME));
     }
 

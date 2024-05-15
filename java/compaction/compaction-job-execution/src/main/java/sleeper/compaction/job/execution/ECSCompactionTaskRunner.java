@@ -28,7 +28,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.job.commit.CompactionJobCommitter;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
 import sleeper.compaction.task.CompactionTaskStatusStore;
@@ -37,7 +36,6 @@ import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.LoggedDuration;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.job.common.EC2ContainerMetadata;
@@ -95,18 +93,11 @@ public class ECSCompactionTaskRunner {
             DefaultSelector compactionSelector = new DefaultSelector(instanceProperties,
                     tablePropertiesProvider, stateStoreProvider, objectFactory);
 
-            CompactionJobCommitter committer = new CompactionJobCommitter(jobStatusStore, tableId -> stateStoreProvider.getStateStore(tablePropertiesProvider.getById(tableId)));
-            CompactionJobCommitHandler commitHandler = new CompactionJobCommitHandler(tablePropertiesProvider, committer,
-                    (request) -> {
-                        // TODO send to SQS queue once infrastructure is deployed by CDK
-                        try {
-                            committer.apply(request);
-                        } catch (StateStoreException | InterruptedException e) {
-                            throw new RuntimeException(e);
-                        }
-                    });
-            CompactionTask task = new CompactionTask(instanceProperties, propertiesReloader, new SqsCompactionQueueHandler(sqsClient, instanceProperties),
-                    commitHandler, jobStatusStore, taskStatusStore, compactionSelector, taskId);
+            CompactionJobCommitterOrSendToLambda committerOrLambda = new CompactionJobCommitterOrSendToLambda(
+                    tablePropertiesProvider, stateStoreProvider, jobStatusStore, instanceProperties, sqsClient);
+            CompactionTask task = new CompactionTask(instanceProperties, propertiesReloader,
+                    new SqsCompactionQueueHandler(sqsClient, instanceProperties),
+                    committerOrLambda, jobStatusStore, taskStatusStore, compactionSelector, taskId);
             task.run();
         } finally {
             sqsClient.shutdown();

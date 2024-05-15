@@ -20,12 +20,12 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
-
-import static sleeper.compaction.job.commit.CompactionJobCommitterUtils.updateStateStoreSuccess;
 
 public class CompactionJobCommitter {
     public static final Logger LOGGER = LoggerFactory.getLogger(CompactionJobCommitter.class);
@@ -55,9 +55,40 @@ public class CompactionJobCommitter {
 
     public void apply(CompactionJobCommitRequest request) throws StateStoreException, InterruptedException {
         CompactionJob job = request.getJob();
-        updateStateStoreSuccess(job, request.getRecordsWritten(), stateStoreProvider.getByTableId(job.getTableId()),
+        updateStateStoreSuccess(
+                job, request.getRecordsWritten(), stateStoreProvider.getByTableId(job.getTableId()),
                 jobAssignmentWaitAttempts, jobAssignmentWaitBackoff);
         statusStore.jobFinished(job, request.buildRecordsProcessedSummary(), request.getTaskId());
+    }
+
+    public static void updateStateStoreSuccess(
+            CompactionJob job,
+            long recordsWritten,
+            StateStore stateStore,
+            int jobAssignmentWaitAttempts,
+            ExponentialBackoffWithJitter jobAssignmentWaitBackoff) throws StateStoreException, InterruptedException {
+        FileReference fileReference = FileReference.builder()
+                .filename(job.getOutputFile())
+                .partitionId(job.getPartitionId())
+                .numberOfRecords(recordsWritten)
+                .countApproximate(false)
+                .onlyContainsDataForThisPartition(true)
+                .build();
+
+        // Compaction jobs are sent for execution before updating the state store to assign the input files to the job.
+        // Sometimes the compaction can finish before the job assignment is finished. We wait for the job assignment
+        // rather than immediately failing the job run.
+        FileReferenceNotAssignedToJobException failure = null;
+        for (int attempts = 0; attempts < jobAssignmentWaitAttempts; attempts++) {
+            jobAssignmentWaitBackoff.waitBeforeAttempt(attempts);
+            try {
+                stateStore.atomicallyReplaceFileReferencesWithNewOne(job.getId(), job.getPartitionId(), job.getInputFiles(), fileReference);
+                return;
+            } catch (FileReferenceNotAssignedToJobException e) {
+                failure = e;
+            }
+        }
+        throw new TimedOutWaitingForFileAssignmentsException(failure);
     }
 
     @FunctionalInterface
