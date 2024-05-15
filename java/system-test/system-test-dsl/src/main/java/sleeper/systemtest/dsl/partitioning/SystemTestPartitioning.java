@@ -45,13 +45,11 @@ public class SystemTestPartitioning {
     public void split() {
         WaitForPartitionSplitting waitForPartitionSplitting = WaitForPartitionSplitting
                 .forCurrentPartitionsNeedingSplitting(
-                        instance.getTablePropertiesProvider(),
-                        instance.getStateStoreProvider());
+                        instance.streamTableProperties(),
+                        instance::getStateStore);
         drivers.partitionSplitting(context).splitPartitions();
         try {
-            waitForPartitionSplitting.pollUntilFinished(
-                    instance.getTablePropertiesProvider(),
-                    instance.getStateStoreProvider());
+            waitForPartitionSplitting.pollUntilFinished(instance);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);

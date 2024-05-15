@@ -46,7 +46,7 @@ import static sleeper.systemtest.dsl.testutil.SystemTestTableMetricsHelper.table
 @InMemoryDslTest
 public class MultipleTablesTest {
     private final Schema schema = DEFAULT_SCHEMA;
-    private static final int NUMBER_OF_TABLES = 5;
+    private static final int NUMBER_OF_TABLES = 200;
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper) {

@@ -20,22 +20,22 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.partition.Partition;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.PollWithRetries;
 import sleeper.splitter.FindPartitionToSplitResult;
 import sleeper.splitter.FindPartitionsToSplit;
-import sleeper.statestore.StateStoreProvider;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import static java.util.Map.entry;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
 public class WaitForPartitionSplitting {
@@ -52,43 +52,33 @@ public class WaitForPartitionSplitting {
     }
 
     public static WaitForPartitionSplitting forCurrentPartitionsNeedingSplitting(
-            TablePropertiesProvider propertiesProvider, StateStoreProvider stateStoreProvider) {
-        return new WaitForPartitionSplitting(getResults(propertiesProvider, stateStoreProvider));
+            Stream<TableProperties> tablePropertiesStream, Function<TableProperties, StateStore> getStateStore) {
+        return new WaitForPartitionSplitting(getResults(tablePropertiesStream, getStateStore));
     }
 
-    public void pollUntilFinished(TablePropertiesProvider propertiesProvider, StateStoreProvider stateStoreProvider) throws InterruptedException {
+    public void pollUntilFinished(SystemTestInstanceContext instance) throws InterruptedException {
         LOGGER.info("Waiting for splits, expecting partitions to be split: {}", partitionIdsByTableId);
-        WAIT_FOR_SPLITS.pollUntil("partition splits finished", () -> new FinishedCheck(propertiesProvider, stateStoreProvider).isFinished());
+        WAIT_FOR_SPLITS.pollUntil("partition splits finished", () -> isSplitFinished(instance));
     }
 
-    public boolean isSplitFinished(TablePropertiesProvider propertiesProvider, StateStoreProvider stateStoreProvider) {
-        return new FinishedCheck(propertiesProvider, stateStoreProvider).isFinished();
+    public boolean isSplitFinished(SystemTestInstanceContext instance) {
+        return partitionIdsByTableId.keySet().stream().parallel()
+                .allMatch(tableId -> isSplitFinished(instance, tableId));
     }
 
-    private class FinishedCheck {
-        private final TablePropertiesProvider propertiesProvider;
-        private final StateStoreProvider stateStoreProvider;
+    public boolean isSplitFinished(SystemTestInstanceContext instance, String tableId) {
+        TableProperties properties = instance.getTablePropertiesByDeployedId(tableId).orElseThrow();
+        StateStore stateStore = instance.getStateStore(properties);
+        return isSplitFinished(properties, stateStore);
+    }
 
-        FinishedCheck(TablePropertiesProvider propertiesProvider, StateStoreProvider stateStoreProvider) {
-            this.propertiesProvider = propertiesProvider;
-            this.stateStoreProvider = stateStoreProvider;
-        }
-
-        public boolean isFinished() {
-            return partitionIdsByTableId.keySet().stream().parallel()
-                    .allMatch(this::isTableFinished);
-        }
-
-        public boolean isTableFinished(String tableId) {
-            TableProperties properties = propertiesProvider.getById(tableId);
-            StateStore stateStore = stateStoreProvider.getStateStore(properties);
-            Set<String> leafPartitionIds = getLeafPartitionIds(stateStore);
-            List<String> unsplit = partitionIdsByTableId.get(tableId).stream()
-                    .filter(leafPartitionIds::contains)
-                    .collect(Collectors.toUnmodifiableList());
-            LOGGER.info("Found unsplit partitions in table {}: {}", properties.getStatus(), unsplit);
-            return unsplit.isEmpty();
-        }
+    public boolean isSplitFinished(TableProperties properties, StateStore stateStore) {
+        Set<String> leafPartitionIds = getLeafPartitionIds(stateStore);
+        List<String> unsplit = partitionIdsByTableId.getOrDefault(properties.get(TABLE_ID), Set.of()).stream()
+                .filter(leafPartitionIds::contains)
+                .collect(Collectors.toUnmodifiableList());
+        LOGGER.info("Found unsplit partitions in table {}: {}", properties.getStatus(), unsplit);
+        return unsplit.isEmpty();
     }
 
     private static Set<String> getLeafPartitionIds(StateStore stateStore) {
@@ -102,19 +92,11 @@ public class WaitForPartitionSplitting {
     }
 
     private static List<FindPartitionToSplitResult> getResults(
-            TablePropertiesProvider propertiesProvider, StateStoreProvider stateStoreProvider) {
-
-        // Collect all table properties and state stores first to avoid concurrency problems with providers
-        List<TableProperties> tableProperties = propertiesProvider.streamAllTables()
-                .collect(Collectors.toUnmodifiableList());
-        Map<String, StateStore> stateStoreByTableId = tableProperties.stream()
-                .map(properties -> entry(properties.get(TABLE_ID), stateStoreProvider.getStateStore(properties)))
-                .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
-
-        return tableProperties.stream().parallel()
+            Stream<TableProperties> streamTableProperties, Function<TableProperties, StateStore> getStateStore) {
+        return streamTableProperties.parallel()
                 .flatMap(properties -> {
                     try {
-                        return FindPartitionsToSplit.getResults(properties, stateStoreByTableId.get(properties.get(TABLE_ID))).stream();
+                        return FindPartitionsToSplit.getResults(properties, getStateStore.apply(properties)).stream();
                     } catch (StateStoreException e) {
                         throw new RuntimeException(e);
                     }
