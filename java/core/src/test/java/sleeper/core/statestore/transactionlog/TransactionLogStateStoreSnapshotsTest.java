@@ -15,6 +15,104 @@
  */
 package sleeper.core.statestore.transactionlog;
 
-public class TransactionLogStateStoreSnapshotsTest {
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import sleeper.core.partition.PartitionTree;
+import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.StringType;
+import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.core.statestore.StateStore;
+
+import java.util.function.Consumer;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
+
+public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLogStateStoreTestBase {
+
+    private final Schema schema = schemaWithKey("key", new StringType());
+    private final PartitionsBuilder partitions = new PartitionsBuilder(schema).singlePartition("root");
+
+    @BeforeEach
+    void setUp() throws Exception {
+        stateStore().initialise(partitions.buildList());
+    }
+
+    @Test
+    void shouldSetPartitionsStateWhenCreatingStateStore() throws Exception {
+        // Given
+        StateStorePartitions partitionsState = new StateStorePartitions();
+        PartitionTree splitTree = partitions.splitToNewChildren("root", "L", "R", "l").buildTree();
+
+        // When
+        StateStore stateStore = stateStore(builder -> builder.partitionsState(partitionsState));
+        stateStore.initialise(splitTree.getAllPartitions());
+
+        // Then
+        assertThat(partitionsState.all()).containsExactlyElementsOf(splitTree.getAllPartitions());
+    }
+
+    @Test
+    void shouldSetFilesStateWhenCreatingStateStore() throws Exception {
+        // Given
+        StateStoreFiles filesState = new StateStoreFiles();
+        FileReference file = fileFactory().rootFile(123);
+
+        // When
+        StateStore stateStore = stateStore(builder -> builder.filesState(filesState));
+        stateStore.addFile(file);
+
+        // Then
+        assertThat(filesState.references()).containsExactly(file);
+    }
+
+    @Test
+    void shouldNotLoadOldPartitionTransactionsWhenSettingTransactionNumber() throws Exception {
+        // Given
+        StateStore stateStore = stateStore();
+        PartitionTree splitTree = partitions.splitToNewChildren("root", "L", "R", "l").buildTree();
+        stateStore.initialise(splitTree.getAllPartitions());
+
+        // When
+        StateStore stateStoreSkippingTransaction = stateStore(builder -> builder
+                .partitionsTransactionNumber(partitionsLogStore.getLastTransactionNumber()));
+
+        // Then
+        assertThat(stateStoreSkippingTransaction.getAllPartitions()).isEmpty();
+    }
+
+    @Test
+    void shouldNotLoadOldFileTransactionsWhenSettingTransactionNumber() throws Exception {
+        // Given
+        StateStore stateStore = stateStore();
+        FileReference file = fileFactory().rootFile(123);
+        stateStore.addFile(file);
+
+        // When
+        StateStore stateStoreSkippingTransaction = stateStore(builder -> builder
+                .filesTransactionNumber(filesLogStore.getLastTransactionNumber()));
+
+        // Then
+        assertThat(stateStoreSkippingTransaction.getFileReferences()).isEmpty();
+    }
+
+    private StateStore stateStore() {
+        return stateStore(builder -> {
+        });
+    }
+
+    private StateStore stateStore(Consumer<TransactionLogStateStore.Builder> config) {
+        TransactionLogStateStore.Builder builder = stateStoreBuilder(schema);
+        config.accept(builder);
+        return stateStore(builder);
+    }
+
+    private FileReferenceFactory fileFactory() {
+        return FileReferenceFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
+    }
 
 }

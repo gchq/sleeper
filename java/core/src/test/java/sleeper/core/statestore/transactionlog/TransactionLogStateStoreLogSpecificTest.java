@@ -159,64 +159,6 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
     }
 
     @Test
-    void shouldSetPartitionsStateWhenCreatingStateStore() throws Exception {
-        // Given
-        StateStorePartitions partitionsState = new StateStorePartitions();
-        PartitionTree splitTree = partitions.splitToNewChildren("root", "L", "R", "l").buildTree();
-
-        // When
-        StateStore stateStore = stateStore(builder -> builder.partitionsState(partitionsState));
-        stateStore.initialise(splitTree.getAllPartitions());
-
-        // Then
-        assertThat(partitionsState.all()).containsExactlyElementsOf(splitTree.getAllPartitions());
-    }
-
-    @Test
-    void shouldSetFilesStateWhenCreatingStateStore() throws Exception {
-        // Given
-        StateStoreFiles filesState = new StateStoreFiles();
-        FileReference file = fileFactory().rootFile(123);
-
-        // When
-        StateStore stateStore = stateStore(builder -> builder.filesState(filesState));
-        stateStore.addFile(file);
-
-        // Then
-        assertThat(filesState.references()).containsExactly(file);
-    }
-
-    @Test
-    void shouldNotLoadOldPartitionTransactionsWhenSettingTransactionNumber() throws Exception {
-        // Given
-        StateStore stateStore = stateStore();
-        PartitionTree splitTree = partitions.splitToNewChildren("root", "L", "R", "l").buildTree();
-        stateStore.initialise(splitTree.getAllPartitions());
-
-        // When
-        StateStore stateStoreSkippingTransaction = stateStore(builder -> builder
-                .partitionsTransactionNumber(partitionsLogStore.getLastTransactionNumber()));
-
-        // Then
-        assertThat(stateStoreSkippingTransaction.getAllPartitions()).isEmpty();
-    }
-
-    @Test
-    void shouldNotLoadOldFileTransactionsWhenSettingTransactionNumber() throws Exception {
-        // Given
-        StateStore stateStore = stateStore();
-        FileReference file = fileFactory().rootFile(123);
-        stateStore.addFile(file);
-
-        // When
-        StateStore stateStoreSkippingTransaction = stateStore(builder -> builder
-                .filesTransactionNumber(filesLogStore.getLastTransactionNumber()));
-
-        // Then
-        assertThat(stateStoreSkippingTransaction.getFileReferences()).isEmpty();
-    }
-
-    @Test
     void shouldNotAddSplitFileTransactionWithNoRequests() throws Exception {
         // Given
         long transactionNumberBefore = filesLogStore.getLastTransactionNumber();
