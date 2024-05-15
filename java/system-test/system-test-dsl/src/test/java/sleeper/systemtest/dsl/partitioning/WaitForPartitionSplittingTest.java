@@ -21,7 +21,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Field;
@@ -29,7 +28,8 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.inmemory.StateStoreTestBuilder;
-import sleeper.statestore.FixedStateStoreProvider;
+
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -237,15 +237,11 @@ class WaitForPartitionSplittingTest {
     }
 
     private WaitForPartitionSplitting waitWithStateBefore(TableProperties properties, StateStore stateStore) {
-        return WaitForPartitionSplitting.forCurrentPartitionsNeedingSplitting(
-                new FixedTablePropertiesProvider(properties),
-                new FixedStateStoreProvider(properties, stateStore));
+        return WaitForPartitionSplitting.forCurrentPartitionsNeedingSplitting(Stream.of(properties), table -> stateStore);
     }
 
     private boolean isSplitFinishedWithState(WaitForPartitionSplitting wait, TableProperties properties, StateStore stateStore) {
-        return wait.isSplitFinished(
-                new FixedTablePropertiesProvider(properties),
-                new FixedStateStoreProvider(properties, stateStore));
+        return wait.isSplitFinished(properties, stateStore);
     }
 
     private PartitionsBuilder partitionsBuilder(TableProperties tableProperties) {
