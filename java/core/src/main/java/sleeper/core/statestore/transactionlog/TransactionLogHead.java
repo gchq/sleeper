@@ -24,6 +24,7 @@ import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.LoggedDuration;
 
 import java.time.Instant;
+import java.util.Optional;
 
 class TransactionLogHead<T> {
     public static final Logger LOGGER = LoggerFactory.getLogger(TransactionLogHead.class);
@@ -43,7 +44,7 @@ class TransactionLogHead<T> {
         this.maxAddTransactionAttempts = builder.maxAddTransactionAttempts;
         this.retryBackoff = builder.retryBackoff;
         this.transactionType = builder.transactionType;
-        this.snapshots = new TransactionLogSnapshotLoader();
+        this.snapshots = transactionNumber -> Optional.empty();
         this.state = builder.state;
         this.lastTransactionNumber = builder.lastTransactionNumber;
     }
@@ -94,7 +95,7 @@ class TransactionLogHead<T> {
         try {
             Instant startTime = Instant.now();
             long transactionNumberBefore = lastTransactionNumber;
-            snapshots.loadIfShouldUpdateFromTransaction(transactionNumberBefore).ifPresent(snapshot -> {
+            snapshots.loadLatestSnapshotIfLaterThan(transactionNumberBefore).ifPresent(snapshot -> {
                 state = snapshot.getState();
                 lastTransactionNumber = snapshot.getTransactionNumber();
             });

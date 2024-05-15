@@ -17,8 +17,7 @@ package sleeper.core.statestore.transactionlog;
 
 import java.util.Optional;
 
-public class TransactionLogSnapshotLoader {
-    public Optional<TransactionLogSnapshot> loadIfShouldUpdateFromTransaction(long transactionNumber) {
-        return Optional.empty();
-    }
+@FunctionalInterface
+public interface TransactionLogSnapshotLoader {
+    Optional<TransactionLogSnapshot> loadLatestSnapshotIfLaterThan(long transactionNumber);
 }
