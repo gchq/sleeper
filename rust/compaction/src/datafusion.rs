@@ -23,8 +23,12 @@ use crate::{
     details::create_sketch_path,
     ColRange, CompactionInput, CompactionResult, PartitionBound,
 };
-use arrow::util::pretty::pretty_format_batches;
+use arrow::{
+    datatypes::{DataType, Field, Fields},
+    util::pretty::pretty_format_batches,
+};
 use datafusion::{
+    common::DFSchema,
     config::FormatOptions,
     error::DataFusionError,
     execution::{
@@ -78,6 +82,8 @@ pub async fn compact(
     // Tell DataFusion that the row key columns and sort columns are already sorted
     let po = ParquetReadOptions::default().file_sort_order(vec![sort_order.clone()]);
     let mut frame = ctx.read_parquet(input_paths.to_owned(), po).await?;
+    // ctx.register_parquet("tabley", input_paths[0].as_str(), po)
+    //     .await?;
 
     // If we have a partition region, apply it first
     if let Some(expr) = region_filter(&input_data.region) {
@@ -90,6 +96,14 @@ pub async fn compact(
         &input_data.row_key_cols,
     )));
     frame.task_ctx().register_udf(sketch_func.clone())?;
+
+    // ctx.register_udf(ScalarUDF::from(udf::SketchUDF::new(
+    //     &DFSchema::from_unqualifed_fields(
+    //         Fields::from(vec![Field::new("key", DataType::Utf8, false)]),
+    //         HashMap::default(),
+    //     )?,
+    //     &input_data.row_key_cols,
+    // )));
 
     // Extract all column names
     let col_names = frame.schema().clone().strip_qualifiers().field_names();
@@ -108,8 +122,20 @@ pub async fn compact(
         .chain(col_names.iter().skip(1).map(col)) // 1st column is the sketch function call
         .collect::<Vec<_>>();
 
+    let no_sketches = col_names.iter().map(col).collect::<Vec<_>>();
+
     // Build compaction query
-    frame = frame.sort(sort_order)?.select(col_names_expr)?;
+    // frame = frame.sort(sort_order)?.select(col_names_expr)?;
+    frame = frame
+        .aggregate(
+            vec![col("key"), col("value")],
+            vec![count(col("timestamp")).alias("timestamp")],
+        )?
+        .sort(sort_order)?
+        .select(col_names_expr)?;
+    // let frame = ctx
+    // .sql("SELECT sketch(key),count(timestamp) AS timestamp,value FROM tabley WHERE key >= 'a' AND key < 'z' GROUP BY key,value ORDER BY key ASC")
+    // .await?;
 
     // Show explanation of plan
     let explained = frame.clone().explain(false, false)?.collect().await?;
@@ -118,6 +144,7 @@ pub async fn compact(
 
     let mut pqo = ctx.copied_table_options().parquet;
     // Figure out which columns should be dictionary encoded
+    let col_names = frame.schema().clone().strip_qualifiers().field_names();
     for col in &col_names {
         let col_opts = pqo.column_specific_options.entry(col.into()).or_default();
         let dict_encode = (input_data.dict_enc_row_keys && input_data.row_key_cols.contains(col))
@@ -130,10 +157,11 @@ pub async fn compact(
     }
 
     // Write the frame out and collect stats
-    let stats = collect_stats(frame, output_path, pqo).await?;
+    let stats = collect_stats(frame.clone(), output_path, pqo).await?;
 
     show_store_stats(&store);
 
+    // let sketch_func = frame.registry().udf("sketch")?;
     // Write sketches out to file in Sleeper compatible way
     let binding = sketch_func.inner();
     let inner_function: Option<&SketchUDF> = binding.as_any().downcast_ref();
@@ -377,6 +405,7 @@ fn create_session_cfg<T>(input_data: &CompactionInput, input_paths: &[T]) -> Ses
         .parquet
         .column_index_truncate_length = Some(input_data.column_truncate_length);
     sf.options_mut().execution.parquet.max_statistics_size = Some(input_data.stats_truncate_length);
+    sf.options_mut().optimizer.prefer_existing_sort = true;
     sf
 }
 
