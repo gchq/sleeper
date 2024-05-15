@@ -65,7 +65,7 @@ public class WaitForPartitionSplitting {
         WAIT_FOR_SPLITS.pollUntil("partition splits finished", () -> isSplitFinished(instance));
     }
 
-    public boolean isSplitFinished(SystemTestInstanceContext instance) {
+    private boolean isSplitFinished(SystemTestInstanceContext instance) {
         return partitionIdsByTableId.keySet().stream().parallel()
                 .allMatch(tableId -> isSplitFinished(instance, tableId));
     }
