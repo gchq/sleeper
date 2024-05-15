@@ -70,7 +70,7 @@ public class WaitForPartitionSplitting {
                 .allMatch(tableId -> isSplitFinished(instance, tableId));
     }
 
-    public boolean isSplitFinished(SystemTestInstanceContext instance, String tableId) {
+    private boolean isSplitFinished(SystemTestInstanceContext instance, String tableId) {
         TableProperties properties = instance.getTablePropertiesByDeployedId(tableId).orElseThrow();
         StateStore stateStore = instance.getStateStore(properties);
         return isSplitFinished(properties, stateStore);
