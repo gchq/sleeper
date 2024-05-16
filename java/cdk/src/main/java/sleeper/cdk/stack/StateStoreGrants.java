@@ -15,6 +15,8 @@
  */
 package sleeper.cdk.stack;
 
+import java.util.stream.Stream;
+
 public class StateStoreGrants {
     public enum Access {
         NO_ACCESS(false, false),
@@ -74,6 +76,18 @@ public class StateStoreGrants {
 
     public boolean canReadPartitions() {
         return partitions.canRead();
+    }
+
+    public boolean canReadAny() {
+        return allData().anyMatch(Access::canRead);
+    }
+
+    public boolean canWriteAny() {
+        return allData().anyMatch(Access::canWrite);
+    }
+
+    private Stream<Access> allData() {
+        return Stream.of(activeFiles, readyForGCFiles, partitions);
     }
 
     public static class Builder {
