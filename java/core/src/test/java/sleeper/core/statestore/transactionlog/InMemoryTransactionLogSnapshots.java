@@ -24,15 +24,15 @@ public class InMemoryTransactionLogSnapshots implements TransactionLogSnapshotLo
 
     private TransactionLogSnapshot latestSnapshot;
 
-    public static TransactionLogSnapshot createFilesSnapshot(TableStatus sleeperTable, TransactionLogStore log) throws StateStoreException {
+    public static TransactionLogSnapshot createFilesSnapshot(TableStatus sleeperTable, TransactionLogStore log, long transactionNumber) throws StateStoreException {
         StateStoreFiles state = new StateStoreFiles();
-        long transactionNumber = TransactionLogSnapshotUtils.updateFilesState(sleeperTable, state, log, 0);
+        TransactionLogSnapshotUtils.updateFilesState(sleeperTable, state, log, 0);
         return new TransactionLogSnapshot(state, transactionNumber);
     }
 
-    public static TransactionLogSnapshot createPartitionsSnapshot(TableStatus sleeperTable, TransactionLogStore log) throws StateStoreException {
+    public static TransactionLogSnapshot createPartitionsSnapshot(TableStatus sleeperTable, TransactionLogStore log, long transactionNumber) throws StateStoreException {
         StateStorePartitions state = new StateStorePartitions();
-        long transactionNumber = TransactionLogSnapshotUtils.updatePartitionsState(sleeperTable, state, log, 0);
+        TransactionLogSnapshotUtils.updatePartitionsState(sleeperTable, state, log, 0);
         return new TransactionLogSnapshot(state, transactionNumber);
     }
 

@@ -51,7 +51,7 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
         FileReference file = fileFactory().rootFile(123);
 
         // When
-        createSnapshotWithFreshState(stateStore -> {
+        createSnapshotWithFreshStateAtTransactionNumber(1, stateStore -> {
             stateStore.addFile(file);
         });
 
@@ -65,7 +65,7 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
         partitions.splitToNewChildren("root", "L", "R", "abc");
 
         // When
-        createSnapshotWithFreshState(stateStore -> {
+        createSnapshotWithFreshStateAtTransactionNumber(1, stateStore -> {
             stateStore.initialise(partitions.buildList());
         });
 
@@ -147,7 +147,8 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
         return FileReferenceFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
     }
 
-    protected void createSnapshotWithFreshState(SetupStateStore setupState) throws Exception {
+    protected void createSnapshotWithFreshStateAtTransactionNumber(
+            long transactionNumber, SetupStateStore setupState) throws Exception {
         InMemoryTransactionLogStore fileTransactions = new InMemoryTransactionLogStore();
         InMemoryTransactionLogStore partitionTransactions = new InMemoryTransactionLogStore();
         StateStore stateStore = TransactionLogStateStore.builder()
@@ -159,8 +160,8 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
         stateStore.fixFileUpdateTime(DEFAULT_UPDATE_TIME);
         stateStore.fixPartitionUpdateTime(DEFAULT_UPDATE_TIME);
         setupState.run(stateStore);
-        fileSnapshots.setLatestSnapshot(createFilesSnapshot(sleeperTable, fileTransactions));
-        partitionSnapshots.setLatestSnapshot(createPartitionsSnapshot(sleeperTable, partitionTransactions));
+        fileSnapshots.setLatestSnapshot(createFilesSnapshot(sleeperTable, fileTransactions, transactionNumber));
+        partitionSnapshots.setLatestSnapshot(createPartitionsSnapshot(sleeperTable, partitionTransactions, transactionNumber));
     }
 
     public interface SetupStateStore {
