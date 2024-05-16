@@ -102,30 +102,34 @@ public class TransactionLogStateStoreStack extends NestedStack {
                 .build();
     }
 
-    public void grantReadFiles(IGrantable grantee) {
-        filesLogTable.grantReadData(grantee);
-    }
+    public void grantAccess(StateStoreGrants grants, IGrantable grantee) {
+        // Snapshots and large transactions are both held in the data bucket
+        if (grants.canWriteAny()) {
+            dataStack.grantReadWrite(grantee);
+        } else if (grants.canReadAny()) {
+            dataStack.grantRead(grantee);
+        }
 
-    public void grantReadWriteFiles(IGrantable grantee) {
-        filesLogTable.grantReadWriteData(grantee);
-    }
+        if (grants.canReadAny()) {
+            latestSnapshotsTable.grantReadData(grantee);
+        }
 
-    public void grantReadPartitions(IGrantable grantee) {
-        partitionsLogTable.grantReadData(grantee);
-    }
+        if (grants.canWriteActiveOrReadyForGCFiles()) {
+            filesLogTable.grantReadWriteData(grantee);
+        } else if (grants.canReadActiveOrReadyForGCFiles()) {
+            filesLogTable.grantReadData(grantee);
+        }
 
-    public void grantReadWritePartitions(IGrantable grantee) {
-        partitionsLogTable.grantReadWriteData(grantee);
-    }
-
-    public void grantReadSnapshots(IGrantable grantee) {
-        latestSnapshotsTable.grantReadData(grantee);
-        dataStack.grantRead(grantee);
+        if (grants.canWritePartitions()) {
+            partitionsLogTable.grantReadWriteData(grantee);
+        } else if (grants.canReadPartitions()) {
+            partitionsLogTable.grantReadData(grantee);
+        }
     }
 
     public void grantReadWriteSnapshots(IGrantable grantee) {
-        grantReadFiles(grantee);
-        grantReadPartitions(grantee);
+        filesLogTable.grantReadData(grantee);
+        partitionsLogTable.grantReadData(grantee);
         latestSnapshotsTable.grantReadWriteData(grantee);
         allSnapshotsTable.grantReadWriteData(grantee);
         dataStack.grantReadWrite(grantee);
