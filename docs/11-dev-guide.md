@@ -31,7 +31,7 @@ You can also download [shell.nix](/shell.nix) directly and run `nix-shell shell.
 without running Git. You can then `git clone` the repository from there. Here's an example to get the latest release:
 
 ```bash
-curl "https://raw.githubusercontent.com/gchq/sleeper/develop/shell.nix" -o ./shell.nix
+curl "https://raw.githubusercontent.com/gchq/sleeper/main/shell.nix" -o ./shell.nix
 nix-shell ./shell.nix
 git clone https://github.com/gchq/sleeper.git
 cd sleeper
