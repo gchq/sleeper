@@ -125,14 +125,14 @@ pub async fn compact(
     let no_sketches = col_names.iter().map(col).collect::<Vec<_>>();
 
     // Build compaction query
-    // frame = frame.sort(sort_order)?.select(col_names_expr)?;
-    frame = frame
-        .aggregate(
-            vec![col("key"), col("value")],
-            vec![count(col("timestamp")).alias("timestamp")],
-        )?
-        .sort(sort_order)?
-        .select(col_names_expr)?;
+    frame = frame.sort(sort_order)?.select(col_names_expr)?;
+    // frame = frame
+    //     .aggregate(
+    //         vec![col("key"), col("value")],
+    //         vec![count(col("timestamp")).alias("timestamp")],
+    //     )?
+    //     .sort(sort_order)?
+    //     .select(col_names_expr)?;
     // let frame = ctx
     // .sql("SELECT sketch(key),count(timestamp) AS timestamp,value FROM tabley WHERE key >= 'a' AND key < 'z' GROUP BY key,value ORDER BY key ASC")
     // .await?;
