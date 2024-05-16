@@ -26,7 +26,8 @@ chmod +x ./sleeper-install.sh
 ```
 
 This will install the latest development version. This will not have been as fully tested as released versions and may
-not work as expected. Most users should use the latest released version.
+not work as expected. Most users should use the latest released version. You can find a list
+of released versions [here](https://github.com/gchq/sleeper/tags), and the change log [here](../CHANGELOG.md).
 
 **Due to a bug in GitHub, it is not currently possible to install released versions this way.** See the following
 issue: https://github.com/gchq/sleeper/issues/2494
@@ -34,9 +35,8 @@ issue: https://github.com/gchq/sleeper/issues/2494
 To use a released version, please follow the [developer guide](11-dev-guide.md) to build the CLI from source.
 
 The normal way to install a release is to specify a version by replacing `develop` with `main` for the latest release,
-or a release in the format `v0.20.0`. These correspond to a branch or tag in the GitHub repository. You can find a list
-of released versions [here](https://github.com/gchq/sleeper/tags), and the change log [here](../CHANGELOG.md). If you do
-not specify a version on the command line, it will default to the latest release.
+or a release in the format `v0.20.0`. These correspond to a branch or tag in the GitHub repository. If you do not
+specify a version on the command line, it will default to the latest release.
 
 ```bash
 curl "https://raw.githubusercontent.com/gchq/sleeper/[version]/scripts/cli/install.sh" -o ./sleeper-install.sh
