@@ -41,9 +41,9 @@ public class InMemoryTransactionLogSnapshots implements TransactionLogSnapshotLo
     }
 
     @Override
-    public Optional<TransactionLogSnapshot> loadLatestSnapshotIfLaterThan(long transactionNumber) {
+    public Optional<TransactionLogSnapshot> loadLatestSnapshotAtMinimumTransaction(long transactionNumber) {
         return Optional.ofNullable(latestSnapshot)
-                .filter(snapshot -> snapshot.getTransactionNumber() > transactionNumber);
+                .filter(snapshot -> snapshot.getTransactionNumber() >= transactionNumber);
     }
 
 }

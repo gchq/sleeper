@@ -46,7 +46,7 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
     }
 
     @Test
-    void shouldLoadFilesFromSnapshotWhenNotInLog() throws Exception {
+    void shouldLoadFilesFromSnapshotWhenNotInLogOnFirstLoad() throws Exception {
         // Given
         FileReference file = fileFactory().rootFile(123);
 
@@ -56,11 +56,11 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
         });
 
         // Then
-        assertThat(store.getFileReferences()).containsExactly(file);
+        assertThat(stateStore().getFileReferences()).containsExactly(file);
     }
 
     @Test
-    void shouldLoadPartitionsFromSnapshotWhenNotInLog() throws Exception {
+    void shouldLoadPartitionsFromSnapshotWhenNotInLogOnFirstLoad() throws Exception {
         // Given
         partitions.splitToNewChildren("root", "L", "R", "abc");
 
@@ -72,6 +72,24 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
         // Then
         assertThat(stateStore().getAllPartitions())
                 .containsExactlyInAnyOrderElementsOf(partitions.buildList());
+    }
+
+    @Test
+    void shouldNotLoadSnapshotWhenOnlyOneTransactionAheadAfterLoadingLog() throws Exception {
+        // Given
+        StateStore stateStore = stateStore(builder -> builder
+                .minTransactionsAheadToLoadSnapshot(2));
+        FileReference logFile = fileFactory().rootFile("log-file.parquet", 123);
+        FileReference snapshotFile = fileFactory().rootFile("snapshot-file.parquet", 123);
+        stateStore.addFile(logFile);
+
+        // When
+        createSnapshotWithFreshStateAtTransactionNumber(2, snapshotStateStore -> {
+            snapshotStateStore.addFile(snapshotFile);
+        });
+
+        // Then
+        assertThat(stateStore.getFileReferences()).containsExactly(logFile);
     }
 
     @Test

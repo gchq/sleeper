@@ -30,6 +30,7 @@ public class TransactionLogStateStore extends DelegatingStateStore {
         this(builder, TransactionLogHead.builder()
                 .sleeperTable(builder.sleeperTable)
                 .maxAddTransactionAttempts(builder.maxAddTransactionAttempts)
+                .minTransactionsAheadToLoadSnapshot(builder.minTransactionsAheadToLoadSnapshot)
                 .retryBackoff(builder.retryBackoff));
     }
 
@@ -67,6 +68,7 @@ public class TransactionLogStateStore extends DelegatingStateStore {
         private StateStorePartitions partitionsState = new StateStorePartitions();
         private long partitionsTransactionNumber = 0;
         private long filesTransactionNumber = 0;
+        private long minTransactionsAheadToLoadSnapshot = 1;
         private int maxAddTransactionAttempts = MAX_ADD_TRANSACTION_ATTEMPTS;
         private ExponentialBackoffWithJitter retryBackoff = new ExponentialBackoffWithJitter(RETRY_WAIT_RANGE);
         private TransactionLogSnapshotLoader filesSnapshotLoader = TransactionLogSnapshotLoader.neverLoad();
@@ -132,6 +134,11 @@ public class TransactionLogStateStore extends DelegatingStateStore {
 
         public Builder partitionsSnapshotLoader(TransactionLogSnapshotLoader partitionsSnapshotLoader) {
             this.partitionsSnapshotLoader = partitionsSnapshotLoader;
+            return this;
+        }
+
+        public Builder minTransactionsAheadToLoadSnapshot(long minTransactionsAheadToLoadSnapshot) {
+            this.minTransactionsAheadToLoadSnapshot = minTransactionsAheadToLoadSnapshot;
             return this;
         }
 
