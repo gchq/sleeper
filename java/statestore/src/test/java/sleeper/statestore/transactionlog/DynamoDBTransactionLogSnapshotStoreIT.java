@@ -247,19 +247,19 @@ public class DynamoDBTransactionLogSnapshotStoreIT {
         return new DynamoDBTransactionLogSnapshotStore(instanceProperties, tableProperties, dynamoDBClient, Instant::now);
     }
 
-    private TransactionLogSnapshot filesSnapshot(long transactionNumber) {
+    private TransactionLogSnapshotMetadata filesSnapshot(long transactionNumber) {
         return filesSnapshot(tableProperties, transactionNumber);
     }
 
-    private TransactionLogSnapshot filesSnapshot(TableProperties tableProperties, long transactionNumber) {
-        return TransactionLogSnapshot.forFiles(tableProperties.get(TABLE_ID), transactionNumber);
+    private TransactionLogSnapshotMetadata filesSnapshot(TableProperties tableProperties, long transactionNumber) {
+        return TransactionLogSnapshotMetadata.forFiles(tableProperties.get(TABLE_ID), transactionNumber);
     }
 
-    private TransactionLogSnapshot partitionsSnapshot(long transactionNumber) {
+    private TransactionLogSnapshotMetadata partitionsSnapshot(long transactionNumber) {
         return partitionsSnapshot(tableProperties, transactionNumber);
     }
 
-    private TransactionLogSnapshot partitionsSnapshot(TableProperties tableProperties, long transactionNumber) {
-        return TransactionLogSnapshot.forPartitions(tableProperties.get(TABLE_ID), transactionNumber);
+    private TransactionLogSnapshotMetadata partitionsSnapshot(TableProperties tableProperties, long transactionNumber) {
+        return TransactionLogSnapshotMetadata.forPartitions(tableProperties.get(TABLE_ID), transactionNumber);
     }
 }

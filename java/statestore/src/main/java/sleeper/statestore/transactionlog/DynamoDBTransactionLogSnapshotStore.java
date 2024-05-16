@@ -79,7 +79,7 @@ public class DynamoDBTransactionLogSnapshotStore {
         this.timeSupplier = timeSupplier;
     }
 
-    public void saveSnapshot(TransactionLogSnapshot snapshot) throws DuplicateSnapshotException {
+    public void saveSnapshot(TransactionLogSnapshotMetadata snapshot) throws DuplicateSnapshotException {
         Instant updateTime = timeSupplier.get();
         try {
             List<TransactWriteItem> writes = List.of(
@@ -98,7 +98,7 @@ public class DynamoDBTransactionLogSnapshotStore {
         }
     }
 
-    private Put putNewSnapshot(TransactionLogSnapshot snapshot, Instant updateTime) {
+    private Put putNewSnapshot(TransactionLogSnapshotMetadata snapshot, Instant updateTime) {
         return new Put()
                 .withTableName(allSnapshotsTable)
                 .withItem(new DynamoDBRecordBuilder()
@@ -111,7 +111,7 @@ public class DynamoDBTransactionLogSnapshotStore {
                         .build());
     }
 
-    private Update updateLatestSnapshot(TransactionLogSnapshot snapshot, Instant updateTime) {
+    private Update updateLatestSnapshot(TransactionLogSnapshotMetadata snapshot, Instant updateTime) {
         String pathKey;
         String transactionNumberKey;
         if (snapshot.getType() == SnapshotType.FILES) {
@@ -139,17 +139,17 @@ public class DynamoDBTransactionLogSnapshotStore {
                         ":update_time", createNumberAttribute(updateTime.toEpochMilli())));
     }
 
-    public List<TransactionLogSnapshot> getFilesSnapshots() {
+    public List<TransactionLogSnapshotMetadata> getFilesSnapshots() {
         return getSnapshots(SnapshotType.FILES)
                 .collect(Collectors.toList());
     }
 
-    public List<TransactionLogSnapshot> getPartitionsSnapshots() {
+    public List<TransactionLogSnapshotMetadata> getPartitionsSnapshots() {
         return getSnapshots(SnapshotType.PARTITIONS)
                 .collect(Collectors.toList());
     }
 
-    private Stream<TransactionLogSnapshot> getSnapshots(SnapshotType type) {
+    private Stream<TransactionLogSnapshotMetadata> getSnapshots(SnapshotType type) {
         return streamPagedItems(dynamo, new QueryRequest()
                 .withTableName(allSnapshotsTable)
                 .withConsistentRead(true)
@@ -178,16 +178,16 @@ public class DynamoDBTransactionLogSnapshotStore {
     }
 
     private static LatestSnapshots getLatestSnapshotsFromItem(Map<String, AttributeValue> item) {
-        TransactionLogSnapshot filesSnapshot = null;
+        TransactionLogSnapshotMetadata filesSnapshot = null;
         String filesSnapshotPath = getStringAttribute(item, FILES_SNAPSHOT_PATH);
         if (filesSnapshotPath != null) {
-            filesSnapshot = new TransactionLogSnapshot(filesSnapshotPath, SnapshotType.FILES,
+            filesSnapshot = new TransactionLogSnapshotMetadata(filesSnapshotPath, SnapshotType.FILES,
                     getLongAttribute(item, FILES_TRANSACTION_NUMBER, 0));
         }
-        TransactionLogSnapshot partitionsSnapshot = null;
+        TransactionLogSnapshotMetadata partitionsSnapshot = null;
         String partitionsSnapshotPath = getStringAttribute(item, PARTITIONS_SNAPSHOT_PATH);
         if (partitionsSnapshotPath != null) {
-            partitionsSnapshot = new TransactionLogSnapshot(partitionsSnapshotPath, SnapshotType.PARTITIONS,
+            partitionsSnapshot = new TransactionLogSnapshotMetadata(partitionsSnapshotPath, SnapshotType.PARTITIONS,
                     getLongAttribute(item, PARTITIONS_TRANSACTION_NUMBER, 0));
         }
         return new LatestSnapshots(filesSnapshot, partitionsSnapshot);
@@ -197,29 +197,29 @@ public class DynamoDBTransactionLogSnapshotStore {
         return table + DELIMITER + type.name();
     }
 
-    private static TransactionLogSnapshot getSnapshotFromItem(Map<String, AttributeValue> item) {
+    private static TransactionLogSnapshotMetadata getSnapshotFromItem(Map<String, AttributeValue> item) {
         SnapshotType type = SnapshotType.valueOf(item.get(SNAPSHOT_TYPE).getS());
-        return new TransactionLogSnapshot(getStringAttribute(item, PATH), type, getLongAttribute(item, TRANSACTION_NUMBER, 0));
+        return new TransactionLogSnapshotMetadata(getStringAttribute(item, PATH), type, getLongAttribute(item, TRANSACTION_NUMBER, 0));
     }
 
     public static class LatestSnapshots {
-        private final TransactionLogSnapshot filesSnapshot;
-        private final TransactionLogSnapshot partitionsSnapshot;
+        private final TransactionLogSnapshotMetadata filesSnapshot;
+        private final TransactionLogSnapshotMetadata partitionsSnapshot;
 
         public static LatestSnapshots empty() {
             return new LatestSnapshots(null, null);
         }
 
-        public LatestSnapshots(TransactionLogSnapshot filesSnapshot, TransactionLogSnapshot partitionsSnapshot) {
+        public LatestSnapshots(TransactionLogSnapshotMetadata filesSnapshot, TransactionLogSnapshotMetadata partitionsSnapshot) {
             this.filesSnapshot = filesSnapshot;
             this.partitionsSnapshot = partitionsSnapshot;
         }
 
-        public Optional<TransactionLogSnapshot> getFilesSnapshot() {
+        public Optional<TransactionLogSnapshotMetadata> getFilesSnapshot() {
             return Optional.ofNullable(filesSnapshot);
         }
 
-        public Optional<TransactionLogSnapshot> getPartitionsSnapshot() {
+        public Optional<TransactionLogSnapshotMetadata> getPartitionsSnapshot() {
             return Optional.ofNullable(partitionsSnapshot);
         }
 

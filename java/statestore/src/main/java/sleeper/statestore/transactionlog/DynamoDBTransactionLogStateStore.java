@@ -64,7 +64,7 @@ public class DynamoDBTransactionLogStateStore {
 
     private static void loadLatestFilesSnapshot(TransactionLogStateStore.Builder builder, TransactionLogSnapshotSerDe snapshotSerDe, LatestSnapshots latestSnapshots) {
         if (latestSnapshots.getFilesSnapshot().isPresent()) {
-            TransactionLogSnapshot filesSnapshot = latestSnapshots.getFilesSnapshot().get();
+            TransactionLogSnapshotMetadata filesSnapshot = latestSnapshots.getFilesSnapshot().get();
             LOGGER.info("Found latest files snapshot with last transaction number {}. Creating file reference store using this snapshot.",
                     filesSnapshot.getTransactionNumber());
             try {
@@ -84,7 +84,7 @@ public class DynamoDBTransactionLogStateStore {
 
     private static void loadLatestPartitionsSnapshot(TransactionLogStateStore.Builder builder, TransactionLogSnapshotSerDe snapshotSerDe, LatestSnapshots latestSnapshots) {
         if (latestSnapshots.getPartitionsSnapshot().isPresent()) {
-            TransactionLogSnapshot partitionsSnapshot = latestSnapshots.getPartitionsSnapshot().get();
+            TransactionLogSnapshotMetadata partitionsSnapshot = latestSnapshots.getPartitionsSnapshot().get();
             LOGGER.info("Found latest partitions snapshot with last transaction number {}. Creating partitions store using this snapshot.",
                     partitionsSnapshot.getTransactionNumber());
             try {

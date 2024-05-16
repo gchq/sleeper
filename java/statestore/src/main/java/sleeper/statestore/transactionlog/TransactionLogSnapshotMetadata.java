@@ -17,20 +17,20 @@ package sleeper.statestore.transactionlog;
 
 import java.util.Objects;
 
-public class TransactionLogSnapshot {
+public class TransactionLogSnapshotMetadata {
     private final String path;
     private final SnapshotType type;
     private final long transactionNumber;
 
-    public static TransactionLogSnapshot forFiles(String basePath, long transactionNumber) {
-        return new TransactionLogSnapshot(getFilesPath(basePath, transactionNumber), SnapshotType.FILES, transactionNumber);
+    public static TransactionLogSnapshotMetadata forFiles(String basePath, long transactionNumber) {
+        return new TransactionLogSnapshotMetadata(getFilesPath(basePath, transactionNumber), SnapshotType.FILES, transactionNumber);
     }
 
-    public static TransactionLogSnapshot forPartitions(String basePath, long transactionNumber) {
-        return new TransactionLogSnapshot(getPartitionsPath(basePath, transactionNumber), SnapshotType.PARTITIONS, transactionNumber);
+    public static TransactionLogSnapshotMetadata forPartitions(String basePath, long transactionNumber) {
+        return new TransactionLogSnapshotMetadata(getPartitionsPath(basePath, transactionNumber), SnapshotType.PARTITIONS, transactionNumber);
     }
 
-    public TransactionLogSnapshot(String path, SnapshotType type, long transactionNumber) {
+    public TransactionLogSnapshotMetadata(String path, SnapshotType type, long transactionNumber) {
         this.path = path;
         this.type = type;
         this.transactionNumber = transactionNumber;
@@ -66,10 +66,10 @@ public class TransactionLogSnapshot {
         if (this == obj) {
             return true;
         }
-        if (!(obj instanceof TransactionLogSnapshot)) {
+        if (!(obj instanceof TransactionLogSnapshotMetadata)) {
             return false;
         }
-        TransactionLogSnapshot other = (TransactionLogSnapshot) obj;
+        TransactionLogSnapshotMetadata other = (TransactionLogSnapshotMetadata) obj;
         return Objects.equals(path, other.path) && type == other.type && transactionNumber == other.transactionNumber;
     }
 
