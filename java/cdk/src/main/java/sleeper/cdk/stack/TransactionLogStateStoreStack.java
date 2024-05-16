@@ -127,6 +127,31 @@ public class TransactionLogStateStoreStack extends NestedStack {
         dataStack.grantRead(grantee);
     }
 
+    public void grantAccess(StateStoreGrants grants, IGrantable grantee) {
+        // Snapshots and large transactions are both held in the data bucket
+        if (grants.canWriteAny()) {
+            dataStack.grantReadWrite(grantee);
+        } else if (grants.canReadAny()) {
+            dataStack.grantRead(grantee);
+        }
+
+        if (grants.canReadAny()) {
+            latestSnapshotsTable.grantReadData(grantee);
+        }
+
+        if (grants.canWriteActiveOrReadyForGCFiles()) {
+            filesLogTable.grantReadWriteData(grantee);
+        } else if (grants.canReadActiveOrReadyForGCFiles()) {
+            filesLogTable.grantReadData(grantee);
+        }
+
+        if (grants.canWritePartitions()) {
+            partitionsLogTable.grantReadWriteData(grantee);
+        } else if (grants.canReadPartitions()) {
+            partitionsLogTable.grantReadData(grantee);
+        }
+    }
+
     public void grantReadWriteSnapshots(IGrantable grantee) {
         grantReadFilesLog(grantee);
         grantReadPartitionsLog(grantee);
