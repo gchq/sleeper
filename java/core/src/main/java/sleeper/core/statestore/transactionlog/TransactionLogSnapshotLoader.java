@@ -23,5 +23,5 @@ public interface TransactionLogSnapshotLoader {
         return transactionNumber -> Optional.empty();
     }
 
-    Optional<TransactionLogSnapshot> loadLatestSnapshotAtMinimumTransaction(long transactionNumber);
+    Optional<TransactionLogSnapshot> loadLatestSnapshotIfAtMinimumTransaction(long transactionNumber);
 }

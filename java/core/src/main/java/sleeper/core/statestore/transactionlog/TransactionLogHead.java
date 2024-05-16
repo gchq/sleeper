@@ -96,7 +96,7 @@ class TransactionLogHead<T> {
         try {
             Instant startTime = Instant.now();
             long transactionNumberBefore = lastTransactionNumber;
-            snapshotLoader.loadLatestSnapshotAtMinimumTransaction(
+            snapshotLoader.loadLatestSnapshotIfAtMinimumTransaction(
                     transactionNumberBefore + minTransactionsAheadToLoadSnapshot)
                     .ifPresent(snapshot -> {
                         state = snapshot.getState();
