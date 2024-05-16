@@ -32,11 +32,16 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStore;
+import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
+import sleeper.core.statestore.transactionlog.TransactionLogStore;
 import sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils;
 
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
 
 @Testcontainers
 public class TransactionLogStateStoreTestBase {
@@ -68,5 +73,41 @@ public class TransactionLogStateStoreTestBase {
 
     public StateStore createStateStore(TableProperties tableProperties) {
         return DynamoDBTransactionLogStateStore.create(instanceProperties, tableProperties, dynamoDBClient, s3Client, configuration);
+    }
+
+    protected StateStore stateStore(TransactionLogStateStore.Builder builder) {
+        StateStore stateStore = builder.build();
+        stateStore.fixFileUpdateTime(DEFAULT_UPDATE_TIME);
+        stateStore.fixPartitionUpdateTime(DEFAULT_UPDATE_TIME);
+        return stateStore;
+    }
+
+    protected TransactionLogSnapshotCreator snapshotCreatorWithFreshState(TableProperties tableProperties, SetupStateStore setupState) throws Exception {
+        TransactionLogStore fileTransactions = new InMemoryTransactionLogStore();
+        TransactionLogStore partitionTransactions = new InMemoryTransactionLogStore();
+        StateStore stateStore = TransactionLogStateStore.builder()
+                .sleeperTable(tableProperties.getStatus())
+                .schema(tableProperties.getSchema())
+                .filesLogStore(fileTransactions)
+                .partitionsLogStore(partitionTransactions)
+                .build();
+        stateStore.fixFileUpdateTime(DEFAULT_UPDATE_TIME);
+        stateStore.fixPartitionUpdateTime(DEFAULT_UPDATE_TIME);
+        setupState.run(stateStore);
+
+        DynamoDBTransactionLogSnapshotStore snapshotStore = new DynamoDBTransactionLogSnapshotStore(
+                instanceProperties, tableProperties, dynamoDBClient);
+        return new TransactionLogSnapshotCreator(
+                instanceProperties, tableProperties,
+                fileTransactions, partitionTransactions,
+                configuration, snapshotStore::getLatestSnapshots, snapshotStore::saveSnapshot);
+    }
+
+    protected TransactionLogStateStore.Builder stateStoreBuilder(TableProperties tableProperties) {
+        return DynamoDBTransactionLogStateStore.builderFrom(instanceProperties, tableProperties, dynamoDBClient, s3Client, configuration);
+    }
+
+    public interface SetupStateStore {
+        void run(StateStore stateStore) throws StateStoreException;
     }
 }

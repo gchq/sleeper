@@ -111,11 +111,11 @@ public class TransactionLogStateStoreSnapshotsIT extends TransactionLogStateStor
         });
     }
 
-    private StateStore stateStore(Consumer<TransactionLogStateStore.Builder> config) {
-        // TransactionLogStateStore.Builder builder = stateStoreBuilder(schema);
-        // config.accept(builder);
-        // return stateStore(builder);
-        return null;
+    protected StateStore stateStore(Consumer<TransactionLogStateStore.Builder> config) {
+        TransactionLogStateStore.Builder builder = stateStoreBuilder(tableProperties)
+                .maxAddTransactionAttempts(1);
+        config.accept(builder);
+        return stateStore(builder);
     }
 
     private FileReferenceFactory fileFactory() {
