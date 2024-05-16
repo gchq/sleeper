@@ -138,7 +138,7 @@ public class StateStoreGrants {
         private final boolean canRead;
         private final boolean canWrite;
 
-        private Access(boolean canRead, boolean canWrite) {
+        Access(boolean canRead, boolean canWrite) {
             this.canRead = canRead;
             this.canWrite = canWrite;
         }
