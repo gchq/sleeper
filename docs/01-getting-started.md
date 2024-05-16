@@ -29,7 +29,7 @@ This will install the latest development version. This is an untested version an
 published as a regular release. Due to a bug in GitHub, it's not currently possible to install released versions this
 way. See the following issue:
 
-- https://github.com/gchq/sleeper/issues/2494
+[Sleeper CLI Docker images on main branch can't be pulled #2494](https://github.com/gchq/sleeper/issues/2494)
 
 To use a released version, please follow the [developer guide](11-dev-guide.md) to build the CLI from source.
 
