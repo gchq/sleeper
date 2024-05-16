@@ -93,6 +93,24 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
     }
 
     @Test
+    void shouldLoadSnapshotWhenMoreThanConfiguredTransactionsAheadAfterLoadingLog() throws Exception {
+        // Given
+        StateStore stateStore = stateStore(builder -> builder
+                .minTransactionsAheadToLoadSnapshot(2));
+        FileReference logFile = fileFactory().rootFile("log-file.parquet", 123);
+        FileReference snapshotFile = fileFactory().rootFile("snapshot-file.parquet", 123);
+        stateStore.addFile(logFile);
+
+        // When
+        createSnapshotWithFreshStateAtTransactionNumber(3, snapshotStateStore -> {
+            snapshotStateStore.addFile(snapshotFile);
+        });
+
+        // Then
+        assertThat(stateStore.getFileReferences()).containsExactly(snapshotFile);
+    }
+
+    @Test
     void shouldSetPartitionsStateWhenCreatingStateStore() throws Exception {
         // Given
         StateStorePartitions partitionsState = new StateStorePartitions();
