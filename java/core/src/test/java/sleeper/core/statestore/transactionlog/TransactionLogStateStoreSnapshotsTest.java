@@ -15,7 +15,6 @@
  */
 package sleeper.core.statestore.transactionlog;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionTree;
@@ -39,11 +38,6 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
 
     private final Schema schema = schemaWithKey("key", new StringType());
     private final PartitionsBuilder partitions = new PartitionsBuilder(schema).singlePartition("root");
-
-    @BeforeEach
-    void setUp() throws Exception {
-        initialiseWithPartitions(partitions);
-    }
 
     @Test
     void shouldLoadFilesFromSnapshotWhenNotInLogOnFirstLoad() throws Exception {
