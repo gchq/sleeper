@@ -57,10 +57,13 @@ To build the Sleeper CLI, you can run this instead:
 ./scripts/cli/buildAll.sh
 ```
 
-That will replace any current installation of the Sleeper CLI with the version that is built. The script that invokes it
-will not be replaced, so use `./scripts/cli/runInDocker.sh` to run it. This will act the same as running the `sleeper`
+Use `./scripts/cli/runInDocker.sh` to run the built CLI. This will act the same as running the `sleeper`
 command after installing the CLI. You can manually install it if you copy that script somewhere, rename it to `sleeper`,
 and put it on the system path. Then `sleeper ...` commands will work as though you'd installed it normally.
+
+If you have the CLI installed already it will be replaced with the version that is built. If the `runInDocker.sh` script
+is different in the version you installed before, it will not be replaced. You can find it
+at `$HOME/.local/bin/sleeper`, and manually overwrite it with the contents of `./scripts/cli/runInDocker.sh`. 
 
 ### Java
 
