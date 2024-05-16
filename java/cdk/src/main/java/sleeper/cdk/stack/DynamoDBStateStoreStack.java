@@ -115,10 +115,10 @@ public class DynamoDBStateStoreStack extends NestedStack {
         } else if (grants.canReadActiveFiles()) {
             activeFilesTable.grantReadData(grantee);
         }
-        if (grants.canReadActiveOrReadyForGCFiles()) {
-            fileReferenceCountTable.grantReadData(grantee);
-        } else if (grants.canWriteActiveOrReadyForGCFiles()) {
+        if (grants.canWriteActiveOrReadyForGCFiles()) {
             fileReferenceCountTable.grantReadWriteData(grantee);
+        } else if (grants.canReadActiveOrReadyForGCFiles()) {
+            fileReferenceCountTable.grantReadData(grantee);
         }
         if (grants.canWritePartitions()) {
             partitionTable.grantReadWriteData(grantee);
