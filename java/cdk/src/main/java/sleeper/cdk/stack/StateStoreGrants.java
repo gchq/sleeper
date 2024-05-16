@@ -18,27 +18,6 @@ package sleeper.cdk.stack;
 import java.util.stream.Stream;
 
 public class StateStoreGrants {
-    public enum Access {
-        NO_ACCESS(false, false),
-        READ(true, false),
-        READ_WRITE(true, true);
-
-        private final boolean canRead;
-        private final boolean canWrite;
-
-        private Access(boolean canRead, boolean canWrite) {
-            this.canRead = canRead;
-            this.canWrite = canWrite;
-        }
-
-        public boolean canRead() {
-            return canRead;
-        }
-
-        public boolean canWrite() {
-            return canWrite;
-        }
-    }
 
     private final Access activeFiles;
     private final Access readyForGCFiles;
@@ -46,6 +25,42 @@ public class StateStoreGrants {
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    public static StateStoreGrants readPartitions() {
+        return builder().partitions(Access.READ).build();
+    }
+
+    public static StateStoreGrants readWritePartitions() {
+        return builder().partitions(Access.READ_WRITE).build();
+    }
+
+    public static StateStoreGrants readPartitionsReadWriteActiveFiles() {
+        return builder().partitions(Access.READ).activeFiles(Access.READ_WRITE).build();
+    }
+
+    public static StateStoreGrants readActiveFilesReadWritePartitions() {
+        return builder().activeFiles(Access.READ).partitions(Access.READ_WRITE).build();
+    }
+
+    public static StateStoreGrants readWriteAllFilesAndPartitions() {
+        return builder().activeFiles(Access.READ_WRITE).readyForGCFiles(Access.READ_WRITE).partitions(Access.READ_WRITE).build();
+    }
+
+    public static StateStoreGrants readActiveFilesAndPartitions() {
+        return builder().activeFiles(Access.READ).partitions(Access.READ).build();
+    }
+
+    public static StateStoreGrants readAllFilesAndPartitions() {
+        return builder().activeFiles(Access.READ).readyForGCFiles(Access.READ).partitions(Access.READ).build();
+    }
+
+    public static StateStoreGrants readWriteReadyForGCFiles() {
+        return builder().readyForGCFiles(Access.READ_WRITE).build();
+    }
+
+    public static StateStoreGrants readWriteActiveAndReadyForGCFiles() {
+        return builder().activeFiles(Access.READ_WRITE).readyForGCFiles(Access.READ_WRITE).build();
     }
 
     private StateStoreGrants(Builder builder) {
@@ -115,4 +130,25 @@ public class StateStoreGrants {
         }
     }
 
+    public enum Access {
+        NO_ACCESS(false, false),
+        READ(true, false),
+        READ_WRITE(true, true);
+
+        private final boolean canRead;
+        private final boolean canWrite;
+
+        private Access(boolean canRead, boolean canWrite) {
+            this.canRead = canRead;
+            this.canWrite = canWrite;
+        }
+
+        public boolean canRead() {
+            return canRead;
+        }
+
+        public boolean canWrite() {
+            return canWrite;
+        }
+    }
 }
