@@ -36,7 +36,7 @@ To use a released version, please follow the [developer guide](11-dev-guide.md) 
 
 If the bug is fixed, you can replace `develop` with `main` for the latest release, or a release in the format `v0.20.0`.
 These correspond to a branch or tag in the GitHub repository. If you do not specify a version on the command line, it
-will default to the latest release:
+will default to the latest release.
 
 ```bash
 curl "https://raw.githubusercontent.com/gchq/sleeper/[version]/scripts/cli/install.sh" -o ./sleeper-install.sh
