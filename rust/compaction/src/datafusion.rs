@@ -122,17 +122,15 @@ pub async fn compact(
         .chain(col_names.iter().skip(1).map(col)) // 1st column is the sketch function call
         .collect::<Vec<_>>();
 
-    let no_sketches = col_names.iter().map(col).collect::<Vec<_>>();
-
     // Build compaction query
-    frame = frame.sort(sort_order)?.select(col_names_expr)?;
-    // frame = frame
-    //     .aggregate(
-    //         vec![col("key"), col("value")],
-    //         vec![count(col("timestamp")).alias("timestamp")],
-    //     )?
-    //     .sort(sort_order)?
-    //     .select(col_names_expr)?;
+    // frame = frame.sort(sort_order)?.select(col_names_expr)?;
+    frame = frame
+        .sort(sort_order)?
+        .aggregate(
+            vec![col("key"), col("value")],
+            vec![count(col("timestamp")).alias("timestamp")],
+        )?
+        .select(col_names_expr)?;
     // let frame = ctx
     // .sql("SELECT sketch(key),count(timestamp) AS timestamp,value FROM tabley WHERE key >= 'a' AND key < 'z' GROUP BY key,value ORDER BY key ASC")
     // .await?;
@@ -406,6 +404,7 @@ fn create_session_cfg<T>(input_data: &CompactionInput, input_paths: &[T]) -> Ses
         .column_index_truncate_length = Some(input_data.column_truncate_length);
     sf.options_mut().execution.parquet.max_statistics_size = Some(input_data.stats_truncate_length);
     sf.options_mut().optimizer.prefer_existing_sort = true;
+    sf.options_mut().optimizer.repartition_aggregations = false;
     sf
 }
 
