@@ -114,7 +114,7 @@ public class AwsSleeperTablesDriver implements SleeperTablesDriver {
         clearTable(instanceProperties.get(TRANSACTION_LOG_PARTITIONS_TABLENAME),
                 DynamoDBTransactionLogStateStore.TABLE_ID, DynamoDBTransactionLogStateStore.TRANSACTION_NUMBER);
         clearTable(instanceProperties.get(TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME),
-                DynamoDBTransactionLogSnapshotStore.TABLE_ID_AND_SNAPSHOT_TYPE, DynamoDBTransactionLogStateStore.TRANSACTION_NUMBER);
+                DynamoDBTransactionLogSnapshotStore.TABLE_ID_AND_SNAPSHOT_TYPE, DynamoDBTransactionLogSnapshotStore.TRANSACTION_NUMBER);
         clearTable(instanceProperties.get(TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME), DynamoDBTransactionLogSnapshotStore.TABLE_ID);
         waitForTablesToEmpty(
                 instanceProperties.get(TABLE_NAME_INDEX_DYNAMO_TABLENAME),
