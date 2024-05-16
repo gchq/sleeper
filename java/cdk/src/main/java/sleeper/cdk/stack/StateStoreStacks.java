@@ -41,9 +41,9 @@ public final class StateStoreStacks {
         dynamo.grantReadActiveFileMetadata(grantee);
         dynamo.grantReadPartitionMetadata(grantee);
         s3.grantRead(grantee);
-        transactionLog.grantReadFiles(grantee);
-        transactionLog.grantReadPartitions(grantee);
-        transactionLog.grantReadSnapshots(grantee);
+        transactionLog.grantReadFilesLog(grantee);
+        transactionLog.grantReadPartitionsLog(grantee);
+        transactionLog.grantReadLatestSnapshots(grantee);
     }
 
     public void grantReadWriteAllFilesAndPartitions(IGrantable grantee) {
@@ -51,55 +51,55 @@ public final class StateStoreStacks {
         dynamo.grantReadWriteReadyForGCFileMetadata(grantee);
         dynamo.grantReadWritePartitionMetadata(grantee);
         s3.grantReadWrite(grantee);
-        transactionLog.grantReadWriteFiles(grantee);
-        transactionLog.grantReadWritePartitions(grantee);
-        transactionLog.grantReadSnapshots(grantee);
+        transactionLog.grantReadWriteFilesLog(grantee);
+        transactionLog.grantReadWritePartitionsLog(grantee);
+        transactionLog.grantReadLatestSnapshots(grantee);
     }
 
     public void grantReadActiveFilesReadWritePartitions(IGrantable grantee) {
         dynamo.grantReadActiveFileMetadata(grantee);
         dynamo.grantReadWritePartitionMetadata(grantee);
         s3.grantReadWrite(grantee);
-        transactionLog.grantReadFiles(grantee);
-        transactionLog.grantReadWritePartitions(grantee);
-        transactionLog.grantReadSnapshots(grantee);
+        transactionLog.grantReadFilesLog(grantee);
+        transactionLog.grantReadWritePartitionsLog(grantee);
+        transactionLog.grantReadLatestSnapshots(grantee);
     }
 
     public void grantReadPartitionsReadWriteActiveFiles(IGrantable grantee) {
         dynamo.grantReadPartitionMetadata(grantee);
         dynamo.grantReadWriteActiveFileMetadata(grantee);
         s3.grantReadWrite(grantee);
-        transactionLog.grantReadPartitions(grantee);
-        transactionLog.grantReadWriteFiles(grantee);
-        transactionLog.grantReadSnapshots(grantee);
+        transactionLog.grantReadPartitionsLog(grantee);
+        transactionLog.grantReadWriteFilesLog(grantee);
+        transactionLog.grantReadLatestSnapshots(grantee);
     }
 
     public void grantReadPartitions(IGrantable grantee) {
         dynamo.grantReadPartitionMetadata(grantee);
         s3.grantRead(grantee);
-        transactionLog.grantReadPartitions(grantee);
-        transactionLog.grantReadSnapshots(grantee);
+        transactionLog.grantReadPartitionsLog(grantee);
+        transactionLog.grantReadLatestSnapshots(grantee);
     }
 
     public void grantReadWriteActiveAndReadyForGCFiles(IGrantable grantee) {
         dynamo.grantReadWriteActiveFileMetadata(grantee);
         dynamo.grantReadWriteReadyForGCFileMetadata(grantee);
         s3.grantReadWrite(grantee);
-        transactionLog.grantReadWriteFiles(grantee);
-        transactionLog.grantReadSnapshots(grantee);
+        transactionLog.grantReadWriteFilesLog(grantee);
+        transactionLog.grantReadLatestSnapshots(grantee);
     }
 
     public void grantReadWriteReadyForGCFiles(IGrantable grantee) {
         dynamo.grantReadWriteReadyForGCFileMetadata(grantee);
         s3.grantReadWrite(grantee);
-        transactionLog.grantReadWriteFiles(grantee);
-        transactionLog.grantReadSnapshots(grantee);
+        transactionLog.grantReadWriteFilesLog(grantee);
+        transactionLog.grantReadLatestSnapshots(grantee);
     }
 
     public void grantReadWritePartitions(IGrantable grantee) {
         dynamo.grantReadWritePartitionMetadata(grantee);
         s3.grantReadWrite(grantee);
-        transactionLog.grantReadWritePartitions(grantee);
-        transactionLog.grantReadSnapshots(grantee);
+        transactionLog.grantReadWritePartitionsLog(grantee);
+        transactionLog.grantReadLatestSnapshots(grantee);
     }
 }
