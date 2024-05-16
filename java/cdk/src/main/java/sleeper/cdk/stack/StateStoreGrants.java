@@ -17,9 +17,25 @@ package sleeper.cdk.stack;
 
 public class StateStoreGrants {
     public enum Access {
-        NO_ACCESS,
-        READ,
-        READ_WRITE
+        NO_ACCESS(false, false),
+        READ(true, false),
+        READ_WRITE(true, true);
+
+        private final boolean canRead;
+        private final boolean canWrite;
+
+        private Access(boolean canRead, boolean canWrite) {
+            this.canRead = canRead;
+            this.canWrite = canWrite;
+        }
+
+        public boolean canRead() {
+            return canRead;
+        }
+
+        public boolean canWrite() {
+            return canWrite;
+        }
     }
 
     private final Access activeFiles;
@@ -34,6 +50,30 @@ public class StateStoreGrants {
         this.activeFiles = builder.activeFiles;
         this.readyForGCFiles = builder.readyForGCFiles;
         this.partitions = builder.partitions;
+    }
+
+    public boolean canWriteActiveFiles() {
+        return activeFiles.canWrite();
+    }
+
+    public boolean canReadActiveFiles() {
+        return activeFiles.canRead();
+    }
+
+    public boolean canReadActiveOrReadyForGCFiles() {
+        return activeFiles.canRead() || readyForGCFiles.canRead();
+    }
+
+    public boolean canWriteActiveOrReadyForGCFiles() {
+        return activeFiles.canWrite() || readyForGCFiles.canWrite();
+    }
+
+    public boolean canWritePartitions() {
+        return partitions.canWrite();
+    }
+
+    public boolean canReadPartitions() {
+        return partitions.canRead();
     }
 
     public static class Builder {
@@ -60,4 +100,5 @@ public class StateStoreGrants {
             return new StateStoreGrants(this);
         }
     }
+
 }

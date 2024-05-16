@@ -130,4 +130,22 @@ public class DynamoDBStateStoreStack extends NestedStack {
     public void grantReadWritePartitionMetadata(IGrantable grantee) {
         partitionTable.grantReadWriteData(grantee);
     }
+
+    public void grantAccess(StateStoreGrants grants, IGrantable grantee) {
+        if (grants.canWriteActiveFiles()) {
+            activeFilesTable.grantReadWriteData(grantee);
+        } else if (grants.canReadActiveFiles()) {
+            activeFilesTable.grantReadData(grantee);
+        }
+        if (grants.canReadActiveOrReadyForGCFiles()) {
+            fileReferenceCountTable.grantReadData(grantee);
+        } else if (grants.canWriteActiveOrReadyForGCFiles()) {
+            fileReferenceCountTable.grantReadWriteData(grantee);
+        }
+        if (grants.canWritePartitions()) {
+            partitionTable.grantReadWriteData(grantee);
+        } else if (grants.canReadPartitions()) {
+            partitionTable.grantReadData(grantee);
+        }
+    }
 }
