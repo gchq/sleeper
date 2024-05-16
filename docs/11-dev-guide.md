@@ -49,13 +49,29 @@ into the scripts directory so that the scripts work.
 ./scripts/build/buildForTest.sh
 ```
 
-Maven (removing the '-Pquick' option will cause the unit and integration tests
-to run):
+### Sleeper CLI
+
+To build the Sleeper CLI, you can run this instead:
+
+```bash
+./scripts/cli/buildAll.sh
+```
+
+That will replace any current installation of the Sleeper CLI with the version that is built. The script that invokes it
+will not be replaced, so use `./scripts/cli/runInDocker.sh` to run it. This will act the same as running the `sleeper`
+command after installing the CLI. You can manually install it if you copy that script somewhere, rename it to `sleeper`,
+and put it on the system path. Then `sleeper ...` commands will work as though you'd installed it normally.
+
+### Java
+
+To build the Java code only, without installing it for the scripts:
 
 ```bash
 cd java
 mvn clean install -Pquick
 ```
+
+Removing the '-Pquick' option will cause the unit and integration tests to run.
 
 ## Using the codebase
 

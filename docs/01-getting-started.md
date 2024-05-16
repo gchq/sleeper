@@ -20,20 +20,23 @@ The Sleeper CLI contains Docker images with the necessary dependencies and scrip
 following commands to install the latest development version of the CLI.
 
 ```bash
-curl "https://raw.githubusercontent.com/gchq/sleeper/main/scripts/cli/install.sh" -o ./sleeper-install.sh
+curl "https://raw.githubusercontent.com/gchq/sleeper/develop/scripts/cli/install.sh" -o ./sleeper-install.sh
 chmod +x ./sleeper-install.sh
 ./sleeper-install.sh develop
 ```
 
 This will install the latest development version. This is an untested version and may not work. When ready this is
-published to `latest` as a regular release. It's not currently possible to install released versions due to a bug in
-GitHub, see the following issue:
+published as a regular release. Due to a bug in GitHub, it's not currently possible to install released versions this
+way. See the following issue:
 
 https://github.com/gchq/sleeper/issues/2494
 
-Once that's resolved, you can specify a version to install by replacing `develop` with `latest` for the latest release,
+To use a released version, please follow the [developer guide](11-dev-guide.md) to build the CLI from source.
+
+The normal way to install a release is to specify a version by replacing `develop` with `main` for the latest release,
 or a release in the format `v0.20.0`. These correspond to a branch or tag in the GitHub repository. You can find a list
-of released versions [here](https://github.com/gchq/sleeper/tags), and the change log [here](../CHANGELOG.md).
+of released versions [here](https://github.com/gchq/sleeper/tags), and the change log [here](../CHANGELOG.md). If you do
+not specify a version on the command line, it will default to the latest release.
 
 ```bash
 curl "https://raw.githubusercontent.com/gchq/sleeper/[version]/scripts/cli/install.sh" -o ./sleeper-install.sh
