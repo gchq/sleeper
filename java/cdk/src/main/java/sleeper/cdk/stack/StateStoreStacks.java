@@ -44,6 +44,9 @@ public final class StateStoreStacks {
         grantAccess(readPartitionsReadWriteActiveFiles(), policiesStack.getDirectIngestPolicyForGrants());
         grantAccess(readActiveFilesAndPartitions(), policiesStack.getQueryPolicyForGrants());
         grantAccess(readAllFilesAndPartitions(), policiesStack.getReportingPolicyForGrants());
+        transactionLog.grantReadAllSnapshotsTable(policiesStack.getReportingPolicyForGrants());
+        grantAccess(readWriteAllFilesAndPartitions(), policiesStack.getClearInstancePolicyForGrants());
+        transactionLog.grantClearSnapshots(policiesStack.getClearInstancePolicyForGrants());
         grantAccess(readWritePartitions(), policiesStack.getEditTablesPolicyForGrants());
     }
 

@@ -51,10 +51,10 @@ import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
 
 public class DynamoDBTransactionLogSnapshotStore {
     private static final String DELIMITER = "|";
-    public static final String TABLE_ID = DynamoDBTransactionLogStateStore.TABLE_ID;
+    public static final String TABLE_ID = "TABLE_ID";
     public static final String TABLE_ID_AND_SNAPSHOT_TYPE = "TABLE_ID_AND_SNAPSHOT_TYPE";
     private static final String PATH = "PATH";
-    public static final String TRANSACTION_NUMBER = DynamoDBTransactionLogStateStore.TRANSACTION_NUMBER;
+    public static final String TRANSACTION_NUMBER = "TRANSACTION_NUMBER";
     private static final String UPDATE_TIME = "UPDATE_TIME";
     private static final String SNAPSHOT_TYPE = "SNAPSHOT_TYPE";
     private static final String FILES_TRANSACTION_NUMBER = "FILES_TRANSACTION_NUMBER";

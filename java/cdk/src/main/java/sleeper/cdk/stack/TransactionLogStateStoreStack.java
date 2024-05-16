@@ -21,6 +21,7 @@ import software.amazon.awscdk.services.dynamodb.AttributeType;
 import software.amazon.awscdk.services.dynamodb.BillingMode;
 import software.amazon.awscdk.services.dynamodb.Table;
 import software.amazon.awscdk.services.iam.IGrantable;
+import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.constructs.Construct;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -127,11 +128,20 @@ public class TransactionLogStateStoreStack extends NestedStack {
         }
     }
 
-    public void grantReadWriteSnapshots(IGrantable grantee) {
+    public void grantCreateSnapshots(IGrantable grantee) {
         filesLogTable.grantReadData(grantee);
         partitionsLogTable.grantReadData(grantee);
         latestSnapshotsTable.grantReadWriteData(grantee);
         allSnapshotsTable.grantReadWriteData(grantee);
         dataStack.grantReadWrite(grantee);
+    }
+
+    public void grantReadAllSnapshotsTable(ManagedPolicy grantee) {
+        allSnapshotsTable.grantReadData(grantee);
+    }
+
+    public void grantClearSnapshots(ManagedPolicy grantee) {
+        latestSnapshotsTable.grantReadWriteData(grantee);
+        allSnapshotsTable.grantReadWriteData(grantee);
     }
 }
