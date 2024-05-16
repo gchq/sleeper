@@ -96,17 +96,27 @@ class TransactionLogHead<T> {
         try {
             Instant startTime = Instant.now();
             long transactionNumberBefore = lastTransactionNumber;
-            snapshotLoader.loadLatestSnapshotIfAtMinimumTransaction(
-                    transactionNumberBefore + minTransactionsAheadToLoadSnapshot)
-                    .ifPresent(snapshot -> {
+            long minTransactionNumberToLoadSnapshot = transactionNumberBefore + minTransactionsAheadToLoadSnapshot;
+            snapshotLoader.loadLatestSnapshotIfAtMinimumTransaction(minTransactionNumberToLoadSnapshot)
+                    .ifPresentOrElse(snapshot -> {
                         state = snapshot.getState();
                         lastTransactionNumber = snapshot.getTransactionNumber();
+                        LOGGER.info("Loaded snapshot at transaction {}", lastTransactionNumber);
+                    }, () -> {
+                        LOGGER.info("No snapshot found at or beyond transaction {}, updating from log from transaction {}",
+                                minTransactionNumberToLoadSnapshot, transactionNumberBefore);
                     });
+            Instant loadedSnapshotTime = Instant.now();
+            long transactionNumberBeforeLogLoad = lastTransactionNumber;
             logStore.readTransactionsAfter(lastTransactionNumber)
                     .forEach(this::applyTransaction);
-            LOGGER.info("Updated {}, read {} transactions, took {}, last transaction number is {}",
-                    state.getClass().getSimpleName(), lastTransactionNumber - transactionNumberBefore,
-                    LoggedDuration.withShortOutput(startTime, Instant.now()), lastTransactionNumber);
+            Instant endTime = Instant.now();
+            LOGGER.info("Updated {}, took {}, loaded snapshot in {}, read {} transactions from log in {}, last transaction number is {}",
+                    state.getClass().getSimpleName(),
+                    LoggedDuration.withShortOutput(startTime, endTime),
+                    LoggedDuration.withShortOutput(startTime, loadedSnapshotTime),
+                    LoggedDuration.withShortOutput(loadedSnapshotTime, endTime),
+                    lastTransactionNumber - transactionNumberBeforeLogLoad, lastTransactionNumber);
         } catch (RuntimeException e) {
             throw new StateStoreException("Failed reading transactions", e);
         }
