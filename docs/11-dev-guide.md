@@ -6,8 +6,8 @@ This is a brief guide to developing Sleeper.
 ## Get your environment setup
 
 Before you do any dev work on Sleeper it is worth reading the "Get your environment setup" section in
-the [deployment guide](02-deployment-guide.md) as exactly the same will apply here, especially for running the system
-tests.
+the [deployment guide](02-deployment-guide.md). Once you've built the system, exactly the same will apply here with a
+copy that you built yourself.
 
 ### Install Prerequisite Software
 
@@ -27,8 +27,16 @@ Git repository. This will start a shell with all the Sleeper dependencies instal
 system. If you run your IDE from that shell, the dependencies will be available in your IDE. You can run `nix-shell`
 again whenever you want to work with Sleeper.
 
-You can also download [shell.nix](/shell.nix) directly and run `nix-shell shell.nix` if you'd like to get a shell
-without running Git. You can then `git clone` the repository from there.
+You can also download [shell.nix](/shell.nix) directly if you'd like to avoid installing Git. You can then `git clone`
+the repository from the Nix shell. Here's an example to get the latest release:
+
+```bash
+curl "https://raw.githubusercontent.com/gchq/sleeper/main/shell.nix" -o ./shell.nix
+nix-shell ./shell.nix
+git clone https://github.com/gchq/sleeper.git
+cd sleeper
+git checkout --track origin/main
+```
 
 If you're working with the Sleeper CLI, you can use `sleeper builder` to get a shell inside a Docker container with
 the dependencies pre-installed. You'll need to clone the Git repository, and this will be persisted between executions
@@ -49,13 +57,32 @@ into the scripts directory so that the scripts work.
 ./scripts/build/buildForTest.sh
 ```
 
-Maven (removing the '-Pquick' option will cause the unit and integration tests
-to run):
+### Sleeper CLI
+
+To build the Sleeper CLI, you can run this instead:
+
+```bash
+./scripts/cli/buildAll.sh
+```
+
+Use `./scripts/cli/runInDocker.sh` to run the built CLI. This will act the same as running the `sleeper`
+command after installing the CLI. You can manually install it if you copy that script somewhere, rename it to `sleeper`,
+and put it on the system path. Then `sleeper ...` commands will work as though you'd installed it normally.
+
+If you have the CLI installed already it will be replaced with the version that is built. If the `runInDocker.sh` script
+is different in the version you installed before, it will not be replaced. You can find it
+at `$HOME/.local/bin/sleeper`, and manually overwrite it with the contents of `./scripts/cli/runInDocker.sh`. 
+
+### Java
+
+To build the Java code only, without installing it for the scripts:
 
 ```bash
 cd java
 mvn clean install -Pquick
 ```
+
+Removing the '-Pquick' option will cause the unit and integration tests to run.
 
 ## Using the codebase
 

@@ -75,7 +75,7 @@ public class TransactionLogSnapshotCreationLambda implements RequestHandler<SQSE
 
         Instant finishTime = Instant.now();
         LOGGER.info("Lambda finished at {} (ran for {})", finishTime, LoggedDuration.withFullOutput(startTime, finishTime));
-        return null;
+        return new SQSBatchResponse(batchItemFailures);
     }
 
     private void createSnapshots(List<TableProperties> tables, Map<String, List<SQSMessage>> messagesByTableId,
