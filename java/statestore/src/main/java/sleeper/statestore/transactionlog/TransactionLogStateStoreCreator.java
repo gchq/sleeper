@@ -22,24 +22,20 @@ import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
 import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.KeyType;
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
-import com.amazonaws.services.s3.AmazonS3;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.List;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_FILES_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_PARTITIONS_TABLENAME;
 
 public class TransactionLogStateStoreCreator {
     private final AmazonDynamoDB dynamoDB;
-    private final AmazonS3 s3Client;
     private final InstanceProperties instanceProperties;
 
-    public TransactionLogStateStoreCreator(InstanceProperties instanceProperties, AmazonDynamoDB dynamoDB, AmazonS3 s3Client) {
+    public TransactionLogStateStoreCreator(InstanceProperties instanceProperties, AmazonDynamoDB dynamoDB) {
         this.dynamoDB = dynamoDB;
-        this.s3Client = s3Client;
         this.instanceProperties = instanceProperties;
     }
 
@@ -47,7 +43,6 @@ public class TransactionLogStateStoreCreator {
         new DynamoDBTransactionLogSnapshotStoreCreator(instanceProperties, dynamoDB).create();
         createTransactionLogTable(instanceProperties.get(TRANSACTION_LOG_FILES_TABLENAME));
         createTransactionLogTable(instanceProperties.get(TRANSACTION_LOG_PARTITIONS_TABLENAME));
-        s3Client.createBucket(instanceProperties.get(DATA_BUCKET));
     }
 
     private void createTransactionLogTable(String tableName) {

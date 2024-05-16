@@ -62,20 +62,27 @@ import static sleeper.sketches.s3.SketchesSerDeToS3.sketchesPathForDataFile;
  * Executes a compaction job. Compacts N input files into a single output file.
  */
 public class StandardCompactor implements CompactionRunner {
-    private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final ObjectFactory objectFactory;
     private final StateStoreProvider stateStoreProvider;
+    private final Configuration configuration;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(StandardCompactor.class);
 
     public StandardCompactor(
             InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider, ObjectFactory objectFactory) {
-        this.instanceProperties = instanceProperties;
+        this(tablePropertiesProvider, stateStoreProvider, objectFactory,
+                HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
+    }
+
+    public StandardCompactor(
+            TablePropertiesProvider tablePropertiesProvider,
+            StateStoreProvider stateStoreProvider, ObjectFactory objectFactory, Configuration configuration) {
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.objectFactory = objectFactory;
         this.stateStoreProvider = stateStoreProvider;
+        this.configuration = configuration;
     }
 
     public RecordsProcessed compact(CompactionJob compactionJob) throws IOException, IteratorException, StateStoreException, InterruptedException {
@@ -85,10 +92,9 @@ public class StandardCompactor implements CompactionRunner {
         Partition partition = stateStore.getAllPartitions().stream()
                 .filter(p -> Objects.equals(compactionJob.getPartitionId(), p.getId()))
                 .findFirst().orElseThrow(() -> new NoSuchElementException("Partition not found for compaction job"));
-        Configuration conf = getConfiguration();
 
         // Create a reader for each file
-        List<CloseableIterator<Record>> inputIterators = createInputIterators(compactionJob, partition, schema, conf);
+        List<CloseableIterator<Record>> inputIterators = createInputIterators(compactionJob, partition, schema);
 
         CloseableIterator<Record> mergingIterator = getMergingIterator(objectFactory, schema, compactionJob, inputIterators);
         // Merge these iterator into one sorted iterator
@@ -100,7 +106,7 @@ public class StandardCompactor implements CompactionRunner {
         // update the state store, it will overwrite the existing output file writte
         //  by the previous run
         ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(
-                outputPath, tableProperties, conf, ParquetFileWriter.Mode.OVERWRITE);
+                outputPath, tableProperties, configuration, ParquetFileWriter.Mode.OVERWRITE);
 
         LOGGER.info("Compaction job {}: Created writer for file {}", compactionJob.getId(), compactionJob.getOutputFile());
         Sketches sketches = Sketches.from(schema);
@@ -121,7 +127,7 @@ public class StandardCompactor implements CompactionRunner {
 
         // Remove the extension (if present), then add one
         Path sketchesPath = sketchesPathForDataFile(compactionJob.getOutputFile());
-        new SketchesSerDeToS3(schema).saveToHadoopFS(sketchesPath, sketches, conf);
+        new SketchesSerDeToS3(schema).saveToHadoopFS(sketchesPath, sketches, configuration);
         LOGGER.info("Compaction job {}: Wrote sketches file to {}", compactionJob.getId(), sketchesPath);
 
         for (CloseableIterator<Record> iterator : inputIterators) {
@@ -138,13 +144,13 @@ public class StandardCompactor implements CompactionRunner {
         return new RecordsProcessed(totalNumberOfRecordsRead, recordsWritten);
     }
 
-    private List<CloseableIterator<Record>> createInputIterators(CompactionJob compactionJob, Partition partition, Schema schema, Configuration conf) throws IOException {
+    private List<CloseableIterator<Record>> createInputIterators(CompactionJob compactionJob, Partition partition, Schema schema) throws IOException {
         List<CloseableIterator<Record>> inputIterators = new ArrayList<>();
 
         FilterCompat.Filter partitionFilter = FilterCompat.get(RangeQueryUtils.getFilterPredicate(partition));
         for (String file : compactionJob.getInputFiles()) {
             ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(file), schema)
-                    .withConf(conf)
+                    .withConf(configuration)
                     .withFilter(partitionFilter)
                     .build();
             ParquetReaderIterator recordIterator = new ParquetReaderIterator(reader);
@@ -176,9 +182,5 @@ public class StandardCompactor implements CompactionRunner {
             mergingIterator = iterator.apply(mergingIterator);
         }
         return mergingIterator;
-    }
-
-    private Configuration getConfiguration() {
-        return HadoopConfigurationProvider.getConfigurationForECS(instanceProperties);
     }
 }
