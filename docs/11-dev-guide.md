@@ -6,8 +6,8 @@ This is a brief guide to developing Sleeper.
 ## Get your environment setup
 
 Before you do any dev work on Sleeper it is worth reading the "Get your environment setup" section in
-the [deployment guide](02-deployment-guide.md) as exactly the same will apply here, especially for running the system
-tests.
+the [deployment guide](02-deployment-guide.md). Once you've built the system, exactly the same will apply here with a
+copy that you built yourself.
 
 ### Install Prerequisite Software
 
