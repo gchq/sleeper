@@ -28,18 +28,13 @@ system. If you run your IDE from that shell, the dependencies will be available 
 again whenever you want to work with Sleeper.
 
 You can also download [shell.nix](/shell.nix) directly and run `nix-shell shell.nix` if you'd like to get a shell
-without running Git. You can then `git clone` the repository from there:
+without running Git. You can then `git clone` the repository from there. Here's an example to get the latest release:
 
 ```bash
 curl "https://raw.githubusercontent.com/gchq/sleeper/develop/shell.nix" -o ./shell.nix
 nix-shell ./shell.nix
 git clone https://github.com/gchq/sleeper.git
 cd sleeper
-```
-
-Make sure you switch to the version you want to work with. Use this if you want the latest relese:
-
-```bash
 git checkout --track origin/main
 ```
 
