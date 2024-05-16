@@ -29,6 +29,7 @@ import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.StateStorePartitions;
+import sleeper.core.statestore.transactionlog.TransactionLogSnapshot;
 import sleeper.core.statestore.transactionlog.TransactionLogSnapshotUtils;
 import sleeper.core.statestore.transactionlog.TransactionLogStore;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.LatestSnapshots;
@@ -130,13 +131,20 @@ public class TransactionLogSnapshotCreator {
         LOGGER.info("Transaction found with transaction number {} is newer than latest files snapshot transaction number {}.",
                 transactionNumberAfter, transactionNumberBefore);
         LOGGER.info("Creating a new files snapshot from latest transaction.");
-        TransactionLogSnapshotMetadata snapshot = TransactionLogSnapshotMetadata.forFiles(getBasePath(), transactionNumberAfter);
-        snapshotSerDe.saveFiles(snapshot, filesState);
+        TransactionLogSnapshot snapshot = new TransactionLogSnapshot(filesState, transactionNumberAfter);
+        saveFilesSnapshot(snapshot);
+    }
+
+    public void saveFilesSnapshot(TransactionLogSnapshot snapshot) throws IOException, DuplicateSnapshotException {
+        TransactionLogSnapshotMetadata snapshotMetadata = TransactionLogSnapshotMetadata.forFiles(
+                getBasePath(), snapshot.getTransactionNumber());
+
+        snapshotSerDe.saveFiles(snapshotMetadata, snapshot.getState());
         try {
-            snapshotSaver.save(snapshot);
+            snapshotSaver.save(snapshotMetadata);
         } catch (Exception e) {
             LOGGER.info("Failed to save snapshot to Dynamo DB. Deleting snapshot file.");
-            Path path = new Path(snapshot.getPath());
+            Path path = new Path(snapshotMetadata.getPath());
             FileSystem fs = path.getFileSystem(configuration);
             fs.delete(path, false);
             throw e;
@@ -155,13 +163,19 @@ public class TransactionLogSnapshotCreator {
         LOGGER.info("Transaction found with transaction number {} is newer than latest partitions snapshot transaction number {}.",
                 transactionNumberAfter, transactionNumberBefore);
         LOGGER.info("Creating a new partitions snapshot from latest transaction.");
-        TransactionLogSnapshotMetadata snapshot = TransactionLogSnapshotMetadata.forPartitions(getBasePath(), transactionNumberAfter);
-        snapshotSerDe.savePartitions(snapshot, partitionsState);
+        TransactionLogSnapshot snapshot = new TransactionLogSnapshot(partitionsState, transactionNumberAfter);
+        savePartitionsSnapshot(snapshot);
+    }
+
+    public void savePartitionsSnapshot(TransactionLogSnapshot snapshot) throws IOException, DuplicateSnapshotException {
+        TransactionLogSnapshotMetadata snapshotMetadata = TransactionLogSnapshotMetadata.forPartitions(
+                getBasePath(), snapshot.getTransactionNumber());
+        snapshotSerDe.savePartitions(snapshotMetadata, snapshot.getState());
         try {
-            snapshotSaver.save(snapshot);
+            snapshotSaver.save(snapshotMetadata);
         } catch (Exception e) {
             LOGGER.info("Failed to save snapshot to Dynamo DB. Deleting snapshot file.");
-            Path path = new Path(snapshot.getPath());
+            Path path = new Path(snapshotMetadata.getPath());
             FileSystem fs = path.getFileSystem(configuration);
             fs.delete(path, false);
             throw e;
