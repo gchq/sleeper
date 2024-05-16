@@ -27,8 +27,8 @@ Git repository. This will start a shell with all the Sleeper dependencies instal
 system. If you run your IDE from that shell, the dependencies will be available in your IDE. You can run `nix-shell`
 again whenever you want to work with Sleeper.
 
-You can also download [shell.nix](/shell.nix) directly and run `nix-shell shell.nix` if you'd like to get a shell
-without running Git. You can then `git clone` the repository from there. Here's an example to get the latest release:
+You can also download [shell.nix](/shell.nix) directly if you'd like to avoid installing Git. You can then `git clone`
+the repository from the Nix shell. Here's an example to get the latest release:
 
 ```bash
 curl "https://raw.githubusercontent.com/gchq/sleeper/main/shell.nix" -o ./shell.nix
