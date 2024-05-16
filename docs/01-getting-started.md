@@ -25,8 +25,8 @@ chmod +x ./sleeper-install.sh
 ./sleeper-install.sh develop
 ```
 
-This will install the latest development version. This is an untested version and may not work. When ready this is
-published as a regular release.
+This will install the latest development version. This will not have been as fully tested as released versions and may
+not work as expected. Most users should use the latest released version.
 
 **Due to a bug in GitHub, it is not currently possible to install released versions this way.** See the following
 issue: https://github.com/gchq/sleeper/issues/2494
