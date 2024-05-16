@@ -115,8 +115,9 @@ class TransactionLogHead<T> {
                     state.getClass().getSimpleName(),
                     LoggedDuration.withShortOutput(startTime, endTime),
                     LoggedDuration.withShortOutput(startTime, loadedSnapshotTime),
+                    lastTransactionNumber - transactionNumberBeforeLogLoad,
                     LoggedDuration.withShortOutput(loadedSnapshotTime, endTime),
-                    lastTransactionNumber - transactionNumberBeforeLogLoad, lastTransactionNumber);
+                    lastTransactionNumber);
         } catch (RuntimeException e) {
             throw new StateStoreException("Failed reading transactions", e);
         }
