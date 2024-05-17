@@ -34,8 +34,8 @@ import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStore;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotMetadataStore.LatestSnapshots;
-import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.SnapshotSaver;
-import sleeper.statestore.transactionlog.TransactionLogSnapshotCreator.LatestSnapshotsLoader;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.LatestSnapshotsMetadataLoader;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.SnapshotMetadataSaver;
 
 import java.io.FileNotFoundException;
 import java.io.UncheckedIOException;
@@ -334,13 +334,13 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
     }
 
     private void runSnapshotCreator(
-            TableProperties table, SnapshotSaver snapshotSaver) {
+            TableProperties table, SnapshotMetadataSaver snapshotSaver) {
         DynamoDBTransactionLogSnapshotMetadataStore snapshotStore = snapshotStore(table);
         runSnapshotCreator(table, snapshotStore::getLatestSnapshots, snapshotSaver);
     }
 
     private void runSnapshotCreator(
-            TableProperties table, LatestSnapshotsLoader latestSnapshotsLoader, SnapshotSaver snapshotSaver) {
+            TableProperties table, LatestSnapshotsMetadataLoader latestSnapshotsLoader, SnapshotMetadataSaver snapshotSaver) {
         new TransactionLogSnapshotCreator(
                 instanceProperties, table,
                 fileTransactionStoreByTableId.get(table.get(TABLE_ID)),
@@ -402,7 +402,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
                 + tableProperties.get(TableProperty.TABLE_ID);
     }
 
-    private SnapshotSaver failedUpdate(RuntimeException exception) {
+    private SnapshotMetadataSaver failedUpdate(RuntimeException exception) {
         return snapshot -> {
             throw exception;
         };

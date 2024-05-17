@@ -31,7 +31,8 @@ import sleeper.core.statestore.transactionlog.TransactionLogSnapshotUtils;
 import sleeper.core.statestore.transactionlog.TransactionLogStore;
 import sleeper.core.table.TableStatus;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotMetadataStore.LatestSnapshots;
-import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.SnapshotSaver;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.LatestSnapshotsMetadataLoader;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.SnapshotMetadataSaver;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -45,7 +46,7 @@ public class TransactionLogSnapshotCreator {
     private final TransactionLogStore filesLogStore;
     private final TransactionLogStore partitionsLogStore;
     private final TransactionLogSnapshotSerDe snapshotSerDe;
-    private final LatestSnapshotsLoader latestSnapshotsLoader;
+    private final LatestSnapshotsMetadataLoader latestMetadataLoader;
     private final DynamoDBTransactionLogSnapshotStore snapshotStore;
 
     public static TransactionLogSnapshotCreator from(
@@ -67,19 +68,20 @@ public class TransactionLogSnapshotCreator {
     public TransactionLogSnapshotCreator(
             InstanceProperties instanceProperties, TableProperties tableProperties,
             TransactionLogStore filesLogStore, TransactionLogStore partitionsLogStore,
-            Configuration configuration, LatestSnapshotsLoader latestSnapshotsLoader, SnapshotSaver snapshotSaver) {
+            Configuration configuration, LatestSnapshotsMetadataLoader latestMetadataLoader, SnapshotMetadataSaver snapshotSaver) {
         this.tableStatus = tableProperties.getStatus();
         this.filesLogStore = filesLogStore;
         this.partitionsLogStore = partitionsLogStore;
         this.snapshotSerDe = new TransactionLogSnapshotSerDe(tableProperties.getSchema(), configuration);
-        this.latestSnapshotsLoader = latestSnapshotsLoader;
-        this.snapshotStore = new DynamoDBTransactionLogSnapshotStore(snapshotSaver, snapshotSerDe,
+        this.latestMetadataLoader = latestMetadataLoader;
+        this.snapshotStore = new DynamoDBTransactionLogSnapshotStore(
+                latestMetadataLoader, snapshotSaver, snapshotSerDe,
                 instanceProperties, tableProperties, configuration);
     }
 
     public void createSnapshot() {
         LOGGER.info("Creating snapshot for table {}", tableStatus);
-        LatestSnapshots latestSnapshots = latestSnapshotsLoader.load();
+        LatestSnapshots latestSnapshots = latestMetadataLoader.load();
         LOGGER.info("Found latest snapshots: {}", latestSnapshots);
         StateStoreFiles filesState = latestSnapshots.getFilesSnapshot()
                 .map(snapshot -> {
@@ -143,9 +145,5 @@ public class TransactionLogSnapshotCreator {
         LOGGER.info("Creating a new partitions snapshot from latest transaction.");
         TransactionLogSnapshot snapshot = new TransactionLogSnapshot(partitionsState, transactionNumberAfter);
         snapshotStore.savePartitionsSnapshot(snapshot);
-    }
-
-    interface LatestSnapshotsLoader {
-        LatestSnapshots load();
     }
 }

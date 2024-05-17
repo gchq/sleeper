@@ -26,18 +26,20 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.statestore.transactionlog.TransactionLogSnapshot;
-import sleeper.core.statestore.transactionlog.TransactionLogSnapshotLoader;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotMetadataStore.LatestSnapshots;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.Optional;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 
-public class DynamoDBTransactionLogSnapshotStore implements TransactionLogSnapshotLoader {
+public class DynamoDBTransactionLogSnapshotStore {
     public static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBTransactionLogSnapshotStore.class);
 
-    private final SnapshotSaver metadataStore;
+    private final LatestSnapshotsMetadataLoader latestMetadataLoader;
+    private final SnapshotMetadataSaver metadataSaver;
     private final TransactionLogSnapshotSerDe snapshotSerDe;
     private final InstanceProperties instanceProperties;
     private final TableProperties tableProperties;
@@ -53,23 +55,47 @@ public class DynamoDBTransactionLogSnapshotStore implements TransactionLogSnapsh
     private DynamoDBTransactionLogSnapshotStore(
             DynamoDBTransactionLogSnapshotMetadataStore metadataStore, TransactionLogSnapshotSerDe snapshotSerDe,
             InstanceProperties instanceProperties, TableProperties tableProperties, Configuration configuration) {
-        this(metadataStore::saveSnapshot, snapshotSerDe, instanceProperties, tableProperties, configuration);
+        this(metadataStore::getLatestSnapshots, metadataStore::saveSnapshot, snapshotSerDe, instanceProperties, tableProperties, configuration);
     }
 
     DynamoDBTransactionLogSnapshotStore(
-            SnapshotSaver metadataStore, TransactionLogSnapshotSerDe snapshotSerDe,
+            LatestSnapshotsMetadataLoader latestMetadataLoader, SnapshotMetadataSaver metadataSaver,
+            TransactionLogSnapshotSerDe snapshotSerDe,
             InstanceProperties instanceProperties, TableProperties tableProperties, Configuration configuration) {
-        this.metadataStore = metadataStore;
+        this.latestMetadataLoader = latestMetadataLoader;
+        this.metadataSaver = metadataSaver;
         this.snapshotSerDe = snapshotSerDe;
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
         this.configuration = configuration;
     }
 
-    @Override
-    public Optional<TransactionLogSnapshot> loadLatestSnapshotIfAtMinimumTransaction(long transactionNumber) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'loadLatestSnapshotIfAtMinimumTransaction'");
+    public Optional<TransactionLogSnapshot> loadLatestFilesSnapshotIfAtMinimumTransaction(long transactionNumber) {
+        return latestMetadataLoader.load().getFilesSnapshot()
+                .filter(metadata -> metadata.getTransactionNumber() >= transactionNumber)
+                .map(this::loadFilesSnapshot);
+    }
+
+    public Optional<TransactionLogSnapshot> loadLatestPartitionsSnapshotIfAtMinimumTransaction(long transactionNumber) {
+        return latestMetadataLoader.load().getPartitionsSnapshot()
+                .filter(metadata -> metadata.getTransactionNumber() >= transactionNumber)
+                .map(this::loadPartitionsSnapshot);
+    }
+
+    private TransactionLogSnapshot loadFilesSnapshot(TransactionLogSnapshotMetadata metadata) {
+        try {
+            return new TransactionLogSnapshot(snapshotSerDe.loadFiles(metadata), metadata.getTransactionNumber());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private TransactionLogSnapshot loadPartitionsSnapshot(TransactionLogSnapshotMetadata metadata) {
+        try {
+            return new TransactionLogSnapshot(snapshotSerDe.loadPartitions(metadata), metadata.getTransactionNumber());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     public void saveFilesSnapshot(TransactionLogSnapshot snapshot) throws IOException, DuplicateSnapshotException {
@@ -78,7 +104,7 @@ public class DynamoDBTransactionLogSnapshotStore implements TransactionLogSnapsh
 
         snapshotSerDe.saveFiles(snapshotMetadata, snapshot.getState());
         try {
-            metadataStore.save(snapshotMetadata);
+            metadataSaver.save(snapshotMetadata);
         } catch (Exception e) {
             LOGGER.info("Failed to save snapshot to Dynamo DB. Deleting snapshot file.");
             Path path = new Path(snapshotMetadata.getPath());
@@ -93,7 +119,7 @@ public class DynamoDBTransactionLogSnapshotStore implements TransactionLogSnapsh
                 getBasePath(), snapshot.getTransactionNumber());
         snapshotSerDe.savePartitions(snapshotMetadata, snapshot.getState());
         try {
-            metadataStore.save(snapshotMetadata);
+            metadataSaver.save(snapshotMetadata);
         } catch (Exception e) {
             LOGGER.info("Failed to save snapshot to Dynamo DB. Deleting snapshot file.");
             Path path = new Path(snapshotMetadata.getPath());
@@ -109,7 +135,11 @@ public class DynamoDBTransactionLogSnapshotStore implements TransactionLogSnapsh
                 + tableProperties.get(TableProperty.TABLE_ID);
     }
 
-    public interface SnapshotSaver {
+    public interface LatestSnapshotsMetadataLoader {
+        LatestSnapshots load();
+    }
+
+    public interface SnapshotMetadataSaver {
         void save(TransactionLogSnapshotMetadata snapshot) throws DuplicateSnapshotException;
     }
 }
