@@ -32,7 +32,7 @@ import java.util.function.Consumer;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
-import static sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshots.createSnapshotWithFreshState;
+import static sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshots.setupSnapshotWithFreshState;
 
 public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLogStateStoreTestBase {
 
@@ -179,7 +179,7 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
 
     protected void createSnapshotWithFreshStateAtTransactionNumber(
             long transactionNumber, SetupStateStore setupState) throws Exception {
-        SnapshotSetup snapshotSetup = createSnapshotWithFreshState(sleeperTable, schema, setupState);
+        SnapshotSetup snapshotSetup = setupSnapshotWithFreshState(sleeperTable, schema, setupState);
         fileSnapshots.setLatestSnapshot(snapshotSetup.createFilesSnapshot(transactionNumber));
         partitionSnapshots.setLatestSnapshot(snapshotSetup.createPartitionsSnapshot(transactionNumber));
     }

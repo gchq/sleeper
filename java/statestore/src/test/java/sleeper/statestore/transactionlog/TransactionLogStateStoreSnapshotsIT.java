@@ -130,7 +130,7 @@ public class TransactionLogStateStoreSnapshotsIT extends TransactionLogStateStor
 
     protected void createSnapshotWithFreshStateAtTransactionNumber(
             long transactionNumber, SetupStateStore setupState) throws Exception {
-        SnapshotSetup snapshotSetup = InMemoryTransactionLogSnapshots.createSnapshotWithFreshState(
+        SnapshotSetup snapshotSetup = InMemoryTransactionLogSnapshots.setupSnapshotWithFreshState(
                 tableProperties.getStatus(), tableProperties.getSchema(), setupState);
         DynamoDBTransactionLogSnapshotStore snapshotStore = new DynamoDBTransactionLogSnapshotStore(instanceProperties, tableProperties, dynamoDBClient, configuration);
         snapshotStore.saveFilesSnapshot(snapshotSetup.createFilesSnapshot(transactionNumber));

@@ -28,7 +28,7 @@ public class InMemoryTransactionLogSnapshots implements TransactionLogSnapshotLo
 
     private TransactionLogSnapshot latestSnapshot;
 
-    public static SnapshotSetup createSnapshotWithFreshState(
+    public static SnapshotSetup setupSnapshotWithFreshState(
             TableStatus sleeperTable, Schema schema, SetupStateStore setupState) throws StateStoreException {
         InMemoryTransactionLogStore fileTransactions = new InMemoryTransactionLogStore();
         InMemoryTransactionLogStore partitionTransactions = new InMemoryTransactionLogStore();
