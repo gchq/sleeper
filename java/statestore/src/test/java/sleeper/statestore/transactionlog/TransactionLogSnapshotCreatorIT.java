@@ -33,7 +33,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStore;
-import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.LatestSnapshots;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotMetadataStore.LatestSnapshots;
 import sleeper.statestore.transactionlog.TransactionLogSnapshotCreator.LatestSnapshotsLoader;
 import sleeper.statestore.transactionlog.TransactionLogSnapshotCreator.SnapshotSaver;
 
@@ -329,13 +329,13 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
     }
 
     private void runSnapshotCreator(TableProperties table) {
-        DynamoDBTransactionLogSnapshotStore snapshotStore = snapshotStore(table);
+        DynamoDBTransactionLogSnapshotMetadataStore snapshotStore = snapshotStore(table);
         runSnapshotCreator(table, snapshotStore::getLatestSnapshots, snapshotStore::saveSnapshot);
     }
 
     private void runSnapshotCreator(
             TableProperties table, SnapshotSaver snapshotSaver) {
-        DynamoDBTransactionLogSnapshotStore snapshotStore = snapshotStore(table);
+        DynamoDBTransactionLogSnapshotMetadataStore snapshotStore = snapshotStore(table);
         runSnapshotCreator(table, snapshotStore::getLatestSnapshots, snapshotSaver);
     }
 
@@ -361,8 +361,8 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
         return stateStore;
     }
 
-    private DynamoDBTransactionLogSnapshotStore snapshotStore(TableProperties table) {
-        return new DynamoDBTransactionLogSnapshotStore(instanceProperties, table, dynamoDBClient);
+    private DynamoDBTransactionLogSnapshotMetadataStore snapshotStore(TableProperties table) {
+        return new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, table, dynamoDBClient);
     }
 
     private TableProperties createTable(String tableId, String tableName) {

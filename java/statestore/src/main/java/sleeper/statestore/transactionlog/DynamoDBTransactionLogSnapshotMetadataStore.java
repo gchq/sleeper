@@ -49,7 +49,7 @@ import static sleeper.dynamodb.tools.DynamoDBAttributes.getStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.hasConditionalCheckFailure;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
 
-public class DynamoDBTransactionLogSnapshotStore {
+public class DynamoDBTransactionLogSnapshotMetadataStore {
     private static final String DELIMITER = "|";
     public static final String TABLE_ID = "TABLE_ID";
     public static final String TABLE_ID_AND_SNAPSHOT_TYPE = "TABLE_ID_AND_SNAPSHOT_TYPE";
@@ -67,11 +67,11 @@ public class DynamoDBTransactionLogSnapshotStore {
     private final AmazonDynamoDB dynamo;
     private final Supplier<Instant> timeSupplier;
 
-    public DynamoDBTransactionLogSnapshotStore(InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamo) {
+    public DynamoDBTransactionLogSnapshotMetadataStore(InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamo) {
         this(instanceProperties, tableProperties, dynamo, Instant::now);
     }
 
-    public DynamoDBTransactionLogSnapshotStore(InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamo, Supplier<Instant> timeSupplier) {
+    public DynamoDBTransactionLogSnapshotMetadataStore(InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamo, Supplier<Instant> timeSupplier) {
         this.allSnapshotsTable = instanceProperties.get(TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME);
         this.latestSnapshotsTable = instanceProperties.get(TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME);
         this.sleeperTableId = tableProperties.get(TableProperty.TABLE_ID);
@@ -159,7 +159,7 @@ public class DynamoDBTransactionLogSnapshotStore {
                         .string(":table_and_type", tableAndType(sleeperTableId, type))
                         .build())
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL))
-                .map(DynamoDBTransactionLogSnapshotStore::getSnapshotFromItem);
+                .map(DynamoDBTransactionLogSnapshotMetadataStore::getSnapshotFromItem);
     }
 
     public LatestSnapshots getLatestSnapshots() {

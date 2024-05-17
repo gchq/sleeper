@@ -25,7 +25,7 @@ import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.constructs.Construct;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotMetadataStore;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
 
 import static sleeper.cdk.Utils.removalPolicy;
@@ -80,7 +80,7 @@ public class TransactionLogStateStoreStack extends NestedStack {
                 .removalPolicy(removalPolicy(instanceProperties))
                 .billingMode(BillingMode.PAY_PER_REQUEST)
                 .partitionKey(Attribute.builder()
-                        .name(DynamoDBTransactionLogSnapshotStore.TABLE_ID)
+                        .name(DynamoDBTransactionLogSnapshotMetadataStore.TABLE_ID)
                         .type(AttributeType.STRING)
                         .build())
                 .build();
@@ -93,11 +93,11 @@ public class TransactionLogStateStoreStack extends NestedStack {
                 .removalPolicy(removalPolicy(instanceProperties))
                 .billingMode(BillingMode.PAY_PER_REQUEST)
                 .partitionKey(Attribute.builder()
-                        .name(DynamoDBTransactionLogSnapshotStore.TABLE_ID_AND_SNAPSHOT_TYPE)
+                        .name(DynamoDBTransactionLogSnapshotMetadataStore.TABLE_ID_AND_SNAPSHOT_TYPE)
                         .type(AttributeType.STRING)
                         .build())
                 .sortKey(Attribute.builder()
-                        .name(DynamoDBTransactionLogSnapshotStore.TRANSACTION_NUMBER)
+                        .name(DynamoDBTransactionLogSnapshotMetadataStore.TRANSACTION_NUMBER)
                         .type(AttributeType.NUMBER)
                         .build())
                 .build();

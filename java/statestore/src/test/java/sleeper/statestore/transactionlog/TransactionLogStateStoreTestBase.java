@@ -95,7 +95,7 @@ public class TransactionLogStateStoreTestBase {
         stateStore.fixPartitionUpdateTime(DEFAULT_UPDATE_TIME);
         setupState.run(stateStore);
 
-        DynamoDBTransactionLogSnapshotStore snapshotStore = new DynamoDBTransactionLogSnapshotStore(
+        DynamoDBTransactionLogSnapshotMetadataStore snapshotStore = new DynamoDBTransactionLogSnapshotMetadataStore(
                 instanceProperties, tableProperties, dynamoDBClient);
         return new TransactionLogSnapshotCreator(
                 instanceProperties, tableProperties,

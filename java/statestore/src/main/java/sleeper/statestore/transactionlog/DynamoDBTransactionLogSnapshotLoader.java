@@ -22,11 +22,11 @@ import java.util.Optional;
 
 public class DynamoDBTransactionLogSnapshotLoader implements TransactionLogSnapshotLoader {
 
-    private final DynamoDBTransactionLogSnapshotStore snapshotStore;
+    private final DynamoDBTransactionLogSnapshotMetadataStore snapshotStore;
     private final TransactionLogSnapshotSerDe snapshotSerDe;
 
     public DynamoDBTransactionLogSnapshotLoader(
-            DynamoDBTransactionLogSnapshotStore snapshotStore, TransactionLogSnapshotSerDe snapshotSerDe) {
+            DynamoDBTransactionLogSnapshotMetadataStore snapshotStore, TransactionLogSnapshotSerDe snapshotSerDe) {
         this.snapshotStore = snapshotStore;
         this.snapshotSerDe = snapshotSerDe;
     }

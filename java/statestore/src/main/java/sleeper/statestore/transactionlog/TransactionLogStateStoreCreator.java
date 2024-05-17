@@ -40,7 +40,7 @@ public class TransactionLogStateStoreCreator {
     }
 
     public void create() {
-        new DynamoDBTransactionLogSnapshotStoreCreator(instanceProperties, dynamoDB).create();
+        new DynamoDBTransactionLogSnapshotMetadataStoreCreator(instanceProperties, dynamoDB).create();
         createTransactionLogTable(instanceProperties.get(TRANSACTION_LOG_FILES_TABLENAME));
         createTransactionLogTable(instanceProperties.get(TRANSACTION_LOG_PARTITIONS_TABLENAME));
     }

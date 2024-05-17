@@ -27,7 +27,7 @@ import sleeper.core.statestore.transactionlog.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.StateStorePartitions;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.core.util.LoggedDuration;
-import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.LatestSnapshots;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotMetadataStore.LatestSnapshots;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -56,7 +56,7 @@ public class DynamoDBTransactionLogStateStore {
     private static void loadLatestSnapshots(
             TransactionLogStateStore.Builder builder, InstanceProperties instanceProperties, TableProperties tableProperties,
             AmazonDynamoDB dynamoDB, Configuration configuration) {
-        LatestSnapshots latestSnapshots = new DynamoDBTransactionLogSnapshotStore(instanceProperties, tableProperties, dynamoDB).getLatestSnapshots();
+        LatestSnapshots latestSnapshots = new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamoDB).getLatestSnapshots();
         TransactionLogSnapshotSerDe snapshotSerDe = new TransactionLogSnapshotSerDe(tableProperties.getSchema(), configuration);
         loadLatestFilesSnapshot(builder, snapshotSerDe, latestSnapshots);
         loadLatestPartitionsSnapshot(builder, snapshotSerDe, latestSnapshots);

@@ -32,7 +32,7 @@ import sleeper.core.statestore.transactionlog.StateStorePartitions;
 import sleeper.core.statestore.transactionlog.TransactionLogSnapshot;
 import sleeper.core.statestore.transactionlog.TransactionLogSnapshotUtils;
 import sleeper.core.statestore.transactionlog.TransactionLogStore;
-import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.LatestSnapshots;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotMetadataStore.LatestSnapshots;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -62,7 +62,7 @@ public class TransactionLogSnapshotCreator {
         TransactionLogStore partitionTransactionStore = new DynamoDBTransactionLogStore(
                 instanceProperties.get(TRANSACTION_LOG_PARTITIONS_TABLENAME),
                 instanceProperties, tableProperties, dynamoDBClient, s3Client);
-        DynamoDBTransactionLogSnapshotStore snapshotStore = new DynamoDBTransactionLogSnapshotStore(
+        DynamoDBTransactionLogSnapshotMetadataStore snapshotStore = new DynamoDBTransactionLogSnapshotMetadataStore(
                 instanceProperties, tableProperties, dynamoDBClient);
         return new TransactionLogSnapshotCreator(instanceProperties, tableProperties,
                 fileTransactionStore, partitionTransactionStore, configuration,
