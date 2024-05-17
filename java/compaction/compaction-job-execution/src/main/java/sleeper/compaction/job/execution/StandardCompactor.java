@@ -196,4 +196,19 @@ public class StandardCompactor implements CompactionRunner {
         }
         return mergingIterator;
     }
+
+    @Override
+    public boolean supportsIterators() {
+        return true;
+    }
+
+    @Override
+    public String implementationLanguage() {
+        return "Java";
+    }
+
+    @Override
+    public boolean isHardwareAccelerated() {
+        return false;
+    }
 }
