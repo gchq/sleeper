@@ -24,8 +24,9 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.statestore.transactionlog.StateStoreFiles;
-import sleeper.core.statestore.transactionlog.StateStorePartitions;
+import sleeper.core.statestore.transactionlog.FileReferenceTransaction;
+import sleeper.core.statestore.transactionlog.PartitionTransaction;
+import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.TransactionLogSnapshot;
 import sleeper.core.statestore.transactionlog.TransactionLogSnapshotUtils;
 import sleeper.core.statestore.transactionlog.TransactionLogStore;
@@ -84,46 +85,29 @@ public class TransactionLogSnapshotCreator {
         TransactionLogSnapshot filesSnapshot = snapshotStore.loadFilesSnapshot(latestSnapshots);
         TransactionLogSnapshot partitionsSnapshot = snapshotStore.loadPartitionsSnapshot(latestSnapshots);
         try {
-            saveFilesSnapshot(filesSnapshot);
-            savePartitionsSnapshot(partitionsSnapshot);
+            saveSnapshot(filesSnapshot, filesLogStore, FileReferenceTransaction.class);
+            saveSnapshot(partitionsSnapshot, partitionsLogStore, PartitionTransaction.class);
         } catch (DuplicateSnapshotException | StateStoreException | IOException e) {
             LOGGER.error("Failed to create snapshot for table {}", tableStatus);
             throw new RuntimeException(e);
         }
     }
 
-    private void saveFilesSnapshot(TransactionLogSnapshot lastSnapshot) throws IOException, StateStoreException, DuplicateSnapshotException {
-        StateStoreFiles state = lastSnapshot.getState();
-        long transactionNumberBefore = lastSnapshot.getTransactionNumber();
-        long transactionNumberAfter = TransactionLogSnapshotUtils.updateFilesState(
-                tableStatus, state, filesLogStore, transactionNumberBefore);
-        if (transactionNumberBefore >= transactionNumberAfter) {
-            LOGGER.info("No new file transactions found after transaction number {}, skipping snapshot creation.",
-                    transactionNumberBefore);
+    private <T> void saveSnapshot(
+            TransactionLogSnapshot lastSnapshot,
+            TransactionLogStore logStore,
+            Class<? extends StateStoreTransaction<T>> transactionType) throws IOException, StateStoreException, DuplicateSnapshotException {
+        TransactionLogSnapshot newSnapshot = TransactionLogSnapshotUtils.updateState(
+                tableStatus, lastSnapshot, logStore, transactionType);
+        if (lastSnapshot.getTransactionNumber() >= newSnapshot.getTransactionNumber()) {
+            LOGGER.info("No new {}s found after transaction number {}, skipping snapshot creation.",
+                    transactionType.getSimpleName(),
+                    lastSnapshot.getTransactionNumber());
             return;
         }
-        LOGGER.info("Transaction found with transaction number {} is newer than latest files snapshot transaction number {}.",
-                transactionNumberAfter, transactionNumberBefore);
-        LOGGER.info("Creating a new files snapshot from latest transaction.");
-        TransactionLogSnapshot snapshot = new TransactionLogSnapshot(state, transactionNumberAfter);
-        snapshotStore.saveFilesSnapshot(snapshot);
-    }
-
-    private void savePartitionsSnapshot(TransactionLogSnapshot lastSnapshot) throws IOException, StateStoreException, DuplicateSnapshotException {
-        StateStorePartitions state = lastSnapshot.getState();
-        long transactionNumberBefore = lastSnapshot.getTransactionNumber();
-        long transactionNumberAfter = TransactionLogSnapshotUtils.updatePartitionsState(
-                tableStatus, state, partitionsLogStore, transactionNumberBefore);
-        if (transactionNumberBefore >= transactionNumberAfter) {
-            LOGGER.info("No new partition transactions found after transaction number {}, skipping snapshot creation.",
-                    transactionNumberBefore);
-            return;
-        }
-
-        LOGGER.info("Transaction found with transaction number {} is newer than latest partitions snapshot transaction number {}.",
-                transactionNumberAfter, transactionNumberBefore);
-        LOGGER.info("Creating a new partitions snapshot from latest transaction.");
-        TransactionLogSnapshot snapshot = new TransactionLogSnapshot(state, transactionNumberAfter);
-        snapshotStore.savePartitionsSnapshot(snapshot);
+        LOGGER.info("Transaction found with number {} is newer than latest {} number {}.",
+                newSnapshot.getTransactionNumber(), transactionType.getSimpleName(), lastSnapshot.getTransactionNumber());
+        LOGGER.info("Creating a new snapshot from latest {}.", transactionType.getSimpleName());
+        snapshotStore.saveFilesSnapshot(newSnapshot);
     }
 }

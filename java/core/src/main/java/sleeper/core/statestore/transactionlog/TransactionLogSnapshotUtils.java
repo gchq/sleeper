@@ -22,6 +22,21 @@ public class TransactionLogSnapshotUtils {
     private TransactionLogSnapshotUtils() {
     }
 
+    public static <T> TransactionLogSnapshot updateState(
+            TableStatus table, TransactionLogSnapshot lastSnapshot, TransactionLogStore logStore,
+            Class<? extends StateStoreTransaction<T>> transactionType) throws StateStoreException {
+        T state = lastSnapshot.getState();
+        TransactionLogHead<T> head = TransactionLogHead.builder()
+                .transactionType(transactionType)
+                .logStore(logStore)
+                .lastTransactionNumber(lastSnapshot.getTransactionNumber())
+                .state(state)
+                .sleeperTable(table)
+                .build();
+        head.update();
+        return new TransactionLogSnapshot(state, head.lastTransactionNumber());
+    }
+
     public static long updateFilesState(
             TableStatus table, StateStoreFiles state, TransactionLogStore store, long lastTransactionNumber) throws StateStoreException {
         return updateState(TransactionLogHead.builder().forFiles()
