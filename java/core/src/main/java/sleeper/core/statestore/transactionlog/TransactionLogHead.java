@@ -23,7 +23,9 @@ import sleeper.core.table.TableStatus;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.LoggedDuration;
 
+import java.time.Duration;
 import java.time.Instant;
+import java.util.function.Supplier;
 
 class TransactionLogHead<T> {
     public static final Logger LOGGER = LoggerFactory.getLogger(TransactionLogHead.class);
@@ -34,9 +36,12 @@ class TransactionLogHead<T> {
     private final ExponentialBackoffWithJitter retryBackoff;
     private final Class<? extends StateStoreTransaction<T>> transactionType;
     private final TransactionLogSnapshotLoader snapshotLoader;
+    private final Duration timeBetweenSnapshotChecks;
+    private final Supplier<Instant> loadSnapshotClock;
     private final long minTransactionsAheadToLoadSnapshot;
     private T state;
     private long lastTransactionNumber;
+    private Instant nextSnapshotCheckTime;
 
     private TransactionLogHead(Builder<T> builder) {
         this.sleeperTable = builder.sleeperTable;
@@ -45,6 +50,8 @@ class TransactionLogHead<T> {
         this.retryBackoff = builder.retryBackoff;
         this.transactionType = builder.transactionType;
         this.snapshotLoader = builder.snapshotLoader;
+        this.timeBetweenSnapshotChecks = builder.timeBetweenSnapshotChecks;
+        this.loadSnapshotClock = builder.loadSnapshotClock;
         this.minTransactionsAheadToLoadSnapshot = builder.minTransactionsAheadToLoadSnapshot;
         this.state = builder.state;
         this.lastTransactionNumber = builder.lastTransactionNumber;
@@ -114,7 +121,13 @@ class TransactionLogHead<T> {
     }
 
     private void loadSnapshotIfNeeded() {
-        Instant startTime = Instant.now();
+        Instant startTime = loadSnapshotClock.get();
+        if (nextSnapshotCheckTime != null && startTime.isBefore(nextSnapshotCheckTime)) {
+            LOGGER.info("Not checking for snapshot of {}, next check at {}",
+                    state.getClass().getSimpleName(), nextSnapshotCheckTime);
+            return;
+        }
+        nextSnapshotCheckTime = startTime.plus(timeBetweenSnapshotChecks);
         long minTransactionNumberToLoadSnapshot = lastTransactionNumber + minTransactionsAheadToLoadSnapshot;
         snapshotLoader.loadLatestSnapshotIfAtMinimumTransaction(minTransactionNumberToLoadSnapshot)
                 .ifPresentOrElse(snapshot -> {
@@ -156,6 +169,8 @@ class TransactionLogHead<T> {
         private ExponentialBackoffWithJitter retryBackoff;
         private Class<? extends StateStoreTransaction<T>> transactionType;
         private TransactionLogSnapshotLoader snapshotLoader = TransactionLogSnapshotLoader.neverLoad();
+        private Duration timeBetweenSnapshotChecks = Duration.ZERO;
+        private Supplier<Instant> loadSnapshotClock = Instant::now;
         private T state;
         private long lastTransactionNumber = 0;
         private long minTransactionsAheadToLoadSnapshot = 1;
@@ -190,6 +205,16 @@ class TransactionLogHead<T> {
 
         public Builder<T> snapshotLoader(TransactionLogSnapshotLoader snapshotLoader) {
             this.snapshotLoader = snapshotLoader;
+            return this;
+        }
+
+        public Builder<T> timeBetweenSnapshotChecks(Duration timeBetweenSnapshotChecks) {
+            this.timeBetweenSnapshotChecks = timeBetweenSnapshotChecks;
+            return this;
+        }
+
+        public Builder<T> loadSnapshotClock(Supplier<Instant> loadSnapshotClock) {
+            this.loadSnapshotClock = loadSnapshotClock;
             return this;
         }
 

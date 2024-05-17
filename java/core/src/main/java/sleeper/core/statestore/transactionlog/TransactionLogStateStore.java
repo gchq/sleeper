@@ -21,6 +21,10 @@ import sleeper.core.table.TableStatus;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.util.function.Supplier;
+
 public class TransactionLogStateStore extends DelegatingStateStore {
 
     public static final int MAX_ADD_TRANSACTION_ATTEMPTS = 10;
@@ -30,6 +34,7 @@ public class TransactionLogStateStore extends DelegatingStateStore {
         this(builder, TransactionLogHead.builder()
                 .sleeperTable(builder.sleeperTable)
                 .maxAddTransactionAttempts(builder.maxAddTransactionAttempts)
+                .timeBetweenSnapshotChecks(builder.timeBetweenSnapshotChecks)
                 .minTransactionsAheadToLoadSnapshot(builder.minTransactionsAheadToLoadSnapshot)
                 .retryBackoff(builder.retryBackoff));
     }
@@ -41,12 +46,14 @@ public class TransactionLogStateStore extends DelegatingStateStore {
                         .logStore(builder.filesLogStore)
                         .lastTransactionNumber(builder.filesTransactionNumber)
                         .snapshotLoader(builder.filesSnapshotLoader)
+                        .loadSnapshotClock(builder.loadFilesSnapshotClock)
                         .build(),
                 headBuilder.forPartitions()
                         .state(builder.partitionsState)
                         .logStore(builder.partitionsLogStore)
                         .lastTransactionNumber(builder.partitionsTransactionNumber)
                         .snapshotLoader(builder.partitionsSnapshotLoader)
+                        .loadSnapshotClock(builder.loadPartitionsSnapshotClock)
                         .build());
     }
 
@@ -73,6 +80,9 @@ public class TransactionLogStateStore extends DelegatingStateStore {
         private ExponentialBackoffWithJitter retryBackoff = new ExponentialBackoffWithJitter(RETRY_WAIT_RANGE);
         private TransactionLogSnapshotLoader filesSnapshotLoader = TransactionLogSnapshotLoader.neverLoad();
         private TransactionLogSnapshotLoader partitionsSnapshotLoader = TransactionLogSnapshotLoader.neverLoad();
+        private Duration timeBetweenSnapshotChecks = Duration.ZERO;
+        private Supplier<Instant> loadFilesSnapshotClock = Instant::now;
+        private Supplier<Instant> loadPartitionsSnapshotClock = Instant::now;
 
         private Builder() {
         }
@@ -134,6 +144,21 @@ public class TransactionLogStateStore extends DelegatingStateStore {
 
         public Builder partitionsSnapshotLoader(TransactionLogSnapshotLoader partitionsSnapshotLoader) {
             this.partitionsSnapshotLoader = partitionsSnapshotLoader;
+            return this;
+        }
+
+        public Builder timeBetweenSnapshotChecks(Duration timeBetweenSnapshotChecks) {
+            this.timeBetweenSnapshotChecks = timeBetweenSnapshotChecks;
+            return this;
+        }
+
+        public Builder loadFilesSnapshotClock(Supplier<Instant> loadFilesSnapshotClock) {
+            this.loadFilesSnapshotClock = loadFilesSnapshotClock;
+            return this;
+        }
+
+        public Builder loadPartitionsSnapshotClock(Supplier<Instant> loadPartitionsSnapshotClock) {
+            this.loadPartitionsSnapshotClock = loadPartitionsSnapshotClock;
             return this;
         }
 

@@ -26,6 +26,9 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
 import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -102,6 +105,29 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
 
         // Then
         assertThat(stateStore.getFileReferences()).containsExactly(snapshotFile);
+    }
+
+    @Test
+    void shouldNotCheckForSnapshotWhenLessThanConfiguredTimeHasPassed() throws Exception {
+        // Given
+        StateStore stateStore = stateStore(builder -> builder
+                .minTransactionsAheadToLoadSnapshot(2)
+                .timeBetweenSnapshotChecks(Duration.ofMinutes(1))
+                .loadFilesSnapshotClock(List.of(
+                        Instant.parse("2024-05-17T15:15:00Z"),
+                        Instant.parse("2024-05-17T15:15:55Z"))
+                        .iterator()::next));
+        FileReference logFile = fileFactory().rootFile("log-file.parquet", 123);
+        FileReference snapshotFile = fileFactory().rootFile("snapshot-file.parquet", 123);
+        stateStore.addFile(logFile);
+
+        // When
+        createSnapshotWithFreshStateAtTransactionNumber(3, snapshotStateStore -> {
+            snapshotStateStore.addFile(snapshotFile);
+        });
+
+        // Then
+        assertThat(stateStore.getFileReferences()).containsExactly(logFile);
     }
 
     @Test
