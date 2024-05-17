@@ -71,11 +71,13 @@ class TransactionLogHead<T> {
             long transactionNumber = lastTransactionNumber + 1;
             try {
                 logStore.addTransaction(new TransactionLogEntry(transactionNumber, updateTime, transaction));
-            } catch (Exception e) {
+            } catch (DuplicateTransactionNumberException e) {
                 LOGGER.warn("Failed adding transaction on attempt {} of {} for table {}, failure: {}",
                         attempts + 1, maxAddTransactionAttempts, sleeperTable, e.toString());
                 failure = e;
                 continue;
+            } catch (RuntimeException e) {
+                throw new StateStoreException("Failed adding transaction", e);
             }
             transaction.apply(state, updateTime);
             lastTransactionNumber = transactionNumber;
