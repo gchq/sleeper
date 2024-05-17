@@ -48,23 +48,21 @@ public class DynamoDBTransactionLogSnapshotStore {
     public DynamoDBTransactionLogSnapshotStore(
             InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamo, Configuration configuration) {
         this(new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamo),
-                new TransactionLogSnapshotSerDe(tableProperties.getSchema(), configuration),
                 instanceProperties, tableProperties, configuration);
     }
 
     private DynamoDBTransactionLogSnapshotStore(
-            DynamoDBTransactionLogSnapshotMetadataStore metadataStore, TransactionLogSnapshotSerDe snapshotSerDe,
+            DynamoDBTransactionLogSnapshotMetadataStore metadataStore,
             InstanceProperties instanceProperties, TableProperties tableProperties, Configuration configuration) {
-        this(metadataStore::getLatestSnapshots, metadataStore::saveSnapshot, snapshotSerDe, instanceProperties, tableProperties, configuration);
+        this(metadataStore::getLatestSnapshots, metadataStore::saveSnapshot, instanceProperties, tableProperties, configuration);
     }
 
     DynamoDBTransactionLogSnapshotStore(
             LatestSnapshotsMetadataLoader latestMetadataLoader, SnapshotMetadataSaver metadataSaver,
-            TransactionLogSnapshotSerDe snapshotSerDe,
             InstanceProperties instanceProperties, TableProperties tableProperties, Configuration configuration) {
         this.latestMetadataLoader = latestMetadataLoader;
         this.metadataSaver = metadataSaver;
-        this.snapshotSerDe = snapshotSerDe;
+        this.snapshotSerDe = new TransactionLogSnapshotSerDe(tableProperties.getSchema(), configuration);
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
         this.configuration = configuration;

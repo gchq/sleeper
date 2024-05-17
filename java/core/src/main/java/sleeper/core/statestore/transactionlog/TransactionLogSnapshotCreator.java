@@ -15,11 +15,37 @@
  */
 package sleeper.core.statestore.transactionlog;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.TableStatus;
 
+import java.util.Optional;
+
 public class TransactionLogSnapshotCreator {
+    public static final Logger LOGGER = LoggerFactory.getLogger(TransactionLogSnapshotCreator.class);
+
     private TransactionLogSnapshotCreator() {
+    }
+
+    public static <T> Optional<TransactionLogSnapshot> createSnapshotIfChanged(
+            TransactionLogSnapshot lastSnapshot,
+            TransactionLogStore logStore,
+            Class<? extends StateStoreTransaction<T>> transactionType,
+            TableStatus tableStatus) throws StateStoreException {
+        TransactionLogSnapshot newSnapshot = updateState(
+                lastSnapshot, transactionType, logStore, tableStatus);
+        if (lastSnapshot.getTransactionNumber() >= newSnapshot.getTransactionNumber()) {
+            LOGGER.info("No new {}s found after transaction number {}, skipping snapshot creation.",
+                    transactionType.getSimpleName(),
+                    lastSnapshot.getTransactionNumber());
+            return Optional.empty();
+        }
+        LOGGER.info("Transaction found with number {} is newer than latest {} number {}.",
+                newSnapshot.getTransactionNumber(), transactionType.getSimpleName(), lastSnapshot.getTransactionNumber());
+        LOGGER.info("Creating a new snapshot from latest {}.", transactionType.getSimpleName());
+        return Optional.of(newSnapshot);
     }
 
     public static <T> TransactionLogSnapshot updateState(

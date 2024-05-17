@@ -26,7 +26,6 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.FileReferenceTransaction;
 import sleeper.core.statestore.transactionlog.PartitionTransaction;
-import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.TransactionLogSnapshot;
 import sleeper.core.statestore.transactionlog.TransactionLogSnapshotCreator;
 import sleeper.core.statestore.transactionlog.TransactionLogStore;
@@ -72,49 +71,46 @@ public class DynamoDBTransactionLogSnapshotCreator {
         this.tableStatus = tableProperties.getStatus();
         this.filesLogStore = filesLogStore;
         this.partitionsLogStore = partitionsLogStore;
-        TransactionLogSnapshotSerDe snapshotSerDe = new TransactionLogSnapshotSerDe(tableProperties.getSchema(), configuration);
         this.latestMetadataLoader = latestMetadataLoader;
         this.snapshotStore = new DynamoDBTransactionLogSnapshotStore(
-                latestMetadataLoader, snapshotSaver, snapshotSerDe,
-                instanceProperties, tableProperties, configuration);
+                latestMetadataLoader, snapshotSaver, instanceProperties, tableProperties, configuration);
     }
 
     public void createSnapshot() {
         LOGGER.info("Creating snapshot for table {}", tableStatus);
         LatestSnapshots latestSnapshots = latestMetadataLoader.load();
         LOGGER.info("Found latest snapshots: {}", latestSnapshots);
-        TransactionLogSnapshot filesSnapshot = snapshotStore.loadFilesSnapshot(latestSnapshots);
-        TransactionLogSnapshot partitionsSnapshot = snapshotStore.loadPartitionsSnapshot(latestSnapshots);
+        updateFilesSnapshot(latestSnapshots);
+        updatePartitionsSnapshot(latestSnapshots);
+    }
+
+    private void updateFilesSnapshot(LatestSnapshots latestSnapshots) {
+        TransactionLogSnapshot oldSnapshot = snapshotStore.loadFilesSnapshot(latestSnapshots);
         try {
-            Optional<TransactionLogSnapshot> createForFiles = createSnapshot(filesSnapshot, filesLogStore, FileReferenceTransaction.class);
-            Optional<TransactionLogSnapshot> createForPartitions = createSnapshot(partitionsSnapshot, partitionsLogStore, PartitionTransaction.class);
-            if (createForFiles.isPresent()) {
-                snapshotStore.saveFilesSnapshot(createForFiles.get());
-            }
-            if (createForPartitions.isPresent()) {
-                snapshotStore.savePartitionsSnapshot(createForPartitions.get());
+            Optional<TransactionLogSnapshot> newSnapshot = TransactionLogSnapshotCreator.createSnapshotIfChanged(
+                    oldSnapshot, filesLogStore, FileReferenceTransaction.class, tableStatus);
+            if (newSnapshot.isPresent()) {
+                snapshotStore.saveFilesSnapshot(newSnapshot.get());
+                LOGGER.info("Saved new files snapshot");
             }
         } catch (DuplicateSnapshotException | StateStoreException | IOException e) {
-            LOGGER.error("Failed to create snapshot for table {}", tableStatus);
+            LOGGER.error("Failed to create files snapshot for table {}", tableStatus);
             throw new RuntimeException(e);
         }
     }
 
-    private <T> Optional<TransactionLogSnapshot> createSnapshot(
-            TransactionLogSnapshot lastSnapshot,
-            TransactionLogStore logStore,
-            Class<? extends StateStoreTransaction<T>> transactionType) throws StateStoreException {
-        TransactionLogSnapshot newSnapshot = TransactionLogSnapshotCreator.updateState(
-                lastSnapshot, transactionType, logStore, tableStatus);
-        if (lastSnapshot.getTransactionNumber() >= newSnapshot.getTransactionNumber()) {
-            LOGGER.info("No new {}s found after transaction number {}, skipping snapshot creation.",
-                    transactionType.getSimpleName(),
-                    lastSnapshot.getTransactionNumber());
-            return Optional.empty();
+    private void updatePartitionsSnapshot(LatestSnapshots latestSnapshots) {
+        TransactionLogSnapshot oldSnapshot = snapshotStore.loadPartitionsSnapshot(latestSnapshots);
+        try {
+            Optional<TransactionLogSnapshot> newSnapshot = TransactionLogSnapshotCreator.createSnapshotIfChanged(
+                    oldSnapshot, partitionsLogStore, PartitionTransaction.class, tableStatus);
+            if (newSnapshot.isPresent()) {
+                snapshotStore.savePartitionsSnapshot(newSnapshot.get());
+                LOGGER.info("Saved new partitions snapshot");
+            }
+        } catch (DuplicateSnapshotException | StateStoreException | IOException e) {
+            LOGGER.error("Failed to create partitions snapshot for table {}", tableStatus);
+            throw new RuntimeException(e);
         }
-        LOGGER.info("Transaction found with number {} is newer than latest {} number {}.",
-                newSnapshot.getTransactionNumber(), transactionType.getSimpleName(), lastSnapshot.getTransactionNumber());
-        LOGGER.info("Creating a new snapshot from latest {}.", transactionType.getSimpleName());
-        return Optional.of(newSnapshot);
     }
 }
