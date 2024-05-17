@@ -16,9 +16,9 @@
 package sleeper.statestore.transactionlog;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
@@ -30,6 +30,7 @@ import sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshots.Se
 import sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshots.SnapshotSetup;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 
+import java.util.List;
 import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -76,7 +77,7 @@ public class TransactionLogStateStoreSnapshotsIT extends TransactionLogStateStor
     }
 
     @Test
-    void shouldNotLoadSnapshotWhenOnlyOneTransactionAheadAfterLoadingLog() throws Exception {
+    void shouldNotLoadFilesSnapshotWhenOnlyOneTransactionAheadAfterLoadingLog() throws Exception {
         // Given
         StateStore stateStore = stateStore(builder -> builder
                 .minTransactionsAheadToLoadSnapshot(2));
@@ -94,8 +95,7 @@ public class TransactionLogStateStoreSnapshotsIT extends TransactionLogStateStor
     }
 
     @Test
-    @Disabled
-    void shouldLoadSnapshotWhenMoreThanConfiguredTransactionsAheadAfterLoadingLog() throws Exception {
+    void shouldLoadFilesSnapshotWhenMoreThanConfiguredTransactionsAheadAfterLoadingLog() throws Exception {
         // Given
         StateStore stateStore = stateStore(builder -> builder
                 .minTransactionsAheadToLoadSnapshot(2));
@@ -110,6 +110,42 @@ public class TransactionLogStateStoreSnapshotsIT extends TransactionLogStateStor
 
         // Then
         assertThat(stateStore.getFileReferences()).containsExactly(snapshotFile);
+    }
+
+    @Test
+    void shouldNotLoadPartitionsSnapshotWhenOnlyOneTransactionAheadAfterLoadingLog() throws Exception {
+        // Given
+        StateStore stateStore = stateStore(builder -> builder
+                .minTransactionsAheadToLoadSnapshot(2));
+        List<Partition> logPartitions = new PartitionsBuilder(schema).rootFirst("A").buildList();
+        List<Partition> snapshotPartitions = new PartitionsBuilder(schema).rootFirst("B").buildList();
+        stateStore.initialise(logPartitions);
+
+        // When
+        createSnapshotWithFreshStateAtTransactionNumber(2, snapshotStateStore -> {
+            snapshotStateStore.initialise(snapshotPartitions);
+        });
+
+        // Then
+        assertThat(stateStore.getAllPartitions()).containsExactlyElementsOf(logPartitions);
+    }
+
+    @Test
+    void shouldLoadPartitionsSnapshotWhenMoreThanConfiguredTransactionsAheadAfterLoadingLog() throws Exception {
+        // Given
+        StateStore stateStore = stateStore(builder -> builder
+                .minTransactionsAheadToLoadSnapshot(2));
+        List<Partition> logPartitions = new PartitionsBuilder(schema).rootFirst("A").buildList();
+        List<Partition> snapshotPartitions = new PartitionsBuilder(schema).rootFirst("B").buildList();
+        stateStore.initialise(logPartitions);
+
+        // When
+        createSnapshotWithFreshStateAtTransactionNumber(3, snapshotStateStore -> {
+            snapshotStateStore.initialise(snapshotPartitions);
+        });
+
+        // Then
+        assertThat(stateStore.getAllPartitions()).containsExactlyElementsOf(snapshotPartitions);
     }
 
     private StateStore stateStore() {
