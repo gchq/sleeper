@@ -15,6 +15,7 @@
  */
 package sleeper.statestore.transactionlog;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -43,12 +44,19 @@ public class DynamoDBTransactionLogSnapshotStore implements TransactionLogSnapsh
     private final Configuration configuration;
 
     public DynamoDBTransactionLogSnapshotStore(
+            InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamo, Configuration configuration) {
+        this(new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamo),
+                new TransactionLogSnapshotSerDe(tableProperties.getSchema(), configuration),
+                instanceProperties, tableProperties, configuration);
+    }
+
+    private DynamoDBTransactionLogSnapshotStore(
             DynamoDBTransactionLogSnapshotMetadataStore metadataStore, TransactionLogSnapshotSerDe snapshotSerDe,
             InstanceProperties instanceProperties, TableProperties tableProperties, Configuration configuration) {
         this(metadataStore::saveSnapshot, snapshotSerDe, instanceProperties, tableProperties, configuration);
     }
 
-    public DynamoDBTransactionLogSnapshotStore(
+    DynamoDBTransactionLogSnapshotStore(
             SnapshotSaver metadataStore, TransactionLogSnapshotSerDe snapshotSerDe,
             InstanceProperties instanceProperties, TableProperties tableProperties, Configuration configuration) {
         this.metadataStore = metadataStore;
@@ -60,7 +68,6 @@ public class DynamoDBTransactionLogSnapshotStore implements TransactionLogSnapsh
 
     @Override
     public Optional<TransactionLogSnapshot> loadLatestSnapshotIfAtMinimumTransaction(long transactionNumber) {
-        //metadataStore.getLatestSnapshots();
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'loadLatestSnapshotIfAtMinimumTransaction'");
     }

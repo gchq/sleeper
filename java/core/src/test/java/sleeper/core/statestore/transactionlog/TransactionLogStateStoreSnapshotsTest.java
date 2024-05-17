@@ -24,15 +24,15 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshots.SetupStateStore;
+import sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshots.SnapshotSetup;
 
 import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
-import static sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshots.createFilesSnapshot;
-import static sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshots.createPartitionsSnapshot;
+import static sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshots.createSnapshotWithFreshState;
 
 public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLogStateStoreTestBase {
 
@@ -179,23 +179,9 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
 
     protected void createSnapshotWithFreshStateAtTransactionNumber(
             long transactionNumber, SetupStateStore setupState) throws Exception {
-        InMemoryTransactionLogStore fileTransactions = new InMemoryTransactionLogStore();
-        InMemoryTransactionLogStore partitionTransactions = new InMemoryTransactionLogStore();
-        StateStore stateStore = TransactionLogStateStore.builder()
-                .sleeperTable(sleeperTable)
-                .schema(schema)
-                .filesLogStore(fileTransactions)
-                .partitionsLogStore(partitionTransactions)
-                .build();
-        stateStore.fixFileUpdateTime(DEFAULT_UPDATE_TIME);
-        stateStore.fixPartitionUpdateTime(DEFAULT_UPDATE_TIME);
-        setupState.run(stateStore);
-        fileSnapshots.setLatestSnapshot(createFilesSnapshot(sleeperTable, fileTransactions, transactionNumber));
-        partitionSnapshots.setLatestSnapshot(createPartitionsSnapshot(sleeperTable, partitionTransactions, transactionNumber));
-    }
-
-    public interface SetupStateStore {
-        void run(StateStore stateStore) throws StateStoreException;
+        SnapshotSetup snapshotSetup = createSnapshotWithFreshState(sleeperTable, schema, setupState);
+        fileSnapshots.setLatestSnapshot(snapshotSetup.createFilesSnapshot(transactionNumber));
+        partitionSnapshots.setLatestSnapshot(snapshotSetup.createPartitionsSnapshot(transactionNumber));
     }
 
 }

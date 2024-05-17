@@ -29,6 +29,9 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshots;
+import sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshots.SetupStateStore;
+import sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshots.SnapshotSetup;
 import sleeper.statestore.StateStoreFactory;
 
 import java.nio.file.Path;
@@ -238,7 +241,16 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
         }
 
         private void createSnapshotWithFreshState(SetupStateStore setupState) throws Exception {
-            snapshotCreatorWithFreshState(tableProperties, setupState).createSnapshot();
+            SnapshotSetup snapshotSetup = InMemoryTransactionLogSnapshots.createSnapshotWithFreshState(
+                    tableProperties.getStatus(), tableProperties.getSchema(), setupState);
+
+            DynamoDBTransactionLogSnapshotMetadataStore snapshotStore = new DynamoDBTransactionLogSnapshotMetadataStore(
+                    instanceProperties, tableProperties, dynamoDBClient);
+            new TransactionLogSnapshotCreator(
+                    instanceProperties, tableProperties,
+                    snapshotSetup.getFilesLog(), snapshotSetup.getPartitionsLog(),
+                    configuration, snapshotStore::getLatestSnapshots, snapshotStore::saveSnapshot)
+                    .createSnapshot();
         }
 
         private FileReferenceFactory factory(PartitionTree tree) {
