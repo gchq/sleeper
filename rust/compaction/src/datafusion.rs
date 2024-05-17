@@ -82,8 +82,6 @@ pub async fn compact(
     // Tell DataFusion that the row key columns and sort columns are already sorted
     let po = ParquetReadOptions::default().file_sort_order(vec![sort_order.clone()]);
     let mut frame = ctx.read_parquet(input_paths.to_owned(), po).await?;
-    // ctx.register_parquet("tabley", input_paths[0].as_str(), po)
-    //     .await?;
 
     // If we have a partition region, apply it first
     if let Some(expr) = region_filter(&input_data.region) {
@@ -96,14 +94,6 @@ pub async fn compact(
         &input_data.row_key_cols,
     )));
     frame.task_ctx().register_udf(sketch_func.clone())?;
-
-    // ctx.register_udf(ScalarUDF::from(udf::SketchUDF::new(
-    //     &DFSchema::from_unqualifed_fields(
-    //         Fields::from(vec![Field::new("key", DataType::Utf8, false)]),
-    //         HashMap::default(),
-    //     )?,
-    //     &input_data.row_key_cols,
-    // )));
 
     // Extract all column names
     let col_names = frame.schema().clone().strip_qualifiers().field_names();
@@ -125,15 +115,12 @@ pub async fn compact(
     // Build compaction query
     // frame = frame.sort(sort_order)?.select(col_names_expr)?;
     frame = frame
-        .sort(sort_order)?
         .aggregate(
             vec![col("key"), col("value")],
             vec![count(col("timestamp")).alias("timestamp")],
         )?
+        .sort(sort_order)?
         .select(col_names_expr)?;
-    // let frame = ctx
-    // .sql("SELECT sketch(key),count(timestamp) AS timestamp,value FROM tabley WHERE key >= 'a' AND key < 'z' GROUP BY key,value ORDER BY key ASC")
-    // .await?;
 
     // Show explanation of plan
     let explained = frame.clone().explain(false, false)?.collect().await?;
@@ -159,7 +146,6 @@ pub async fn compact(
 
     show_store_stats(&store);
 
-    // let sketch_func = frame.registry().udf("sketch")?;
     // Write sketches out to file in Sleeper compatible way
     let binding = sketch_func.inner();
     let inner_function: Option<&SketchUDF> = binding.as_any().downcast_ref();
