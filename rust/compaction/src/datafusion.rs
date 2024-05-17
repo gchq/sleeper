@@ -23,12 +23,8 @@ use crate::{
     details::create_sketch_path,
     ColRange, CompactionInput, CompactionResult, PartitionBound,
 };
-use arrow::{
-    datatypes::{DataType, Field, Fields},
-    util::pretty::pretty_format_batches,
-};
+use arrow::util::pretty::pretty_format_batches;
 use datafusion::{
-    common::DFSchema,
     config::FormatOptions,
     error::DataFusionError,
     execution::{
@@ -38,8 +34,8 @@ use datafusion::{
     logical_expr::{LogicalPlanBuilder, ScalarUDF},
     parquet::basic::{BrotliLevel, GzipLevel, ZstdLevel},
     physical_plan::{
-        accept, coalesce_partitions::CoalescePartitionsExec, collect, filter::FilterExec,
-        ExecutionPlan, ExecutionPlanVisitor,
+        accept, collect, filter::FilterExec, projection::ProjectionExec, ExecutionPlan,
+        ExecutionPlanVisitor,
     },
     prelude::*,
 };
@@ -113,7 +109,13 @@ pub async fn compact(
         .collect::<Vec<_>>();
 
     // Build compaction query
-    frame = frame.sort(sort_order)?.select(col_names_expr)?;
+    frame = frame
+        .aggregate(
+            vec![col("key"), col("value")],
+            vec![sum(col("timestamp")).alias("timestamp")],
+        )?
+        .sort(sort_order)?
+        .select(col_names_expr)?;
 
     // Show explanation of plan
     let explained = frame.clone().explain(false, false)?.collect().await?;
@@ -220,7 +222,7 @@ impl ExecutionPlanVisitor for RowCounts {
         // read output records from here
         let maybe_coalesce = plan
             .as_any()
-            .downcast_ref::<CoalescePartitionsExec>()
+            .downcast_ref::<ProjectionExec>()
             .and_then(ExecutionPlan::metrics);
         // read input records from here
         let maybe_parq_read = plan
@@ -382,8 +384,8 @@ fn create_session_cfg<T>(input_data: &CompactionInput, input_paths: &[T]) -> Ses
         .parquet
         .column_index_truncate_length = Some(input_data.column_truncate_length);
     sf.options_mut().execution.parquet.max_statistics_size = Some(input_data.stats_truncate_length);
-    // sf.options_mut().optimizer.prefer_existing_sort = true;
-    // sf.options_mut().optimizer.repartition_aggregations = false;
+    sf.options_mut().optimizer.prefer_existing_sort = true;
+    sf.options_mut().optimizer.repartition_aggregations = false;
     sf
 }
 
