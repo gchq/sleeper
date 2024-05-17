@@ -75,7 +75,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
         FileReference file2 = fileFactory().rootFile("file2.parquet", 200);
         FileReference file3 = fileFactory().rootFile("file3.parquet", 300);
         store.addFile(file1);
-        filesLogStore.beforeNextAddTransaction(() -> {
+        filesLogStore.atStartOfNextAddTransaction(() -> {
             otherProcess().addFile(file2);
         });
 
@@ -89,38 +89,40 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
     }
 
     @Test
-    void shouldRetryAddTransactionWhenUnexpectedFailureOccurredAddingTransaction() throws Exception {
-        // Given
-        filesLogStore.beforeNextAddTransaction(() -> {
-            throw new RuntimeException("Unexpected failure");
-        });
+    void shouldRetryAddTransactionWhenConflictOccurredAddingTransaction() throws Exception {
+        // Given we cause a transaction conflict by adding another file during an update
         FileReference file = fileFactory().rootFile("file.parquet", 100);
+        FileReference otherProcessFile = fileFactory().rootFile("other-file.parquet", 100);
+        filesLogStore.atStartOfNextAddTransaction(() -> {
+            store.addFile(otherProcessFile);
+        });
 
         // When
         store.addFile(file);
 
         // Then
         assertThat(store.getFileReferences())
-                .containsExactly(file);
+                .containsExactly(file, otherProcessFile);
         assertThat(retryWaits).hasSize(1);
     }
 
     @Test
-    void shouldFailAfterTooManyTries() throws Exception {
-        // Given
+    void shouldFailAfterTooManyConflictsAddingTransaction() throws Exception {
+        // Given we only allow one attempt adding a transaction
         store = stateStore(builder -> builder.maxAddTransactionAttempts(1));
-        RuntimeException failure = new RuntimeException("Unexpected failure");
-        filesLogStore.beforeNextAddTransaction(() -> {
-            throw failure;
-        });
+        // And we cause a transaction conflict by adding another file during an update
         FileReference file = fileFactory().rootFile("file.parquet", 100);
+        FileReference otherProcessFile = fileFactory().rootFile("other-file.parquet", 100);
+        filesLogStore.atStartOfNextAddTransaction(() -> {
+            store.addFile(otherProcessFile);
+        });
 
         // When / Then
         assertThatThrownBy(() -> store.addFile(file))
                 .isInstanceOf(StateStoreException.class)
-                .hasCause(failure);
+                .hasCauseInstanceOf(DuplicateTransactionNumberException.class);
         assertThat(store.getFileReferences())
-                .isEmpty();
+                .containsExactly(otherProcessFile);
         assertThat(retryWaits).isEmpty();
     }
 
@@ -145,7 +147,25 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
         // Given
         FileReference file = fileFactory().rootFile("file.parquet", 100);
         RuntimeException failure = new RuntimeException("Unexpected failure");
-        filesLogStore.beforeNextReadTransactions(() -> {
+        filesLogStore.atStartOfNextReadTransactions(() -> {
+            throw failure;
+        });
+
+        // When / Then
+        assertThatThrownBy(() -> store.addFile(file))
+                .isInstanceOf(StateStoreException.class)
+                .cause().isSameAs(failure);
+        assertThat(store.getFileReferences())
+                .isEmpty();
+        assertThat(retryWaits).isEmpty();
+    }
+
+    @Test
+    void shouldFailOnUnexpectedFailureAddingTransaction() throws Exception {
+        // Given
+        FileReference file = fileFactory().rootFile("file.parquet", 100);
+        RuntimeException failure = new RuntimeException("Unexpected failure");
+        filesLogStore.atStartOfNextAddTransaction(() -> {
             throw failure;
         });
 
