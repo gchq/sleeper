@@ -35,7 +35,6 @@ import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.Lat
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.SnapshotMetadataSaver;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_FILES_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_PARTITIONS_TABLENAME;
@@ -45,7 +44,6 @@ public class TransactionLogSnapshotCreator {
     private final TableStatus tableStatus;
     private final TransactionLogStore filesLogStore;
     private final TransactionLogStore partitionsLogStore;
-    private final TransactionLogSnapshotSerDe snapshotSerDe;
     private final LatestSnapshotsMetadataLoader latestMetadataLoader;
     private final DynamoDBTransactionLogSnapshotStore snapshotStore;
 
@@ -72,7 +70,7 @@ public class TransactionLogSnapshotCreator {
         this.tableStatus = tableProperties.getStatus();
         this.filesLogStore = filesLogStore;
         this.partitionsLogStore = partitionsLogStore;
-        this.snapshotSerDe = new TransactionLogSnapshotSerDe(tableProperties.getSchema(), configuration);
+        TransactionLogSnapshotSerDe snapshotSerDe = new TransactionLogSnapshotSerDe(tableProperties.getSchema(), configuration);
         this.latestMetadataLoader = latestMetadataLoader;
         this.snapshotStore = new DynamoDBTransactionLogSnapshotStore(
                 latestMetadataLoader, snapshotSaver, snapshotSerDe,
@@ -83,42 +81,22 @@ public class TransactionLogSnapshotCreator {
         LOGGER.info("Creating snapshot for table {}", tableStatus);
         LatestSnapshots latestSnapshots = latestMetadataLoader.load();
         LOGGER.info("Found latest snapshots: {}", latestSnapshots);
-        StateStoreFiles filesState = latestSnapshots.getFilesSnapshot()
-                .map(snapshot -> {
-                    try {
-                        return snapshotSerDe.loadFiles(snapshot);
-                    } catch (IOException e) {
-                        throw new UncheckedIOException(e);
-                    }
-                })
-                .orElseGet(StateStoreFiles::new);
-        long filesTransactionNumberBefore = latestSnapshots.getFilesSnapshot()
-                .map(TransactionLogSnapshotMetadata::getTransactionNumber)
-                .orElse(0L);
-        StateStorePartitions partitionsState = latestSnapshots.getPartitionsSnapshot()
-                .map(snapshot -> {
-                    try {
-                        return snapshotSerDe.loadPartitions(snapshot);
-                    } catch (IOException e) {
-                        throw new UncheckedIOException(e);
-                    }
-                })
-                .orElseGet(StateStorePartitions::new);
-        long partitionsTransactionNumberBefore = latestSnapshots.getPartitionsSnapshot()
-                .map(TransactionLogSnapshotMetadata::getTransactionNumber)
-                .orElse(0L);
+        TransactionLogSnapshot filesSnapshot = snapshotStore.loadFilesSnapshot(latestSnapshots);
+        TransactionLogSnapshot partitionsSnapshot = snapshotStore.loadPartitionsSnapshot(latestSnapshots);
         try {
-            saveFilesSnapshot(filesState, filesTransactionNumberBefore);
-            savePartitionsSnapshot(partitionsState, partitionsTransactionNumberBefore);
+            saveFilesSnapshot(filesSnapshot);
+            savePartitionsSnapshot(partitionsSnapshot);
         } catch (DuplicateSnapshotException | StateStoreException | IOException e) {
             LOGGER.error("Failed to create snapshot for table {}", tableStatus);
             throw new RuntimeException(e);
         }
     }
 
-    private void saveFilesSnapshot(StateStoreFiles filesState, long transactionNumberBefore) throws IOException, StateStoreException, DuplicateSnapshotException {
+    private void saveFilesSnapshot(TransactionLogSnapshot lastSnapshot) throws IOException, StateStoreException, DuplicateSnapshotException {
+        StateStoreFiles state = lastSnapshot.getState();
+        long transactionNumberBefore = lastSnapshot.getTransactionNumber();
         long transactionNumberAfter = TransactionLogSnapshotUtils.updateFilesState(
-                tableStatus, filesState, filesLogStore, transactionNumberBefore);
+                tableStatus, state, filesLogStore, transactionNumberBefore);
         if (transactionNumberBefore >= transactionNumberAfter) {
             LOGGER.info("No new file transactions found after transaction number {}, skipping snapshot creation.",
                     transactionNumberBefore);
@@ -127,13 +105,15 @@ public class TransactionLogSnapshotCreator {
         LOGGER.info("Transaction found with transaction number {} is newer than latest files snapshot transaction number {}.",
                 transactionNumberAfter, transactionNumberBefore);
         LOGGER.info("Creating a new files snapshot from latest transaction.");
-        TransactionLogSnapshot snapshot = new TransactionLogSnapshot(filesState, transactionNumberAfter);
+        TransactionLogSnapshot snapshot = new TransactionLogSnapshot(state, transactionNumberAfter);
         snapshotStore.saveFilesSnapshot(snapshot);
     }
 
-    private void savePartitionsSnapshot(StateStorePartitions partitionsState, long transactionNumberBefore) throws IOException, StateStoreException, DuplicateSnapshotException {
+    private void savePartitionsSnapshot(TransactionLogSnapshot lastSnapshot) throws IOException, StateStoreException, DuplicateSnapshotException {
+        StateStorePartitions state = lastSnapshot.getState();
+        long transactionNumberBefore = lastSnapshot.getTransactionNumber();
         long transactionNumberAfter = TransactionLogSnapshotUtils.updatePartitionsState(
-                tableStatus, partitionsState, partitionsLogStore, transactionNumberBefore);
+                tableStatus, state, partitionsLogStore, transactionNumberBefore);
         if (transactionNumberBefore >= transactionNumberAfter) {
             LOGGER.info("No new partition transactions found after transaction number {}, skipping snapshot creation.",
                     transactionNumberBefore);
@@ -143,7 +123,7 @@ public class TransactionLogSnapshotCreator {
         LOGGER.info("Transaction found with transaction number {} is newer than latest partitions snapshot transaction number {}.",
                 transactionNumberAfter, transactionNumberBefore);
         LOGGER.info("Creating a new partitions snapshot from latest transaction.");
-        TransactionLogSnapshot snapshot = new TransactionLogSnapshot(partitionsState, transactionNumberAfter);
+        TransactionLogSnapshot snapshot = new TransactionLogSnapshot(state, transactionNumberAfter);
         snapshotStore.savePartitionsSnapshot(snapshot);
     }
 }

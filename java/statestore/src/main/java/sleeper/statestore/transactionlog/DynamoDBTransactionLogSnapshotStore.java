@@ -25,6 +25,8 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
+import sleeper.core.statestore.transactionlog.StateStoreFiles;
+import sleeper.core.statestore.transactionlog.StateStorePartitions;
 import sleeper.core.statestore.transactionlog.TransactionLogSnapshot;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotMetadataStore.LatestSnapshots;
 
@@ -80,6 +82,18 @@ public class DynamoDBTransactionLogSnapshotStore {
         return latestMetadataLoader.load().getPartitionsSnapshot()
                 .filter(metadata -> metadata.getTransactionNumber() >= transactionNumber)
                 .map(this::loadPartitionsSnapshot);
+    }
+
+    public TransactionLogSnapshot loadFilesSnapshot(LatestSnapshots snapshots) {
+        return snapshots.getFilesSnapshot()
+                .map(this::loadFilesSnapshot)
+                .orElseGet(() -> new TransactionLogSnapshot(new StateStoreFiles(), 0));
+    }
+
+    public TransactionLogSnapshot loadPartitionsSnapshot(LatestSnapshots snapshots) {
+        return snapshots.getPartitionsSnapshot()
+                .map(this::loadPartitionsSnapshot)
+                .orElseGet(() -> new TransactionLogSnapshot(new StateStorePartitions(), 0));
     }
 
     private TransactionLogSnapshot loadFilesSnapshot(TransactionLogSnapshotMetadata metadata) {
