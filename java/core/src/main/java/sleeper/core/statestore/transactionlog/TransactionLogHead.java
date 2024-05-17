@@ -103,11 +103,10 @@ class TransactionLogHead<T> {
                     state.getClass().getSimpleName(), lastTransactionNumber);
             logStore.readTransactionsAfter(lastTransactionNumber)
                     .forEach(this::applyTransaction);
-            Instant endTime = Instant.now();
             LOGGER.info("Updated {}, read {} transactions from log in {}, last transaction number is {}",
                     state.getClass().getSimpleName(),
                     lastTransactionNumber - transactionNumberBeforeLogLoad,
-                    LoggedDuration.withShortOutput(startTime, endTime),
+                    LoggedDuration.withShortOutput(startTime, Instant.now()),
                     lastTransactionNumber);
         } catch (RuntimeException e) {
             throw new StateStoreException("Failed updating state from transactions", e);
