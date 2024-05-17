@@ -34,8 +34,8 @@ import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStore;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotMetadataStore.LatestSnapshots;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.SnapshotSaver;
 import sleeper.statestore.transactionlog.TransactionLogSnapshotCreator.LatestSnapshotsLoader;
-import sleeper.statestore.transactionlog.TransactionLogSnapshotCreator.SnapshotSaver;
 
 import java.io.FileNotFoundException;
 import java.io.UncheckedIOException;
