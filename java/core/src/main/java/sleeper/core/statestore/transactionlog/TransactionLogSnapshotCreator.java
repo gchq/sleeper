@@ -18,8 +18,8 @@ package sleeper.core.statestore.transactionlog;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.TableStatus;
 
-public class TransactionLogSnapshotUtils {
-    private TransactionLogSnapshotUtils() {
+public class TransactionLogSnapshotCreator {
+    private TransactionLogSnapshotCreator() {
     }
 
     public static <T> TransactionLogSnapshot updateState(

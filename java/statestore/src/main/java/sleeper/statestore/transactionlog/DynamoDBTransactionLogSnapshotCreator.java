@@ -28,7 +28,7 @@ import sleeper.core.statestore.transactionlog.FileReferenceTransaction;
 import sleeper.core.statestore.transactionlog.PartitionTransaction;
 import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.TransactionLogSnapshot;
-import sleeper.core.statestore.transactionlog.TransactionLogSnapshotUtils;
+import sleeper.core.statestore.transactionlog.TransactionLogSnapshotCreator;
 import sleeper.core.statestore.transactionlog.TransactionLogStore;
 import sleeper.core.table.TableStatus;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotMetadataStore.LatestSnapshots;
@@ -41,15 +41,15 @@ import java.util.Optional;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_FILES_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_PARTITIONS_TABLENAME;
 
-public class TransactionLogSnapshotCreator {
-    public static final Logger LOGGER = LoggerFactory.getLogger(TransactionLogSnapshotCreator.class);
+public class DynamoDBTransactionLogSnapshotCreator {
+    public static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBTransactionLogSnapshotCreator.class);
     private final TableStatus tableStatus;
     private final TransactionLogStore filesLogStore;
     private final TransactionLogStore partitionsLogStore;
     private final LatestSnapshotsMetadataLoader latestMetadataLoader;
     private final DynamoDBTransactionLogSnapshotStore snapshotStore;
 
-    public static TransactionLogSnapshotCreator from(
+    public static DynamoDBTransactionLogSnapshotCreator from(
             InstanceProperties instanceProperties, TableProperties tableProperties,
             AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, Configuration configuration) {
         TransactionLogStore fileTransactionStore = new DynamoDBTransactionLogStore(
@@ -60,12 +60,12 @@ public class TransactionLogSnapshotCreator {
                 instanceProperties, tableProperties, dynamoDBClient, s3Client);
         DynamoDBTransactionLogSnapshotMetadataStore snapshotStore = new DynamoDBTransactionLogSnapshotMetadataStore(
                 instanceProperties, tableProperties, dynamoDBClient);
-        return new TransactionLogSnapshotCreator(instanceProperties, tableProperties,
+        return new DynamoDBTransactionLogSnapshotCreator(instanceProperties, tableProperties,
                 fileTransactionStore, partitionTransactionStore, configuration,
                 snapshotStore::getLatestSnapshots, snapshotStore::saveSnapshot);
     }
 
-    public TransactionLogSnapshotCreator(
+    public DynamoDBTransactionLogSnapshotCreator(
             InstanceProperties instanceProperties, TableProperties tableProperties,
             TransactionLogStore filesLogStore, TransactionLogStore partitionsLogStore,
             Configuration configuration, LatestSnapshotsMetadataLoader latestMetadataLoader, SnapshotMetadataSaver snapshotSaver) {
@@ -104,7 +104,7 @@ public class TransactionLogSnapshotCreator {
             TransactionLogSnapshot lastSnapshot,
             TransactionLogStore logStore,
             Class<? extends StateStoreTransaction<T>> transactionType) throws StateStoreException {
-        TransactionLogSnapshot newSnapshot = TransactionLogSnapshotUtils.updateState(
+        TransactionLogSnapshot newSnapshot = TransactionLogSnapshotCreator.updateState(
                 lastSnapshot, transactionType, logStore, tableStatus);
         if (lastSnapshot.getTransactionNumber() >= newSnapshot.getTransactionNumber()) {
             LOGGER.info("No new {}s found after transaction number {}, skipping snapshot creation.",

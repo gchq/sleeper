@@ -70,12 +70,12 @@ public class InMemoryTransactionLogSnapshots implements TransactionLogSnapshotLo
         }
 
         public TransactionLogSnapshot createFilesSnapshot(long transactionNumber) throws StateStoreException {
-            return TransactionLogSnapshotUtils.updateState(
+            return TransactionLogSnapshotCreator.updateState(
                     TransactionLogSnapshot.filesInitialState(), FileReferenceTransaction.class, filesLog, sleeperTable);
         }
 
         public TransactionLogSnapshot createPartitionsSnapshot(long transactionNumber) throws StateStoreException {
-            return TransactionLogSnapshotUtils.updateState(
+            return TransactionLogSnapshotCreator.updateState(
                     TransactionLogSnapshot.partitionsInitialState(), PartitionTransaction.class, partitionsLog, sleeperTable);
         }
 
