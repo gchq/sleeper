@@ -25,8 +25,6 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
-import sleeper.core.statestore.transactionlog.StateStoreFiles;
-import sleeper.core.statestore.transactionlog.StateStorePartitions;
 import sleeper.core.statestore.transactionlog.TransactionLogSnapshot;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotMetadataStore.LatestSnapshots;
 
@@ -87,13 +85,13 @@ public class DynamoDBTransactionLogSnapshotStore {
     public TransactionLogSnapshot loadFilesSnapshot(LatestSnapshots snapshots) {
         return snapshots.getFilesSnapshot()
                 .map(this::loadFilesSnapshot)
-                .orElseGet(() -> new TransactionLogSnapshot(new StateStoreFiles(), 0));
+                .orElseGet(TransactionLogSnapshot::filesInitialState);
     }
 
     public TransactionLogSnapshot loadPartitionsSnapshot(LatestSnapshots snapshots) {
         return snapshots.getPartitionsSnapshot()
                 .map(this::loadPartitionsSnapshot)
-                .orElseGet(() -> new TransactionLogSnapshot(new StateStorePartitions(), 0));
+                .orElseGet(TransactionLogSnapshot::partitionsInitialState);
     }
 
     private TransactionLogSnapshot loadFilesSnapshot(TransactionLogSnapshotMetadata metadata) {
@@ -119,7 +117,7 @@ public class DynamoDBTransactionLogSnapshotStore {
         snapshotSerDe.saveFiles(snapshotMetadata, snapshot.getState());
         try {
             metadataSaver.save(snapshotMetadata);
-        } catch (Exception e) {
+        } catch (DuplicateSnapshotException | RuntimeException e) {
             LOGGER.info("Failed to save snapshot to Dynamo DB. Deleting snapshot file.");
             Path path = new Path(snapshotMetadata.getPath());
             FileSystem fs = path.getFileSystem(configuration);
@@ -134,7 +132,7 @@ public class DynamoDBTransactionLogSnapshotStore {
         snapshotSerDe.savePartitions(snapshotMetadata, snapshot.getState());
         try {
             metadataSaver.save(snapshotMetadata);
-        } catch (Exception e) {
+        } catch (DuplicateSnapshotException | RuntimeException e) {
             LOGGER.info("Failed to save snapshot to Dynamo DB. Deleting snapshot file.");
             Path path = new Path(snapshotMetadata.getPath());
             FileSystem fs = path.getFileSystem(configuration);

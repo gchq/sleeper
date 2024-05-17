@@ -44,18 +44,6 @@ public class InMemoryTransactionLogSnapshots implements TransactionLogSnapshotLo
         return new SnapshotSetup(sleeperTable, fileTransactions, partitionTransactions);
     }
 
-    public static TransactionLogSnapshot createFilesSnapshot(TableStatus sleeperTable, TransactionLogStore log, long transactionNumber) throws StateStoreException {
-        StateStoreFiles state = new StateStoreFiles();
-        TransactionLogSnapshotUtils.updateFilesState(sleeperTable, state, log, 0);
-        return new TransactionLogSnapshot(state, transactionNumber);
-    }
-
-    public static TransactionLogSnapshot createPartitionsSnapshot(TableStatus sleeperTable, TransactionLogStore log, long transactionNumber) throws StateStoreException {
-        StateStorePartitions state = new StateStorePartitions();
-        TransactionLogSnapshotUtils.updatePartitionsState(sleeperTable, state, log, 0);
-        return new TransactionLogSnapshot(state, transactionNumber);
-    }
-
     public void setLatestSnapshot(TransactionLogSnapshot latestSnapshot) {
         this.latestSnapshot = latestSnapshot;
     }
@@ -82,15 +70,13 @@ public class InMemoryTransactionLogSnapshots implements TransactionLogSnapshotLo
         }
 
         public TransactionLogSnapshot createFilesSnapshot(long transactionNumber) throws StateStoreException {
-            StateStoreFiles state = new StateStoreFiles();
-            TransactionLogSnapshotUtils.updateFilesState(sleeperTable, state, filesLog, 0);
-            return new TransactionLogSnapshot(state, transactionNumber);
+            return TransactionLogSnapshotUtils.updateState(
+                    TransactionLogSnapshot.filesInitialState(), FileReferenceTransaction.class, filesLog, sleeperTable);
         }
 
         public TransactionLogSnapshot createPartitionsSnapshot(long transactionNumber) throws StateStoreException {
-            StateStorePartitions state = new StateStorePartitions();
-            TransactionLogSnapshotUtils.updatePartitionsState(sleeperTable, state, partitionsLog, 0);
-            return new TransactionLogSnapshot(state, transactionNumber);
+            return TransactionLogSnapshotUtils.updateState(
+                    TransactionLogSnapshot.partitionsInitialState(), PartitionTransaction.class, partitionsLog, sleeperTable);
         }
 
         public TransactionLogStore getFilesLog() {

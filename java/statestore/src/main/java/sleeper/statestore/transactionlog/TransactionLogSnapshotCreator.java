@@ -36,6 +36,7 @@ import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.Lat
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.SnapshotMetadataSaver;
 
 import java.io.IOException;
+import java.util.Optional;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_FILES_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_PARTITIONS_TABLENAME;
@@ -85,29 +86,35 @@ public class TransactionLogSnapshotCreator {
         TransactionLogSnapshot filesSnapshot = snapshotStore.loadFilesSnapshot(latestSnapshots);
         TransactionLogSnapshot partitionsSnapshot = snapshotStore.loadPartitionsSnapshot(latestSnapshots);
         try {
-            saveSnapshot(filesSnapshot, filesLogStore, FileReferenceTransaction.class);
-            saveSnapshot(partitionsSnapshot, partitionsLogStore, PartitionTransaction.class);
+            Optional<TransactionLogSnapshot> createForFiles = createSnapshot(filesSnapshot, filesLogStore, FileReferenceTransaction.class);
+            Optional<TransactionLogSnapshot> createForPartitions = createSnapshot(partitionsSnapshot, partitionsLogStore, PartitionTransaction.class);
+            if (createForFiles.isPresent()) {
+                snapshotStore.saveFilesSnapshot(createForFiles.get());
+            }
+            if (createForPartitions.isPresent()) {
+                snapshotStore.savePartitionsSnapshot(createForPartitions.get());
+            }
         } catch (DuplicateSnapshotException | StateStoreException | IOException e) {
             LOGGER.error("Failed to create snapshot for table {}", tableStatus);
             throw new RuntimeException(e);
         }
     }
 
-    private <T> void saveSnapshot(
+    private <T> Optional<TransactionLogSnapshot> createSnapshot(
             TransactionLogSnapshot lastSnapshot,
             TransactionLogStore logStore,
-            Class<? extends StateStoreTransaction<T>> transactionType) throws IOException, StateStoreException, DuplicateSnapshotException {
+            Class<? extends StateStoreTransaction<T>> transactionType) throws StateStoreException {
         TransactionLogSnapshot newSnapshot = TransactionLogSnapshotUtils.updateState(
-                tableStatus, lastSnapshot, logStore, transactionType);
+                lastSnapshot, transactionType, logStore, tableStatus);
         if (lastSnapshot.getTransactionNumber() >= newSnapshot.getTransactionNumber()) {
             LOGGER.info("No new {}s found after transaction number {}, skipping snapshot creation.",
                     transactionType.getSimpleName(),
                     lastSnapshot.getTransactionNumber());
-            return;
+            return Optional.empty();
         }
         LOGGER.info("Transaction found with number {} is newer than latest {} number {}.",
                 newSnapshot.getTransactionNumber(), transactionType.getSimpleName(), lastSnapshot.getTransactionNumber());
         LOGGER.info("Creating a new snapshot from latest {}.", transactionType.getSimpleName());
-        snapshotStore.saveFilesSnapshot(newSnapshot);
+        return Optional.of(newSnapshot);
     }
 }
