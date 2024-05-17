@@ -149,6 +149,7 @@ public class StandardCompactor implements CompactionRunner {
 
         FilterCompat.Filter partitionFilter = FilterCompat.get(RangeQueryUtils.getFilterPredicate(partition));
         for (String file : compactionJob.getInputFiles()) {
+         {
             ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(file), schema)
                     .withConf(configuration)
                     .withFilter(partitionFilter)
@@ -158,6 +159,18 @@ public class StandardCompactor implements CompactionRunner {
             LOGGER.debug("Compaction job {}: Created reader for file {}", compactionJob.getId(), file);
             LOGGER.debug("Compaction job {}: File is being filtered on ranges {}", compactionJob.getId(),
                     partition.getRegion().getRanges().toString());
+        }
+                    {
+            ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(file), schema)
+                    .withConf(configuration)
+                    .withFilter(partitionFilter)
+                    .build();
+            ParquetReaderIterator recordIterator = new ParquetReaderIterator(reader);
+            inputIterators.add(recordIterator);
+            LOGGER.debug("Compaction job {}: Created reader for file {}", compactionJob.getId(), file);
+            LOGGER.debug("Compaction job {}: File is being filtered on ranges {}", compactionJob.getId(),
+                    partition.getRegion().getRanges().toString());
+            }
         }
         return inputIterators;
     }
