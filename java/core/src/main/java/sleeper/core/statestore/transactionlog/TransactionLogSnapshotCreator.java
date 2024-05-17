@@ -48,7 +48,7 @@ public class TransactionLogSnapshotCreator {
         return Optional.of(newSnapshot);
     }
 
-    public static <T> TransactionLogSnapshot updateState(
+    private static <T> TransactionLogSnapshot updateState(
             TransactionLogSnapshot lastSnapshot,
             Class<? extends StateStoreTransaction<T>> transactionType, TransactionLogStore logStore,
             TableStatus table) throws StateStoreException {
