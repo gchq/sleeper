@@ -30,6 +30,7 @@ public class TransactionLogStateStore extends DelegatingStateStore {
         this(builder, TransactionLogHead.builder()
                 .sleeperTable(builder.sleeperTable)
                 .maxAddTransactionAttempts(builder.maxAddTransactionAttempts)
+                .minTransactionsAheadToLoadSnapshot(builder.minTransactionsAheadToLoadSnapshot)
                 .retryBackoff(builder.retryBackoff));
     }
 
@@ -39,11 +40,13 @@ public class TransactionLogStateStore extends DelegatingStateStore {
                         .state(builder.filesState)
                         .logStore(builder.filesLogStore)
                         .lastTransactionNumber(builder.filesTransactionNumber)
+                        .snapshotLoader(builder.filesSnapshotLoader)
                         .build(),
                 headBuilder.forPartitions()
                         .state(builder.partitionsState)
                         .logStore(builder.partitionsLogStore)
                         .lastTransactionNumber(builder.partitionsTransactionNumber)
+                        .snapshotLoader(builder.partitionsSnapshotLoader)
                         .build());
     }
 
@@ -65,8 +68,11 @@ public class TransactionLogStateStore extends DelegatingStateStore {
         private StateStorePartitions partitionsState = new StateStorePartitions();
         private long partitionsTransactionNumber = 0;
         private long filesTransactionNumber = 0;
+        private long minTransactionsAheadToLoadSnapshot = 1;
         private int maxAddTransactionAttempts = MAX_ADD_TRANSACTION_ATTEMPTS;
         private ExponentialBackoffWithJitter retryBackoff = new ExponentialBackoffWithJitter(RETRY_WAIT_RANGE);
+        private TransactionLogSnapshotLoader filesSnapshotLoader = TransactionLogSnapshotLoader.neverLoad();
+        private TransactionLogSnapshotLoader partitionsSnapshotLoader = TransactionLogSnapshotLoader.neverLoad();
 
         private Builder() {
         }
@@ -118,6 +124,21 @@ public class TransactionLogStateStore extends DelegatingStateStore {
 
         public Builder retryBackoff(ExponentialBackoffWithJitter retryBackoff) {
             this.retryBackoff = retryBackoff;
+            return this;
+        }
+
+        public Builder filesSnapshotLoader(TransactionLogSnapshotLoader filesSnapshotLoader) {
+            this.filesSnapshotLoader = filesSnapshotLoader;
+            return this;
+        }
+
+        public Builder partitionsSnapshotLoader(TransactionLogSnapshotLoader partitionsSnapshotLoader) {
+            this.partitionsSnapshotLoader = partitionsSnapshotLoader;
+            return this;
+        }
+
+        public Builder minTransactionsAheadToLoadSnapshot(long minTransactionsAheadToLoadSnapshot) {
+            this.minTransactionsAheadToLoadSnapshot = minTransactionsAheadToLoadSnapshot;
             return this;
         }
 

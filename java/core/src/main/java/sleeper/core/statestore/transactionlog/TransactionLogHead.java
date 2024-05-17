@@ -33,7 +33,9 @@ class TransactionLogHead<T> {
     private final int maxAddTransactionAttempts;
     private final ExponentialBackoffWithJitter retryBackoff;
     private final Class<? extends StateStoreTransaction<T>> transactionType;
-    private final T state;
+    private final TransactionLogSnapshotLoader snapshotLoader;
+    private final long minTransactionsAheadToLoadSnapshot;
+    private T state;
     private long lastTransactionNumber;
 
     private TransactionLogHead(Builder<T> builder) {
@@ -42,6 +44,8 @@ class TransactionLogHead<T> {
         this.maxAddTransactionAttempts = builder.maxAddTransactionAttempts;
         this.retryBackoff = builder.retryBackoff;
         this.transactionType = builder.transactionType;
+        this.snapshotLoader = builder.snapshotLoader;
+        this.minTransactionsAheadToLoadSnapshot = builder.minTransactionsAheadToLoadSnapshot;
         this.state = builder.state;
         this.lastTransactionNumber = builder.lastTransactionNumber;
     }
@@ -92,11 +96,28 @@ class TransactionLogHead<T> {
         try {
             Instant startTime = Instant.now();
             long transactionNumberBefore = lastTransactionNumber;
+            long minTransactionNumberToLoadSnapshot = transactionNumberBefore + minTransactionsAheadToLoadSnapshot;
+            snapshotLoader.loadLatestSnapshotIfAtMinimumTransaction(minTransactionNumberToLoadSnapshot)
+                    .ifPresentOrElse(snapshot -> {
+                        state = snapshot.getState();
+                        lastTransactionNumber = snapshot.getTransactionNumber();
+                        LOGGER.info("Loaded snapshot at transaction {}", lastTransactionNumber);
+                    }, () -> {
+                        LOGGER.info("No snapshot found at or beyond transaction {}, updating from log from transaction {}",
+                                minTransactionNumberToLoadSnapshot, transactionNumberBefore);
+                    });
+            Instant loadedSnapshotTime = Instant.now();
+            long transactionNumberBeforeLogLoad = lastTransactionNumber;
             logStore.readTransactionsAfter(lastTransactionNumber)
                     .forEach(this::applyTransaction);
-            LOGGER.info("Updated {}, read {} transactions, took {}, last transaction number is {}",
-                    state.getClass().getSimpleName(), lastTransactionNumber - transactionNumberBefore,
-                    LoggedDuration.withShortOutput(startTime, Instant.now()), lastTransactionNumber);
+            Instant endTime = Instant.now();
+            LOGGER.info("Updated {}, took {}, loaded snapshot in {}, read {} transactions from log in {}, last transaction number is {}",
+                    state.getClass().getSimpleName(),
+                    LoggedDuration.withShortOutput(startTime, endTime),
+                    LoggedDuration.withShortOutput(startTime, loadedSnapshotTime),
+                    lastTransactionNumber - transactionNumberBeforeLogLoad,
+                    LoggedDuration.withShortOutput(loadedSnapshotTime, endTime),
+                    lastTransactionNumber);
         } catch (RuntimeException e) {
             throw new StateStoreException("Failed reading transactions", e);
         }
@@ -127,8 +148,10 @@ class TransactionLogHead<T> {
         private int maxAddTransactionAttempts;
         private ExponentialBackoffWithJitter retryBackoff;
         private Class<? extends StateStoreTransaction<T>> transactionType;
+        private TransactionLogSnapshotLoader snapshotLoader = TransactionLogSnapshotLoader.neverLoad();
         private T state;
         private long lastTransactionNumber = 0;
+        private long minTransactionsAheadToLoadSnapshot = 1;
 
         private Builder() {
         }
@@ -158,6 +181,11 @@ class TransactionLogHead<T> {
             return (Builder<N>) this;
         }
 
+        public Builder<T> snapshotLoader(TransactionLogSnapshotLoader snapshotLoader) {
+            this.snapshotLoader = snapshotLoader;
+            return this;
+        }
+
         public Builder<T> state(T state) {
             this.state = state;
             return this;
@@ -165,6 +193,11 @@ class TransactionLogHead<T> {
 
         public Builder<T> lastTransactionNumber(long lastTransactionNumber) {
             this.lastTransactionNumber = lastTransactionNumber;
+            return this;
+        }
+
+        public Builder<T> minTransactionsAheadToLoadSnapshot(long minTransactionsAheadToLoadSnapshot) {
+            this.minTransactionsAheadToLoadSnapshot = minTransactionsAheadToLoadSnapshot;
             return this;
         }
 

@@ -281,7 +281,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
         StateStore stateStore = createStateStoreWithInMemoryTransactionLog(table);
         stateStore.initialise(partitions.buildList());
         runSnapshotCreator(table);
-        TransactionLogSnapshot snapshot = getLatestPartitionsSnapshot(table);
+        TransactionLogSnapshotMetadata snapshot = getLatestPartitionsSnapshot(table);
         deleteSnapshotFile(snapshot);
         // And we add a transaction that would trigger a new snapshot
         partitions.splitToNewChildren("root", "L", "R", 123L)
@@ -302,7 +302,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
         stateStore.initialise();
         stateStore.addFile(FileReferenceFactory.from(stateStore).rootFile("file1.parquet", 123));
         runSnapshotCreator(table);
-        TransactionLogSnapshot snapshot = getLatestFilesSnapshot(table);
+        TransactionLogSnapshotMetadata snapshot = getLatestFilesSnapshot(table);
         deleteSnapshotFile(snapshot);
         // And we add a transaction that would trigger a new snapshot
         stateStore.addFile(FileReferenceFactory.from(stateStore).rootFile("file2.parquet", 456));
@@ -314,15 +314,15 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
         assertThat(snapshotStore(table).getFilesSnapshots()).containsExactly(snapshot);
     }
 
-    private TransactionLogSnapshot getLatestPartitionsSnapshot(TableProperties table) {
+    private TransactionLogSnapshotMetadata getLatestPartitionsSnapshot(TableProperties table) {
         return snapshotStore(table).getLatestSnapshots().getPartitionsSnapshot().orElseThrow();
     }
 
-    private TransactionLogSnapshot getLatestFilesSnapshot(TableProperties table) {
+    private TransactionLogSnapshotMetadata getLatestFilesSnapshot(TableProperties table) {
         return snapshotStore(table).getLatestSnapshots().getFilesSnapshot().orElseThrow();
     }
 
-    private void deleteSnapshotFile(TransactionLogSnapshot snapshot) throws Exception {
+    private void deleteSnapshotFile(TransactionLogSnapshotMetadata snapshot) throws Exception {
         org.apache.hadoop.fs.Path path = new org.apache.hadoop.fs.Path(snapshot.getPath());
         FileSystem fs = path.getFileSystem(configuration);
         fs.delete(path, false);
@@ -375,20 +375,20 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
         return tableProperties;
     }
 
-    private TransactionLogSnapshot filesSnapshot(TableProperties table, long transactionNumber) {
-        return TransactionLogSnapshot.forFiles(getBasePath(instanceProperties, table), transactionNumber);
+    private TransactionLogSnapshotMetadata filesSnapshot(TableProperties table, long transactionNumber) {
+        return TransactionLogSnapshotMetadata.forFiles(getBasePath(instanceProperties, table), transactionNumber);
     }
 
-    private TransactionLogSnapshot partitionsSnapshot(TableProperties table, long transactionNumber) {
-        return TransactionLogSnapshot.forPartitions(getBasePath(instanceProperties, table), transactionNumber);
+    private TransactionLogSnapshotMetadata partitionsSnapshot(TableProperties table, long transactionNumber) {
+        return TransactionLogSnapshotMetadata.forPartitions(getBasePath(instanceProperties, table), transactionNumber);
     }
 
     private Path filesSnapshotPath(TableProperties table, long transactionNumber) {
-        return Path.of(TransactionLogSnapshot.forFiles(getBasePathNoFs(instanceProperties, table), 1).getPath());
+        return Path.of(TransactionLogSnapshotMetadata.forFiles(getBasePathNoFs(instanceProperties, table), 1).getPath());
     }
 
     private Path partitionsSnapshotPath(TableProperties table, long transactionNumber) {
-        return Path.of(TransactionLogSnapshot.forPartitions(getBasePathNoFs(instanceProperties, table), 1).getPath());
+        return Path.of(TransactionLogSnapshotMetadata.forPartitions(getBasePathNoFs(instanceProperties, table), 1).getPath());
     }
 
     private static String getBasePath(InstanceProperties instanceProperties, TableProperties tableProperties) {

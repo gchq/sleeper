@@ -96,7 +96,7 @@ public class TransactionLogSnapshotCreator {
                 })
                 .orElseGet(StateStoreFiles::new);
         long filesTransactionNumberBefore = latestSnapshots.getFilesSnapshot()
-                .map(TransactionLogSnapshot::getTransactionNumber)
+                .map(TransactionLogSnapshotMetadata::getTransactionNumber)
                 .orElse(0L);
         StateStorePartitions partitionsState = latestSnapshots.getPartitionsSnapshot()
                 .map(snapshot -> {
@@ -108,7 +108,7 @@ public class TransactionLogSnapshotCreator {
                 })
                 .orElseGet(StateStorePartitions::new);
         long partitionsTransactionNumberBefore = latestSnapshots.getPartitionsSnapshot()
-                .map(TransactionLogSnapshot::getTransactionNumber)
+                .map(TransactionLogSnapshotMetadata::getTransactionNumber)
                 .orElse(0L);
         try {
             saveFilesSnapshot(filesState, filesTransactionNumberBefore);
@@ -130,7 +130,7 @@ public class TransactionLogSnapshotCreator {
         LOGGER.info("Transaction found with transaction number {} is newer than latest files snapshot transaction number {}.",
                 transactionNumberAfter, transactionNumberBefore);
         LOGGER.info("Creating a new files snapshot from latest transaction.");
-        TransactionLogSnapshot snapshot = TransactionLogSnapshot.forFiles(getBasePath(), transactionNumberAfter);
+        TransactionLogSnapshotMetadata snapshot = TransactionLogSnapshotMetadata.forFiles(getBasePath(), transactionNumberAfter);
         snapshotSerDe.saveFiles(snapshot, filesState);
         try {
             snapshotSaver.save(snapshot);
@@ -155,7 +155,7 @@ public class TransactionLogSnapshotCreator {
         LOGGER.info("Transaction found with transaction number {} is newer than latest partitions snapshot transaction number {}.",
                 transactionNumberAfter, transactionNumberBefore);
         LOGGER.info("Creating a new partitions snapshot from latest transaction.");
-        TransactionLogSnapshot snapshot = TransactionLogSnapshot.forPartitions(getBasePath(), transactionNumberAfter);
+        TransactionLogSnapshotMetadata snapshot = TransactionLogSnapshotMetadata.forPartitions(getBasePath(), transactionNumberAfter);
         snapshotSerDe.savePartitions(snapshot, partitionsState);
         try {
             snapshotSaver.save(snapshot);
@@ -179,6 +179,6 @@ public class TransactionLogSnapshotCreator {
     }
 
     public interface SnapshotSaver {
-        void save(TransactionLogSnapshot snapshot) throws DuplicateSnapshotException;
+        void save(TransactionLogSnapshotMetadata snapshot) throws DuplicateSnapshotException;
     }
 }

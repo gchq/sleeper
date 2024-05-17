@@ -28,11 +28,7 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.SplitFileReferences;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.util.ExponentialBackoffWithJitter;
-import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
 
-import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -40,17 +36,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
-import static sleeper.core.table.TableStatusTestHelper.uniqueIdAndName;
-import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.fixJitterSeed;
-import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.recordWaits;
 
-public class TransactionLogStateStoreLogSpecificTest {
+public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransactionLogStateStoreTestBase {
 
     private final Schema schema = schemaWithKey("key", new StringType());
     private final PartitionsBuilder partitions = new PartitionsBuilder(schema).singlePartition("root");
-    private final InMemoryTransactionLogStore filesLogStore = new InMemoryTransactionLogStore();
-    private final InMemoryTransactionLogStore partitionsLogStore = new InMemoryTransactionLogStore();
-    private final List<Duration> retryWaits = new ArrayList<>();
     private StateStore store = stateStore();
 
     @BeforeEach
@@ -169,64 +159,6 @@ public class TransactionLogStateStoreLogSpecificTest {
     }
 
     @Test
-    void shouldSetPartitionsStateWhenCreatingStateStore() throws Exception {
-        // Given
-        StateStorePartitions partitionsState = new StateStorePartitions();
-        PartitionTree splitTree = partitions.splitToNewChildren("root", "L", "R", "l").buildTree();
-
-        // When
-        StateStore stateStore = stateStore(builder -> builder.partitionsState(partitionsState));
-        stateStore.initialise(splitTree.getAllPartitions());
-
-        // Then
-        assertThat(partitionsState.all()).containsExactlyElementsOf(splitTree.getAllPartitions());
-    }
-
-    @Test
-    void shouldSetFilesStateWhenCreatingStateStore() throws Exception {
-        // Given
-        StateStoreFiles filesState = new StateStoreFiles();
-        FileReference file = fileFactory().rootFile(123);
-
-        // When
-        StateStore stateStore = stateStore(builder -> builder.filesState(filesState));
-        stateStore.addFile(file);
-
-        // Then
-        assertThat(filesState.references()).containsExactly(file);
-    }
-
-    @Test
-    void shouldNotLoadOldPartitionTransactionsWhenSettingTransactionNumber() throws Exception {
-        // Given
-        StateStore stateStore = stateStore();
-        PartitionTree splitTree = partitions.splitToNewChildren("root", "L", "R", "l").buildTree();
-        stateStore.initialise(splitTree.getAllPartitions());
-
-        // When
-        StateStore stateStoreSkippingTransaction = stateStore(builder -> builder
-                .partitionsTransactionNumber(partitionsLogStore.getLastTransactionNumber()));
-
-        // Then
-        assertThat(stateStoreSkippingTransaction.getAllPartitions()).isEmpty();
-    }
-
-    @Test
-    void shouldNotLoadOldFileTransactionsWhenSettingTransactionNumber() throws Exception {
-        // Given
-        StateStore stateStore = stateStore();
-        FileReference file = fileFactory().rootFile(123);
-        stateStore.addFile(file);
-
-        // When
-        StateStore stateStoreSkippingTransaction = stateStore(builder -> builder
-                .filesTransactionNumber(filesLogStore.getLastTransactionNumber()));
-
-        // Then
-        assertThat(stateStoreSkippingTransaction.getFileReferences()).isEmpty();
-    }
-
-    @Test
     void shouldNotAddSplitFileTransactionWithNoRequests() throws Exception {
         // Given
         long transactionNumberBefore = filesLogStore.getLastTransactionNumber();
@@ -321,23 +253,9 @@ public class TransactionLogStateStoreLogSpecificTest {
     }
 
     private StateStore stateStore(Consumer<TransactionLogStateStore.Builder> config) {
-        TransactionLogStateStore.Builder builder = stateStoreBuilder();
+        TransactionLogStateStore.Builder builder = stateStoreBuilder(schema);
         config.accept(builder);
-        StateStore stateStore = builder.build();
-        stateStore.fixFileUpdateTime(DEFAULT_UPDATE_TIME);
-        return stateStore;
-    }
-
-    private TransactionLogStateStore.Builder stateStoreBuilder() {
-        return TransactionLogStateStore.builder()
-                .sleeperTable(uniqueIdAndName("test-table-id", "test-table"))
-                .schema(schema)
-                .filesLogStore(filesLogStore)
-                .partitionsLogStore(partitionsLogStore)
-                .maxAddTransactionAttempts(10)
-                .retryBackoff(new ExponentialBackoffWithJitter(
-                        WaitRange.firstAndMaxWaitCeilingSecs(1, 30),
-                        fixJitterSeed(), recordWaits(retryWaits)));
+        return stateStore(builder);
     }
 
     private FileReferenceFactory fileFactory() {
