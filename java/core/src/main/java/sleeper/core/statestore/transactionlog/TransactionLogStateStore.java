@@ -29,6 +29,8 @@ public class TransactionLogStateStore extends DelegatingStateStore {
 
     public static final int DEFAULT_MAX_ADD_TRANSACTION_ATTEMPTS = 10;
     public static final WaitRange DEFAULT_RETRY_WAIT_RANGE = WaitRange.firstAndMaxWaitCeilingSecs(0.2, 30);
+    public static final Duration DEFAULT_TIME_BETWEEN_SNAPSHOT_CHECKS = Duration.ofMinutes(1);
+    public static final Duration DEFAULT_TIME_BETWEEN_TRANSACTION_CHECKS = Duration.ofSeconds(1);
 
     public TransactionLogStateStore(Builder builder) {
         this(builder, TransactionLogHead.builder()
@@ -72,7 +74,7 @@ public class TransactionLogStateStore extends DelegatingStateStore {
         private ExponentialBackoffWithJitter retryBackoff = new ExponentialBackoffWithJitter(DEFAULT_RETRY_WAIT_RANGE);
         private TransactionLogSnapshotLoader filesSnapshotLoader = TransactionLogSnapshotLoader.neverLoad();
         private TransactionLogSnapshotLoader partitionsSnapshotLoader = TransactionLogSnapshotLoader.neverLoad();
-        private Duration timeBetweenSnapshotChecks = Duration.ZERO;
+        private Duration timeBetweenSnapshotChecks = DEFAULT_TIME_BETWEEN_SNAPSHOT_CHECKS;
         private Supplier<Instant> loadFilesSnapshotClock = Instant::now;
         private Supplier<Instant> loadPartitionsSnapshotClock = Instant::now;
 

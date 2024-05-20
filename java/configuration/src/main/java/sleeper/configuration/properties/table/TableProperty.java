@@ -59,6 +59,8 @@ import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_ROW_GROUP_SIZE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_S3A_READAHEAD_RANGE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_STATISTICS_TRUNCATE_LENGTH;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_TIME_BETWEEN_SNAPSHOT_CHECKS_SECS;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_TIME_BETWEEN_TRANSACTION_CHECKS_MS;
 import static sleeper.configuration.properties.instance.GarbageCollectionProperty.DEFAULT_GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_ARM_INSTANCE_TYPES;
 import static sleeper.configuration.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE;
@@ -270,6 +272,21 @@ public interface TableProperty extends SleeperProperty {
                     "period between 0 and this value. This restricts the exponential increase of the wait ceiling " +
                     "while retrying the transaction. See the below article.\n" +
                     "https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/")
+            .propertyGroup(TablePropertyGroup.METADATA)
+            .build();
+    TableProperty TIME_BETWEEN_SNAPSHOT_CHECKS_SECS = Index.propertyBuilder("sleeper.table.metadata.time.between.snapshot.checks.secs")
+            .defaultProperty(DEFAULT_TIME_BETWEEN_SNAPSHOT_CHECKS_SECS)
+            .description("The number of seconds to wait after we've loaded a snapshot before looking for a new " +
+                    "snapshot. This should relate to the rate at which new snapshots are created, configured in the " +
+                    "instance property `sleeper.metadata.transactionlog.snapshot.creation.lambda.period.minutes`.")
+            .propertyGroup(TablePropertyGroup.METADATA)
+            .build();
+    TableProperty TIME_BETWEEN_TRANSACTION_CHECKS_MS = Index.propertyBuilder("sleeper.table.metadata.time.between.transaction.checks.ms")
+            .defaultProperty(DEFAULT_TIME_BETWEEN_TRANSACTION_CHECKS_MS)
+            .description("The number of milliseconds to wait after we've updated from the transaction log before " +
+                    "checking for new transactions. The state visible locally can be out of date by this amount. " +
+                    "This should avoid excessive queries by the same process. When adding a new transaction to " +
+                    "update the state, this will be ignored and the state will be brought completely up to date.")
             .propertyGroup(TablePropertyGroup.METADATA)
             .build();
     TableProperty DYNAMODB_STRONGLY_CONSISTENT_READS = Index.propertyBuilder("sleeper.table.metadata.dynamo.consistent.reads")
