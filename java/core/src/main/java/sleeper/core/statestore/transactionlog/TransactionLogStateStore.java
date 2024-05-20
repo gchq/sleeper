@@ -27,8 +27,8 @@ import java.util.function.Supplier;
 
 public class TransactionLogStateStore extends DelegatingStateStore {
 
-    public static final int MAX_ADD_TRANSACTION_ATTEMPTS = 10;
-    public static final WaitRange RETRY_WAIT_RANGE = WaitRange.firstAndMaxWaitCeilingSecs(0.2, 30);
+    public static final int DEFAULT_MAX_ADD_TRANSACTION_ATTEMPTS = 10;
+    public static final WaitRange DEFAULT_RETRY_WAIT_RANGE = WaitRange.firstAndMaxWaitCeilingSecs(0.2, 30);
 
     public TransactionLogStateStore(Builder builder) {
         this(builder, TransactionLogHead.builder()
@@ -68,8 +68,8 @@ public class TransactionLogStateStore extends DelegatingStateStore {
         private TransactionLogStore filesLogStore;
         private TransactionLogStore partitionsLogStore;
         private long minTransactionsAheadToLoadSnapshot = 1;
-        private int maxAddTransactionAttempts = MAX_ADD_TRANSACTION_ATTEMPTS;
-        private ExponentialBackoffWithJitter retryBackoff = new ExponentialBackoffWithJitter(RETRY_WAIT_RANGE);
+        private int maxAddTransactionAttempts = DEFAULT_MAX_ADD_TRANSACTION_ATTEMPTS;
+        private ExponentialBackoffWithJitter retryBackoff = new ExponentialBackoffWithJitter(DEFAULT_RETRY_WAIT_RANGE);
         private TransactionLogSnapshotLoader filesSnapshotLoader = TransactionLogSnapshotLoader.neverLoad();
         private TransactionLogSnapshotLoader partitionsSnapshotLoader = TransactionLogSnapshotLoader.neverLoad();
         private Duration timeBetweenSnapshotChecks = Duration.ZERO;
