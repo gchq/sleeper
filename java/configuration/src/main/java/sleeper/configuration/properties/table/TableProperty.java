@@ -33,6 +33,9 @@ import static sleeper.configuration.properties.instance.CompactionProperty.DEFAU
 import static sleeper.configuration.properties.instance.CompactionProperty.DEFAULT_COMPACTION_STRATEGY_CLASS;
 import static sleeper.configuration.properties.instance.CompactionProperty.DEFAULT_SIZERATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION;
 import static sleeper.configuration.properties.instance.CompactionProperty.DEFAULT_SIZERATIO_COMPACTION_STRATEGY_RATIO;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_ADD_TRANSACTION_FIRST_RETRY_WAIT_CEILING_MS;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_ADD_TRANSACTION_MAX_ATTEMPTS;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_ADD_TRANSACTION_MAX_RETRY_WAIT_CEILING_MS;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_COLUMN_INDEX_TRUNCATE_LENGTH;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_COMPACTION_JOB_COMMIT_ASYNC;
@@ -246,6 +249,29 @@ public interface TableProperty extends SleeperProperty {
                     "sleeper.statestore.dynamodb.DynamoDBStateStore")
             .propertyGroup(TablePropertyGroup.METADATA)
             .editable(false).build();
+    TableProperty ADD_TRANSACTION_MAX_ATTEMPTS = Index.propertyBuilder("sleeper.table.metadata.add.transaction.max.attempts")
+            .defaultProperty(DEFAULT_ADD_TRANSACTION_MAX_ATTEMPTS)
+            .description("The number of attempts to make when applying a transaction to the state store.")
+            .propertyGroup(TablePropertyGroup.METADATA)
+            .build();
+    TableProperty ADD_TRANSACTION_FIRST_RETRY_WAIT_CEILING_MS = Index.propertyBuilder("sleeper.table.metadata.add.transaction.first.retry.wait.ceiling.ms")
+            .defaultProperty(DEFAULT_ADD_TRANSACTION_FIRST_RETRY_WAIT_CEILING_MS)
+            .description("The maximum amount of time to wait before the first retry when applying a transaction to " +
+                    "the state store. Full jitter will be applied so that the actual wait time will be a random " +
+                    "period between 0 and this value. This ceiling will increase exponentially on further retries. " +
+                    "See the below article.\n" +
+                    "https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/")
+            .propertyGroup(TablePropertyGroup.METADATA)
+            .build();
+    TableProperty ADD_TRANSACTION_MAX_RETRY_WAIT_CEILING_MS = Index.propertyBuilder("sleeper.table.metadata.add.transaction.max.retry.wait.ceiling.ms")
+            .defaultProperty(DEFAULT_ADD_TRANSACTION_MAX_RETRY_WAIT_CEILING_MS)
+            .description("The maximum amount of time to wait before any retry when applying a transaction to " +
+                    "the state store. Full jitter will be applied so that the actual wait time will be a random " +
+                    "period between 0 and this value. This restricts the exponential increase of the wait ceiling " +
+                    "while retrying the transaction. See the below article.\n" +
+                    "https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/")
+            .propertyGroup(TablePropertyGroup.METADATA)
+            .build();
     TableProperty DYNAMODB_STRONGLY_CONSISTENT_READS = Index.propertyBuilder("sleeper.table.metadata.dynamo.consistent.reads")
             .defaultProperty(DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS)
             .description("This specifies whether queries and scans against DynamoDB tables used in the state stores " +

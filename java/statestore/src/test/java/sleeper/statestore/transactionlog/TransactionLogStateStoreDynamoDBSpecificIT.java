@@ -42,6 +42,7 @@ import java.util.stream.LongStream;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.configuration.properties.table.TableProperty.ADD_TRANSACTION_MAX_ATTEMPTS;
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
@@ -51,6 +52,11 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
     private Path tempDir;
     private final Schema schema = schemaWithKey("key", new LongType());
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+
+    @BeforeEach
+    void setUp() {
+        tableProperties.setNumber(ADD_TRANSACTION_MAX_ATTEMPTS, 1);
+    }
 
     @Nested
     @DisplayName("Handle large transactions")
@@ -259,8 +265,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
     }
 
     private StateStore createStateStore() {
-        return stateStore(stateStoreBuilder(tableProperties)
-                .maxAddTransactionAttempts(1));
+        return createStateStore(tableProperties);
     }
 
     private StateStoreFactory stateStoreFactory() {

@@ -21,6 +21,7 @@ import sleeper.configuration.properties.SleeperPropertyIndex;
 import sleeper.configuration.properties.table.CompressionCodec;
 import sleeper.configuration.properties.validation.IngestFileWritingStrategy;
 import sleeper.configuration.properties.validation.IngestQueue;
+import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 
 import java.util.List;
 import java.util.Locale;
@@ -84,18 +85,38 @@ public interface DefaultProperty {
             .defaultValue("v2")
             .validationPredicate(List.of("v1", "v2")::contains)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
+    UserDefinedInstanceProperty DEFAULT_ADD_TRANSACTION_MAX_ATTEMPTS = Index.propertyBuilder("sleeper.default.table.metadata.add.transaction.max.attempts")
+            .description("The number of attempts to make when applying a transaction to the state store. " +
+                    "This default can be overridden by a table property.")
+            .defaultValue("" + TransactionLogStateStore.DEFAULT_MAX_ADD_TRANSACTION_ATTEMPTS)
+            .validationPredicate(Utils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.DEFAULT).build();
+    UserDefinedInstanceProperty DEFAULT_ADD_TRANSACTION_FIRST_RETRY_WAIT_CEILING_MS = Index.propertyBuilder("sleeper.default.table.metadata.add.transaction.first.retry.wait.ceiling.ms")
+            .description("The maximum amount of time to wait before the first retry when applying a transaction to " +
+                    "the state store. Full jitter will be applied so that the actual wait time will be a random " +
+                    "period between 0 and this value. This ceiling will increase exponentially on further retries. " +
+                    "See the below article.\n" +
+                    "https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/\n" +
+                    "This default can be overridden by a table property.")
+            .defaultValue("" + TransactionLogStateStore.DEFAULT_RETRY_WAIT_RANGE.getFirstWaitCeiling().toMillis())
+            .validationPredicate(Utils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.DEFAULT).build();
+    UserDefinedInstanceProperty DEFAULT_ADD_TRANSACTION_MAX_RETRY_WAIT_CEILING_MS = Index.propertyBuilder("sleeper.default.table.metadata.add.transaction.max.retry.wait.ceiling.ms")
+            .description("The maximum amount of time to wait before any retry when applying a transaction to " +
+                    "the state store. Full jitter will be applied so that the actual wait time will be a random " +
+                    "period between 0 and this value. This restricts the exponential increase of the wait ceiling " +
+                    "while retrying the transaction. See the below article.\n" +
+                    "https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/\n" +
+                    "This default can be overridden by a table property.")
+            .defaultValue("" + TransactionLogStateStore.DEFAULT_RETRY_WAIT_RANGE.getMaxWaitCeiling().toMillis())
+            .validationPredicate(Utils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS = Index.propertyBuilder("sleeper.default.table.dynamo.strongly.consistent.reads")
             .description("This specifies whether queries and scans against DynamoDB tables used in the state stores " +
                     "are strongly consistent. This default can be overridden by a table property.")
             .defaultValue("false")
             .validationPredicate(Utils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
-    UserDefinedInstanceProperty DEFAULT_TRANSACTION_LOG_LOAD_LATEST_SNAPSHOTS = Index.propertyBuilder("sleeper.default.metadata.transactionlog.load.latest.snapshots")
-            .description("If set, transaction log state stores will load the latest snapshot from the snapshot store when created.")
-            .defaultValue("true")
-            .validationPredicate(Utils::isTrueOrFalse)
-            .propertyGroup(InstancePropertyGroup.DEFAULT)
-            .build();
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT = Index.propertyBuilder("sleeper.default.bulk.import.min.leaf.partitions")
             .description("Specifies the minimum number of leaf partitions that are needed to run a bulk import job. " +
                     "If this minimum has not been reached, bulk import jobs will refuse to start.")

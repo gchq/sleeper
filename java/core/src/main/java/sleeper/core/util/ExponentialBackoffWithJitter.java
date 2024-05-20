@@ -108,5 +108,13 @@ public class ExponentialBackoffWithJitter {
         public static WaitRange firstAndMaxWaitCeilingSecs(double firstWaitCeilingSecs, double maxWaitCeilingSecs) {
             return new WaitRange(firstWaitCeilingSecs, maxWaitCeilingSecs);
         }
+
+        public Duration getFirstWaitCeiling() {
+            return Duration.ofMillis((long) (firstWaitCeilingSecs * 1000));
+        }
+
+        public Duration getMaxWaitCeiling() {
+            return Duration.ofMillis((long) (maxWaitCeilingSecs * 1000));
+        }
     }
 }
