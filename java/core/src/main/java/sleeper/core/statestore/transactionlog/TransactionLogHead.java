@@ -25,6 +25,7 @@ import sleeper.core.util.LoggedDuration;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 class TransactionLogHead<T> {
@@ -112,8 +113,8 @@ class TransactionLogHead<T> {
                         state.getClass().getSimpleName(), sleeperTable, nextTransactionCheckTime);
                 return;
             }
-            loadSnapshotIfNeeded(startTime);
-            updateFromLog();
+            Instant afterSnapshotTime = loadSnapshotIfNeeded(startTime);
+            updateFromLog(afterSnapshotTime);
         } catch (RuntimeException e) {
             throw new StateStoreException("Failed updating state from transactions", e);
         }
@@ -122,37 +123,39 @@ class TransactionLogHead<T> {
     private void forceUpdate() throws StateStoreException {
         try {
             Instant startTime = stateUpdateClock.get();
-            loadSnapshotIfNeeded(startTime);
-            updateFromLog();
+            Instant afterSnapshotTime = loadSnapshotIfNeeded(startTime);
+            updateFromLog(afterSnapshotTime);
         } catch (RuntimeException e) {
             throw new StateStoreException("Failed force updating state from transactions", e);
         }
     }
 
-    private void loadSnapshotIfNeeded(Instant startTime) {
+    private Instant loadSnapshotIfNeeded(Instant startTime) {
         if (nextSnapshotCheckTime != null && startTime.isBefore(nextSnapshotCheckTime)) {
             LOGGER.debug("Not checking for snapshot of {} for table {}, next check at {}",
                     state.getClass().getSimpleName(), sleeperTable, nextSnapshotCheckTime);
-            return;
+            return startTime;
         }
-        nextSnapshotCheckTime = startTime.plus(timeBetweenSnapshotChecks);
         long minTransactionNumberToLoadSnapshot = lastTransactionNumber + minTransactionsAheadToLoadSnapshot;
-        snapshotLoader.loadLatestSnapshotIfAtMinimumTransaction(minTransactionNumberToLoadSnapshot)
-                .ifPresentOrElse(snapshot -> {
-                    state = snapshot.getState();
-                    lastTransactionNumber = snapshot.getTransactionNumber();
-                    LOGGER.info("Loaded snapshot of {} for table {} at transaction {} in {}",
-                            state.getClass().getSimpleName(), sleeperTable, lastTransactionNumber,
-                            LoggedDuration.withShortOutput(startTime, Instant.now()));
-                }, () -> {
-                    LOGGER.debug("No snapshot found of {} for table {} at or beyond transaction {} in {}",
-                            state.getClass().getSimpleName(), sleeperTable, minTransactionNumberToLoadSnapshot,
-                            LoggedDuration.withShortOutput(startTime, Instant.now()));
-                });
+        Optional<TransactionLogSnapshot> snapshotOpt = snapshotLoader
+                .loadLatestSnapshotIfAtMinimumTransaction(minTransactionNumberToLoadSnapshot);
+        Instant finishTime = stateUpdateClock.get();
+        nextSnapshotCheckTime = finishTime.plus(timeBetweenSnapshotChecks);
+        snapshotOpt.ifPresentOrElse(snapshot -> {
+            state = snapshot.getState();
+            lastTransactionNumber = snapshot.getTransactionNumber();
+            LOGGER.info("Loaded snapshot of {} for table {} at transaction {} in {}",
+                    state.getClass().getSimpleName(), sleeperTable, lastTransactionNumber,
+                    LoggedDuration.withShortOutput(startTime, finishTime));
+        }, () -> {
+            LOGGER.debug("No snapshot found of {} for table {} at or beyond transaction {} in {}",
+                    state.getClass().getSimpleName(), sleeperTable, minTransactionNumberToLoadSnapshot,
+                    LoggedDuration.withShortOutput(startTime, finishTime));
+        });
+        return finishTime;
     }
 
-    private void updateFromLog() {
-        Instant startTime = stateUpdateClock.get();
+    private void updateFromLog(Instant startTime) {
         long transactionNumberBeforeLogLoad = lastTransactionNumber;
         LOGGER.debug("Updating {} for table {} from log from transaction {}",
                 state.getClass().getSimpleName(), sleeperTable, lastTransactionNumber);
