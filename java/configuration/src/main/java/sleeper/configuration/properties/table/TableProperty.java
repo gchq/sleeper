@@ -284,8 +284,9 @@ public interface TableProperty extends SleeperProperty {
     TableProperty TIME_BETWEEN_TRANSACTION_CHECKS_MS = Index.propertyBuilder("sleeper.table.metadata.time.between.transaction.checks.ms")
             .defaultProperty(DEFAULT_TIME_BETWEEN_TRANSACTION_CHECKS_MS)
             .description("The number of milliseconds to wait after we've updated from the transaction log before " +
-                    "checking for new transactions. The state visible locally can be out of date by this amount. " +
-                    "This should avoid excessive queries by the same process. When adding a new transaction to " +
+                    "checking for new transactions. The state visible to an instance of the state store can be out " +
+                    "of date by this amount. This can avoid excessive queries by the same process, but can result in " +
+                    "unwanted behaviour when using multiple state store objects. When adding a new transaction to " +
                     "update the state, this will be ignored and the state will be brought completely up to date.")
             .propertyGroup(TablePropertyGroup.METADATA)
             .build();

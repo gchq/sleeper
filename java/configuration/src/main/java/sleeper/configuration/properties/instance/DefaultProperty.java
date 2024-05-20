@@ -121,8 +121,9 @@ public interface DefaultProperty {
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_TIME_BETWEEN_TRANSACTION_CHECKS_MS = Index.propertyBuilder("sleeper.default.table.metadata.time.between.transaction.checks.ms")
             .description("The number of milliseconds to wait after we've updated from the transaction log before " +
-                    "checking for new transactions. The state visible locally can be out of date by this amount. " +
-                    "This can avoid excessive queries by the same process. When adding a new transaction to " +
+                    "checking for new transactions. The state visible to an instance of the state store can be out " +
+                    "of date by this amount. This can avoid excessive queries by the same process, but can result in " +
+                    "unwanted behaviour when using multiple state store objects. When adding a new transaction to " +
                     "update the state, this will be ignored and the state will be brought completely up to date. " +
                     "This default can be overridden by a table property.")
             .defaultValue("" + TransactionLogStateStore.DEFAULT_TIME_BETWEEN_TRANSACTION_CHECKS.toMillis())
