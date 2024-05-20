@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.table.TableProperty.ADD_TRANSACTION_MAX_ATTEMPTS;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
 
@@ -45,6 +46,7 @@ public class TransactionLogStateStoreSnapshotsIT extends TransactionLogStateStor
     @BeforeEach
     void setUp() {
         tableProperties.setSchema(schema);
+        tableProperties.setNumber(ADD_TRANSACTION_MAX_ATTEMPTS, 1);
     }
 
     @Test
@@ -154,8 +156,7 @@ public class TransactionLogStateStoreSnapshotsIT extends TransactionLogStateStor
     }
 
     protected StateStore stateStore(Consumer<TransactionLogStateStore.Builder> config) {
-        TransactionLogStateStore.Builder builder = stateStoreBuilder(tableProperties)
-                .maxAddTransactionAttempts(1);
+        TransactionLogStateStore.Builder builder = stateStoreBuilder(tableProperties);
         config.accept(builder);
         return stateStore(builder);
     }

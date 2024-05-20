@@ -21,6 +21,7 @@ import sleeper.configuration.properties.SleeperPropertyIndex;
 import sleeper.configuration.properties.table.CompressionCodec;
 import sleeper.configuration.properties.validation.IngestFileWritingStrategy;
 import sleeper.configuration.properties.validation.IngestQueue;
+import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 
 import java.util.List;
 import java.util.Locale;
@@ -87,7 +88,7 @@ public interface DefaultProperty {
     UserDefinedInstanceProperty DEFAULT_ADD_TRANSACTION_MAX_ATTEMPTS = Index.propertyBuilder("sleeper.default.table.metadata.add.transaction.max.attempts")
             .description("The number of attempts to make when applying a transaction to the state store. " +
                     "This default can be overridden by a table property.")
-            .defaultValue("10")
+            .defaultValue("" + TransactionLogStateStore.DEFAULT_MAX_ADD_TRANSACTION_ATTEMPTS)
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_ADD_TRANSACTION_FIRST_RETRY_WAIT_CEILING_MS = Index.propertyBuilder("sleeper.default.table.metadata.add.transaction.first.retry.wait.ceiling.ms")
@@ -97,7 +98,7 @@ public interface DefaultProperty {
                     "See the below article.\n" +
                     "https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/\n" +
                     "This default can be overridden by a table property.")
-            .defaultValue("200")
+            .defaultValue("" + TransactionLogStateStore.DEFAULT_RETRY_WAIT_RANGE.getFirstWaitCeiling().toMillis())
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_ADD_TRANSACTION_MAX_RETRY_WAIT_CEILING_MS = Index.propertyBuilder("sleeper.default.table.metadata.add.transaction.max.retry.wait.ceiling.ms")
@@ -107,7 +108,7 @@ public interface DefaultProperty {
                     "while retrying the transaction. See the below article.\n" +
                     "https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/\n" +
                     "This default can be overridden by a table property.")
-            .defaultValue("30000")
+            .defaultValue("" + TransactionLogStateStore.DEFAULT_RETRY_WAIT_RANGE.getMaxWaitCeiling().toMillis())
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS = Index.propertyBuilder("sleeper.default.table.dynamo.strongly.consistent.reads")
