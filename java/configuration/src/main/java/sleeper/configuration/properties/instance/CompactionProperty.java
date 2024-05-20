@@ -131,6 +131,13 @@ public interface CompactionProperty {
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty COMPACTION_JOB_MAX_RETRIES = Index.propertyBuilder("sleeper.compaction.job.max.retries")
+            .description("The maximum number of times that a compaction job can be taken off the job definition queue " +
+                    "before it is moved to the dead letter queue.\n" +
+                    "This property is used to configure the maxReceiveCount of the compaction job definition queue.")
+            .defaultValue("3")
+            .validationPredicate(Utils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_TASK_CPU_ARCHITECTURE = Index.propertyBuilder("sleeper.compaction.task.cpu.architecture")
             .description("The CPU architecture to run compaction tasks on. Valid values are X86_64 and ARM64.\n" +
                     "See Task CPU architecture at https://docs.aws.amazon.com/AmazonECS/latest/developerguide/AWS_Fargate.html")
