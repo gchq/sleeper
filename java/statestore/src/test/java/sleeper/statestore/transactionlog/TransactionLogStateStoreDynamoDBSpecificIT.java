@@ -29,14 +29,12 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
-import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStore;
-import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
-import sleeper.core.statestore.transactionlog.TransactionLogStore;
+import sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshots;
+import sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshots.SetupStateStore;
+import sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshots.SnapshotSetup;
 import sleeper.statestore.StateStoreFactory;
 
 import java.nio.file.Path;
-import java.time.Instant;
 import java.util.List;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
@@ -46,9 +44,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
 
 public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogStateStoreTestBase {
-    protected static final Instant DEFAULT_UPDATE_TIME = Instant.parse("2024-04-26T13:00:00Z");
     @TempDir
     private Path tempDir;
     private final Schema schema = schemaWithKey("key", new LongType());
@@ -243,23 +241,14 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
         }
 
         private void createSnapshotWithFreshState(SetupStateStore setupState) throws Exception {
-            TransactionLogStore fileTransactions = new InMemoryTransactionLogStore();
-            TransactionLogStore partitionTransactions = new InMemoryTransactionLogStore();
-            StateStore stateStore = TransactionLogStateStore.builder()
-                    .sleeperTable(tableProperties.getStatus())
-                    .schema(schema)
-                    .filesLogStore(fileTransactions)
-                    .partitionsLogStore(partitionTransactions)
-                    .build();
-            stateStore.fixFileUpdateTime(DEFAULT_UPDATE_TIME);
-            stateStore.fixPartitionUpdateTime(DEFAULT_UPDATE_TIME);
-            setupState.run(stateStore);
+            SnapshotSetup snapshotSetup = InMemoryTransactionLogSnapshots.setupSnapshotWithFreshState(
+                    tableProperties.getStatus(), tableProperties.getSchema(), setupState);
 
-            DynamoDBTransactionLogSnapshotStore snapshotStore = new DynamoDBTransactionLogSnapshotStore(
+            DynamoDBTransactionLogSnapshotMetadataStore snapshotStore = new DynamoDBTransactionLogSnapshotMetadataStore(
                     instanceProperties, tableProperties, dynamoDBClient);
             new TransactionLogSnapshotCreator(
                     instanceProperties, tableProperties,
-                    fileTransactions, partitionTransactions,
+                    snapshotSetup.getFilesLog(), snapshotSetup.getPartitionsLog(),
                     configuration, snapshotStore::getLatestSnapshots, snapshotStore::saveSnapshot)
                     .createSnapshot();
         }
@@ -270,19 +259,11 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
     }
 
     private StateStore createStateStore() {
-        StateStore stateStore = DynamoDBTransactionLogStateStore.builderFrom(instanceProperties, tableProperties, dynamoDBClient, s3Client, configuration)
-                .maxAddTransactionAttempts(1)
-                .build();
-        stateStore.fixFileUpdateTime(DEFAULT_UPDATE_TIME);
-        stateStore.fixPartitionUpdateTime(DEFAULT_UPDATE_TIME);
-        return stateStore;
+        return stateStore(stateStoreBuilder(tableProperties)
+                .maxAddTransactionAttempts(1));
     }
 
     private StateStoreFactory stateStoreFactory() {
         return new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, configuration);
-    }
-
-    public interface SetupStateStore {
-        void run(StateStore stateStore) throws StateStoreException;
     }
 }

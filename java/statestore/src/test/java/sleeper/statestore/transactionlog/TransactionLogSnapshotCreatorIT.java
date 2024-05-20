@@ -33,9 +33,9 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStore;
-import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.LatestSnapshots;
-import sleeper.statestore.transactionlog.TransactionLogSnapshotCreator.LatestSnapshotsLoader;
-import sleeper.statestore.transactionlog.TransactionLogSnapshotCreator.SnapshotSaver;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotMetadataStore.LatestSnapshots;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.LatestSnapshotsMetadataLoader;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.SnapshotMetadataSaver;
 
 import java.io.FileNotFoundException;
 import java.io.UncheckedIOException;
@@ -329,18 +329,18 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
     }
 
     private void runSnapshotCreator(TableProperties table) {
-        DynamoDBTransactionLogSnapshotStore snapshotStore = snapshotStore(table);
+        DynamoDBTransactionLogSnapshotMetadataStore snapshotStore = snapshotStore(table);
         runSnapshotCreator(table, snapshotStore::getLatestSnapshots, snapshotStore::saveSnapshot);
     }
 
     private void runSnapshotCreator(
-            TableProperties table, SnapshotSaver snapshotSaver) {
-        DynamoDBTransactionLogSnapshotStore snapshotStore = snapshotStore(table);
+            TableProperties table, SnapshotMetadataSaver snapshotSaver) {
+        DynamoDBTransactionLogSnapshotMetadataStore snapshotStore = snapshotStore(table);
         runSnapshotCreator(table, snapshotStore::getLatestSnapshots, snapshotSaver);
     }
 
     private void runSnapshotCreator(
-            TableProperties table, LatestSnapshotsLoader latestSnapshotsLoader, SnapshotSaver snapshotSaver) {
+            TableProperties table, LatestSnapshotsMetadataLoader latestSnapshotsLoader, SnapshotMetadataSaver snapshotSaver) {
         new TransactionLogSnapshotCreator(
                 instanceProperties, table,
                 fileTransactionStoreByTableId.get(table.get(TABLE_ID)),
@@ -361,8 +361,8 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
         return stateStore;
     }
 
-    private DynamoDBTransactionLogSnapshotStore snapshotStore(TableProperties table) {
-        return new DynamoDBTransactionLogSnapshotStore(instanceProperties, table, dynamoDBClient);
+    private DynamoDBTransactionLogSnapshotMetadataStore snapshotStore(TableProperties table) {
+        return new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, table, dynamoDBClient);
     }
 
     private TableProperties createTable(String tableId, String tableName) {
@@ -402,7 +402,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
                 + tableProperties.get(TableProperty.TABLE_ID);
     }
 
-    private SnapshotSaver failedUpdate(RuntimeException exception) {
+    private SnapshotMetadataSaver failedUpdate(RuntimeException exception) {
         return snapshot -> {
             throw exception;
         };
