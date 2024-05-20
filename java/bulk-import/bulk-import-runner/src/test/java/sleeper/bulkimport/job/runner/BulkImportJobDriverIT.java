@@ -89,6 +89,7 @@ import static sleeper.configuration.properties.InstancePropertiesTestHelper.crea
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_TIME_BETWEEN_TRANSACTION_CHECKS_MS;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
@@ -170,6 +171,7 @@ class BulkImportJobDriverIT {
         InstanceProperties instanceProperties = createTestInstanceProperties();
         instanceProperties.set(DATA_BUCKET, dir);
         instanceProperties.set(FILE_SYSTEM, "file://");
+        instanceProperties.setNumber(DEFAULT_TIME_BETWEEN_TRANSACTION_CHECKS_MS, 0);
 
         s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
         DynamoDBTableIndexCreator.create(dynamoDBClient, instanceProperties);
