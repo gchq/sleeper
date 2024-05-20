@@ -58,7 +58,7 @@ runMavenQuickSystemTests() {
     echo "Tearing down instance "$SHORT_ID" and "$SHORT_ID-main""
     echo "-------------------------------------------------------------------------------"
     "$SCRIPTS_DIR/test/maven/tearDown.sh" "$SHORT_ID" "$SHORT_ID-main" > "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
-    echo "Tearing down for instance "$SHORT_ID" and "$SHORT_ID-main complete"
+    echo "Tearing down for instance "$SHORT_ID" and "$SHORT_ID-main complete""
 
     echo "-------------------------------------------------------------------------------"
     echo "[$(time_str)] Uploading test output"
