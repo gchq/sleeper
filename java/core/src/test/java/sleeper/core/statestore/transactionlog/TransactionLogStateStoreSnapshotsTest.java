@@ -86,7 +86,8 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
         void shouldNotLoadFilesSnapshotWhenOnlyOneTransactionAheadAfterLoadingLog() throws Exception {
             // Given
             StateStore stateStore = stateStore(builder -> builder
-                    .minTransactionsAheadToLoadSnapshot(2));
+                    .minTransactionsAheadToLoadSnapshot(2)
+                    .timeBetweenSnapshotChecks(Duration.ZERO));
             FileReference logFile = fileFactory().rootFile("log-file.parquet", 123);
             FileReference snapshotFile = fileFactory().rootFile("snapshot-file.parquet", 123);
             stateStore.addFile(logFile);
@@ -104,7 +105,8 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
         void shouldLoadFilesSnapshotWhenMoreThanConfiguredTransactionsAheadAfterLoadingLog() throws Exception {
             // Given
             StateStore stateStore = stateStore(builder -> builder
-                    .minTransactionsAheadToLoadSnapshot(2));
+                    .minTransactionsAheadToLoadSnapshot(2)
+                    .timeBetweenSnapshotChecks(Duration.ZERO));
             FileReference logFile = fileFactory().rootFile("log-file.parquet", 123);
             FileReference snapshotFile = fileFactory().rootFile("snapshot-file.parquet", 123);
             stateStore.addFile(logFile);
@@ -122,7 +124,8 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
         void shouldNotLoadPartitionsSnapshotWhenOnlyOneTransactionAheadAfterLoadingLog() throws Exception {
             // Given
             StateStore stateStore = stateStore(builder -> builder
-                    .minTransactionsAheadToLoadSnapshot(2));
+                    .minTransactionsAheadToLoadSnapshot(2)
+                    .timeBetweenSnapshotChecks(Duration.ZERO));
             List<Partition> logPartitions = new PartitionsBuilder(schema).rootFirst("A").buildList();
             List<Partition> snapshotPartitions = new PartitionsBuilder(schema).rootFirst("B").buildList();
             stateStore.initialise(logPartitions);
@@ -140,7 +143,8 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
         void shouldLoadPartitionsSnapshotWhenMoreThanConfiguredTransactionsAheadAfterLoadingLog() throws Exception {
             // Given
             StateStore stateStore = stateStore(builder -> builder
-                    .minTransactionsAheadToLoadSnapshot(2));
+                    .minTransactionsAheadToLoadSnapshot(2)
+                    .timeBetweenSnapshotChecks(Duration.ZERO));
             List<Partition> logPartitions = new PartitionsBuilder(schema).rootFirst("A").buildList();
             List<Partition> snapshotPartitions = new PartitionsBuilder(schema).rootFirst("B").buildList();
             stateStore.initialise(logPartitions);

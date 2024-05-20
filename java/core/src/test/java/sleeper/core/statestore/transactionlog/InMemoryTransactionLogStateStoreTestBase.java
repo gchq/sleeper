@@ -78,9 +78,7 @@ public class InMemoryTransactionLogStateStoreTestBase {
                 .maxAddTransactionAttempts(10)
                 .retryBackoff(new ExponentialBackoffWithJitter(
                         TransactionLogStateStore.DEFAULT_RETRY_WAIT_RANGE,
-                        fixJitterSeed(), recordWaits(retryWaits)))
-                .timeBetweenSnapshotChecks(Duration.ZERO)
-                .timeBetweenTransactionChecks(Duration.ZERO);
+                        fixJitterSeed(), recordWaits(retryWaits)));
     }
 
     protected void splitPartition(String parentId, String leftId, String rightId, long splitPoint) throws StateStoreException {
