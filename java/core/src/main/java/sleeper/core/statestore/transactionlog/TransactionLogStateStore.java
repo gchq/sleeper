@@ -46,12 +46,12 @@ public class TransactionLogStateStore extends DelegatingStateStore {
                 headBuilder.forFiles()
                         .logStore(builder.filesLogStore)
                         .snapshotLoader(builder.filesSnapshotLoader)
-                        .loadSnapshotClock(builder.loadFilesSnapshotClock)
+                        .checkStateClock(builder.checkFilesStateClock)
                         .build(),
                 headBuilder.forPartitions()
                         .logStore(builder.partitionsLogStore)
                         .snapshotLoader(builder.partitionsSnapshotLoader)
-                        .loadSnapshotClock(builder.loadPartitionsSnapshotClock)
+                        .checkStateClock(builder.checkPartitionsStateClock)
                         .build());
     }
 
@@ -75,8 +75,9 @@ public class TransactionLogStateStore extends DelegatingStateStore {
         private TransactionLogSnapshotLoader filesSnapshotLoader = TransactionLogSnapshotLoader.neverLoad();
         private TransactionLogSnapshotLoader partitionsSnapshotLoader = TransactionLogSnapshotLoader.neverLoad();
         private Duration timeBetweenSnapshotChecks = DEFAULT_TIME_BETWEEN_SNAPSHOT_CHECKS;
-        private Supplier<Instant> loadFilesSnapshotClock = Instant::now;
-        private Supplier<Instant> loadPartitionsSnapshotClock = Instant::now;
+        private Duration timeBetweenTransactionChecks = DEFAULT_TIME_BETWEEN_TRANSACTION_CHECKS;
+        private Supplier<Instant> checkFilesStateClock = Instant::now;
+        private Supplier<Instant> checkPartitionsStateClock = Instant::now;
 
         private Builder() {
         }
@@ -126,13 +127,18 @@ public class TransactionLogStateStore extends DelegatingStateStore {
             return this;
         }
 
-        public Builder loadFilesSnapshotClock(Supplier<Instant> loadFilesSnapshotClock) {
-            this.loadFilesSnapshotClock = loadFilesSnapshotClock;
+        public Builder timeBetweenTransactionChecks(Duration timeBetweenTransactionChecks) {
+            this.timeBetweenTransactionChecks = timeBetweenTransactionChecks;
             return this;
         }
 
-        public Builder loadPartitionsSnapshotClock(Supplier<Instant> loadPartitionsSnapshotClock) {
-            this.loadPartitionsSnapshotClock = loadPartitionsSnapshotClock;
+        public Builder checkFilesStateClock(Supplier<Instant> checkFilesStateClock) {
+            this.checkFilesStateClock = checkFilesStateClock;
+            return this;
+        }
+
+        public Builder checkPartitionsStateClock(Supplier<Instant> checkPartitionsStateClock) {
+            this.checkPartitionsStateClock = checkPartitionsStateClock;
             return this;
         }
 

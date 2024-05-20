@@ -37,7 +37,7 @@ class TransactionLogHead<T> {
     private final Class<? extends StateStoreTransaction<T>> transactionType;
     private final TransactionLogSnapshotLoader snapshotLoader;
     private final Duration timeBetweenSnapshotChecks;
-    private final Supplier<Instant> loadSnapshotClock;
+    private final Supplier<Instant> checkStateClock;
     private final long minTransactionsAheadToLoadSnapshot;
     private T state;
     private long lastTransactionNumber;
@@ -51,7 +51,7 @@ class TransactionLogHead<T> {
         this.transactionType = builder.transactionType;
         this.snapshotLoader = builder.snapshotLoader;
         this.timeBetweenSnapshotChecks = builder.timeBetweenSnapshotChecks;
-        this.loadSnapshotClock = builder.loadSnapshotClock;
+        this.checkStateClock = builder.checkStateClock;
         this.minTransactionsAheadToLoadSnapshot = builder.minTransactionsAheadToLoadSnapshot;
         this.state = builder.state;
         this.lastTransactionNumber = builder.lastTransactionNumber;
@@ -114,7 +114,7 @@ class TransactionLogHead<T> {
             if (readTransactions > 0) {
                 LOGGER.info("Updated {} for table {}, read {} transactions from log in {}, last transaction number is {}",
                         state.getClass().getSimpleName(), sleeperTable,
-                        lastTransactionNumber - transactionNumberBeforeLogLoad,
+                        readTransactions,
                         LoggedDuration.withShortOutput(startTime, Instant.now()),
                         lastTransactionNumber);
             } else {
@@ -129,7 +129,7 @@ class TransactionLogHead<T> {
     }
 
     private void loadSnapshotIfNeeded() {
-        Instant startTime = loadSnapshotClock.get();
+        Instant startTime = checkStateClock.get();
         if (nextSnapshotCheckTime != null && startTime.isBefore(nextSnapshotCheckTime)) {
             LOGGER.debug("Not checking for snapshot of {} for table {}, next check at {}",
                     state.getClass().getSimpleName(), sleeperTable, nextSnapshotCheckTime);
@@ -180,7 +180,7 @@ class TransactionLogHead<T> {
         private Class<? extends StateStoreTransaction<T>> transactionType;
         private TransactionLogSnapshotLoader snapshotLoader = TransactionLogSnapshotLoader.neverLoad();
         private Duration timeBetweenSnapshotChecks = Duration.ZERO;
-        private Supplier<Instant> loadSnapshotClock = Instant::now;
+        private Supplier<Instant> checkStateClock = Instant::now;
         private T state;
         private long lastTransactionNumber = 0;
         private long minTransactionsAheadToLoadSnapshot = 1;
@@ -223,8 +223,8 @@ class TransactionLogHead<T> {
             return this;
         }
 
-        public Builder<T> loadSnapshotClock(Supplier<Instant> loadSnapshotClock) {
-            this.loadSnapshotClock = loadSnapshotClock;
+        public Builder<T> checkStateClock(Supplier<Instant> checkStateClock) {
+            this.checkStateClock = checkStateClock;
             return this;
         }
 
