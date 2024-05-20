@@ -117,7 +117,7 @@ public interface DefaultProperty {
                     "instance property `sleeper.metadata.transactionlog.snapshot.creation.lambda.period.minutes`. " +
                     "This default can be overridden by a table property.")
             .defaultValue("" + TransactionLogStateStore.DEFAULT_TIME_BETWEEN_SNAPSHOT_CHECKS.toSeconds())
-            .validationPredicate(Utils::isPositiveInteger)
+            .validationPredicate(Utils::isNonNegativeInteger)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_TIME_BETWEEN_TRANSACTION_CHECKS_MS = Index.propertyBuilder("sleeper.default.table.metadata.time.between.transaction.checks.ms")
             .description("The number of milliseconds to wait after we've updated from the transaction log before " +
@@ -126,7 +126,7 @@ public interface DefaultProperty {
                     "update the state, this will be ignored and the state will be brought completely up to date. " +
                     "This default can be overridden by a table property.")
             .defaultValue("" + TransactionLogStateStore.DEFAULT_TIME_BETWEEN_TRANSACTION_CHECKS.toMillis())
-            .validationPredicate(Utils::isPositiveInteger)
+            .validationPredicate(Utils::isNonNegativeInteger)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS = Index.propertyBuilder("sleeper.default.table.dynamo.strongly.consistent.reads")
             .description("This specifies whether queries and scans against DynamoDB tables used in the state stores " +
