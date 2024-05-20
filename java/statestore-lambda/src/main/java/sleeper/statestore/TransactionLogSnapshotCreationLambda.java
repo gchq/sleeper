@@ -32,7 +32,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.util.LoggedDuration;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
-import sleeper.statestore.transactionlog.TransactionLogSnapshotCreator;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotCreator;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -75,7 +75,7 @@ public class TransactionLogSnapshotCreationLambda implements RequestHandler<SQSE
 
         Instant finishTime = Instant.now();
         LOGGER.info("Lambda finished at {} (ran for {})", finishTime, LoggedDuration.withFullOutput(startTime, finishTime));
-        return null;
+        return new SQSBatchResponse(batchItemFailures);
     }
 
     private void createSnapshots(List<TableProperties> tables, Map<String, List<SQSMessage>> messagesByTableId,
@@ -83,7 +83,7 @@ public class TransactionLogSnapshotCreationLambda implements RequestHandler<SQSE
         for (TableProperties table : tables) {
             LOGGER.info("Creating snapshot for table {}", table.getStatus());
             try {
-                TransactionLogSnapshotCreator.from(instanceProperties, table, s3Client, dynamoClient,
+                DynamoDBTransactionLogSnapshotCreator.from(instanceProperties, table, s3Client, dynamoClient,
                         HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties))
                         .createSnapshot();
             } catch (RuntimeException e) {

@@ -18,6 +18,8 @@ package sleeper.systemtest.drivers.util;
 
 import com.amazonaws.services.autoscaling.AmazonAutoScaling;
 import com.amazonaws.services.autoscaling.AmazonAutoScalingClientBuilder;
+import com.amazonaws.services.cloudwatchevents.AmazonCloudWatchEvents;
+import com.amazonaws.services.cloudwatchevents.AmazonCloudWatchEventsClientBuilder;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.ecr.AmazonECR;
@@ -62,6 +64,7 @@ public class SystemTestClients {
     private final AmazonAutoScaling autoScaling;
     private final AmazonECR ecr;
     private final CloudWatchClient cloudWatch;
+    private final AmazonCloudWatchEvents cloudWatchEvents;
     private final Map<String, String> authEnvVars;
 
     public SystemTestClients() {
@@ -79,6 +82,7 @@ public class SystemTestClients {
         autoScaling = AmazonAutoScalingClientBuilder.defaultClient();
         ecr = AmazonECRClientBuilder.defaultClient();
         cloudWatch = CloudWatchClient.create();
+        cloudWatchEvents = AmazonCloudWatchEventsClientBuilder.defaultClient();
         authEnvVars = Map.of();
     }
 
@@ -97,6 +101,7 @@ public class SystemTestClients {
         autoScaling = assumeRole.v1Client(AmazonAutoScalingClientBuilder.standard());
         ecr = assumeRole.v1Client(AmazonECRClientBuilder.standard());
         cloudWatch = assumeRole.v2Client(CloudWatchClient.builder());
+        cloudWatchEvents = assumeRole.v1Client(AmazonCloudWatchEventsClientBuilder.standard());
         authEnvVars = assumeRole.authEnvVars();
     }
 
@@ -154,6 +159,10 @@ public class SystemTestClients {
 
     public CloudWatchClient getCloudWatch() {
         return cloudWatch;
+    }
+
+    public AmazonCloudWatchEvents getCloudWatchEvents() {
+        return cloudWatchEvents;
     }
 
     public Map<String, String> getAuthEnvVars() {

@@ -133,13 +133,13 @@ public class CompactionTaskTestBase {
             String taskId,
             TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider) throws Exception {
-        CompactionJobCommitHandler commitHandler = new CompactionJobCommitHandler(
+        CompactionJobCommitterOrSendToLambda committer = new CompactionJobCommitterOrSendToLambda(
                 tablePropertiesProvider,
                 new CompactionJobCommitter(jobStore, tableId -> stateStoreProvider.getStateStore(tablePropertiesProvider.getById(tableId))),
                 commitRequestsOnQueue::add);
         new CompactionTask(instanceProperties,
                 PropertiesReloader.neverReload(), messageReceiver, compactor,
-                commitHandler, jobStore, taskStore, taskId, timeSupplier, sleeps::add)
+                committer, jobStore, taskStore, taskId, timeSupplier, sleeps::add)
                 .run();
     }
 

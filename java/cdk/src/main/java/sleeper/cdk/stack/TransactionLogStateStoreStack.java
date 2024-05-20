@@ -21,10 +21,11 @@ import software.amazon.awscdk.services.dynamodb.AttributeType;
 import software.amazon.awscdk.services.dynamodb.BillingMode;
 import software.amazon.awscdk.services.dynamodb.Table;
 import software.amazon.awscdk.services.iam.IGrantable;
+import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.constructs.Construct;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotMetadataStore;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
 
 import static sleeper.cdk.Utils.removalPolicy;
@@ -79,7 +80,7 @@ public class TransactionLogStateStoreStack extends NestedStack {
                 .removalPolicy(removalPolicy(instanceProperties))
                 .billingMode(BillingMode.PAY_PER_REQUEST)
                 .partitionKey(Attribute.builder()
-                        .name(DynamoDBTransactionLogSnapshotStore.TABLE_ID)
+                        .name(DynamoDBTransactionLogSnapshotMetadataStore.TABLE_ID)
                         .type(AttributeType.STRING)
                         .build())
                 .build();
@@ -92,42 +93,55 @@ public class TransactionLogStateStoreStack extends NestedStack {
                 .removalPolicy(removalPolicy(instanceProperties))
                 .billingMode(BillingMode.PAY_PER_REQUEST)
                 .partitionKey(Attribute.builder()
-                        .name(DynamoDBTransactionLogSnapshotStore.TABLE_ID_AND_SNAPSHOT_TYPE)
+                        .name(DynamoDBTransactionLogSnapshotMetadataStore.TABLE_ID_AND_SNAPSHOT_TYPE)
                         .type(AttributeType.STRING)
                         .build())
                 .sortKey(Attribute.builder()
-                        .name(DynamoDBTransactionLogSnapshotStore.TRANSACTION_NUMBER)
+                        .name(DynamoDBTransactionLogSnapshotMetadataStore.TRANSACTION_NUMBER)
                         .type(AttributeType.NUMBER)
                         .build())
                 .build();
     }
 
-    public void grantReadFiles(IGrantable grantee) {
+    public void grantAccess(StateStoreGrants grants, IGrantable grantee) {
+        // Snapshots and large transactions are both held in the data bucket
+        if (grants.canWriteAny()) {
+            dataStack.grantReadWrite(grantee);
+        } else if (grants.canReadAny()) {
+            dataStack.grantRead(grantee);
+        }
+
+        if (grants.canReadAny()) {
+            latestSnapshotsTable.grantReadData(grantee);
+        }
+
+        if (grants.canWriteActiveOrReadyForGCFiles()) {
+            filesLogTable.grantReadWriteData(grantee);
+        } else if (grants.canReadActiveOrReadyForGCFiles()) {
+            filesLogTable.grantReadData(grantee);
+        }
+
+        if (grants.canWritePartitions()) {
+            partitionsLogTable.grantReadWriteData(grantee);
+        } else if (grants.canReadPartitions()) {
+            partitionsLogTable.grantReadData(grantee);
+        }
+    }
+
+    public void grantCreateSnapshots(IGrantable grantee) {
         filesLogTable.grantReadData(grantee);
-    }
-
-    public void grantReadWriteFiles(IGrantable grantee) {
-        filesLogTable.grantReadWriteData(grantee);
-    }
-
-    public void grantReadPartitions(IGrantable grantee) {
         partitionsLogTable.grantReadData(grantee);
-    }
-
-    public void grantReadWritePartitions(IGrantable grantee) {
-        partitionsLogTable.grantReadWriteData(grantee);
-    }
-
-    public void grantReadSnapshots(IGrantable grantee) {
-        latestSnapshotsTable.grantReadData(grantee);
-        dataStack.grantRead(grantee);
-    }
-
-    public void grantReadWriteSnapshots(IGrantable grantee) {
-        grantReadFiles(grantee);
-        grantReadPartitions(grantee);
         latestSnapshotsTable.grantReadWriteData(grantee);
         allSnapshotsTable.grantReadWriteData(grantee);
         dataStack.grantReadWrite(grantee);
+    }
+
+    public void grantReadAllSnapshotsTable(ManagedPolicy grantee) {
+        allSnapshotsTable.grantReadData(grantee);
+    }
+
+    public void grantClearSnapshots(ManagedPolicy grantee) {
+        latestSnapshotsTable.grantReadWriteData(grantee);
+        allSnapshotsTable.grantReadWriteData(grantee);
     }
 }

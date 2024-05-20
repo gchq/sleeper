@@ -33,9 +33,9 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStore;
-import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.LatestSnapshots;
-import sleeper.statestore.transactionlog.TransactionLogSnapshotCreator.LatestSnapshotsLoader;
-import sleeper.statestore.transactionlog.TransactionLogSnapshotCreator.SnapshotSaver;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotMetadataStore.LatestSnapshots;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.LatestSnapshotsMetadataLoader;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.SnapshotMetadataSaver;
 
 import java.io.FileNotFoundException;
 import java.io.UncheckedIOException;
@@ -281,7 +281,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
         StateStore stateStore = createStateStoreWithInMemoryTransactionLog(table);
         stateStore.initialise(partitions.buildList());
         runSnapshotCreator(table);
-        TransactionLogSnapshot snapshot = getLatestPartitionsSnapshot(table);
+        TransactionLogSnapshotMetadata snapshot = getLatestPartitionsSnapshot(table);
         deleteSnapshotFile(snapshot);
         // And we add a transaction that would trigger a new snapshot
         partitions.splitToNewChildren("root", "L", "R", 123L)
@@ -302,7 +302,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
         stateStore.initialise();
         stateStore.addFile(FileReferenceFactory.from(stateStore).rootFile("file1.parquet", 123));
         runSnapshotCreator(table);
-        TransactionLogSnapshot snapshot = getLatestFilesSnapshot(table);
+        TransactionLogSnapshotMetadata snapshot = getLatestFilesSnapshot(table);
         deleteSnapshotFile(snapshot);
         // And we add a transaction that would trigger a new snapshot
         stateStore.addFile(FileReferenceFactory.from(stateStore).rootFile("file2.parquet", 456));
@@ -314,34 +314,34 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
         assertThat(snapshotStore(table).getFilesSnapshots()).containsExactly(snapshot);
     }
 
-    private TransactionLogSnapshot getLatestPartitionsSnapshot(TableProperties table) {
+    private TransactionLogSnapshotMetadata getLatestPartitionsSnapshot(TableProperties table) {
         return snapshotStore(table).getLatestSnapshots().getPartitionsSnapshot().orElseThrow();
     }
 
-    private TransactionLogSnapshot getLatestFilesSnapshot(TableProperties table) {
+    private TransactionLogSnapshotMetadata getLatestFilesSnapshot(TableProperties table) {
         return snapshotStore(table).getLatestSnapshots().getFilesSnapshot().orElseThrow();
     }
 
-    private void deleteSnapshotFile(TransactionLogSnapshot snapshot) throws Exception {
+    private void deleteSnapshotFile(TransactionLogSnapshotMetadata snapshot) throws Exception {
         org.apache.hadoop.fs.Path path = new org.apache.hadoop.fs.Path(snapshot.getPath());
         FileSystem fs = path.getFileSystem(configuration);
         fs.delete(path, false);
     }
 
     private void runSnapshotCreator(TableProperties table) {
-        DynamoDBTransactionLogSnapshotStore snapshotStore = snapshotStore(table);
+        DynamoDBTransactionLogSnapshotMetadataStore snapshotStore = snapshotStore(table);
         runSnapshotCreator(table, snapshotStore::getLatestSnapshots, snapshotStore::saveSnapshot);
     }
 
     private void runSnapshotCreator(
-            TableProperties table, SnapshotSaver snapshotSaver) {
-        DynamoDBTransactionLogSnapshotStore snapshotStore = snapshotStore(table);
+            TableProperties table, SnapshotMetadataSaver snapshotSaver) {
+        DynamoDBTransactionLogSnapshotMetadataStore snapshotStore = snapshotStore(table);
         runSnapshotCreator(table, snapshotStore::getLatestSnapshots, snapshotSaver);
     }
 
     private void runSnapshotCreator(
-            TableProperties table, LatestSnapshotsLoader latestSnapshotsLoader, SnapshotSaver snapshotSaver) {
-        new TransactionLogSnapshotCreator(
+            TableProperties table, LatestSnapshotsMetadataLoader latestSnapshotsLoader, SnapshotMetadataSaver snapshotSaver) {
+        new DynamoDBTransactionLogSnapshotCreator(
                 instanceProperties, table,
                 fileTransactionStoreByTableId.get(table.get(TABLE_ID)),
                 partitionTransactionStoreByTableId.get(table.get(TABLE_ID)),
@@ -361,8 +361,8 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
         return stateStore;
     }
 
-    private DynamoDBTransactionLogSnapshotStore snapshotStore(TableProperties table) {
-        return new DynamoDBTransactionLogSnapshotStore(instanceProperties, table, dynamoDBClient);
+    private DynamoDBTransactionLogSnapshotMetadataStore snapshotStore(TableProperties table) {
+        return new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, table, dynamoDBClient);
     }
 
     private TableProperties createTable(String tableId, String tableName) {
@@ -375,20 +375,20 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
         return tableProperties;
     }
 
-    private TransactionLogSnapshot filesSnapshot(TableProperties table, long transactionNumber) {
-        return TransactionLogSnapshot.forFiles(getBasePath(instanceProperties, table), transactionNumber);
+    private TransactionLogSnapshotMetadata filesSnapshot(TableProperties table, long transactionNumber) {
+        return TransactionLogSnapshotMetadata.forFiles(getBasePath(instanceProperties, table), transactionNumber);
     }
 
-    private TransactionLogSnapshot partitionsSnapshot(TableProperties table, long transactionNumber) {
-        return TransactionLogSnapshot.forPartitions(getBasePath(instanceProperties, table), transactionNumber);
+    private TransactionLogSnapshotMetadata partitionsSnapshot(TableProperties table, long transactionNumber) {
+        return TransactionLogSnapshotMetadata.forPartitions(getBasePath(instanceProperties, table), transactionNumber);
     }
 
     private Path filesSnapshotPath(TableProperties table, long transactionNumber) {
-        return Path.of(TransactionLogSnapshot.forFiles(getBasePathNoFs(instanceProperties, table), 1).getPath());
+        return Path.of(TransactionLogSnapshotMetadata.forFiles(getBasePathNoFs(instanceProperties, table), 1).getPath());
     }
 
     private Path partitionsSnapshotPath(TableProperties table, long transactionNumber) {
-        return Path.of(TransactionLogSnapshot.forPartitions(getBasePathNoFs(instanceProperties, table), 1).getPath());
+        return Path.of(TransactionLogSnapshotMetadata.forPartitions(getBasePathNoFs(instanceProperties, table), 1).getPath());
     }
 
     private static String getBasePath(InstanceProperties instanceProperties, TableProperties tableProperties) {
@@ -402,7 +402,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
                 + tableProperties.get(TableProperty.TABLE_ID);
     }
 
-    private SnapshotSaver failedUpdate(RuntimeException exception) {
+    private SnapshotMetadataSaver failedUpdate(RuntimeException exception) {
         return snapshot -> {
             throw exception;
         };

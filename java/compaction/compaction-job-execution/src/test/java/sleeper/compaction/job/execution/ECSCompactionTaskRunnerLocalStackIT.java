@@ -46,7 +46,6 @@ import sleeper.compaction.job.CompactionJobSerDe;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobCommitRequestSerDe;
-import sleeper.compaction.job.commit.CompactionJobCommitter;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStoreCreator;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
@@ -76,7 +75,7 @@ import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.statestore.s3.S3StateStoreCreator;
+import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -93,6 +92,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
@@ -150,7 +150,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
         s3.createBucket(instanceProperties.get(DATA_BUCKET));
         instanceProperties.saveToS3(s3);
         DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
-        new S3StateStoreCreator(instanceProperties, dynamoDB).create();
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoDB).create();
 
         return instanceProperties;
     }
@@ -266,7 +266,9 @@ public class ECSCompactionTaskRunnerLocalStackIT {
 
             // Then
             // - The compaction job should be put back on the queue
-            assertThat(messagesOnQueue(COMPACTION_JOB_QUEUE_URL)).containsExactly(jobJson);
+            assertThat(messagesOnQueue(COMPACTION_JOB_QUEUE_URL))
+                    .map(Message::getBody)
+                    .containsExactly(jobJson);
             // - No file references should be in the state store
             assertThat(stateStore.getFileReferences()).isEmpty();
         }
@@ -287,6 +289,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
             assertThat(messagesOnQueue(COMPACTION_JOB_QUEUE_URL)).isEmpty();
             // - The compaction job should be on the DLQ
             assertThat(messagesOnQueue(COMPACTION_JOB_DLQ_URL))
+                    .map(Message::getBody)
                     .containsExactly(jobJson);
             // - No file references should be in the state store
             assertThat(stateStore.getFileReferences()).isEmpty();
@@ -309,6 +312,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
             // Then
             // - The compaction job should be put back on the queue
             assertThat(messagesOnQueue(COMPACTION_JOB_QUEUE_URL))
+                    .map(Message::getBody)
                     .containsExactly(jobJson);
             // - No file references should be in the state store
             assertThat(stateStore.getFileReferences()).isEmpty();
@@ -334,6 +338,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
             assertThat(messagesOnQueue(COMPACTION_JOB_QUEUE_URL)).isEmpty();
             // - The compaction job should be on the DLQ
             assertThat(messagesOnQueue(COMPACTION_JOB_DLQ_URL))
+                    .map(Message::getBody)
                     .containsExactly(jobJson);
             // - No file references should be in the state store
             assertThat(stateStore.getFileReferences()).isEmpty();
@@ -371,11 +376,14 @@ public class ECSCompactionTaskRunnerLocalStackIT {
         assertThat(messagesOnQueue(COMPACTION_JOB_QUEUE_URL)).isEmpty();
         assertThat(messagesOnQueue(COMPACTION_JOB_DLQ_URL)).isEmpty();
         // - A compaction commit request should be on the job commit queue
-        assertThat(messagesOnQueue(COMPACTION_JOB_COMMITTER_QUEUE_URL)).containsExactly(
-                commitRequestOnQueue(job, "task-id",
-                        new RecordsProcessedSummary(new RecordsProcessed(100, 100),
-                                Instant.parse("2024-05-09T12:55:00Z"),
-                                Instant.parse("2024-05-09T12:56:00Z"))));
+        assertThat(messagesOnQueue(COMPACTION_JOB_COMMITTER_QUEUE_URL))
+                .extracting(Message::getBody, this::getMessageGroupId)
+                .containsExactly(tuple(
+                        commitRequestOnQueue(job, "task-id",
+                                new RecordsProcessedSummary(new RecordsProcessed(100, 100),
+                                        Instant.parse("2024-05-09T12:55:00Z"),
+                                        Instant.parse("2024-05-09T12:56:00Z"))),
+                        tableId));
         // - Check new output file has been created with the correct records
         assertThat(readRecords("output1.parquet", schema))
                 .containsExactlyElementsOf(expectedRecords);
@@ -385,12 +393,16 @@ public class ECSCompactionTaskRunnerLocalStackIT {
                 .containsExactly(onJob(job, fileReference));
     }
 
-    private Stream<String> messagesOnQueue(InstanceProperty queueProperty) {
+    private String getMessageGroupId(Message message) {
+        return message.getAttributes().get("MessageGroupId");
+    }
+
+    private Stream<Message> messagesOnQueue(InstanceProperty queueProperty) {
         return sqs.receiveMessage(new ReceiveMessageRequest()
                 .withQueueUrl(instanceProperties.get(queueProperty))
+                .withAttributeNames("MessageGroupId")
                 .withWaitTimeSeconds(2))
-                .getMessages().stream()
-                .map(Message::getBody);
+                .getMessages().stream();
     }
 
     private void configureJobQueuesWithMaxReceiveCount(int maxReceiveCount) {
@@ -431,12 +443,12 @@ public class ECSCompactionTaskRunnerLocalStackIT {
         CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties,
                 tablePropertiesProvider, stateStoreProvider,
                 ObjectFactory.noUserJars());
-        CompactionJobCommitHandler commitHandler = new CompactionJobCommitHandler(tablePropertiesProvider,
-                new CompactionJobCommitter(jobStatusStore, tableId -> stateStoreProvider.getStateStore(tablePropertiesProvider.getById(tableId))),
+        CompactionJobCommitterOrSendToLambda committer = new CompactionJobCommitterOrSendToLambda(
+                tablePropertiesProvider, stateStoreProvider, jobStatusStore,
                 instanceProperties, sqs);
         CompactionTask task = new CompactionTask(instanceProperties,
                 PropertiesReloader.neverReload(), new SqsCompactionQueueHandler(sqs, instanceProperties), compactSortedFiles,
-                commitHandler, jobStatusStore, taskStatusStore, taskId, timeSupplier, duration -> {
+                committer, jobStatusStore, taskStatusStore, taskId, timeSupplier, duration -> {
                 });
         return task;
     }

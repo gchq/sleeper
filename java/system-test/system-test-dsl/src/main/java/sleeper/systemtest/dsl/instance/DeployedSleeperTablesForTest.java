@@ -23,6 +23,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.schema.Schema;
+import sleeper.core.statestore.StateStore;
 import sleeper.statestore.StateStoreProvider;
 
 import java.util.List;
@@ -32,6 +33,7 @@ import java.util.TreeMap;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public final class DeployedSleeperTablesForTest {
@@ -39,6 +41,8 @@ public final class DeployedSleeperTablesForTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(DeployedSleeperTablesForTest.class);
     private final InstanceProperties instanceProperties;
     private final Map<String, TableProperties> tableByName = new TreeMap<>();
+    private final Map<String, TableProperties> tableById = new TreeMap<>();
+    private final Map<String, StateStore> stateStoreByTableId = new TreeMap<>();
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
     private TableProperties currentTable = null;
@@ -61,11 +65,19 @@ public final class DeployedSleeperTablesForTest {
     public void addTables(SleeperTablesDriver driver, List<TableProperties> tables) {
         LOGGER.info("Adding {} tables with instance ID: {}", tables.size(), instanceProperties.get(ID));
         tables.stream().parallel().forEach(tableProperties -> driver.addTable(instanceProperties, tableProperties));
-        tables.forEach(tableProperties -> tableByName.put(tableProperties.get(TABLE_NAME), tableProperties));
+        tables.forEach(tableProperties -> {
+            tableByName.put(tableProperties.get(TABLE_NAME), tableProperties);
+            tableById.put(tableProperties.get(TABLE_ID), tableProperties);
+            stateStoreByTableId.put(tableProperties.get(TABLE_ID), stateStoreProvider.getStateStore(tableProperties));
+        });
     }
 
     public Optional<TableProperties> getTablePropertiesByName(String tableName) {
         return Optional.ofNullable(tableByName.get(tableName));
+    }
+
+    public Optional<TableProperties> getTablePropertiesById(String tableId) {
+        return Optional.ofNullable(tableById.get(tableId));
     }
 
     public TableProperties getTableProperties() {
@@ -82,6 +94,10 @@ public final class DeployedSleeperTablesForTest {
 
     public StateStoreProvider getStateStoreProvider() {
         return stateStoreProvider;
+    }
+
+    public StateStore getStateStore(TableProperties tableProperties) {
+        return stateStoreByTableId.get(tableProperties.get(TABLE_ID));
     }
 
     public Stream<String> streamTableNames() {

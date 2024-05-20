@@ -75,11 +75,11 @@ public class TransactionLogSnapshotSerDeIT {
         return FileReferenceFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
     }
 
-    private TransactionLogSnapshot filesSnapshot(long transactionNumber) {
-        return TransactionLogSnapshot.forFiles(tempDir.toString(), transactionNumber);
+    private TransactionLogSnapshotMetadata filesSnapshot(long transactionNumber) {
+        return TransactionLogSnapshotMetadata.forFiles(tempDir.toString(), transactionNumber);
     }
 
-    private TransactionLogSnapshot partitionsSnapshot(long transactionNumber) {
-        return TransactionLogSnapshot.forPartitions(tempDir.toString(), transactionNumber);
+    private TransactionLogSnapshotMetadata partitionsSnapshot(long transactionNumber) {
+        return TransactionLogSnapshotMetadata.forPartitions(tempDir.toString(), transactionNumber);
     }
 }

@@ -21,29 +21,38 @@ import sleeper.core.table.TableStatus;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.util.function.Supplier;
+
 public class TransactionLogStateStore extends DelegatingStateStore {
 
-    public static final int MAX_ADD_TRANSACTION_ATTEMPTS = 10;
-    public static final WaitRange RETRY_WAIT_RANGE = WaitRange.firstAndMaxWaitCeilingSecs(0.2, 30);
+    public static final int DEFAULT_MAX_ADD_TRANSACTION_ATTEMPTS = 10;
+    public static final WaitRange DEFAULT_RETRY_WAIT_RANGE = WaitRange.firstAndMaxWaitCeilingSecs(0.2, 30);
+    public static final Duration DEFAULT_TIME_BETWEEN_SNAPSHOT_CHECKS = Duration.ofMinutes(1);
+    public static final Duration DEFAULT_TIME_BETWEEN_TRANSACTION_CHECKS = Duration.ZERO;
 
     public TransactionLogStateStore(Builder builder) {
         this(builder, TransactionLogHead.builder()
                 .sleeperTable(builder.sleeperTable)
                 .maxAddTransactionAttempts(builder.maxAddTransactionAttempts)
+                .timeBetweenSnapshotChecks(builder.timeBetweenSnapshotChecks)
+                .timeBetweenTransactionChecks(builder.timeBetweenTransactionChecks)
+                .minTransactionsAheadToLoadSnapshot(builder.minTransactionsAheadToLoadSnapshot)
                 .retryBackoff(builder.retryBackoff));
     }
 
     private TransactionLogStateStore(Builder builder, TransactionLogHead.Builder<?> headBuilder) {
         this(builder.schema,
                 headBuilder.forFiles()
-                        .state(builder.filesState)
                         .logStore(builder.filesLogStore)
-                        .lastTransactionNumber(builder.filesTransactionNumber)
+                        .snapshotLoader(builder.filesSnapshotLoader)
+                        .stateUpdateClock(builder.filesStateUpdateClock)
                         .build(),
                 headBuilder.forPartitions()
-                        .state(builder.partitionsState)
                         .logStore(builder.partitionsLogStore)
-                        .lastTransactionNumber(builder.partitionsTransactionNumber)
+                        .snapshotLoader(builder.partitionsSnapshotLoader)
+                        .stateUpdateClock(builder.partitionsStateUpdateClock)
                         .build());
     }
 
@@ -61,12 +70,15 @@ public class TransactionLogStateStore extends DelegatingStateStore {
         private Schema schema;
         private TransactionLogStore filesLogStore;
         private TransactionLogStore partitionsLogStore;
-        private StateStoreFiles filesState = new StateStoreFiles();
-        private StateStorePartitions partitionsState = new StateStorePartitions();
-        private long partitionsTransactionNumber = 0;
-        private long filesTransactionNumber = 0;
-        private int maxAddTransactionAttempts = MAX_ADD_TRANSACTION_ATTEMPTS;
-        private ExponentialBackoffWithJitter retryBackoff = new ExponentialBackoffWithJitter(RETRY_WAIT_RANGE);
+        private long minTransactionsAheadToLoadSnapshot = 1;
+        private int maxAddTransactionAttempts = DEFAULT_MAX_ADD_TRANSACTION_ATTEMPTS;
+        private ExponentialBackoffWithJitter retryBackoff = new ExponentialBackoffWithJitter(DEFAULT_RETRY_WAIT_RANGE);
+        private TransactionLogSnapshotLoader filesSnapshotLoader = TransactionLogSnapshotLoader.neverLoad();
+        private TransactionLogSnapshotLoader partitionsSnapshotLoader = TransactionLogSnapshotLoader.neverLoad();
+        private Duration timeBetweenSnapshotChecks = DEFAULT_TIME_BETWEEN_SNAPSHOT_CHECKS;
+        private Duration timeBetweenTransactionChecks = DEFAULT_TIME_BETWEEN_TRANSACTION_CHECKS;
+        private Supplier<Instant> filesStateUpdateClock = Instant::now;
+        private Supplier<Instant> partitionsStateUpdateClock = Instant::now;
 
         private Builder() {
         }
@@ -91,26 +103,6 @@ public class TransactionLogStateStore extends DelegatingStateStore {
             return this;
         }
 
-        public Builder filesState(StateStoreFiles filesState) {
-            this.filesState = filesState;
-            return this;
-        }
-
-        public Builder partitionsState(StateStorePartitions partitionsState) {
-            this.partitionsState = partitionsState;
-            return this;
-        }
-
-        public Builder partitionsTransactionNumber(long partitionsTransactionNumber) {
-            this.partitionsTransactionNumber = partitionsTransactionNumber;
-            return this;
-        }
-
-        public Builder filesTransactionNumber(long filesTransactionNumber) {
-            this.filesTransactionNumber = filesTransactionNumber;
-            return this;
-        }
-
         public Builder maxAddTransactionAttempts(int maxAddTransactionAttempts) {
             this.maxAddTransactionAttempts = maxAddTransactionAttempts;
             return this;
@@ -118,6 +110,41 @@ public class TransactionLogStateStore extends DelegatingStateStore {
 
         public Builder retryBackoff(ExponentialBackoffWithJitter retryBackoff) {
             this.retryBackoff = retryBackoff;
+            return this;
+        }
+
+        public Builder filesSnapshotLoader(TransactionLogSnapshotLoader filesSnapshotLoader) {
+            this.filesSnapshotLoader = filesSnapshotLoader;
+            return this;
+        }
+
+        public Builder partitionsSnapshotLoader(TransactionLogSnapshotLoader partitionsSnapshotLoader) {
+            this.partitionsSnapshotLoader = partitionsSnapshotLoader;
+            return this;
+        }
+
+        public Builder timeBetweenSnapshotChecks(Duration timeBetweenSnapshotChecks) {
+            this.timeBetweenSnapshotChecks = timeBetweenSnapshotChecks;
+            return this;
+        }
+
+        public Builder timeBetweenTransactionChecks(Duration timeBetweenTransactionChecks) {
+            this.timeBetweenTransactionChecks = timeBetweenTransactionChecks;
+            return this;
+        }
+
+        public Builder filesStateUpdateClock(Supplier<Instant> filesStateUpdateClock) {
+            this.filesStateUpdateClock = filesStateUpdateClock;
+            return this;
+        }
+
+        public Builder partitionsStateUpdateClock(Supplier<Instant> partitionsStateUpdateClock) {
+            this.partitionsStateUpdateClock = partitionsStateUpdateClock;
+            return this;
+        }
+
+        public Builder minTransactionsAheadToLoadSnapshot(long minTransactionsAheadToLoadSnapshot) {
+            this.minTransactionsAheadToLoadSnapshot = minTransactionsAheadToLoadSnapshot;
             return this;
         }
 

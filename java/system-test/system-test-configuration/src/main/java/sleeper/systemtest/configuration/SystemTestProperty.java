@@ -63,9 +63,6 @@ public interface SystemTestProperty extends InstanceProperty {
     SystemTestProperty WRITE_DATA_TASK_DEFINITION_FAMILY = Index.propertyBuilder("sleeper.systemtest.task.definition")
             .description("The name of the family of task definitions used for writing data")
             .setByCdk(true).build();
-    SystemTestProperty WRITE_DATA_ROLE_NAME = Index.propertyBuilder("sleeper.systemtest.writer.role")
-            .description("The name of the role used when writing data for an instance in an ECS cluster")
-            .setByCdk(true).build();
     SystemTestProperty SYSTEM_TEST_TASK_CPU = Index.propertyBuilder("sleeper.systemtest.task.cpu")
             .description("The number of CPU units for the containers that write random data, where 1024 is 1 vCPU.\n" +
                     "For valid values, see: " +
