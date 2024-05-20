@@ -15,6 +15,8 @@
  */
 package sleeper.core.statestore.transactionlog;
 
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.Partition;
@@ -42,151 +44,166 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
     private final Schema schema = schemaWithKey("key", new StringType());
     private final PartitionsBuilder partitions = new PartitionsBuilder(schema).singlePartition("root");
 
-    @Test
-    void shouldLoadFilesFromSnapshotWhenNotInLogOnFirstLoad() throws Exception {
-        // Given
-        FileReference file = fileFactory().rootFile(123);
+    @Nested
+    @DisplayName("Get snapshot on first load")
+    class FirstLoad {
 
-        // When
-        createSnapshotWithFreshStateAtTransactionNumber(1, stateStore -> {
-            stateStore.addFile(file);
-        });
+        @Test
+        void shouldLoadFilesFromSnapshotWhenNotInLogOnFirstLoad() throws Exception {
+            // Given
+            FileReference file = fileFactory().rootFile(123);
 
-        // Then
-        assertThat(stateStore().getFileReferences()).containsExactly(file);
+            // When
+            createSnapshotWithFreshStateAtTransactionNumber(1, stateStore -> {
+                stateStore.addFile(file);
+            });
+
+            // Then
+            assertThat(stateStore().getFileReferences()).containsExactly(file);
+        }
+
+        @Test
+        void shouldLoadPartitionsFromSnapshotWhenNotInLogOnFirstLoad() throws Exception {
+            // Given
+            partitions.splitToNewChildren("root", "L", "R", "abc");
+
+            // When
+            createSnapshotWithFreshStateAtTransactionNumber(1, stateStore -> {
+                stateStore.initialise(partitions.buildList());
+            });
+
+            // Then
+            assertThat(stateStore().getAllPartitions())
+                    .containsExactlyInAnyOrderElementsOf(partitions.buildList());
+        }
     }
 
-    @Test
-    void shouldLoadPartitionsFromSnapshotWhenNotInLogOnFirstLoad() throws Exception {
-        // Given
-        partitions.splitToNewChildren("root", "L", "R", "abc");
+    @Nested
+    @DisplayName("Only load snapshot when it's a configured number of transactions ahead")
+    class RestrictTransactionsAhead {
 
-        // When
-        createSnapshotWithFreshStateAtTransactionNumber(1, stateStore -> {
-            stateStore.initialise(partitions.buildList());
-        });
+        @Test
+        void shouldNotLoadFilesSnapshotWhenOnlyOneTransactionAheadAfterLoadingLog() throws Exception {
+            // Given
+            StateStore stateStore = stateStore(builder -> builder
+                    .minTransactionsAheadToLoadSnapshot(2));
+            FileReference logFile = fileFactory().rootFile("log-file.parquet", 123);
+            FileReference snapshotFile = fileFactory().rootFile("snapshot-file.parquet", 123);
+            stateStore.addFile(logFile);
 
-        // Then
-        assertThat(stateStore().getAllPartitions())
-                .containsExactlyInAnyOrderElementsOf(partitions.buildList());
+            // When
+            createSnapshotWithFreshStateAtTransactionNumber(2, snapshotStateStore -> {
+                snapshotStateStore.addFile(snapshotFile);
+            });
+
+            // Then
+            assertThat(stateStore.getFileReferences()).containsExactly(logFile);
+        }
+
+        @Test
+        void shouldLoadFilesSnapshotWhenMoreThanConfiguredTransactionsAheadAfterLoadingLog() throws Exception {
+            // Given
+            StateStore stateStore = stateStore(builder -> builder
+                    .minTransactionsAheadToLoadSnapshot(2));
+            FileReference logFile = fileFactory().rootFile("log-file.parquet", 123);
+            FileReference snapshotFile = fileFactory().rootFile("snapshot-file.parquet", 123);
+            stateStore.addFile(logFile);
+
+            // When
+            createSnapshotWithFreshStateAtTransactionNumber(3, snapshotStateStore -> {
+                snapshotStateStore.addFile(snapshotFile);
+            });
+
+            // Then
+            assertThat(stateStore.getFileReferences()).containsExactly(snapshotFile);
+        }
+
+        @Test
+        void shouldNotLoadPartitionsSnapshotWhenOnlyOneTransactionAheadAfterLoadingLog() throws Exception {
+            // Given
+            StateStore stateStore = stateStore(builder -> builder
+                    .minTransactionsAheadToLoadSnapshot(2));
+            List<Partition> logPartitions = new PartitionsBuilder(schema).rootFirst("A").buildList();
+            List<Partition> snapshotPartitions = new PartitionsBuilder(schema).rootFirst("B").buildList();
+            stateStore.initialise(logPartitions);
+
+            // When
+            createSnapshotWithFreshStateAtTransactionNumber(2, snapshotStateStore -> {
+                snapshotStateStore.initialise(snapshotPartitions);
+            });
+
+            // Then
+            assertThat(stateStore.getAllPartitions()).containsExactlyElementsOf(logPartitions);
+        }
+
+        @Test
+        void shouldLoadPartitionsSnapshotWhenMoreThanConfiguredTransactionsAheadAfterLoadingLog() throws Exception {
+            // Given
+            StateStore stateStore = stateStore(builder -> builder
+                    .minTransactionsAheadToLoadSnapshot(2));
+            List<Partition> logPartitions = new PartitionsBuilder(schema).rootFirst("A").buildList();
+            List<Partition> snapshotPartitions = new PartitionsBuilder(schema).rootFirst("B").buildList();
+            stateStore.initialise(logPartitions);
+
+            // When
+            createSnapshotWithFreshStateAtTransactionNumber(3, snapshotStateStore -> {
+                snapshotStateStore.initialise(snapshotPartitions);
+            });
+
+            // Then
+            assertThat(stateStore.getAllPartitions()).containsExactlyElementsOf(snapshotPartitions);
+        }
     }
 
-    @Test
-    void shouldNotLoadFilesSnapshotWhenOnlyOneTransactionAheadAfterLoadingLog() throws Exception {
-        // Given
-        StateStore stateStore = stateStore(builder -> builder
-                .minTransactionsAheadToLoadSnapshot(2));
-        FileReference logFile = fileFactory().rootFile("log-file.parquet", 123);
-        FileReference snapshotFile = fileFactory().rootFile("snapshot-file.parquet", 123);
-        stateStore.addFile(logFile);
+    @Nested
+    @DisplayName("Only check for new snapshots/transactions after a configured amount of time")
+    class RestrictCheckFrequency {
 
-        // When
-        createSnapshotWithFreshStateAtTransactionNumber(2, snapshotStateStore -> {
-            snapshotStateStore.addFile(snapshotFile);
-        });
+        @Test
+        void shouldNotCheckForFilesSnapshotWhenLessThanConfiguredTimeHasPassed() throws Exception {
+            // Given
+            StateStore stateStore = stateStore(builder -> builder
+                    .minTransactionsAheadToLoadSnapshot(2)
+                    .timeBetweenSnapshotChecks(Duration.ofMinutes(1))
+                    .loadFilesSnapshotClock(List.of(
+                            Instant.parse("2024-05-17T15:15:00Z"),
+                            Instant.parse("2024-05-17T15:15:55Z"))
+                            .iterator()::next));
+            FileReference logFile = fileFactory().rootFile("log-file.parquet", 123);
+            FileReference snapshotFile = fileFactory().rootFile("snapshot-file.parquet", 123);
+            stateStore.addFile(logFile);
 
-        // Then
-        assertThat(stateStore.getFileReferences()).containsExactly(logFile);
-    }
+            // When
+            createSnapshotWithFreshStateAtTransactionNumber(3, snapshotStateStore -> {
+                snapshotStateStore.addFile(snapshotFile);
+            });
 
-    @Test
-    void shouldLoadFilesSnapshotWhenMoreThanConfiguredTransactionsAheadAfterLoadingLog() throws Exception {
-        // Given
-        StateStore stateStore = stateStore(builder -> builder
-                .minTransactionsAheadToLoadSnapshot(2));
-        FileReference logFile = fileFactory().rootFile("log-file.parquet", 123);
-        FileReference snapshotFile = fileFactory().rootFile("snapshot-file.parquet", 123);
-        stateStore.addFile(logFile);
+            // Then
+            assertThat(stateStore.getFileReferences()).containsExactly(logFile);
+        }
 
-        // When
-        createSnapshotWithFreshStateAtTransactionNumber(3, snapshotStateStore -> {
-            snapshotStateStore.addFile(snapshotFile);
-        });
+        @Test
+        void shouldCheckForFilesSnapshotWhenConfiguredTimeHasPassed() throws Exception {
+            // Given
+            StateStore stateStore = stateStore(builder -> builder
+                    .minTransactionsAheadToLoadSnapshot(2)
+                    .timeBetweenSnapshotChecks(Duration.ofMinutes(1))
+                    .loadFilesSnapshotClock(List.of(
+                            Instant.parse("2024-05-17T15:15:00Z"),
+                            Instant.parse("2024-05-17T15:16:05Z"))
+                            .iterator()::next));
+            FileReference logFile = fileFactory().rootFile("log-file.parquet", 123);
+            FileReference snapshotFile = fileFactory().rootFile("snapshot-file.parquet", 123);
+            stateStore.addFile(logFile);
 
-        // Then
-        assertThat(stateStore.getFileReferences()).containsExactly(snapshotFile);
-    }
+            // When
+            createSnapshotWithFreshStateAtTransactionNumber(3, snapshotStateStore -> {
+                snapshotStateStore.addFile(snapshotFile);
+            });
 
-    @Test
-    void shouldNotLoadPartitionsSnapshotWhenOnlyOneTransactionAheadAfterLoadingLog() throws Exception {
-        // Given
-        StateStore stateStore = stateStore(builder -> builder
-                .minTransactionsAheadToLoadSnapshot(2));
-        List<Partition> logPartitions = new PartitionsBuilder(schema).rootFirst("A").buildList();
-        List<Partition> snapshotPartitions = new PartitionsBuilder(schema).rootFirst("B").buildList();
-        stateStore.initialise(logPartitions);
-
-        // When
-        createSnapshotWithFreshStateAtTransactionNumber(2, snapshotStateStore -> {
-            snapshotStateStore.initialise(snapshotPartitions);
-        });
-
-        // Then
-        assertThat(stateStore.getAllPartitions()).containsExactlyElementsOf(logPartitions);
-    }
-
-    @Test
-    void shouldLoadPartitionsSnapshotWhenMoreThanConfiguredTransactionsAheadAfterLoadingLog() throws Exception {
-        // Given
-        StateStore stateStore = stateStore(builder -> builder
-                .minTransactionsAheadToLoadSnapshot(2));
-        List<Partition> logPartitions = new PartitionsBuilder(schema).rootFirst("A").buildList();
-        List<Partition> snapshotPartitions = new PartitionsBuilder(schema).rootFirst("B").buildList();
-        stateStore.initialise(logPartitions);
-
-        // When
-        createSnapshotWithFreshStateAtTransactionNumber(3, snapshotStateStore -> {
-            snapshotStateStore.initialise(snapshotPartitions);
-        });
-
-        // Then
-        assertThat(stateStore.getAllPartitions()).containsExactlyElementsOf(snapshotPartitions);
-    }
-
-    @Test
-    void shouldNotCheckForFilesSnapshotWhenLessThanConfiguredTimeHasPassed() throws Exception {
-        // Given
-        StateStore stateStore = stateStore(builder -> builder
-                .minTransactionsAheadToLoadSnapshot(2)
-                .timeBetweenSnapshotChecks(Duration.ofMinutes(1))
-                .loadFilesSnapshotClock(List.of(
-                        Instant.parse("2024-05-17T15:15:00Z"),
-                        Instant.parse("2024-05-17T15:15:55Z"))
-                        .iterator()::next));
-        FileReference logFile = fileFactory().rootFile("log-file.parquet", 123);
-        FileReference snapshotFile = fileFactory().rootFile("snapshot-file.parquet", 123);
-        stateStore.addFile(logFile);
-
-        // When
-        createSnapshotWithFreshStateAtTransactionNumber(3, snapshotStateStore -> {
-            snapshotStateStore.addFile(snapshotFile);
-        });
-
-        // Then
-        assertThat(stateStore.getFileReferences()).containsExactly(logFile);
-    }
-
-    @Test
-    void shouldCheckForFilesSnapshotWhenConfiguredTimeHasPassed() throws Exception {
-        // Given
-        StateStore stateStore = stateStore(builder -> builder
-                .minTransactionsAheadToLoadSnapshot(2)
-                .timeBetweenSnapshotChecks(Duration.ofMinutes(1))
-                .loadFilesSnapshotClock(List.of(
-                        Instant.parse("2024-05-17T15:15:00Z"),
-                        Instant.parse("2024-05-17T15:16:05Z"))
-                        .iterator()::next));
-        FileReference logFile = fileFactory().rootFile("log-file.parquet", 123);
-        FileReference snapshotFile = fileFactory().rootFile("snapshot-file.parquet", 123);
-        stateStore.addFile(logFile);
-
-        // When
-        createSnapshotWithFreshStateAtTransactionNumber(3, snapshotStateStore -> {
-            snapshotStateStore.addFile(snapshotFile);
-        });
-
-        // Then
-        assertThat(stateStore.getFileReferences()).containsExactly(snapshotFile);
+            // Then
+            assertThat(stateStore.getFileReferences()).containsExactly(snapshotFile);
+        }
     }
 
     private StateStore stateStore() {
