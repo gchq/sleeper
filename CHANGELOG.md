@@ -4,6 +4,39 @@ Releases
 This page documents the releases of Sleeper. Performance figures for each release
 are available [here](docs/13-system-tests.md#performance-benchmarks)
 
+## Version 0.23.0
+
+This contains the following improvements:
+
+Tables:
+
+- Updated queues used by scheduled operations to be FIFO queues. This is to ensure only one scheduled action is running at a time for each Sleeper table.
+
+State store:
+
+- Added a new state store type - DynamoDBTransactionLogStateStore.
+
+Compactions:
+
+- Added a new lambda to batch-apply finished compaction jobs.
+- Added a retry to compaction jobs committing in the case where the input files have not yet been assigned to the job.
+
+Deployment
+- Added a way to keep query lambdas warm using the optional stack `KeepLambdaWarmStack`.
+- Added dashboard error metrics for all dead letter queues.
+- Added ability to deploy Sleeper instances without using the `AdministratorAccess` policy.
+
+System tests:
+- Added system tests for compactions running on EC2.
+- Added system tests for queries running against a WebSocket.
+
+Bugfixes:
+
+- Fixed an issue where the WebSocket query script failed to print records to the console.
+- Fixed an issue where the WebSocket query script failed to run 2 consecutive queries.
+- Fixed an issue where CDK would fail to update if there were too many tables in an instance.
+- Fixed an issue where running the file status report when a file belongs in a partition that no longer exists would fail.
+
 ## Version 0.22.1
 
 This is a bug-fix release. It contains a fix of the following bug:
