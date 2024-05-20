@@ -76,10 +76,10 @@ public class ParallelCompactionsIT {
 
         // When we run compaction
         sleeper.compaction()
-                .forceStartTasks(300)
                 .createJobs(8192,
                         PollWithRetries.intervalAndPollingTimeout(
                                 Duration.ofSeconds(10), Duration.ofMinutes(5)))
+                .invokeTasks(300)
                 .waitForJobs(
                         PollWithRetries.intervalAndPollingTimeout(
                                 Duration.ofSeconds(10), Duration.ofMinutes(5)));

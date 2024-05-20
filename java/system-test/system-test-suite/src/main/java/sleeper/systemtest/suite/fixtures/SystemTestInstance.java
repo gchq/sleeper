@@ -190,7 +190,7 @@ public class SystemTestInstance {
         InstanceProperties properties = configuration.getInstanceProperties();
         properties.set(OPTIONAL_STACKS, "CompactionStack");
         properties.set(MAXIMUM_CONCURRENT_COMPACTION_TASKS, "300");
-        properties.set(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS, "600");
+        properties.set(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS, "20");
 
         Map<String, String> tags = new HashMap<>(properties.getTags());
         tags.put("SystemTestInstance", "compactionInParallel");
