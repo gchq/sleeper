@@ -24,7 +24,7 @@ import sleeper.statestore.StateStoreFileUtils;
 
 import java.io.IOException;
 
-public class TransactionLogSnapshotSerDe {
+class TransactionLogSnapshotSerDe {
     private final Schema sleeperSchema;
     private final StateStoreFileUtils stateStoreFileUtils;
 

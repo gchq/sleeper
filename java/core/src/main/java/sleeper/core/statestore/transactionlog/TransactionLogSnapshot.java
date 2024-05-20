@@ -21,11 +21,22 @@ public class TransactionLogSnapshot {
     private final long transactionNumber;
 
     public TransactionLogSnapshot(StateStoreFiles state, long transactionNumber) {
-        this.state = state;
-        this.transactionNumber = transactionNumber;
+        this((Object) state, transactionNumber);
     }
 
     public TransactionLogSnapshot(StateStorePartitions state, long transactionNumber) {
+        this((Object) state, transactionNumber);
+    }
+
+    public static TransactionLogSnapshot filesInitialState() {
+        return new TransactionLogSnapshot(new StateStoreFiles(), 0);
+    }
+
+    public static TransactionLogSnapshot partitionsInitialState() {
+        return new TransactionLogSnapshot(new StateStorePartitions(), 0);
+    }
+
+    TransactionLogSnapshot(Object state, long transactionNumber) {
         this.state = state;
         this.transactionNumber = transactionNumber;
     }
