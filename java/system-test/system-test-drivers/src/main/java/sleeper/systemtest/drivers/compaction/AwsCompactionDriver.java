@@ -37,6 +37,7 @@ import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.PollWithRetries;
+import sleeper.statestore.StateStoreProvider;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
@@ -81,12 +82,13 @@ public class AwsCompactionDriver implements CompactionDriver {
 
     @Override
     public void forceCreateJobs() {
-        CreateCompactionJobs createJobs = new CreateCompactionJobs(
-                ObjectFactory.noUserJars(), instance.getInstanceProperties(), instance.getStateStoreProvider(),
-                new SendCompactionJobToSqs(instance.getInstanceProperties(), sqsClient)::send, getJobStatusStore(),
-                Mode.FORCE_ALL_FILES_AFTER_STRATEGY);
         instance.streamTableProperties().parallel().forEach(table -> {
             try {
+                CreateCompactionJobs createJobs = new CreateCompactionJobs(
+                        ObjectFactory.noUserJars(), instance.getInstanceProperties(),
+                        new StateStoreProvider(instance.getInstanceProperties(), instance::getStateStore),
+                        new SendCompactionJobToSqs(instance.getInstanceProperties(), sqsClient)::send, getJobStatusStore(),
+                        Mode.FORCE_ALL_FILES_AFTER_STRATEGY);
                 createJobs.createJobs(table);
             } catch (StateStoreException | IOException | ObjectFactoryException e) {
                 throw new RuntimeException("Failed creating compaction jobs for table " + table.getStatus(), e);

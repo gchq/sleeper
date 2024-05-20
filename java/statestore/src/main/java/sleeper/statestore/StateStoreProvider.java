@@ -47,7 +47,7 @@ public class StateStoreProvider {
         this(instanceProperties, new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, configuration)::getStateStore);
     }
 
-    protected StateStoreProvider(InstanceProperties instanceProperties, StateStoreLoader stateStoreFactory) {
+    public StateStoreProvider(InstanceProperties instanceProperties, StateStoreLoader stateStoreFactory) {
         this(instanceProperties.getInt(STATESTORE_PROVIDER_CACHE_SIZE), stateStoreFactory);
     }
 
@@ -71,7 +71,7 @@ public class StateStoreProvider {
         return tableIdToStateStoreCache.get(tableId);
     }
 
-    interface StateStoreLoader {
+    public interface StateStoreLoader {
         StateStore getStateStore(TableProperties tableProperties);
     }
 }
