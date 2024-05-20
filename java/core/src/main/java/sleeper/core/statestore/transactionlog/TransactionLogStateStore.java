@@ -37,6 +37,7 @@ public class TransactionLogStateStore extends DelegatingStateStore {
                 .sleeperTable(builder.sleeperTable)
                 .maxAddTransactionAttempts(builder.maxAddTransactionAttempts)
                 .timeBetweenSnapshotChecks(builder.timeBetweenSnapshotChecks)
+                .timeBetweenTransactionChecks(builder.timeBetweenTransactionChecks)
                 .minTransactionsAheadToLoadSnapshot(builder.minTransactionsAheadToLoadSnapshot)
                 .retryBackoff(builder.retryBackoff));
     }
@@ -46,12 +47,12 @@ public class TransactionLogStateStore extends DelegatingStateStore {
                 headBuilder.forFiles()
                         .logStore(builder.filesLogStore)
                         .snapshotLoader(builder.filesSnapshotLoader)
-                        .checkStateClock(builder.checkFilesStateClock)
+                        .stateUpdateClock(builder.filesStateUpdateClock)
                         .build(),
                 headBuilder.forPartitions()
                         .logStore(builder.partitionsLogStore)
                         .snapshotLoader(builder.partitionsSnapshotLoader)
-                        .checkStateClock(builder.checkPartitionsStateClock)
+                        .stateUpdateClock(builder.partitionsStateUpdateClock)
                         .build());
     }
 
@@ -76,8 +77,8 @@ public class TransactionLogStateStore extends DelegatingStateStore {
         private TransactionLogSnapshotLoader partitionsSnapshotLoader = TransactionLogSnapshotLoader.neverLoad();
         private Duration timeBetweenSnapshotChecks = DEFAULT_TIME_BETWEEN_SNAPSHOT_CHECKS;
         private Duration timeBetweenTransactionChecks = DEFAULT_TIME_BETWEEN_TRANSACTION_CHECKS;
-        private Supplier<Instant> checkFilesStateClock = Instant::now;
-        private Supplier<Instant> checkPartitionsStateClock = Instant::now;
+        private Supplier<Instant> filesStateUpdateClock = Instant::now;
+        private Supplier<Instant> partitionsStateUpdateClock = Instant::now;
 
         private Builder() {
         }
@@ -132,13 +133,13 @@ public class TransactionLogStateStore extends DelegatingStateStore {
             return this;
         }
 
-        public Builder checkFilesStateClock(Supplier<Instant> checkFilesStateClock) {
-            this.checkFilesStateClock = checkFilesStateClock;
+        public Builder filesStateUpdateClock(Supplier<Instant> filesStateUpdateClock) {
+            this.filesStateUpdateClock = filesStateUpdateClock;
             return this;
         }
 
-        public Builder checkPartitionsStateClock(Supplier<Instant> checkPartitionsStateClock) {
-            this.checkPartitionsStateClock = checkPartitionsStateClock;
+        public Builder partitionsStateUpdateClock(Supplier<Instant> partitionsStateUpdateClock) {
+            this.partitionsStateUpdateClock = partitionsStateUpdateClock;
             return this;
         }
 

@@ -37,11 +37,13 @@ class TransactionLogHead<T> {
     private final Class<? extends StateStoreTransaction<T>> transactionType;
     private final TransactionLogSnapshotLoader snapshotLoader;
     private final Duration timeBetweenSnapshotChecks;
-    private final Supplier<Instant> checkStateClock;
+    private final Duration timeBetweenTransactionChecks;
+    private final Supplier<Instant> stateUpdateClock;
     private final long minTransactionsAheadToLoadSnapshot;
     private T state;
     private long lastTransactionNumber;
     private Instant nextSnapshotCheckTime;
+    private Instant nextTransactionCheckTime;
 
     private TransactionLogHead(Builder<T> builder) {
         this.sleeperTable = builder.sleeperTable;
@@ -51,7 +53,8 @@ class TransactionLogHead<T> {
         this.transactionType = builder.transactionType;
         this.snapshotLoader = builder.snapshotLoader;
         this.timeBetweenSnapshotChecks = builder.timeBetweenSnapshotChecks;
-        this.checkStateClock = builder.checkStateClock;
+        this.timeBetweenTransactionChecks = builder.timeBetweenTransactionChecks;
+        this.stateUpdateClock = builder.stateUpdateClock;
         this.minTransactionsAheadToLoadSnapshot = builder.minTransactionsAheadToLoadSnapshot;
         this.state = builder.state;
         this.lastTransactionNumber = builder.lastTransactionNumber;
@@ -73,7 +76,7 @@ class TransactionLogHead<T> {
                 Thread.currentThread().interrupt();
                 throw new StateStoreException("Interrupted while waiting to retry", e);
             }
-            update();
+            forceUpdate();
             transaction.validate(state);
             long transactionNumber = lastTransactionNumber + 1;
             try {
@@ -103,33 +106,30 @@ class TransactionLogHead<T> {
 
     void update() throws StateStoreException {
         try {
-            loadSnapshotIfNeeded();
-            Instant startTime = Instant.now();
-            long transactionNumberBeforeLogLoad = lastTransactionNumber;
-            LOGGER.debug("Updating {} for table {} from log from transaction {}",
-                    state.getClass().getSimpleName(), sleeperTable, lastTransactionNumber);
-            logStore.readTransactionsAfter(lastTransactionNumber)
-                    .forEach(this::applyTransaction);
-            long readTransactions = lastTransactionNumber - transactionNumberBeforeLogLoad;
-            if (readTransactions > 0) {
-                LOGGER.info("Updated {} for table {}, read {} transactions from log in {}, last transaction number is {}",
-                        state.getClass().getSimpleName(), sleeperTable,
-                        readTransactions,
-                        LoggedDuration.withShortOutput(startTime, Instant.now()),
-                        lastTransactionNumber);
-            } else {
-                LOGGER.debug("No new transactions found in log of {} for table {} in {}, last transaction number is {}",
-                        state.getClass().getSimpleName(), sleeperTable,
-                        LoggedDuration.withShortOutput(startTime, Instant.now()),
-                        lastTransactionNumber);
+            Instant startTime = stateUpdateClock.get();
+            if (nextTransactionCheckTime != null && startTime.isBefore(nextTransactionCheckTime)) {
+                LOGGER.debug("Not checking for {} transactions for table {}, next check at {}",
+                        state.getClass().getSimpleName(), sleeperTable, nextTransactionCheckTime);
+                return;
             }
+            loadSnapshotIfNeeded(startTime);
+            updateFromLog();
         } catch (RuntimeException e) {
             throw new StateStoreException("Failed updating state from transactions", e);
         }
     }
 
-    private void loadSnapshotIfNeeded() {
-        Instant startTime = checkStateClock.get();
+    private void forceUpdate() throws StateStoreException {
+        try {
+            Instant startTime = stateUpdateClock.get();
+            loadSnapshotIfNeeded(startTime);
+            updateFromLog();
+        } catch (RuntimeException e) {
+            throw new StateStoreException("Failed force updating state from transactions", e);
+        }
+    }
+
+    private void loadSnapshotIfNeeded(Instant startTime) {
         if (nextSnapshotCheckTime != null && startTime.isBefore(nextSnapshotCheckTime)) {
             LOGGER.debug("Not checking for snapshot of {} for table {}, next check at {}",
                     state.getClass().getSimpleName(), sleeperTable, nextSnapshotCheckTime);
@@ -149,6 +149,30 @@ class TransactionLogHead<T> {
                             state.getClass().getSimpleName(), sleeperTable, minTransactionNumberToLoadSnapshot,
                             LoggedDuration.withShortOutput(startTime, Instant.now()));
                 });
+    }
+
+    private void updateFromLog() {
+        Instant startTime = stateUpdateClock.get();
+        long transactionNumberBeforeLogLoad = lastTransactionNumber;
+        LOGGER.debug("Updating {} for table {} from log from transaction {}",
+                state.getClass().getSimpleName(), sleeperTable, lastTransactionNumber);
+        logStore.readTransactionsAfter(lastTransactionNumber)
+                .forEach(this::applyTransaction);
+        long readTransactions = lastTransactionNumber - transactionNumberBeforeLogLoad;
+        Instant finishTime = stateUpdateClock.get();
+        nextTransactionCheckTime = finishTime.plus(timeBetweenTransactionChecks);
+        if (readTransactions > 0) {
+            LOGGER.info("Updated {} for table {}, read {} transactions from log in {}, last transaction number is {}",
+                    state.getClass().getSimpleName(), sleeperTable,
+                    readTransactions,
+                    LoggedDuration.withShortOutput(startTime, finishTime),
+                    lastTransactionNumber);
+        } else {
+            LOGGER.debug("No new transactions found in log of {} for table {} in {}, last transaction number is {}",
+                    state.getClass().getSimpleName(), sleeperTable,
+                    LoggedDuration.withShortOutput(startTime, finishTime),
+                    lastTransactionNumber);
+        }
     }
 
     private void applyTransaction(TransactionLogEntry entry) {
@@ -180,7 +204,8 @@ class TransactionLogHead<T> {
         private Class<? extends StateStoreTransaction<T>> transactionType;
         private TransactionLogSnapshotLoader snapshotLoader = TransactionLogSnapshotLoader.neverLoad();
         private Duration timeBetweenSnapshotChecks = Duration.ZERO;
-        private Supplier<Instant> checkStateClock = Instant::now;
+        private Duration timeBetweenTransactionChecks = Duration.ZERO;
+        private Supplier<Instant> stateUpdateClock = Instant::now;
         private T state;
         private long lastTransactionNumber = 0;
         private long minTransactionsAheadToLoadSnapshot = 1;
@@ -223,8 +248,13 @@ class TransactionLogHead<T> {
             return this;
         }
 
-        public Builder<T> checkStateClock(Supplier<Instant> checkStateClock) {
-            this.checkStateClock = checkStateClock;
+        public Builder<T> timeBetweenTransactionChecks(Duration timeBetweenTransactionChecks) {
+            this.timeBetweenTransactionChecks = timeBetweenTransactionChecks;
+            return this;
+        }
+
+        public Builder<T> stateUpdateClock(Supplier<Instant> stateUpdateClock) {
+            this.stateUpdateClock = stateUpdateClock;
             return this;
         }
 
