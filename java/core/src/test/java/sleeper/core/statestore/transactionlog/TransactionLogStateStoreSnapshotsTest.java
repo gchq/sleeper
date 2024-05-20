@@ -208,6 +208,35 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
             // Then
             assertThat(stateStore.getFileReferences()).containsExactly(file1, file2);
         }
+
+        @Test
+        void shouldCheckForFilesTransactionWhenAnotherUpdateIsMadeBeforeConfiguredTimeHasPassed() throws Exception {
+            // Given
+            StateStore stateStore = stateStore(builder -> builder
+                    .timeBetweenTransactionChecks(Duration.ofMinutes(1))
+                    .filesStateUpdateClock(List.of(
+                            Instant.parse("2024-05-17T15:15:00Z"), // Check time adding file 1
+                            Instant.parse("2024-05-17T15:15:01Z"), // Start reading transactions adding file 1
+                            Instant.parse("2024-05-17T15:15:02Z"), // Finish reading transactions adding file 1
+                            Instant.parse("2024-05-17T15:15:03Z"), // Check time adding file 3
+                            Instant.parse("2024-05-17T15:15:04Z"), // Start reading transactions adding file 3
+                            Instant.parse("2024-05-17T15:15:05Z"), // Finish reading transactions adding file 3
+                            Instant.parse("2024-05-17T15:15:06Z"), // Check time querying files
+                            Instant.parse("2024-05-17T15:15:07Z"), // Start reading transactions in query
+                            Instant.parse("2024-05-17T15:15:08Z")) // Finish reading transactions in query
+                            .iterator()::next));
+            FileReference file1 = fileFactory().rootFile("file-1.parquet", 123);
+            FileReference file2 = fileFactory().rootFile("file-2.parquet", 456);
+            FileReference file3 = fileFactory().rootFile("file-3.parquet", 456);
+            stateStore.addFile(file1);
+
+            // When
+            otherProcess().addFile(file2);
+            stateStore.addFile(file3);
+
+            // Then
+            assertThat(stateStore.getFileReferences()).containsExactly(file1, file2, file3);
+        }
     }
 
     @Nested
