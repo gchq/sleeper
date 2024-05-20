@@ -63,6 +63,7 @@ public class InMemoryTransactionLogStateStoreTestBase {
     protected StateStore stateStore(TransactionLogStateStore.Builder builder) {
         StateStore stateStore = builder.build();
         stateStore.fixFileUpdateTime(DEFAULT_UPDATE_TIME);
+        stateStore.fixPartitionUpdateTime(DEFAULT_UPDATE_TIME);
         return stateStore;
     }
 

@@ -30,11 +30,11 @@ import java.util.List;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME;
 
-public class DynamoDBTransactionLogSnapshotStoreCreator {
+public class DynamoDBTransactionLogSnapshotMetadataStoreCreator {
     private final AmazonDynamoDB dynamoDB;
     private final InstanceProperties instanceProperties;
 
-    public DynamoDBTransactionLogSnapshotStoreCreator(InstanceProperties instanceProperties, AmazonDynamoDB dynamoDB) {
+    public DynamoDBTransactionLogSnapshotMetadataStoreCreator(InstanceProperties instanceProperties, AmazonDynamoDB dynamoDB) {
         this.dynamoDB = dynamoDB;
         this.instanceProperties = instanceProperties;
     }
@@ -46,9 +46,9 @@ public class DynamoDBTransactionLogSnapshotStoreCreator {
 
     private void createLatestSnapshotTable() {
         List<AttributeDefinition> attributeDefinitions = List.of(
-                new AttributeDefinition(DynamoDBTransactionLogSnapshotStore.TABLE_ID, ScalarAttributeType.S));
+                new AttributeDefinition(DynamoDBTransactionLogSnapshotMetadataStore.TABLE_ID, ScalarAttributeType.S));
         List<KeySchemaElement> keySchemaElements = List.of(
-                new KeySchemaElement(DynamoDBTransactionLogSnapshotStore.TABLE_ID, KeyType.HASH));
+                new KeySchemaElement(DynamoDBTransactionLogSnapshotMetadataStore.TABLE_ID, KeyType.HASH));
         CreateTableRequest request = new CreateTableRequest()
                 .withTableName(instanceProperties.get(TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME))
                 .withAttributeDefinitions(attributeDefinitions)
@@ -59,11 +59,11 @@ public class DynamoDBTransactionLogSnapshotStoreCreator {
 
     private void createAllSnapshotsTable() {
         List<AttributeDefinition> attributeDefinitions = List.of(
-                new AttributeDefinition(DynamoDBTransactionLogSnapshotStore.TABLE_ID_AND_SNAPSHOT_TYPE, ScalarAttributeType.S),
-                new AttributeDefinition(DynamoDBTransactionLogSnapshotStore.TRANSACTION_NUMBER, ScalarAttributeType.N));
+                new AttributeDefinition(DynamoDBTransactionLogSnapshotMetadataStore.TABLE_ID_AND_SNAPSHOT_TYPE, ScalarAttributeType.S),
+                new AttributeDefinition(DynamoDBTransactionLogSnapshotMetadataStore.TRANSACTION_NUMBER, ScalarAttributeType.N));
         List<KeySchemaElement> keySchemaElements = List.of(
-                new KeySchemaElement(DynamoDBTransactionLogSnapshotStore.TABLE_ID_AND_SNAPSHOT_TYPE, KeyType.HASH),
-                new KeySchemaElement(DynamoDBTransactionLogSnapshotStore.TRANSACTION_NUMBER, KeyType.RANGE));
+                new KeySchemaElement(DynamoDBTransactionLogSnapshotMetadataStore.TABLE_ID_AND_SNAPSHOT_TYPE, KeyType.HASH),
+                new KeySchemaElement(DynamoDBTransactionLogSnapshotMetadataStore.TRANSACTION_NUMBER, KeyType.RANGE));
         CreateTableRequest request = new CreateTableRequest()
                 .withTableName(instanceProperties.get(TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME))
                 .withAttributeDefinitions(attributeDefinitions)

@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.statestore.transactionlog;
+package sleeper.statestore.transactionlog;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.Partition;
@@ -24,23 +25,27 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshots;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshots.SetupStateStore;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshots.SnapshotSetup;
+import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.util.List;
 import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
-import static sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshots.setupSnapshotWithFreshState;
 
-public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLogStateStoreTestBase {
+public class TransactionLogStateStoreSnapshotsIT extends TransactionLogStateStoreOneTableTestBase {
 
     private final Schema schema = schemaWithKey("key", new StringType());
     private final PartitionsBuilder partitions = new PartitionsBuilder(schema).singlePartition("root");
+
+    @BeforeEach
+    void setUp() {
+        tableProperties.setSchema(schema);
+    }
 
     @Test
     void shouldLoadFilesFromSnapshotWhenNotInLogOnFirstLoad() throws Exception {
@@ -108,29 +113,6 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
     }
 
     @Test
-    void shouldNotCheckForSnapshotWhenLessThanConfiguredTimeHasPassed() throws Exception {
-        // Given
-        StateStore stateStore = stateStore(builder -> builder
-                .minTransactionsAheadToLoadSnapshot(2)
-                .timeBetweenSnapshotChecks(Duration.ofMinutes(1))
-                .loadFilesSnapshotClock(List.of(
-                        Instant.parse("2024-05-17T15:15:00Z"),
-                        Instant.parse("2024-05-17T15:15:55Z"))
-                        .iterator()::next));
-        FileReference logFile = fileFactory().rootFile("log-file.parquet", 123);
-        FileReference snapshotFile = fileFactory().rootFile("snapshot-file.parquet", 123);
-        stateStore.addFile(logFile);
-
-        // When
-        createSnapshotWithFreshStateAtTransactionNumber(3, snapshotStateStore -> {
-            snapshotStateStore.addFile(snapshotFile);
-        });
-
-        // Then
-        assertThat(stateStore.getFileReferences()).containsExactly(logFile);
-    }
-
-    @Test
     void shouldNotLoadPartitionsSnapshotWhenOnlyOneTransactionAheadAfterLoadingLog() throws Exception {
         // Given
         StateStore stateStore = stateStore(builder -> builder
@@ -171,8 +153,9 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
         });
     }
 
-    private StateStore stateStore(Consumer<TransactionLogStateStore.Builder> config) {
-        TransactionLogStateStore.Builder builder = stateStoreBuilder(schema);
+    protected StateStore stateStore(Consumer<TransactionLogStateStore.Builder> config) {
+        TransactionLogStateStore.Builder builder = stateStoreBuilder(tableProperties)
+                .maxAddTransactionAttempts(1);
         config.accept(builder);
         return stateStore(builder);
     }
@@ -183,9 +166,11 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
 
     protected void createSnapshotWithFreshStateAtTransactionNumber(
             long transactionNumber, SetupStateStore setupState) throws Exception {
-        SnapshotSetup snapshotSetup = setupSnapshotWithFreshState(sleeperTable, schema, setupState);
-        fileSnapshots.setLatestSnapshot(snapshotSetup.createFilesSnapshot(transactionNumber));
-        partitionSnapshots.setLatestSnapshot(snapshotSetup.createPartitionsSnapshot(transactionNumber));
+        SnapshotSetup snapshotSetup = InMemoryTransactionLogSnapshots.setupSnapshotWithFreshState(
+                tableProperties.getStatus(), tableProperties.getSchema(), setupState);
+        DynamoDBTransactionLogSnapshotStore snapshotStore = new DynamoDBTransactionLogSnapshotStore(instanceProperties, tableProperties, dynamoDBClient, configuration);
+        snapshotStore.saveFilesSnapshot(snapshotSetup.createFilesSnapshot(transactionNumber));
+        snapshotStore.savePartitionsSnapshot(snapshotSetup.createPartitionsSnapshot(transactionNumber));
     }
 
 }

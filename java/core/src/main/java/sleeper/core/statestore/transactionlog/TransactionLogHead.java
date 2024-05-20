@@ -234,11 +234,13 @@ class TransactionLogHead<T> {
         }
 
         public Builder<StateStoreFiles> forFiles() {
-            return transactionType(FileReferenceTransaction.class);
+            return transactionType(FileReferenceTransaction.class)
+                    .state(new StateStoreFiles());
         }
 
         public Builder<StateStorePartitions> forPartitions() {
-            return transactionType(PartitionTransaction.class);
+            return transactionType(PartitionTransaction.class)
+                    .state(new StateStorePartitions());
         }
 
         public TransactionLogHead<T> build() {
