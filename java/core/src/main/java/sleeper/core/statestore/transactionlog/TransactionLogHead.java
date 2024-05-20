@@ -106,15 +106,23 @@ class TransactionLogHead<T> {
             loadSnapshotIfNeeded();
             Instant startTime = Instant.now();
             long transactionNumberBeforeLogLoad = lastTransactionNumber;
-            LOGGER.info("Updating {} from log from transaction {}",
-                    state.getClass().getSimpleName(), lastTransactionNumber);
+            LOGGER.debug("Updating {} for table {} from log from transaction {}",
+                    state.getClass().getSimpleName(), sleeperTable, lastTransactionNumber);
             logStore.readTransactionsAfter(lastTransactionNumber)
                     .forEach(this::applyTransaction);
-            LOGGER.info("Updated {}, read {} transactions from log in {}, last transaction number is {}",
-                    state.getClass().getSimpleName(),
-                    lastTransactionNumber - transactionNumberBeforeLogLoad,
-                    LoggedDuration.withShortOutput(startTime, Instant.now()),
-                    lastTransactionNumber);
+            long readTransactions = lastTransactionNumber - transactionNumberBeforeLogLoad;
+            if (readTransactions > 0) {
+                LOGGER.info("Updated {} for table {}, read {} transactions from log in {}, last transaction number is {}",
+                        state.getClass().getSimpleName(), sleeperTable,
+                        lastTransactionNumber - transactionNumberBeforeLogLoad,
+                        LoggedDuration.withShortOutput(startTime, Instant.now()),
+                        lastTransactionNumber);
+            } else {
+                LOGGER.debug("No new transactions found in log of {} for table {} in {}, last transaction number is {}",
+                        state.getClass().getSimpleName(), sleeperTable,
+                        LoggedDuration.withShortOutput(startTime, Instant.now()),
+                        lastTransactionNumber);
+            }
         } catch (RuntimeException e) {
             throw new StateStoreException("Failed updating state from transactions", e);
         }
@@ -123,8 +131,8 @@ class TransactionLogHead<T> {
     private void loadSnapshotIfNeeded() {
         Instant startTime = loadSnapshotClock.get();
         if (nextSnapshotCheckTime != null && startTime.isBefore(nextSnapshotCheckTime)) {
-            LOGGER.info("Not checking for snapshot of {}, next check at {}",
-                    state.getClass().getSimpleName(), nextSnapshotCheckTime);
+            LOGGER.debug("Not checking for snapshot of {} for table {}, next check at {}",
+                    state.getClass().getSimpleName(), sleeperTable, nextSnapshotCheckTime);
             return;
         }
         nextSnapshotCheckTime = startTime.plus(timeBetweenSnapshotChecks);
@@ -133,20 +141,22 @@ class TransactionLogHead<T> {
                 .ifPresentOrElse(snapshot -> {
                     state = snapshot.getState();
                     lastTransactionNumber = snapshot.getTransactionNumber();
-                    LOGGER.info("Loaded snapshot of {} at transaction {} in {}",
-                            state.getClass().getSimpleName(), lastTransactionNumber,
+                    LOGGER.info("Loaded snapshot of {} for table {} at transaction {} in {}",
+                            state.getClass().getSimpleName(), sleeperTable, lastTransactionNumber,
                             LoggedDuration.withShortOutput(startTime, Instant.now()));
                 }, () -> {
-                    LOGGER.info("No snapshot found for {} at or beyond transaction {} in {}",
-                            state.getClass().getSimpleName(), minTransactionNumberToLoadSnapshot,
+                    LOGGER.debug("No snapshot found of {} for table {} at or beyond transaction {} in {}",
+                            state.getClass().getSimpleName(), sleeperTable, minTransactionNumberToLoadSnapshot,
                             LoggedDuration.withShortOutput(startTime, Instant.now()));
                 });
     }
 
     private void applyTransaction(TransactionLogEntry entry) {
         if (!transactionType.isInstance(entry.getTransaction())) {
-            LOGGER.warn("Found unexpected transaction type. Expected {}, found {}",
-                    transactionType.getClass().getName(), entry.getTransaction().getClass().getName());
+            LOGGER.warn("Found unexpected transaction type for table {} with number {}. Expected {}, found {}",
+                    sleeperTable, entry.getTransactionNumber(),
+                    transactionType.getClass().getName(),
+                    entry.getTransaction().getClass().getName());
             return;
         }
         transactionType.cast(entry.getTransaction())
