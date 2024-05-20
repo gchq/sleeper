@@ -48,23 +48,21 @@ public class DynamoDBTransactionLogSnapshotStore {
     public DynamoDBTransactionLogSnapshotStore(
             InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamo, Configuration configuration) {
         this(new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamo),
-                new TransactionLogSnapshotSerDe(tableProperties.getSchema(), configuration),
                 instanceProperties, tableProperties, configuration);
     }
 
     private DynamoDBTransactionLogSnapshotStore(
-            DynamoDBTransactionLogSnapshotMetadataStore metadataStore, TransactionLogSnapshotSerDe snapshotSerDe,
+            DynamoDBTransactionLogSnapshotMetadataStore metadataStore,
             InstanceProperties instanceProperties, TableProperties tableProperties, Configuration configuration) {
-        this(metadataStore::getLatestSnapshots, metadataStore::saveSnapshot, snapshotSerDe, instanceProperties, tableProperties, configuration);
+        this(metadataStore::getLatestSnapshots, metadataStore::saveSnapshot, instanceProperties, tableProperties, configuration);
     }
 
     DynamoDBTransactionLogSnapshotStore(
             LatestSnapshotsMetadataLoader latestMetadataLoader, SnapshotMetadataSaver metadataSaver,
-            TransactionLogSnapshotSerDe snapshotSerDe,
             InstanceProperties instanceProperties, TableProperties tableProperties, Configuration configuration) {
         this.latestMetadataLoader = latestMetadataLoader;
         this.metadataSaver = metadataSaver;
-        this.snapshotSerDe = snapshotSerDe;
+        this.snapshotSerDe = new TransactionLogSnapshotSerDe(tableProperties.getSchema(), configuration);
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
         this.configuration = configuration;
@@ -80,6 +78,18 @@ public class DynamoDBTransactionLogSnapshotStore {
         return latestMetadataLoader.load().getPartitionsSnapshot()
                 .filter(metadata -> metadata.getTransactionNumber() >= transactionNumber)
                 .map(this::loadPartitionsSnapshot);
+    }
+
+    public TransactionLogSnapshot loadFilesSnapshot(LatestSnapshots snapshots) {
+        return snapshots.getFilesSnapshot()
+                .map(this::loadFilesSnapshot)
+                .orElseGet(TransactionLogSnapshot::filesInitialState);
+    }
+
+    public TransactionLogSnapshot loadPartitionsSnapshot(LatestSnapshots snapshots) {
+        return snapshots.getPartitionsSnapshot()
+                .map(this::loadPartitionsSnapshot)
+                .orElseGet(TransactionLogSnapshot::partitionsInitialState);
     }
 
     private TransactionLogSnapshot loadFilesSnapshot(TransactionLogSnapshotMetadata metadata) {
@@ -105,7 +115,7 @@ public class DynamoDBTransactionLogSnapshotStore {
         snapshotSerDe.saveFiles(snapshotMetadata, snapshot.getState());
         try {
             metadataSaver.save(snapshotMetadata);
-        } catch (Exception e) {
+        } catch (DuplicateSnapshotException | RuntimeException e) {
             LOGGER.info("Failed to save snapshot to Dynamo DB. Deleting snapshot file.");
             Path path = new Path(snapshotMetadata.getPath());
             FileSystem fs = path.getFileSystem(configuration);
@@ -120,7 +130,7 @@ public class DynamoDBTransactionLogSnapshotStore {
         snapshotSerDe.savePartitions(snapshotMetadata, snapshot.getState());
         try {
             metadataSaver.save(snapshotMetadata);
-        } catch (Exception e) {
+        } catch (DuplicateSnapshotException | RuntimeException e) {
             LOGGER.info("Failed to save snapshot to Dynamo DB. Deleting snapshot file.");
             Path path = new Path(snapshotMetadata.getPath());
             FileSystem fs = path.getFileSystem(configuration);

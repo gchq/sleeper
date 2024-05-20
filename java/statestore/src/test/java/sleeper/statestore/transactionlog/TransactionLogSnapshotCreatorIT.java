@@ -341,7 +341,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
 
     private void runSnapshotCreator(
             TableProperties table, LatestSnapshotsMetadataLoader latestSnapshotsLoader, SnapshotMetadataSaver snapshotSaver) {
-        new TransactionLogSnapshotCreator(
+        new DynamoDBTransactionLogSnapshotCreator(
                 instanceProperties, table,
                 fileTransactionStoreByTableId.get(table.get(TABLE_ID)),
                 partitionTransactionStoreByTableId.get(table.get(TABLE_ID)),

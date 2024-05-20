@@ -37,15 +37,11 @@ public class TransactionLogStateStore extends DelegatingStateStore {
     private TransactionLogStateStore(Builder builder, TransactionLogHead.Builder<?> headBuilder) {
         this(builder.schema,
                 headBuilder.forFiles()
-                        .state(builder.filesState)
                         .logStore(builder.filesLogStore)
-                        .lastTransactionNumber(builder.filesTransactionNumber)
                         .snapshotLoader(builder.filesSnapshotLoader)
                         .build(),
                 headBuilder.forPartitions()
-                        .state(builder.partitionsState)
                         .logStore(builder.partitionsLogStore)
-                        .lastTransactionNumber(builder.partitionsTransactionNumber)
                         .snapshotLoader(builder.partitionsSnapshotLoader)
                         .build());
     }
@@ -64,10 +60,6 @@ public class TransactionLogStateStore extends DelegatingStateStore {
         private Schema schema;
         private TransactionLogStore filesLogStore;
         private TransactionLogStore partitionsLogStore;
-        private StateStoreFiles filesState = new StateStoreFiles();
-        private StateStorePartitions partitionsState = new StateStorePartitions();
-        private long partitionsTransactionNumber = 0;
-        private long filesTransactionNumber = 0;
         private long minTransactionsAheadToLoadSnapshot = 1;
         private int maxAddTransactionAttempts = MAX_ADD_TRANSACTION_ATTEMPTS;
         private ExponentialBackoffWithJitter retryBackoff = new ExponentialBackoffWithJitter(RETRY_WAIT_RANGE);
@@ -94,26 +86,6 @@ public class TransactionLogStateStore extends DelegatingStateStore {
 
         public Builder partitionsLogStore(TransactionLogStore partitionsLogStore) {
             this.partitionsLogStore = partitionsLogStore;
-            return this;
-        }
-
-        public Builder filesState(StateStoreFiles filesState) {
-            this.filesState = filesState;
-            return this;
-        }
-
-        public Builder partitionsState(StateStorePartitions partitionsState) {
-            this.partitionsState = partitionsState;
-            return this;
-        }
-
-        public Builder partitionsTransactionNumber(long partitionsTransactionNumber) {
-            this.partitionsTransactionNumber = partitionsTransactionNumber;
-            return this;
-        }
-
-        public Builder filesTransactionNumber(long filesTransactionNumber) {
-            this.filesTransactionNumber = filesTransactionNumber;
             return this;
         }
 
