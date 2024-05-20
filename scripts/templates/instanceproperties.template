@@ -1101,7 +1101,7 @@ sleeper.default.table.metadata.time.between.snapshot.checks.secs=60
 # excessive queries by the same process. When adding a new transaction to update the state, this will
 # be ignored and the state will be brought completely up to date. This default can be overridden by a
 # table property.
-sleeper.default.table.metadata.time.between.transaction.checks.ms=1000
+sleeper.default.table.metadata.time.between.transaction.checks.ms=0
 
 # This specifies whether queries and scans against DynamoDB tables used in the state stores are
 # strongly consistent. This default can be overridden by a table property.
