@@ -108,29 +108,6 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
     }
 
     @Test
-    void shouldNotCheckForSnapshotWhenLessThanConfiguredTimeHasPassed() throws Exception {
-        // Given
-        StateStore stateStore = stateStore(builder -> builder
-                .minTransactionsAheadToLoadSnapshot(2)
-                .timeBetweenSnapshotChecks(Duration.ofMinutes(1))
-                .loadFilesSnapshotClock(List.of(
-                        Instant.parse("2024-05-17T15:15:00Z"),
-                        Instant.parse("2024-05-17T15:15:55Z"))
-                        .iterator()::next));
-        FileReference logFile = fileFactory().rootFile("log-file.parquet", 123);
-        FileReference snapshotFile = fileFactory().rootFile("snapshot-file.parquet", 123);
-        stateStore.addFile(logFile);
-
-        // When
-        createSnapshotWithFreshStateAtTransactionNumber(3, snapshotStateStore -> {
-            snapshotStateStore.addFile(snapshotFile);
-        });
-
-        // Then
-        assertThat(stateStore.getFileReferences()).containsExactly(logFile);
-    }
-
-    @Test
     void shouldNotLoadPartitionsSnapshotWhenOnlyOneTransactionAheadAfterLoadingLog() throws Exception {
         // Given
         StateStore stateStore = stateStore(builder -> builder
@@ -164,6 +141,52 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
 
         // Then
         assertThat(stateStore.getAllPartitions()).containsExactlyElementsOf(snapshotPartitions);
+    }
+
+    @Test
+    void shouldNotCheckForFilesSnapshotWhenLessThanConfiguredTimeHasPassed() throws Exception {
+        // Given
+        StateStore stateStore = stateStore(builder -> builder
+                .minTransactionsAheadToLoadSnapshot(2)
+                .timeBetweenSnapshotChecks(Duration.ofMinutes(1))
+                .loadFilesSnapshotClock(List.of(
+                        Instant.parse("2024-05-17T15:15:00Z"),
+                        Instant.parse("2024-05-17T15:15:55Z"))
+                        .iterator()::next));
+        FileReference logFile = fileFactory().rootFile("log-file.parquet", 123);
+        FileReference snapshotFile = fileFactory().rootFile("snapshot-file.parquet", 123);
+        stateStore.addFile(logFile);
+
+        // When
+        createSnapshotWithFreshStateAtTransactionNumber(3, snapshotStateStore -> {
+            snapshotStateStore.addFile(snapshotFile);
+        });
+
+        // Then
+        assertThat(stateStore.getFileReferences()).containsExactly(logFile);
+    }
+
+    @Test
+    void shouldCheckForFilesSnapshotWhenConfiguredTimeHasPassed() throws Exception {
+        // Given
+        StateStore stateStore = stateStore(builder -> builder
+                .minTransactionsAheadToLoadSnapshot(2)
+                .timeBetweenSnapshotChecks(Duration.ofMinutes(1))
+                .loadFilesSnapshotClock(List.of(
+                        Instant.parse("2024-05-17T15:15:00Z"),
+                        Instant.parse("2024-05-17T15:16:05Z"))
+                        .iterator()::next));
+        FileReference logFile = fileFactory().rootFile("log-file.parquet", 123);
+        FileReference snapshotFile = fileFactory().rootFile("snapshot-file.parquet", 123);
+        stateStore.addFile(logFile);
+
+        // When
+        createSnapshotWithFreshStateAtTransactionNumber(3, snapshotStateStore -> {
+            snapshotStateStore.addFile(snapshotFile);
+        });
+
+        // Then
+        assertThat(stateStore.getFileReferences()).containsExactly(snapshotFile);
     }
 
     private StateStore stateStore() {
