@@ -51,6 +51,7 @@ import sleeper.ingest.IngestRecords;
 import sleeper.ingest.IngestResult;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.StateStoreProvider;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotCreator;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.IOException;
@@ -89,7 +90,6 @@ public class DeleteTableIT {
     private final Schema schema = schemaWithKey("key1");
     private final TablePropertiesStore propertiesStore = S3TableProperties.getStore(instanceProperties, s3, dynamoDB);
     private final Configuration conf = getHadoopConfiguration(localStackContainer);
-    private final StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3, dynamoDB, conf);
     private String inputFolderName;
 
     @BeforeEach
@@ -168,6 +168,45 @@ public class DeleteTableIT {
     }
 
     @Test
+    void shouldDeleteTableWhenSnapshotIsPresent() throws Exception {
+        // Given
+        TableProperties table = createTable(uniqueIdAndName("test-table-1", "table-1"));
+        StateStore stateStore = createStateStore(table);
+        stateStore.initialise(new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", 50L)
+                .buildList());
+        IngestResult result = ingestRecords(table, List.of(
+                new Record(Map.of("key1", 25L)),
+                new Record(Map.of("key1", 100L))));
+        FileReference rootFile = result.getFileReferenceList().get(0);
+
+        DynamoDBTransactionLogSnapshotCreator.from(instanceProperties, table, s3, dynamoDB, conf)
+                .createSnapshot();
+
+        List<String> tableFilesInS3 = streamTableObjects(table)
+                .map(S3ObjectSummary::getKey)
+                .collect(Collectors.toList());
+        assertThat(tableFilesInS3.stream()
+                .map(FilenameUtils::getName))
+                .containsExactly(
+                        // Data files
+                        FilenameUtils.getName(rootFile.getFilename()),
+                        FilenameUtils.getName(rootFile.getFilename()).replace("parquet", "sketches"),
+                        // Snapshot files
+                        "1-files.parquet",
+                        "1-partitions.parquet");
+
+        // When
+        deleteTable("table-1");
+
+        // Then
+        assertThatThrownBy(() -> propertiesStore.loadByName("table-1"))
+                .isInstanceOf(TableNotFoundException.class);
+        assertThat(streamTableObjects(table)).isEmpty();
+    }
+
+    @Test
     void shouldFailToDeleteTableThatDoesNotExist() {
         // When / Then
         assertThatThrownBy(() -> deleteTable("table-1"))
@@ -175,7 +214,9 @@ public class DeleteTableIT {
     }
 
     private void deleteTable(String tableName) throws Exception {
-        new DeleteTable(instanceProperties, s3, propertiesStore, stateStoreProvider).delete(tableName);
+        new DeleteTable(instanceProperties, s3, propertiesStore,
+                new StateStoreProvider(instanceProperties, s3, dynamoDB, conf))
+                .delete(tableName);
     }
 
     private TableProperties createTable(TableStatus tableStatus) {
@@ -194,7 +235,7 @@ public class DeleteTableIT {
         IngestFactory factory = IngestFactory.builder()
                 .objectFactory(ObjectFactory.noUserJars())
                 .localDir(inputFolderName)
-                .stateStoreProvider(stateStoreProvider)
+                .stateStoreProvider(new StateStoreProvider(instanceProperties, s3, dynamoDB, conf))
                 .instanceProperties(instanceProperties)
                 .hadoopConfiguration(conf)
                 .build();
