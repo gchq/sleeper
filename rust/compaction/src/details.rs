@@ -137,7 +137,6 @@ pub async fn merge_sorted_files(input_data: &CompactionInput<'_>) -> Result<Comp
         let input_file_paths: Vec<Url> = input_data
             .input_files
             .iter()
-            .flat_map(|x| std::iter::repeat(x).take(2))
             .map(|u| {
                 let mut t = u.clone();
                 if t.scheme() == "s3a" {

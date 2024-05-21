@@ -109,13 +109,7 @@ pub async fn compact(
         .collect::<Vec<_>>();
 
     // Build compaction query
-    frame = frame
-        .aggregate(
-            vec![col("key"), col("value")],
-            vec![sum(col("timestamp")).alias("timestamp")],
-        )?
-        .sort(sort_order)?
-        .select(col_names_expr)?;
+    frame = frame.sort(sort_order)?.select(col_names_expr)?;
 
     // Show explanation of plan
     let explained = frame.clone().explain(false, false)?.collect().await?;
@@ -384,8 +378,6 @@ fn create_session_cfg<T>(input_data: &CompactionInput, input_paths: &[T]) -> Ses
         .parquet
         .column_index_truncate_length = Some(input_data.column_truncate_length);
     sf.options_mut().execution.parquet.max_statistics_size = Some(input_data.stats_truncate_length);
-    sf.options_mut().optimizer.prefer_existing_sort = true;
-    sf.options_mut().optimizer.repartition_aggregations = false;
     sf
 }
 
