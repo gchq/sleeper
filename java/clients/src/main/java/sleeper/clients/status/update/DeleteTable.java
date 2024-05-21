@@ -60,8 +60,8 @@ public class DeleteTable {
     public void delete(String tableName) throws StateStoreException {
         TableProperties tableProperties = tablePropertiesStore.loadByName(tableName);
         stateStoreProvider.getStateStore(tableProperties).clearSleeperTable();
-        tablePropertiesStore.deleteByName(tableName);
         deleteAllObjectsInBucketWithPrefix(s3Client, instanceProperties.get(DATA_BUCKET), tableProperties.get(TABLE_ID));
+        tablePropertiesStore.deleteByName(tableName);
         LOGGER.info("Successfully deleted table {}", tableProperties.getStatus());
     }
 
