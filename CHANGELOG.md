@@ -16,6 +16,7 @@ State store:
 
 - Added a new state store type - `DynamoDBTransactionLogStateStore`.
   - This state store intends to improve on update times by only dealing with changes that have happened since the last state. This is an improvement over the `S3StateStore`, which always loads the entire state of the state store, regardless of how little has changed since the last revision.
+  - This state store has been made the default state store.
 
 Compactions:
 
