@@ -93,12 +93,17 @@ public class ParallelCompactionsIT {
                         "only contains data for one partition")
                 .allMatch(file -> file.getJobId() == null,
                         "not assigned to any job")
-                .allMatch(file -> file.getNumberOfRecords() > 800 && file.getNumberOfRecords() < 1600,
-                        "contains an even distribution of records for the partition");
+                .allSatisfy(file -> assertThat(file.getNumberOfRecords())
+                        .describedAs("contains an even distribution of records for the partition")
+                        .isBetween(800L, 1600L));
         // And all jobs have finished and only ran once
         assertThat(sleeper.reporting().compactionJobs().finishedStatistics())
                 .matches(statistics -> statistics.isAllFinishedOneRunEach(8192),
                         "all jobs finished and ran once");
+        assertThat(sleeper.reporting().finishedCompactionTasks())
+                .allSatisfy(task -> assertThat(task.getJobRuns())
+                        .describedAs("ran an even distribution of the jobs")
+                        .isBetween(20, 40));
     }
 
 }

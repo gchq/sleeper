@@ -13,19 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package sleeper.systemtest.dsl.reporting;
 
-import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.task.CompactionTaskStatus;
 
 import java.util.List;
 
-public interface CompactionReportsDriver {
+public class SystemTestCompactionTasksReport {
 
-    SystemTestReport tasksAndJobsReport();
+    private final List<CompactionTaskStatus> tasks;
 
-    List<CompactionJobStatus> jobs(ReportingContext reportingContext);
+    public SystemTestCompactionTasksReport(List<CompactionTaskStatus> tasks) {
+        this.tasks = tasks;
+    }
 
-    List<CompactionTaskStatus> tasks(ReportingContext reportingContext);
 }
