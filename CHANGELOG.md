@@ -33,6 +33,8 @@ System tests:
 
 - Added system tests for compactions running on EC2.
 - Added system tests for queries running against a WebSocket.
+- Added ability to run multiple ingests in a single system test task.
+
 
 Bugfixes:
 
