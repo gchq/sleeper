@@ -111,7 +111,7 @@ public class WaitForJobs {
             PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofSeconds(30))
                     .pollUntil("jobs are committed", () -> {
                         WaitForJobsStatus status = store.getStatus(jobIds);
-                        LOGGER.info("Status of {} jobs: {}", typeDescription, status);
+                        LOGGER.info("Status of {} jobs waiting for async commits: {}", typeDescription, status);
                         return status.areAllJobsFinished();
                     });
         } catch (InterruptedException e) {
