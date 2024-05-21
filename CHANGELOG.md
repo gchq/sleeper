@@ -17,6 +17,7 @@ State store:
 - Added a new state store type - `DynamoDBTransactionLogStateStore`.
   - This state store intends to improve on update times by only dealing with changes that have happened since the last state. This is an improvement over the `S3StateStore`, which always loads the entire state of the state store, regardless of how little has changed since the last revision.
   - This state store has been made the default state store.
+- Data files in S3 are now stored in `data/partition_<id>/` rather than just `partition_<id>`.
 
 Compactions:
 
@@ -28,6 +29,11 @@ Deployment
 - Added a way to keep query lambdas warm using the optional stack `KeepLambdaWarmStack`.
 - Added dashboard error metrics for all dead letter queues.
 - Added ability to deploy Sleeper instances without using the `AdministratorAccess` policy.
+
+Documentation
+- Added a step in GitHub Actions to fail if Javadoc is missing.
+  - Some modules have been suppressed as there is too much to update at once.
+- Added missing javadoc in the core module.
 
 System tests:
 
@@ -42,6 +48,7 @@ Bugfixes:
 - Fixed an issue where the WebSocket query script failed to run 2 consecutive queries.
 - Fixed an issue where CDK would fail to update if there were too many tables in an instance.
 - Fixed an issue where the file status report would fail when a file belongs in a partition that no longer exists.
+- Fixed an issue where the system tests did not set the Hadoop configuration correctly when loading records in queries.
 
 ## Version 0.22.1
 
