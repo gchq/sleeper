@@ -81,6 +81,12 @@ public class WaitForJobs {
     }
 
     public void waitForJobs(Collection<String> jobIds, PollWithRetries pollUntilJobsFinished) {
+        waitForJobs(jobIds, pollUntilJobsFinished,
+                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofSeconds(30)));
+    }
+
+    public void waitForJobs(
+            Collection<String> jobIds, PollWithRetries pollUntilJobsFinished, PollWithRetries pollUntilJobsCommit) {
         InstanceProperties properties = instance.getInstanceProperties();
         JobStatusStore store = getJobsStore.apply(properties);
         TaskStatusStore tasksStore = getTasksStore.apply(properties);
@@ -96,7 +102,7 @@ public class WaitForJobs {
                     return false;
                 } else {
                     LOGGER.info("Found no running tasks while waiting for {} jobs, will wait for async commits", typeDescription);
-                    waitForJobsToCommit(jobIds, store);
+                    waitForJobsToCommit(jobIds, store, pollUntilJobsCommit);
                     return true;
                 }
             });
@@ -106,14 +112,14 @@ public class WaitForJobs {
         }
     }
 
-    private void waitForJobsToCommit(Collection<String> jobIds, JobStatusStore store) {
+    private void waitForJobsToCommit(
+            Collection<String> jobIds, JobStatusStore store, PollWithRetries pollUntilJobsCommit) {
         try {
-            PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofSeconds(30))
-                    .pollUntil("jobs are committed", () -> {
-                        WaitForJobsStatus status = store.getStatus(jobIds);
-                        LOGGER.info("Status of {} jobs waiting for async commits: {}", typeDescription, status);
-                        return status.areAllJobsFinished();
-                    });
+            pollUntilJobsCommit.pollUntil("jobs are committed", () -> {
+                WaitForJobsStatus status = store.getStatus(jobIds);
+                LOGGER.info("Status of {} jobs waiting for async commits: {}", typeDescription, status);
+                return status.areAllJobsFinished();
+            });
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);

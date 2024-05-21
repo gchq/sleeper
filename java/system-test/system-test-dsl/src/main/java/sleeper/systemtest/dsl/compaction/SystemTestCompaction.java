@@ -79,6 +79,12 @@ public class SystemTestCompaction {
         return this;
     }
 
+    public SystemTestCompaction waitForJobsToFinishThenCommit(
+            PollWithRetries pollUntilFinished, PollWithRetries pollUntilCommitted) {
+        waitForJobs.waitForJobs(lastJobIds, pollUntilFinished, pollUntilCommitted);
+        return this;
+    }
+
     public void scaleToZero() {
         driver.scaleToZero();
     }

@@ -80,7 +80,9 @@ public class ParallelCompactionsIT {
                         PollWithRetries.intervalAndPollingTimeout(
                                 Duration.ofSeconds(10), Duration.ofMinutes(10)))
                 .invokeTasks(300)
-                .waitForJobs(
+                .waitForJobsToFinishThenCommit(
+                        PollWithRetries.intervalAndPollingTimeout(
+                                Duration.ofSeconds(10), Duration.ofMinutes(5)),
                         PollWithRetries.intervalAndPollingTimeout(
                                 Duration.ofSeconds(10), Duration.ofMinutes(5)));
 
