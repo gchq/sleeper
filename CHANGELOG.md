@@ -20,7 +20,7 @@ State store:
 
 Compactions:
 
-- Added a new lambda to batch-apply finished compaction jobs.
+- Added a new lambda to commit the results of compaction jobs asynchronously.
 - Added a retry to compaction jobs committing in the case where the input files have not yet been assigned to the job.
 
 Deployment
