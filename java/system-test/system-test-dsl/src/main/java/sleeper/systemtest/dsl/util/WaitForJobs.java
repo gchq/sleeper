@@ -92,12 +92,13 @@ public class WaitForJobs {
                 if (status.areAllJobsFinished()) {
                     return true;
                 }
-                if (!tasksStore.hasRunningTasks()) {
+                if (tasksStore.hasRunningTasks()) {
+                    return false;
+                } else {
                     LOGGER.info("Found no running tasks while waiting for {} jobs, will wait for async commits", typeDescription);
                     waitForJobsToCommit(jobIds, store);
                     return true;
                 }
-                return false;
             });
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
