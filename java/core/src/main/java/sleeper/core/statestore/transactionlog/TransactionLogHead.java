@@ -23,7 +23,10 @@ import sleeper.core.table.TableStatus;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.LoggedDuration;
 
+import java.time.Duration;
 import java.time.Instant;
+import java.util.Optional;
+import java.util.function.Supplier;
 
 class TransactionLogHead<T> {
     public static final Logger LOGGER = LoggerFactory.getLogger(TransactionLogHead.class);
@@ -34,9 +37,14 @@ class TransactionLogHead<T> {
     private final ExponentialBackoffWithJitter retryBackoff;
     private final Class<? extends StateStoreTransaction<T>> transactionType;
     private final TransactionLogSnapshotLoader snapshotLoader;
+    private final Duration timeBetweenSnapshotChecks;
+    private final Duration timeBetweenTransactionChecks;
+    private final Supplier<Instant> stateUpdateClock;
     private final long minTransactionsAheadToLoadSnapshot;
     private T state;
     private long lastTransactionNumber;
+    private Instant nextSnapshotCheckTime;
+    private Instant nextTransactionCheckTime;
 
     private TransactionLogHead(Builder<T> builder) {
         this.sleeperTable = builder.sleeperTable;
@@ -45,6 +53,9 @@ class TransactionLogHead<T> {
         this.retryBackoff = builder.retryBackoff;
         this.transactionType = builder.transactionType;
         this.snapshotLoader = builder.snapshotLoader;
+        this.timeBetweenSnapshotChecks = builder.timeBetweenSnapshotChecks;
+        this.timeBetweenTransactionChecks = builder.timeBetweenTransactionChecks;
+        this.stateUpdateClock = builder.stateUpdateClock;
         this.minTransactionsAheadToLoadSnapshot = builder.minTransactionsAheadToLoadSnapshot;
         this.state = builder.state;
         this.lastTransactionNumber = builder.lastTransactionNumber;
@@ -66,7 +77,7 @@ class TransactionLogHead<T> {
                 Thread.currentThread().interrupt();
                 throw new StateStoreException("Interrupted while waiting to retry", e);
             }
-            update();
+            forceUpdate();
             transaction.validate(state);
             long transactionNumber = lastTransactionNumber + 1;
             try {
@@ -96,39 +107,83 @@ class TransactionLogHead<T> {
 
     void update() throws StateStoreException {
         try {
-            Instant startTime = Instant.now();
-            long transactionNumberBefore = lastTransactionNumber;
-            long minTransactionNumberToLoadSnapshot = transactionNumberBefore + minTransactionsAheadToLoadSnapshot;
-            snapshotLoader.loadLatestSnapshotIfAtMinimumTransaction(minTransactionNumberToLoadSnapshot)
-                    .ifPresentOrElse(snapshot -> {
-                        state = snapshot.getState();
-                        lastTransactionNumber = snapshot.getTransactionNumber();
-                        LOGGER.info("Loaded snapshot at transaction {}", lastTransactionNumber);
-                    }, () -> {
-                        LOGGER.info("No snapshot found at or beyond transaction {}, updating from log from transaction {}",
-                                minTransactionNumberToLoadSnapshot, transactionNumberBefore);
-                    });
-            Instant loadedSnapshotTime = Instant.now();
-            long transactionNumberBeforeLogLoad = lastTransactionNumber;
-            logStore.readTransactionsAfter(lastTransactionNumber)
-                    .forEach(this::applyTransaction);
-            Instant endTime = Instant.now();
-            LOGGER.info("Updated {}, took {}, loaded snapshot in {}, read {} transactions from log in {}, last transaction number is {}",
-                    state.getClass().getSimpleName(),
-                    LoggedDuration.withShortOutput(startTime, endTime),
-                    LoggedDuration.withShortOutput(startTime, loadedSnapshotTime),
-                    lastTransactionNumber - transactionNumberBeforeLogLoad,
-                    LoggedDuration.withShortOutput(loadedSnapshotTime, endTime),
-                    lastTransactionNumber);
+            Instant startTime = stateUpdateClock.get();
+            if (nextTransactionCheckTime != null && startTime.isBefore(nextTransactionCheckTime)) {
+                LOGGER.debug("Not checking for {} transactions for table {}, next check at {}",
+                        state.getClass().getSimpleName(), sleeperTable, nextTransactionCheckTime);
+                return;
+            }
+            Instant afterSnapshotTime = loadSnapshotIfNeeded(startTime);
+            updateFromLog(afterSnapshotTime);
         } catch (RuntimeException e) {
-            throw new StateStoreException("Failed reading transactions", e);
+            throw new StateStoreException("Failed updating state from transactions", e);
+        }
+    }
+
+    private void forceUpdate() throws StateStoreException {
+        try {
+            Instant startTime = stateUpdateClock.get();
+            Instant afterSnapshotTime = loadSnapshotIfNeeded(startTime);
+            updateFromLog(afterSnapshotTime);
+        } catch (RuntimeException e) {
+            throw new StateStoreException("Failed force updating state from transactions", e);
+        }
+    }
+
+    private Instant loadSnapshotIfNeeded(Instant startTime) {
+        if (nextSnapshotCheckTime != null && startTime.isBefore(nextSnapshotCheckTime)) {
+            LOGGER.debug("Not checking for snapshot of {} for table {}, next check at {}",
+                    state.getClass().getSimpleName(), sleeperTable, nextSnapshotCheckTime);
+            return startTime;
+        }
+        long minTransactionNumberToLoadSnapshot = lastTransactionNumber + minTransactionsAheadToLoadSnapshot;
+        Optional<TransactionLogSnapshot> snapshotOpt = snapshotLoader
+                .loadLatestSnapshotIfAtMinimumTransaction(minTransactionNumberToLoadSnapshot);
+        Instant finishTime = stateUpdateClock.get();
+        nextSnapshotCheckTime = finishTime.plus(timeBetweenSnapshotChecks);
+        snapshotOpt.ifPresentOrElse(snapshot -> {
+            state = snapshot.getState();
+            lastTransactionNumber = snapshot.getTransactionNumber();
+            LOGGER.info("Loaded snapshot of {} for table {} at transaction {} in {}",
+                    state.getClass().getSimpleName(), sleeperTable, lastTransactionNumber,
+                    LoggedDuration.withShortOutput(startTime, finishTime));
+        }, () -> {
+            LOGGER.debug("No snapshot found of {} for table {} at or beyond transaction {} in {}",
+                    state.getClass().getSimpleName(), sleeperTable, minTransactionNumberToLoadSnapshot,
+                    LoggedDuration.withShortOutput(startTime, finishTime));
+        });
+        return finishTime;
+    }
+
+    private void updateFromLog(Instant startTime) {
+        long transactionNumberBeforeLogLoad = lastTransactionNumber;
+        LOGGER.debug("Updating {} for table {} from log from transaction {}",
+                state.getClass().getSimpleName(), sleeperTable, lastTransactionNumber);
+        logStore.readTransactionsAfter(lastTransactionNumber)
+                .forEach(this::applyTransaction);
+        long readTransactions = lastTransactionNumber - transactionNumberBeforeLogLoad;
+        Instant finishTime = stateUpdateClock.get();
+        nextTransactionCheckTime = finishTime.plus(timeBetweenTransactionChecks);
+        if (readTransactions > 0) {
+            LOGGER.info("Updated {} for table {}, read {} transactions from log in {}, last transaction number is {}",
+                    state.getClass().getSimpleName(), sleeperTable,
+                    readTransactions,
+                    LoggedDuration.withShortOutput(startTime, finishTime),
+                    lastTransactionNumber);
+        } else {
+            LOGGER.debug("No new transactions found in log of {} for table {} in {}, last transaction number is {}",
+                    state.getClass().getSimpleName(), sleeperTable,
+                    LoggedDuration.withShortOutput(startTime, finishTime),
+                    lastTransactionNumber);
         }
     }
 
     private void applyTransaction(TransactionLogEntry entry) {
         if (!transactionType.isInstance(entry.getTransaction())) {
-            LOGGER.warn("Found unexpected transaction type. Expected {}, found {}",
-                    transactionType.getClass().getName(), entry.getTransaction().getClass().getName());
+            LOGGER.warn("Found unexpected transaction type for table {} with number {}. Expected {}, found {}",
+                    sleeperTable, entry.getTransactionNumber(),
+                    transactionType.getClass().getName(),
+                    entry.getTransaction().getClass().getName());
             return;
         }
         transactionType.cast(entry.getTransaction())
@@ -151,6 +206,9 @@ class TransactionLogHead<T> {
         private ExponentialBackoffWithJitter retryBackoff;
         private Class<? extends StateStoreTransaction<T>> transactionType;
         private TransactionLogSnapshotLoader snapshotLoader = TransactionLogSnapshotLoader.neverLoad();
+        private Duration timeBetweenSnapshotChecks = Duration.ZERO;
+        private Duration timeBetweenTransactionChecks = Duration.ZERO;
+        private Supplier<Instant> stateUpdateClock = Instant::now;
         private T state;
         private long lastTransactionNumber = 0;
         private long minTransactionsAheadToLoadSnapshot = 1;
@@ -185,6 +243,21 @@ class TransactionLogHead<T> {
 
         public Builder<T> snapshotLoader(TransactionLogSnapshotLoader snapshotLoader) {
             this.snapshotLoader = snapshotLoader;
+            return this;
+        }
+
+        public Builder<T> timeBetweenSnapshotChecks(Duration timeBetweenSnapshotChecks) {
+            this.timeBetweenSnapshotChecks = timeBetweenSnapshotChecks;
+            return this;
+        }
+
+        public Builder<T> timeBetweenTransactionChecks(Duration timeBetweenTransactionChecks) {
+            this.timeBetweenTransactionChecks = timeBetweenTransactionChecks;
+            return this;
+        }
+
+        public Builder<T> stateUpdateClock(Supplier<Instant> stateUpdateClock) {
+            this.stateUpdateClock = stateUpdateClock;
             return this;
         }
 
