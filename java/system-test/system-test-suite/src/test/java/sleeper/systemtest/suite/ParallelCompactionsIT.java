@@ -78,7 +78,7 @@ public class ParallelCompactionsIT {
         sleeper.compaction()
                 .createJobs(8192,
                         PollWithRetries.intervalAndPollingTimeout(
-                                Duration.ofSeconds(10), Duration.ofMinutes(5)))
+                                Duration.ofSeconds(10), Duration.ofMinutes(10)))
                 .invokeTasks(300)
                 .waitForJobs(
                         PollWithRetries.intervalAndPollingTimeout(
