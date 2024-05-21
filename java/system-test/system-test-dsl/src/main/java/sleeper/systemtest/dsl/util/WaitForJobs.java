@@ -93,10 +93,26 @@ public class WaitForJobs {
                     return true;
                 }
                 if (!tasksStore.hasRunningTasks()) {
-                    throw new IllegalStateException("Found no tasks running while waiting for " + typeDescription + " jobs");
+                    LOGGER.info("Found no running tasks while waiting for {} jobs, will wait for async commits", typeDescription);
+                    waitForJobsToCommit(jobIds, store);
+                    return true;
                 }
                 return false;
             });
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void waitForJobsToCommit(Collection<String> jobIds, JobStatusStore store) {
+        try {
+            PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofSeconds(30))
+                    .pollUntil("jobs are committed", () -> {
+                        WaitForJobsStatus status = store.getStatus(jobIds);
+                        LOGGER.info("Status of {} jobs: {}", typeDescription, status);
+                        return status.areAllJobsFinished();
+                    });
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
