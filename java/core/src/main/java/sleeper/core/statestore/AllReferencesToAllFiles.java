@@ -56,6 +56,11 @@ public class AllReferencesToAllFiles {
         return filesWithNoReferencesByFilename.values();
     }
 
+    /**
+     * Builds a list of all file references in the snapshot.
+     *
+     * @return the list
+     */
     public List<FileReference> listFileReferences() {
         return getFilesWithReferences().stream()
                 .flatMap(file -> file.getInternalReferences().stream())
