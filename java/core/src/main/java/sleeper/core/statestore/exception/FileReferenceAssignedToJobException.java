@@ -19,6 +19,10 @@ package sleeper.core.statestore.exception;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStoreException;
 
+/**
+ * An exception for when a file reference could not be assigned to a job because it is already assigned. It may be
+ * assigned to the same job or a different job.
+ */
 public class FileReferenceAssignedToJobException extends StateStoreException {
     public FileReferenceAssignedToJobException(FileReference fileReference) {
         this(fileReference, null);

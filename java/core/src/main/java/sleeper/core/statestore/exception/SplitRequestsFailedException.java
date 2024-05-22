@@ -21,6 +21,10 @@ import sleeper.core.statestore.StateStoreException;
 
 import java.util.List;
 
+/**
+ * An exception for when some file references could not be split. Some splits may have been successful, and this tracks
+ * which succeeded and which failed.
+ */
 public class SplitRequestsFailedException extends StateStoreException {
     private final transient List<SplitFileReferenceRequest> successfulRequests;
     private final transient List<SplitFileReferenceRequest> failedRequests;
