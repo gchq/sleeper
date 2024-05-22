@@ -15,5 +15,8 @@
  */
 package sleeper.core.statestore.transactionlog;
 
+/**
+ * A transaction that updates the file references in a state store.
+ */
 public interface FileReferenceTransaction extends StateStoreTransaction<StateStoreFiles> {
 }
