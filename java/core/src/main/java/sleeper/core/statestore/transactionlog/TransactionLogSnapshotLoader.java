@@ -17,11 +17,27 @@ package sleeper.core.statestore.transactionlog;
 
 import java.util.Optional;
 
+/**
+ * Loads the latest snapshot of state derived from a transaction log.
+ */
 @FunctionalInterface
 public interface TransactionLogSnapshotLoader {
+
+    /**
+     * Loads the latest snapshot if it's beyond a certain point in the log. This is used to avoid loading a snapshot
+     * if it would be quicker to just seek through the log.
+     *
+     * @param  transactionNumber the minimum transaction number to load a snapshot
+     * @return                   the latest snapshot if it's after the given point in the log
+     */
+    Optional<TransactionLogSnapshot> loadLatestSnapshotIfAtMinimumTransaction(long transactionNumber);
+
+    /**
+     * Creates a loader that will always return no snapshot.
+     *
+     * @return the loader
+     */
     static TransactionLogSnapshotLoader neverLoad() {
         return transactionNumber -> Optional.empty();
     }
-
-    Optional<TransactionLogSnapshot> loadLatestSnapshotIfAtMinimumTransaction(long transactionNumber);
 }

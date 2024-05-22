@@ -28,6 +28,15 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+/**
+ * Tracks some state derived from a transaction log, at a position in the log. This can perform an update to the state
+ * by adding a transaction to the log, or it can bring the state up to date with transactions in the log.
+ * <p>
+ * Interacts with the log with {@link TransactionLogStore}. Can skip reading transactions when a snapshot is available
+ * of the state at a specific point in the log with {@link TransactionLogSnapshotLoader}.
+ *
+ * @param <T> the type of the state derived from the log
+ */
 class TransactionLogHead<T> {
     public static final Logger LOGGER = LoggerFactory.getLogger(TransactionLogHead.class);
 
@@ -65,6 +74,12 @@ class TransactionLogHead<T> {
         return new Builder<>();
     }
 
+    /**
+     * Adds a transaction to the log. Brings the state as up to date as possible before writing to the log. Handles
+     * conflicts with other processes writing to the log at the same time.
+     *
+     * @throws StateStoreException thrown if there's any failure reading or adding a transaction
+     */
     void addTransaction(Instant updateTime, StateStoreTransaction<T> transaction) throws StateStoreException {
         Instant startTime = Instant.now();
         LOGGER.info("Adding transaction of type {} to table {}",
@@ -105,6 +120,12 @@ class TransactionLogHead<T> {
         }
     }
 
+    /**
+     * Brings the state up to date with the log by seeking through transactions starting at the current position in the
+     * log. Applies each transaction to the state in order.
+     *
+     * @throws StateStoreException thrown if there's any failure reading transactions or applying them to the state
+     */
     void update() throws StateStoreException {
         try {
             Instant startTime = stateUpdateClock.get();
@@ -199,6 +220,11 @@ class TransactionLogHead<T> {
         return lastTransactionNumber;
     }
 
+    /**
+     * Builder to initialise the head to read from a transaction log and snapshots.
+     *
+     * @param <T> the type of the state derived from the log
+     */
     static class Builder<T> {
         private TableStatus sleeperTable;
         private TransactionLogStore logStore;

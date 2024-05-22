@@ -43,6 +43,9 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 
+/**
+ * A file reference store backed by a log of transactions. Part of {@link TransactionLogStateStore}.
+ */
 class TransactionLogFileReferenceStore implements FileReferenceStore {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(TransactionLogFileReferenceStore.class);

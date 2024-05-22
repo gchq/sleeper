@@ -15,6 +15,11 @@
  */
 package sleeper.core.statestore.transactionlog;
 
+/**
+ * A snapshot of the state at a given point in a transaction log. Since the state is always derived from all the
+ * transactions in the log up to a given point, if we have a snapshot at a given transaction we know we only need to
+ * look at transactions after that point.
+ */
 public class TransactionLogSnapshot {
 
     private final Object state;
@@ -28,10 +33,20 @@ public class TransactionLogSnapshot {
         this((Object) state, transactionNumber);
     }
 
+    /**
+     * Creates a snapshot of the initial state of file references when no transactions have occurred.
+     *
+     * @return the snapshot
+     */
     public static TransactionLogSnapshot filesInitialState() {
         return new TransactionLogSnapshot(new StateStoreFiles(), 0);
     }
 
+    /**
+     * Creates a snapshot of the initial state of partitions when no transactions have occurred.
+     *
+     * @return the snapshot
+     */
     public static TransactionLogSnapshot partitionsInitialState() {
         return new TransactionLogSnapshot(new StateStorePartitions(), 0);
     }
@@ -41,6 +56,12 @@ public class TransactionLogSnapshot {
         this.transactionNumber = transactionNumber;
     }
 
+    /**
+     * Retrieves the state. This relies on keeping track of the correct type external to this class.
+     *
+     * @param  <T> the type of the state
+     * @return     the state
+     */
     public <T> T getState() {
         return (T) state;
     }
