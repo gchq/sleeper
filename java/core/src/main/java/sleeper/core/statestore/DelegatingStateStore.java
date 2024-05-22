@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.partition.Partition;
+import sleeper.core.statestore.exception.SplitRequestsFailedException;
 
 import java.time.Instant;
 import java.util.List;
