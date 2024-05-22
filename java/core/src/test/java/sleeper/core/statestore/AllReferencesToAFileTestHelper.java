@@ -19,7 +19,6 @@ package sleeper.core.statestore;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 public class AllReferencesToAFileTestHelper {
@@ -34,7 +33,7 @@ public class AllReferencesToAFileTestHelper {
     public static AllReferencesToAFile fileWithNoReferences(String filename, Instant updateTime) {
         return AllReferencesToAFile.builder()
                 .filename(filename)
-                .internalReferenceByPartitionId(Map.of())
+                .internalReferences(List.of())
                 .totalReferenceCount(0)
                 .lastStateStoreUpdateTime(updateTime)
                 .build();
@@ -46,7 +45,7 @@ public class AllReferencesToAFileTestHelper {
 
     public static AllReferencesToAFile fileWithReferences(Collection<FileReference> references) {
         List<AllReferencesToAFile> files = AllReferencesToAFile
-                .newFilesWithReferences(references.stream(), null)
+                .newFilesWithReferences(references.stream())
                 .collect(Collectors.toUnmodifiableList());
         if (files.size() != 1) {
             throw new IllegalArgumentException("Expected one file, found: " + files);

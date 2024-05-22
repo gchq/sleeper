@@ -45,9 +45,11 @@ public class FilesReportTestHelper {
     }
 
     public static AllReferencesToAllFiles activeFilesReport(Instant updateTime, List<FileReference> references) {
-        return new AllReferencesToAllFiles(AllReferencesToAFile
-                .newFilesWithReferences(references.stream(), updateTime)
-                .collect(Collectors.toUnmodifiableList()), false);
+        return new AllReferencesToAllFiles(
+                AllReferencesToAFile.newFilesWithReferences(references.stream())
+                        .map(file -> file.withCreatedUpdateTime(updateTime))
+                        .collect(Collectors.toUnmodifiableList()),
+                false);
     }
 
     public static AllReferencesToAllFiles activeAndReadyForGCFiles(List<FileReference> activeFiles, List<String> readyForGCFiles) {
@@ -74,7 +76,7 @@ public class FilesReportTestHelper {
     private static List<AllReferencesToAFile> activeAndReadyForGCFiles(
             Instant updateTime, List<FileReference> activeFiles, List<String> readyForGCFiles) {
         return Stream.concat(
-                AllReferencesToAFile.newFilesWithReferences(activeFiles.stream(), updateTime),
+                AllReferencesToAFile.newFilesWithReferences(activeFiles.stream()).map(file -> file.withCreatedUpdateTime(updateTime)),
                 readyForGCFiles.stream().map(filename -> AllReferencesToAFileTestHelper.fileWithNoReferences(filename, updateTime))).collect(Collectors.toUnmodifiableList());
     }
 }
