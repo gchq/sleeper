@@ -57,21 +57,16 @@ public class DeleteTable {
         this.stateStoreProvider = stateStoreProvider;
     }
 
-    /**
-     * Deletes a table from the Sleeper instance.
-     *
-     * First we clear the state store for the table. This needs to happen first so that if a transaction log
-     * snapshot exists, it can be loaded when the transaction log state store updates.
-     * We then delete all files in the data bucket for the table.
-     * Finally, the table is removed from the table index, and the table properties file is removed. This happens
-     * last to handle the case where the deletion of files in the data bucket fails, so you can still see that a
-     * table existed.
-     *
-     * @param  tableName           the name of the table to delete
-     * @throws StateStoreException -
-     */
     public void delete(String tableName) throws StateStoreException {
         TableProperties tableProperties = tablePropertiesStore.loadByName(tableName);
+        /*
+         * - First we clear the state store for the table. This needs to happen first so that if a transaction log
+         * snapshot exists, it can be loaded when the transaction log state store updates.
+         * - We then delete all files in the data bucket for the table.
+         * - Finally, the table is removed from the table index, and the table properties file is removed. This happens
+         * last to handle the case where the deletion of files in the data bucket fails, so you can still see that a
+         * table existed.
+         */
         stateStoreProvider.getStateStore(tableProperties).clearSleeperTable();
         deleteAllObjectsInBucketWithPrefix(s3Client, instanceProperties.get(DATA_BUCKET), tableProperties.get(TABLE_ID));
         tablePropertiesStore.deleteByName(tableName);
