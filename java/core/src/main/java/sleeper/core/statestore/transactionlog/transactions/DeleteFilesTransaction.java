@@ -26,6 +26,9 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * A transaction to delete files that have no remaining references. This is used to perform garbage collection.
+ */
 public class DeleteFilesTransaction implements FileReferenceTransaction {
 
     private final List<String> filenames;

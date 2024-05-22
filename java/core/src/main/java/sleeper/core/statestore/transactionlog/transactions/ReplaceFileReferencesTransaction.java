@@ -29,6 +29,10 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * A transaction to remove a number of file references that were assigned to a job, and replace them with a new file.
+ * This can be used to apply the results of a compaction.
+ */
 public class ReplaceFileReferencesTransaction implements FileReferenceTransaction {
 
     private final String jobId;

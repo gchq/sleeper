@@ -27,6 +27,9 @@ import java.util.Objects;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 
+/**
+ * A transaction to add files to the state store.
+ */
 public class AddFilesTransaction implements FileReferenceTransaction {
 
     private final List<AllReferencesToAFile> files;
