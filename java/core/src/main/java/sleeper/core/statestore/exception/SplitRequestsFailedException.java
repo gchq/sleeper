@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-package sleeper.core.statestore;
+package sleeper.core.statestore.exception;
+
+import sleeper.core.statestore.SplitFileReferenceRequest;
+import sleeper.core.statestore.StateStoreException;
 
 import java.util.List;
 
