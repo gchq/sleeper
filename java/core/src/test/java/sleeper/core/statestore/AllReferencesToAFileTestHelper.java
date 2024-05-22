@@ -21,15 +21,32 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * A test helper to create file records for a state store.
+ */
 public class AllReferencesToAFileTestHelper {
 
     private AllReferencesToAFileTestHelper() {
     }
 
+    /**
+     * Creates a file record with no references. This will be as it is before being added to the state store, with no
+     * update time.
+     *
+     * @param  filename the filename
+     * @return          the file
+     */
     public static AllReferencesToAFile fileWithNoReferences(String filename) {
         return fileWithNoReferences(filename, null);
     }
 
+    /**
+     * Creates a file record with no references, last updated at a certain time.
+     *
+     * @param  filename   the filename
+     * @param  updateTime the last time the file was updated in the state store
+     * @return            the file
+     */
     public static AllReferencesToAFile fileWithNoReferences(String filename, Instant updateTime) {
         return AllReferencesToAFile.builder()
                 .filename(filename)
@@ -39,10 +56,24 @@ public class AllReferencesToAFileTestHelper {
                 .build();
     }
 
+    /**
+     * Creates a file record with given references. This will be as it is before being added to the state store, with no
+     * update time.
+     *
+     * @param  references the references
+     * @return            the file
+     */
     public static AllReferencesToAFile fileWithReferences(FileReference... references) {
         return fileWithReferences(List.of(references));
     }
 
+    /**
+     * Creates a file record with given references. This will be as it is before being added to the state store, with no
+     * update time.
+     *
+     * @param  references the references
+     * @return            the file
+     */
     public static AllReferencesToAFile fileWithReferences(Collection<FileReference> references) {
         List<AllReferencesToAFile> files = AllReferencesToAFile
                 .newFilesWithReferences(references.stream())
