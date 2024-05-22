@@ -30,11 +30,12 @@ public class SplitFileReference {
     }
 
     /**
-     * Used to create a new reference to a file in one of the two child partitions that the original reference is
-     * associated with. This will be paired with another call to this method for the other child partition, to split
-     * the original file reference into two. The original reference should then be deleted.
+     * Creates a new reference to a file in one of the two child partitions that the original reference is associated
+     * with. This will be paired with another call to this method for the other child partition, to split the original
+     * file reference into two. The original reference should then be deleted.
      * <p>
-     * This will compute an estimate of the number of records in the file that are in this partition.
+     * This will estimate the number of records in the child partition by assuming an even split between two child
+     * partitions.
      *
      * @param  file             the file reference being split
      * @param  childPartitionId the ID of the child partition to create metadata for
@@ -45,9 +46,9 @@ public class SplitFileReference {
     }
 
     /**
-     * Used to create a new reference to a file in one of the two child partitions that the original reference is
-     * associated with. This will be paired with another call to this method for the other child partition, to split
-     * the original file reference into two. The original reference should then be deleted.
+     * Creates a new reference to a file in one of the two child partitions that the original reference is associated
+     * with. This will be paired with another call to this method for the other child partition, to split the original
+     * file reference into two. The original reference should then be deleted.
      * <p>
      * This should be used when we have estimated the number of records in the child partiton.
      *
