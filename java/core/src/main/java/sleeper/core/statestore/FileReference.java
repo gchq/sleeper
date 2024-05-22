@@ -50,7 +50,14 @@ public class FileReference {
         return new Builder();
     }
 
-    public static void validateNewReferenceForJobOutput(Collection<String> inputFiles, FileReference newReference) throws StateStoreException {
+    /**
+     * Validates that a job's output file is not the same as any of its input files.
+     *
+     * @param  inputFiles                              the input filenames
+     * @param  newReference                            the output file reference
+     * @throws NewReferenceSameAsOldReferenceException thrown if any of the input files are the same as the output file
+     */
+    public static void validateNewReferenceForJobOutput(Collection<String> inputFiles, FileReference newReference) throws NewReferenceSameAsOldReferenceException {
         for (String inputFile : inputFiles) {
             if (inputFile.equals(newReference.getFilename())) {
                 throw new NewReferenceSameAsOldReferenceException(inputFile);
@@ -82,6 +89,11 @@ public class FileReference {
         return countApproximate;
     }
 
+    /**
+     * Returns true if the file that's referenced does not contain data for any other partition.
+     *
+     * @return true if the file only contains data for this partition
+     */
     public boolean onlyContainsDataForThisPartition() {
         return onlyContainsDataForThisPartition;
     }
@@ -129,6 +141,9 @@ public class FileReference {
                 .onlyContainsDataForThisPartition(onlyContainsDataForThisPartition);
     }
 
+    /**
+     * Builder to create a file reference.
+     */
     public static final class Builder {
         private String filename;
         private String partitionId;
@@ -141,36 +156,84 @@ public class FileReference {
         private Builder() {
         }
 
+        /**
+         * Sets the filename.
+         *
+         * @param  filename the filename
+         * @return          the builder
+         */
         public Builder filename(String filename) {
             this.filename = filename;
             return this;
         }
 
+        /**
+         * Sets the ID of the partition the file is referenced on.
+         *
+         * @param  partitionId the partition ID
+         * @return             the builder
+         */
         public Builder partitionId(String partitionId) {
             this.partitionId = partitionId;
             return this;
         }
 
+        /**
+         * Sets the number of records in the file that are in the given partition. This may be exact or an estimate.
+         * This must be set alongside {@link #countApproximate(boolean)}.
+         *
+         * @param  numberOfRecords the number of records
+         * @return                 the builder
+         */
         public Builder numberOfRecords(Long numberOfRecords) {
             this.numberOfRecords = numberOfRecords;
             return this;
         }
 
+        /**
+         * Sets which job the file reference is assigned to. This will only be set if the file's records on this
+         * partition are due to be processed by a job, e.g. a compaction.
+         *
+         * @param  jobId the ID of the job
+         * @return       the builder
+         */
         public Builder jobId(String jobId) {
             this.jobId = jobId;
             return this;
         }
 
+        /**
+         * Sets when this reference was last updated in the state store. This is independent of the last update time of
+         * the referenced file, although the file will always be updated when any of its references are updated. This
+         * should only be set by an implementation of the state store.
+         *
+         * @param  lastStateStoreUpdateTime the update time (should be set by the state store implementation)
+         * @return                          the builder
+         */
         public Builder lastStateStoreUpdateTime(Instant lastStateStoreUpdateTime) {
             this.lastStateStoreUpdateTime = lastStateStoreUpdateTime;
             return this;
         }
 
+        /**
+         * Sets whether the count of records in the given partition is exact or an estimate. This must be set alongside
+         * {@link #numberOfRecords(Long)}.
+         *
+         * @param  countApproximate true if the number of records is approximate
+         * @return                  the builder
+         */
         public Builder countApproximate(boolean countApproximate) {
             this.countApproximate = countApproximate;
             return this;
         }
 
+        /**
+         * Sets whether this reference includes all the data in the file. If true, there are no other references to the
+         * file on any other partition. If false, the file has been split into references on multiple partitions.
+         *
+         * @param  onlyContainsDataForThisPartition true if this is the only internal reference to the file
+         * @return                                  the builder
+         */
         public Builder onlyContainsDataForThisPartition(boolean onlyContainsDataForThisPartition) {
             this.onlyContainsDataForThisPartition = onlyContainsDataForThisPartition;
             return this;
