@@ -22,9 +22,10 @@ import java.util.Collection;
 import java.util.Objects;
 
 /**
- * Stores metadata about a reference to a physical file, such as its filename, which partition it is in,
+ * Stores metadata about a reference to a physical file. This includes its filename, which partition it is in,
  * the number of records in this section of the file, and optionally a job id indicating which compaction
- * job is responsible for compacting it.
+ * job is responsible for compacting it. If a file is referenced in multiple partitions, the ranges covered by those
+ * partitions must not overlap, or the records in the overlapping portion may be duplicated.
  */
 public class FileReference {
 
