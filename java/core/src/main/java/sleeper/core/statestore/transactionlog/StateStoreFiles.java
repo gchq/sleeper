@@ -30,7 +30,8 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
  * Holds the state of file references in a state store backed by a transaction log. This object is mutable, is cached in
- * memory in the state store, and is updated by applying each transaction in the log in sequence.
+ * memory in the state store, and is updated by applying each transaction in the log in sequence. This is not thread
+ * safe.
  * <p>
  * The methods to update this object should only ever be called by the transactions.
  */
