@@ -30,7 +30,8 @@ import java.util.stream.Stream;
 /**
  * Reports on all the references for an individual physical file. A file may be referenced in a number of different
  * partitions, and may also have other external references which contribute to a combined reference count (eg. a
- * long-running query may count as a reference to the file).
+ * long-running query may count as a reference to the file). If a file is referenced in multiple partitions, the ranges
+ * covered by those partitions must not overlap, or the records in the overlapping portion may be duplicated.
  */
 public class AllReferencesToAFile {
 
