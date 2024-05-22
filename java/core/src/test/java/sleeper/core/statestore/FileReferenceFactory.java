@@ -22,6 +22,9 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * A test helper factory to create file references for a state store.
+ */
 public class FileReferenceFactory {
     private final PartitionTree partitionTree;
     private final Instant lastStateStoreUpdate;
@@ -35,14 +38,33 @@ public class FileReferenceFactory {
         this.lastStateStoreUpdate = lastStateStoreUpdate;
     }
 
+    /**
+     * Creates a factory to create files in the given partition tree.
+     *
+     * @param  tree the tree
+     * @return      the factory
+     */
     public static FileReferenceFactory from(PartitionTree tree) {
         return new FileReferenceFactory(tree);
     }
 
+    /**
+     * Creates a factory to create files in the given partition tree.
+     *
+     * @param  partitions the partitions in the tree
+     * @return            the factory
+     */
     public static FileReferenceFactory from(List<Partition> partitions) {
         return from(new PartitionTree(partitions));
     }
 
+    /**
+     * Creates a factory to create files in the given state store. This will load partitions from the store, so may not
+     * be efficient if the store is not in-memory.
+     *
+     * @param  stateStore the state store to load partitions from
+     * @return            the factory
+     */
     public static FileReferenceFactory from(StateStore stateStore) {
         try {
             return from(stateStore.getAllPartitions());
@@ -51,14 +73,39 @@ public class FileReferenceFactory {
         }
     }
 
+    /**
+     * Creates a factory to create files in the given partition tree. Sets a fixed last updated date for any references
+     * created by the factory.
+     *
+     * @param  tree                 the tree
+     * @param  lastStateStoreUpdate the time created references should be marked as having last been updated
+     * @return                      the factory
+     */
     public static FileReferenceFactory fromUpdatedAt(PartitionTree tree, Instant lastStateStoreUpdate) {
         return new FileReferenceFactory(tree, lastStateStoreUpdate);
     }
 
+    /**
+     * Creates a factory to create files in the given partition tree. Sets a fixed last updated date for any references
+     * created by the factory.
+     *
+     * @param  partitions           the partitions in the tree
+     * @param  lastStateStoreUpdate the time created references should be marked as having last been updated
+     * @return                      the factory
+     */
     public static FileReferenceFactory fromUpdatedAt(List<Partition> partitions, Instant lastStateStoreUpdate) {
         return fromUpdatedAt(new PartitionTree(partitions), lastStateStoreUpdate);
     }
 
+    /**
+     * Creates a factory to create files in the given state store. This will load partitions from the store, so may not
+     * be efficient if the store is not in-memory. Sets a fixed last updated date for any references created by the
+     * factory.
+     *
+     * @param  stateStore           the state store to load partitions from
+     * @param  lastStateStoreUpdate the time created references should be marked as having last been updated
+     * @return                      the factory
+     */
     public static FileReferenceFactory fromUpdatedAt(StateStore stateStore, Instant lastStateStoreUpdate) {
         try {
             return fromUpdatedAt(stateStore.getAllPartitions(), lastStateStoreUpdate);
@@ -67,18 +114,46 @@ public class FileReferenceFactory {
         }
     }
 
+    /**
+     * Creates a file in the root partition.
+     *
+     * @param  records the number of records in the file
+     * @return         the file reference
+     */
     public FileReference rootFile(long records) {
         return fileForPartition(partitionTree.getRootPartition(), records);
     }
 
+    /**
+     * Creates a file in the root partition.
+     *
+     * @param  filename the filename
+     * @param  records  the number of records in the file
+     * @return          the file reference
+     */
     public FileReference rootFile(String filename, long records) {
         return fileForPartition(partitionTree.getRootPartition(), filename, records);
     }
 
+    /**
+     * Creates a file in a specified partition.
+     *
+     * @param  partitionId the partition ID
+     * @param  records     the number of records in the file
+     * @return             the file reference
+     */
     public FileReference partitionFile(String partitionId, long records) {
         return fileForPartition(partitionTree.getPartition(partitionId), records);
     }
 
+    /**
+     * Creates a file in a specified partition.
+     *
+     * @param  partitionId the partition ID
+     * @param  filename    the filename
+     * @param  records     the number of records in the file
+     * @return             the file reference
+     */
     public FileReference partitionFile(String partitionId, String filename, long records) {
         return fileForPartition(partitionTree.getPartition(partitionId), filename, records);
     }
