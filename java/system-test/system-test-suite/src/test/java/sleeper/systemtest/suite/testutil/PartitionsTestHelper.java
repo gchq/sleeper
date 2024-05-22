@@ -42,6 +42,10 @@ public class PartitionsTestHelper {
         return createStringPartitionsFromSplitPointsDirectory(sleeper, "512-partitions.txt");
     }
 
+    public static PartitionTree create8192StringPartitions(SleeperSystemTest sleeper) {
+        return createStringPartitionsFromSplitPointsDirectory(sleeper, "8192-partitions.txt");
+    }
+
     public static PartitionTree createStringPartitionsFromSplitPointsDirectory(
             SleeperSystemTest sleeper, String filename) {
         return createPartitionsFromSplitPoints(sleeper.tableProperties().getSchema(),
