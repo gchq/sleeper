@@ -24,23 +24,35 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
+import sleeper.core.statestore.transactionlog.transactions.TransactionSerDe;
+
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Serialises all a file's references to and from a JSON string.
+ */
 public class AllReferencesToAFileSerDe {
 
     private AllReferencesToAFileSerDe() {
     }
 
-    public static SerDe noUpdateTimes() {
-        return new FileSerDe();
+    /**
+     * Creates GSON configuration to serialise files without update times. Should be combined with
+     * {@link FileReferenceSerDe#excludeUpdateTimes}. Used in {@link TransactionSerDe}.
+     *
+     * @return the GSON configuration
+     */
+    public static NoUpdateTimesGsonSerDe noUpdateTimes() {
+        return new NoUpdateTimesGsonSerDe();
     }
 
-    public interface SerDe extends JsonSerializer<AllReferencesToAFile>, JsonDeserializer<AllReferencesToAFile> {
-    }
-
-    public static class FileSerDe implements SerDe {
+    /**
+     * GSON configuration to serialise files without update times. Should be combined with
+     * {@link FileReferenceSerDe#excludeUpdateTimes}. Used in {@link TransactionSerDe}.
+     */
+    public static class NoUpdateTimesGsonSerDe implements JsonSerializer<AllReferencesToAFile>, JsonDeserializer<AllReferencesToAFile> {
 
         @Override
         public AllReferencesToAFile deserialize(JsonElement json, Type type, JsonDeserializationContext context) throws JsonParseException {
