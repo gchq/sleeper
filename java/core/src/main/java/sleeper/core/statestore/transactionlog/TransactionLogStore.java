@@ -17,10 +17,28 @@ package sleeper.core.statestore.transactionlog;
 
 import java.util.stream.Stream;
 
+/**
+ * A store of a transaction log that can be used to derive the state of a Sleeper table. Used by
+ * {@link TransactionLogStateStore}.
+ */
 public interface TransactionLogStore {
 
+    /**
+     * Adds a new transaction at the end of the log.
+     *
+     * @param  entry                               the entry
+     * @throws DuplicateTransactionNumberException thrown if a transaction already exists with the given number,
+     *                                             potentially because another process updated the state store at the
+     *                                             same time
+     */
     void addTransaction(TransactionLogEntry entry) throws DuplicateTransactionNumberException;
 
+    /**
+     * Streams through transactions to the end of the log, starting after a given transaction.
+     *
+     * @param  lastTransactionNumber the last transaction number that should not be read
+     * @return                       all transactions in order, starting at the one after the specified number
+     */
     Stream<TransactionLogEntry> readTransactionsAfter(long lastTransactionNumber);
 
 }
