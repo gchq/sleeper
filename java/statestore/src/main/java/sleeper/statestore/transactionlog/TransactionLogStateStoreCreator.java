@@ -30,6 +30,10 @@ import java.util.List;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_FILES_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_PARTITIONS_TABLENAME;
 
+/**
+ * Creates the DynamoDB tables needed for a state store derived from a transaction log. Mainly used for testing purposes
+ * as the creation of the tables in real deployments is normally done using CDK.
+ */
 public class TransactionLogStateStoreCreator {
     private final AmazonDynamoDB dynamoDB;
     private final InstanceProperties instanceProperties;
@@ -39,6 +43,9 @@ public class TransactionLogStateStoreCreator {
         this.instanceProperties = instanceProperties;
     }
 
+    /**
+     * Creates the needed DynamoDB tables.
+     */
     public void create() {
         new DynamoDBTransactionLogSnapshotMetadataStoreCreator(instanceProperties, dynamoDB).create();
         createTransactionLogTable(instanceProperties.get(TRANSACTION_LOG_FILES_TABLENAME));

@@ -34,17 +34,38 @@ import static sleeper.configuration.properties.table.TableProperty.ADD_TRANSACTI
 import static sleeper.configuration.properties.table.TableProperty.TIME_BETWEEN_SNAPSHOT_CHECKS_SECS;
 import static sleeper.configuration.properties.table.TableProperty.TIME_BETWEEN_TRANSACTION_CHECKS_MS;
 
+/**
+ * An implementation of the state store backed by a transaction log held in DynamoDB and S3, with snapshots disabled.
+ */
 public class DynamoDBTransactionLogStateStoreNoSnapshots {
 
     private DynamoDBTransactionLogStateStoreNoSnapshots() {
     }
 
+    /**
+     * Creates the state store for the given Sleeper table.
+     *
+     * @param  instanceProperties the Sleeper instance properties
+     * @param  tableProperties    the Sleeper table properties
+     * @param  dynamoDB           the client for interacting with DynamoDB
+     * @param  s3                 the client for interacting with S3
+     * @return                    the state store
+     */
     public static TransactionLogStateStore create(
             InstanceProperties instanceProperties, TableProperties tableProperties,
             AmazonDynamoDB dynamoDB, AmazonS3 s3) {
         return builderFrom(instanceProperties, tableProperties, dynamoDB, s3).build();
     }
 
+    /**
+     * Creates a builder for the state store for the given Sleeper table.
+     *
+     * @param  instanceProperties the Sleeper instance properties
+     * @param  tableProperties    the Sleeper table properties
+     * @param  dynamoDB           the client for interacting with DynamoDB
+     * @param  s3                 the client for interacting with S3
+     * @return                    the builder
+     */
     public static TransactionLogStateStore.Builder builderFrom(
             InstanceProperties instanceProperties, TableProperties tableProperties,
             AmazonDynamoDB dynamoDB, AmazonS3 s3) {

@@ -15,6 +15,10 @@
  */
 package sleeper.statestore.transactionlog;
 
+/**
+ * The type of data held in a snapshot derived from a transaction log. Used when holding metadata about the snapshot in
+ * an index, with {@link TransactionLogSnapshotMetadata}.
+ */
 public enum SnapshotType {
     FILES, PARTITIONS
 }

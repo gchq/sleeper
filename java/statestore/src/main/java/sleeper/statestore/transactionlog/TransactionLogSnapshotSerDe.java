@@ -24,6 +24,9 @@ import sleeper.statestore.StateStoreFileUtils;
 
 import java.io.IOException;
 
+/**
+ * Reads and writes snapshots derived from a transaction log to/from Parquet files.
+ */
 class TransactionLogSnapshotSerDe {
     private final Schema sleeperSchema;
     private final StateStoreFileUtils stateStoreFileUtils;
