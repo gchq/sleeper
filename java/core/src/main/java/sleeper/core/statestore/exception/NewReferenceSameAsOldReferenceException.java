@@ -18,6 +18,9 @@ package sleeper.core.statestore.exception;
 
 import sleeper.core.statestore.StateStoreException;
 
+/**
+ * An exception for when we could not replace a file with a new one because the new one is the same as the old one.
+ */
 public class NewReferenceSameAsOldReferenceException extends StateStoreException {
     public NewReferenceSameAsOldReferenceException(String filename) {
         super("New file has the same filename as a file being removed: " + filename);

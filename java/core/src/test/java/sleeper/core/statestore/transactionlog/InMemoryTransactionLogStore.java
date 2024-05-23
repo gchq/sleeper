@@ -19,6 +19,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
+/**
+ * An in-memory implementation of a transaction log store. Holds transactions in a list. Can simulate some other process
+ * performing some operation just as a transaction is added or as transactions are read.
+ */
 public class InMemoryTransactionLogStore implements TransactionLogStore {
 
     private static final Runnable DO_NOTHING = () -> {
@@ -48,10 +52,25 @@ public class InMemoryTransactionLogStore implements TransactionLogStore {
                 .skip(lastTransactionNumber);
     }
 
+    /**
+     * Sets some operation that should happen just before the next transaction is added. This will occur after any
+     * local state has been brought up to date in the state store. If the given operation adds a transaction to the
+     * log, it will conflict with the transaction being added. If an exception is thrown in the operation, that will be
+     * thrown out of the transaction log store.
+     *
+     * @param action the operation to occur before the next transaction
+     */
     public void atStartOfNextAddTransaction(ThrowingRunnable action) {
         startOfNextAdd = wrappingCheckedExceptions(action);
     }
 
+    /**
+     * Sets some operation that should happen just before the next time transactions are read. This will occur the next
+     * time the local state store brings itself up to date. If an exception is thrown in the operation, that will be
+     * thrown out of the transaction log store.
+     *
+     * @param action the operation to occur before the next time transactions are read
+     */
     public void atStartOfNextReadTransactions(ThrowingRunnable action) {
         startOfNextRead = wrappingCheckedExceptions(action);
     }
@@ -84,7 +103,16 @@ public class InMemoryTransactionLogStore implements TransactionLogStore {
         };
     }
 
+    /**
+     * Performs some action that can throw checked exceptions.
+     */
     public interface ThrowingRunnable {
+
+        /**
+         * Perform the action.
+         *
+         * @throws Exception if any exception was thrown by the action
+         */
         void run() throws Exception;
     }
 }

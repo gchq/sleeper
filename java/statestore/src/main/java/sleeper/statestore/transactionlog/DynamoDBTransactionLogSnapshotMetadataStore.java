@@ -49,6 +49,9 @@ import static sleeper.dynamodb.tools.DynamoDBAttributes.getStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.hasConditionalCheckFailure;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
 
+/**
+ * Stores an index of snapshots derived from a transaction log. The index is backed by DynamoDB.
+ */
 public class DynamoDBTransactionLogSnapshotMetadataStore {
     private static final String DELIMITER = "|";
     public static final String TABLE_ID = "TABLE_ID";
@@ -79,6 +82,12 @@ public class DynamoDBTransactionLogSnapshotMetadataStore {
         this.timeSupplier = timeSupplier;
     }
 
+    /**
+     * Saves a new snapshot to the index.
+     *
+     * @param  snapshot                   the metadata of the snapshot to be indexed
+     * @throws DuplicateSnapshotException if a snapshot already exists for the given transaction number
+     */
     public void saveSnapshot(TransactionLogSnapshotMetadata snapshot) throws DuplicateSnapshotException {
         Instant updateTime = timeSupplier.get();
         try {
@@ -162,6 +171,11 @@ public class DynamoDBTransactionLogSnapshotMetadataStore {
                 .map(DynamoDBTransactionLogSnapshotMetadataStore::getSnapshotFromItem);
     }
 
+    /**
+     * Retrieves metadata on the latest snapshots in the index for the given Sleeper table.
+     *
+     * @return metadata describing the latest snapshots for the Sleeper table
+     */
     public LatestSnapshots getLatestSnapshots() {
         QueryResult result = dynamo.query(new QueryRequest()
                 .withTableName(latestSnapshotsTable)
@@ -202,10 +216,18 @@ public class DynamoDBTransactionLogSnapshotMetadataStore {
         return new TransactionLogSnapshotMetadata(getStringAttribute(item, PATH), type, getLongAttribute(item, TRANSACTION_NUMBER, 0));
     }
 
+    /**
+     * Metadata about the latest snapshots in a Sleeper table.
+     */
     public static class LatestSnapshots {
         private final TransactionLogSnapshotMetadata filesSnapshot;
         private final TransactionLogSnapshotMetadata partitionsSnapshot;
 
+        /**
+         * Builds metadata for the state where no snapshots have been made for a Sleeper table.
+         *
+         * @return the metadata
+         */
         public static LatestSnapshots empty() {
             return new LatestSnapshots(null, null);
         }

@@ -29,9 +29,8 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshots;
-import sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshots.SetupStateStore;
-import sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshots.SnapshotSetup;
+import sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshotSetup;
+import sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshotSetup.SetupStateStore;
 import sleeper.statestore.StateStoreFactory;
 
 import java.nio.file.Path;
@@ -46,6 +45,7 @@ import static sleeper.configuration.properties.table.TableProperty.ADD_TRANSACTI
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
+import static sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshotSetup.setupSnapshotWithFreshState;
 
 public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogStateStoreTestBase {
     @TempDir
@@ -247,7 +247,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
         }
 
         private void createSnapshotWithFreshState(SetupStateStore setupState) throws Exception {
-            SnapshotSetup snapshotSetup = InMemoryTransactionLogSnapshots.setupSnapshotWithFreshState(
+            InMemoryTransactionLogSnapshotSetup snapshotSetup = setupSnapshotWithFreshState(
                     tableProperties.getStatus(), tableProperties.getSchema(), setupState);
 
             DynamoDBTransactionLogSnapshotMetadataStore snapshotStore = new DynamoDBTransactionLogSnapshotMetadataStore(

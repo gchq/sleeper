@@ -25,9 +25,8 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshots;
-import sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshots.SetupStateStore;
-import sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshots.SnapshotSetup;
+import sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshotSetup;
+import sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshotSetup.SetupStateStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 
 import java.util.List;
@@ -39,6 +38,7 @@ import static sleeper.configuration.properties.table.TableProperty.TIME_BETWEEN_
 import static sleeper.configuration.properties.table.TableProperty.TIME_BETWEEN_TRANSACTION_CHECKS_MS;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
+import static sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshotSetup.setupSnapshotWithFreshState;
 
 public class TransactionLogStateStoreSnapshotsIT extends TransactionLogStateStoreOneTableTestBase {
 
@@ -171,7 +171,7 @@ public class TransactionLogStateStoreSnapshotsIT extends TransactionLogStateStor
 
     protected void createSnapshotWithFreshStateAtTransactionNumber(
             long transactionNumber, SetupStateStore setupState) throws Exception {
-        SnapshotSetup snapshotSetup = InMemoryTransactionLogSnapshots.setupSnapshotWithFreshState(
+        InMemoryTransactionLogSnapshotSetup snapshotSetup = setupSnapshotWithFreshState(
                 tableProperties.getStatus(), tableProperties.getSchema(), setupState);
         DynamoDBTransactionLogSnapshotStore snapshotStore = new DynamoDBTransactionLogSnapshotStore(instanceProperties, tableProperties, dynamoDBClient, configuration);
         snapshotStore.saveFilesSnapshot(snapshotSetup.createFilesSnapshot(transactionNumber));

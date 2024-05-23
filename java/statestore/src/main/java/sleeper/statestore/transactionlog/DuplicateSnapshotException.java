@@ -15,6 +15,9 @@
  */
 package sleeper.statestore.transactionlog;
 
+/**
+ * Failure adding a snapshot when one already exists with that transaction number.
+ */
 public class DuplicateSnapshotException extends Exception {
     public DuplicateSnapshotException(String path, Exception cause) {
         super("Snapshot already exists: " + path, cause);

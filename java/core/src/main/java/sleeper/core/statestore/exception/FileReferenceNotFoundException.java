@@ -19,6 +19,9 @@ package sleeper.core.statestore.exception;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStoreException;
 
+/**
+ * An exception for when we could not update a file reference because it could not be found.
+ */
 public class FileReferenceNotFoundException extends StateStoreException {
     public FileReferenceNotFoundException(FileReference fileReference) {
         this(fileReference.getFilename(), fileReference.getPartitionId(), null);

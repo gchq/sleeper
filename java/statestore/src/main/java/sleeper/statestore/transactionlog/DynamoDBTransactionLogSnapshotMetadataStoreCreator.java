@@ -30,6 +30,10 @@ import java.util.List;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME;
 
+/**
+ * Creates the DynamoDB tables needed to store an index of snapshots derived from a transaction log. Mainly used for
+ * testing purposes as the creation of the tables in real deployments is normally done using CDK.
+ */
 public class DynamoDBTransactionLogSnapshotMetadataStoreCreator {
     private final AmazonDynamoDB dynamoDB;
     private final InstanceProperties instanceProperties;
@@ -39,6 +43,9 @@ public class DynamoDBTransactionLogSnapshotMetadataStoreCreator {
         this.instanceProperties = instanceProperties;
     }
 
+    /**
+     * Creates the needed DynamoDB tables.
+     */
     public void create() {
         createLatestSnapshotTable();
         createAllSnapshotsTable();

@@ -19,12 +19,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.partition.Partition;
+import sleeper.core.statestore.exception.SplitRequestsFailedException;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
+/**
+ * A state store implementation that delegates to implementations of a file reference and partition store.
+ */
 public class DelegatingStateStore implements StateStore {
     public static final Logger LOGGER = LoggerFactory.getLogger(DelegatingStateStore.class);
     private final FileReferenceStore fileReferenceStore;
@@ -133,6 +137,11 @@ public class DelegatingStateStore implements StateStore {
         fileReferenceStore.initialise();
     }
 
+    /**
+     * Initialises just the file reference store.
+     *
+     * @throws StateStoreException thrown if the initialisation fails
+     */
     public void setInitialFileReferences() throws StateStoreException {
         fileReferenceStore.initialise();
     }
