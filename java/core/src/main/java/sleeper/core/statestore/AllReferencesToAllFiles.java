@@ -27,7 +27,7 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
- * This class contains a snapshot of files in the state store at a point in time, to be used to build a report.
+ * This class contains a report of files in the state store at a point in time, to be used in a reporting client.
  */
 public class AllReferencesToAllFiles {
     private final Map<String, AllReferencesToAFile> filesByFilename;
