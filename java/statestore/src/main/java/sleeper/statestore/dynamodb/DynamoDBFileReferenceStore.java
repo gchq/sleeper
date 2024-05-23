@@ -83,6 +83,9 @@ import static sleeper.statestore.dynamodb.DynamoDBFileReferenceFormat.PARTITION_
 import static sleeper.statestore.dynamodb.DynamoDBFileReferenceFormat.REFERENCES;
 import static sleeper.statestore.dynamodb.DynamoDBFileReferenceFormat.TABLE_ID;
 
+/**
+ * A Sleeper table file reference store where the state is held in DynamoDB.
+ */
 class DynamoDBFileReferenceStore implements FileReferenceStore {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBFileReferenceStore.class);
@@ -406,6 +409,9 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
         }
     }
 
+    /**
+     * A check to determine why a conditional failure occurred for a given DynamoDB item.
+     */
     interface ConditionalFailureCheck {
         StateStoreException check(Map<String, AttributeValue> item);
     }
@@ -668,6 +674,9 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
                 .withReturnValuesOnConditionCheckFailure(ReturnValuesOnConditionCheckFailure.ALL_OLD);
     }
 
+    /**
+     * Builder to create a file reference store backed by DynamoDB.
+     */
     static final class Builder {
         private AmazonDynamoDB dynamoDB;
         private String activeTableName;

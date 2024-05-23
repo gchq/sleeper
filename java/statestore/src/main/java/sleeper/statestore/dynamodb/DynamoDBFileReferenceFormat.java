@@ -33,6 +33,9 @@ import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getInstantAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getIntAttribute;
 
+/**
+ * Reads and writes DynamoDB items to store Sleeper file references and reference counts.
+ */
 class DynamoDBFileReferenceFormat {
     static final String TABLE_ID = DynamoDBStateStore.TABLE_ID;
     static final String PARTITION_ID_AND_FILENAME = "PartitionIdAndFileName";

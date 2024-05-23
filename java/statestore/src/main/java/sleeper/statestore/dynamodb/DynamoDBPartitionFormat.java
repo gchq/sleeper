@@ -30,6 +30,9 @@ import java.util.Map;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createNumberAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 
+/**
+ * Reads and writes DynamoDB items to store Sleeper partitions.
+ */
 class DynamoDBPartitionFormat {
 
     static final String TABLE_ID = DynamoDBStateStore.TABLE_ID;
