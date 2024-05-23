@@ -16,6 +16,7 @@
 
 package sleeper.systemtest.drivers.python;
 
+import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.ingest.IngestByAnyQueueDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
@@ -32,11 +33,11 @@ public class PythonBulkImportDriver implements IngestByAnyQueueDriver {
     private final PythonRunner pythonRunner;
     private final Path pythonDir;
 
-    public PythonBulkImportDriver(SystemTestContext context) {
+    public PythonBulkImportDriver(SystemTestContext context, SystemTestClients clients) {
         this.instance = context.instance();
         this.sourceFiles = context.sourceFiles();
         this.pythonDir = context.parameters().getPythonDirectory();
-        this.pythonRunner = new PythonRunner(pythonDir);
+        this.pythonRunner = new PythonRunner(pythonDir, clients);
     }
 
     @Override

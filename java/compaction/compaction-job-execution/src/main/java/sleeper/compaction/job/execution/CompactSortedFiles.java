@@ -38,9 +38,9 @@ import sleeper.core.partition.Partition;
 import sleeper.core.record.Record;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
@@ -51,7 +51,6 @@ import sleeper.sketches.s3.SketchesSerDeToS3;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -63,33 +62,41 @@ import static sleeper.sketches.s3.SketchesSerDeToS3.sketchesPathForDataFile;
  * Executes a compaction job. Compacts N input files into a single output file.
  */
 public class CompactSortedFiles implements CompactionTask.CompactionRunner {
-    private final InstanceProperties instanceProperties;
+    private static final Logger LOGGER = LoggerFactory.getLogger(CompactSortedFiles.class);
+    public static final int JOB_ASSIGNMENT_WAIT_ATTEMPTS = 10;
+    public static final WaitRange JOB_ASSIGNMENT_WAIT_RANGE = WaitRange.firstAndMaxWaitCeilingSecs(2, 60);
+
     private final TablePropertiesProvider tablePropertiesProvider;
     private final ObjectFactory objectFactory;
     private final StateStoreProvider stateStoreProvider;
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(CompactSortedFiles.class);
+    private final Configuration configuration;
 
     public CompactSortedFiles(
             InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider, ObjectFactory objectFactory) {
-        this.instanceProperties = instanceProperties;
+        this(tablePropertiesProvider, stateStoreProvider, objectFactory,
+                HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
+    }
+
+    public CompactSortedFiles(
+            TablePropertiesProvider tablePropertiesProvider,
+            StateStoreProvider stateStoreProvider, ObjectFactory objectFactory, Configuration configuration) {
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.objectFactory = objectFactory;
         this.stateStoreProvider = stateStoreProvider;
+        this.configuration = configuration;
     }
 
-    public RecordsProcessed compact(CompactionJob compactionJob) throws IOException, IteratorException, StateStoreException {
+    public RecordsProcessed compact(CompactionJob compactionJob) throws IOException, IteratorException, StateStoreException, InterruptedException {
         TableProperties tableProperties = tablePropertiesProvider.getById(compactionJob.getTableId());
         Schema schema = tableProperties.getSchema();
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         Partition partition = stateStore.getAllPartitions().stream()
                 .filter(p -> Objects.equals(compactionJob.getPartitionId(), p.getId()))
                 .findFirst().orElseThrow(() -> new NoSuchElementException("Partition not found for compaction job"));
-        Configuration conf = getConfiguration();
 
         // Create a reader for each file
-        List<CloseableIterator<Record>> inputIterators = createInputIterators(compactionJob, partition, schema, conf);
+        List<CloseableIterator<Record>> inputIterators = createInputIterators(compactionJob, partition, schema);
 
         CloseableIterator<Record> mergingIterator = getMergingIterator(objectFactory, schema, compactionJob, inputIterators);
         // Merge these iterator into one sorted iterator
@@ -100,7 +107,7 @@ public class CompactSortedFiles implements CompactionTask.CompactionRunner {
         // Setting file writer mode to OVERWRITE so if the same job runs again after failing to
         // update the state store, it will overwrite the existing output file written by the previous run
         ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(
-                outputPath, tableProperties, conf, ParquetFileWriter.Mode.OVERWRITE);
+                outputPath, tableProperties, configuration, ParquetFileWriter.Mode.OVERWRITE);
 
         LOGGER.info("Compaction job {}: Created writer for file {}", compactionJob.getId(), compactionJob.getOutputFile());
         Sketches sketches = Sketches.from(schema);
@@ -121,7 +128,7 @@ public class CompactSortedFiles implements CompactionTask.CompactionRunner {
 
         // Remove the extension (if present), then add one
         Path sketchesPath = sketchesPathForDataFile(compactionJob.getOutputFile());
-        new SketchesSerDeToS3(schema).saveToHadoopFS(sketchesPath, sketches, conf);
+        new SketchesSerDeToS3(schema).saveToHadoopFS(sketchesPath, sketches, configuration);
         LOGGER.info("Compaction job {}: Wrote sketches file to {}", compactionJob.getId(), sketchesPath);
 
         for (CloseableIterator<Record> iterator : inputIterators) {
@@ -135,19 +142,15 @@ public class CompactSortedFiles implements CompactionTask.CompactionRunner {
         }
 
         LOGGER.info("Compaction job {}: Read {} records and wrote {} records", compactionJob.getId(), totalNumberOfRecordsRead, recordsWritten);
-
-        updateStateStoreSuccess(compactionJob, recordsWritten, stateStore);
-        LOGGER.info("Compaction job {}: compaction committed to state store at {}", compactionJob.getId(), LocalDateTime.now());
-
         return new RecordsProcessed(totalNumberOfRecordsRead, recordsWritten);
     }
 
-    private List<CloseableIterator<Record>> createInputIterators(CompactionJob compactionJob, Partition partition, Schema schema, Configuration conf) throws IOException {
+    private List<CloseableIterator<Record>> createInputIterators(CompactionJob compactionJob, Partition partition, Schema schema) throws IOException {
         List<CloseableIterator<Record>> inputIterators = new ArrayList<>();
         FilterCompat.Filter partitionFilter = FilterCompat.get(RangeQueryUtils.getFilterPredicate(partition));
         for (String file : compactionJob.getInputFiles()) {
             ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(file), schema)
-                    .withConf(conf)
+                    .withConf(configuration)
                     .withFilter(partitionFilter)
                     .build();
             ParquetReaderIterator recordIterator = new ParquetReaderIterator(reader);
@@ -178,29 +181,5 @@ public class CompactSortedFiles implements CompactionTask.CompactionRunner {
             mergingIterator = iterator.apply(mergingIterator);
         }
         return mergingIterator;
-    }
-
-    private Configuration getConfiguration() {
-        return HadoopConfigurationProvider.getConfigurationForECS(instanceProperties);
-    }
-
-    public static void updateStateStoreSuccess(
-            CompactionJob job,
-            long recordsWritten,
-            StateStore stateStore) throws StateStoreException {
-        FileReference fileReference = FileReference.builder()
-                .filename(job.getOutputFile())
-                .partitionId(job.getPartitionId())
-                .numberOfRecords(recordsWritten)
-                .countApproximate(false)
-                .onlyContainsDataForThisPartition(true)
-                .build();
-        try {
-            stateStore.atomicallyReplaceFileReferencesWithNewOne(job.getId(), job.getPartitionId(), job.getInputFiles(), fileReference);
-            LOGGER.debug("Updated file references in state store");
-        } catch (StateStoreException e) {
-            LOGGER.error("Exception updating StateStore (moving input files to ready for GC and creating new active file): {}", e.getMessage());
-            throw e;
-        }
     }
 }

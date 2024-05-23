@@ -107,7 +107,7 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
         this.instanceProperties.loadFromS3(s3Client, configBucket);
         this.tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDBClient);
         this.tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
-        this.stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, new Configuration());
+        this.stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, new Configuration());
     }
 
     public SleeperMetadataHandler(
@@ -119,7 +119,7 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
         this.instanceProperties.loadFromS3(s3Client, configBucket);
         this.tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDBClient);
         this.tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
-        this.stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, new Configuration());
+        this.stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, new Configuration());
     }
 
     /**

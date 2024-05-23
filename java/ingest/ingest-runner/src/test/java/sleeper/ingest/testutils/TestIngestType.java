@@ -48,9 +48,8 @@ public class TestIngestType {
     public static TestIngestType directWriteBackedByArrowWriteToLocalFile(
             Consumer<ArrowRecordBatchFactory.Builder<Record>> arrowConfig) {
         return new TestIngestType(
-                parameters ->
-                        ingestCoordinatorDirectWriteBackedByArrow(parameters, parameters.getLocalFilePrefix(),
-                                arrowConfig, new ArrowRecordWriterAcceptingRecords()),
+                parameters -> ingestCoordinatorDirectWriteBackedByArrow(parameters, parameters.getLocalFilePrefix(),
+                        arrowConfig, new ArrowRecordWriterAcceptingRecords()),
                 IngestCoordinatorTestParameters::getLocalFilePrefix);
     }
 

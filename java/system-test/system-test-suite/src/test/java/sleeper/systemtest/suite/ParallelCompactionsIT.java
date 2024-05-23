@@ -17,96 +17,95 @@ package sleeper.systemtest.suite;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.compaction.strategy.impl.BasicCompactionStrategy;
 import sleeper.configuration.properties.validation.IngestFileWritingStrategy;
-import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.record.Record;
-import sleeper.core.schema.Schema;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.extension.AfterTestPurgeQueues;
+import sleeper.systemtest.dsl.extension.AfterTestReports;
+import sleeper.systemtest.dsl.reporting.SystemTestReports;
+import sleeper.systemtest.suite.testutil.Expensive;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
-import java.nio.file.Path;
 import java.time.Duration;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.IntStream;
-import java.util.stream.LongStream;
 
-import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_QUEUE_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
-import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
-import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStringAndZeroPadTo;
-import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides.overrideField;
-import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
-import static sleeper.systemtest.suite.fixtures.SystemTestSchema.DEFAULT_SCHEMA;
-import static sleeper.systemtest.suite.fixtures.SystemTestSchema.ROW_KEY_FIELD_NAME;
+import static sleeper.systemtest.configuration.SystemTestIngestMode.DIRECT;
+import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_MODE;
+import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_INGEST;
+import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRITERS;
+import static sleeper.systemtest.suite.fixtures.SystemTestInstance.PARALLEL_COMPACTIONS;
+import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.create8192StringPartitions;
 
 @SystemTest
+@Expensive
 public class ParallelCompactionsIT {
-    public static final int NUMBER_OF_COMPACTIONS = 5;
-    private final Schema schema = DEFAULT_SCHEMA;
-    @TempDir
-    private Path tempDir;
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper) throws Exception {
-        sleeper.connectToInstance(MAIN);
+    void setUp(SleeperSystemTest sleeper, AfterTestReports reporting, AfterTestPurgeQueues purgeQueues) throws Exception {
+        sleeper.connectToInstance(PARALLEL_COMPACTIONS);
+        reporting.reportIfTestFailed(SystemTestReports.SystemTestBuilder::compactionTasksAndJobs);
+        purgeQueues.purgeIfTestFailed(COMPACTION_JOB_CREATION_QUEUE_URL, COMPACTION_JOB_QUEUE_URL);
     }
 
     @Test
     void shouldApplyOneCompactionPerPartition(SleeperSystemTest sleeper) {
-        // Given we have partitions split evenly across the intended range of records
-        sleeper.setGeneratorOverrides(overrideField(ROW_KEY_FIELD_NAME,
-                numberStringAndZeroPadTo(4).then(addPrefix("row-"))));
-        List<String> leafIds = IntStream.range(0, NUMBER_OF_COMPACTIONS)
-                .mapToObj(i -> "" + i)
-                .collect(toUnmodifiableList());
-        List<Object> splitPoints = IntStream.range(1, NUMBER_OF_COMPACTIONS)
-                .map(i -> 10000 * i / NUMBER_OF_COMPACTIONS)
-                .mapToObj(i -> "row-" + numberStringAndZeroPadTo(4, i))
-                .collect(toUnmodifiableList());
-        sleeper.partitioning().setPartitions(new PartitionsBuilder(schema)
-                .leavesWithSplits(leafIds, splitPoints)
-                .anyTreeJoiningAllLeaves()
-                .buildTree());
-        // And we have records spread across all partitions in two files per partition
-        // And we configure to compact every partition
+        // Given we configure to compact many partitions
+        sleeper.partitioning().setPartitions(create8192StringPartitions(sleeper));
         sleeper.updateTableProperties(Map.of(
-                INGEST_FILE_WRITING_STRATEGY, IngestFileWritingStrategy.ONE_FILE_PER_LEAF.toString(),
                 COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
-                COMPACTION_FILES_BATCH_SIZE, "2"));
-        sleeper.ingest().direct(tempDir)
-                .numberedRecords(LongStream.range(0, 5000).map(i -> i * 2)) // Evens
-                .numberedRecords(LongStream.range(0, 5000).map(i -> i * 2 + 1)); // Odds
+                COMPACTION_FILES_BATCH_SIZE, "10",
+                INGEST_FILE_WRITING_STRATEGY, IngestFileWritingStrategy.ONE_FILE_PER_LEAF.toString()));
+        // And we have records spread across all partitions in many files per partition
+        sleeper.systemTestCluster()
+                .updateProperties(properties -> {
+                    properties.setEnum(INGEST_MODE, DIRECT);
+                    properties.setNumber(NUMBER_OF_WRITERS, 10);
+                    properties.setNumber(NUMBER_OF_RECORDS_PER_INGEST, 1_000_000);
+                }).generateData(
+                        PollWithRetries.intervalAndPollingTimeout(
+                                Duration.ofSeconds(10), Duration.ofMinutes(5)));
 
         // When we run compaction
         sleeper.compaction()
-                .forceStartTasks(NUMBER_OF_COMPACTIONS,
+                .createJobs(8192,
                         PollWithRetries.intervalAndPollingTimeout(
-                                Duration.ofSeconds(10), Duration.ofMinutes(5)))
-                .createJobs(NUMBER_OF_COMPACTIONS)
-                .waitForJobs();
+                                Duration.ofSeconds(10), Duration.ofMinutes(10)))
+                .invokeTasks(300)
+                .waitForJobsToFinishThenCommit(
+                        PollWithRetries.intervalAndPollingTimeout(
+                                Duration.ofSeconds(10), Duration.ofMinutes(5)),
+                        PollWithRetries.intervalAndPollingTimeout(
+                                Duration.ofSeconds(10), Duration.ofMinutes(5)));
 
-        // Then we have one output file per compaction
+        // Then we have one file per partition
         assertThat(sleeper.tableFiles().references())
-                .hasSize(NUMBER_OF_COMPACTIONS);
-        // And we have the same records afterwards
-        assertThat(inAnyOrder(sleeper.directQuery().allRecordsInTable()))
-                .isEqualTo(inAnyOrder(sleeper.generateNumberedRecords(
-                        LongStream.range(0, 10000))));
-    }
-
-    private static Map<Record, Integer> inAnyOrder(Iterable<Record> records) {
-        Map<Record, Integer> map = new HashMap<>();
-        records.forEach(record -> map.compute(record, (r, count) -> count == null ? 1 : count + 1));
-        return map;
+                .hasSize(8192)
+                .satisfies(files -> assertThat(files.stream().mapToLong(FileReference::getNumberOfRecords).sum())
+                        .isEqualTo(10_000_000))
+                .allMatch(file -> file.onlyContainsDataForThisPartition() && !file.isCountApproximate(),
+                        "only contains data for one partition")
+                .allMatch(file -> file.getJobId() == null,
+                        "not assigned to any job")
+                .allSatisfy(file -> assertThat(file.getNumberOfRecords())
+                        .describedAs("contains an even distribution of records for the partition")
+                        .isBetween(800L, 1600L));
+        // And all jobs have finished and only ran once
+        assertThat(sleeper.reporting().compactionJobs().finishedStatistics())
+                .matches(statistics -> statistics.isAllFinishedOneRunEach(8192),
+                        "all jobs finished and ran once");
+        assertThat(sleeper.reporting().finishedCompactionTasks())
+                .allSatisfy(task -> assertThat(task.getJobRuns())
+                        .describedAs("ran the expected distribution of jobs")
+                        .isBetween(1, 60));
     }
 
 }

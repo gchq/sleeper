@@ -59,24 +59,18 @@ public class FilesStatusReport {
         FILE_STATUS_REPORTERS.put("CSV", new CVSFileStatusReporter());
     }
 
-    public FilesStatusReport(StateStore stateStore,
-                             int maxNumberOfFilesWithNoReferencesToCount,
-                             boolean verbose) {
+    public FilesStatusReport(StateStore stateStore, int maxNumberOfFilesWithNoReferencesToCount, boolean verbose) {
         this(stateStore, maxNumberOfFilesWithNoReferencesToCount, verbose, DEFAULT_STATUS_REPORTER);
     }
 
-
-    public FilesStatusReport(StateStore stateStore,
-                             int maxNumberOfFilesWithNoReferencesToCount,
-                             boolean verbose,
-                             String outputType) {
+    public FilesStatusReport(
+            StateStore stateStore, int maxNumberOfFilesWithNoReferencesToCount, boolean verbose, String outputType) {
         this(stateStore, maxNumberOfFilesWithNoReferencesToCount, verbose, getReporter(outputType));
     }
 
-    public FilesStatusReport(StateStore stateStore,
-                             int maxNumberOfFilesWithNoReferencesToCount,
-                             boolean verbose,
-                             FileStatusReporter fileStatusReporter) {
+    public FilesStatusReport(
+            StateStore stateStore, int maxNumberOfFilesWithNoReferencesToCount, boolean verbose,
+            FileStatusReporter fileStatusReporter) {
         this.maxNumberOfFilesWithNoReferencesToCount = maxNumberOfFilesWithNoReferencesToCount;
         this.verbose = verbose;
         this.fileStatusReporter = fileStatusReporter;
@@ -120,17 +114,18 @@ public class FilesStatusReport {
             reporterType = args[4].toUpperCase(Locale.ROOT);
         }
 
-        AmazonS3 amazonS3 = buildAwsV1Client(AmazonS3ClientBuilder.standard());
-        InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, instanceId);
-
+        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
         AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, amazonS3, dynamoDBClient);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, getConfigurationForClient());
-        StateStore stateStore = stateStoreProvider.getStateStore(tableName, tablePropertiesProvider);
 
-        new FilesStatusReport(stateStore, maxFilesWithNoReferences, verbose, reporterType).run();
-
-        amazonS3.shutdown();
-        dynamoDBClient.shutdown();
+        try {
+            InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(s3Client, instanceId);
+            TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
+            StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, getConfigurationForClient());
+            StateStore stateStore = stateStoreProvider.getStateStore(tablePropertiesProvider.getByName(tableName));
+            new FilesStatusReport(stateStore, maxFilesWithNoReferences, verbose, reporterType).run();
+        } finally {
+            s3Client.shutdown();
+            dynamoDBClient.shutdown();
+        }
     }
 }

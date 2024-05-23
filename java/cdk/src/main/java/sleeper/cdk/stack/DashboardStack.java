@@ -15,7 +15,6 @@
  */
 package sleeper.cdk.stack;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
@@ -47,18 +46,18 @@ import java.util.stream.IntStream;
 
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.METRICS_NAMESPACE;
+import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 import static sleeper.configuration.properties.instance.DashboardProperty.DASHBOARD_TIME_WINDOW_MINUTES;
 
-@SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR")
 public class DashboardStack extends NestedStack {
-    private final IngestStack ingestStack;
-    private final CompactionStack compactionStack;
-    private final PartitionSplittingStack partitionSplittingStack;
     private final String instanceId;
     private final List<String> tableNames;
     private final String metricsNamespace;
     private final Duration window;
     private final Dashboard dashboard;
+    private final IngestStack ingestStack;
+    private final CompactionStack compactionStack;
+    private final PartitionSplittingStack partitionSplittingStack;
 
     public DashboardStack(
             Construct scope,
@@ -66,7 +65,8 @@ public class DashboardStack extends NestedStack {
             IngestStack ingestStack,
             CompactionStack compactionStack,
             PartitionSplittingStack partitionSplittingStack,
-            InstanceProperties instanceProperties) {
+            InstanceProperties instanceProperties,
+            List<IMetric> errorMetrics) {
         super(scope, id);
 
         this.ingestStack = ingestStack;
@@ -77,51 +77,39 @@ public class DashboardStack extends NestedStack {
         tableNames = Utils.getAllTableProperties(instanceProperties, this)
                 .map(tableProperties -> tableProperties.get(TableProperty.TABLE_NAME))
                 .sorted()
+                // There's a limit of 500 widgets in a dashboard, including the widgets not associated with a table
+                .limit(50)
                 .collect(Collectors.toList());
         metricsNamespace = instanceProperties.get(METRICS_NAMESPACE);
         int timeWindowInMinutes = instanceProperties.getInt(DASHBOARD_TIME_WINDOW_MINUTES);
         window = Duration.minutes(timeWindowInMinutes);
         dashboard = Dashboard.Builder.create(this, "dashboard").dashboardName(instanceId).build();
 
-        addErrorMetrics();
+        addErrorMetricsWidgets(errorMetrics);
         addIngestWidgets();
         addTableWidgets();
         addCompactionWidgets();
 
         CfnOutput.Builder.create(this, "DashboardUrl")
-                .value(constructUrl())
+                .value(constructUrl(instanceProperties))
                 .build();
 
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
-    private String constructUrl() {
-        return "https://" + this.getRegion() + ".console.aws.amazon.com/cloudwatch/home#dashboards:name=" + instanceId + ";expand=true";
+    private static String constructUrl(InstanceProperties instanceProperties) {
+        return "https://" + instanceProperties.get(REGION) + ".console.aws.amazon.com/cloudwatch/home" +
+                "#dashboards:name=" + instanceProperties.get(ID) + ";expand=true";
     }
 
-    private void addErrorMetrics() {
-        List<IMetric> errorMetrics = new ArrayList<>();
-        if (null != ingestStack) {
-            errorMetrics.add(ingestStack.getErrorQueue().metricApproximateNumberOfMessagesVisible(
-                    MetricOptions.builder().label("Ingest Errors").period(window).statistic("Sum").build()));
-        }
-        if (null != compactionStack) {
-            errorMetrics.add(compactionStack.getCompactionDeadLetterQueue().metricApproximateNumberOfMessagesVisible(
-                    MetricOptions.builder().label("Compaction Errors").period(window).statistic("Sum").build()));
-        }
-        if (null != partitionSplittingStack) {
-            errorMetrics.add(partitionSplittingStack.getDeadLetterQueue().metricApproximateNumberOfMessagesVisible(
-                    MetricOptions.builder().label("Partition Split Errors").period(window).statistic("Sum").build()));
-        }
-
+    private void addErrorMetricsWidgets(List<IMetric> errorMetrics) {
         if (!errorMetrics.isEmpty()) {
             dashboard.addWidgets(
                     SingleValueWidget.Builder.create()
                             .title("Errors")
                             .metrics(errorMetrics)
                             .width(24)
-                            .build()
-            );
+                            .build());
         }
     }
 
@@ -185,12 +173,10 @@ public class DashboardStack extends NestedStack {
                                                         .dimensionsMap(createDimensionMap(instanceId, tableNames.get(i)))
                                                         .build()))
                                                 .build())
-                                        .collect(Collectors.toList())
-                        )
+                                        .collect(Collectors.toList()))
                         .leftYAxis(YAxisProps.builder().min(0).build())
                         .width(6)
-                        .build()
-        );
+                        .build());
     }
 
     private static Map<String, String> createDimensionMap(String instanceId, String tableName) {
@@ -259,8 +245,7 @@ public class DashboardStack extends NestedStack {
                                             .period(window)
                                             .statistic("Average")
                                             .dimensionsMap(dimensions)
-                                            .build()
-                            ))
+                                            .build()))
                             .leftYAxis(YAxisProps.builder().min(0).build())
                             .width(6)
                             .build(),
@@ -277,8 +262,7 @@ public class DashboardStack extends NestedStack {
                                     .build()))
                             .leftYAxis(YAxisProps.builder().min(0).build())
                             .width(6)
-                            .build()
-            );
+                            .build());
         });
     }
 
@@ -297,24 +281,21 @@ public class DashboardStack extends NestedStack {
                             .unit(Unit.COUNT)
                             .period(window)
                             .statistic("Sum")
-                            .build())
-            );
+                            .build()));
             jobsWaitingMetrics.add(
                     compactionStack.getCompactionJobsQueue().metricApproximateNumberOfMessagesVisible(MetricOptions.builder()
                             .label("Compaction")
                             .unit(Unit.COUNT)
                             .period(window)
                             .statistic("Average")
-                            .build())
-            );
+                            .build()));
             oldestJobMetrics.add(
                     compactionStack.getCompactionJobsQueue().metricApproximateAgeOfOldestMessage(MetricOptions.builder()
                             .label("Compaction")
                             .unit(Unit.COUNT)
                             .period(window)
                             .statistic("Maximum")
-                            .build())
-            );
+                            .build()));
         }
 
         if (null != partitionSplittingStack) {
@@ -324,24 +305,21 @@ public class DashboardStack extends NestedStack {
                             .unit(Unit.COUNT)
                             .period(window)
                             .statistic("Sum")
-                            .build())
-            );
+                            .build()));
             jobsWaitingMetrics.add(
                     partitionSplittingStack.getJobQueue().metricApproximateNumberOfMessagesVisible(MetricOptions.builder()
                             .label("Partition Splits")
                             .unit(Unit.COUNT)
                             .period(window)
                             .statistic("Average")
-                            .build())
-            );
+                            .build()));
             oldestJobMetrics.add(
                     partitionSplittingStack.getJobQueue().metricApproximateAgeOfOldestMessage(MetricOptions.builder()
                             .label("Partition Splits")
                             .unit(Unit.COUNT)
                             .period(window)
                             .statistic("Maximum")
-                            .build())
-            );
+                            .build()));
         }
 
         dashboard.addWidgets(
@@ -367,7 +345,6 @@ public class DashboardStack extends NestedStack {
                         .title("AgeOfOldestWaitingJob")
                         .left(oldestJobMetrics)
                         .width(6)
-                        .build()
-        );
+                        .build());
     }
 }

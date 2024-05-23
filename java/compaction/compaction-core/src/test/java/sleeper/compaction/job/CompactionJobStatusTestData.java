@@ -29,8 +29,8 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 
+import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.records;
-import static sleeper.core.record.process.status.TestRunStatusUpdates.defaultUpdateTime;
 
 public class CompactionJobStatusTestData {
     private CompactionJobStatusTestData() {

@@ -179,6 +179,20 @@ class SleeperPropertiesTest {
         }
 
         @Test
+        void shouldSetEmptyList() {
+            // Given
+            TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
+            testSleeperProperties.setList(INGEST_SOURCE_BUCKET, List.of("test-bucket"));
+
+            // When
+            testSleeperProperties.setList(INGEST_SOURCE_BUCKET, List.of());
+
+            // Then
+            assertThat(testSleeperProperties.get(INGEST_SOURCE_BUCKET)).isNull();
+            assertThat(testSleeperProperties.getList(INGEST_SOURCE_BUCKET)).isEmpty();
+        }
+
+        @Test
         void shouldAddToList() {
             // Given
             TestSleeperProperties testSleeperProperties = new TestSleeperProperties();

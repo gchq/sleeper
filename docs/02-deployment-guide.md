@@ -7,7 +7,7 @@ This contains instructions on how to deploy Sleeper.
 
 You will need to get your environment set up correctly so that you can deploy a Sleeper instance to AWS and then
 interact with it. See [getting started](01-getting-started.md) for how to install the Sleeper CLI. The information
-below provides more detail.
+below provides more detail on how to use it.
 
 ### Configure AWS
 

@@ -18,15 +18,18 @@ package sleeper.cdk.stack;
 
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
+import software.amazon.awscdk.services.cloudwatch.IMetric;
 import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
+import software.amazon.awscdk.services.iam.Effect;
+import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
-import software.amazon.awscdk.services.lambda.eventsources.SqsEventSourceProps;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
+import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
@@ -39,8 +42,10 @@ import sleeper.configuration.properties.SleeperScheduleRule;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
 
+import static sleeper.cdk.Utils.createAlarmForDlq;
 import static sleeper.cdk.Utils.createLambdaLogGroup;
 import static sleeper.cdk.Utils.shouldDeployPaused;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_DLQ_ARN;
@@ -51,13 +56,14 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_RULE;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
+import static sleeper.configuration.properties.instance.CommonProperty.METRICS_TABLE_BATCH_SIZE;
 import static sleeper.configuration.properties.instance.CommonProperty.TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB;
 import static sleeper.configuration.properties.instance.CommonProperty.TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS;
 
 public class TableMetricsStack extends NestedStack {
     public TableMetricsStack(
             Construct scope, String id, InstanceProperties instanceProperties,
-            BuiltJars jars, CoreStacks coreStacks) {
+            BuiltJars jars, Topic topic, CoreStacks coreStacks, List<IMetric> errorMetrics) {
         super(scope, id);
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
         LambdaCode metricsJar = jars.lambdaCode(BuiltJar.METRICS, jarsBucket);
@@ -72,6 +78,7 @@ public class TableMetricsStack extends NestedStack {
                 .runtime(Runtime.JAVA_11)
                 .handler("sleeper.metrics.TableMetricsTriggerLambda::handleRequest")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
+                .reservedConcurrentExecutions(1)
                 .memorySize(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS)))
                 .logGroup(createLambdaLogGroup(this, "MetricsTriggerLogGroup", triggerFunctionName, instanceProperties)));
@@ -85,8 +92,6 @@ public class TableMetricsStack extends NestedStack {
                 .timeout(Duration.minutes(1))
                 .logGroup(createLambdaLogGroup(this, "MetricsPublisherLogGroup", publishFunctionName, instanceProperties)));
 
-        coreStacks.grantReadTablesStatus(tableMetricsTrigger);
-        coreStacks.grantReadTablesMetadata(tableMetricsPublisher);
         instanceProperties.set(TABLE_METRICS_LAMBDA_FUNCTION, tableMetricsTrigger.getFunctionName());
 
         Rule rule = Rule.Builder.create(this, "MetricsPublishSchedule")
@@ -97,29 +102,41 @@ public class TableMetricsStack extends NestedStack {
                 .build();
         instanceProperties.set(TABLE_METRICS_RULE, rule.getRuleName());
 
-        String deadLetterQueueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-MetricsJobDLQ");
         Queue deadLetterQueue = Queue.Builder
                 .create(this, "MetricsJobDeadLetterQueue")
-                .queueName(deadLetterQueueName)
+                .queueName(String.join("-", "sleeper", instanceProperties.get(ID), "MetricsJobDLQ.fifo"))
+                .fifo(true)
                 .build();
-        String queueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-MetricsJobQ");
         Queue queue = Queue.Builder
                 .create(this, "MetricsJobQueue")
-                .queueName(queueName)
+                .queueName(String.join("-", "sleeper", instanceProperties.get(ID), "MetricsJobQ.fifo"))
                 .deadLetterQueue(DeadLetterQueue.builder()
                         .maxReceiveCount(1)
                         .queue(deadLetterQueue)
                         .build())
+                .fifo(true)
                 .visibilityTimeout(Duration.seconds(70))
                 .build();
         instanceProperties.set(TABLE_METRICS_QUEUE_URL, queue.getQueueUrl());
         instanceProperties.set(TABLE_METRICS_QUEUE_ARN, queue.getQueueArn());
         instanceProperties.set(TABLE_METRICS_DLQ_URL, deadLetterQueue.getQueueUrl());
         instanceProperties.set(TABLE_METRICS_DLQ_ARN, deadLetterQueue.getQueueArn());
+        createAlarmForDlq(this, "MetricsJobAlarm",
+                "Alarms if there are any messages on the dead letter queue for the table metrics queue",
+                deadLetterQueue, topic);
+        errorMetrics.add(Utils.createErrorMetric("Table Metrics Errors", deadLetterQueue, instanceProperties));
+        tableMetricsPublisher.addEventSource(SqsEventSource.Builder.create(queue)
+                .batchSize(instanceProperties.getInt(METRICS_TABLE_BATCH_SIZE)).build());
 
+        coreStacks.grantReadTablesStatus(tableMetricsTrigger);
+        coreStacks.grantReadTablesMetadata(tableMetricsPublisher);
         queue.grantSendMessages(tableMetricsTrigger);
-        tableMetricsPublisher.addEventSource(new SqsEventSource(queue,
-                SqsEventSourceProps.builder().batchSize(1).build()));
+        coreStacks.grantInvokeScheduled(tableMetricsTrigger, queue);
+        coreStacks.getReportingPolicyForGrants().addStatements(PolicyStatement.Builder.create()
+                .effect(Effect.ALLOW)
+                .actions(List.of("cloudwatch:GetMetricData"))
+                .resources(List.of("*"))
+                .build());
 
         Utils.addStackTagIfSet(this, instanceProperties);
     }

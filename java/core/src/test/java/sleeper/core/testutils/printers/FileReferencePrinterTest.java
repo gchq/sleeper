@@ -27,13 +27,10 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.core.table.TableStatus;
-import sleeper.core.table.TableStatusTestHelper;
 
 import java.util.List;
 import java.util.Map;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFiles;
 import static sleeper.core.statestore.FilesReportTestHelper.activeFiles;
@@ -101,6 +98,64 @@ public class FileReferencePrinterTest {
                     referenceForChildPartition(splitFile, "L"),
                     referenceForChildPartition(splitFile, "R"),
                     leftFile, rightFile));
+
+            // Then see approved output
+            Approvals.verify(printed);
+        }
+
+        @Test
+        void shouldPrintWholeFileBeforePartialFileWithSameNumberOfRecordsInSamePartition() {
+            // Given
+            partitions.rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", "row-50");
+            FileReference wholeFile = fileReferenceFactory().partitionFile("L", "whole.parquet", 50);
+            FileReference splitFile = fileReferenceFactory().rootFile("split.parquet", 100);
+            FileReference partialFile = referenceForChildPartition(splitFile, "L");
+
+            // When
+            String printed = FileReferencePrinter.printFiles(
+                    partitions.buildTree(), activeFiles(partialFile, wholeFile));
+
+            // Then see approved output
+            Approvals.verify(printed);
+        }
+
+        @Test // TODO this is incorrect as the order is determined by the filenames instead of the tree position
+        void shouldPrintTwoPartialFilesWithSameNumberOfRecordsWhenOneHasOtherRecordsOnADifferentPartition() {
+            // Given
+            partitions.rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", "row-50")
+                    .splitToNewChildren("R", "RL", "RR", "row-75");
+            FileReference splitFile1 = fileReferenceFactory().rootFile("split1.parquet", 100);
+            FileReference splitFile2 = fileReferenceFactory().rootFile("split2.parquet", 100);
+
+            // When
+            String printed = FileReferencePrinter.printFiles(
+                    partitions.buildTree(), activeFiles(
+                            referenceForChildPartition(splitFile1, "L"),
+                            referenceForChildPartition(splitFile2, "L"),
+                            referenceForChildPartition(splitFile2, "RL"),
+                            referenceForChildPartition(splitFile1, "RR")));
+
+            // Then see approved output
+            Approvals.verify(printed);
+        }
+
+        @Test // TODO this is incorrect as the order is determined by the filenames instead of the number of records
+        void shouldPrintTwoPartialFilesWithSameNumberOfRecordsWhenBothHaveADifferentNumberOfRecordsOnADifferentPartition() {
+            // Given
+            partitions.rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", "row-50");
+            FileReference splitFile1 = fileReferenceFactory().rootFile("split1.parquet", 100);
+            FileReference splitFile2 = fileReferenceFactory().rootFile("split2.parquet", 100);
+
+            // When
+            String printed = FileReferencePrinter.printFiles(
+                    partitions.buildTree(), activeFiles(
+                            referenceForChildPartition(splitFile1, "L", 50),
+                            referenceForChildPartition(splitFile2, "L", 50),
+                            referenceForChildPartition(splitFile2, "R", 50),
+                            referenceForChildPartition(splitFile1, "R", 25)));
 
             // Then see approved output
             Approvals.verify(printed);
@@ -314,23 +369,6 @@ public class FileReferencePrinterTest {
             // Then see approved output
             Approvals.verify(printed);
         }
-
-        @Test
-        void shouldPrintExpectedForTables() {
-            // Given
-            partitions.rootFirst("root");
-            AllReferencesToAllFiles files = activeFiles(
-                    fileReferenceFactory().partitionFile("root", 10));
-
-            // When
-            String printed = FileReferencePrinter.printExpectedFilesForAllTables(
-                    List.of(table("table-1"), table("table-2")), partitions.buildTree(), files);
-
-            // Then
-            assertThat(printed).isEqualTo(FileReferencePrinter.printTableFilesExpectingIdentical(
-                    Map.of("table-1", partitions.buildTree(), "table-2", partitions.buildTree()),
-                    Map.of("table-1", files, "table-2", files)));
-        }
     }
 
     @Nested
@@ -378,10 +416,6 @@ public class FileReferencePrinterTest {
             // Then see approved output
             Approvals.verify(printed);
         }
-    }
-
-    private TableStatus table(String name) {
-        return TableStatusTestHelper.uniqueIdAndName(name, name);
     }
 
     private FileReferenceFactory fileReferenceFactory() {

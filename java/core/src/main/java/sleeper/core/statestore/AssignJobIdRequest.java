@@ -17,6 +17,7 @@
 package sleeper.core.statestore;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * A request to assign a job to its input files. A job will operate on files in a single partition.
@@ -35,6 +36,14 @@ public class AssignJobIdRequest {
         this.filenames = filenames;
     }
 
+    /**
+     * Builds a request to assign files on a single partition to a job.
+     *
+     * @param  jobId       the ID of the job
+     * @param  partitionId the ID of the partition
+     * @param  filenames   the filenames that identify the files in the state store
+     * @return             the request
+     */
     public static AssignJobIdRequest assignJobOnPartitionToFiles(String jobId, String partitionId, List<String> filenames) {
         return new AssignJobIdRequest(jobId, partitionId, filenames);
     }
@@ -49,5 +58,27 @@ public class AssignJobIdRequest {
 
     public List<String> getFilenames() {
         return filenames;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(jobId, partitionId, filenames);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof AssignJobIdRequest)) {
+            return false;
+        }
+        AssignJobIdRequest other = (AssignJobIdRequest) obj;
+        return Objects.equals(jobId, other.jobId) && Objects.equals(partitionId, other.partitionId) && Objects.equals(filenames, other.filenames);
+    }
+
+    @Override
+    public String toString() {
+        return "AssignJobIdRequest{jobId=" + jobId + ", partitionId=" + partitionId + ", filenames=" + filenames + "}";
     }
 }

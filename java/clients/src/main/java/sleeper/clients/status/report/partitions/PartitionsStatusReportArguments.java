@@ -37,9 +37,8 @@ public class PartitionsStatusReportArguments {
     private final String tableName;
     private final Function<PrintStream, PartitionsStatusReporter> reporter;
 
-    private PartitionsStatusReportArguments(String instanceId,
-                                            String tableName,
-                                            Function<PrintStream, PartitionsStatusReporter> reporter) {
+    private PartitionsStatusReportArguments(
+            String instanceId, String tableName, Function<PrintStream, PartitionsStatusReporter> reporter) {
         this.instanceId = instanceId;
         this.tableName = tableName;
         this.reporter = reporter;
@@ -56,11 +55,11 @@ public class PartitionsStatusReportArguments {
         return new PartitionsStatusReportArguments(args[0], args[1], PartitionsStatusReporter::new);
     }
 
-    public void runReport(AmazonS3 amazonS3, AmazonDynamoDB dynamoDBClient, PrintStream out) throws StateStoreException {
-        InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, instanceId);
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, amazonS3, dynamoDBClient);
+    public void runReport(AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, PrintStream out) throws StateStoreException {
+        InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(s3Client, instanceId);
+        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
         TableProperties tableProperties = tablePropertiesProvider.getByName(tableName);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, new Configuration());
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, new Configuration());
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
 
         new PartitionsStatusReport(stateStore, tableProperties, reporter.apply(out)).run();

@@ -59,10 +59,13 @@ public class PartitionsStatusReport {
             return;
         }
 
-        AmazonS3 amazonS3 = buildAwsV1Client(AmazonS3ClientBuilder.standard());
+        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
         AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
-        arguments.runReport(amazonS3, dynamoDBClient, System.out);
-        amazonS3.shutdown();
-        dynamoDBClient.shutdown();
+        try {
+            arguments.runReport(s3Client, dynamoDBClient, System.out);
+        } finally {
+            s3Client.shutdown();
+            dynamoDBClient.shutdown();
+        }
     }
 }

@@ -16,7 +16,6 @@
 
 package sleeper.clients.status.report.ingest.task;
 
-
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.ingest.task.IngestTaskFinishedStatus;
@@ -33,28 +32,27 @@ public class IngestTaskStatusReportTestHelper {
         return startedTaskBuilder(taskId, startTime).build();
     }
 
-
     private static IngestTaskStatus.Builder startedTaskBuilder(String taskId, String startTime) {
         return IngestTaskStatus.builder()
                 .startTime(Instant.parse(startTime))
                 .taskId(taskId);
     }
 
-    public static IngestTaskStatus finishedTask(String taskId, String startTime,
-                                                String finishTime, long recordsRead, long recordsWritten) {
+    public static IngestTaskStatus finishedTask(
+            String taskId, String startTime, String finishTime, long recordsRead, long recordsWritten) {
         return finishedTaskBuilder(taskId, startTime, finishTime, recordsRead, recordsWritten).build();
     }
 
-    public static IngestTaskStatus finishedTask(String taskId, String startTime, String finishTime,
-                                                RecordsProcessedSummary... summaries) {
+    public static IngestTaskStatus finishedTask(
+            String taskId, String startTime, String finishTime, RecordsProcessedSummary... summaries) {
         return startedTaskBuilder(taskId, startTime)
                 .finished(Instant.parse(finishTime),
                         IngestTaskFinishedStatus.builder().jobSummaries(Stream.of(summaries)))
                 .build();
     }
 
-    private static IngestTaskStatus.Builder finishedTaskBuilder(String taskId, String startTime,
-                                                                String finishTime, long recordsRead, long recordsWritten) {
+    private static IngestTaskStatus.Builder finishedTaskBuilder(
+            String taskId, String startTime, String finishTime, long recordsRead, long recordsWritten) {
         return startedTaskBuilder(taskId, startTime)
                 .finished(Instant.parse(finishTime),
                         taskFinishedStatus(startTime, finishTime, recordsRead, recordsWritten));

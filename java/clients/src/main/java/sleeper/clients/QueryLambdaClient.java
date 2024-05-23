@@ -103,7 +103,7 @@ public class QueryLambdaClient extends QueryCommandLineClient {
     }
 
     @Override
-    protected void runQueries(TableProperties tableProperties) {
+    protected void runQueries(TableProperties tableProperties) throws InterruptedException {
         Scanner scanner = new Scanner(System.in, StandardCharsets.UTF_8.displayName());
         resultsPublisherConfig = new HashMap<>();
         while (true) {
@@ -133,18 +133,23 @@ public class QueryLambdaClient extends QueryCommandLineClient {
                 query.withResultsPublisherConfig(resultsPublisherConfig)));
     }
 
-    public static void main(String[] args) throws StateStoreException {
+    public static void main(String[] args) throws StateStoreException, InterruptedException {
         if (1 != args.length) {
             throw new IllegalArgumentException("Usage: <instance-id>");
         }
 
-        AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
-        AmazonSQS amazonSQS = AmazonSQSClientBuilder.defaultClient();
-        AmazonDynamoDB dynamoDB = AmazonDynamoDBClientBuilder.defaultClient();
+        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+        AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
+        AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
 
-        InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, args[0]);
-
-        QueryLambdaClient queryLambdaClient = new QueryLambdaClient(amazonS3, dynamoDB, amazonSQS, instanceProperties);
-        queryLambdaClient.run();
+        try {
+            InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(s3Client, args[0]);
+            QueryLambdaClient queryLambdaClient = new QueryLambdaClient(s3Client, dynamoDBClient, sqsClient, instanceProperties);
+            queryLambdaClient.run();
+        } finally {
+            s3Client.shutdown();
+            sqsClient.shutdown();
+            dynamoDBClient.shutdown();
+        }
     }
 }

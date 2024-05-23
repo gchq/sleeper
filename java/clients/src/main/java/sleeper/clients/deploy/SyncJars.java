@@ -66,14 +66,16 @@ public class SyncJars {
         if (args.length < 3 || args.length > 4) {
             throw new IllegalArgumentException("Usage: <jars-dir> <bucket-name> <region> <optional-delete-old-jars>");
         }
-        builder().jarsDirectory(Path.of(args[0]))
-                .bucketName(args[1])
-                .region(args[2])
-                .s3(S3Client.create())
-                .deleteOldJars(optionalArgument(args, 3)
-                        .map(Boolean::parseBoolean)
-                        .orElse(false))
-                .build().sync();
+        try (S3Client s3 = S3Client.create()) {
+            builder().jarsDirectory(Path.of(args[0]))
+                    .bucketName(args[1])
+                    .region(args[2])
+                    .s3(s3)
+                    .deleteOldJars(optionalArgument(args, 3)
+                            .map(Boolean::parseBoolean)
+                            .orElse(false))
+                    .build().sync();
+        }
     }
 
     public boolean sync() throws IOException {
@@ -131,8 +133,8 @@ public class SyncJars {
         uploadJars.stream().parallel().forEach(jar -> {
             LOGGER.info("Uploading jar: {}", jar.getFileName());
             s3.putObject(builder -> builder
-                            .bucket(bucketName)
-                            .key(String.valueOf(jar.getFileName())),
+                    .bucket(bucketName)
+                    .key(String.valueOf(jar.getFileName())),
                     jar);
             LOGGER.info("Finished uploading jar: {}", jar.getFileName());
         });

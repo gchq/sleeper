@@ -24,6 +24,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * An in-memory partition store implementation where the partitions are fixed and cannot be changed.
+ */
 public class FixedPartitionStore implements PartitionStore {
 
     private final List<Partition> partitions;

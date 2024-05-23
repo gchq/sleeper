@@ -18,7 +18,7 @@ package sleeper.clients.status.report.ingest.task;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.status.report.IngestTaskStatusReport;
-import sleeper.clients.testutil.ToStringPrintStream;
+import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.ingest.task.IngestTaskStatus;
 import sleeper.ingest.task.IngestTaskStatusStore;
 
@@ -32,7 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static sleeper.clients.testutil.ClientTestUtils.example;
-import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
+import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 
 public class IngestTaskStatusReportTest {
     private final IngestTaskStatusStore store = mock(IngestTaskStatusStore.class);
@@ -110,10 +110,9 @@ public class IngestTaskStatusReportTest {
     }
 
     private String getReport(IngestTaskQuery query, Function<PrintStream, IngestTaskStatusReporter> getReporter) {
-        ToStringPrintStream output = new ToStringPrintStream();
+        ToStringConsoleOutput output = new ToStringConsoleOutput();
         new IngestTaskStatusReport(store,
-                getReporter.apply(output.getPrintStream()), query
-        ).run();
+                getReporter.apply(output.getPrintStream()), query).run();
         return output.toString();
     }
 }

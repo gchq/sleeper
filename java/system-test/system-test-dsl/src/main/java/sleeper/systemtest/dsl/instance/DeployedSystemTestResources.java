@@ -39,7 +39,6 @@ import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JA
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REGION;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REPO;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_VPC_ID;
-import static sleeper.systemtest.configuration.SystemTestProperty.WRITE_DATA_ROLE_NAME;
 
 public class DeployedSystemTestResources {
     private static final Logger LOGGER = LoggerFactory.getLogger(DeployedSystemTestResources.class);
@@ -79,10 +78,9 @@ public class DeployedSystemTestResources {
     }
 
     public void resetProperties() {
-        updateProperties(properties ->
-                properties.getPropertiesIndex().getUserDefined().stream()
-                        .filter(property -> property.isEditable() && !property.isRunCdkDeployWhenChanged())
-                        .forEach(properties::unset));
+        updateProperties(properties -> properties.getPropertiesIndex().getUserDefined().stream()
+                .filter(property -> property.isEditable() && !property.isRunCdkDeployWhenChanged())
+                .forEach(properties::unset));
     }
 
     public boolean isSystemTestClusterEnabled() {
@@ -134,9 +132,5 @@ public class DeployedSystemTestResources {
 
     public String getSystemTestBucketName() {
         return properties.get(SYSTEM_TEST_BUCKET_NAME);
-    }
-
-    public String getSystemTestWriterRoleName() {
-        return properties.get(WRITE_DATA_ROLE_NAME);
     }
 }

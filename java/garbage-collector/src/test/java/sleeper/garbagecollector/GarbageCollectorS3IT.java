@@ -27,7 +27,6 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.PartitionTree;
@@ -39,7 +38,6 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.table.InvokeForTableRequest;
 import sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils;
 import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.StateStoreProvider;
@@ -56,7 +54,6 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
@@ -87,7 +84,7 @@ public class GarbageCollectorS3IT {
 
     StateStore setupStateStoreAndFixTime(Instant fixedTime) {
         StateStore stateStore = inMemoryStateStoreWithSinglePartition(TEST_SCHEMA);
-        stateStore.fixTime(fixedTime);
+        stateStore.fixFileUpdateTime(fixedTime);
         stateStoreProvider = new FixedStateStoreProvider(tableProperties, stateStore);
         return stateStore;
     }
@@ -117,10 +114,9 @@ public class GarbageCollectorS3IT {
 
         // When
         GarbageCollector collector = createGarbageCollector(instanceProperties, stateStoreProvider);
-        InvokeForTableRequest request = new InvokeForTableRequest(List.of(tableProperties.get(TABLE_ID)));
 
         // And / Then
-        assertThatThrownBy(() -> collector.runAtTime(currentTime, request))
+        assertThatThrownBy(() -> collector.runAtTime(currentTime, List.of(tableProperties)))
                 .isInstanceOf(FailedGarbageCollectionException.class);
         assertThat(s3Client.doesObjectExist(TEST_BUCKET, "old-file-2.parquet")).isFalse();
         assertThat(s3Client.doesObjectExist(TEST_BUCKET, "new-file-2.parquet")).isTrue();
@@ -146,8 +142,7 @@ public class GarbageCollectorS3IT {
     }
 
     private GarbageCollector createGarbageCollector(InstanceProperties instanceProperties, StateStoreProvider stateStoreProvider) {
-        return new GarbageCollector(configuration, instanceProperties,
-                new FixedTablePropertiesProvider(tables), stateStoreProvider);
+        return new GarbageCollector(configuration, instanceProperties, stateStoreProvider);
     }
 
     private static Schema getSchema() {

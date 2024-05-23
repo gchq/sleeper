@@ -81,7 +81,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
         // Make query
         SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
 
-        StateStore stateStore = new StateStoreFactory(dynamoClient, instance, configuration).getStateStore(table);
+        StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoClient, configuration).getStateStore(table);
         Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
         List<String> relevantFiles = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() >= 2020)
@@ -108,8 +108,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
                 tableName,
                 new Constraints(predicate),
                 getTableResponse.getSchema(),
-                getTableResponse.getPartitionColumns()
-        );
+                getTableResponse.getPartitionColumns());
 
         GetTableLayoutResponse getTableLayoutResponse = sleeperMetadataHandler.doGetTableLayout(blockAllocator, request);
 
@@ -131,7 +130,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
         // When
         // Make query
         SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
-        StateStore stateStore = new StateStoreFactory(dynamoClient, instance, configuration).getStateStore(table);
+        StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoClient, configuration).getStateStore(table);
         Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
         List<List<String>> relevantFiles = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() <= 2018)
@@ -156,8 +155,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
                 tableName,
                 new Constraints(predicate),
                 getTableResponse.getSchema(),
-                getTableResponse.getPartitionColumns()
-        );
+                getTableResponse.getPartitionColumns());
 
         GetTableLayoutResponse getTableLayoutResponse = sleeperMetadataHandler.doGetTableLayout(blockAllocator, request);
 
@@ -183,7 +181,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
         // Make query
         SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
 
-        StateStore stateStore = new StateStoreFactory(dynamoClient, instance, configuration).getStateStore(table);
+        StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoClient, configuration).getStateStore(table);
         Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
         List<List<String>> relevantFiles = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)
@@ -211,8 +209,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
                 tableName,
                 new Constraints(predicate),
                 getTableResponse.getSchema(),
-                getTableResponse.getPartitionColumns()
-        );
+                getTableResponse.getPartitionColumns());
 
         GetTableLayoutResponse getTableLayoutResponse = sleeperMetadataHandler.doGetTableLayout(new BlockAllocatorImpl(),
                 request);
@@ -236,7 +233,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
         // Make query
         SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
 
-        StateStore stateStore = new StateStoreFactory(dynamoClient, instance, configuration).getStateStore(table);
+        StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoClient, configuration).getStateStore(table);
         Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
         List<List<String>> relevantFiles = stateStore.getLeafPartitions().stream()
                 .map(Partition::getId)
@@ -259,8 +256,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
                 tableName,
                 new Constraints(predicate),
                 getTableResponse.getSchema(),
-                getTableResponse.getPartitionColumns()
-        );
+                getTableResponse.getPartitionColumns());
 
         GetTableLayoutResponse getTableLayoutResponse = sleeperMetadataHandler.doGetTableLayout(new BlockAllocatorImpl(),
                 request);
@@ -286,7 +282,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
         // Make query
         SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
 
-        StateStore stateStore = new StateStoreFactory(dynamoClient, instance, configuration).getStateStore(table);
+        StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoClient, configuration).getStateStore(table);
         Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
         List<List<String>> relevantFiles = stateStore.getLeafPartitions().stream()
                 .map(Partition::getId)
@@ -308,8 +304,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
                 tableName,
                 new Constraints(predicate),
                 getTableResponse.getSchema(),
-                getTableResponse.getPartitionColumns()
-        );
+                getTableResponse.getPartitionColumns());
 
         GetTableLayoutResponse getTableLayoutResponse = sleeperMetadataHandler.doGetTableLayout(new BlockAllocatorImpl(),
                 request);
@@ -360,7 +355,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
         // Make query
         SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
 
-        StateStore stateStore = new StateStoreFactory(dynamoClient, instance, configuration).getStateStore(table);
+        StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoClient, configuration).getStateStore(table);
         Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
         List<List<String>> relevantFiles = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == Integer.MIN_VALUE || (Integer) p.getRegion().getRange("year").getMin() == 2019)
@@ -384,8 +379,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
                 tableName,
                 new Constraints(predicate),
                 getTableResponse.getSchema(),
-                getTableResponse.getPartitionColumns()
-        );
+                getTableResponse.getPartitionColumns());
 
         GetTableLayoutResponse getTableLayoutResponse = sleeperMetadataHandler.doGetTableLayout(new BlockAllocatorImpl(),
                 request);
@@ -489,7 +483,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
         TableName tableName = new TableName(instance.get(ID), table.get(TABLE_NAME));
 
         // When
-        StateStore stateStore = new StateStoreFactory(dynamoClient, instance, configuration).getStateStore(table);
+        StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoClient, configuration).getStateStore(table);
         Partition partition2018 = stateStore.getLeafPartitions()
                 .stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)
@@ -518,8 +512,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
                 "abc", "cde",
                 tableName,
                 queryConstraints, getTableResponse.getSchema(),
-                getTableResponse.getPartitionColumns()
-        ));
+                getTableResponse.getPartitionColumns()));
 
         // Then
         Block partitions = getTableLayoutResponse.getPartitions();

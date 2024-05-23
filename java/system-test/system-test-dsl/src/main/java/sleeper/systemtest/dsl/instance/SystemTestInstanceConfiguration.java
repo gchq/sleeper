@@ -22,17 +22,18 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import java.util.function.Supplier;
 
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_ROLE;
 
 public class SystemTestInstanceConfiguration {
     private final String shortName;
     private final Supplier<DeployInstanceConfiguration> deployConfig;
     private final boolean useSystemTestIngestSourceBucket;
+    private final boolean disableTransactionLogSnapshots;
 
     private SystemTestInstanceConfiguration(Builder builder) {
         shortName = builder.shortName;
         deployConfig = builder.deployConfig;
         useSystemTestIngestSourceBucket = builder.useSystemTestIngestSourceBucket;
+        disableTransactionLogSnapshots = builder.disableTransactionLogSnapshots;
     }
 
     public static Builder builder() {
@@ -57,7 +58,6 @@ public class SystemTestInstanceConfiguration {
         if (shouldUseSystemTestIngestSourceBucket()) {
             properties.set(INGEST_SOURCE_BUCKET, systemTest.getSystemTestBucketName());
         }
-        properties.set(INGEST_SOURCE_ROLE, systemTest.getSystemTestWriterRoleName());
         return configuration;
     }
 
@@ -75,9 +75,14 @@ public class SystemTestInstanceConfiguration {
         return useSystemTestIngestSourceBucket;
     }
 
+    public boolean shouldEnableTransactionLogSnapshots() {
+        return !disableTransactionLogSnapshots;
+    }
+
     public static final class Builder {
         private Supplier<DeployInstanceConfiguration> deployConfig;
         private boolean useSystemTestIngestSourceBucket = true;
+        private boolean disableTransactionLogSnapshots = false;
         private String shortName;
 
         private Builder() {
@@ -95,6 +100,11 @@ public class SystemTestInstanceConfiguration {
 
         public Builder useSystemTestIngestSourceBucket(boolean useSystemTestIngestSourceBucket) {
             this.useSystemTestIngestSourceBucket = useSystemTestIngestSourceBucket;
+            return this;
+        }
+
+        public Builder disableTransactionLogSnapshots(boolean disableTransactionLogSnapshots) {
+            this.disableTransactionLogSnapshots = disableTransactionLogSnapshots;
             return this;
         }
 

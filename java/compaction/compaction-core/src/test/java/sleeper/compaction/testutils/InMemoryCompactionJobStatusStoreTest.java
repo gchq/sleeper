@@ -36,11 +36,11 @@ import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompacti
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
-import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
+import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
+import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forJob;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forJobOnTask;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.records;
-import static sleeper.core.record.process.status.TestRunStatusUpdates.defaultUpdateTime;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 class InMemoryCompactionJobStatusStoreTest {
@@ -289,10 +289,10 @@ class InMemoryCompactionJobStatusStoreTest {
             assertThat(store.getJobsInTimePeriod(tableId,
                     Instant.parse("2023-03-29T12:00:00Z"),
                     Instant.parse("2023-03-29T13:00:00Z")))
-                            .containsExactly(
-                                    jobStatusFrom(records().fromUpdates(
-                                            forJob(job1.getId(), CompactionJobCreatedStatus.from(job1, createdTime1)),
-                                            forJobOnTask(job1.getId(), taskId1, startedCompactionStatus(startedTime1)))));
+                    .containsExactly(
+                            jobStatusFrom(records().fromUpdates(
+                                    forJob(job1.getId(), CompactionJobCreatedStatus.from(job1, createdTime1)),
+                                    forJobOnTask(job1.getId(), taskId1, startedCompactionStatus(startedTime1)))));
         }
 
         @Test

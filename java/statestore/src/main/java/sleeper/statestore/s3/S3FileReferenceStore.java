@@ -17,25 +17,15 @@ package sleeper.statestore.s3;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-import org.apache.parquet.hadoop.ParquetReader;
-import org.apache.parquet.hadoop.ParquetWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.core.record.Record;
-import sleeper.core.schema.Field;
-import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.IntType;
-import sleeper.core.schema.type.LongType;
-import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.FileReferenceSerDe;
 import sleeper.core.statestore.FileReferenceStore;
 import sleeper.core.statestore.SplitFileReferenceRequest;
-import sleeper.core.statestore.SplitRequestsFailedException;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.FileAlreadyExistsException;
 import sleeper.core.statestore.exception.FileHasReferencesException;
@@ -44,12 +34,10 @@ import sleeper.core.statestore.exception.FileReferenceAlreadyExistsException;
 import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
-import sleeper.io.parquet.record.ParquetReaderIterator;
-import sleeper.io.parquet.record.ParquetRecordReader;
-import sleeper.io.parquet.record.ParquetRecordWriterFactory;
+import sleeper.core.statestore.exception.SplitRequestsFailedException;
+import sleeper.statestore.StateStoreFileUtils;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -77,20 +65,13 @@ import static sleeper.statestore.s3.S3StateStore.CURRENT_FILES_REVISION_ID_KEY;
 
 class S3FileReferenceStore implements FileReferenceStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(S3FileReferenceStore.class);
-    private static final Schema FILE_SCHEMA = Schema.builder()
-            .rowKeyFields(new Field("fileName", new StringType()))
-            .valueFields(
-                    new Field("referencesJson", new StringType()),
-                    new Field("externalReferences", new IntType()),
-                    new Field("lastStateStoreUpdateTime", new LongType()))
-            .build();
     private static final String DELIMITER = "|";
 
     private final String stateStorePath;
     private final Configuration conf;
     private final S3RevisionIdStore s3RevisionIdStore;
-    private final FileReferenceSerDe serDe = new FileReferenceSerDe();
     private final S3StateStoreDataFile<List<AllReferencesToAFile>> s3StateStoreFile;
+    private final StateStoreFileUtils stateStoreFileUtils;
     private Clock clock = Clock.systemUTC();
 
     private S3FileReferenceStore(Builder builder) {
@@ -105,6 +86,7 @@ class S3FileReferenceStore implements FileReferenceStore {
                 .loadAndWriteData(this::readFilesFromParquet, this::writeFilesToParquet)
                 .hadoopConf(conf)
                 .build();
+        stateStoreFileUtils = new StateStoreFileUtils(conf);
     }
 
     static Builder builder() {
@@ -390,62 +372,39 @@ class S3FileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public boolean hasNoFiles() {
+    public boolean hasNoFiles() throws StateStoreException {
         S3RevisionId revisionId = getCurrentFilesRevisionId();
         if (revisionId == null) {
             return true;
         }
-        String path = getFilesPath(revisionId);
-        try (ParquetReader<Record> reader = fileReader(path)) {
-            return reader.read() == null;
+        try {
+            return stateStoreFileUtils.isEmpty(getFilesPath(revisionId));
         } catch (IOException e) {
-            throw new UncheckedIOException("Failed loading files", e);
+            throw new StateStoreException("Failed to load files", e);
         }
     }
 
     @Override
-    public void clearFileData() {
-        Path path = new Path(stateStorePath + "/files");
+    public void clearFileData() throws StateStoreException {
         try {
+            Path path = new Path(stateStorePath + "/files");
             path.getFileSystem(conf).delete(path, true);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+            s3RevisionIdStore.deleteFilesRevision();
+        } catch (IOException | RuntimeException e) {
+            throw new StateStoreException("Failed deleting files file", e);
         }
-        s3RevisionIdStore.deleteFilesRevision();
     }
 
     private String getFilesPath(S3RevisionId revisionId) {
         return stateStorePath + "/files/" + revisionId.getRevision() + "-" + revisionId.getUuid() + "-files.parquet";
     }
 
-    private Record getRecordFromFile(AllReferencesToAFile file) {
-        Record record = new Record();
-        record.put("fileName", file.getFilename());
-        record.put("referencesJson", serDe.collectionToJson(file.getInternalReferences()));
-        record.put("externalReferences", file.getExternalReferenceCount());
-        record.put("lastStateStoreUpdateTime", file.getLastStateStoreUpdateTime().toEpochMilli());
-        return record;
-    }
-
-    private AllReferencesToAFile getFileFromRecord(Record record) {
-        List<FileReference> internalReferences = serDe.listFromJson((String) record.get("referencesJson"));
-        return AllReferencesToAFile.builder()
-                .filename((String) record.get("fileName"))
-                .internalReferences(internalReferences)
-                .totalReferenceCount((int) record.get("externalReferences") + internalReferences.size())
-                .lastStateStoreUpdateTime(Instant.ofEpochMilli((long) record.get("lastStateStoreUpdateTime")))
-                .build();
-    }
-
     private void writeFilesToParquet(List<AllReferencesToAFile> files, String path) throws StateStoreException {
         LOGGER.debug("Writing {} file records to {}", files.size(), path);
-        try (ParquetWriter<Record> recordWriter = ParquetRecordWriterFactory
-                .createParquetRecordWriter(new Path(path), FILE_SCHEMA, conf)) {
-            for (AllReferencesToAFile file : files) {
-                recordWriter.write(getRecordFromFile(file));
-            }
+        try {
+            stateStoreFileUtils.saveFiles(path, files.stream());
         } catch (IOException e) {
-            throw new StateStoreException("Failed writing files", e);
+            throw new StateStoreException("Failed to save files", e);
         }
         LOGGER.debug("Wrote {} file records to {}", files.size(), path);
     }
@@ -453,25 +412,16 @@ class S3FileReferenceStore implements FileReferenceStore {
     private List<AllReferencesToAFile> readFilesFromParquet(String path) throws StateStoreException {
         LOGGER.debug("Loading file records from {}", path);
         List<AllReferencesToAFile> files = new ArrayList<>();
-        try (ParquetReader<Record> reader = fileReader(path)) {
-            ParquetReaderIterator recordReader = new ParquetReaderIterator(reader);
-            while (recordReader.hasNext()) {
-                files.add(getFileFromRecord(recordReader.next()));
-            }
+        try {
+            stateStoreFileUtils.loadFiles(path, files::add);
         } catch (IOException e) {
-            throw new StateStoreException("Failed loading files", e);
+            throw new StateStoreException("Failed to load files", e);
         }
         LOGGER.debug("Loaded {} file records from {}", files.size(), path);
         return files;
     }
 
-    private ParquetReader<Record> fileReader(String path) throws IOException {
-        return new ParquetRecordReader.Builder(new Path(path), FILE_SCHEMA)
-                .withConf(conf)
-                .build();
-    }
-
-    public void fixTime(Instant now) {
+    public void fixFileUpdateTime(Instant now) {
         clock = Clock.fixed(now, ZoneId.of("UTC"));
     }
 

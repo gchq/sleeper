@@ -65,6 +65,13 @@ public class JSONResultsBatchSerialiser implements ResultsBatchSerialiser {
         return gson.fromJson(json, ResultsBatch.class);
     }
 
+    /**
+     * Serialises a batch of results to a JSON string.
+     *
+     * @param  resultsBatch the batch of results
+     * @param  prettyPrint  whether to pretty-print the JSON string
+     * @return              a serialised JSON string
+     */
     public String serialise(ResultsBatch resultsBatch, boolean prettyPrint) {
         if (prettyPrint) {
             return gsonPrettyPrinting.toJson(resultsBatch);
@@ -72,6 +79,9 @@ public class JSONResultsBatchSerialiser implements ResultsBatchSerialiser {
         return serialise(resultsBatch);
     }
 
+    /**
+     * A GSON plugin to serialise/deserialise a batch of results.
+     */
     private static class ResultsBatchSerDe implements JsonSerializer<ResultsBatch>, JsonDeserializer<ResultsBatch> {
         @Override
         public ResultsBatch deserialize(JsonElement json, java.lang.reflect.Type typeOfT, JsonDeserializationContext context) throws JsonParseException {

@@ -17,7 +17,7 @@ package sleeper.clients.util.table;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.clients.testutil.ToStringPrintStream;
+import sleeper.clients.testutil.ToStringConsoleOutput;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.testutil.ClientTestUtils.example;
@@ -30,7 +30,7 @@ class TableWriterFieldAlignmentTest {
         TableWriterFactory.Builder factoryBuilder = TableWriterFactory.builder();
         TableField field = factoryBuilder.addNumericField("Field");
         TableWriterFactory factory = factoryBuilder.build();
-        ToStringPrintStream output = new ToStringPrintStream();
+        ToStringConsoleOutput output = new ToStringConsoleOutput();
 
         // When
         factory.tableBuilder()

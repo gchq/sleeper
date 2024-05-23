@@ -21,6 +21,10 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * Updates held in the status store for a job. These are sorted by the latest update first, and are organised by
+ * correlating updates that occur in the same run of a job. The raw records from the status store are also kept.
+ */
 public class JobStatusUpdates {
 
     private final String jobId;
@@ -34,12 +38,27 @@ public class JobStatusUpdates {
         this.runs = runs;
     }
 
+    /**
+     * Creates an instance of this class. The records are correlated to detect which update occurs on which run of the
+     * job.
+     *
+     * @param  jobId   the job ID to set
+     * @param  records the list of status update records for the job
+     * @return         an instance of this class
+     */
     public static JobStatusUpdates from(String jobId, List<ProcessStatusUpdateRecord> records) {
         List<ProcessStatusUpdateRecord> recordsLatestFirst = orderLatestFirst(records);
         ProcessRuns runs = ProcessRuns.fromRecordsLatestFirst(recordsLatestFirst);
         return new JobStatusUpdates(jobId, recordsLatestFirst, runs);
     }
 
+    /**
+     * Creates and streams instances of this class from status update records. The records are gathered and organised
+     * for each job.
+     *
+     * @param  records the list of status update records
+     * @return         a stream of instances of this class, each for a different job
+     */
     public static Stream<JobStatusUpdates> streamFrom(Stream<ProcessStatusUpdateRecord> records) {
         JobStatusesBuilder builder = new JobStatusesBuilder();
         records.forEach(builder::update);
@@ -58,6 +77,13 @@ public class JobStatusUpdates {
         return recordsLatestFirst.get(0);
     }
 
+    /**
+     * Gets the first status update of the provided type.
+     *
+     * @param  <T>        the status update type
+     * @param  updateType the class defining the type of update to look for
+     * @return            the first status update, or an empty optional if there is no update of the given type
+     */
     public <T extends ProcessStatusUpdate> Optional<T> getFirstStatusUpdateOfType(Class<T> updateType) {
         for (int i = recordsLatestFirst.size() - 1; i >= 0; i--) {
             ProcessStatusUpdate update = recordsLatestFirst.get(i).getStatusUpdate();

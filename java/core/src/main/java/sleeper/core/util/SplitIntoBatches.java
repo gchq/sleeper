@@ -22,10 +22,21 @@ import java.util.function.Consumer;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+/**
+ * A utility class to help split a collection of items into batches.
+ */
 public class SplitIntoBatches {
     private SplitIntoBatches() {
     }
 
+    /**
+     * Splits a list of items into batches of a given size.
+     *
+     * @param  <T>       the item type
+     * @param  batchSize the maximum size of sub-list to return
+     * @param  list      the list to split
+     * @return           an iterable of sub-lists backed by the source list
+     */
     public static <T> Iterable<List<T>> splitListIntoBatchesOf(int batchSize, List<T> list) {
         if (batchSize < 1) {
             throw new IllegalArgumentException("Batch size must be at least 1, found " + batchSize);
@@ -38,6 +49,14 @@ public class SplitIntoBatches {
                 .mapToObj(i -> items.subList(i, Math.min(i + batchSize, items.size())));
     }
 
+    /**
+     * Performs an operation on batches of items, reusing the same list to store the current batch.
+     *
+     * @param <T>       the item type
+     * @param batchSize the number of items to process in a batch
+     * @param items     a stream of items to process in batches
+     * @param operation an operation to perform on a batch of items
+     */
     public static <T> void reusingListOfSize(int batchSize, Stream<T> items, Consumer<List<T>> operation) {
         if (batchSize < 1) {
             throw new IllegalArgumentException("Batch size must be at least 1, found " + batchSize);

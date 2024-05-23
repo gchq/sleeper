@@ -25,6 +25,7 @@ import sleeper.systemtest.dsl.ingest.DirectIngestDriver;
 import sleeper.systemtest.dsl.ingest.IngestBatcherDriver;
 import sleeper.systemtest.dsl.ingest.IngestByQueue;
 import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
+import sleeper.systemtest.dsl.instance.AssumeAdminRoleDriver;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
 import sleeper.systemtest.dsl.instance.SleeperTablesDriver;
@@ -33,6 +34,7 @@ import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import sleeper.systemtest.dsl.metrics.TableMetricsDriver;
 import sleeper.systemtest.dsl.partitioning.PartitionSplittingDriver;
 import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
+import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryCompaction;
@@ -47,6 +49,7 @@ import sleeper.systemtest.dsl.testutil.drivers.InMemoryQueryByQueueDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySketchesStore;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySleeperInstanceDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySleeperTablesDriver;
+import sleeper.systemtest.dsl.testutil.drivers.InMemorySnapshotsDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySourceFilesDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySystemTestDeploymentDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryTableMetrics;
@@ -76,6 +79,11 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
     @Override
     public SleeperInstanceDriver instance(SystemTestParameters parameters) {
         return instanceDriver;
+    }
+
+    @Override
+    public AssumeAdminRoleDriver assumeAdminRole() {
+        return properties -> this;
     }
 
     @Override
@@ -153,6 +161,11 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
     }
 
     @Override
+    public QueryAllTablesDriver queryByWebSocket(SystemTestContext context) {
+        return InMemoryQueryByQueueDriver.allTablesDriver(context.instance(), data);
+    }
+
+    @Override
     public PurgeQueueDriver purgeQueues(SystemTestContext context) {
         return properties -> {
         };
@@ -170,5 +183,10 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
 
     public InMemoryDataStore data() {
         return data;
+    }
+
+    @Override
+    public SnapshotsDriver snapshots() {
+        return new InMemorySnapshotsDriver();
     }
 }

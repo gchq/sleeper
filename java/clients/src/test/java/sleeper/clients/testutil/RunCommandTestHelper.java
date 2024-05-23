@@ -35,8 +35,7 @@ public class RunCommandTestHelper {
     }
 
     public static List<CommandPipeline> pipelinesRunOn(
-            PipelineInvoker invoker, CommandPipelineRunner runner)
-            throws IOException, InterruptedException {
+            PipelineInvoker invoker, CommandPipelineRunner runner) throws IOException, InterruptedException {
         List<CommandPipeline> pipelines = new ArrayList<>();
         CommandPipelineRunner runCommand = (pipeline) -> {
             pipelines.add(pipeline);
@@ -66,10 +65,6 @@ public class RunCommandTestHelper {
             throw new IllegalStateException("Exactly one command expected, found: " + commands);
         }
         return commands.get(0).toArray();
-    }
-
-    public static Command command(String... command) {
-        return new Command(command);
     }
 
     public interface CommandInvoker {

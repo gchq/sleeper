@@ -39,8 +39,8 @@ public class S3StateStoreStack extends NestedStack {
     private final Table revisionTable;
     private final TableDataStack dataStack;
 
-    public S3StateStoreStack(Construct scope, String id, InstanceProperties instanceProperties,
-                             TableDataStack dataStack, ManagedPoliciesStack policiesStack) {
+    public S3StateStoreStack(
+            Construct scope, String id, InstanceProperties instanceProperties, TableDataStack dataStack) {
         super(scope, id);
         this.dataStack = dataStack;
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
@@ -65,16 +65,15 @@ public class S3StateStoreStack extends NestedStack {
                 .pointInTimeRecovery(instanceProperties.getBoolean(S3_STATE_STORE_DYNAMO_POINT_IN_TIME_RECOVERY))
                 .build();
         instanceProperties.set(REVISION_TABLENAME, this.revisionTable.getTableName());
-        revisionTable.grantReadWriteData(policiesStack.getIngestPolicy());
     }
 
-    public void grantReadWrite(IGrantable grantee) {
-        revisionTable.grantReadWriteData(grantee);
-        dataStack.getDataBucket().grantReadWrite(grantee); // TODO Only needs access to keys starting with 'table-name/statestore'
-    }
-
-    public void grantRead(IGrantable grantee) {
-        revisionTable.grantReadData(grantee);
-        dataStack.getDataBucket().grantRead(grantee); // TODO Only needs access to keys starting with 'table-name/statestore'
+    public void grantAccess(StateStoreGrants grants, IGrantable grantee) {
+        if (grants.canWriteAny()) {
+            revisionTable.grantReadWriteData(grantee);
+            dataStack.getDataBucket().grantReadWrite(grantee); // TODO Only needs access to keys starting with 'table-name/statestore'
+        } else if (grants.canReadAny()) {
+            revisionTable.grantReadData(grantee);
+            dataStack.getDataBucket().grantRead(grantee); // TODO Only needs access to keys starting with 'table-name/statestore'
+        }
     }
 }

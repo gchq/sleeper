@@ -16,7 +16,6 @@
 
 package sleeper.configuration.properties.instance;
 
-
 import sleeper.configuration.Utils;
 import sleeper.configuration.properties.SleeperPropertyIndex;
 
@@ -77,10 +76,6 @@ public interface IngestProperty {
             .description("A comma-separated list of buckets that contain files to be ingested via ingest jobs. The buckets should already " +
                     "exist, i.e. they will not be created as part of the cdk deployment of this instance of Sleeper. The ingest " +
                     "and bulk import stacks will be given read access to these buckets so that they can consume data from them.")
-            .propertyGroup(InstancePropertyGroup.INGEST)
-            .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty INGEST_SOURCE_ROLE = Index.propertyBuilder("sleeper.ingest.source.role")
-            .description("A comma-separated list of role names which should be able to ingest data into Sleeper.")
             .propertyGroup(InstancePropertyGroup.INGEST)
             .runCdkDeployWhenChanged(true).build();
 

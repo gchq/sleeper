@@ -45,8 +45,7 @@ public class AwsGeneratedIngestSourceFilesDriver implements GeneratedIngestSourc
 
     public GeneratedIngestSourceFiles findGeneratedFiles() {
         String bucketName = context.getSystemTestBucketName();
-        List<String> objectKeys = s3Client.listObjectsV2Paginator(builder ->
-                        builder.bucket(bucketName).prefix("ingest/"))
+        List<String> objectKeys = s3Client.listObjectsV2Paginator(builder -> builder.bucket(bucketName).prefix("ingest/"))
                 .contents().stream()
                 .map(S3Object::key)
                 .collect(Collectors.toUnmodifiableList());

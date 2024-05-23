@@ -36,7 +36,7 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.IngestFactory;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.statestore.s3.S3StateStoreCreator;
+import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.IOException;
 import java.sql.Timestamp;
@@ -74,7 +74,7 @@ public class TestUtils {
         s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
         instanceProperties.saveToS3(s3Client);
         DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
-        new S3StateStoreCreator(instanceProperties, dynamoDB).create();
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoDB).create();
 
         return instanceProperties;
     }
@@ -87,7 +87,7 @@ public class TestUtils {
         S3TableProperties.getStore(instance, s3Client, dynamoDB).save(tableProperties);
 
         try {
-            StateStore stateStore = new StateStoreFactory(dynamoDB, instance, configuration).getStateStore(tableProperties);
+            StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoDB, configuration).getStateStore(tableProperties);
             stateStore.initialise(new PartitionsFromSplitPoints(schema, List.of(splitPoints)).construct());
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
@@ -96,13 +96,14 @@ public class TestUtils {
         return tableProperties;
     }
 
-    public static void ingestData(AmazonDynamoDB dynamoClient, String dataDir, InstanceProperties instanceProperties,
-                                  TableProperties table) {
+    public static void ingestData(
+            AmazonS3 s3Client, AmazonDynamoDB dynamoClient, String dataDir,
+            InstanceProperties instanceProperties, TableProperties table) {
         try {
             IngestFactory factory = IngestFactory.builder()
                     .objectFactory(ObjectFactory.noUserJars())
                     .localDir(dataDir)
-                    .stateStoreProvider(new StateStoreProvider(dynamoClient, instanceProperties, new Configuration()))
+                    .stateStoreProvider(new StateStoreProvider(instanceProperties, s3Client, dynamoClient, new Configuration()))
                     .hadoopConfiguration(new Configuration())
                     .instanceProperties(instanceProperties)
                     .build();

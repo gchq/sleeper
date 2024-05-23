@@ -16,30 +16,47 @@
 
 package sleeper.core.statestore;
 
+/**
+ * Splits file references to create new references to the file that replace the original. Multiple method calls will
+ * made for an original reference to produce the new references.
+ * <p>
+ * This may be used to consider a file to be in a child partition without moving or copying the file. This is
+ * useful when compacting parts of a file at a time down the partition tree to leaf partitions. To split a file further
+ * down the tree this split must be repeated.
+ */
 public class SplitFileReference {
 
     private SplitFileReference() {
     }
 
     /**
-     * Used to create a new reference to a file in one of the two child partitions that the original reference is
-     * associated with. This will be paired with another call to this method for the other child partition, to split
-     * the original file reference into two. The original reference should then be deleted.
+     * Creates a new reference to a file in one of the two child partitions that the original reference is associated
+     * with. This will be paired with another call to this method for the other child partition, to split the original
+     * file reference into two. The original reference should then be deleted.
      * <p>
-     * This may be used to consider that file to be in the child partition without moving or copying the file. This is
-     * useful when compacting parts of a file at a time down the partition tree to leaf partitions.
-     * <p>
-     * To split a file further down the tree this split must be repeated. This will compute an estimate of the number of
-     * records in the file that are in this partition.
+     * This will estimate the number of records in the child partition by assuming an even split between two child
+     * partitions.
      *
-     * @param file             The file reference being split
-     * @param childPartitionId The ID of the child partition to create metadata for
-     * @return The reference to the new copy
+     * @param  file             the file reference being split
+     * @param  childPartitionId the ID of the child partition to create metadata for
+     * @return                  the reference to the new copy
      */
     public static FileReference referenceForChildPartition(FileReference file, String childPartitionId) {
         return referenceForChildPartition(file, childPartitionId, file.getNumberOfRecords() / 2);
     }
 
+    /**
+     * Creates a new reference to a file in one of the two child partitions that the original reference is associated
+     * with. This will be paired with another call to this method for the other child partition, to split the original
+     * file reference into two. The original reference should then be deleted.
+     * <p>
+     * This should be used when we have estimated the number of records in the child partiton.
+     *
+     * @param  file             the file reference being split
+     * @param  childPartitionId the ID of the child partition to create metadata for
+     * @param  numberOfRecords  the estimate of the number of records in the child partition
+     * @return                  the reference to the new copy
+     */
     public static FileReference referenceForChildPartition(FileReference file, String childPartitionId, long numberOfRecords) {
         return FileReference.builder()
                 .partitionId(childPartitionId)

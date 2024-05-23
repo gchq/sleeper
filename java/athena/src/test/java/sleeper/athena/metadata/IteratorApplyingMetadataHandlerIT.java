@@ -83,7 +83,7 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
                 s3Client, dynamoClient, instance.get(CONFIG_BUCKET),
                 mock(EncryptionKeyFactory.class), mock(AWSSecretsManager.class), mock(AmazonAthena.class),
                 "spillBucket", "spillPrefix");
-        StateStore stateStore = new StateStoreFactory(dynamoClient, instance, configuration).getStateStore(table);
+        StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoClient, configuration).getStateStore(table);
         TableName tableName = new TableName(table.get(TABLE_NAME), table.get(TABLE_NAME));
         GetTableResponse getTableResponse = sleeperMetadataHandler.doGetTable(new BlockAllocatorImpl(),
                 new GetTableRequest(TestUtils.createIdentity(), "abc", "def", tableName));
@@ -93,8 +93,7 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
                 tableName,
                 new Constraints(new HashMap<>()),
                 getTableResponse.getSchema(),
-                getTableResponse.getPartitionColumns()
-        );
+                getTableResponse.getPartitionColumns());
         GetTableLayoutResponse getTableLayoutResponse = sleeperMetadataHandler.doGetTableLayout(new BlockAllocatorImpl(),
                 request);
 
@@ -171,7 +170,7 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
         TableName tableName = new TableName(instance.get(ID), table.get(TABLE_NAME));
 
         // When
-        StateStore stateStore = new StateStoreFactory(dynamoClient, instance, configuration).getStateStore(table);
+        StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoClient, configuration).getStateStore(table);
         Partition partition2018 = stateStore.getLeafPartitions()
                 .stream()
                 .filter(p -> p.getRegion().getRange("year").getMin().equals(2018))
@@ -195,8 +194,7 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
                         "abc", "cde",
                         tableName,
                         queryConstraints, getTableResponse.getSchema(),
-                        getTableResponse.getPartitionColumns()
-                ));
+                        getTableResponse.getPartitionColumns()));
 
         // Then
         Block partitions = getTableLayoutResponse.getPartitions();
@@ -215,7 +213,7 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
         TableName tableName = new TableName(instance.get(ID), table.get(TABLE_NAME));
 
         // When
-        StateStore stateStore = new StateStoreFactory(dynamoClient, instance, configuration).getStateStore(table);
+        StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoClient, configuration).getStateStore(table);
         Partition partition2018 = stateStore.getLeafPartitions()
                 .stream()
                 .filter(p -> p.getRegion().getRange("year").getMin().equals(2018))
@@ -246,8 +244,7 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
                 "abc", "cde",
                 tableName,
                 queryConstraints, getTableResponse.getSchema(),
-                getTableResponse.getPartitionColumns()
-        ));
+                getTableResponse.getPartitionColumns()));
 
         // Then
         Block partitions = getTableLayoutResponse.getPartitions();
@@ -272,7 +269,7 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
         TableName tableName = new TableName(instance.get(ID), table.get(TABLE_NAME));
 
         // When
-        StateStore stateStore = new StateStoreFactory(dynamoClient, instance, configuration).getStateStore(table);
+        StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoClient, configuration).getStateStore(table);
         Partition partition2018 = stateStore.getLeafPartitions()
                 .stream()
                 .filter(p -> p.getRegion().getRange("year").getMin().equals(2018))
@@ -302,8 +299,7 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
                 "abc", "cde",
                 tableName,
                 queryConstraints, getTableResponse.getSchema(),
-                getTableResponse.getPartitionColumns()
-        ));
+                getTableResponse.getPartitionColumns()));
 
         // Then
         Block partitions = getTableLayoutResponse.getPartitions();

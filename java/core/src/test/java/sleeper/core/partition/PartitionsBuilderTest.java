@@ -21,7 +21,6 @@ import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 
 import java.util.Arrays;
@@ -49,10 +48,8 @@ class PartitionsBuilderTest {
                 .parentJoining("E", "D", "C");
 
         // Then
-        List<PrimitiveType> rowKeyTypes = schema.getRowKeyTypes();
         List<Partition> expectedPartitions = Arrays.asList(
                 Partition.builder()
-                        .rowKeyTypes(rowKeyTypes)
                         .region(new Region(rangeFactory.createRange(field, "", "aaa")))
                         .id("A")
                         .leafPartition(true)
@@ -61,7 +58,6 @@ class PartitionsBuilderTest {
                         .dimension(-1)
                         .build(),
                 Partition.builder()
-                        .rowKeyTypes(rowKeyTypes)
                         .region(new Region(rangeFactory.createRange(field, "aaa", "bbb")))
                         .id("B")
                         .leafPartition(true)
@@ -70,7 +66,6 @@ class PartitionsBuilderTest {
                         .dimension(-1)
                         .build(),
                 Partition.builder()
-                        .rowKeyTypes(rowKeyTypes)
                         .region(new Region(rangeFactory.createRange(field, "bbb", null)))
                         .id("C")
                         .leafPartition(true)
@@ -79,7 +74,6 @@ class PartitionsBuilderTest {
                         .dimension(-1)
                         .build(),
                 Partition.builder()
-                        .rowKeyTypes(rowKeyTypes)
                         .region(new Region(rangeFactory.createRange(field, "", "bbb")))
                         .id("D")
                         .leafPartition(false)
@@ -88,7 +82,6 @@ class PartitionsBuilderTest {
                         .dimension(0)
                         .build(),
                 Partition.builder()
-                        .rowKeyTypes(rowKeyTypes)
                         .region(new Region(rangeFactory.createRange(field, "", null)))
                         .id("E")
                         .leafPartition(false)

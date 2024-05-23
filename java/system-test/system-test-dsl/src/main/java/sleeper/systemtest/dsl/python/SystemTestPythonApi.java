@@ -36,8 +36,9 @@ public class SystemTestPythonApi {
     private final WaitForJobs waitForBulkImport;
     private final PythonQueryTypesDriver queryDriver;
 
-    public SystemTestPythonApi(SystemTestContext context, SystemTestDrivers drivers) {
+    public SystemTestPythonApi(SystemTestContext context) {
         instance = context.instance();
+        SystemTestDrivers drivers = instance.adminDrivers();
         ingestDriver = drivers.pythonIngest(context);
         ingestLocalFileDriver = drivers.pythonIngestLocalFile(context);
         bulkImportDriver = drivers.pythonBulkImport(context);

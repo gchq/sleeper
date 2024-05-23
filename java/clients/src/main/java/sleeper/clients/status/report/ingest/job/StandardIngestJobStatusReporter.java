@@ -66,8 +66,9 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
     }
 
     @Override
-    public void report(List<IngestJobStatus> statusList, JobQuery.Type query, IngestQueueMessages queueMessages,
-                       Map<String, Integer> persistentEmrStepCount) {
+    public void report(
+            List<IngestJobStatus> statusList, JobQuery.Type query, IngestQueueMessages queueMessages,
+            Map<String, Integer> persistentEmrStepCount) {
         out.println();
         out.println("Ingest Job Status Report");
         out.println("------------------------");
@@ -81,8 +82,9 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
         }
     }
 
-    private void printSummary(List<IngestJobStatus> statusList, JobQuery.Type queryType,
-                              IngestQueueMessages queueMessages, Map<String, Integer> persistentEmrStepCount) {
+    private void printSummary(
+            List<IngestJobStatus> statusList, JobQuery.Type queryType,
+            IngestQueueMessages queueMessages, Map<String, Integer> persistentEmrStepCount) {
         if (queryType.equals(JobQuery.Type.DETAILED)) {
             printDetailedSummary(statusList);
         } else if (queryType.equals(JobQuery.Type.ALL)) {
@@ -156,15 +158,16 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
         }
     }
 
-    private void printAllSummary(List<IngestJobStatus> statusList, IngestQueueMessages queueMessages,
-                                 Map<String, Integer> persistentEmrStepCount) {
+    private void printAllSummary(
+            List<IngestJobStatus> statusList, IngestQueueMessages queueMessages,
+            Map<String, Integer> persistentEmrStepCount) {
         printUnfinishedSummary(statusList, queueMessages, persistentEmrStepCount);
         out.printf("Total jobs finished: %s%n", statusList.stream().filter(IngestJobStatus::isFinished).count());
         AverageRecordRateReport.printf("Average ingest rate: %s%n", recordRate(statusList), out);
     }
 
     private void printUnfinishedSummary(List<IngestJobStatus> statusList, IngestQueueMessages queueMessages,
-                                        Map<String, Integer> persistentEmrStepCount) {
+            Map<String, Integer> persistentEmrStepCount) {
         queueMessages.print(out);
         printPendingEmrStepCount(persistentEmrStepCount);
         out.printf("Total jobs in progress: %s%n", statusList.stream().filter(status -> !status.isFinished()).count());

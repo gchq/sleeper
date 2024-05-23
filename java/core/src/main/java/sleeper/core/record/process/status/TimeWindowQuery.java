@@ -19,6 +19,13 @@ package sleeper.core.record.process.status;
 import java.time.Duration;
 import java.time.Instant;
 
+/**
+ * Checks if a process was running during a defined time window. If it overlaps the window at all, it is said to be in
+ * the window.
+ * <p>
+ * This can use a maximum runtime so that if a process has not finished, it is assumed to have finished after the
+ * maximum runtime elapses.
+ */
 public class TimeWindowQuery {
     private final Instant windowStartTime;
     private final Instant windowEndTime;
@@ -34,6 +41,13 @@ public class TimeWindowQuery {
         this.maxRuntime = maxRuntime;
     }
 
+    /**
+     * Checks if an unfinished process is in the time window. If a maximum runtime was set, it will be assumed to
+     * finish at the end of that maximum time.
+     *
+     * @param  startTime the start time to check
+     * @return           true if the process is in the time window
+     */
     public boolean isUnfinishedProcessInWindow(Instant startTime) {
         if (maxRuntime != null && startTime.plus(maxRuntime).isBefore(windowStartTime)) {
             return false;
@@ -41,6 +55,13 @@ public class TimeWindowQuery {
         return startTime.isBefore(windowEndTime);
     }
 
+    /**
+     * Checks if a finished process is in the time window.
+     *
+     * @param  startTime the start time to check
+     * @param  endTime   the end time to check
+     * @return           true if the process is in the time window
+     */
     public boolean isFinishedProcessInWindow(Instant startTime, Instant endTime) {
         return endTime.isAfter(windowStartTime) &&
                 startTime.isBefore(windowEndTime);

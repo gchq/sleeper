@@ -1,6 +1,10 @@
 name: Dependency Check
 on:
   workflow_call:
+    inputs:
+      failOnCacheMiss:
+        required: true
+        type: boolean
 
 jobs:
   build:
@@ -12,26 +16,36 @@ jobs:
         with:
           java-version: '17'
           distribution: 'corretto'
-      - name: Cache dependencies
-        uses: actions/cache@v3
+      - name: Get current date
+        id: date
+        run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
+      - name: Restore cache of Maven dependencies & CVEs database
+        uses: actions/cache/restore@v3
+        id: restore-cache
         with:
-          path: .m2/repository
-          key: ${{ runner.os }}-dependency-check-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-dependency-check-
+          path: ${{ runner.temp }}/.m2/repository
+          key: ${{ runner.os }}-dependency-check-${{ steps.date.outputs.date }}
+          fail-on-cache-miss: ${{ inputs.failOnCacheMiss }}
+          restore-keys: |
+            ${{ runner.os }}-dependency-check-
       - name: Resolve dependencies
-        run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -Dmaven.repo.local=../.m2/repository
+        run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
         working-directory: ./java
-      - name: Explain disabled workflow
-        run: echo "Temporarily disabled dependency checks as NVD API is unavailable."
-      # - name: Update CVEs database
-      #   run: mvn --batch-mode dependency-check:update-only -Dmaven.repo.local=../.m2/repository
-      #   working-directory: ./java
-      # - name: Build with Maven
-      #   run: mvn --batch-mode verify dependency-check:aggregate -Pquick -Dmaven.repo.local=../.m2/repository
-      #   working-directory: ./java
-      # - name: Upload dependency check report
-      #   if: ${{ always() }}
-      #   uses: actions/upload-artifact@master
-      #   with:
-      #     name: Dependency check report
-      #     path: java/target/dependency-check-report.html
+      - name: Update CVEs database
+        run: mvn --batch-mode dependency-check:update-only -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
+        working-directory: ./java
+      - name: Build with Maven
+        run: mvn --batch-mode verify dependency-check:aggregate -Pquick -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
+        working-directory: ./java
+      - name: Cache Maven dependencies & CVEs database
+        uses: actions/cache/save@v3
+        if: ${{ always() }}
+        with:
+          path: ${{ runner.temp }}/.m2/repository
+          key: ${{ steps.restore-cache.outputs.cache-primary-key }}
+      - name: Upload dependency check report
+        if: ${{ always() }}
+        uses: actions/upload-artifact@master
+        with:
+          name: Dependency check report
+          path: java/target/dependency-check-report.html

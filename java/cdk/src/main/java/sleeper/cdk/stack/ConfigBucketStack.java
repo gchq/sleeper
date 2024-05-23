@@ -40,8 +40,8 @@ public class ConfigBucketStack extends NestedStack {
 
     private final IBucket configBucket;
 
-    public ConfigBucketStack(Construct scope, String id, InstanceProperties instanceProperties,
-                             ManagedPoliciesStack policiesStack) {
+    public ConfigBucketStack(
+            Construct scope, String id, InstanceProperties instanceProperties, ManagedPoliciesStack policiesStack) {
         super(scope, id);
 
         configBucket = Bucket.Builder.create(this, "ConfigBucket")
@@ -54,7 +54,11 @@ public class ConfigBucketStack extends NestedStack {
                 .build();
         instanceProperties.set(CONFIG_BUCKET, configBucket.getBucketName());
 
-        configBucket.grantRead(policiesStack.getIngestPolicy());
+        configBucket.grantRead(policiesStack.getDirectIngestPolicyForGrants());
+        configBucket.grantRead(policiesStack.getIngestByQueuePolicyForGrants());
+        configBucket.grantReadWrite(policiesStack.getEditTablesPolicyForGrants());
+        configBucket.grantRead(policiesStack.getClearInstancePolicyForGrants());
+        configBucket.grantDelete(policiesStack.getClearInstancePolicyForGrants());
 
         Utils.addStackTagIfSet(this, instanceProperties);
     }

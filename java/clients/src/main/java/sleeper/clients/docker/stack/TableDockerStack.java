@@ -23,6 +23,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 import sleeper.statestore.s3.S3StateStoreCreator;
+import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.util.Locale;
 
@@ -35,6 +36,10 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_ID_INDEX_DYNAMO_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_NAME_INDEX_DYNAMO_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_ONLINE_INDEX_DYNAMO_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_FILES_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_PARTITIONS_TABLENAME;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
 public class TableDockerStack implements DockerStack {
@@ -52,8 +57,9 @@ public class TableDockerStack implements DockerStack {
         return new Builder();
     }
 
-    public static TableDockerStack from(InstanceProperties instanceProperties,
-                                        AmazonS3 s3Client, AmazonDynamoDB dynamoDB) {
+    public static TableDockerStack from(
+            InstanceProperties instanceProperties,
+            AmazonS3 s3Client, AmazonDynamoDB dynamoDB) {
         return builder().instanceProperties(instanceProperties)
                 .s3Client(s3Client).dynamoDB(dynamoDB)
                 .build();
@@ -74,12 +80,21 @@ public class TableDockerStack implements DockerStack {
         new DynamoDBStateStoreCreator(instanceProperties, dynamoDB).create();
         instanceProperties.set(REVISION_TABLENAME, String.join("-", "sleeper", instanceId, "rv"));
         new S3StateStoreCreator(instanceProperties, dynamoDB).create();
+        instanceProperties.set(TRANSACTION_LOG_FILES_TABLENAME, String.join("-", "sleeper", instanceId, "-ftl"));
+        instanceProperties.set(TRANSACTION_LOG_PARTITIONS_TABLENAME, String.join("-", "sleeper", instanceId, "-ptl"));
+        instanceProperties.set(TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME, String.join("-", "sleeper", instanceId, "-tlas"));
+        instanceProperties.set(TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME, String.join("-", "sleeper", instanceId, "-tlls"));
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoDB).create();
     }
 
     public void tearDown() {
         dynamoDB.deleteTable(instanceProperties.get(ACTIVE_FILES_TABLELENAME));
         dynamoDB.deleteTable(instanceProperties.get(PARTITION_TABLENAME));
         dynamoDB.deleteTable(instanceProperties.get(REVISION_TABLENAME));
+        dynamoDB.deleteTable(instanceProperties.get(TRANSACTION_LOG_FILES_TABLENAME));
+        dynamoDB.deleteTable(instanceProperties.get(TRANSACTION_LOG_PARTITIONS_TABLENAME));
+        dynamoDB.deleteTable(instanceProperties.get(TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME));
+        dynamoDB.deleteTable(instanceProperties.get(TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME));
         tearDownBucket(s3Client, instanceProperties.get(DATA_BUCKET));
     }
 

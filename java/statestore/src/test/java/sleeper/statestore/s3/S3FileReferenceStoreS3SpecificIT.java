@@ -51,7 +51,7 @@ public class S3FileReferenceStoreS3SpecificIT extends S3StateStoreOneTableTestBa
         List<FileReference> files = IntStream.range(0, 1000)
                 .mapToObj(i -> factory.rootFile("file-" + i, 1))
                 .collect(Collectors.toUnmodifiableList());
-        store.fixTime(Instant.ofEpochMilli(1_000_000L));
+        store.fixFileUpdateTime(Instant.ofEpochMilli(1_000_000L));
 
         // When
         store.addFiles(files);
@@ -103,8 +103,7 @@ public class S3FileReferenceStoreS3SpecificIT extends S3StateStoreOneTableTestBa
                         }
                     })
                     .map(runnable -> CompletableFuture.runAsync(runnable, executorService))
-                    .toArray(CompletableFuture[]::new)
-            ).join();
+                    .toArray(CompletableFuture[]::new)).join();
 
             // Then
             assertThat(new HashSet<>(store.getFileReferences()))

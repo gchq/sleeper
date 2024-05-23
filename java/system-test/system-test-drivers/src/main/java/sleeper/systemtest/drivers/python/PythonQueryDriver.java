@@ -21,6 +21,7 @@ import com.google.gson.GsonBuilder;
 
 import sleeper.core.record.Record;
 import sleeper.io.parquet.record.ParquetRecordReader;
+import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.python.PythonQueryTypesDriver;
 
@@ -39,9 +40,9 @@ public class PythonQueryDriver implements PythonQueryTypesDriver {
     private final PythonRunner pythonRunner;
     private final Path pythonDir;
 
-    public PythonQueryDriver(SystemTestInstanceContext instance, Path pythonDir) {
+    public PythonQueryDriver(SystemTestInstanceContext instance, Path pythonDir, SystemTestClients clients) {
         this.instance = instance;
-        this.pythonRunner = new PythonRunner(pythonDir);
+        this.pythonRunner = new PythonRunner(pythonDir, clients);
         this.pythonDir = pythonDir;
     }
 

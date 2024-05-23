@@ -47,7 +47,7 @@ import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
 import sleeper.statestore.StateStoreFactory;
-import sleeper.statestore.s3.S3StateStoreCreator;
+import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -95,20 +95,21 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
             .rootFirst("root")
             .splitToNewChildren("root", "left", "right", 0L)
             .buildTree();
-    private final StateStore stateStore = createStateStore(recordListAndSchema.sleeperSchema);
+    private StateStore stateStore;
 
     @BeforeEach
     public void before() throws StateStoreException {
         s3.createBucket(instanceProperties.get(DATA_BUCKET));
-        new S3StateStoreCreator(instanceProperties, dynamoDB).create();
-        stateStore.initialise(tree.getAllPartitions());
-        stateStore.fixTime(stateStoreUpdateTime);
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoDB).create();
         tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
+        stateStore = createStateStore(recordListAndSchema.sleeperSchema);
+        stateStore.initialise(tree.getAllPartitions());
+        stateStore.fixFileUpdateTime(stateStoreUpdateTime);
     }
 
     private StateStore createStateStore(Schema schema) {
         tableProperties.setSchema(schema);
-        return new StateStoreFactory(dynamoDB, instanceProperties, hadoopConfiguration).getStateStore(tableProperties);
+        return new StateStoreFactory(instanceProperties, s3, dynamoDB, hadoopConfiguration).getStateStore(tableProperties);
     }
 
     @Test
@@ -122,8 +123,8 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
-        FileReference leftFile = fileReferenceFactory.partitionFile("left", "s3a://" + dataBucketName + "/partition_left/leftFile.parquet", 100);
-        FileReference rightFile = fileReferenceFactory.partitionFile("right", "s3a://" + dataBucketName + "/partition_right/rightFile.parquet", 100);
+        FileReference leftFile = fileReferenceFactory.partitionFile("left", "s3a://" + dataBucketName + "/data/partition_left/leftFile.parquet", 100);
+        FileReference rightFile = fileReferenceFactory.partitionFile("right", "s3a://" + dataBucketName + "/data/partition_right/rightFile.parquet", 100);
         List<Record> leftRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, leftFile, hadoopConfiguration);
         List<Record> rightRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rightFile, hadoopConfiguration);
         List<Record> allRecords = Stream.of(leftRecords, rightRecords).flatMap(List::stream).collect(Collectors.toUnmodifiableList());
@@ -155,8 +156,8 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
-        FileReference firstLeftFile = fileReferenceFactory.partitionFile("left", "s3a://" + dataBucketName + "/partition_left/file0.parquet", 5);
-        FileReference firstRightFile = fileReferenceFactory.partitionFile("right", "s3a://" + dataBucketName + "/partition_right/file1.parquet", 5);
+        FileReference firstLeftFile = fileReferenceFactory.partitionFile("left", "s3a://" + dataBucketName + "/data/partition_left/file0.parquet", 5);
+        FileReference firstRightFile = fileReferenceFactory.partitionFile("right", "s3a://" + dataBucketName + "/data/partition_right/file1.parquet", 5);
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
         List<Record> firstLeftFileRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, firstLeftFile, hadoopConfiguration);
         List<Record> firstRightFileRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, firstRightFile, hadoopConfiguration);
@@ -194,8 +195,7 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
                 DirectPartitionFileWriterFactory.from(
                         parquetConfiguration,
                         "s3a://" + dataBucketName,
-                        fileNames.iterator()::next
-                ))
+                        fileNames.iterator()::next))
                 .ingestFileWritingStrategy(tableProperties.getEnumValue(INGEST_FILE_WRITING_STRATEGY, IngestFileWritingStrategy.class))
                 .build()) {
             for (Record record : recordListAndSchema.recordList) {

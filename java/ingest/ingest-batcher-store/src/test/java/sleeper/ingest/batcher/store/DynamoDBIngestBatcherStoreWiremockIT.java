@@ -122,7 +122,8 @@ public class DynamoDBIngestBatcherStoreWiremockIT {
         return new DynamoDBIngestBatcherStore(
                 wiremockDynamoDBClientBuilder(runtimeInfo)
                         .withClientConfiguration(new ClientConfiguration()
-                                .withRetryPolicy(PredefinedRetryPolicies.NO_RETRY_POLICY)).build(),
+                                .withRetryPolicy(PredefinedRetryPolicies.NO_RETRY_POLICY))
+                        .build(),
                 instanceProperties, tablePropertiesProvider);
     }
 

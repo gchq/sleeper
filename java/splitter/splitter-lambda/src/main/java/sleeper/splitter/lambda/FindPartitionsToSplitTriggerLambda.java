@@ -27,18 +27,17 @@ import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
-import sleeper.core.table.InvokeForTableRequest;
-import sleeper.core.table.InvokeForTableRequestSerDe;
 import sleeper.core.table.TableIndex;
 import sleeper.core.util.LoggedDuration;
+import sleeper.invoke.tables.InvokeForTables;
 
 import java.time.Instant;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_TABLE_BATCH_QUEUE_URL;
-import static sleeper.configuration.properties.instance.PartitionSplittingProperty.PARTITION_SPLITTING_TABLE_BATCH_SIZE;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.FIND_PARTITIONS_TO_SPLIT_QUEUE_URL;
 
 /**
  * A lambda to invoke partition splitting with batches of tables.
@@ -46,34 +45,30 @@ import static sleeper.configuration.properties.instance.PartitionSplittingProper
 public class FindPartitionsToSplitTriggerLambda implements RequestHandler<ScheduledEvent, Void> {
     private static final Logger LOGGER = LoggerFactory.getLogger(FindPartitionsToSplitTriggerLambda.class);
 
+    private final AmazonDynamoDB dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
+    private final AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
     private final InstanceProperties instanceProperties = new InstanceProperties();
-    private final InvokeForTableRequestSerDe serDe = new InvokeForTableRequestSerDe();
-    private final AmazonS3 s3Client;
-    private final AmazonDynamoDB dynamoClient;
-    private final AmazonSQS sqsClient;
-    private final String configBucketName;
+    private final PropertiesReloader propertiesReloader;
 
     public FindPartitionsToSplitTriggerLambda() {
-        this.s3Client = AmazonS3ClientBuilder.defaultClient();
-        this.dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
-        this.sqsClient = AmazonSQSClientBuilder.defaultClient();
-        this.configBucketName = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
+        String configBucketName = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
+        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+        instanceProperties.loadFromS3(s3Client, configBucketName);
+        propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties);
     }
 
     @Override
     public Void handleRequest(ScheduledEvent event, Context context) {
         Instant startTime = Instant.now();
         LOGGER.info("Lambda triggered at {}, started at {}", event.getTime(), startTime);
-        instanceProperties.loadFromS3(s3Client, configBucketName);
-        int batchSize = instanceProperties.getInt(PARTITION_SPLITTING_TABLE_BATCH_SIZE);
-        String queueUrl = instanceProperties.get(PARTITION_SPLITTING_TABLE_BATCH_QUEUE_URL);
+        propertiesReloader.reloadIfNeeded();
+
+        String queueUrl = instanceProperties.get(FIND_PARTITIONS_TO_SPLIT_QUEUE_URL);
         TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
-        InvokeForTableRequest.forTables(tableIndex.streamOnlineTables(), batchSize,
-                request -> sqsClient.sendMessage(queueUrl, serDe.toJson(request)));
+        InvokeForTables.sendOneMessagePerTable(sqsClient, queueUrl, tableIndex.streamOnlineTables());
 
         Instant finishTime = Instant.now();
         LOGGER.info("Lambda finished at {} (ran for {})", finishTime, LoggedDuration.withFullOutput(startTime, finishTime));
         return null;
     }
-
 }

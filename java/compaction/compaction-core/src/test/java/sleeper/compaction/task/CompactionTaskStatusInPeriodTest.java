@@ -145,8 +145,7 @@ public class CompactionTaskStatusInPeriodTest {
                 .finished(finishTime, CompactionTaskFinishedStatus.builder()
                         .addJobSummary(new RecordsProcessedSummary(
                                 new RecordsProcessed(200, 100),
-                                startTime, finishTime
-                        )))
+                                startTime, finishTime)))
                 .build();
     }
 

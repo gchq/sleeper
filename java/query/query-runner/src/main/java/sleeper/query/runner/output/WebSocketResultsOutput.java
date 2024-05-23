@@ -15,11 +15,15 @@
  */
 package sleeper.query.runner.output;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.record.Record;
+import sleeper.core.record.serialiser.RecordJSONSerDe;
+import sleeper.core.schema.Schema;
 import sleeper.query.model.QueryOrLeafPartitionQuery;
 import sleeper.query.output.ResultsOutput;
 import sleeper.query.output.ResultsOutputInfo;
@@ -41,10 +45,14 @@ public class WebSocketResultsOutput extends WebSocketOutput implements ResultsOu
 
     private final List<ResultsOutputLocation> outputLocations = new ArrayList<>();
     private final Long maxBatchSize;
+    private final Gson serde;
 
-    public WebSocketResultsOutput(Map<String, String> config) {
+    public WebSocketResultsOutput(Schema schema, Map<String, String> config) {
         super(config);
 
+        this.serde = new GsonBuilder()
+                .registerTypeAdapter(Record.class, new RecordJSONSerDe.RecordGsonSerialiser(schema))
+                .create();
         String maxBatchSize = config.get(MAX_BATCH_SIZE);
         this.maxBatchSize = maxBatchSize != null && !maxBatchSize.isEmpty() ? Long.parseLong(maxBatchSize) : null;
         this.outputLocations.add(new ResultsOutputLocation("websocket-endpoint", config.get(ENDPOINT)));
@@ -114,6 +122,6 @@ public class WebSocketResultsOutput extends WebSocketOutput implements ResultsOu
     private void publishBatch(Map<String, Object> message, List<Record> records) throws IOException {
         LOGGER.info("Publishing batch of {} records to WebSocket connection", records.size());
         message.put("records", records);
-        this.sendJson(message);
+        this.sendString(serde.toJson(message));
     }
 }

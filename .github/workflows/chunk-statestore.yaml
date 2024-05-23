@@ -9,9 +9,11 @@ on:
       - 'code-style/spotbugs*.xml'
       - 'java/pom.xml'
       - 'java/statestore/**'
-      - 'java/dynamodb-tools/**'
+      - 'java/statestore-lambda/**'
+      - 'java/common/common-invoke-tables/**'
       - 'java/parquet/**'
       - 'java/configuration/**'
+      - 'java/common/dynamodb-tools/**'
       - 'java/core/**'
 
 jobs:

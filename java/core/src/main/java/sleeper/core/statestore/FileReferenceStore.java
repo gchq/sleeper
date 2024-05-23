@@ -22,6 +22,7 @@ import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.core.statestore.exception.NewReferenceSameAsOldReferenceException;
+import sleeper.core.statestore.exception.SplitRequestsFailedException;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -241,17 +242,17 @@ public interface FileReferenceStore {
      *
      * @return a boolean representing whether the state store has files in it or not.
      */
-    boolean hasNoFiles();
+    boolean hasNoFiles() throws StateStoreException;
 
     /**
      * Clears all file data from the file reference store. Note that this does not delete any of the actual files.
      */
-    void clearFileData();
+    void clearFileData() throws StateStoreException;
 
     /**
-     * Used to set the current time. Should only be called during tests.
+     * Used to fix the time of file updates. Should only be called during tests.
      *
-     * @param time Time to set to be the current time
+     * @param time the time that any future file updates will be considered to occur
      */
-    void fixTime(Instant time);
+    void fixFileUpdateTime(Instant time);
 }

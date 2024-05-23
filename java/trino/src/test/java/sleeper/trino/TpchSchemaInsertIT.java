@@ -36,27 +36,25 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class TpchSchemaInsertIT {
     private static final String TPCH_TABLE_SIZE = "tiny";
 
-    private static final List<PopulatedSleeperExternalResource.TableDefinition> TABLE_DEFINITIONS =
-            ImmutableList.of(
-                    new PopulatedSleeperExternalResource.TableDefinition(
-                            "customer",
-                            generateCustomerSchema(),
-                            List.of(),
-                            Stream.empty()),
-                    new PopulatedSleeperExternalResource.TableDefinition(
-                            "orders",
-                            generateOrdersSchema(),
-                            List.of(),
-                            Stream.empty()),
-                    new PopulatedSleeperExternalResource.TableDefinition(
-                            "lineitem",
-                            generateLineItemSchema(),
-                            List.of(),
-                            Stream.empty()));
+    private static final List<PopulatedSleeperExternalResource.TableDefinition> TABLE_DEFINITIONS = ImmutableList.of(
+            new PopulatedSleeperExternalResource.TableDefinition(
+                    "customer",
+                    generateCustomerSchema(),
+                    List.of(),
+                    Stream.empty()),
+            new PopulatedSleeperExternalResource.TableDefinition(
+                    "orders",
+                    generateOrdersSchema(),
+                    List.of(),
+                    Stream.empty()),
+            new PopulatedSleeperExternalResource.TableDefinition(
+                    "lineitem",
+                    generateLineItemSchema(),
+                    List.of(),
+                    Stream.empty()));
 
     @RegisterExtension
-    public static final PopulatedSleeperExternalResource POPULATED_SLEEPER_EXTERNAL_RESOURCE =
-            new PopulatedSleeperExternalResource(TABLE_DEFINITIONS);
+    public static final PopulatedSleeperExternalResource POPULATED_SLEEPER_EXTERNAL_RESOURCE = new PopulatedSleeperExternalResource(TABLE_DEFINITIONS);
     private static QueryAssertions assertions;
 
     @BeforeAll
@@ -192,16 +190,16 @@ public class TpchSchemaInsertIT {
                 .matches("SELECT custkey, orderkey, totalprice, orderstatus, clerk FROM orders WHERE custkey = 1");
     }
 
-//    @Test
-//    It should be possible to test that the dynamic filter is being applied correctly, but it is complicated to
-//    construct the plan to match it against. May be worth revisiting in future.
-//    See TestJoin in the Trino source.
-//    public void testCustomerOrdersJoinPlan() {
-//        assertions.assertQueryAndPlan(
-//                "SELECT custkey, orderkey, totalprice, orderstatus, clerk " +
-//                        "FROM orders INNER JOIN customer USING (custkey) " +
-//                        "WHERE name = 'Customer#000000001'",
-//                "SELECT custkey, orderkey, totalprice, orderstatus, clerk FROM orders WHERE custkey = 1",
-//                // Expected plan goes here // );
-//    }
+    //    @Test
+    //    It should be possible to test that the dynamic filter is being applied correctly, but it is complicated to
+    //    construct the plan to match it against. May be worth revisiting in future.
+    //    See TestJoin in the Trino source.
+    //    public void testCustomerOrdersJoinPlan() {
+    //        assertions.assertQueryAndPlan(
+    //                "SELECT custkey, orderkey, totalprice, orderstatus, clerk " +
+    //                        "FROM orders INNER JOIN customer USING (custkey) " +
+    //                        "WHERE name = 'Customer#000000001'",
+    //                "SELECT custkey, orderkey, totalprice, orderstatus, clerk FROM orders WHERE custkey = 1",
+    //                // Expected plan goes here // );
+    //    }
 }

@@ -17,6 +17,9 @@ package sleeper.core.record.process;
 
 import java.util.Objects;
 
+/**
+ * A data structure for storing the number of records read and written.
+ */
 public class RecordsProcessed {
     private final long recordsRead;
     private final long recordsWritten;

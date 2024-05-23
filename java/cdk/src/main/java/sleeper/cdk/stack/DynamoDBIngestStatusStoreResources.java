@@ -36,12 +36,13 @@ import java.util.List;
 import static sleeper.cdk.Utils.removalPolicy;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
-public class DynamoDBIngestStatusStoreResources implements IngestStatusStoreResources {
+public final class DynamoDBIngestStatusStoreResources implements IngestStatusStoreResources {
     private final Table updatesTable;
     private final Table jobsTable;
     private final Table tasksTable;
 
-    public DynamoDBIngestStatusStoreResources(Construct scope, InstanceProperties instanceProperties) {
+    public DynamoDBIngestStatusStoreResources(
+            Construct scope, InstanceProperties instanceProperties, CoreStacks coreStacks) {
         String instanceId = instanceProperties.get(ID);
 
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
@@ -102,6 +103,11 @@ public class DynamoDBIngestStatusStoreResources implements IngestStatusStoreReso
                 .timeToLiveAttribute(DynamoDBIngestTaskStatusFormat.EXPIRY_DATE)
                 .pointInTimeRecovery(false)
                 .build();
+
+        grantWriteJobEvent(coreStacks.getDirectIngestPolicyForGrants());
+        updatesTable.grantReadData(coreStacks.getReportingPolicyForGrants());
+        jobsTable.grantReadData(coreStacks.getReportingPolicyForGrants());
+        tasksTable.grantReadData(coreStacks.getReportingPolicyForGrants());
     }
 
     @Override

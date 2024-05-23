@@ -33,7 +33,9 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_WARM_LAMBDA_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_RULE;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_SNAPSHOT_CREATION_RULE;
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.configuration.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
@@ -149,6 +151,8 @@ class PopulatePropertiesTest {
         expected.set(INGEST_CLOUDWATCH_RULE, "test-instance-IngestTasksCreationRule");
         expected.set(INGEST_BATCHER_JOB_CREATION_CLOUDWATCH_RULE, "test-instance-IngestBatcherJobCreationRule");
         expected.set(TABLE_METRICS_RULE, "test-instance-MetricsPublishRule");
+        expected.set(QUERY_WARM_LAMBDA_CLOUDWATCH_RULE, "test-instance-QueryWarmLambdaRule");
+        expected.set(TRANSACTION_LOG_SNAPSHOT_CREATION_RULE, "test-instance-TransactionLogSnapshotCreationRule");
 
         assertThat(properties).isEqualTo(expected);
     }

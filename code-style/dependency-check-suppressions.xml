@@ -101,7 +101,7 @@
         doesn't have a fixed version.
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.bouncycastle/bcprov\-jdk15on@.*$</packageUrl>
-        <vulnerabilityName>CVE-2023-33201</vulnerabilityName>
+        <vulnerabilityName regex="true">CVE-2023-33201|CVE-2024-29857|CVE-2024-30172|CVE-2024-30171|CVE-2024-34447</vulnerabilityName>
     </suppress>
     <suppress>
         <notes><![CDATA[
@@ -240,5 +240,30 @@
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.jboss\.xnio/xnio\-api@.*$</packageUrl>
         <vulnerabilityName>CVE-2023-5685</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        JGraphT is used in the build module to visualise the dependencies between Maven modules. This is not used in
+        production code, and there is not a more up to date version that does not have this problem.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.jgrapht/jgrapht\-core@.*$</packageUrl>
+        <vulnerabilityName regex="true">CVE-2024-23078|CVE-2024-23079</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        Apfloat is used in the build module by JUNG for visualising dependencies between Maven modules. This is not used
+        in production code, and there is not a more up to date version that does not have this problem.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apfloat/apfloat@.*$</packageUrl>
+        <vulnerabilityName regex="true">CVE-2024-23086|CVE-2024-23084|CVE-2024-23085</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        Joda Time is used by most of the AWS SDK v1 dependencies, by the Trino Plugin Toolkit, and by the AWS Lambda
+        API. There is currently no version of the library without this vulnerability, and the vulnerability itself is
+        disputed.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/joda\-time/joda\-time@.*$</packageUrl>
+        <vulnerabilityName>CVE-2024-23080</vulnerabilityName>
     </suppress>
 </suppressions>

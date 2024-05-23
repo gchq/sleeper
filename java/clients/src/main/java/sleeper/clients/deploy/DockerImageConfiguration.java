@@ -32,8 +32,7 @@ public class DockerImageConfiguration {
             "IngestStack", dockerBuildImage("ingest"),
             "EksBulkImportStack", dockerBuildImage("bulk-import-runner"),
             "CompactionStack", dockerBuildxImage("compaction-job-execution"),
-            "EmrServerlessBulkImportStack", emrServerlessImage("bulk-import-runner-emr-serverless")
-    );
+            "EmrServerlessBulkImportStack", emrServerlessImage("bulk-import-runner-emr-serverless"));
 
     private final Map<String, StackDockerImage> imageByStack;
 
@@ -51,10 +50,10 @@ public class DockerImageConfiguration {
 
     public List<StackDockerImage> getStacksToDeploy(Collection<String> stacks, List<StackDockerImage> extraDockerImages) {
         return Stream.concat(
-                        stacks.stream()
-                                .map(this::getStackImage)
-                                .flatMap(Optional::stream),
-                        extraDockerImages.stream())
+                stacks.stream()
+                        .map(this::getStackImage)
+                        .flatMap(Optional::stream),
+                extraDockerImages.stream())
                 .collect(toUnmodifiableList());
     }
 

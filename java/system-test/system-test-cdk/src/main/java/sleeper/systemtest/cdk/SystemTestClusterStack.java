@@ -29,7 +29,9 @@ import software.amazon.awscdk.services.ecs.Cluster;
 import software.amazon.awscdk.services.ecs.ContainerDefinitionOptions;
 import software.amazon.awscdk.services.ecs.ContainerImage;
 import software.amazon.awscdk.services.ecs.FargateTaskDefinition;
+import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.IRole;
+import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.constructs.Construct;
 
@@ -45,6 +47,7 @@ import sleeper.systemtest.configuration.SystemTestPropertySetter;
 import sleeper.systemtest.configuration.SystemTestPropertyValues;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
+import java.util.List;
 import java.util.Locale;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
@@ -60,16 +63,12 @@ import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_RE
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_TASK_CPU;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_TASK_MEMORY;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_VPC_ID;
-import static sleeper.systemtest.configuration.SystemTestProperty.WRITE_DATA_ROLE_NAME;
 import static sleeper.systemtest.configuration.SystemTestProperty.WRITE_DATA_TASK_DEFINITION_FAMILY;
 
 public class SystemTestClusterStack extends NestedStack {
 
-    private IRole taskRole;
-
-    public SystemTestClusterStack(Construct scope, String id,
-                                  SystemTestStandaloneProperties properties,
-                                  SystemTestBucketStack bucketStack) {
+    public SystemTestClusterStack(
+            Construct scope, String id, SystemTestStandaloneProperties properties, SystemTestBucketStack bucketStack) {
         super(scope, id);
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(ID, properties.get(SYSTEM_TEST_ID));
@@ -81,27 +80,17 @@ public class SystemTestClusterStack extends NestedStack {
         Tags.of(this).add("DeploymentStack", id);
     }
 
-    public SystemTestClusterStack(Construct scope, String id,
-                                  SystemTestProperties properties,
-                                  SystemTestBucketStack bucketStack,
-                                  CoreStacks coreStacks,
-                                  IngestStacks ingestStacks,
-                                  IngestBatcherStack ingestBatcherStack) {
+    public SystemTestClusterStack(
+            Construct scope, String id, SystemTestProperties properties, SystemTestBucketStack bucketStack,
+            CoreStacks coreStacks, IngestStacks ingestStacks, IngestBatcherStack ingestBatcherStack) {
         super(scope, id);
         createSystemTestCluster(properties.testPropertiesOnly(), properties::set, properties, bucketStack);
-
-        coreStacks.grantIngest(taskRole);
-        ingestStacks.ingestQueues().forEach(queue -> queue.grantSendMessages(taskRole));
-        if (null != ingestBatcherStack) {
-            ingestBatcherStack.getSubmitQueue().grantSendMessages(taskRole);
-        }
         Utils.addStackTagIfSet(this, properties);
     }
 
-    private void createSystemTestCluster(SystemTestPropertyValues properties,
-                                         SystemTestPropertySetter propertySetter,
-                                         InstanceProperties instanceProperties,
-                                         SystemTestBucketStack bucketStack) {
+    private void createSystemTestCluster(
+            SystemTestPropertyValues properties, SystemTestPropertySetter propertySetter,
+            InstanceProperties instanceProperties, SystemTestBucketStack bucketStack) {
         VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
                 .vpcId(instanceProperties.get(VPC_ID))
                 .build();
@@ -127,9 +116,8 @@ public class SystemTestClusterStack extends NestedStack {
                 .cpu(properties.getInt(SYSTEM_TEST_TASK_CPU))
                 .memoryLimitMiB(properties.getInt(SYSTEM_TEST_TASK_MEMORY))
                 .build();
-        taskRole = taskDefinition.getTaskRole();
+        IRole taskRole = taskDefinition.getTaskRole();
         propertySetter.set(WRITE_DATA_TASK_DEFINITION_FAMILY, taskDefinition.getFamily());
-        propertySetter.set(WRITE_DATA_ROLE_NAME, taskRole.getRoleName());
         CfnOutputProps taskDefinitionFamilyOutputProps = new CfnOutputProps.Builder()
                 .value(taskDefinition.getFamily())
                 .build();
@@ -147,6 +135,11 @@ public class SystemTestClusterStack extends NestedStack {
 
         Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET)).grantRead(taskRole);
         bucketStack.getBucket().grantReadWrite(taskRole);
+        taskRole.addToPrincipalPolicy(PolicyStatement.Builder.create()
+                .effect(Effect.ALLOW)
+                .actions(List.of("sts:AssumeRole"))
+                .resources(List.of("arn:aws:iam::*:role/sleeper-ingest-*"))
+                .build());
     }
 
     public static String generateSystemTestClusterName(String instanceId) {

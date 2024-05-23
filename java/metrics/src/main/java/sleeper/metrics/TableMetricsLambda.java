@@ -20,10 +20,11 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
+import com.amazonaws.services.lambda.runtime.events.SQSBatchResponse;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
+import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.cloudwatchlogs.emf.logger.MetricsLogger;
@@ -32,80 +33,87 @@ import software.amazon.cloudwatchlogs.emf.model.Unit;
 import software.amazon.lambda.powertools.metrics.Metrics;
 import software.amazon.lambda.powertools.metrics.MetricsUtils;
 
+import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.metrics.TableMetrics;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.table.InvokeForTableRequest;
-import sleeper.core.table.InvokeForTableRequestSerDe;
+import sleeper.core.statestore.StateStoreException;
+import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
+import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreProvider;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
+import static java.util.stream.Collectors.groupingBy;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.METRICS_NAMESPACE;
 
-@SuppressWarnings("unused")
-public class TableMetricsLambda implements RequestHandler<SQSEvent, Void> {
+public class TableMetricsLambda implements RequestHandler<SQSEvent, SQSBatchResponse> {
     private static final Logger LOGGER = LoggerFactory.getLogger(TableMetricsLambda.class);
 
-    private final AmazonS3 s3Client;
-    private final AmazonDynamoDB dynamoClient;
-    private final String configBucketName;
-    private final InvokeForTableRequestSerDe serDe = new InvokeForTableRequestSerDe();
+    private final InstanceProperties instanceProperties = new InstanceProperties();
+    private final TablePropertiesProvider tablePropertiesProvider;
+    private final StateStoreProvider stateStoreProvider;
+    private final PropertiesReloader propertiesReloader;
 
     public TableMetricsLambda() {
-        this(
-                AmazonS3ClientBuilder.defaultClient(),
-                AmazonDynamoDBClientBuilder.defaultClient(),
-                System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
-    }
-
-    public TableMetricsLambda(AmazonS3 s3Client, AmazonDynamoDB dynamoClient, String configBucketName) {
-        this.s3Client = s3Client;
-        this.dynamoClient = dynamoClient;
-        this.configBucketName = configBucketName;
+        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+        AmazonDynamoDB dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
+        String configBucketName = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
+        instanceProperties.loadFromS3(s3Client, configBucketName);
+        tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
+        stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoClient,
+                HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties));
+        propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
     }
 
     @Override
     @Metrics
-    public Void handleRequest(SQSEvent event, Context context) {
+    public SQSBatchResponse handleRequest(SQSEvent event, Context context) {
         Instant startTime = Instant.now();
         LOGGER.info("Lambda started at {}", startTime);
+        propertiesReloader.reloadIfNeeded();
 
-        event.getRecords().stream()
-                .map(SQSEvent.SQSMessage::getBody)
-                .peek(body -> LOGGER.info("Received message: {}", body))
-                .map(serDe::fromJson)
-                .forEach(this::publishStateStoreMetrics);
+        Map<String, List<SQSMessage>> messagesByTableId = event.getRecords().stream()
+                .collect(groupingBy(SQSEvent.SQSMessage::getBody));
+        List<SQSBatchResponse.BatchItemFailure> batchItemFailures = new ArrayList<SQSBatchResponse.BatchItemFailure>();
+        List<TableProperties> tables = loadTables(messagesByTableId, batchItemFailures);
+        publishStateStoreMetrics(tables, messagesByTableId, batchItemFailures);
 
         Instant finishTime = Instant.now();
         LOGGER.info("Lambda finished at {} (ran for {})", finishTime, LoggedDuration.withFullOutput(startTime, finishTime));
-        return null;
+        return new SQSBatchResponse(batchItemFailures);
     }
 
-    public void publishStateStoreMetrics(InvokeForTableRequest request) {
-        LOGGER.info("Loading instance properties from config bucket {}", configBucketName);
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.loadFromS3(s3Client, configBucketName);
+    public void publishStateStoreMetrics(
+            List<TableProperties> tables,
+            Map<String, List<SQSMessage>> messagesByTableId,
+            List<SQSBatchResponse.BatchItemFailure> batchItemFailures) {
         String metricsNamespace = instanceProperties.get(METRICS_NAMESPACE);
         LOGGER.info("Generating metrics for namespace {}", metricsNamespace);
         MetricsLogger metricsLogger = MetricsUtils.metricsLogger();
         metricsLogger.setNamespace(metricsNamespace);
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoClient, instanceProperties, new Configuration());
-        for (String tableId : request.getTableIds()) {
+        for (TableProperties tableProperties : tables) {
+            TableStatus tableStatus = tableProperties.getStatus();
             try {
-                TableProperties tableProperties = tablePropertiesProvider.getById(tableId);
                 StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
                 TableMetrics metrics = TableMetrics.from(
-                        instanceProperties.get(ID), tableProperties.getStatus(), stateStore);
+                        instanceProperties.get(ID), tableStatus, stateStore);
                 publishStateStoreMetrics(metricsLogger, metrics);
-            } catch (Exception e) {
-                LOGGER.error("Failed publishing metrics for table {}", tableId, e);
+            } catch (StateStoreException | RuntimeException e) {
+                LOGGER.error("Failed publishing metrics for table {}", tableStatus, e);
+                messagesByTableId.get(tableStatus.getTableUniqueId()).stream()
+                        .map(SQSMessage::getMessageId)
+                        .map(SQSBatchResponse.BatchItemFailure::new)
+                        .forEach(batchItemFailures::add);
             }
         }
     }
@@ -125,5 +133,27 @@ public class TableMetricsLambda implements RequestHandler<SQSEvent, Void> {
         metricsLogger.putMetric("AverageActiveFilesPerPartition", metrics.getAverageActiveFilesPerPartition(), Unit.COUNT);
         metricsLogger.setTimestamp(Instant.now());
         metricsLogger.flush();
+    }
+
+    private List<TableProperties> loadTables(
+            Map<String, List<SQSMessage>> messagesByTableId,
+            List<SQSBatchResponse.BatchItemFailure> batchItemFailures) {
+        List<TableProperties> tables = new ArrayList<>();
+        for (Entry<String, List<SQSMessage>> tableAndMessages : messagesByTableId.entrySet()) {
+            String tableId = tableAndMessages.getKey();
+            List<SQSMessage> tableMessages = tableAndMessages.getValue();
+            try {
+                TableProperties tableProperties = tablePropertiesProvider.getById(tableId);
+                LOGGER.info("Received {} messages for table {}", tableMessages.size(), tableProperties.getStatus());
+                tables.add(tableProperties);
+            } catch (RuntimeException e) {
+                LOGGER.error("Failed loading properties for table {}", tableId, e);
+                tableMessages.stream()
+                        .map(SQSMessage::getMessageId)
+                        .map(SQSBatchResponse.BatchItemFailure::new)
+                        .forEach(batchItemFailures::add);
+            }
+        }
+        return tables;
     }
 }

@@ -36,7 +36,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.TABLE_INDEX_DYNAMO_POINT_IN_TIME_RECOVERY;
 
-public class TableIndexStack extends NestedStack {
+public final class TableIndexStack extends NestedStack {
 
     private final ITable indexByNameDynamoTable;
     private final ITable indexByIdDynamoTable;
@@ -91,14 +91,21 @@ public class TableIndexStack extends NestedStack {
                 .build();
         instanceProperties.set(TABLE_ONLINE_INDEX_DYNAMO_TABLENAME, indexByOnlineDynamoTable.getTableName());
 
-        indexByNameDynamoTable.grantReadData(policiesStack.getIngestPolicy());
-        indexByIdDynamoTable.grantReadData(policiesStack.getIngestPolicy());
-        indexByOnlineDynamoTable.grantReadData(policiesStack.getIngestPolicy());
+        grantRead(policiesStack.getDirectIngestPolicyForGrants());
+        grantRead(policiesStack.getIngestByQueuePolicyForGrants());
+        grantReadWrite(policiesStack.getEditTablesPolicyForGrants());
+        grantReadWrite(policiesStack.getClearInstancePolicyForGrants());
     }
 
     public void grantRead(IGrantable grantee) {
         indexByNameDynamoTable.grantReadData(grantee);
         indexByIdDynamoTable.grantReadData(grantee);
         indexByOnlineDynamoTable.grantReadData(grantee);
+    }
+
+    private void grantReadWrite(IGrantable grantee) {
+        indexByNameDynamoTable.grantReadWriteData(grantee);
+        indexByIdDynamoTable.grantReadWriteData(grantee);
+        indexByOnlineDynamoTable.grantReadWriteData(grantee);
     }
 }

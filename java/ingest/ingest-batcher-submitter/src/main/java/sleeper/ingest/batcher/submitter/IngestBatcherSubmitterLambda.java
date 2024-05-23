@@ -34,6 +34,7 @@ import sleeper.core.table.TableIndex;
 import sleeper.ingest.batcher.FileIngestRequest;
 import sleeper.ingest.batcher.IngestBatcherStore;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
+import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 
 import java.time.Instant;
 import java.util.List;
@@ -59,12 +60,14 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
         this.store = new DynamoDBIngestBatcherStore(dynamoDBClient, instanceProperties, tablePropertiesProvider);
         this.propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
-        this.fileIngestRequestSerDe = new FileIngestRequestSerDe(instanceProperties, new Configuration(),
+        this.fileIngestRequestSerDe = new FileIngestRequestSerDe(instanceProperties,
+                HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties),
                 new DynamoDBTableIndex(instanceProperties, dynamoDBClient));
     }
 
-    public IngestBatcherSubmitterLambda(IngestBatcherStore store, InstanceProperties instanceProperties,
-                                        TableIndex tableIndex, Configuration conf) {
+    public IngestBatcherSubmitterLambda(
+            IngestBatcherStore store, InstanceProperties instanceProperties,
+            TableIndex tableIndex, Configuration conf) {
         this.store = store;
         this.propertiesReloader = PropertiesReloader.neverReload();
         this.fileIngestRequestSerDe = new FileIngestRequestSerDe(instanceProperties, conf, tableIndex);
@@ -73,8 +76,7 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
     @Override
     public Void handleRequest(SQSEvent input, Context context) {
         propertiesReloader.reloadIfNeeded();
-        input.getRecords().forEach(message ->
-                handleMessage(message.getBody(), Instant.now()));
+        input.getRecords().forEach(message -> handleMessage(message.getBody(), Instant.now()));
         return null;
     }
 

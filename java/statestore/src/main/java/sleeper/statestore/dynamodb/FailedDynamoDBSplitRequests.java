@@ -22,11 +22,11 @@ import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
 
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.SplitFileReferenceRequest;
-import sleeper.core.statestore.SplitRequestsFailedException;
 import sleeper.core.statestore.exception.FileNotFoundException;
 import sleeper.core.statestore.exception.FileReferenceAlreadyExistsException;
 import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
+import sleeper.core.statestore.exception.SplitRequestsFailedException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -128,9 +128,10 @@ class FailedDynamoDBSplitRequests {
         private final CancellationReason reasonDeleteOldFailed;
         private final List<CancellationReason> reasonsAddNewFailed;
 
-        RequestReferenceFailures(SplitFileReferenceRequest request,
-                                 CancellationReason reasonDeleteOldFailed,
-                                 List<CancellationReason> reasonsAddNewFailed) {
+        RequestReferenceFailures(
+                SplitFileReferenceRequest request,
+                CancellationReason reasonDeleteOldFailed,
+                List<CancellationReason> reasonsAddNewFailed) {
             this.request = request;
             this.reasonDeleteOldFailed = reasonDeleteOldFailed;
             this.reasonsAddNewFailed = reasonsAddNewFailed;

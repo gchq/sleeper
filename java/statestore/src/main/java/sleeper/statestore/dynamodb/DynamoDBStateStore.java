@@ -35,9 +35,9 @@ public class DynamoDBStateStore extends DelegatingStateStore {
 
     public DynamoDBStateStore(InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamoDB) {
         this(DynamoDBFileReferenceStore.builder().dynamoDB(dynamoDB)
-                        .instanceProperties(instanceProperties)
-                        .tableProperties(tableProperties)
-                        .build(),
+                .instanceProperties(instanceProperties)
+                .tableProperties(tableProperties)
+                .build(),
                 DynamoDBPartitionStore.builder().dynamoDB(dynamoDB)
                         .dynamoTableName(instanceProperties.get(PARTITION_TABLENAME))
                         .tableProperties(tableProperties)

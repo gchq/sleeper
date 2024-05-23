@@ -23,6 +23,9 @@ import sleeper.core.schema.Schema;
 
 import java.util.List;
 
+/**
+ * A data structure for a batch of results from a query.
+ */
 public class ResultsBatch {
     private final String queryId;
     private final Schema schema;

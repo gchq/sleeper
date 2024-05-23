@@ -1,0 +1,60 @@
+{
+  "requests": [
+    {
+      "oldReference": {
+        "filename": "file1.parquet",
+        "partitionId": "root",
+        "numberOfRecords": 100,
+        "jobId": null,
+        "countApproximate": false,
+        "onlyContainsDataForThisPartition": true
+      },
+      "newReferences": [
+        {
+          "filename": "file1.parquet",
+          "partitionId": "L",
+          "numberOfRecords": 50,
+          "jobId": null,
+          "countApproximate": true,
+          "onlyContainsDataForThisPartition": false
+        },
+        {
+          "filename": "file1.parquet",
+          "partitionId": "R",
+          "numberOfRecords": 50,
+          "jobId": null,
+          "countApproximate": true,
+          "onlyContainsDataForThisPartition": false
+        }
+      ]
+    },
+    {
+      "oldReference": {
+        "filename": "file2.parquet",
+        "partitionId": "L",
+        "numberOfRecords": 200,
+        "jobId": null,
+        "countApproximate": false,
+        "onlyContainsDataForThisPartition": true
+      },
+      "newReferences": [
+        {
+          "filename": "file2.parquet",
+          "partitionId": "LL",
+          "numberOfRecords": 100,
+          "jobId": null,
+          "countApproximate": true,
+          "onlyContainsDataForThisPartition": false
+        },
+        {
+          "filename": "file2.parquet",
+          "partitionId": "LR",
+          "numberOfRecords": 100,
+          "jobId": null,
+          "countApproximate": true,
+          "onlyContainsDataForThisPartition": false
+        }
+      ]
+    }
+  ]
+}

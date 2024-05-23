@@ -16,41 +16,50 @@
 package sleeper.garbagecollector;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
+import com.amazonaws.services.lambda.runtime.events.SQSBatchResponse;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
+import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.core.table.InvokeForTableRequestSerDe;
+import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
+import sleeper.garbagecollector.FailedGarbageCollectionException.TableFailures;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreProvider;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
+import static java.util.stream.Collectors.groupingBy;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
  * Runs the garbage collector in AWS Lambda. Builds and invokes {@link GarbageCollector} for a batch of tables.
  */
-@SuppressWarnings("unused")
-public class GarbageCollectorLambda implements RequestHandler<SQSEvent, Void> {
+public class GarbageCollectorLambda implements RequestHandler<SQSEvent, SQSBatchResponse> {
     private static final Logger LOGGER = LoggerFactory.getLogger(GarbageCollectorLambda.class);
 
-    private final InvokeForTableRequestSerDe serDe = new InvokeForTableRequestSerDe();
     private final TablePropertiesProvider tablePropertiesProvider;
+    private final PropertiesReloader propertiesReloader;
     private final GarbageCollector garbageCollector;
 
     public GarbageCollectorLambda() {
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClient.builder().build();
+        AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
 
         String s3Bucket = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
         if (null == s3Bucket) {
@@ -62,29 +71,60 @@ public class GarbageCollectorLambda implements RequestHandler<SQSEvent, Void> {
         LOGGER.debug("Loaded InstanceProperties from {}", s3Bucket);
 
         tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
+        propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
         Configuration conf = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, conf);
-
-        this.garbageCollector = new GarbageCollector(conf,
-                instanceProperties, tablePropertiesProvider, stateStoreProvider);
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, conf);
+        garbageCollector = new GarbageCollector(conf, instanceProperties, stateStoreProvider);
     }
 
     @Override
-    public Void handleRequest(SQSEvent event, Context context) {
+    public SQSBatchResponse handleRequest(SQSEvent event, Context context) {
         Instant startTime = Instant.now();
         LOGGER.info("Lambda started at {}", startTime);
+        propertiesReloader.reloadIfNeeded();
 
+        Map<String, List<SQSMessage>> messagesByTableId = event.getRecords().stream()
+                .collect(groupingBy(SQSEvent.SQSMessage::getBody));
+        List<SQSBatchResponse.BatchItemFailure> batchItemFailures = new ArrayList<SQSBatchResponse.BatchItemFailure>();
+        List<TableProperties> tables = loadTables(messagesByTableId, batchItemFailures);
         try {
-            event.getRecords().stream()
-                    .map(SQSEvent.SQSMessage::getBody)
-                    .peek(body -> LOGGER.info("Received message: {}", body))
-                    .map(serDe::fromJson)
-                    .forEach(garbageCollector::run);
+            garbageCollector.run(tables);
+        } catch (FailedGarbageCollectionException e) {
+            LOGGER.error("Found {} tables with failures", e.getTableFailures().size(), e);
+            e.getTableFailures().stream()
+                    .map(TableFailures::getTable)
+                    .map(TableStatus::getTableUniqueId)
+                    .flatMap(tableId -> messagesByTableId.get(tableId).stream())
+                    .map(SQSMessage::getMessageId)
+                    .map(SQSBatchResponse.BatchItemFailure::new)
+                    .forEach(batchItemFailures::add);
         } finally {
             Instant finishTime = Instant.now();
-            LOGGER.info("Lambda finished at {} (ran for {})",
-                    finishTime, LoggedDuration.withFullOutput(startTime, finishTime));
+            LOGGER.info("Lambda finished at {} (ran for {}), {} failures",
+                    finishTime, LoggedDuration.withFullOutput(startTime, finishTime), batchItemFailures.size());
         }
-        return null;
+        return new SQSBatchResponse(batchItemFailures);
+    }
+
+    private List<TableProperties> loadTables(
+            Map<String, List<SQSMessage>> messagesByTableId,
+            List<SQSBatchResponse.BatchItemFailure> batchItemFailures) {
+        List<TableProperties> tables = new ArrayList<>();
+        for (Entry<String, List<SQSMessage>> tableAndMessages : messagesByTableId.entrySet()) {
+            String tableId = tableAndMessages.getKey();
+            List<SQSMessage> tableMessages = tableAndMessages.getValue();
+            try {
+                TableProperties tableProperties = tablePropertiesProvider.getById(tableId);
+                LOGGER.info("Received {} messages for table {}", tableMessages.size(), tableProperties.getStatus());
+                tables.add(tableProperties);
+            } catch (RuntimeException e) {
+                LOGGER.error("Failed loading properties for table {}", tableId, e);
+                tableMessages.stream()
+                        .map(SQSMessage::getMessageId)
+                        .map(SQSBatchResponse.BatchItemFailure::new)
+                        .forEach(batchItemFailures::add);
+            }
+        }
+        return tables;
     }
 }

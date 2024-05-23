@@ -30,6 +30,13 @@ public class RangeCanonicaliser {
     private RangeCanonicaliser() {
     }
 
+    /**
+     * Convert a range into canonical form. A range is in canonical form when the minimum is inclusive and the
+     * maximum is exclusive.
+     *
+     * @param  range the range to convert
+     * @return       the canonicalised range
+     */
     public static Range canonicaliseRange(Range range) {
         if (range.isInCanonicalForm()) {
             return range;

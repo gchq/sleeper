@@ -19,6 +19,8 @@ package sleeper.core.statestore;
 import java.util.List;
 import java.util.Objects;
 
+import static java.util.stream.Collectors.toUnmodifiableList;
+
 /**
  * A request to split a file reference in the state store. The old reference will be deleted and new references will be
  * created in one transaction.
@@ -35,10 +37,33 @@ public class SplitFileReferenceRequest {
         }
     }
 
+    /**
+     * Builds a request to split a file reference into the immediate child partitions of the original partition. This
+     * will estimate the number of records in the child partitions by assuming an even split between the two.
+     *
+     * @param  file           the original file reference
+     * @param  leftPartition  the ID of the left child partition
+     * @param  rightPartition the ID of the right child partition
+     * @return                the request
+     */
     public static SplitFileReferenceRequest splitFileToChildPartitions(FileReference file, String leftPartition, String rightPartition) {
         return new SplitFileReferenceRequest(file,
                 List.of(SplitFileReference.referenceForChildPartition(file, leftPartition),
                         SplitFileReference.referenceForChildPartition(file, rightPartition)));
+    }
+
+    /**
+     * Creates a copy of this request with the update times removed in the file references. Used when storing a
+     * transaction to apply this request where the update time is held separately.
+     *
+     * @return the copy
+     */
+    public SplitFileReferenceRequest withNoUpdateTimes() {
+        return new SplitFileReferenceRequest(
+                oldReference.toBuilder().lastStateStoreUpdateTime(null).build(),
+                newReferences.stream()
+                        .map(ref -> ref.toBuilder().lastStateStoreUpdateTime(null).build())
+                        .collect(toUnmodifiableList()));
     }
 
     public String getFilename() {

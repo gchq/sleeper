@@ -24,9 +24,9 @@ public class SleeperSerDeUtils {
      * Converts a string version of an object into an object of a specified type. It is a bit of a hack and it would be
      * good to remove the need for it.
      *
-     * @param objectTypeAsString  The full name of the type to generate, such as "java.lang.String".
-     * @param objectValueAsString The object value, as a String.
-     * @return The parsed object.
+     * @param  objectTypeAsString  The full name of the type to generate, such as "java.lang.String".
+     * @param  objectValueAsString The object value, as a String.
+     * @return                     The parsed object.
      */
     public static Object convertStringToObjectOfNamedType(String objectTypeAsString, String objectValueAsString) {
         if (objectValueAsString == null) {

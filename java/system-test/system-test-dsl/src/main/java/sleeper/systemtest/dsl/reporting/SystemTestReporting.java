@@ -16,8 +16,11 @@
 
 package sleeper.systemtest.dsl.reporting;
 
+import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
+
+import java.util.List;
 
 public class SystemTestReporting {
 
@@ -25,7 +28,8 @@ public class SystemTestReporting {
     private final IngestReportsDriver ingestDriver;
     private final CompactionReportsDriver compactionDriver;
 
-    public SystemTestReporting(SystemTestContext context, SystemTestDrivers drivers) {
+    public SystemTestReporting(SystemTestContext context) {
+        SystemTestDrivers drivers = context.instance().adminDrivers();
         this.context = context.reporting();
         this.ingestDriver = drivers.ingestReports(context);
         this.compactionDriver = drivers.compactionReports(context);
@@ -37,5 +41,9 @@ public class SystemTestReporting {
 
     public SystemTestCompactionJobsReport compactionJobs() {
         return new SystemTestCompactionJobsReport(compactionDriver.jobs(context));
+    }
+
+    public List<CompactionTaskStatus> finishedCompactionTasks() {
+        return compactionDriver.tasks(context);
     }
 }

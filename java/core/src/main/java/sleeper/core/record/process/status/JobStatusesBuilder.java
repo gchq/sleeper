@@ -22,16 +22,32 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
+/**
+ * Builds job status objects. Gathers records from a status store into a list for each job that has updates, then
+ * creates a {@link JobStatusUpdates} object for each job.
+ */
 public class JobStatusesBuilder {
 
     private final Map<String, List<ProcessStatusUpdateRecord>> updatesByJobId = new HashMap<>();
 
+    /**
+     * Adds the update to the existing list of updates for the job.
+     *
+     * @param  update the status update to add
+     * @return        the builder
+     */
     public JobStatusesBuilder update(ProcessStatusUpdateRecord update) {
         updatesByJobId.computeIfAbsent(update.getJobId(), id -> new ArrayList<>())
                 .add(update);
         return this;
     }
 
+    /**
+     * Streams through jobs that have status updates, and builds a status object for each one. These are ordered by the
+     * time of the first update to each job, with the job that was created most recently first.
+     *
+     * @return a stream of {@link JobStatusUpdates} objects
+     */
     public Stream<JobStatusUpdates> stream() {
         return updatesByJobId.entrySet().stream()
                 .map(entry -> JobStatusUpdates.from(entry.getKey(), entry.getValue()))
@@ -39,7 +55,6 @@ public class JobStatusesBuilder {
     }
 
     private static Comparator<JobStatusUpdates> latestFirstByFirstUpdate() {
-        return Comparator.comparing((JobStatusUpdates job) ->
-                job.getFirstRecord().getUpdateTime()).reversed();
+        return Comparator.comparing((JobStatusUpdates job) -> job.getFirstRecord().getUpdateTime()).reversed();
     }
 }

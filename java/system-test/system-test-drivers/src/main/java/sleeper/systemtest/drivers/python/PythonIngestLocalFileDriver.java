@@ -16,6 +16,7 @@
 
 package sleeper.systemtest.drivers.python;
 
+import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.ingest.IngestLocalFileByAnyQueueDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
@@ -28,9 +29,9 @@ public class PythonIngestLocalFileDriver implements IngestLocalFileByAnyQueueDri
     private final PythonRunner pythonRunner;
     private final Path pythonDir;
 
-    public PythonIngestLocalFileDriver(SystemTestInstanceContext instance, Path pythonDir) {
+    public PythonIngestLocalFileDriver(SystemTestInstanceContext instance, Path pythonDir, SystemTestClients clients) {
         this.instance = instance;
-        this.pythonRunner = new PythonRunner(pythonDir);
+        this.pythonRunner = new PythonRunner(pythonDir, clients);
         this.pythonDir = pythonDir;
     }
 

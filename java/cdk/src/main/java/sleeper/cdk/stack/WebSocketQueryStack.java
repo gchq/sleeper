@@ -52,7 +52,7 @@ import java.util.Map;
 import static sleeper.cdk.Utils.createLambdaLogGroup;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
-public class WebSocketQueryStack extends NestedStack {
+public final class WebSocketQueryStack extends NestedStack {
 
     private CfnApi webSocketApi;
 
@@ -153,6 +153,7 @@ public class WebSocketQueryStack extends NestedStack {
         stage.grantManagementApiAccess(webSocketApiHandler);
         stage.grantManagementApiAccess(queryStack.getQueryExecutorLambda());
         stage.grantManagementApiAccess(queryStack.getLeafPartitionQueryLambda());
+        grantAccessToWebSocketQueryApi(coreStacks.getQueryPolicyForGrants());
 
         new CfnOutput(this, "WebSocketApiUrl", CfnOutputProps.builder()
                 .value(stage.getUrl())

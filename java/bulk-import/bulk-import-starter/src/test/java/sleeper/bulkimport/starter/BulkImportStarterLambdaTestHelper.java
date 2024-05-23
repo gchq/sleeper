@@ -28,8 +28,7 @@ public class BulkImportStarterLambdaTestHelper {
         SQSEvent.SQSMessage sqsMessage = new SQSEvent.SQSMessage();
         sqsMessage.setBody(message);
         event.setRecords(Lists.newArrayList(
-                sqsMessage
-        ));
+                sqsMessage));
         return event;
     }
 }

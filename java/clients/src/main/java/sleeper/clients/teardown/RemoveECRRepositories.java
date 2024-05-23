@@ -40,9 +40,9 @@ public class RemoveECRRepositories {
 
     public static void remove(AmazonECR ecr, InstanceProperties properties, List<String> extraRepositories) {
         Stream.concat(Stream.of(ECR_COMPACTION_REPO, ECR_INGEST_REPO, BULK_IMPORT_REPO, BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO)
-                                .filter(properties::isSet)
-                                .map(properties::get),
-                        extraRepositories.stream())
+                .filter(properties::isSet)
+                .map(properties::get),
+                extraRepositories.stream())
                 .parallel().forEach(repositoryName -> deleteRepository(ecr, repositoryName));
     }
 

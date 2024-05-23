@@ -1,0 +1,30 @@
+{
+  "files": [
+    {
+      "filename": "file1.parquet",
+      "totalReferenceCount": 1,
+      "references": [
+        {
+          "partitionId": "root",
+          "numberOfRecords": 100,
+          "jobId": null,
+          "countApproximate": false,
+          "onlyContainsDataForThisPartition": true
+        }
+      ]
+    },
+    {
+      "filename": "file2.parquet",
+      "totalReferenceCount": 1,
+      "references": [
+        {
+          "partitionId": "root",
+          "numberOfRecords": 200,
+          "jobId": null,
+          "countApproximate": false,
+          "onlyContainsDataForThisPartition": true
+        }
+      ]
+    }
+  ]
+}

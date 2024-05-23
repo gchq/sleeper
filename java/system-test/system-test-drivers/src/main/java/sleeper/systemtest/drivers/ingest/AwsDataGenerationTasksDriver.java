@@ -35,9 +35,8 @@ public class AwsDataGenerationTasksDriver implements DataGenerationTasksDriver {
     private final SystemTestInstanceContext instance;
     private final AmazonECS ecsClient;
 
-    public AwsDataGenerationTasksDriver(DeployedSystemTestResources systemTest,
-                                        SystemTestInstanceContext instance,
-                                        AmazonECS ecsClient) {
+    public AwsDataGenerationTasksDriver(
+            DeployedSystemTestResources systemTest, SystemTestInstanceContext instance, AmazonECS ecsClient) {
         this.systemTest = systemTest;
         this.instance = instance;
         this.ecsClient = ecsClient;

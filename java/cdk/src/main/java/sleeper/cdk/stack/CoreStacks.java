@@ -18,6 +18,9 @@ package sleeper.cdk.stack;
 
 import software.amazon.awscdk.services.iam.IGrantable;
 import software.amazon.awscdk.services.iam.IRole;
+import software.amazon.awscdk.services.iam.ManagedPolicy;
+import software.amazon.awscdk.services.lambda.IFunction;
+import software.amazon.awscdk.services.sqs.IQueue;
 
 public class CoreStacks {
 
@@ -113,7 +116,35 @@ public class CoreStacks {
         policiesStack.grantReadIngestSources(grantee);
     }
 
-    public IGrantable getIngestPolicy() {
-        return policiesStack.getIngestPolicy();
+    public IGrantable getDirectIngestPolicyForGrants() {
+        return policiesStack.getDirectIngestPolicyForGrants();
+    }
+
+    public IGrantable getIngestByQueuePolicyForGrants() {
+        return policiesStack.getIngestByQueuePolicyForGrants();
+    }
+
+    public IGrantable getQueryPolicyForGrants() {
+        return policiesStack.getQueryPolicyForGrants();
+    }
+
+    public ManagedPolicy getReportingPolicyForGrants() {
+        return policiesStack.getReportingPolicyForGrants();
+    }
+
+    public void grantInvokeScheduled(IFunction function) {
+        policiesStack.grantInvokeScheduled(function);
+    }
+
+    public void grantInvokeScheduled(IFunction triggerFunction, IQueue invokeQueue) {
+        policiesStack.grantInvokeScheduled(triggerFunction, invokeQueue);
+    }
+
+    public ManagedPolicy getInvokeCompactionPolicyForGrants() {
+        return policiesStack.getInvokeCompactionPolicyForGrants();
+    }
+
+    public IGrantable getPurgeQueuesPolicyForGrants() {
+        return policiesStack.getPurgeQueuesPolicyForGrants();
     }
 }

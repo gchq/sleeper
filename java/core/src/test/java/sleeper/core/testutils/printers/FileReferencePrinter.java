@@ -19,7 +19,6 @@ package sleeper.core.testutils.printers;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.table.TableStatus;
 
 import java.io.PrintWriter;
 import java.util.HashMap;
@@ -31,30 +30,42 @@ import java.util.stream.Collectors;
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
+/**
+ * Prints the state of files in a Sleeper table as text, for readable assertions in tests. Intended to be used in
+ * approval tests, for visual comparison against previously generated values. Uses {@link TablesPrinter} to consolidate
+ * the generated output for multiple tables.
+ */
 public class FileReferencePrinter {
 
     private FileReferencePrinter() {
     }
 
-    public static String printExpectedFilesForAllTables(
-            List<TableStatus> tables, PartitionTree partitions, AllReferencesToAllFiles files) {
-        return printTableFilesExpectingIdentical(
-                tables.stream().collect(Collectors.toMap(TableStatus::getTableName, table -> partitions)),
-                tables.stream().collect(Collectors.toMap(TableStatus::getTableName, table -> files)));
-    }
-
+    /**
+     * Generates a string with information about file references for all provided tables.
+     *
+     * @param  partitionsByTable a map of table name to expected {@link PartitionTree}
+     * @param  filesByTable      a map of table name to expected {@link AllReferencesToAllFiles}
+     * @return                   a generated string
+     */
     public static String printTableFilesExpectingIdentical(
             Map<String, PartitionTree> partitionsByTable, Map<String, AllReferencesToAllFiles> filesByTable) {
-        return TablesPrinter.printForAllTables(filesByTable.keySet(),
+        return TablesPrinter.printForAllTablesExcludingNames(filesByTable.keySet(),
                 table -> printFiles(partitionsByTable.get(table), filesByTable.get(table)));
     }
 
-    public static String printFiles(PartitionTree tree, AllReferencesToAllFiles files) {
-        ToStringPrintStream printer = new ToStringPrintStream();
+    /**
+     * Generates a string with information about file references.
+     *
+     * @param  partitions the {@link PartitionTree}
+     * @param  files      the {@link AllReferencesToAllFiles}
+     * @return            a generated string
+     */
+    public static String printFiles(PartitionTree partitions, AllReferencesToAllFiles files) {
+        ToStringPrintWriter printer = new ToStringPrintWriter();
         PrintWriter out = printer.getPrintWriter();
         out.println("Unreferenced files: " + files.getFilesWithNoReferences().size());
         out.println("Referenced files: " + files.getFilesWithReferences().size());
-        printFiles(tree, files, out);
+        printFiles(partitions, files, out);
         out.flush();
         return printer.toString();
     }
@@ -64,8 +75,8 @@ public class FileReferencePrinter {
         out.println("File references: " + references.size());
         Map<String, List<FileReference>> filesByPartition = references.stream()
                 .collect(Collectors.groupingBy(FileReference::getPartitionId));
-        AtomicInteger partialCount = new AtomicInteger();
-        Map<String, Integer> numberByPartialFilename = new HashMap<>();
+        AtomicInteger nextFileNumber = new AtomicInteger();
+        Map<String, Integer> numberByFilename = new HashMap<>();
         partitionTree.traverseLeavesFirst().forEach(partition -> {
             List<FileReference> partitionFiles = filesByPartition.get(partition.getId());
             if (partitionFiles == null) {
@@ -83,12 +94,12 @@ public class FileReferencePrinter {
                 if (file.isCountApproximate()) {
                     out.print("(approx) ");
                 }
+                int fileNumber = numberByFilename.computeIfAbsent(
+                        file.getFilename(), name -> nextFileNumber.incrementAndGet());
                 if (file.onlyContainsDataForThisPartition()) {
-                    out.println("in file");
+                    out.println("in file " + fileNumber);
                 } else {
-                    int partialFileNumber = numberByPartialFilename.computeIfAbsent(
-                            file.getFilename(), name -> partialCount.incrementAndGet());
-                    out.println("in partial file " + partialFileNumber);
+                    out.println("in partial file " + fileNumber);
                 }
             }
         });
@@ -97,7 +108,9 @@ public class FileReferencePrinter {
     private static List<FileReference> sortFileReferences(AllReferencesToAllFiles files) {
         return files.getFilesWithReferences().stream()
                 .flatMap(file -> file.getInternalReferences().stream())
-                .sorted(comparing(FileReference::getNumberOfRecords).reversed())
+                .sorted(comparing(FileReference::onlyContainsDataForThisPartition)
+                        .thenComparing(FileReference::getNumberOfRecords)
+                        .reversed())
                 .collect(toUnmodifiableList());
     }
 }

@@ -40,7 +40,7 @@ public class CompactionOutputFileNameFactoryTest {
         instanceProperties.set(DATA_BUCKET, "data-bucket");
         tableProperties.set(TABLE_ID, "test-table");
         assertThat(factory().jobPartitionFile("test-job", "test-partition"))
-                .isEqualTo("file://data-bucket/test-table/partition_test-partition/test-job.parquet");
+                .isEqualTo("file://data-bucket/test-table/data/partition_test-partition/test-job.parquet");
     }
 
     private CompactionOutputFileNameFactory factory() {

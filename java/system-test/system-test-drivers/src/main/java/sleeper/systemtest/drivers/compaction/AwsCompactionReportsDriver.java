@@ -28,6 +28,7 @@ import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
+import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.reporting.CompactionReportsDriver;
@@ -62,6 +63,12 @@ public class AwsCompactionReportsDriver implements CompactionReportsDriver {
     public List<CompactionJobStatus> jobs(ReportingContext reportingContext) {
         return new RangeJobsQuery(instance.getTableStatus(), reportingContext.getRecordingStartTime(), Instant.MAX)
                 .run(jobStore());
+    }
+
+    @Override
+    public List<CompactionTaskStatus> tasks(ReportingContext reportingContext) {
+        return CompactionTaskQuery.forPeriod(reportingContext.getRecordingStartTime(), Instant.MAX)
+                .run(taskStore());
     }
 
     private CompactionJobStatusStore jobStore() {

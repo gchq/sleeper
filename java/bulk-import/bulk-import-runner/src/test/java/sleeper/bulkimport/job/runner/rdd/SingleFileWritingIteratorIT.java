@@ -74,8 +74,7 @@ class SingleFileWritingIteratorIT {
                 RowFactory.create("a", 1, 2),
                 RowFactory.create("b", 1, 2),
                 RowFactory.create("c", 1, 2),
-                RowFactory.create("d", 1, 2)
-        ).iterator();
+                RowFactory.create("d", 1, 2)).iterator();
 
         @Test
         void shouldWriteAllRecordsToAParquetFile() {
@@ -108,7 +107,7 @@ class SingleFileWritingIteratorIT {
             assertThat(fileWritingIterator).toIterable()
                     .containsExactly(RowFactory.create(
                             "test-partition",
-                            "file://" + tempFolder + "/" + tableProperties.get(TABLE_ID) + "/partition_test-partition/test-file.parquet",
+                            "file://" + tempFolder + "/" + tableProperties.get(TABLE_ID) + "/data/partition_test-partition/test-file.parquet",
                             4));
         }
     }
@@ -125,8 +124,7 @@ class SingleFileWritingIteratorIT {
                     RowFactory.create("a", 1, 2),
                     RowFactory.create("b", 1, 2),
                     RowFactory.create("d", 1, 2),
-                    RowFactory.create("e", 1, 2)
-            ).iterator();
+                    RowFactory.create("e", 1, 2)).iterator();
             PartitionTree partitionTree = createPartitionsBuilder()
                     .leavesWithSplits(List.of("left", "right"), List.of("c"))
                     .parentJoining("root", "left", "right")

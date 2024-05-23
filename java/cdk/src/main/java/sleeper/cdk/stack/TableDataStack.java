@@ -37,8 +37,8 @@ public class TableDataStack extends NestedStack {
 
     private final IBucket dataBucket;
 
-    public TableDataStack(Construct scope, String id, InstanceProperties instanceProperties,
-                          ManagedPoliciesStack policiesStack) {
+    public TableDataStack(
+            Construct scope, String id, InstanceProperties instanceProperties, ManagedPoliciesStack policiesStack) {
         super(scope, id);
 
         String instanceId = instanceProperties.get(ID);
@@ -55,7 +55,9 @@ public class TableDataStack extends NestedStack {
 
         instanceProperties.set(DATA_BUCKET, dataBucket.getBucketName());
 
-        dataBucket.grantReadWrite(policiesStack.getIngestPolicy());
+        dataBucket.grantReadWrite(policiesStack.getDirectIngestPolicyForGrants());
+        dataBucket.grantRead(policiesStack.getClearInstancePolicyForGrants());
+        dataBucket.grantDelete(policiesStack.getClearInstancePolicyForGrants());
     }
 
     public IBucket getDataBucket() {

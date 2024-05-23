@@ -79,8 +79,7 @@ class FileWritingIteratorIT {
                 RowFactory.create("a", 1, 2, "a"),
                 RowFactory.create("b", 1, 2, "a"),
                 RowFactory.create("c", 1, 2, "b"),
-                RowFactory.create("d", 1, 2, "b")
-        ).iterator();
+                RowFactory.create("d", 1, 2, "b")).iterator();
 
         // When
         FileWritingIterator fileWritingIterator = createIteratorFrom(input);
@@ -96,8 +95,7 @@ class FileWritingIteratorIT {
                 RowFactory.create("a", 1, 2, "a"),
                 RowFactory.create("b", 1, 2, "a"),
                 RowFactory.create("c", 1, 2, "b"),
-                RowFactory.create("d", 1, 2, "b")
-        ).iterator();
+                RowFactory.create("d", 1, 2, "b")).iterator();
 
         // When
         FileWritingIterator fileWritingIterator = createIteratorFrom(input);
@@ -119,8 +117,7 @@ class FileWritingIteratorIT {
                 RowFactory.create("a", 1, 2, "a"),
                 RowFactory.create("b", 1, 2, "a"),
                 RowFactory.create("c", 1, 2, "b"),
-                RowFactory.create("d", 1, 2, "b")
-        ).iterator();
+                RowFactory.create("d", 1, 2, "b")).iterator();
 
         // When
         FileWritingIterator fileWritingIterator = createIteratorFrom(input);
@@ -145,8 +142,7 @@ class FileWritingIteratorIT {
                 RowFactory.create("b", 1, 2, "a"),
                 RowFactory.create("c", 1, 2, "b"),
                 RowFactory.create("d", 1, 2, "b"),
-                RowFactory.create("e", 1, 2, "c")
-        ).iterator();
+                RowFactory.create("e", 1, 2, "c")).iterator();
 
         // When
         FileWritingIterator fileWritingIterator = createIteratorFrom(input);
@@ -172,8 +168,7 @@ class FileWritingIteratorIT {
                 RowFactory.create("a", 1, 2, "a"),
                 RowFactory.create("b", 1, 2, "a"),
                 RowFactory.create("c", 1, 2, "b"),
-                RowFactory.create("d", 1, 2, "b")
-        ).iterator();
+                RowFactory.create("d", 1, 2, "b")).iterator();
 
         // When
         FileWritingIterator fileWritingIterator = createIteratorFrom(input, List.of("file1", "file2").iterator()::next);
@@ -182,8 +177,8 @@ class FileWritingIteratorIT {
         assertThat(fileWritingIterator).toIterable()
                 .extracting(row -> row.getString(1))
                 .containsExactly(
-                        "file://" + tempFolder + "/" + tableProperties.get(TABLE_ID) + "/partition_a/file1.parquet",
-                        "file://" + tempFolder + "/" + tableProperties.get(TABLE_ID) + "/partition_b/file2.parquet");
+                        "file://" + tempFolder + "/" + tableProperties.get(TABLE_ID) + "/data/partition_a/file1.parquet",
+                        "file://" + tempFolder + "/" + tableProperties.get(TABLE_ID) + "/data/partition_b/file2.parquet");
     }
 
     private FileWritingIterator createIteratorFrom(Iterator<Row> input) {

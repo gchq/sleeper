@@ -38,20 +38,19 @@ public class RestartSystem {
             throw new IllegalArgumentException("Usage: <instance-id>");
         }
 
-        AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
-        InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, args[0]);
-        amazonS3.shutdown();
-
+        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         AmazonCloudWatchEvents cwClient = AmazonCloudWatchEventsClientBuilder.defaultClient();
-
-        SleeperScheduleRule.getCloudWatchRules(instanceProperties)
-                .forEach(rules -> enableRule(cwClient, rules));
-
-        cwClient.shutdown();
+        try {
+            InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(s3Client, args[0]);
+            SleeperScheduleRule.getCloudWatchRules(instanceProperties)
+                    .forEach(rules -> enableRule(cwClient, rules));
+        } finally {
+            s3Client.shutdown();
+            cwClient.shutdown();
+        }
     }
 
-    private static void enableRule(AmazonCloudWatchEvents cwClient,
-                                   SleeperScheduleRule.Value rules) {
+    private static void enableRule(AmazonCloudWatchEvents cwClient, SleeperScheduleRule.Value rules) {
         List<String> ruleNames = rules.getRuleNames();
         if (ruleNames.isEmpty()) {
             System.out.println("No rule found for property " + rules.getProperty() + ", not enabling");

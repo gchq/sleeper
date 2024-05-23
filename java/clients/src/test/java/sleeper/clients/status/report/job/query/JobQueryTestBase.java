@@ -18,7 +18,7 @@ package sleeper.clients.status.report.job.query;
 
 import sleeper.clients.status.report.job.query.JobQuery.Type;
 import sleeper.clients.testutil.TestConsoleInput;
-import sleeper.clients.testutil.ToStringPrintStream;
+import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.CompactionJobStatusTestData;
@@ -54,7 +54,7 @@ public class JobQueryTestBase {
     protected final CompactionJobStatus exampleStatus2 = CompactionJobStatusTestData.jobCreated(
             exampleJob2, Instant.parse("2022-09-22T13:53:12.001Z"));
     protected final List<CompactionJobStatus> exampleStatusList = Arrays.asList(exampleStatus2, exampleStatus1);
-    protected final ToStringPrintStream out = new ToStringPrintStream();
+    protected final ToStringConsoleOutput out = new ToStringConsoleOutput();
     protected final TestConsoleInput in = new TestConsoleInput(out.consoleOut());
 
     protected List<CompactionJobStatus> queryStatuses(Type queryType) {

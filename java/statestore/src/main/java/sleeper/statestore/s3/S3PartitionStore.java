@@ -17,29 +17,17 @@ package sleeper.statestore.s3;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-import org.apache.parquet.hadoop.ParquetReader;
-import org.apache.parquet.hadoop.ParquetWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsFromSplitPoints;
-import sleeper.core.range.RegionSerDe;
-import sleeper.core.record.Record;
-import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.IntType;
-import sleeper.core.schema.type.ListType;
-import sleeper.core.schema.type.PrimitiveType;
-import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.PartitionStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.io.parquet.record.ParquetReaderIterator;
-import sleeper.io.parquet.record.ParquetRecordReader;
-import sleeper.io.parquet.record.ParquetRecordWriterFactory;
+import sleeper.statestore.StateStoreFileUtils;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -57,21 +45,17 @@ import static sleeper.statestore.s3.S3StateStoreDataFile.conditionCheckFor;
 
 class S3PartitionStore implements PartitionStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(S3PartitionStore.class);
-    private static final Schema PARTITION_SCHEMA = initialisePartitionSchema();
 
-    private final List<PrimitiveType> rowKeyTypes;
     private final S3RevisionIdStore s3RevisionIdStore;
     private final Configuration conf;
-    private final RegionSerDe regionSerDe;
     private final Schema tableSchema;
     private final String stateStorePath;
     private final S3StateStoreDataFile<Map<String, Partition>> s3StateStoreFile;
+    private final StateStoreFileUtils stateStoreFileUtils;
 
     private S3PartitionStore(Builder builder) {
         conf = Objects.requireNonNull(builder.conf, "hadoopConfiguration must not be null");
         tableSchema = Objects.requireNonNull(builder.tableSchema, "tableSchema must not be null");
-        regionSerDe = new RegionSerDe(tableSchema);
-        rowKeyTypes = tableSchema.getRowKeyTypes();
         stateStorePath = Objects.requireNonNull(builder.stateStorePath, "stateStorePath must not be null");
         s3RevisionIdStore = Objects.requireNonNull(builder.s3RevisionIdStore, "s3RevisionIdStore must not be null");
         s3StateStoreFile = S3StateStoreDataFile.builder()
@@ -82,6 +66,7 @@ class S3PartitionStore implements PartitionStore {
                 .loadAndWriteData(this::readPartitionsMapFromParquet, this::writePartitionsMapToParquet)
                 .hadoopConf(conf)
                 .build();
+        stateStoreFileUtils = new StateStoreFileUtils(conf);
     }
 
     public static Builder builder() {
@@ -158,27 +143,15 @@ class S3PartitionStore implements PartitionStore {
         return "";
     }
 
-    private static Schema initialisePartitionSchema() {
-        return Schema.builder()
-                .rowKeyFields(new Field("partitionId", new StringType()))
-                .valueFields(
-                        new Field("leafPartition", new StringType()),
-                        new Field("parentPartitionId", new StringType()),
-                        new Field("childPartitionIds", new ListType(new StringType())),
-                        new Field("region", new StringType()),
-                        new Field("dimension", new IntType()))
-                .build();
-    }
-
     @Override
-    public void clearPartitionData() {
-        Path path = new Path(stateStorePath + "/partitions");
+    public void clearPartitionData() throws StateStoreException {
         try {
+            Path path = new Path(stateStorePath + "/partitions");
             path.getFileSystem(conf).delete(path, true);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+            s3RevisionIdStore.deletePartitionsRevision();
+        } catch (IOException | RuntimeException e) {
+            throw new StateStoreException("Failed deleting partitions file", e);
         }
-        s3RevisionIdStore.deletePartitionsRevision();
     }
 
     private String getPartitionsPath(S3RevisionId revisionId) {
@@ -231,13 +204,10 @@ class S3PartitionStore implements PartitionStore {
 
     private void writePartitionsToParquet(Collection<Partition> partitions, String path) throws StateStoreException {
         LOGGER.debug("Writing {} partitions to {}", partitions.size(), path);
-        try (ParquetWriter<Record> recordWriter = ParquetRecordWriterFactory.createParquetRecordWriter(
-                new Path(path), PARTITION_SCHEMA, conf)) {
-            for (Partition partition : partitions) {
-                recordWriter.write(getRecordFromPartition(partition));
-            }
+        try {
+            stateStoreFileUtils.savePartitions(path, partitions, tableSchema);
         } catch (IOException e) {
-            throw new StateStoreException("Failed writing partitions", e);
+            throw new StateStoreException("Failed to save partitions", e);
         }
         LOGGER.debug("Wrote {} partitions to {}", partitions.size(), path);
     }
@@ -245,50 +215,13 @@ class S3PartitionStore implements PartitionStore {
     private List<Partition> readPartitionsFromParquet(String path) throws StateStoreException {
         LOGGER.debug("Loading partitions from {}", path);
         List<Partition> partitions = new ArrayList<>();
-        try (ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(path), PARTITION_SCHEMA)
-                .withConf(conf)
-                .build()) {
-            ParquetReaderIterator recordReader = new ParquetReaderIterator(reader);
-            while (recordReader.hasNext()) {
-                partitions.add(getPartitionFromRecord(recordReader.next()));
-            }
+        try {
+            stateStoreFileUtils.loadPartitions(path, tableSchema, partitions::add);
         } catch (IOException e) {
-            throw new StateStoreException("Failed loading partitions", e);
+            throw new StateStoreException("Failed to load partitions", e);
         }
         LOGGER.debug("Loaded {} partitions from {}", partitions.size(), path);
         return partitions;
-    }
-
-    private Record getRecordFromPartition(Partition partition) {
-        Record record = new Record();
-        record.put("partitionId", partition.getId());
-        record.put("leafPartition", "" + partition.isLeafPartition()); // TODO Change to boolean once boolean is a supported type
-        String parentPartitionId;
-        if (null == partition.getParentPartitionId()) {
-            parentPartitionId = "null";
-        } else {
-            parentPartitionId = partition.getParentPartitionId();
-        }
-        record.put("parentPartitionId", parentPartitionId);
-        record.put("childPartitionIds", partition.getChildPartitionIds());
-        record.put("region", regionSerDe.toJson(partition.getRegion()));
-        record.put("dimension", partition.getDimension());
-        return record;
-    }
-
-    private Partition getPartitionFromRecord(Record record) {
-        Partition.Builder partitionBuilder = Partition.builder()
-                .id((String) record.get("partitionId"))
-                .leafPartition(record.get("leafPartition").equals("true"))
-                .rowKeyTypes(rowKeyTypes)
-                .childPartitionIds((List<String>) record.get("childPartitionIds"))
-                .region(regionSerDe.fromJson((String) record.get("region")))
-                .dimension((int) record.get("dimension"));
-        String parentPartitionId = (String) record.get("parentPartitionId");
-        if (!"null".equals(parentPartitionId)) {
-            partitionBuilder.parentPartitionId(parentPartitionId);
-        }
-        return partitionBuilder.build();
     }
 
     static final class Builder {

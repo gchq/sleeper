@@ -82,7 +82,7 @@ class PartitionsStatusTest {
         PartitionsStatus status = PartitionsStatus.from(tableProperties, store);
 
         // Then
-        assertThat(status.getNumLeafPartitionsThatNeedSplitting()).isZero();
+        assertThat(status.getNumLeafPartitionsThatWillBeSplit()).isZero();
     }
 
     @Test
@@ -96,7 +96,7 @@ class PartitionsStatusTest {
         PartitionsStatus status = PartitionsStatus.from(tableProperties, store);
 
         // Then
-        assertThat(status.getNumLeafPartitionsThatNeedSplitting()).isEqualTo(2);
+        assertThat(status.getNumLeafPartitionsThatWillBeSplit()).isEqualTo(2);
     }
 
     @Test
@@ -104,8 +104,8 @@ class PartitionsStatusTest {
         // Given
         TableProperties tableProperties = createTablePropertiesWithSplitThreshold(10);
         StateStore store = StateStoreTestBuilder.from(createPartitionsBuilder()
-                        .rootFirst("root")
-                        .splitToNewChildren("root", "L", "R", "abc"))
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", "abc"))
                 .partitionFileWithRecords("root", "not-split-yet.parquet", 100L)
                 .buildStateStore();
 
@@ -113,7 +113,7 @@ class PartitionsStatusTest {
         PartitionsStatus status = PartitionsStatus.from(tableProperties, store);
 
         // Then
-        assertThat(status.getNumLeafPartitionsThatNeedSplitting()).isEqualTo(0);
+        assertThat(status.getNumLeafPartitionsThatWillBeSplit()).isEqualTo(0);
     }
 
     @Test

@@ -37,8 +37,8 @@ import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_RE
 
 public class SystemTestStandaloneApp extends Stack {
 
-    public SystemTestStandaloneApp(App app, String id, StackProps props,
-                                   SystemTestStandaloneProperties properties, BuiltJars jars) {
+    public SystemTestStandaloneApp(
+            App app, String id, StackProps props, SystemTestStandaloneProperties properties, BuiltJars jars) {
         super(app, id, props);
 
         SystemTestBucketStack bucketStack = new SystemTestBucketStack(this, "SystemTestBucket", properties);
@@ -58,16 +58,20 @@ public class SystemTestStandaloneApp extends Stack {
         systemTestProperties.getPropertiesIndex().getCdkDefined().forEach(systemTestProperties::unset);
 
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        BuiltJars jars = new BuiltJars(s3Client, systemTestProperties.get(SYSTEM_TEST_JARS_BUCKET));
+        try {
+            BuiltJars jars = new BuiltJars(s3Client, systemTestProperties.get(SYSTEM_TEST_JARS_BUCKET));
 
-        String id = systemTestProperties.get(SYSTEM_TEST_ID);
-        Environment environment = Environment.builder()
-                .account(systemTestProperties.get(SYSTEM_TEST_ACCOUNT))
-                .region(systemTestProperties.get(SYSTEM_TEST_REGION))
-                .build();
-        new SystemTestStandaloneApp(app, id,
-                StackProps.builder().stackName(id).env(environment).build(),
-                systemTestProperties, jars);
-        app.synth();
+            String id = systemTestProperties.get(SYSTEM_TEST_ID);
+            Environment environment = Environment.builder()
+                    .account(systemTestProperties.get(SYSTEM_TEST_ACCOUNT))
+                    .region(systemTestProperties.get(SYSTEM_TEST_REGION))
+                    .build();
+            new SystemTestStandaloneApp(app, id,
+                    StackProps.builder().stackName(id).env(environment).build(),
+                    systemTestProperties, jars);
+            app.synth();
+        } finally {
+            s3Client.shutdown();
+        }
     }
 }
