@@ -9,19 +9,19 @@ AWS Java SDK (com.amazonaws:aws-java-sdk-*:1.12.498):
 
 - Apache License, Version 2.0
 
-AWS Java SDK v2 (software.amazon.awssdk:*:2.25.14):
+AWS Java SDK v2 (software.amazon.awssdk:*:2.25.57):
 
 - Apache License, Version 2.0
 
-AWS CRT (software.amazon.awssdk.crt:aws-crt:0.29.11):
+AWS CRT (software.amazon.awssdk.crt:aws-crt:0.29.19):
 
 - Apache License, Version 2.0
 
-AWS Lambda Java Core SDK (com.amazonaws:aws-lambda-java-core:1.2.2):
+AWS Lambda Java Core SDK (com.amazonaws:aws-lambda-java-core:1.2.3):
 
 - Apache License, Version 2.0
 
-AWS Lambda Java Events SDK (com.amazonaws:aws-lambda-java-events:3.11.4):
+AWS Lambda Java Events SDK (com.amazonaws:aws-lambda-java-events:3.11.5):
 
 - Apache License, Version 2.0
 
@@ -29,7 +29,7 @@ WildFly OpenSSL (org.wildfly.openssl:wildfly-openssl:2.2.5.Final):
 
 - Apache License, Version 2.0
 
-Woodstox (com.fasterxml.woodstox:woodstox-core:5.4.0):
+Woodstox (com.fasterxml.woodstox:woodstox-core:6.6.2):
 
 - Apache License, Version 2.0
 
@@ -41,11 +41,11 @@ Snappy Java (org.xerial.snappy:snappy-java:1.1.10.5):
 
 - Apache License, Version 2.0
 
-Protocol Buffers (com.google.protobuf:protobuf-java:3.23.3):
+Protocol Buffers (com.google.protobuf:protobuf-java:4.26.1):
 
 - The 3-Clause BSD License
 
-Nimbus JOSE+JWT (com.nimbusds:nimbus-jose-jwt:9.37.3):
+Nimbus JOSE+JWT (com.nimbusds:nimbus-jose-jwt:9.39.1):
 
 - Apache License, Version 2.0
 
@@ -53,7 +53,7 @@ Apache Avro (org.apache.avro:*:1.11.3):
 
 - Apache License, Version 2.0
 
-JSON Small and Fast Parser (net.minidev:json-smart:2.4.11):
+JSON Small and Fast Parser (net.minidev:json-smart:2.5.1):
 
 - Apache License, Version 2.0
 
@@ -61,7 +61,7 @@ Apache Kerby (org.apache.kerby:*:2.0.3):
 
 - Apache License, Version 2.0
 
-XNIO (org.jboss.xnio:xnio-api:3.8.13.Final):
+XNIO (org.jboss.xnio:xnio-api:3.8.14.Final):
 
 - Apache License, Version 2.0
 
@@ -73,11 +73,11 @@ Okio (com.squareup.okio:*:3.9.0):
 
 - Apache License, Version 2.0
 
-Kotlin Stdlib (org.jetbrains.kotlin:*:1.9.23):
+Kotlin Stdlib (org.jetbrains.kotlin:*:2.0.0):
 
 - Apache License, Version 2.0
 
-Logback (ch.qos.logback:logback-core:1.4.14):
+Logback (ch.qos.logback:logback-core:1.5.6):
 
 - Dual license (https://logback.qos.ch/license.html)
 - Eclipse Public License 1.0
@@ -87,11 +87,11 @@ Facebook Jcommon collections (com.facebook.jcommon:collections::0.1.32):
 
 - Apache License, Version 2.0
 
-Guava: Google Core Libraries For Java (com.google.guava:guava:33.0.0-jre):
+Guava: Google Core Libraries For Java (com.google.guava:guava:33.2.0-jre):
 
 - Apache License, Version 2.0
 
-Fasterxml Jackson (com.fasterxml.jackson.core:*:2.17.0, com.fasterxml.jackson.module:*:2.17.0)
+Fasterxml Jackson (com.fasterxml.jackson.core:*:2.17.1, com.fasterxml.jackson.module:*:2.17.1)
 
 - Apache License, Version 2.0
 
@@ -99,19 +99,19 @@ Wiremock (com.github.tomakehurst:wiremock-jre8:2.35.2):
 
 - Apache License, Version 2.0
 
-GSON (com.google.code.gson:gson:2.10.1):
+GSON (com.google.code.gson:gson:2.11.0):
 
 - Apache License, Version 2.0
 
-Commons Codec (commons-codec:commons-codec:1.16.1):
+Commons Codec (commons-codec:commons-codec:1.17.0):
 
 - Apache License, Version 2.0
 
-Commons IO (commons-io:commons-io:2.13.0):
+Commons IO (commons-io:commons-io:2.16.1):
 
 - Apache License, Version 2.0
 
-Apache Commons Configuration (org.apache.commons:commons-configuration2:2.9.0):
+Apache Commons Configuration (org.apache.commons:commons-configuration2:2.10.1):
 
 - Apache License, Version 2.0
 
@@ -119,15 +119,15 @@ Apache Commons Compress (org.apache.commons:commons-compress:1.26.1):
 
 - Apache License, Version 2.0
 
-Apache Commons Text (org.apache.commons:commons-text:1.10.0):
+Apache Commons Text (org.apache.commons:commons-text:1.12.0):
 
 - Apache License, Version 2.0
 
-Apache Commons Net (commons-net:commons-net:3.9.0):
+Apache Commons Net (commons-net:commons-net:3.10.0):
 
 - Apache License, Version 2.0
 
-Apache Commons Lang (org.apache.commons:commons-lang3:3.12.0):
+Apache Commons Lang (org.apache.commons:commons-lang3:3.14.0):
 
 - Apache License, Version 2.0
 
@@ -167,23 +167,23 @@ JUnit (org.junit.jupiter:junit-jupiter-*:5.10.2):
 
 - Eclipse Public License 1.0
 
-Mockito (org.mockito:mockito-core:5.11.0):
+Mockito (org.mockito:mockito-core:5.12.0):
 
 - MIT License
 
-ApprovalTests.Java (com.approvaltests:approvaltests:22.3.3):
+ApprovalTests.Java (com.approvaltests:approvaltests:24.2.0):
 
 - Apache License, Version 2.0
 
-AssertJ (org.assertj:assertj-core:3.24.1):
+AssertJ (org.assertj:assertj-core:3.25.3):
 
 - Apache License, Version 2.0
 
-JsonUnit (net.javacrumbs.json-unit:json-unit-assertj:2.38.0):
+JsonUnit (net.javacrumbs.json-unit:json-unit-assertj:3.2.7):
 
 - Apache License, Version 2.0
 
-SLF4J (org.slf4j:slf4j-api:2.0.12, org.slf4j:slf4j-reload4j:2.0.12):
+SLF4J (org.slf4j:slf4j-api:2.0.12, org.slf4j:slf4j-reload4j:2.0.13):
 
 - MIT License
 
@@ -191,15 +191,15 @@ Reload4j (ch.qos.reload4j:reload4j:1.2.25):
 
 - Apache License, Version 2.0
 
-Bouncy Castle (org.bouncycastle:bcpkix-jdk18on:1.75):
+Bouncy Castle (org.bouncycastle:bcpkix-jdk18on:1.78.1):
 
 - Bouncy Castle License
 
-Testcontainers (org.testcontainers:localstack:1.19.7, org.testcontainers:testcontainers:1.19.7, org.testcontainers:junit-jupiter:1.19.7):
+Testcontainers (org.testcontainers:localstack:1.19.8, org.testcontainers:testcontainers:1.19.8, org.testcontainers:junit-jupiter:1.19.8):
 
 - MIT License
 
-AWS CDK (software.amazon.awscdk:aws-cdk-lib:2.133.0):
+AWS CDK (software.amazon.awscdk:aws-cdk-lib:2.142.1):
 
 - Apache License, Version 2.0
 
@@ -207,7 +207,7 @@ CDK Lambda Layer KUBECTL V24 (software.amazon.awscdk:cdk-lambda-layer-kubectl-v2
 
 - Apache License, Version 2.0
 
-AWS Constructs (software.constructs:constructs:10.2.63):
+AWS Constructs (software.constructs:constructs:10.3.0):
 
 - Apache License, Version 2.0
 
@@ -215,15 +215,15 @@ AWS Lambda Powertools (software.amazon.lambda:powertools-metrics:1.18.0):
 
 - MIT License (https://github.com/awslabs/aws-lambda-powertools-java/blob/master/LICENSE)
 
-Jersey Client (org.glassfish.jersey.core:jersey-client:2.38):
+Jersey Client (org.glassfish.jersey.core:jersey-client:2.43):
 
 - Eclipse Public License 2.0 (https://projects.eclipse.org/projects/ee4j.jersey)
 
-Netty (io.netty:*:4.1.107.Final):
+Netty (io.netty:*:4.1.109.Final):
 
 - Apache License, Version 2.0
 
-Eclipse Jetty (org.eclipse.jetty:*:9.4.53.v20231009):
+Eclipse Jetty (org.eclipse.jetty:*:9.4.54.v20240208):
 
 - Dual license (https://eclipse.dev/jetty/licenses.php)
 - Apache License, Version 2.0
@@ -243,7 +243,7 @@ JGraphT (org.jgrapht:*:1.5.2):
 - GNU Lesser General Public License (LGPL) 2.1
 - Eclipse Public License (EPL) 2.0
 
-Apfloat (org.apfloat:apfloat:1.13.0):
+Apfloat (org.apfloat:apfloat:1.14.0):
 
 - MIT License
 
@@ -255,7 +255,7 @@ Go Offline Maven Plugin (de.qaware.maven:go-offline-maven-plugin:1.2.8):
 
 - Apache License, Version 2.0
 
-Dependency Check Maven Plugin (org.owasp:dependency-check-maven:9.0.10):
+Dependency Check Maven Plugin (org.owasp:dependency-check-maven:9.2.0):
 
 - Apache License, Version 2.0
 
