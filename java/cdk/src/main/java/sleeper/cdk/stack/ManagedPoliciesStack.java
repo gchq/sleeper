@@ -49,6 +49,7 @@ public class ManagedPoliciesStack extends NestedStack {
     private final ManagedPolicy editTablesPolicy;
     private final ManagedPolicy reportingPolicy;
     private final ManagedPolicy readIngestSourcesPolicy;
+    private final ManagedPolicy clearInstancePolicy;
     private ManagedPolicy purgeQueuesPolicy;
     private ManagedPolicy invokeCompactionPolicy;
     private ManagedPolicy invokeSchedulesPolicy;
@@ -63,6 +64,7 @@ public class ManagedPoliciesStack extends NestedStack {
         queryPolicy = createManagedPolicy("QueryPolicy");
         editTablesPolicy = createManagedPolicy("EditTablesPolicy");
         reportingPolicy = createManagedPolicy("ReportingPolicy");
+        clearInstancePolicy = createManagedPolicy("ClearInstancePolicy");
 
         List<IBucket> sourceBuckets = addIngestSourceBucketReferences(this, instanceProperties);
         if (sourceBuckets.isEmpty()) { // CDK doesn't allow a managed policy without any grants
@@ -91,6 +93,10 @@ public class ManagedPoliciesStack extends NestedStack {
 
     public ManagedPolicy getReportingPolicyForGrants() {
         return reportingPolicy;
+    }
+
+    public ManagedPolicy getClearInstancePolicyForGrants() {
+        return clearInstancePolicy;
     }
 
     public ManagedPolicy getPurgeQueuesPolicyForGrants() {
@@ -135,7 +141,8 @@ public class ManagedPoliciesStack extends NestedStack {
 
     Stream<ManagedPolicy> instanceAdminPolicies() {
         return Stream.of(
-                directIngestPolicy, ingestByQueuePolicy, queryPolicy, editTablesPolicy, reportingPolicy,
+                directIngestPolicy, ingestByQueuePolicy, queryPolicy,
+                editTablesPolicy, reportingPolicy, clearInstancePolicy,
                 purgeQueuesPolicy, invokeCompactionPolicy, invokeSchedulesPolicy)
                 .filter(policy -> policy != null);
     }

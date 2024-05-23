@@ -42,6 +42,7 @@ import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.s3.S3StateStore;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotMetadataStore;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SleeperTablesDriver;
@@ -113,8 +114,8 @@ public class AwsSleeperTablesDriver implements SleeperTablesDriver {
         clearTable(instanceProperties.get(TRANSACTION_LOG_PARTITIONS_TABLENAME),
                 DynamoDBTransactionLogStateStore.TABLE_ID, DynamoDBTransactionLogStateStore.TRANSACTION_NUMBER);
         clearTable(instanceProperties.get(TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME),
-                DynamoDBTransactionLogStateStore.TABLE_ID, DynamoDBTransactionLogStateStore.TRANSACTION_NUMBER);
-        clearTable(instanceProperties.get(TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME), DynamoDBTransactionLogStateStore.TABLE_ID);
+                DynamoDBTransactionLogSnapshotMetadataStore.TABLE_ID_AND_SNAPSHOT_TYPE, DynamoDBTransactionLogSnapshotMetadataStore.TRANSACTION_NUMBER);
+        clearTable(instanceProperties.get(TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME), DynamoDBTransactionLogSnapshotMetadataStore.TABLE_ID);
         waitForTablesToEmpty(
                 instanceProperties.get(TABLE_NAME_INDEX_DYNAMO_TABLENAME),
                 instanceProperties.get(TABLE_ID_INDEX_DYNAMO_TABLENAME),

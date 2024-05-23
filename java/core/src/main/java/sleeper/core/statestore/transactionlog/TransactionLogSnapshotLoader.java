@@ -13,19 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package sleeper.core.statestore.transactionlog;
 
-package sleeper.systemtest.dsl.reporting;
+import java.util.Optional;
 
-import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.compaction.task.CompactionTaskStatus;
+@FunctionalInterface
+public interface TransactionLogSnapshotLoader {
+    static TransactionLogSnapshotLoader neverLoad() {
+        return transactionNumber -> Optional.empty();
+    }
 
-import java.util.List;
-
-public interface CompactionReportsDriver {
-
-    SystemTestReport tasksAndJobsReport();
-
-    List<CompactionJobStatus> jobs(ReportingContext reportingContext);
-
-    List<CompactionTaskStatus> tasks(ReportingContext reportingContext);
+    Optional<TransactionLogSnapshot> loadLatestSnapshotIfAtMinimumTransaction(long transactionNumber);
 }

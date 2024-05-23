@@ -91,8 +91,10 @@ public class PollWithRetries {
      *                              to find _"
      * @param  checkFinished        the exit condition
      * @throws InterruptedException if the thread was interrupted while waiting
+     * @throws TimedOutException    if the maximum number of polls is reached
+     * @throws CheckFailedException if configured to only poll once, and it failed
      */
-    public void pollUntil(String description, BooleanSupplier checkFinished) throws InterruptedException {
+    public void pollUntil(String description, BooleanSupplier checkFinished) throws InterruptedException, TimedOutException, CheckFailedException {
         int polls = 0;
         while (!checkFinished.getAsBoolean()) {
             polls++;
@@ -123,8 +125,10 @@ public class PollWithRetries {
      * @param  condition            the exit condition to check against each query result
      * @return                      the last query result
      * @throws InterruptedException if the thread was interrupted while waiting
+     * @throws TimedOutException    if the maximum number of polls is reached
+     * @throws CheckFailedException if configured to only poll once, and it failed
      */
-    public <T> T queryUntil(String description, Supplier<T> query, Predicate<T> condition) throws InterruptedException {
+    public <T> T queryUntil(String description, Supplier<T> query, Predicate<T> condition) throws InterruptedException, TimedOutException, CheckFailedException {
         QueryTracker<T> tracker = new QueryTracker<>(query, condition);
         pollUntil(description, tracker::checkFinished);
         return tracker.lastResult;

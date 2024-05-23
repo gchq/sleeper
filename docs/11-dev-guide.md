@@ -6,8 +6,8 @@ This is a brief guide to developing Sleeper.
 ## Get your environment setup
 
 Before you do any dev work on Sleeper it is worth reading the "Get your environment setup" section in
-the [deployment guide](02-deployment-guide.md) as exactly the same will apply here, especially for running the system
-tests.
+the [deployment guide](02-deployment-guide.md). Once you've built the system, exactly the same will apply here with a
+copy that you built yourself.
 
 ### Install Prerequisite Software
 
@@ -29,8 +29,16 @@ Git repository. This will start a shell with all the Sleeper dependencies instal
 system. If you run your IDE from that shell, the dependencies will be available in your IDE. You can run `nix-shell`
 again whenever you want to work with Sleeper.
 
-You can also download [shell.nix](/shell.nix) directly and run `nix-shell shell.nix` if you'd like to get a shell
-without running Git. You can then `git clone` the repository from there.
+You can also download [shell.nix](/shell.nix) directly if you'd like to avoid installing Git. You can then `git clone`
+the repository from the Nix shell. Here's an example to get the latest release:
+
+```bash
+curl "https://raw.githubusercontent.com/gchq/sleeper/main/shell.nix" -o ./shell.nix
+nix-shell ./shell.nix
+git clone https://github.com/gchq/sleeper.git
+cd sleeper
+git checkout --track origin/main
+```
 
 If you're working with the Sleeper CLI, you can use `sleeper builder` to get a shell inside a Docker container with
 the dependencies pre-installed. You'll need to clone the Git repository, and this will be persisted between executions
@@ -51,13 +59,32 @@ into the scripts directory so that the scripts work.
 ./scripts/build/buildForTest.sh
 ```
 
-Maven (removing the '-Pquick' option will cause the unit and integration tests
-to run):
+### Sleeper CLI
+
+To build the Sleeper CLI, you can run this instead:
+
+```bash
+./scripts/cli/buildAll.sh
+```
+
+Use `./scripts/cli/runInDocker.sh` to run the built CLI. This will act the same as running the `sleeper`
+command after installing the CLI. You can manually install it if you copy that script somewhere, rename it to `sleeper`,
+and put it on the system path. Then `sleeper ...` commands will work as though you'd installed it normally.
+
+If you have the CLI installed already it will be replaced with the version that is built. If the `runInDocker.sh` script
+is different in the version you installed before, it will not be replaced. You can find it
+at `$HOME/.local/bin/sleeper`, and manually overwrite it with the contents of `./scripts/cli/runInDocker.sh`.
+
+### Java
+
+To build the Java code only, without installing it for the scripts:
 
 ```bash
 cd java
 mvn clean install -Pquick
 ```
+
+Removing the '-Pquick' option will cause the unit and integration tests to run.
 
 ### Disabling Rust component
 
@@ -87,19 +114,19 @@ For VS Code there's [a separate setup guide](/.vscode/README.md).
 
 For IntelliJ, these settings are available to import:
 
-- Code style scheme at [code-style/intellij-style.xml](/code-style/intellij-style.xml)
-- Inspection profile at [code-style/intellij-inspection-profile.xml](/code-style/intellij-inspection-profile.xml)
-- Copyright profile for license header
+* Code style scheme at [code-style/intellij-style.xml](/code-style/intellij-style.xml)
+* Inspection profile at [code-style/intellij-inspection-profile.xml](/code-style/intellij-inspection-profile.xml)
+* Copyright profile for license header
   at [code-style/intellij-copyright-profile.xml](/code-style/intellij-copyright-profile.xml)
-- Checkstyle plugin settings in [code-style/checkstyle-idea](/code-style/checkstyle-idea)
+* Checkstyle plugin settings in [code-style/checkstyle-idea](/code-style/checkstyle-idea)
 
 For Eclipse, these settings are available to import:
 
-- Code style at [code-style/eclipse-style.xml](/code-style/eclipse-style.xml)
-- Import order at [code-style/eclipse-import-order.importorder](/code-style/eclipse-import-order.importorder)
-- License header at [code-style/licenseHeader.txt](/code-style/licenseHeader.txt)
-- Code templates at [code-style/eclipse-codetemplates.xml](/code-style/eclipse-codetemplates.xml)
-- Editor templates at [code-style/eclipse-templates.xml](/code-style/eclipse-templates.xml)
+* Code style at [code-style/eclipse-style.xml](/code-style/eclipse-style.xml)
+* Import order at [code-style/eclipse-import-order.importorder](/code-style/eclipse-import-order.importorder)
+* License header at [code-style/licenseHeader.txt](/code-style/licenseHeader.txt)
+* Code templates at [code-style/eclipse-codetemplates.xml](/code-style/eclipse-codetemplates.xml)
+* Editor templates at [code-style/eclipse-templates.xml](/code-style/eclipse-templates.xml)
 
 ### Linting
 
@@ -119,7 +146,7 @@ We try to ensure that all classes have Javadoc. Most methods should also have Ja
 getters and setters can be skipped unless there's something important to know.
 
 See Oracle's standards for Javadoc:
-https://www.oracle.com/technical-resources/articles/java/javadoc-tool.html
+<https://www.oracle.com/technical-resources/articles/java/javadoc-tool.html>
 
 Note that the first sentence in a Javadoc comment will be used as a summary fragment in generated documentation. This
 should not contain any links or formatting, to read normally as an item in a list.
@@ -190,8 +217,8 @@ When deploying multiple instances (or running multiple system tests), many log g
 it difficult to find the logs you need to view. This script will delete any log groups that meet all of the following
 criteria:
 
-- Its name does not contain the name of any deployed CloudFormation stack
-- Either it's empty, or it has no retention period and is older than 30 days
+* Its name does not contain the name of any deployed CloudFormation stack
+* Either it's empty, or it has no retention period and is older than 30 days
 
 This can be used to limit the number of log groups in your AWS account, particularly if all your log groups are
 deployed by the CDK or CloudFormation, with the stack name in the log group name.

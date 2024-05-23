@@ -25,13 +25,13 @@ public class InMemoryTransactionLogStore implements TransactionLogStore {
     };
 
     private final List<TransactionLogEntry> transactions = new ArrayList<>();
-    private Runnable beforeNextAdd = DO_NOTHING;
-    private Runnable beforeNextRead = DO_NOTHING;
+    private Runnable startOfNextAdd = DO_NOTHING;
+    private Runnable startOfNextRead = DO_NOTHING;
 
     @Override
     public void addTransaction(TransactionLogEntry entry) throws DuplicateTransactionNumberException {
         long transactionNumber = entry.getTransactionNumber();
-        doBeforeNextAdd();
+        doStartOfAddTransaction();
         if (transactionNumber <= transactions.size()) {
             throw new DuplicateTransactionNumberException(transactionNumber);
         }
@@ -43,32 +43,32 @@ public class InMemoryTransactionLogStore implements TransactionLogStore {
 
     @Override
     public Stream<TransactionLogEntry> readTransactionsAfter(long lastTransactionNumber) {
-        doBeforeNextRead();
+        doStartOfReadTransactions();
         return transactions.stream()
                 .skip(lastTransactionNumber);
     }
 
-    public void beforeNextAddTransaction(ThrowingRunnable action) {
-        beforeNextAdd = wrappingCheckedExceptions(action);
+    public void atStartOfNextAddTransaction(ThrowingRunnable action) {
+        startOfNextAdd = wrappingCheckedExceptions(action);
     }
 
-    public void beforeNextReadTransactions(ThrowingRunnable action) {
-        beforeNextRead = wrappingCheckedExceptions(action);
+    public void atStartOfNextReadTransactions(ThrowingRunnable action) {
+        startOfNextRead = wrappingCheckedExceptions(action);
     }
 
     public long getLastTransactionNumber() {
         return transactions.size();
     }
 
-    private void doBeforeNextAdd() {
-        Runnable action = beforeNextAdd;
-        beforeNextAdd = DO_NOTHING;
+    private void doStartOfAddTransaction() {
+        Runnable action = startOfNextAdd;
+        startOfNextAdd = DO_NOTHING;
         action.run();
     }
 
-    private void doBeforeNextRead() {
-        Runnable action = beforeNextRead;
-        beforeNextRead = DO_NOTHING;
+    private void doStartOfReadTransactions() {
+        Runnable action = startOfNextRead;
+        startOfNextRead = DO_NOTHING;
         action.run();
     }
 
