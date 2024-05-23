@@ -33,7 +33,7 @@ public class InMemoryTransactionLogSnapshotSetup {
 
     /**
      * Sets up in-memory transaction logs with the given state. Sets up state by performing the requested interactions
-     * with the state store.
+     * with the state store. The constructed logs can then be used to derive snapshots.
      *
      * @param  sleeperTable        the Sleeper table the state is for (used in logging)
      * @param  schema              the schema of the Sleeper table
