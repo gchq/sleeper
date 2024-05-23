@@ -38,7 +38,7 @@ import sleeper.cdk.stack.IngestBatcherStack;
 import sleeper.cdk.stack.IngestStack;
 import sleeper.cdk.stack.IngestStacks;
 import sleeper.cdk.stack.IngestStatusStoreStack;
-import sleeper.cdk.stack.InstanceAdminRoleStack;
+import sleeper.cdk.stack.InstanceRolesStack;
 import sleeper.cdk.stack.KeepLambdaWarmStack;
 import sleeper.cdk.stack.ManagedPoliciesStack;
 import sleeper.cdk.stack.PartitionSplittingStack;
@@ -320,7 +320,7 @@ public class SleeperCdkApp extends Stack {
         }
 
         // Only create instance admin role after we know which policies are deployed in the instance
-        new InstanceAdminRoleStack(this, "InstanceAdminRole", instanceProperties, policiesStack);
+        new InstanceRolesStack(this, "InstanceRoles", instanceProperties, policiesStack);
 
         this.generateProperties();
         addTags(app);

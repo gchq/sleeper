@@ -54,7 +54,7 @@ import sleeper.query.model.QuerySerDe;
 import sleeper.query.output.ResultsOutputConstants;
 import sleeper.query.runner.tracker.DynamoDBQueryTrackerCreator;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.statestore.s3.S3StateStoreCreator;
+import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -178,7 +178,7 @@ public class WarmQueryExecutorLambdaIT {
 
         new DynamoDBQueryTrackerCreator(instanceProperties, dynamoClient).create();
         DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
-        new S3StateStoreCreator(instanceProperties, dynamoClient).create();
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
     }
 
     private void createTable(TableProperties tableProperties) {

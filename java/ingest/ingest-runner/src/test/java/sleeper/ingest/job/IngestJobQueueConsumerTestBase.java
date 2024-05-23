@@ -48,7 +48,7 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.statestore.StateStoreFactory;
-import sleeper.statestore.s3.S3StateStoreCreator;
+import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -110,7 +110,7 @@ public abstract class IngestJobQueueConsumerTestBase {
         instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
         instanceProperties.set(INGEST_JOB_QUEUE_WAIT_TIME, "0");
         DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
-        new S3StateStoreCreator(instanceProperties, dynamoDB).create();
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoDB).create();
     }
 
     protected StateStore createTable(Schema schema) throws IOException, StateStoreException {

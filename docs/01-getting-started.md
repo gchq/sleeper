@@ -17,20 +17,26 @@ The Sleeper CLI has the following dependencies:
 ### Installation
 
 The Sleeper CLI contains Docker images with the necessary dependencies and scripts to work with Sleeper. Run the
-following commands to install the latest nightly build of the CLI.
+following commands to install the latest development version of the CLI.
 
 ```bash
-curl "https://raw.githubusercontent.com/gchq/sleeper/main/scripts/cli/install.sh" -o ./sleeper-install.sh
+curl "https://raw.githubusercontent.com/gchq/sleeper/develop/scripts/cli/install.sh" -o ./sleeper-install.sh
 chmod +x ./sleeper-install.sh
-./sleeper-install.sh
+./sleeper-install.sh develop
 ```
 
-You can also specify a version to install. This can be `main` for the latest nightly build, or a release in the
-format `v0.20.0`. These correspond to a branch or tag in the GitHub repository. You can find a list of released
-versions [here](https://github.com/gchq/sleeper/tags), and the change log [here](../CHANGELOG.md).
+This will install the latest development version. This will not have been as fully tested as released versions and may
+not work as expected. Most users should use the latest released version. You can find a list
+of released versions [here](https://github.com/gchq/sleeper/tags), and the change log [here](../CHANGELOG.md).
 
-If you're a developer you can get the latest development version as `develop`. This is an untested version and may not
-work. When all the tests pass this is published to `main` as a nightly build.
+**Due to a bug in GitHub, it is not currently possible to install released versions this way.** See the following
+issue: https://github.com/gchq/sleeper/issues/2494
+
+To use a released version, please follow the [developer guide](11-dev-guide.md) to build the CLI from source.
+
+If the bug is fixed, you can replace `develop` with `main` for the latest release, or a release in the format `v0.20.0`.
+These correspond to a branch or tag in the GitHub repository. If you do not specify a version on the command line, it
+will default to the latest release.
 
 ```bash
 curl "https://raw.githubusercontent.com/gchq/sleeper/[version]/scripts/cli/install.sh" -o ./sleeper-install.sh

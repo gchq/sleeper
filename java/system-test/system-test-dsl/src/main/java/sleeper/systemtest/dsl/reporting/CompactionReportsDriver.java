@@ -17,6 +17,7 @@
 package sleeper.systemtest.dsl.reporting;
 
 import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.compaction.task.CompactionTaskStatus;
 
 import java.util.List;
 
@@ -25,4 +26,6 @@ public interface CompactionReportsDriver {
     SystemTestReport tasksAndJobsReport();
 
     List<CompactionJobStatus> jobs(ReportingContext reportingContext);
+
+    List<CompactionTaskStatus> tasks(ReportingContext reportingContext);
 }

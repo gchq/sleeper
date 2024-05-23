@@ -33,6 +33,9 @@ import static sleeper.configuration.properties.instance.CompactionProperty.DEFAU
 import static sleeper.configuration.properties.instance.CompactionProperty.DEFAULT_COMPACTION_STRATEGY_CLASS;
 import static sleeper.configuration.properties.instance.CompactionProperty.DEFAULT_SIZERATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION;
 import static sleeper.configuration.properties.instance.CompactionProperty.DEFAULT_SIZERATIO_COMPACTION_STRATEGY_RATIO;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_ADD_TRANSACTION_FIRST_RETRY_WAIT_CEILING_MS;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_ADD_TRANSACTION_MAX_ATTEMPTS;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_ADD_TRANSACTION_MAX_RETRY_WAIT_CEILING_MS;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_COLUMN_INDEX_TRUNCATE_LENGTH;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_COMPACTION_JOB_COMMIT_ASYNC;
@@ -56,6 +59,8 @@ import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_ROW_GROUP_SIZE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_S3A_READAHEAD_RANGE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_STATISTICS_TRUNCATE_LENGTH;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_TIME_BETWEEN_SNAPSHOT_CHECKS_SECS;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_TIME_BETWEEN_TRANSACTION_CHECKS_MS;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS;
 import static sleeper.configuration.properties.instance.GarbageCollectionProperty.DEFAULT_GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_ARM_INSTANCE_TYPES;
@@ -238,15 +243,54 @@ public interface TableProperty extends SleeperProperty {
             .propertyGroup(TablePropertyGroup.COMPACTION)
             .build();
     TableProperty STATESTORE_CLASSNAME = Index.propertyBuilder("sleeper.table.statestore.classname")
-            .defaultValue("sleeper.statestore.s3.S3StateStore")
+            .defaultValue("sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore")
             .description("The name of the class used for the metadata store. " +
-                    "The default is S3StateStore. Options are:\n" +
+                    "The default is DynamoDBTransactionLogStateStore. Options are:\n" +
                     "sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore\n" +
                     "sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStoreNoSnapshots\n" +
                     "sleeper.statestore.s3.S3StateStore\n" +
                     "sleeper.statestore.dynamodb.DynamoDBStateStore")
             .propertyGroup(TablePropertyGroup.METADATA)
             .editable(false).build();
+    TableProperty ADD_TRANSACTION_MAX_ATTEMPTS = Index.propertyBuilder("sleeper.table.metadata.add.transaction.max.attempts")
+            .defaultProperty(DEFAULT_ADD_TRANSACTION_MAX_ATTEMPTS)
+            .description("The number of attempts to make when applying a transaction to the state store.")
+            .propertyGroup(TablePropertyGroup.METADATA)
+            .build();
+    TableProperty ADD_TRANSACTION_FIRST_RETRY_WAIT_CEILING_MS = Index.propertyBuilder("sleeper.table.metadata.add.transaction.first.retry.wait.ceiling.ms")
+            .defaultProperty(DEFAULT_ADD_TRANSACTION_FIRST_RETRY_WAIT_CEILING_MS)
+            .description("The maximum amount of time to wait before the first retry when applying a transaction to " +
+                    "the state store. Full jitter will be applied so that the actual wait time will be a random " +
+                    "period between 0 and this value. This ceiling will increase exponentially on further retries. " +
+                    "See the below article.\n" +
+                    "https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/")
+            .propertyGroup(TablePropertyGroup.METADATA)
+            .build();
+    TableProperty ADD_TRANSACTION_MAX_RETRY_WAIT_CEILING_MS = Index.propertyBuilder("sleeper.table.metadata.add.transaction.max.retry.wait.ceiling.ms")
+            .defaultProperty(DEFAULT_ADD_TRANSACTION_MAX_RETRY_WAIT_CEILING_MS)
+            .description("The maximum amount of time to wait before any retry when applying a transaction to " +
+                    "the state store. Full jitter will be applied so that the actual wait time will be a random " +
+                    "period between 0 and this value. This restricts the exponential increase of the wait ceiling " +
+                    "while retrying the transaction. See the below article.\n" +
+                    "https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/")
+            .propertyGroup(TablePropertyGroup.METADATA)
+            .build();
+    TableProperty TIME_BETWEEN_SNAPSHOT_CHECKS_SECS = Index.propertyBuilder("sleeper.table.metadata.time.between.snapshot.checks.secs")
+            .defaultProperty(DEFAULT_TIME_BETWEEN_SNAPSHOT_CHECKS_SECS)
+            .description("The number of seconds to wait after we've loaded a snapshot before looking for a new " +
+                    "snapshot. This should relate to the rate at which new snapshots are created, configured in the " +
+                    "instance property `sleeper.metadata.transactionlog.snapshot.creation.lambda.period.minutes`.")
+            .propertyGroup(TablePropertyGroup.METADATA)
+            .build();
+    TableProperty TIME_BETWEEN_TRANSACTION_CHECKS_MS = Index.propertyBuilder("sleeper.table.metadata.time.between.transaction.checks.ms")
+            .defaultProperty(DEFAULT_TIME_BETWEEN_TRANSACTION_CHECKS_MS)
+            .description("The number of milliseconds to wait after we've updated from the transaction log before " +
+                    "checking for new transactions. The state visible to an instance of the state store can be out " +
+                    "of date by this amount. This can avoid excessive queries by the same process, but can result in " +
+                    "unwanted behaviour when using multiple state store objects. When adding a new transaction to " +
+                    "update the state, this will be ignored and the state will be brought completely up to date.")
+            .propertyGroup(TablePropertyGroup.METADATA)
+            .build();
     TableProperty DYNAMODB_STRONGLY_CONSISTENT_READS = Index.propertyBuilder("sleeper.table.metadata.dynamo.consistent.reads")
             .defaultProperty(DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS)
             .description("This specifies whether queries and scans against DynamoDB tables used in the state stores " +

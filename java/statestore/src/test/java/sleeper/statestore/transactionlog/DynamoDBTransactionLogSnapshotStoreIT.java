@@ -29,7 +29,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.dynamodb.tools.DynamoDBContainer;
-import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.LatestSnapshots;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotMetadataStore.LatestSnapshots;
 
 import java.time.Instant;
 import java.util.List;
@@ -52,7 +52,7 @@ public class DynamoDBTransactionLogSnapshotStoreIT {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = schemaWithKey("key");
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-    private final DynamoDBTransactionLogSnapshotStore store = snapshotStore();
+    private final DynamoDBTransactionLogSnapshotMetadataStore store = snapshotStore();
 
     @BeforeAll
     public static void initDynamoClient() {
@@ -61,7 +61,7 @@ public class DynamoDBTransactionLogSnapshotStoreIT {
 
     @BeforeEach
     void setup() {
-        new DynamoDBTransactionLogSnapshotStoreCreator(instanceProperties, dynamoDBClient).create();
+        new DynamoDBTransactionLogSnapshotMetadataStoreCreator(instanceProperties, dynamoDBClient).create();
     }
 
     @Nested
@@ -198,8 +198,8 @@ public class DynamoDBTransactionLogSnapshotStoreIT {
     void shouldSaveAndLoadSnapshotsForMultipleTables() throws Exception {
         TableProperties table1 = createTable();
         TableProperties table2 = createTable();
-        DynamoDBTransactionLogSnapshotStore snapshotStore1 = snapshotStore(table1);
-        DynamoDBTransactionLogSnapshotStore snapshotStore2 = snapshotStore(table2);
+        DynamoDBTransactionLogSnapshotMetadataStore snapshotStore1 = snapshotStore(table1);
+        DynamoDBTransactionLogSnapshotMetadataStore snapshotStore2 = snapshotStore(table2);
 
         // When
         snapshotStore1.saveSnapshot(filesSnapshot(table1, 1));
@@ -280,35 +280,31 @@ public class DynamoDBTransactionLogSnapshotStoreIT {
         return createTestTableProperties(instanceProperties, schema);
     }
 
-    private DynamoDBTransactionLogSnapshotStore snapshotStore() {
+    private DynamoDBTransactionLogSnapshotMetadataStore snapshotStore() {
         return snapshotStore(Instant::now);
     }
 
-    private DynamoDBTransactionLogSnapshotStore snapshotStore(Supplier<Instant> timeSupplier) {
+    private DynamoDBTransactionLogSnapshotMetadataStore snapshotStore(Supplier<Instant> timeSupplier) {
         return snapshotStore(tableProperties, timeSupplier);
     }
 
-    private DynamoDBTransactionLogSnapshotStore snapshotStore(TableProperties tableProperties) {
-        return snapshotStore(tableProperties, Instant::now);
+    private DynamoDBTransactionLogSnapshotMetadataStore snapshotStore(TableProperties tableProperties, Supplier<Instant> timeSupplier) {
+        return new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamoDBClient, Instant::now);
     }
 
-    private DynamoDBTransactionLogSnapshotStore snapshotStore(TableProperties tableProperties, Supplier<Instant> timeSupplier) {
-        return new DynamoDBTransactionLogSnapshotStore(instanceProperties, tableProperties, dynamoDBClient, timeSupplier);
-    }
-
-    private TransactionLogSnapshot filesSnapshot(long transactionNumber) {
+    private TransactionLogSnapshotMetadata filesSnapshot(long transactionNumber) {
         return filesSnapshot(tableProperties, transactionNumber);
     }
 
-    private TransactionLogSnapshot filesSnapshot(TableProperties tableProperties, long transactionNumber) {
-        return TransactionLogSnapshot.forFiles(tableProperties.get(TABLE_ID), transactionNumber);
+    private TransactionLogSnapshotMetadata filesSnapshot(TableProperties tableProperties, long transactionNumber) {
+        return TransactionLogSnapshotMetadata.forFiles(tableProperties.get(TABLE_ID), transactionNumber);
     }
 
-    private TransactionLogSnapshot partitionsSnapshot(long transactionNumber) {
+    private TransactionLogSnapshotMetadata partitionsSnapshot(long transactionNumber) {
         return partitionsSnapshot(tableProperties, transactionNumber);
     }
 
-    private TransactionLogSnapshot partitionsSnapshot(TableProperties tableProperties, long transactionNumber) {
-        return TransactionLogSnapshot.forPartitions(tableProperties.get(TABLE_ID), transactionNumber);
+    private TransactionLogSnapshotMetadata partitionsSnapshot(TableProperties tableProperties, long transactionNumber) {
+        return TransactionLogSnapshotMetadata.forPartitions(tableProperties.get(TABLE_ID), transactionNumber);
     }
 }

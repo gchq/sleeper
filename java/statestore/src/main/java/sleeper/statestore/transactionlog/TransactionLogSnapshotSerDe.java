@@ -24,7 +24,10 @@ import sleeper.statestore.StateStoreFileUtils;
 
 import java.io.IOException;
 
-public class TransactionLogSnapshotSerDe {
+/**
+ * Reads and writes snapshots derived from a transaction log to/from Parquet files.
+ */
+class TransactionLogSnapshotSerDe {
     private final Schema sleeperSchema;
     private final StateStoreFileUtils stateStoreFileUtils;
 
@@ -33,21 +36,21 @@ public class TransactionLogSnapshotSerDe {
         this.stateStoreFileUtils = new StateStoreFileUtils(configuration);
     }
 
-    void savePartitions(TransactionLogSnapshot snapshot, StateStorePartitions state) throws IOException {
+    void savePartitions(TransactionLogSnapshotMetadata snapshot, StateStorePartitions state) throws IOException {
         stateStoreFileUtils.savePartitions(snapshot.getPath(), state, sleeperSchema);
     }
 
-    StateStorePartitions loadPartitions(TransactionLogSnapshot snapshot) throws IOException {
+    StateStorePartitions loadPartitions(TransactionLogSnapshotMetadata snapshot) throws IOException {
         StateStorePartitions partitions = new StateStorePartitions();
         stateStoreFileUtils.loadPartitions(snapshot.getPath(), sleeperSchema, partitions::put);
         return partitions;
     }
 
-    void saveFiles(TransactionLogSnapshot snapshot, StateStoreFiles state) throws IOException {
+    void saveFiles(TransactionLogSnapshotMetadata snapshot, StateStoreFiles state) throws IOException {
         stateStoreFileUtils.saveFiles(snapshot.getPath(), state);
     }
 
-    StateStoreFiles loadFiles(TransactionLogSnapshot snapshot) throws IOException {
+    StateStoreFiles loadFiles(TransactionLogSnapshotMetadata snapshot) throws IOException {
         StateStoreFiles files = new StateStoreFiles();
         stateStoreFileUtils.loadFiles(snapshot.getPath(), files::add);
         return files;

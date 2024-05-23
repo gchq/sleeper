@@ -17,6 +17,10 @@ package sleeper.core.statestore.transactionlog.transactions;
 
 import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 
+/**
+ * A marker for the type of a transaction. Used when storing a log entry for a transaction. Stabilises mapping between
+ * a serialised transaction type and the class of the transaction, in case the class is renamed or moved.
+ */
 public enum TransactionType {
 
     ADD_FILES(AddFilesTransaction.class),
@@ -38,6 +42,12 @@ public enum TransactionType {
         return type;
     }
 
+    /**
+     * Retrieves the type of a transaction.
+     *
+     * @param  transaction the transaction
+     * @return             the type
+     */
     public static TransactionType getType(StateStoreTransaction<?> transaction) {
         for (TransactionType type : values()) {
             if (type.getType().isInstance(transaction)) {

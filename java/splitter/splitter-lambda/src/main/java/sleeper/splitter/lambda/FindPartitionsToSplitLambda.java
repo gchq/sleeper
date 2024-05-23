@@ -104,7 +104,7 @@ public class FindPartitionsToSplitLambda implements RequestHandler<SQSEvent, SQS
         Instant finishTime = Instant.now();
         LOGGER.info("Lambda finished at {} (ran for {}), {} failures",
                 finishTime, LoggedDuration.withFullOutput(startTime, finishTime), batchItemFailures.size());
-        return null;
+        return new SQSBatchResponse(batchItemFailures);
     }
 
     private List<TableProperties> loadTables(

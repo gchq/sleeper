@@ -18,6 +18,9 @@ package sleeper.core.statestore.exception;
 
 import sleeper.core.statestore.StateStoreException;
 
+/**
+ * An exception for when a file could not be deleted because it could not be found.
+ */
 public class FileNotFoundException extends StateStoreException {
     public FileNotFoundException(String filename) {
         this(filename, null);

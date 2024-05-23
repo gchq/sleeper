@@ -23,6 +23,10 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * A transaction to set all partitions in a Sleeper table. This should specify the whole partition tree. Any partitions
+ * that were present before will be deleted.
+ */
 public class InitialisePartitionsTransaction implements PartitionTransaction {
 
     private final List<Partition> partitions;

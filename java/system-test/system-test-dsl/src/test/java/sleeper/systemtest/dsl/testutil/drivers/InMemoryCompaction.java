@@ -20,6 +20,7 @@ import org.apache.datasketches.quantiles.ItemsSketch;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.job.commit.CompactionJobCommitter;
 import sleeper.compaction.job.creation.CreateCompactionJobs;
 import sleeper.compaction.job.creation.CreateCompactionJobs.Mode;
 import sleeper.compaction.job.execution.CompactSortedFiles;
@@ -43,6 +44,7 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.PollWithRetries;
 import sleeper.ingest.impl.partitionfilewriter.PartitionFileWriterUtils;
 import sleeper.query.runner.recordretrieval.InMemoryDataStore;
@@ -62,7 +64,6 @@ import java.util.TreeMap;
 import java.util.UUID;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
-import static sleeper.compaction.job.commit.CompactionJobCommitterUtils.updateStateStoreSuccess;
 
 public class InMemoryCompaction {
     private final Map<String, CompactionJob> queuedJobsById = new TreeMap<>();
@@ -179,7 +180,9 @@ public class InMemoryCompaction {
         Partition partition = getPartitionForJob(stateStore, job);
         RecordsProcessed recordsProcessed = mergeInputFiles(job, partition, schema);
         try {
-            updateStateStoreSuccess(job, recordsProcessed.getRecordsWritten(), stateStore);
+            CompactionJobCommitter.updateStateStoreSuccess(job, recordsProcessed.getRecordsWritten(), stateStore,
+                    CompactionJobCommitter.JOB_ASSIGNMENT_WAIT_ATTEMPTS,
+                    new ExponentialBackoffWithJitter(CompactionJobCommitter.JOB_ASSIGNMENT_WAIT_RANGE));
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
         } catch (InterruptedException e) {

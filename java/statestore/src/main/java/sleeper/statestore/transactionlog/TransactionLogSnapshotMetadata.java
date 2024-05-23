@@ -17,20 +17,38 @@ package sleeper.statestore.transactionlog;
 
 import java.util.Objects;
 
-public class TransactionLogSnapshot {
+/**
+ * Metadata about a snapshot derived from a transaction log, to be held in an index.
+ */
+public class TransactionLogSnapshotMetadata {
     private final String path;
     private final SnapshotType type;
     private final long transactionNumber;
 
-    public static TransactionLogSnapshot forFiles(String basePath, long transactionNumber) {
-        return new TransactionLogSnapshot(getFilesPath(basePath, transactionNumber), SnapshotType.FILES, transactionNumber);
+    /**
+     * Creates metadata about a snapshot of files. Generates a path to the file in which the snapshot will be stored.
+     *
+     * @param  basePath          the base path under which data is held for the given Sleeper table
+     * @param  transactionNumber the transaction number the snapshot was made against
+     * @return                   the metadata
+     */
+    public static TransactionLogSnapshotMetadata forFiles(String basePath, long transactionNumber) {
+        return new TransactionLogSnapshotMetadata(getFilesPath(basePath, transactionNumber), SnapshotType.FILES, transactionNumber);
     }
 
-    public static TransactionLogSnapshot forPartitions(String basePath, long transactionNumber) {
-        return new TransactionLogSnapshot(getPartitionsPath(basePath, transactionNumber), SnapshotType.PARTITIONS, transactionNumber);
+    /**
+     * Creates metadata about a snapshot of partitions. Generates a path to the file in which the snapshot will be
+     * stored.
+     *
+     * @param  basePath          the base path under which data is held for the given Sleeper table
+     * @param  transactionNumber the transaction number the snapshot was made against
+     * @return                   the metadata
+     */
+    public static TransactionLogSnapshotMetadata forPartitions(String basePath, long transactionNumber) {
+        return new TransactionLogSnapshotMetadata(getPartitionsPath(basePath, transactionNumber), SnapshotType.PARTITIONS, transactionNumber);
     }
 
-    public TransactionLogSnapshot(String path, SnapshotType type, long transactionNumber) {
+    public TransactionLogSnapshotMetadata(String path, SnapshotType type, long transactionNumber) {
         this.path = path;
         this.type = type;
         this.transactionNumber = transactionNumber;
@@ -66,10 +84,10 @@ public class TransactionLogSnapshot {
         if (this == obj) {
             return true;
         }
-        if (!(obj instanceof TransactionLogSnapshot)) {
+        if (!(obj instanceof TransactionLogSnapshotMetadata)) {
             return false;
         }
-        TransactionLogSnapshot other = (TransactionLogSnapshot) obj;
+        TransactionLogSnapshotMetadata other = (TransactionLogSnapshotMetadata) obj;
         return Objects.equals(path, other.path) && type == other.type && transactionNumber == other.transactionNumber;
     }
 

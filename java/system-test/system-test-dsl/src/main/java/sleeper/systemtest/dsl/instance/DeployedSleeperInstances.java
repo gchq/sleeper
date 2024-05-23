@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.dsl.instance;
 
-import sleeper.configuration.deploy.DeployInstanceConfiguration;
+import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -26,16 +26,18 @@ public class DeployedSleeperInstances {
     private final DeployedSystemTestResources systemTest;
     private final SleeperInstanceDriver instanceDriver;
     private final AssumeAdminRoleDriver assumeRoleDriver;
+    private final SnapshotsDriver snapshotsDriver;
     private final Map<String, Exception> failureById = new HashMap<>();
     private final Map<String, DeployedSleeperInstance> instanceByShortName = new HashMap<>();
 
     public DeployedSleeperInstances(
             SystemTestParameters parameters, DeployedSystemTestResources systemTest,
-            SleeperInstanceDriver instanceDriver, AssumeAdminRoleDriver assumeRoleDriver) {
+            SleeperInstanceDriver instanceDriver, AssumeAdminRoleDriver assumeRoleDriver, SnapshotsDriver snapshotsDriver) {
         this.parameters = parameters;
         this.systemTest = systemTest;
         this.instanceDriver = instanceDriver;
         this.assumeRoleDriver = assumeRoleDriver;
+        this.snapshotsDriver = snapshotsDriver;
     }
 
     public DeployedSleeperInstance connectToAndReset(SystemTestInstanceConfiguration configuration) {
@@ -59,8 +61,7 @@ public class DeployedSleeperInstances {
     private DeployedSleeperInstance createInstanceIfMissing(String identifier, SystemTestInstanceConfiguration configuration) {
         String instanceId = parameters.buildInstanceId(identifier);
         OutputInstanceIds.addInstanceIdToOutput(instanceId, parameters);
-        DeployInstanceConfiguration deployConfig = configuration.buildDeployConfig(parameters, systemTest);
         return DeployedSleeperInstance.loadOrDeployIfNeeded(
-                instanceId, deployConfig, parameters, systemTest, instanceDriver, assumeRoleDriver);
+                instanceId, configuration, parameters, systemTest, instanceDriver, assumeRoleDriver, snapshotsDriver);
     }
 }

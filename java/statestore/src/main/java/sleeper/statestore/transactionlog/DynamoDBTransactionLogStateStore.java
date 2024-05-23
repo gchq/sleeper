@@ -23,16 +23,11 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.statestore.transactionlog.StateStoreFiles;
-import sleeper.core.statestore.transactionlog.StateStorePartitions;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
-import sleeper.core.util.LoggedDuration;
-import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.LatestSnapshots;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.time.Instant;
-
+/**
+ * An implementation of the state store backed by a transaction log held in DynamoDB and S3.
+ */
 public class DynamoDBTransactionLogStateStore {
     public static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBTransactionLogStateStore.class);
     public static final String TABLE_ID = "TABLE_ID";
@@ -41,64 +36,36 @@ public class DynamoDBTransactionLogStateStore {
     private DynamoDBTransactionLogStateStore() {
     }
 
+    /**
+     * Creates the state store for the given Sleeper table.
+     *
+     * @param  instanceProperties the Sleeper instance properties
+     * @param  tableProperties    the Sleeper table properties
+     * @param  dynamoDB           the client for interacting with DynamoDB
+     * @param  s3                 the client for interacting with S3
+     * @param  configuration      the Hadoop configuration for interacting with Parquet
+     * @return                    the state store
+     */
     public static TransactionLogStateStore create(
             InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamoDB, AmazonS3 s3, Configuration configuration) {
         return builderFrom(instanceProperties, tableProperties, dynamoDB, s3, configuration).build();
     }
 
+    /**
+     * Creates a builder for the state store for the given Sleeper table.
+     *
+     * @param  instanceProperties the Sleeper instance properties
+     * @param  tableProperties    the Sleeper table properties
+     * @param  dynamoDB           the client for interacting with DynamoDB
+     * @param  s3                 the client for interacting with S3
+     * @param  configuration      the Hadoop configuration for interacting with Parquet
+     * @return                    the builder
+     */
     public static TransactionLogStateStore.Builder builderFrom(
             InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamoDB, AmazonS3 s3, Configuration configuration) {
-        TransactionLogStateStore.Builder builder = DynamoDBTransactionLogStateStoreNoSnapshots.builderFrom(instanceProperties, tableProperties, dynamoDB, s3);
-        loadLatestSnapshots(builder, instanceProperties, tableProperties, dynamoDB, configuration);
-        return builder;
-    }
-
-    private static void loadLatestSnapshots(
-            TransactionLogStateStore.Builder builder, InstanceProperties instanceProperties, TableProperties tableProperties,
-            AmazonDynamoDB dynamoDB, Configuration configuration) {
-        LatestSnapshots latestSnapshots = new DynamoDBTransactionLogSnapshotStore(instanceProperties, tableProperties, dynamoDB).getLatestSnapshots();
-        TransactionLogSnapshotSerDe snapshotSerDe = new TransactionLogSnapshotSerDe(tableProperties.getSchema(), configuration);
-        loadLatestFilesSnapshot(builder, snapshotSerDe, latestSnapshots);
-        loadLatestPartitionsSnapshot(builder, snapshotSerDe, latestSnapshots);
-    }
-
-    private static void loadLatestFilesSnapshot(TransactionLogStateStore.Builder builder, TransactionLogSnapshotSerDe snapshotSerDe, LatestSnapshots latestSnapshots) {
-        if (latestSnapshots.getFilesSnapshot().isPresent()) {
-            TransactionLogSnapshot filesSnapshot = latestSnapshots.getFilesSnapshot().get();
-            LOGGER.info("Found latest files snapshot with last transaction number {}. Creating file reference store using this snapshot.",
-                    filesSnapshot.getTransactionNumber());
-            try {
-                Instant startTime = Instant.now();
-                StateStoreFiles filesState = snapshotSerDe.loadFiles(filesSnapshot);
-                LOGGER.info("Finished loading and deserialising files snapshot, took {}",
-                        LoggedDuration.withShortOutput(startTime, Instant.now()));
-                builder.filesState(filesState)
-                        .filesTransactionNumber(filesSnapshot.getTransactionNumber());
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        } else {
-            LOGGER.info("Could not find latest files snapshot. Creating empty file reference store.");
-        }
-    }
-
-    private static void loadLatestPartitionsSnapshot(TransactionLogStateStore.Builder builder, TransactionLogSnapshotSerDe snapshotSerDe, LatestSnapshots latestSnapshots) {
-        if (latestSnapshots.getPartitionsSnapshot().isPresent()) {
-            TransactionLogSnapshot partitionsSnapshot = latestSnapshots.getPartitionsSnapshot().get();
-            LOGGER.info("Found latest partitions snapshot with last transaction number {}. Creating partitions store using this snapshot.",
-                    partitionsSnapshot.getTransactionNumber());
-            try {
-                Instant startTime = Instant.now();
-                StateStorePartitions partitionsState = snapshotSerDe.loadPartitions(partitionsSnapshot);
-                LOGGER.info("Finished loading and deserialising partitions snapshot, took {}",
-                        LoggedDuration.withShortOutput(startTime, Instant.now()));
-                builder.partitionsState(partitionsState)
-                        .partitionsTransactionNumber(partitionsSnapshot.getTransactionNumber());
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        } else {
-            LOGGER.info("Could not find latest partitions snapshot. Creating empty partitions store.");
-        }
+        DynamoDBTransactionLogSnapshotStore snapshotStore = new DynamoDBTransactionLogSnapshotStore(instanceProperties, tableProperties, dynamoDB, configuration);
+        return DynamoDBTransactionLogStateStoreNoSnapshots.builderFrom(instanceProperties, tableProperties, dynamoDB, s3)
+                .filesSnapshotLoader(snapshotStore::loadLatestFilesSnapshotIfAtMinimumTransaction)
+                .partitionsSnapshotLoader(snapshotStore::loadLatestPartitionsSnapshotIfAtMinimumTransaction);
     }
 }

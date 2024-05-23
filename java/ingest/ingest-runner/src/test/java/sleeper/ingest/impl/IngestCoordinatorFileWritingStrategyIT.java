@@ -51,7 +51,7 @@ import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
 import sleeper.ingest.testutils.TestIngestType;
 import sleeper.statestore.StateStoreFactory;
-import sleeper.statestore.s3.S3StateStoreCreator;
+import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -107,7 +107,7 @@ public class IngestCoordinatorFileWritingStrategyIT {
     @BeforeEach
     public void before() {
         s3.createBucket(dataBucketName);
-        new S3StateStoreCreator(instanceProperties, dynamoDB).create();
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoDB).create();
     }
 
     @Nested
@@ -294,7 +294,7 @@ public class IngestCoordinatorFileWritingStrategyIT {
                     List.of(leftFile1, rightFile1, leftFile2, rightFile2), hadoopConfiguration);
 
             assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
-            assertThat(actualFiles).containsExactly(leftFile1, rightFile1, leftFile2, rightFile2);
+            assertThat(actualFiles).containsExactlyInAnyOrder(leftFile1, rightFile1, leftFile2, rightFile2);
             assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
 
             ResultVerifier.assertOnSketch(

@@ -21,27 +21,63 @@ import com.amazonaws.services.s3.AmazonS3;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
+import sleeper.core.util.ExponentialBackoffWithJitter;
+import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
+
+import java.time.Duration;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_FILES_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_PARTITIONS_TABLENAME;
+import static sleeper.configuration.properties.table.TableProperty.ADD_TRANSACTION_FIRST_RETRY_WAIT_CEILING_MS;
+import static sleeper.configuration.properties.table.TableProperty.ADD_TRANSACTION_MAX_ATTEMPTS;
+import static sleeper.configuration.properties.table.TableProperty.ADD_TRANSACTION_MAX_RETRY_WAIT_CEILING_MS;
+import static sleeper.configuration.properties.table.TableProperty.TIME_BETWEEN_SNAPSHOT_CHECKS_SECS;
+import static sleeper.configuration.properties.table.TableProperty.TIME_BETWEEN_TRANSACTION_CHECKS_MS;
 
+/**
+ * An implementation of the state store backed by a transaction log held in DynamoDB and S3, with snapshots disabled.
+ */
 public class DynamoDBTransactionLogStateStoreNoSnapshots {
 
     private DynamoDBTransactionLogStateStoreNoSnapshots() {
     }
 
+    /**
+     * Creates the state store for the given Sleeper table.
+     *
+     * @param  instanceProperties the Sleeper instance properties
+     * @param  tableProperties    the Sleeper table properties
+     * @param  dynamoDB           the client for interacting with DynamoDB
+     * @param  s3                 the client for interacting with S3
+     * @return                    the state store
+     */
     public static TransactionLogStateStore create(
             InstanceProperties instanceProperties, TableProperties tableProperties,
             AmazonDynamoDB dynamoDB, AmazonS3 s3) {
         return builderFrom(instanceProperties, tableProperties, dynamoDB, s3).build();
     }
 
+    /**
+     * Creates a builder for the state store for the given Sleeper table.
+     *
+     * @param  instanceProperties the Sleeper instance properties
+     * @param  tableProperties    the Sleeper table properties
+     * @param  dynamoDB           the client for interacting with DynamoDB
+     * @param  s3                 the client for interacting with S3
+     * @return                    the builder
+     */
     public static TransactionLogStateStore.Builder builderFrom(
             InstanceProperties instanceProperties, TableProperties tableProperties,
             AmazonDynamoDB dynamoDB, AmazonS3 s3) {
         return TransactionLogStateStore.builder()
                 .sleeperTable(tableProperties.getStatus())
                 .schema(tableProperties.getSchema())
+                .timeBetweenSnapshotChecks(Duration.ofSeconds(tableProperties.getLong(TIME_BETWEEN_SNAPSHOT_CHECKS_SECS)))
+                .timeBetweenTransactionChecks(Duration.ofMillis(tableProperties.getLong(TIME_BETWEEN_TRANSACTION_CHECKS_MS)))
+                .maxAddTransactionAttempts(tableProperties.getInt(ADD_TRANSACTION_MAX_ATTEMPTS))
+                .retryBackoff(new ExponentialBackoffWithJitter(WaitRange.firstAndMaxWaitCeilingSecs(
+                        tableProperties.getLong(ADD_TRANSACTION_FIRST_RETRY_WAIT_CEILING_MS) / 1000.0,
+                        tableProperties.getLong(ADD_TRANSACTION_MAX_RETRY_WAIT_CEILING_MS) / 1000.0)))
                 .filesLogStore(new DynamoDBTransactionLogStore(instanceProperties.get(TRANSACTION_LOG_FILES_TABLENAME), instanceProperties, tableProperties, dynamoDB, s3))
                 .partitionsLogStore(new DynamoDBTransactionLogStore(instanceProperties.get(TRANSACTION_LOG_PARTITIONS_TABLENAME), instanceProperties, tableProperties, dynamoDB, s3));
     }

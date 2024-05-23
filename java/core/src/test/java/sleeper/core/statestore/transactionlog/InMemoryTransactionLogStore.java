@@ -19,19 +19,23 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
+/**
+ * An in-memory implementation of a transaction log store. Holds transactions in a list. Can simulate some other process
+ * performing some operation just as a transaction is added or as transactions are read.
+ */
 public class InMemoryTransactionLogStore implements TransactionLogStore {
 
     private static final Runnable DO_NOTHING = () -> {
     };
 
     private final List<TransactionLogEntry> transactions = new ArrayList<>();
-    private Runnable beforeNextAdd = DO_NOTHING;
-    private Runnable beforeNextRead = DO_NOTHING;
+    private Runnable startOfNextAdd = DO_NOTHING;
+    private Runnable startOfNextRead = DO_NOTHING;
 
     @Override
     public void addTransaction(TransactionLogEntry entry) throws DuplicateTransactionNumberException {
         long transactionNumber = entry.getTransactionNumber();
-        doBeforeNextAdd();
+        doStartOfAddTransaction();
         if (transactionNumber <= transactions.size()) {
             throw new DuplicateTransactionNumberException(transactionNumber);
         }
@@ -43,32 +47,47 @@ public class InMemoryTransactionLogStore implements TransactionLogStore {
 
     @Override
     public Stream<TransactionLogEntry> readTransactionsAfter(long lastTransactionNumber) {
-        doBeforeNextRead();
+        doStartOfReadTransactions();
         return transactions.stream()
                 .skip(lastTransactionNumber);
     }
 
-    public void beforeNextAddTransaction(ThrowingRunnable action) {
-        beforeNextAdd = wrappingCheckedExceptions(action);
+    /**
+     * Sets some operation that should happen just before the next transaction is added. This will occur after any
+     * local state has been brought up to date in the state store. If the given operation adds a transaction to the
+     * log, it will conflict with the transaction being added. If an exception is thrown in the operation, that will be
+     * thrown out of the transaction log store.
+     *
+     * @param action the operation to occur before the next transaction
+     */
+    public void atStartOfNextAddTransaction(ThrowingRunnable action) {
+        startOfNextAdd = wrappingCheckedExceptions(action);
     }
 
-    public void beforeNextReadTransactions(ThrowingRunnable action) {
-        beforeNextRead = wrappingCheckedExceptions(action);
+    /**
+     * Sets some operation that should happen just before the next time transactions are read. This will occur the next
+     * time the local state store brings itself up to date. If an exception is thrown in the operation, that will be
+     * thrown out of the transaction log store.
+     *
+     * @param action the operation to occur before the next time transactions are read
+     */
+    public void atStartOfNextReadTransactions(ThrowingRunnable action) {
+        startOfNextRead = wrappingCheckedExceptions(action);
     }
 
     public long getLastTransactionNumber() {
         return transactions.size();
     }
 
-    private void doBeforeNextAdd() {
-        Runnable action = beforeNextAdd;
-        beforeNextAdd = DO_NOTHING;
+    private void doStartOfAddTransaction() {
+        Runnable action = startOfNextAdd;
+        startOfNextAdd = DO_NOTHING;
         action.run();
     }
 
-    private void doBeforeNextRead() {
-        Runnable action = beforeNextRead;
-        beforeNextRead = DO_NOTHING;
+    private void doStartOfReadTransactions() {
+        Runnable action = startOfNextRead;
+        startOfNextRead = DO_NOTHING;
         action.run();
     }
 
@@ -84,7 +103,16 @@ public class InMemoryTransactionLogStore implements TransactionLogStore {
         };
     }
 
+    /**
+     * Performs some action that can throw checked exceptions.
+     */
     public interface ThrowingRunnable {
+
+        /**
+         * Perform the action.
+         *
+         * @throws Exception if any exception was thrown by the action
+         */
         void run() throws Exception;
     }
 }
