@@ -32,8 +32,8 @@ public class InMemoryTransactionLogSnapshotSetup {
     private final TransactionLogStore partitionsLog;
 
     /**
-     * Sets up a transaction log with the given state. Sets up state by performing the requested interactions with the
-     * state store.
+     * Sets up in-memory transaction logs with the given state. Sets up state by performing the requested interactions
+     * with the state store.
      *
      * @param  sleeperTable        the Sleeper table the state is for (used in logging)
      * @param  schema              the schema of the Sleeper table
