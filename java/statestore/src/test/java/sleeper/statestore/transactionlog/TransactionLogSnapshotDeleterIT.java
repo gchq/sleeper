@@ -44,7 +44,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.properties.table.TableProperty.TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
-public class DeleteTransactionLogSnapshotsIT extends TransactionLogStateStoreTestBase {
+public class TransactionLogSnapshotDeleterIT extends TransactionLogStateStoreTestBase {
     @TempDir
     private java.nio.file.Path tempDir;
     private final Schema schema = schemaWithKey("key", new LongType());
@@ -195,12 +195,12 @@ public class DeleteTransactionLogSnapshotsIT extends TransactionLogStateStoreTes
     }
 
     private void createSnapshotsAt(TableProperties table, Instant creationTime) throws Exception {
-        CreateTransactionLogSnapshots.from(instanceProperties, table, s3Client, dynamoDBClient, configuration, () -> creationTime)
+        TransactionLogSnapshotCreator.from(instanceProperties, table, s3Client, dynamoDBClient, configuration, () -> creationTime)
                 .createSnapshot();
     }
 
     private void deleteSnapshotsAt(TableProperties table, Instant deletionTime) {
-        new DeleteTransactionLogSnapshots(
+        new TransactionLogSnapshotDeleter(
                 instanceProperties, table, dynamoDBClient, configuration, () -> deletionTime)
                 .deleteSnapshots();
     }

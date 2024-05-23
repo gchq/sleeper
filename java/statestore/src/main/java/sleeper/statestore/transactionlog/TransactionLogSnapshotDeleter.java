@@ -29,12 +29,12 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.function.Supplier;
 
-public class DeleteTransactionLogSnapshots {
-    public static final Logger LOGGER = LoggerFactory.getLogger(DeleteTransactionLogSnapshots.class);
+public class TransactionLogSnapshotDeleter {
+    public static final Logger LOGGER = LoggerFactory.getLogger(TransactionLogSnapshotDeleter.class);
     private final Configuration configuration;
     private final DynamoDBTransactionLogSnapshotStore snapshotStore;
 
-    public DeleteTransactionLogSnapshots(
+    public TransactionLogSnapshotDeleter(
             InstanceProperties instanceProperties, TableProperties tableProperties,
             AmazonDynamoDB dynamoDB, Configuration configuration, Supplier<Instant> timeSupplier) {
         this.configuration = configuration;

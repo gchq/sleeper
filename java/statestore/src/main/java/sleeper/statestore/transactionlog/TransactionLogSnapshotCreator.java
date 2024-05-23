@@ -43,8 +43,8 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_PARTITIONS_TABLENAME;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 
-public class CreateTransactionLogSnapshots {
-    public static final Logger LOGGER = LoggerFactory.getLogger(CreateTransactionLogSnapshots.class);
+public class TransactionLogSnapshotCreator {
+    public static final Logger LOGGER = LoggerFactory.getLogger(TransactionLogSnapshotCreator.class);
     private final InstanceProperties instanceProperties;
     private final TableProperties tableProperties;
     private final TransactionLogStore filesLogStore;
@@ -54,13 +54,13 @@ public class CreateTransactionLogSnapshots {
     private final LatestSnapshotsLoader latestSnapshotsLoader;
     private final SnapshotSaver snapshotSaver;
 
-    public static CreateTransactionLogSnapshots from(
+    public static TransactionLogSnapshotCreator from(
             InstanceProperties instanceProperties, TableProperties tableProperties,
             AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, Configuration configuration) {
         return from(instanceProperties, tableProperties, s3Client, dynamoDBClient, configuration, Instant::now);
     }
 
-    public static CreateTransactionLogSnapshots from(
+    public static TransactionLogSnapshotCreator from(
             InstanceProperties instanceProperties, TableProperties tableProperties,
             AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, Configuration configuration, Supplier<Instant> timeSupplier) {
         TransactionLogStore fileTransactionStore = new DynamoDBTransactionLogStore(
@@ -71,12 +71,12 @@ public class CreateTransactionLogSnapshots {
                 instanceProperties, tableProperties, dynamoDBClient, s3Client);
         DynamoDBTransactionLogSnapshotStore snapshotStore = new DynamoDBTransactionLogSnapshotStore(
                 instanceProperties, tableProperties, dynamoDBClient, timeSupplier);
-        return new CreateTransactionLogSnapshots(instanceProperties, tableProperties,
+        return new TransactionLogSnapshotCreator(instanceProperties, tableProperties,
                 fileTransactionStore, partitionTransactionStore, configuration,
                 snapshotStore::getLatestSnapshots, snapshotStore::saveSnapshot);
     }
 
-    public CreateTransactionLogSnapshots(
+    public TransactionLogSnapshotCreator(
             InstanceProperties instanceProperties, TableProperties tableProperties,
             TransactionLogStore filesLogStore, TransactionLogStore partitionsLogStore,
             Configuration configuration, LatestSnapshotsLoader latestSnapshotsLoader, SnapshotSaver snapshotSaver) {

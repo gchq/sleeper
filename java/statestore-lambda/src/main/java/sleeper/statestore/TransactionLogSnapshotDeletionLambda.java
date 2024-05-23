@@ -32,7 +32,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.util.LoggedDuration;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
-import sleeper.statestore.transactionlog.DeleteTransactionLogSnapshots;
+import sleeper.statestore.transactionlog.TransactionLogSnapshotDeleter;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -83,7 +83,7 @@ public class TransactionLogSnapshotDeletionLambda implements RequestHandler<SQSE
         for (TableProperties table : tables) {
             LOGGER.info("Deleting old snapshots for table {}", table.getStatus());
             try {
-                new DeleteTransactionLogSnapshots(instanceProperties, table, dynamoClient,
+                new TransactionLogSnapshotDeleter(instanceProperties, table, dynamoClient,
                         HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties), Instant::now)
                         .deleteSnapshots();
             } catch (RuntimeException e) {

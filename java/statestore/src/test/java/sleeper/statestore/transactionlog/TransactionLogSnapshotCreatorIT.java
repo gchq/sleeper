@@ -33,9 +33,9 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStore;
-import sleeper.statestore.transactionlog.CreateTransactionLogSnapshots.LatestSnapshotsLoader;
-import sleeper.statestore.transactionlog.CreateTransactionLogSnapshots.SnapshotSaver;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.LatestSnapshots;
+import sleeper.statestore.transactionlog.TransactionLogSnapshotCreator.LatestSnapshotsLoader;
+import sleeper.statestore.transactionlog.TransactionLogSnapshotCreator.SnapshotSaver;
 
 import java.io.FileNotFoundException;
 import java.io.UncheckedIOException;
@@ -55,7 +55,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
 
-public class CreateTransactionLogSnapshotsIT extends TransactionLogStateStoreTestBase {
+public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTestBase {
     @TempDir
     private Path tempDir;
     private final Schema schema = schemaWithKey("key", new LongType());
@@ -341,7 +341,7 @@ public class CreateTransactionLogSnapshotsIT extends TransactionLogStateStoreTes
 
     private void runSnapshotCreator(
             TableProperties table, LatestSnapshotsLoader latestSnapshotsLoader, SnapshotSaver snapshotSaver) {
-        new CreateTransactionLogSnapshots(
+        new TransactionLogSnapshotCreator(
                 instanceProperties, table,
                 fileTransactionStoreByTableId.get(table.get(TABLE_ID)),
                 partitionTransactionStoreByTableId.get(table.get(TABLE_ID)),
