@@ -47,6 +47,9 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.core.statestore.AllReferencesToAFile.fileWithOneReference;
 
+/**
+ * An in-memory file reference store implementation backed by a TreeMap.
+ */
 public class InMemoryFileReferenceStore implements FileReferenceStore {
 
     private final Map<String, AllReferencesToAFile> filesByFilename = new TreeMap<>();
