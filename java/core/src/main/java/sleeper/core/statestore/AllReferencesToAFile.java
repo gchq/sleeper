@@ -53,8 +53,7 @@ public class AllReferencesToAFile {
 
     /**
      * Creates a record for a file referenced in a single partition. This is used in state store implementations to
-     * model
-     * the file when only a reference was provided to add the file to the state store.
+     * model the file when only a reference was provided to add the file to the state store.
      *
      * @param  reference  the reference to the file
      * @param  updateTime the update time in the state store (should be set by the state store implementation)

@@ -57,7 +57,7 @@ public class AllReferencesToAllFiles {
     }
 
     /**
-     * Builds a list of all file references in the snapshot.
+     * Builds a list of all file references in the report.
      *
      * @return the list
      */

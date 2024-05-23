@@ -53,7 +53,8 @@ public class SplitFileReferenceRequest {
     }
 
     /**
-     * Creates a copy of this request with the update times removed in the file references.
+     * Creates a copy of this request with the update times removed in the file references. Used when storing a
+     * transaction to apply this request where the update time is held separately.
      *
      * @return the copy
      */

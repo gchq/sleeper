@@ -111,7 +111,7 @@ public class FilesReportTestHelper {
     }
 
     /**
-     * Creates a report with the specified files with no references in partitions.
+     * Creates a report with the specified files with no references.
      *
      * @param  filenames the filenames
      * @return           the report
@@ -121,8 +121,7 @@ public class FilesReportTestHelper {
     }
 
     /**
-     * Creates a report with the specified files with no references in partitions. All files will be given the same last
-     * update time.
+     * Creates a report with the specified files with no references. All files will be given the same last update time.
      *
      * @param  updateTime the update time
      * @param  filenames  the filenames
@@ -133,9 +132,9 @@ public class FilesReportTestHelper {
     }
 
     /**
-     * Creates a report with the specified files with no references in partitions. All files will be given the same last
-     * update time. This will be a partial report, which will record that there are more files with no references than
-     * the ones specified here.
+     * Creates a report with the specified files with no references. All files will be given the same last update time.
+     * This will be a partial report, which will record that there are more files with no references than the ones
+     * specified here.
      *
      * @param  updateTime the update time
      * @param  filenames  the filenames

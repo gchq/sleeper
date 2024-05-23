@@ -31,7 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Serialises all a file's references to and from a JSON string.
+ * Serialises all of a file's references to and from a JSON string.
  */
 public class AllReferencesToAFileSerDe {
 
