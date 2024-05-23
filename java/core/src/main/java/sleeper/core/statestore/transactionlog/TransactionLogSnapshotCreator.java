@@ -45,7 +45,7 @@ public class TransactionLogSnapshotCreator {
      * @param  transactionType     the type of transactions to read from the log
      * @param  tableStatus         the Sleeper table the log is for, to be used in logging
      * @return                     the new snapshot, if there were updates since the last snapshot
-     * @throws StateStoreException thrown if there are any failures updating from the log
+     * @throws StateStoreException if there are any failures updating the state from the log
      */
     public static <T> Optional<TransactionLogSnapshot> createSnapshotIfChanged(
             TransactionLogSnapshot lastSnapshot,

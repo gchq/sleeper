@@ -22,12 +22,25 @@ import sleeper.core.table.TableStatus;
 
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
 
+/**
+ * A test helper to setup in-memory snapshots derived from a transaction log.
+ */
 public class InMemoryTransactionLogSnapshotSetup {
 
     private final TableStatus sleeperTable;
     private final TransactionLogStore filesLog;
     private final TransactionLogStore partitionsLog;
 
+    /**
+     * Sets up a transaction log with the given state. Sets up state by performing the requested interactions with the
+     * state store.
+     *
+     * @param  sleeperTable        the Sleeper table the state is for (used in logging)
+     * @param  schema              the schema of the Sleeper table
+     * @param  setupState          a function to set up the required state
+     * @return                     a wrapper around the transation logs, with the ability to create snapshots
+     * @throws StateStoreException if the setup function throws a StateStoreException
+     */
     public static InMemoryTransactionLogSnapshotSetup setupSnapshotWithFreshState(
             TableStatus sleeperTable, Schema schema, SetupStateStore setupState) throws StateStoreException {
         InMemoryTransactionLogStore fileTransactions = new InMemoryTransactionLogStore();
@@ -44,7 +57,18 @@ public class InMemoryTransactionLogSnapshotSetup {
         return new InMemoryTransactionLogSnapshotSetup(sleeperTable, fileTransactions, partitionTransactions);
     }
 
+    /**
+     * A setup function to create required state in a state store. Will be used to set up an in-memory transaction log
+     * with the given state.
+     */
     public interface SetupStateStore {
+
+        /**
+         * Set up the required state in a state store.
+         *
+         * @param  stateStore          the state store
+         * @throws StateStoreException if some operation on the state store fails
+         */
         void run(StateStore stateStore) throws StateStoreException;
     }
 
@@ -54,6 +78,14 @@ public class InMemoryTransactionLogSnapshotSetup {
         this.partitionsLog = partitionsLog;
     }
 
+    /**
+     * Create a snapshot of file references based on the state that was set. Fixes the transaction number that the
+     * snapshot should be against, to simulate a snapshot being made against some other transaction log.
+     *
+     * @param  transactionNumber   the simulated transaction number to set
+     * @return                     the snapshot
+     * @throws StateStoreException if there are any failures updating the state from the log
+     */
     public TransactionLogSnapshot createFilesSnapshot(long transactionNumber) throws StateStoreException {
         TransactionLogSnapshot snapshot = TransactionLogSnapshot.filesInitialState();
         snapshot = TransactionLogSnapshotCreator.createSnapshotIfChanged(
@@ -62,6 +94,14 @@ public class InMemoryTransactionLogSnapshotSetup {
         return new TransactionLogSnapshot((StateStoreFiles) snapshot.getState(), transactionNumber);
     }
 
+    /**
+     * Create a snapshot of partitions based on the state that was set. Fixes the transaction number that the
+     * snapshot should be against, to simulate a snapshot being made against some other transaction log.
+     *
+     * @param  transactionNumber   the simulated transaction number to set
+     * @return                     the snapshot
+     * @throws StateStoreException if there are any failures updating the state from the log
+     */
     public TransactionLogSnapshot createPartitionsSnapshot(long transactionNumber) throws StateStoreException {
         TransactionLogSnapshot snapshot = TransactionLogSnapshot.partitionsInitialState();
         snapshot = TransactionLogSnapshotCreator.createSnapshotIfChanged(
