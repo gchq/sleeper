@@ -27,7 +27,6 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshots.SetupStateStore;
-import sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshots.SnapshotSetup;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -319,7 +318,7 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
 
     protected void createSnapshotWithFreshStateAtTransactionNumber(
             long transactionNumber, SetupStateStore setupState) throws Exception {
-        SnapshotSetup snapshotSetup = setupSnapshotWithFreshState(sleeperTable, schema, setupState);
+        InMemoryTransactionLogSnapshotSetup snapshotSetup = setupSnapshotWithFreshState(sleeperTable, schema, setupState);
         fileSnapshots.setLatestSnapshot(snapshotSetup.createFilesSnapshot(transactionNumber));
         partitionSnapshots.setLatestSnapshot(snapshotSetup.createPartitionsSnapshot(transactionNumber));
     }
