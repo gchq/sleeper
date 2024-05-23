@@ -115,7 +115,9 @@ public class FileReferenceFactory {
     }
 
     /**
-     * Creates a file in the root partition.
+     * Creates a file in the root partition. This uses the partition ID as the filename, so may only be used once.
+     * Repeated use of this method will result in references to the same file. This should be avoided as it will produce
+     * failures due to duplicate file references.
      *
      * @param  records the number of records in the file
      * @return         the file reference
@@ -136,7 +138,9 @@ public class FileReferenceFactory {
     }
 
     /**
-     * Creates a file in a specified partition.
+     * Creates a file in a specified partition. This uses the partition ID as the filename, so may only be used once for
+     * a given partition. Repeated use of this method with the same partition will result in references to the same
+     * file. This should be avoided as it will produce failures due to duplicate file references.
      *
      * @param  partitionId the partition ID
      * @param  records     the number of records in the file
