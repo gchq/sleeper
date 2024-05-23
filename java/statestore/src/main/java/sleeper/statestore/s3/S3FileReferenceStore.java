@@ -35,7 +35,7 @@ import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.core.statestore.exception.SplitRequestsFailedException;
-import sleeper.statestore.StateStoreFileUtils;
+import sleeper.statestore.StateStoreParquetSerDe;
 
 import java.io.IOException;
 import java.time.Clock;
@@ -71,7 +71,7 @@ class S3FileReferenceStore implements FileReferenceStore {
     private final Configuration conf;
     private final S3RevisionIdStore s3RevisionIdStore;
     private final S3StateStoreDataFile<List<AllReferencesToAFile>> s3StateStoreFile;
-    private final StateStoreFileUtils stateStoreFileUtils;
+    private final StateStoreParquetSerDe parquetSerDe;
     private Clock clock = Clock.systemUTC();
 
     private S3FileReferenceStore(Builder builder) {
@@ -86,7 +86,7 @@ class S3FileReferenceStore implements FileReferenceStore {
                 .loadAndWriteData(this::readFilesFromParquet, this::writeFilesToParquet)
                 .hadoopConf(conf)
                 .build();
-        stateStoreFileUtils = new StateStoreFileUtils(conf);
+        parquetSerDe = new StateStoreParquetSerDe(conf);
     }
 
     static Builder builder() {
@@ -378,7 +378,7 @@ class S3FileReferenceStore implements FileReferenceStore {
             return true;
         }
         try {
-            return stateStoreFileUtils.isEmpty(getFilesPath(revisionId));
+            return parquetSerDe.isEmpty(getFilesPath(revisionId));
         } catch (IOException e) {
             throw new StateStoreException("Failed to load files", e);
         }
@@ -402,7 +402,7 @@ class S3FileReferenceStore implements FileReferenceStore {
     private void writeFilesToParquet(List<AllReferencesToAFile> files, String path) throws StateStoreException {
         LOGGER.debug("Writing {} file records to {}", files.size(), path);
         try {
-            stateStoreFileUtils.saveFiles(path, files.stream());
+            parquetSerDe.saveFiles(path, files.stream());
         } catch (IOException e) {
             throw new StateStoreException("Failed to save files", e);
         }
@@ -413,7 +413,7 @@ class S3FileReferenceStore implements FileReferenceStore {
         LOGGER.debug("Loading file records from {}", path);
         List<AllReferencesToAFile> files = new ArrayList<>();
         try {
-            stateStoreFileUtils.loadFiles(path, files::add);
+            parquetSerDe.loadFiles(path, files::add);
         } catch (IOException e) {
             throw new StateStoreException("Failed to load files", e);
         }

@@ -38,7 +38,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
  */
 public class StateStoreProvider {
     private final int cacheSize;
-    private final StateStoreLoader stateStoreFactory;
+    private final StateStoreCreator stateStoreFactory;
     private final Map<String, StateStore> tableIdToStateStoreCache;
     private final Queue<String> tableIds;
 
@@ -47,17 +47,23 @@ public class StateStoreProvider {
         this(instanceProperties, new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, configuration)::getStateStore);
     }
 
-    public StateStoreProvider(InstanceProperties instanceProperties, StateStoreLoader stateStoreFactory) {
+    public StateStoreProvider(InstanceProperties instanceProperties, StateStoreCreator stateStoreFactory) {
         this(instanceProperties.getInt(STATESTORE_PROVIDER_CACHE_SIZE), stateStoreFactory);
     }
 
-    protected StateStoreProvider(int cacheSize, StateStoreLoader stateStoreFactory) {
+    protected StateStoreProvider(int cacheSize, StateStoreCreator stateStoreFactory) {
         this.cacheSize = cacheSize;
         this.stateStoreFactory = stateStoreFactory;
         this.tableIdToStateStoreCache = new HashMap<>();
         this.tableIds = new ArrayQueue<>(cacheSize);
     }
 
+    /**
+     * Retrieves or creates the state store client for the given Sleeper table.
+     *
+     * @param  tableProperties the Sleeper table properties
+     * @return                 the state store
+     */
     public StateStore getStateStore(TableProperties tableProperties) {
         String tableId = tableProperties.get(TABLE_ID);
         if (!tableIdToStateStoreCache.containsKey(tableId)) {
@@ -71,7 +77,17 @@ public class StateStoreProvider {
         return tableIdToStateStoreCache.get(tableId);
     }
 
-    public interface StateStoreLoader {
+    /**
+     * Creates an instance of the state store client for a Sleeper table. Implemented by {@link StateStoreFactory}.
+     */
+    public interface StateStoreCreator {
+
+        /**
+         * Creates a state store client.
+         *
+         * @param  tableProperties the Sleeper table properties
+         * @return                 the state store
+         */
         StateStore getStateStore(TableProperties tableProperties);
     }
 }

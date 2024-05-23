@@ -41,7 +41,7 @@ public class InitialiseStateStore {
     /**
      * Initialises a state store with a single root partition from the command line.
      *
-     * @param  args                the command line arguments including Sleeper instance ID and table name
+     * @param  args                the command line arguments
      * @throws StateStoreException if the state store initialisation fails
      */
     public static void main(String[] args) throws StateStoreException {

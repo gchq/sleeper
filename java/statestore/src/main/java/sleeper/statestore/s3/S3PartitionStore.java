@@ -25,7 +25,7 @@ import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.PartitionStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.statestore.StateStoreFileUtils;
+import sleeper.statestore.StateStoreParquetSerDe;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -51,7 +51,7 @@ class S3PartitionStore implements PartitionStore {
     private final Schema tableSchema;
     private final String stateStorePath;
     private final S3StateStoreDataFile<Map<String, Partition>> s3StateStoreFile;
-    private final StateStoreFileUtils stateStoreFileUtils;
+    private final StateStoreParquetSerDe parquetSerDe;
 
     private S3PartitionStore(Builder builder) {
         conf = Objects.requireNonNull(builder.conf, "hadoopConfiguration must not be null");
@@ -66,7 +66,7 @@ class S3PartitionStore implements PartitionStore {
                 .loadAndWriteData(this::readPartitionsMapFromParquet, this::writePartitionsMapToParquet)
                 .hadoopConf(conf)
                 .build();
-        stateStoreFileUtils = new StateStoreFileUtils(conf);
+        parquetSerDe = new StateStoreParquetSerDe(conf);
     }
 
     public static Builder builder() {
@@ -205,7 +205,7 @@ class S3PartitionStore implements PartitionStore {
     private void writePartitionsToParquet(Collection<Partition> partitions, String path) throws StateStoreException {
         LOGGER.debug("Writing {} partitions to {}", partitions.size(), path);
         try {
-            stateStoreFileUtils.savePartitions(path, partitions, tableSchema);
+            parquetSerDe.savePartitions(path, partitions, tableSchema);
         } catch (IOException e) {
             throw new StateStoreException("Failed to save partitions", e);
         }
@@ -216,7 +216,7 @@ class S3PartitionStore implements PartitionStore {
         LOGGER.debug("Loading partitions from {}", path);
         List<Partition> partitions = new ArrayList<>();
         try {
-            stateStoreFileUtils.loadPartitions(path, tableSchema, partitions::add);
+            parquetSerDe.loadPartitions(path, tableSchema, partitions::add);
         } catch (IOException e) {
             throw new StateStoreException("Failed to load partitions", e);
         }
