@@ -40,6 +40,9 @@ import java.util.Optional;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_FILES_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_PARTITIONS_TABLENAME;
 
+/**
+ * Creates a snapshot of the current state of a state store if it has changed since the previous snapshot.
+ */
 public class DynamoDBTransactionLogSnapshotCreator {
     public static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBTransactionLogSnapshotCreator.class);
     private final TableStatus tableStatus;
@@ -48,6 +51,16 @@ public class DynamoDBTransactionLogSnapshotCreator {
     private final LatestSnapshotsMetadataLoader latestMetadataLoader;
     private final DynamoDBTransactionLogSnapshotStore snapshotStore;
 
+    /**
+     * Builds a snapshot creator for a given Sleeper table.
+     *
+     * @param  instanceProperties the Sleeper instance properties
+     * @param  tableProperties    the Sleeper table properties
+     * @param  s3Client           the client for interacting with S3
+     * @param  dynamoDBClient     the client for interacting with DynamoDB
+     * @param  configuration      the Hadoop configuration for interacting with Parquet
+     * @return                    the snapshot creator
+     */
     public static DynamoDBTransactionLogSnapshotCreator from(
             InstanceProperties instanceProperties, TableProperties tableProperties,
             AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, Configuration configuration) {
@@ -76,6 +89,9 @@ public class DynamoDBTransactionLogSnapshotCreator {
                 latestMetadataLoader, snapshotSaver, instanceProperties, tableProperties, configuration);
     }
 
+    /**
+     * Creates a snapshot by reading the latest snapshot for the table and writing a new one if necessary.
+     */
     public void createSnapshot() {
         LOGGER.info("Creating snapshot for table {}", tableStatus);
         LatestSnapshots latestSnapshots = latestMetadataLoader.load();
