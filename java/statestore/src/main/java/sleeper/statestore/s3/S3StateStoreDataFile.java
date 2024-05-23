@@ -35,8 +35,8 @@ import java.util.Optional;
 import java.util.function.Function;
 
 /**
- * This class holds the operations needed to save or load a file in the S3 state store, and is used when performing
- * updates to a file. These files store all the data held in the S3 state store.
+ * Saves or loads files that hold the state in the S3 state store. Used when performing updates to one of these data
+ * files. These files store all the data held in the S3 state store.
  * <p>
  * Each file is tracked with revisions held separately, which can be used to derive the path of the file in S3. Each
  * file has a revision ID key which is used to reference the current revision ID for that file.
@@ -168,6 +168,11 @@ class S3StateStoreDataFile<T> {
         }
     }
 
+    /**
+     * Builder to create an object to save/load state in the S3 state store.
+     *
+     * @param <T> type of the state to save/load
+     */
     static final class Builder<T> {
         private String description;
         private String revisionIdKey;
@@ -237,14 +242,27 @@ class S3StateStoreDataFile<T> {
         }
     }
 
+    /**
+     * Loads the state from a file.
+     *
+     * @param <T> type of the state to load
+     */
     interface LoadData<T> {
         T load(String path) throws StateStoreException;
     }
 
+    /**
+     * Writes the state to a file.
+     *
+     * @param <T> type of the state to write
+     */
     interface WriteData<T> {
         void write(T data, String path) throws StateStoreException;
     }
 
+    /**
+     * Deletes a file holding state store state.
+     */
     interface DeleteFile {
         void delete(String path) throws StateStoreException;
 
@@ -260,14 +278,25 @@ class S3StateStoreDataFile<T> {
         }
     }
 
+    /**
+     * Loads the current revision ID from the revision index.
+     */
     interface LoadS3RevisionId {
         S3RevisionId getCurrentRevisionId(String revisionIdKey);
     }
 
+    /**
+     * Updates the revision ID in the revision index.
+     */
     interface UpdateS3RevisionId {
         void conditionalUpdateOfRevisionId(String revisionIdKey, S3RevisionId currentRevisionId, S3RevisionId newRevisionId);
     }
 
+    /**
+     * A conditional check for whether we can perform some update to the state.
+     *
+     * @param <T> type of the state being updated
+     */
     @FunctionalInterface
     interface ConditionCheck<T> {
         Optional<? extends StateStoreException> check(T data);

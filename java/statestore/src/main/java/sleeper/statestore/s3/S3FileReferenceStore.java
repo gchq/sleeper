@@ -63,6 +63,10 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.core.statestore.AllReferencesToAFile.fileWithOneReference;
 import static sleeper.statestore.s3.S3StateStore.CURRENT_FILES_REVISION_ID_KEY;
 
+/**
+ * A Sleeper table file reference store where the state is held in S3, and revisions of the state are indexed in
+ * DynamoDB.
+ */
 class S3FileReferenceStore implements FileReferenceStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(S3FileReferenceStore.class);
     private static final String DELIMITER = "|";
@@ -356,6 +360,9 @@ class S3FileReferenceStore implements FileReferenceStore {
         s3StateStoreFile.updateWithAttempts(10, update, condition);
     }
 
+    /**
+     * A conditional check for whether we can perform a given update to file references.
+     */
     interface FileReferencesConditionCheck extends S3StateStoreDataFile.ConditionCheck<List<AllReferencesToAFile>> {
     }
 
@@ -429,6 +436,9 @@ class S3FileReferenceStore implements FileReferenceStore {
         return fileReference.getPartitionId() + DELIMITER + fileReference.getFilename();
     }
 
+    /**
+     * Builder to create a file reference store backed by S3.
+     */
     static final class Builder {
         private String stateStorePath;
         private Configuration conf;

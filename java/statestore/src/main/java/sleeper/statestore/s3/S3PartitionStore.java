@@ -43,6 +43,9 @@ import java.util.stream.Collectors;
 import static sleeper.statestore.s3.S3StateStore.CURRENT_PARTITIONS_REVISION_ID_KEY;
 import static sleeper.statestore.s3.S3StateStoreDataFile.conditionCheckFor;
 
+/**
+ * A Sleeper table partition store where the state is held in S3, and revisions of the state are indexed in DynamoDB.
+ */
 class S3PartitionStore implements PartitionStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(S3PartitionStore.class);
 
@@ -224,6 +227,9 @@ class S3PartitionStore implements PartitionStore {
         return partitions;
     }
 
+    /**
+     * Builder to create a partition store backed by S3.
+     */
     static final class Builder {
         private Configuration conf;
         private Schema tableSchema;

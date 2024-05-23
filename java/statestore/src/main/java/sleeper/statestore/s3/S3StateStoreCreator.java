@@ -30,6 +30,10 @@ import java.util.List;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.REVISION_TABLENAME;
 
+/**
+ * Creates the DynamoDB tables necessary for an S3 state store. Mainly used for testing purposes as the creation of the
+ * tables in real deployments is normally done using CDK.
+ */
 public class S3StateStoreCreator {
     private final AmazonDynamoDB dynamoDB;
     private final InstanceProperties instanceProperties;
@@ -39,6 +43,9 @@ public class S3StateStoreCreator {
         this.instanceProperties = instanceProperties;
     }
 
+    /**
+     * Creates the DynamoDB tables.
+     */
     public void create() {
         String tableName = instanceProperties.get(REVISION_TABLENAME);
         List<AttributeDefinition> attributeDefinitions = List.of(
