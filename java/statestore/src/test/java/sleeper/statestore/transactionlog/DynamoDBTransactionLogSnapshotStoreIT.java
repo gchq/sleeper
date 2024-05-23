@@ -245,7 +245,7 @@ public class DynamoDBTransactionLogSnapshotStoreIT {
         void shouldGetSnapshotsThatAreOldEnough() throws Exception {
             // Given
             tableProperties.setNumber(TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS, 1);
-            DynamoDBTransactionLogSnapshotStore snapshotStore = snapshotStore(List.of(
+            DynamoDBTransactionLogSnapshotMetadataStore snapshotStore = snapshotStore(List.of(
                     Instant.parse("2024-04-24T15:45:00Z"),
                     Instant.parse("2024-04-25T15:15:00Z"),
                     Instant.parse("2024-04-26T15:45:00Z"),
@@ -265,7 +265,7 @@ public class DynamoDBTransactionLogSnapshotStoreIT {
         void shouldIgnoreLatestSnapshotIfItIsOldEnough() throws Exception {
             // Given
             tableProperties.setNumber(TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS, 1);
-            DynamoDBTransactionLogSnapshotStore snapshotStore = snapshotStore(List.of(
+            DynamoDBTransactionLogSnapshotMetadataStore snapshotStore = snapshotStore(List.of(
                     Instant.parse("2024-04-24T15:45:00Z"),
                     Instant.parse("2024-04-26T16:00:00Z")).iterator()::next);
             snapshotStore.saveSnapshot(filesSnapshot(1));
@@ -288,8 +288,12 @@ public class DynamoDBTransactionLogSnapshotStoreIT {
         return snapshotStore(tableProperties, timeSupplier);
     }
 
+    private DynamoDBTransactionLogSnapshotMetadataStore snapshotStore(TableProperties tableProperties) {
+        return snapshotStore(tableProperties, Instant::now);
+    }
+
     private DynamoDBTransactionLogSnapshotMetadataStore snapshotStore(TableProperties tableProperties, Supplier<Instant> timeSupplier) {
-        return new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamoDBClient, Instant::now);
+        return new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamoDBClient, timeSupplier);
     }
 
     private TransactionLogSnapshotMetadata filesSnapshot(long transactionNumber) {

@@ -32,17 +32,17 @@ import java.util.function.Supplier;
 public class TransactionLogSnapshotDeleter {
     public static final Logger LOGGER = LoggerFactory.getLogger(TransactionLogSnapshotDeleter.class);
     private final Configuration configuration;
-    private final DynamoDBTransactionLogSnapshotStore snapshotStore;
+    private final DynamoDBTransactionLogSnapshotMetadataStore metadataStore;
 
     public TransactionLogSnapshotDeleter(
             InstanceProperties instanceProperties, TableProperties tableProperties,
             AmazonDynamoDB dynamoDB, Configuration configuration, Supplier<Instant> timeSupplier) {
         this.configuration = configuration;
-        this.snapshotStore = new DynamoDBTransactionLogSnapshotStore(instanceProperties, tableProperties, dynamoDB, timeSupplier);
+        this.metadataStore = new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamoDB, timeSupplier);
     }
 
     public void deleteSnapshots() {
-        snapshotStore.getOldestSnapshots()
+        metadataStore.getOldestSnapshots()
                 .forEach(snapshot -> {
                     LOGGER.info("Deleting snapshot {}", snapshot);
                     try {
@@ -55,7 +55,7 @@ public class TransactionLogSnapshotDeleter {
                     } catch (IOException e) {
                         LOGGER.error("Failed to delete file: {}", snapshot.getPath(), e);
                     }
-                    snapshotStore.deleteSnapshot(snapshot);
+                    metadataStore.deleteSnapshot(snapshot);
                 });
     }
 }

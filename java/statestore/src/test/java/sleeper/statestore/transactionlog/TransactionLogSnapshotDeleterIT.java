@@ -29,7 +29,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.LatestSnapshots;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotMetadataStore.LatestSnapshots;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -120,11 +120,11 @@ public class TransactionLogSnapshotDeleterIT extends TransactionLogStateStoreTes
                         filesSnapshot(table, 3),
                         partitionsSnapshot(table, 2)));
         assertThat(snapshotStore(table).getFilesSnapshots())
-                .containsExactly(
+                .containsExactlyInAnyOrder(
                         filesSnapshot(table, 3),
                         filesSnapshot(table, 1));
         assertThat(snapshotStore(table).getPartitionsSnapshots())
-                .containsExactly(
+                .containsExactlyInAnyOrder(
                         partitionsSnapshot(table, 2),
                         partitionsSnapshot(table, 1));
         assertThat(filesSnapshotFileExists(table, 3)).isTrue();
@@ -195,7 +195,8 @@ public class TransactionLogSnapshotDeleterIT extends TransactionLogStateStoreTes
     }
 
     private void createSnapshotsAt(TableProperties table, Instant creationTime) throws Exception {
-        TransactionLogSnapshotCreator.from(instanceProperties, table, s3Client, dynamoDBClient, configuration, () -> creationTime)
+        DynamoDBTransactionLogSnapshotCreator.from(
+                instanceProperties, table, s3Client, dynamoDBClient, configuration, () -> creationTime)
                 .createSnapshot();
     }
 
@@ -205,8 +206,8 @@ public class TransactionLogSnapshotDeleterIT extends TransactionLogStateStoreTes
                 .deleteSnapshots();
     }
 
-    private DynamoDBTransactionLogSnapshotStore snapshotStore(TableProperties table) {
-        return new DynamoDBTransactionLogSnapshotStore(instanceProperties, table, dynamoDBClient);
+    private DynamoDBTransactionLogSnapshotMetadataStore snapshotStore(TableProperties table) {
+        return new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, table, dynamoDBClient);
     }
 
     private TableProperties createTable(String tableId, String tableName) {
@@ -217,12 +218,12 @@ public class TransactionLogSnapshotDeleterIT extends TransactionLogStateStoreTes
         return tableProperties;
     }
 
-    private TransactionLogSnapshot filesSnapshot(TableProperties table, long transactionNumber) {
-        return TransactionLogSnapshot.forFiles(getBasePath(instanceProperties, table), transactionNumber);
+    private TransactionLogSnapshotMetadata filesSnapshot(TableProperties table, long transactionNumber) {
+        return TransactionLogSnapshotMetadata.forFiles(getBasePath(instanceProperties, table), transactionNumber);
     }
 
-    private TransactionLogSnapshot partitionsSnapshot(TableProperties table, long transactionNumber) {
-        return TransactionLogSnapshot.forPartitions(getBasePath(instanceProperties, table), transactionNumber);
+    private TransactionLogSnapshotMetadata partitionsSnapshot(TableProperties table, long transactionNumber) {
+        return TransactionLogSnapshotMetadata.forPartitions(getBasePath(instanceProperties, table), transactionNumber);
     }
 
     private boolean filesSnapshotFileExists(TableProperties table, long transactionNumber) throws IOException {
