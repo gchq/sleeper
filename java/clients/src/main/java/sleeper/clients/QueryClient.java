@@ -70,7 +70,7 @@ public class QueryClient extends QueryCommandLineClient {
             ConsoleInput in, ConsoleOutput out) throws ObjectFactoryException {
         this(s3Client, instanceProperties, dynamoDBClient, in, out,
                 new ObjectFactory(instanceProperties, s3Client, "/tmp"),
-                new StateStoreProvider(dynamoDBClient, instanceProperties, conf));
+                new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, conf));
     }
 
     public QueryClient(AmazonS3 s3Client, InstanceProperties instanceProperties, AmazonDynamoDB dynamoDBClient,
@@ -133,17 +133,24 @@ public class QueryClient extends QueryCommandLineClient {
         return queryExecutor.execute(query);
     }
 
-    public static void main(String[] args) throws StateStoreException, ObjectFactoryException {
+    public static void main(String[] args) throws StateStoreException, ObjectFactoryException, InterruptedException {
         if (1 != args.length) {
             throw new IllegalArgumentException("Usage: <instance-id>");
         }
 
-        AmazonS3 amazonS3 = buildAwsV1Client(AmazonS3ClientBuilder.standard());
-        AmazonDynamoDB dynamoDB = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
-        InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, args[0]);
+        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
+        AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
 
-        QueryClient queryClient = new QueryClient(amazonS3, instanceProperties, dynamoDB, getConfigurationForClient(instanceProperties),
-                new ConsoleInput(System.console()), new ConsoleOutput(System.out));
-        queryClient.run();
+        try {
+            InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(s3Client, args[0]);
+            QueryClient queryClient = new QueryClient(
+                    s3Client, instanceProperties, dynamoDBClient,
+                    getConfigurationForClient(instanceProperties),
+                    new ConsoleInput(System.console()), new ConsoleOutput(System.out));
+            queryClient.run();
+        } finally {
+            s3Client.shutdown();
+            dynamoDBClient.shutdown();
+        }
     }
 }

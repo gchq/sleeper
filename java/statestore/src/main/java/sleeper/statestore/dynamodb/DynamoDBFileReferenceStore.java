@@ -44,7 +44,6 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceStore;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.SplitFileReferenceRequest;
-import sleeper.core.statestore.SplitRequestsFailedException;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.FileAlreadyExistsException;
 import sleeper.core.statestore.exception.FileHasReferencesException;
@@ -52,6 +51,7 @@ import sleeper.core.statestore.exception.FileNotFoundException;
 import sleeper.core.statestore.exception.FileReferenceAlreadyExistsException;
 import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
+import sleeper.core.statestore.exception.SplitRequestsFailedException;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
 import java.time.Clock;
@@ -631,7 +631,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
      * @param now Time to set to be the current time
      */
     @Override
-    public void fixTime(Instant now) {
+    public void fixFileUpdateTime(Instant now) {
         clock = Clock.fixed(now, ZoneId.of("UTC"));
     }
 

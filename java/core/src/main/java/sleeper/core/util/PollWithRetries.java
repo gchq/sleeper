@@ -26,6 +26,10 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
+/**
+ * Polls a function until some condition is met or a maximum number of polls is reached. Waits for a constant interval
+ * between polls.
+ */
 public class PollWithRetries {
     private static final Logger LOGGER = LoggerFactory.getLogger(PollWithRetries.class);
 
@@ -37,10 +41,24 @@ public class PollWithRetries {
         this.maxPolls = maxPolls;
     }
 
+    /**
+     * Creates an instance of this class.
+     *
+     * @param  pollIntervalMillis milliseconds to wait in between polls
+     * @param  maxPolls           the maximum number of polls
+     * @return                    an instance of {@link PollWithRetries}
+     */
     public static PollWithRetries intervalAndMaxPolls(long pollIntervalMillis, int maxPolls) {
         return new PollWithRetries(pollIntervalMillis, maxPolls);
     }
 
+    /**
+     * Creates an instance of this class.
+     *
+     * @param  pollInterval time to wait in between polls
+     * @param  timeout      the maximum amount of time to wait for, used to compute the maximum number of polls
+     * @return              an instance of {@link PollWithRetries}
+     */
     public static PollWithRetries intervalAndPollingTimeout(Duration pollInterval, Duration timeout) {
         long pollIntervalMillis = pollInterval.toMillis();
         long timeoutMillis = timeout.toMillis();
@@ -48,15 +66,35 @@ public class PollWithRetries {
                 (int) LongMath.divide(timeoutMillis, pollIntervalMillis, RoundingMode.CEILING));
     }
 
+    /**
+     * Creates an instance of this class which will only poll once and never retry.
+     *
+     * @return an instance of {@link PollWithRetries}
+     */
     public static PollWithRetries noRetries() {
         return new PollWithRetries(0, 1);
     }
 
+    /**
+     * Creates an instance of this class which will retry a fixed number of times without waiting between polls.
+     *
+     * @return an instance of {@link PollWithRetries}
+     */
     public static PollWithRetries immediateRetries(int retries) {
         return new PollWithRetries(0, retries + 1);
     }
 
-    public void pollUntil(String description, BooleanSupplier checkFinished) throws InterruptedException {
+    /**
+     * Starts polling until an exit condition is met or the maximum polls has been reached.
+     *
+     * @param  description          a short description to fill in the blank of "timed out waiting until _" or "expected
+     *                              to find _"
+     * @param  checkFinished        the exit condition
+     * @throws InterruptedException if the thread was interrupted while waiting
+     * @throws TimedOutException    if the maximum number of polls is reached
+     * @throws CheckFailedException if configured to only poll once, and it failed
+     */
+    public void pollUntil(String description, BooleanSupplier checkFinished) throws InterruptedException, TimedOutException, CheckFailedException {
         int polls = 0;
         while (!checkFinished.getAsBoolean()) {
             polls++;
@@ -77,12 +115,30 @@ public class PollWithRetries {
         }
     }
 
-    public <T> T queryUntil(String description, Supplier<T> query, Predicate<T> condition) throws InterruptedException {
+    /**
+     * Polls a query function until the results meet an exit condition. Returns the results of the last query.
+     *
+     * @param  <T>                  the result type
+     * @param  description          a short description to fill in the blank of "timed out waiting until _" or "expected
+     *                              to find _"
+     * @param  query                the query function
+     * @param  condition            the exit condition to check against each query result
+     * @return                      the last query result
+     * @throws InterruptedException if the thread was interrupted while waiting
+     * @throws TimedOutException    if the maximum number of polls is reached
+     * @throws CheckFailedException if configured to only poll once, and it failed
+     */
+    public <T> T queryUntil(String description, Supplier<T> query, Predicate<T> condition) throws InterruptedException, TimedOutException, CheckFailedException {
         QueryTracker<T> tracker = new QueryTracker<>(query, condition);
         pollUntil(description, tracker::checkFinished);
         return tracker.lastResult;
     }
 
+    /**
+     * Checks an exit condition against results of a query. Remembers the last query result.
+     *
+     * @param <T> the result type
+     */
     private static class QueryTracker<T> {
         private final Supplier<T> query;
         private final Predicate<T> condition;
@@ -100,12 +156,18 @@ public class PollWithRetries {
         }
     }
 
+    /**
+     * Thrown when the exit condition was not met and no retries were made.
+     */
     public static class CheckFailedException extends RuntimeException {
         private CheckFailedException(String message) {
             super(message);
         }
     }
 
+    /**
+     * Thrown when the exit condition was not met and the maximum number of retries were made.
+     */
     public static class TimedOutException extends CheckFailedException {
         private TimedOutException(String message) {
             super(message);

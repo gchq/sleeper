@@ -16,21 +16,18 @@
 
 package sleeper.systemtest.suite;
 
+import org.approvaltests.Approvals;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.strategy.impl.BasicCompactionStrategy;
-import sleeper.core.partition.PartitionTree;
-import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.extension.AfterTestPurgeQueues;
 import sleeper.systemtest.suite.fixtures.SystemTestSchema;
 import sleeper.systemtest.suite.testutil.Slow;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
-import java.util.List;
 import java.util.Map;
 import java.util.stream.LongStream;
 
@@ -42,11 +39,7 @@ import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FI
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
-import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFiles;
-import static sleeper.core.statestore.FilesReportTestHelper.activeFiles;
-import static sleeper.core.testutils.printers.FileReferencePrinter.printExpectedFilesForAllTables;
 import static sleeper.core.testutils.printers.FileReferencePrinter.printTableFilesExpectingIdentical;
-import static sleeper.core.testutils.printers.PartitionsPrinter.printExpectedPartitionsForAllTables;
 import static sleeper.core.testutils.printers.PartitionsPrinter.printTablePartitionsExpectingIdentical;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStringAndZeroPadTo;
@@ -121,14 +114,9 @@ public class MultipleTablesIT {
                 .hasSize(NUMBER_OF_TABLES)
                 .allSatisfy(((table, records) -> assertThat(records).containsExactlyElementsOf(
                         sleeper.generateNumberedRecords(schema, LongStream.range(0, 100)))));
-        var tables = sleeper.tables().list();
         var partitionsByTable = sleeper.partitioning().treeByTable();
         var filesByTable = sleeper.tableFiles().filesByTable();
-        PartitionTree expectedPartitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
-        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(expectedPartitions);
-        assertThat(printTableFilesExpectingIdentical(partitionsByTable, filesByTable))
-                .isEqualTo(printExpectedFilesForAllTables(tables, expectedPartitions,
-                        activeFiles(fileReferenceFactory.rootFile("merged.parquet", 100))));
+        Approvals.verify(printTableFilesExpectingIdentical(partitionsByTable, filesByTable));
     }
 
     @Test
@@ -158,34 +146,10 @@ public class MultipleTablesIT {
                 .allSatisfy((table, records) -> assertThat(records)
                         .containsExactlyInAnyOrderElementsOf(
                                 sleeper.generateNumberedRecords(schema, LongStream.range(0, 100))));
-        var tables = sleeper.tables().list();
         var partitionsByTable = sleeper.partitioning().treeByTable();
         var filesByTable = sleeper.tableFiles().filesByTable();
-        PartitionTree expectedPartitions = new PartitionsBuilder(schema)
-                .rootFirst("root")
-                .splitToNewChildren("root", "L", "R", "row-50")
-                .splitToNewChildren("L", "LL", "LR", "row-25")
-                .splitToNewChildren("R", "RL", "RR", "row-75")
-                .splitToNewChildren("LL", "LLL", "LLR", "row-12")
-                .splitToNewChildren("LR", "LRL", "LRR", "row-37")
-                .splitToNewChildren("RL", "RLL", "RLR", "row-62")
-                .splitToNewChildren("RR", "RRL", "RRR", "row-87")
-                .buildTree();
-        assertThat(printTablePartitionsExpectingIdentical(schema, partitionsByTable))
-                .isEqualTo(printExpectedPartitionsForAllTables(schema, tables, expectedPartitions));
-        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(expectedPartitions);
-        assertThat(printTableFilesExpectingIdentical(partitionsByTable, filesByTable))
-                .isEqualTo(printExpectedFilesForAllTables(tables, expectedPartitions, activeAndReadyForGCFiles(
-                        List.of(
-                                fileReferenceFactory.partitionFile("LLL", 12),
-                                fileReferenceFactory.partitionFile("LLR", 13),
-                                fileReferenceFactory.partitionFile("LRL", 12),
-                                fileReferenceFactory.partitionFile("LRR", 13),
-                                fileReferenceFactory.partitionFile("RLL", 12),
-                                fileReferenceFactory.partitionFile("RLR", 13),
-                                fileReferenceFactory.partitionFile("RRL", 12),
-                                fileReferenceFactory.partitionFile("RRR", 13)),
-                        List.of("root", "L", "R", "LL", "LR", "RL", "RR"))));
+        Approvals.verify(printTablePartitionsExpectingIdentical(schema, partitionsByTable) + "\n" +
+                printTableFilesExpectingIdentical(partitionsByTable, filesByTable));
     }
 
     @Test

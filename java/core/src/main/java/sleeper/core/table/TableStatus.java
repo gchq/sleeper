@@ -18,6 +18,10 @@ package sleeper.core.table;
 
 import java.util.Objects;
 
+/**
+ * Holds metadata about the status of a Sleeper table. This is any data that's required to look up the table for some
+ * operation. Note that the configuration of the table is stored separately.
+ */
 public class TableStatus {
 
     private final String tableUniqueId;
@@ -30,6 +34,14 @@ public class TableStatus {
         this.online = online;
     }
 
+    /**
+     * Creates an instance of this class.
+     *
+     * @param  tableUniqueId the table ID
+     * @param  tableName     the table name
+     * @param  online        whether the table is online or not
+     * @return               an instance of this class
+     */
     public static TableStatus uniqueIdAndName(String tableUniqueId, String tableName, boolean online) {
         return new TableStatus(tableUniqueId, tableName, online);
     }
@@ -46,10 +58,22 @@ public class TableStatus {
         return online;
     }
 
+    /**
+     * Creates a copy of this table status, with the table offline. Can be used with {@link TableIndex#update} to take
+     * the table offline.
+     *
+     * @return a copy of this table status with the online flag set to false
+     */
     public TableStatus takeOffline() {
         return new TableStatus(this.tableUniqueId, this.tableName, false);
     }
 
+    /**
+     * Creates a copy of this table status, with the table online. Can be used with {@link TableIndex#update} to put the
+     * table online.
+     *
+     * @return a copy of this table status with the online flag set to true
+     */
     public TableStatus putOnline() {
         return new TableStatus(this.tableUniqueId, this.tableName, true);
     }

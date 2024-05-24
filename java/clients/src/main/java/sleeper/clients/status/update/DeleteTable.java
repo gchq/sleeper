@@ -47,7 +47,7 @@ public class DeleteTable {
 
     public DeleteTable(AmazonS3 s3Client, AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties) {
         this(instanceProperties, s3Client, S3TableProperties.getStore(instanceProperties, s3Client, dynamoDB),
-                new StateStoreProvider(dynamoDB, instanceProperties, getConfigurationForClient()));
+                new StateStoreProvider(instanceProperties, s3Client, dynamoDB, getConfigurationForClient()));
     }
 
     public DeleteTable(InstanceProperties instanceProperties, AmazonS3 s3Client, TablePropertiesStore tablePropertiesStore, StateStoreProvider stateStoreProvider) {
@@ -59,8 +59,16 @@ public class DeleteTable {
 
     public void delete(String tableName) throws StateStoreException {
         TableProperties tableProperties = tablePropertiesStore.loadByName(tableName);
-        deleteAllObjectsInBucketWithPrefix(s3Client, instanceProperties.get(DATA_BUCKET), tableProperties.get(TABLE_ID));
+        /*
+         * - First we clear the state store for the table. This needs to happen first so that if a transaction log
+         * snapshot exists, it can be loaded when the transaction log state store updates.
+         * - We then delete all files in the data bucket for the table.
+         * - Finally, the table is removed from the table index, and the table properties file is removed. This happens
+         * last to handle the case where the deletion of files in the data bucket fails, so you can still see that a
+         * table existed.
+         */
         stateStoreProvider.getStateStore(tableProperties).clearSleeperTable();
+        deleteAllObjectsInBucketWithPrefix(s3Client, instanceProperties.get(DATA_BUCKET), tableProperties.get(TABLE_ID));
         tablePropertiesStore.deleteByName(tableName);
         LOGGER.info("Successfully deleted table {}", tableProperties.getStatus());
     }

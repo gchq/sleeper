@@ -27,7 +27,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static sleeper.core.record.process.status.TestRunStatusUpdates.defaultUpdateTime;
+import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 
 public class IngestJobStatusTestData {
 

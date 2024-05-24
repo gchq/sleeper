@@ -19,7 +19,7 @@
     <parent>
         <artifactId>compaction</artifactId>
         <groupId>sleeper</groupId>
-        <version>0.23.0-SNAPSHOT</version>
+        <version>0.24.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -50,6 +50,11 @@
             <artifactId>configuration</artifactId>
             <version>${project.parent.version}</version>
             <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.approvaltests</groupId>
+            <artifactId>approvaltests</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

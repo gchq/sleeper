@@ -25,7 +25,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-import sleeper.clients.testutil.ToStringPrintStream;
+import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -37,7 +37,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
 import sleeper.statestore.StateStoreFactory;
-import sleeper.statestore.s3.S3StateStoreCreator;
+import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.util.function.Consumer;
 
@@ -82,14 +82,14 @@ public class PartitionsStatusReportIT {
     }
 
     private String runReport() throws Exception {
-        ToStringPrintStream out = new ToStringPrintStream();
+        ToStringConsoleOutput out = new ToStringConsoleOutput();
         PartitionsStatusReportArguments.fromArgs(instanceProperties.get(ID), tableProperties.get(TABLE_NAME))
                 .runReport(s3, dynamoDB, out.getPrintStream());
         return out.toString();
     }
 
     private StateStore stateStore() {
-        return new StateStoreFactory(dynamoDB, instanceProperties, getHadoopConfiguration(localStackContainer))
+        return new StateStoreFactory(instanceProperties, s3, dynamoDB, getHadoopConfiguration(localStackContainer))
                 .getStateStore(tableProperties);
     }
 
@@ -97,7 +97,7 @@ public class PartitionsStatusReportIT {
         InstanceProperties properties = createTestInstanceProperties(s3);
         s3.createBucket(properties.get(DATA_BUCKET));
         DynamoDBTableIndexCreator.create(dynamoDB, properties);
-        new S3StateStoreCreator(properties, dynamoDB).create();
+        new TransactionLogStateStoreCreator(properties, dynamoDB).create();
         return properties;
     }
 

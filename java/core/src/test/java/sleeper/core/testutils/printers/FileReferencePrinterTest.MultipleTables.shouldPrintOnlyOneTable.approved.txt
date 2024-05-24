@@ -2,5 +2,5 @@ One table
 Unreferenced files: 0
 Referenced files: 1
 File references: 1
-Partition at root: 10 records in file
+Partition at root: 10 records in file 1
 

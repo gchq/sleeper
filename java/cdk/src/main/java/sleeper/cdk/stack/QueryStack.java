@@ -23,6 +23,7 @@ import software.amazon.awscdk.CfnOutputProps;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.RemovalPolicy;
+import software.amazon.awscdk.services.cloudwatch.IMetric;
 import software.amazon.awscdk.services.dynamodb.Attribute;
 import software.amazon.awscdk.services.dynamodb.AttributeType;
 import software.amazon.awscdk.services.dynamodb.BillingMode;
@@ -42,6 +43,7 @@ import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.BucketEncryption;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.s3.LifecycleRule;
+import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.IQueue;
 import software.amazon.awscdk.services.sqs.Queue;
@@ -56,9 +58,11 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 
+import static sleeper.cdk.Utils.createAlarmForDlq;
 import static sleeper.cdk.Utils.createLambdaLogGroup;
 import static sleeper.cdk.Utils.removalPolicy;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
@@ -76,7 +80,7 @@ import static sleeper.configuration.properties.instance.QueryProperty.QUERY_RESU
 public class QueryStack extends NestedStack {
     public static final String LEAF_PARTITION_QUERY_QUEUE_NAME = "LeafPartitionQueryQueueName";
     public static final String LEAF_PARTITION_QUERY_QUEUE_URL = "LeafPartitionQueryQueueUrl";
-    public static final String LEAF_PARTITION_QUERY_DL_QUEUE_URL = "LeafPartitionQueryDLQueueUrl";
+    public static final String LEAF_PARTITION_QUERY_DLQ_URL = "LeafPartitionQueryDLQUrl";
     public static final String QUERY_RESULTS_QUEUE_NAME = "QueryResultsQueueName";
     public static final String QUERY_RESULTS_QUEUE_URL = "QueryResultsQueueUrl";
     public static final String QUERY_LAMBDA_ROLE_ARN = "QueryLambdaRoleArn";
@@ -88,8 +92,10 @@ public class QueryStack extends NestedStack {
             String id,
             InstanceProperties instanceProperties,
             BuiltJars jars,
+            Topic topic,
             CoreStacks coreStacks,
-            QueryQueueStack queryQueueStack) {
+            QueryQueueStack queryQueueStack,
+            List<IMetric> errorMetrics) {
         super(scope, id);
 
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
@@ -114,9 +120,8 @@ public class QueryStack extends NestedStack {
         instanceProperties.set(QUERY_TRACKER_TABLE_NAME, queryTrackingTable.getTableName());
 
         LambdaCode queryJar = jars.lambdaCode(BuiltJar.QUERY, jarsBucket);
-
         queryExecutorLambda = setupQueryExecutorLambda(coreStacks, queryQueueStack, instanceProperties, queryJar, jarsBucket, queryTrackingTable);
-        leafPartitionQueryLambda = setupLeafPartitionQueryQueueAndLambda(coreStacks, instanceProperties, queryJar, jarsBucket, queryTrackingTable);
+        leafPartitionQueryLambda = setupLeafPartitionQueryQueueAndLambda(coreStacks, instanceProperties, topic, queryJar, jarsBucket, queryTrackingTable, errorMetrics);
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
@@ -199,9 +204,10 @@ public class QueryStack extends NestedStack {
      * @param  queryTrackingTable used to track a query
      * @return                    the lambda created
      */
-    private IFunction setupLeafPartitionQueryQueueAndLambda(CoreStacks coreStacks, InstanceProperties instanceProperties, LambdaCode queryJar,
-            IBucket jarsBucket, ITable queryTrackingTable) {
-        Queue leafPartitionQueriesQueue = setupLeafPartitionQueryQueue(instanceProperties);
+    private IFunction setupLeafPartitionQueryQueueAndLambda(
+            CoreStacks coreStacks, InstanceProperties instanceProperties, Topic topic, LambdaCode queryJar,
+            IBucket jarsBucket, ITable queryTrackingTable, List<IMetric> errorMetrics) {
+        Queue leafPartitionQueryQueue = setupLeafPartitionQueryQueue(instanceProperties, topic, errorMetrics);
         Queue queryResultsQueue = setupResultsQueue(instanceProperties);
         IBucket queryResultsBucket = setupResultsBucket(instanceProperties);
         String leafQueryFunctionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
@@ -211,13 +217,16 @@ public class QueryStack extends NestedStack {
                 "When a query arrives on the query SQS queue, this lambda is invoked to execute the query");
 
         attachPolicy(lambda, "LeafPartition");
-        setPermissionsForLambda(coreStacks, jarsBucket, lambda, queryTrackingTable, leafPartitionQueriesQueue, queryResultsQueue, queryResultsBucket);
+        setPermissionsForLambda(coreStacks, jarsBucket, lambda, queryTrackingTable, leafPartitionQueryQueue, queryResultsQueue, queryResultsBucket);
+        queryResultsQueue.grantConsumeMessages(coreStacks.getQueryPolicyForGrants());
+        queryResultsBucket.grantReadWrite(coreStacks.getQueryPolicyForGrants());
+        queryTrackingTable.grantReadData(coreStacks.getQueryPolicyForGrants());
 
         SqsEventSourceProps eventSourceProps = SqsEventSourceProps.builder()
                 .batchSize(1)
                 .build();
 
-        lambda.addEventSource(new SqsEventSource(leafPartitionQueriesQueue, eventSourceProps));
+        lambda.addEventSource(new SqsEventSource(leafPartitionQueryQueue, eventSourceProps));
 
         return lambda;
     }
@@ -248,47 +257,50 @@ public class QueryStack extends NestedStack {
      * @param  instanceProperties containing configuration details
      * @return                    the queue to be used for leaf partition queries
      */
-    private Queue setupLeafPartitionQueryQueue(InstanceProperties instanceProperties) {
+    private Queue setupLeafPartitionQueryQueue(InstanceProperties instanceProperties, Topic topic, List<IMetric> errorMetrics) {
         String dlLeafPartitionQueueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-LeafPartitionQueryDLQ");
-        Queue leafPartitionQueryQueueForDLs = Queue.Builder
-                .create(this, "LeafPartitionQueriesDeadLetterQueue")
+        Queue leafPartitionQueryDlq = Queue.Builder
+                .create(this, "LeafPartitionQueryDeadLetterQueue")
                 .queueName(dlLeafPartitionQueueName)
                 .build();
-        DeadLetterQueue leafPartitionQueriesDeadLetterQueue = DeadLetterQueue.builder()
+        DeadLetterQueue leafPartitionQueryDeadLetterQueue = DeadLetterQueue.builder()
                 .maxReceiveCount(1)
-                .queue(leafPartitionQueryQueueForDLs)
+                .queue(leafPartitionQueryDlq)
                 .build();
-        String leafPartitionQueueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-LeafPartitionQueriesQueue");
-        Queue leafPartitionQueriesQueue = Queue.Builder
-                .create(this, "LeafPartitionQueriesQueue")
+        String leafPartitionQueueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-LeafPartitionQueryQueue");
+        Queue leafPartitionQueryQueue = Queue.Builder
+                .create(this, "LeafPartitionQueryQueue")
                 .queueName(leafPartitionQueueName)
-                .deadLetterQueue(leafPartitionQueriesDeadLetterQueue)
+                .deadLetterQueue(leafPartitionQueryDeadLetterQueue)
                 .visibilityTimeout(Duration.seconds(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS)))
                 .build();
-        instanceProperties.set(CdkDefinedInstanceProperty.LEAF_PARTITION_QUERY_QUEUE_URL, leafPartitionQueriesQueue.getQueueUrl());
-        instanceProperties.set(CdkDefinedInstanceProperty.LEAF_PARTITION_QUERY_QUEUE_ARN, leafPartitionQueriesQueue.getQueueArn());
-        instanceProperties.set(CdkDefinedInstanceProperty.LEAF_PARTITION_QUERY_QUEUE_DLQ_URL, leafPartitionQueryQueueForDLs.getQueueUrl());
-        instanceProperties.set(CdkDefinedInstanceProperty.LEAF_PARTITION_QUERY_QUEUE_DLQ_ARN, leafPartitionQueryQueueForDLs.getQueueArn());
-
-        CfnOutputProps leafPartitionQueriesQueueOutputNameProps = new CfnOutputProps.Builder()
-                .value(leafPartitionQueriesQueue.getQueueName())
+        instanceProperties.set(CdkDefinedInstanceProperty.LEAF_PARTITION_QUERY_QUEUE_URL, leafPartitionQueryQueue.getQueueUrl());
+        instanceProperties.set(CdkDefinedInstanceProperty.LEAF_PARTITION_QUERY_QUEUE_ARN, leafPartitionQueryQueue.getQueueArn());
+        instanceProperties.set(CdkDefinedInstanceProperty.LEAF_PARTITION_QUERY_QUEUE_DLQ_URL, leafPartitionQueryDlq.getQueueUrl());
+        instanceProperties.set(CdkDefinedInstanceProperty.LEAF_PARTITION_QUERY_QUEUE_DLQ_ARN, leafPartitionQueryDlq.getQueueArn());
+        createAlarmForDlq(this, "LeafPartitionQueryAlarm",
+                "Alarms if there are any messages on the dead letter queue for the leaf partition query queue",
+                leafPartitionQueryDlq, topic);
+        errorMetrics.add(Utils.createErrorMetric("Subquery Errors", leafPartitionQueryDlq, instanceProperties));
+        CfnOutputProps leafPartitionQueryQueueOutputNameProps = new CfnOutputProps.Builder()
+                .value(leafPartitionQueryQueue.getQueueName())
                 .exportName(instanceProperties.get(ID) + "-" + LEAF_PARTITION_QUERY_QUEUE_NAME)
                 .build();
-        new CfnOutput(this, LEAF_PARTITION_QUERY_QUEUE_NAME, leafPartitionQueriesQueueOutputNameProps);
+        new CfnOutput(this, LEAF_PARTITION_QUERY_QUEUE_NAME, leafPartitionQueryQueueOutputNameProps);
 
-        CfnOutputProps leafPartitionQueriesQueueOutputProps = new CfnOutputProps.Builder()
-                .value(leafPartitionQueriesQueue.getQueueUrl())
+        CfnOutputProps leafPartitionQueryQueueOutputProps = new CfnOutputProps.Builder()
+                .value(leafPartitionQueryQueue.getQueueUrl())
                 .exportName(instanceProperties.get(ID) + "-" + LEAF_PARTITION_QUERY_QUEUE_URL)
                 .build();
-        new CfnOutput(this, LEAF_PARTITION_QUERY_QUEUE_URL, leafPartitionQueriesQueueOutputProps);
+        new CfnOutput(this, LEAF_PARTITION_QUERY_QUEUE_URL, leafPartitionQueryQueueOutputProps);
 
-        CfnOutputProps leafPartitionQueriesDLQueueOutputProps = new CfnOutputProps.Builder()
-                .value(leafPartitionQueryQueueForDLs.getQueueUrl())
-                .exportName(instanceProperties.get(ID) + "-" + LEAF_PARTITION_QUERY_DL_QUEUE_URL)
+        CfnOutputProps leafPartitionQueryDlqOutputProps = new CfnOutputProps.Builder()
+                .value(leafPartitionQueryDlq.getQueueUrl())
+                .exportName(instanceProperties.get(ID) + "-" + LEAF_PARTITION_QUERY_DLQ_URL)
                 .build();
-        new CfnOutput(this, LEAF_PARTITION_QUERY_DL_QUEUE_URL, leafPartitionQueriesDLQueueOutputProps);
+        new CfnOutput(this, LEAF_PARTITION_QUERY_DLQ_URL, leafPartitionQueryDlqOutputProps);
 
-        return leafPartitionQueriesQueue;
+        return leafPartitionQueryQueue;
     }
 
     /***

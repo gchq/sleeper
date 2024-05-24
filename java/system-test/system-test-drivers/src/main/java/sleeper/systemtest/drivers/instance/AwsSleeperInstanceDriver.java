@@ -54,9 +54,9 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(AwsSleeperInstanceDriver.class);
 
     private final SystemTestParameters parameters;
-    private final AmazonDynamoDB dynamoDB;
     private final AmazonS3 s3;
     private final S3Client s3v2;
+    private final AmazonDynamoDB dynamoDB;
     private final AWSSecurityTokenService sts;
     private final AwsRegionProvider regionProvider;
     private final CloudFormationClient cloudFormationClient;
@@ -64,9 +64,9 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
 
     public AwsSleeperInstanceDriver(SystemTestParameters parameters, SystemTestClients clients) {
         this.parameters = parameters;
-        this.dynamoDB = clients.getDynamoDB();
         this.s3 = clients.getS3();
         this.s3v2 = clients.getS3V2();
+        this.dynamoDB = clients.getDynamoDB();
         this.sts = clients.getSts();
         this.regionProvider = clients.getRegionProvider();
         this.cloudFormationClient = clients.getCloudFormation();
@@ -97,7 +97,7 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
                     .instanceType(InvokeCdkForInstance.Type.STANDARD)
                     .runCommand(ClientUtils::runCommandLogOutput)
                     .extraInstanceProperties(instanceProperties -> instanceProperties.set(JARS_BUCKET, parameters.buildJarsBucketName()))
-                    .deployWithClients(sts, regionProvider, s3, s3v2, ecr, dynamoDB);
+                    .deployWithClients(sts, regionProvider, s3, s3v2, dynamoDB, ecr);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);

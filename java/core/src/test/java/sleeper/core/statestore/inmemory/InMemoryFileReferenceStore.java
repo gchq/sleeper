@@ -22,7 +22,6 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceStore;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.SplitFileReferenceRequest;
-import sleeper.core.statestore.SplitRequestsFailedException;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.FileAlreadyExistsException;
 import sleeper.core.statestore.exception.FileHasReferencesException;
@@ -32,6 +31,7 @@ import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.core.statestore.exception.NewReferenceSameAsOldReferenceException;
+import sleeper.core.statestore.exception.SplitRequestsFailedException;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -48,6 +48,9 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.core.statestore.AllReferencesToAFile.fileWithOneReference;
 
+/**
+ * An in-memory file reference store implementation backed by a TreeMap.
+ */
 public class InMemoryFileReferenceStore implements FileReferenceStore {
 
     private final Map<String, AllReferencesToAFile> filesByFilename = new TreeMap<>();
@@ -255,7 +258,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public void fixTime(Instant now) {
+    public void fixFileUpdateTime(Instant now) {
         clock = Clock.fixed(now, ZoneId.of("UTC"));
     }
 }

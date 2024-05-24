@@ -26,6 +26,8 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class PartitionSerDeTest {
@@ -39,11 +41,10 @@ public class PartitionSerDeTest {
         Region region = new Region(rangeFactory.createRange(field, 0, true, 10, false));
         Partition partition = Partition.builder()
                 .id("id")
-                .rowKeyTypes(schema.getRowKeyTypes())
                 .leafPartition(true)
                 .region(region)
                 .parentPartitionId(null)
-                .childPartitionIds("id1", "id2")
+                .childPartitionIds(List.of("id1", "id2"))
                 .build();
         PartitionSerDe partitionSerDe = new PartitionSerDe(schema);
 
@@ -64,11 +65,10 @@ public class PartitionSerDeTest {
         Region region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
         Partition partition = Partition.builder()
                 .id("id")
-                .rowKeyTypes(schema.getRowKeyTypes())
                 .leafPartition(true)
                 .region(region)
                 .parentPartitionId(null)
-                .childPartitionIds("id1", "id2")
+                .childPartitionIds(List.of("id1", "id2"))
                 .build();
         PartitionSerDe partitionSerDe = new PartitionSerDe(schema);
 
@@ -89,11 +89,10 @@ public class PartitionSerDeTest {
         Region region = new Region(rangeFactory.createRange(field, "A", true, "Z", false));
         Partition partition = Partition.builder()
                 .id("id")
-                .rowKeyTypes(schema.getRowKeyTypes())
                 .leafPartition(true)
                 .region(region)
                 .parentPartitionId(null)
-                .childPartitionIds("id1", "id2")
+                .childPartitionIds(List.of("id1", "id2"))
                 .build();
         PartitionSerDe partitionSerDe = new PartitionSerDe(schema);
 
@@ -114,11 +113,10 @@ public class PartitionSerDeTest {
         Region region = new Region(rangeFactory.createRange(field, "", true, null, false));
         Partition partition = Partition.builder()
                 .id("id")
-                .rowKeyTypes(schema.getRowKeyTypes())
                 .leafPartition(true)
                 .region(region)
                 .parentPartitionId(null)
-                .childPartitionIds("id1", "id2")
+                .childPartitionIds(List.of("id1", "id2"))
                 .build();
         PartitionSerDe partitionSerDe = new PartitionSerDe(schema);
 
@@ -139,11 +137,10 @@ public class PartitionSerDeTest {
         Region region = new Region(rangeFactory.createRange(field, new byte[]{0}, true, new byte[]{64, 64}, false));
         Partition partition = Partition.builder()
                 .id("id")
-                .rowKeyTypes(schema.getRowKeyTypes())
                 .leafPartition(true)
                 .region(region)
                 .parentPartitionId(null)
-                .childPartitionIds("id1", "id2")
+                .childPartitionIds(List.of("id1", "id2"))
                 .build();
         PartitionSerDe partitionSerDe = new PartitionSerDe(schema);
 
@@ -164,11 +161,10 @@ public class PartitionSerDeTest {
         Region region = new Region(rangeFactory.createRange(field, new byte[]{}, true, null, false));
         Partition partition = Partition.builder()
                 .id("id")
-                .rowKeyTypes(schema.getRowKeyTypes())
                 .leafPartition(true)
                 .region(region)
                 .parentPartitionId(null)
-                .childPartitionIds("id1", "id2")
+                .childPartitionIds(List.of("id1", "id2"))
                 .build();
         PartitionSerDe partitionSerDe = new PartitionSerDe(schema);
 

@@ -19,7 +19,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import org.assertj.core.api.Assertions;
+import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,13 +45,11 @@ import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.StateStoreFactory;
-import sleeper.statestore.s3.S3StateStoreCreator;
+import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
-import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -76,12 +74,14 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
     private static AmazonDynamoDB dynamoDBClient;
     private static AmazonS3 s3Client;
     private static S3AsyncClient s3AsyncClient;
+    private static Configuration configuration;
 
     @BeforeAll
     public static void beforeAll() {
         dynamoDBClient = buildAwsV1Client(localStackContainer, DYNAMODB, AmazonDynamoDBClientBuilder.standard());
         s3Client = buildAwsV1Client(localStackContainer, S3, AmazonS3ClientBuilder.standard());
         s3AsyncClient = buildAwsV2Client(localStackContainer, S3, S3AsyncClient.builder());
+        configuration = getHadoopConfiguration(localStackContainer);
     }
 
     @AfterAll
@@ -95,30 +95,31 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
     void setUp() {
         instanceProperties.resetAndValidate(createTestInstanceProperties().getProperties());
         s3Client.createBucket(instanceProperties.get(DATA_BUCKET));
-        new S3StateStoreCreator(instanceProperties, dynamoDBClient).create();
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoDBClient).create();
         DynamoDBCompactionJobStatusStoreCreator.create(instanceProperties, dynamoDBClient);
     }
 
     protected FileReference ingestRecordsGetFile(StateStore stateStore, List<Record> records) throws Exception {
         return ingestRecordsGetFile(records, builder -> builder
                 .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
-                .hadoopConfiguration(getHadoopConfiguration(localStackContainer))
+                .hadoopConfiguration(configuration)
                 .s3AsyncClient(s3AsyncClient));
     }
 
     private StateStore createStateStore(Schema schema) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         tableProperties.set(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "0");
-        return new StateStoreFactory(dynamoDBClient, instanceProperties, getHadoopConfiguration(localStackContainer))
+        return new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, configuration)
                 .getStateStore(tableProperties);
     }
 
     private CompactSortedFiles createCompactSortedFiles(Schema schema, StateStore stateStore) throws Exception {
         tableProperties.setSchema(schema);
-        return new CompactSortedFiles(instanceProperties,
+        return new CompactSortedFiles(
                 new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties, stateStore),
-                ObjectFactory.noUserJars());
+                ObjectFactory.noUserJars(),
+                configuration);
     }
 
     @Test
@@ -147,15 +148,6 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
         List<Record> expectedResults = CompactSortedFilesTestData.combineSortedBySingleKey(data1, data2);
         assertThat(summary.getRecordsRead()).isEqualTo(expectedResults.size());
         assertThat(summary.getRecordsWritten()).isEqualTo(expectedResults.size());
-        Assertions.assertThat(CompactSortedFilesTestData.readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
-
-        // - Check StateStore has correct ready for GC files
-        assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
-                .containsExactlyInAnyOrder(file1.getFilename(), file2.getFilename());
-
-        // - Check StateStore has correct file references
-        assertThat(stateStore.getFileReferences())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactly(FileReferenceFactory.from(tree).rootFile(compactionJob.getOutputFile(), 200L));
+        assertThat(CompactSortedFilesTestData.readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
     }
 }

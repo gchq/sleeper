@@ -28,7 +28,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static sleeper.core.record.process.status.TestRunStatusUpdates.defaultUpdateTime;
+import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.ingest.job.status.IngestJobStatusType.REJECTED;
 
 public class InMemoryIngestJobStatusStore implements IngestJobStatusStore {

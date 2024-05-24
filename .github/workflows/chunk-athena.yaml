@@ -13,14 +13,14 @@ on:
       - 'java/query/query-core/**'
       - 'java/splitter/splitter-core/**'
       - 'java/ingest/ingest-runner/**'
-      - 'java/common-job/**'
+      - 'java/common/common-job/**'
       - 'java/ingest/ingest-status-store/**'
       - 'java/sketches/**'
       - 'java/ingest/ingest-core/**'
       - 'java/statestore/**'
       - 'java/parquet/**'
       - 'java/configuration/**'
-      - 'java/dynamodb-tools/**'
+      - 'java/common/dynamodb-tools/**'
       - 'java/core/**'
 
 jobs:

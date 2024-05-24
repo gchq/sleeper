@@ -25,7 +25,7 @@ public class AppParameters {
 
     public static final StringParameter BUILD_REPOSITORY = StringParameter.keyAndDefault("repository", "sleeper");
     public static final StringParameter BUILD_FORK = StringParameter.keyAndDefault("fork", "gchq");
-    public static final StringParameter BUILD_BRANCH = StringParameter.keyAndDefault("branch", "main");
+    public static final StringParameter BUILD_BRANCH = StringParameter.keyAndDefault("branch", "develop");
 
     public static final StringParameter BUILD_IMAGE_NAME = StringParameter.keyAndDefault("buildImageName", "ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*");
     public static final StringParameter BUILD_IMAGE_OWNER = StringParameter.keyAndDefault("buildImageOwner", "099720109477");

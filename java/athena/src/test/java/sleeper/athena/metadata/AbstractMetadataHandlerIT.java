@@ -100,7 +100,7 @@ public abstract class AbstractMetadataHandlerIT {
 
     protected TableProperties createTable(InstanceProperties instanceProperties) throws IOException {
         TableProperties table = createEmptyTable(instanceProperties);
-        TestUtils.ingestData(dynamoClient, createTempDirectory(tempDir, null).toString(),
+        TestUtils.ingestData(s3Client, dynamoClient, createTempDirectory(tempDir, null).toString(),
                 instanceProperties, table);
         return table;
     }

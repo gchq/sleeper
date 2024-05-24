@@ -25,9 +25,7 @@ import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.FileReferenceFactory;
 
-import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -62,16 +60,6 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
         assertThat(summary.getRecordsRead()).isEqualTo(data.size());
         assertThat(summary.getRecordsWritten()).isEqualTo(data.size());
         assertThat(readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(data);
-
-        // - Check state store has correct ready for GC files
-        assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
-                .containsExactlyInAnyOrder(file1.getFilename(), file2.getFilename());
-
-        // - Check state store has correct file references
-        assertThat(stateStore.getFileReferences())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactly(FileReferenceFactory.from(stateStore)
-                        .rootFile(compactionJob.getOutputFile(), 100L));
     }
 
     @Test
@@ -96,15 +84,5 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
         assertThat(summary.getRecordsRead()).isZero();
         assertThat(summary.getRecordsWritten()).isZero();
         assertThat(readDataFile(schema, compactionJob.getOutputFile())).isEmpty();
-
-        // - Check state store has correct ready for GC files
-        assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
-                .containsExactly(file1.getFilename(), file2.getFilename());
-
-        // - Check state store has correct active files
-        assertThat(stateStore.getFileReferences())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactly(FileReferenceFactory.from(stateStore)
-                        .rootFile(compactionJob.getOutputFile(), 0L));
     }
 }

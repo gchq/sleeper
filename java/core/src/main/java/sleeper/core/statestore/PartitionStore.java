@@ -18,6 +18,7 @@ package sleeper.core.statestore;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 
+import java.time.Instant;
 import java.util.List;
 
 /**
@@ -76,4 +77,12 @@ public interface PartitionStore {
      * be used again. Any file references will need to be added again.
      */
     void clearPartitionData() throws StateStoreException;
+
+    /**
+     * Used to fix the time of partition updates. Should only be called during tests.
+     *
+     * @param time the time that any future partition updates will be considered to occur
+     */
+    default void fixPartitionUpdateTime(Instant time) {
+    }
 }

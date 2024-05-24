@@ -31,13 +31,9 @@ import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.table.InvokeForTableRequest;
-import sleeper.core.table.TableIndex;
-import sleeper.core.table.TableNotFoundException;
-import sleeper.core.table.TableStatus;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreProvider;
 
@@ -81,20 +77,20 @@ public class CreateCompactionJobsClient {
         try {
             InstanceProperties instanceProperties = new InstanceProperties();
             instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
-            TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDBClient);
-            List<TableStatus> tables = tableNames.stream()
-                    .map(name -> tableIndex.getTableByName(name)
-                            .orElseThrow(() -> TableNotFoundException.withTableName(name)))
-                    .collect(toUnmodifiableList());
             TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
+            List<TableProperties> tables = tableNames.stream()
+                    .map(name -> tablePropertiesProvider.getByName(name))
+                    .collect(toUnmodifiableList());
             Configuration conf = HadoopConfigurationProvider.getConfigurationForClient(instanceProperties);
-            StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, conf);
+            StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, conf);
             CompactionJobStatusStore jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
             CreateCompactionJobs jobCreator = new CreateCompactionJobs(
                     new ObjectFactory(instanceProperties, s3Client, "/tmp"),
-                    instanceProperties, tablePropertiesProvider, stateStoreProvider,
+                    instanceProperties, stateStoreProvider,
                     new SendCompactionJobToSqs(instanceProperties, sqsClient)::send, jobStatusStore, mode);
-            InvokeForTableRequest.forTables(tables.stream(), tables.size(), jobCreator::createJobs);
+            for (TableProperties table : tables) {
+                jobCreator.createJobs(table);
+            }
         } finally {
             s3Client.shutdown();
             dynamoDBClient.shutdown();

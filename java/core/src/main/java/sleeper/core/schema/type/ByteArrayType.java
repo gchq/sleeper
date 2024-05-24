@@ -15,6 +15,9 @@
  */
 package sleeper.core.schema.type;
 
+/**
+ * A primitive type that represents a byte array.
+ */
 public class ByteArrayType extends PrimitiveType {
 
     @Override

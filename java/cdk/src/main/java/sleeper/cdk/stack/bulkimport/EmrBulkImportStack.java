@@ -17,9 +17,11 @@ package sleeper.cdk.stack.bulkimport;
 
 import com.google.common.collect.Lists;
 import software.amazon.awscdk.NestedStack;
+import software.amazon.awscdk.services.cloudwatch.IMetric;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.IFunction;
+import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
@@ -27,10 +29,10 @@ import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.stack.CoreStacks;
 import sleeper.cdk.stack.IngestStatusStoreResources;
-import sleeper.cdk.stack.TopicStack;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_ARN;
@@ -48,18 +50,19 @@ public class EmrBulkImportStack extends NestedStack {
             String id,
             InstanceProperties instanceProperties,
             BuiltJars jars,
+            Topic errorsTopic,
             BulkImportBucketStack importBucketStack,
             CommonEmrBulkImportStack commonEmrStack,
-            TopicStack errorsTopicStack,
             CoreStacks coreStacks,
-            IngestStatusStoreResources statusStoreResources) {
+            IngestStatusStoreResources statusStoreResources,
+            List<IMetric> errorMetrics) {
         super(scope, id);
 
         CommonEmrBulkImportHelper commonHelper = new CommonEmrBulkImportHelper(
-                this, "NonPersistentEMR", instanceProperties, coreStacks, statusStoreResources);
+                this, "NonPersistentEMR", instanceProperties, coreStacks, statusStoreResources, errorMetrics);
         bulkImportJobQueue = commonHelper.createJobQueue(
                 BULK_IMPORT_EMR_JOB_QUEUE_URL, BULK_IMPORT_EMR_JOB_QUEUE_ARN,
-                errorsTopicStack.getTopic());
+                errorsTopic);
         IFunction jobStarter = commonHelper.createJobStarterFunction(
                 "NonPersistentEMR", bulkImportJobQueue, jars, importBucketStack.getImportBucket(), commonEmrStack);
 

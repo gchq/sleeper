@@ -57,7 +57,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Stream;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -105,7 +104,7 @@ public class FindPartitionsToSplitIT {
         writeFiles(createEvenRecordList(100, 10));
 
         // When
-        findPartitionsToSplit().run(Stream.of(tableProperties));
+        findPartitionsToSplit().run(tableProperties);
 
         // Then
         List<Message> messages = receivePartitionSplittingMessages();
@@ -127,7 +126,7 @@ public class FindPartitionsToSplitIT {
         writeFiles(createEvenRecordList(100, 10));
 
         // When
-        findPartitionsToSplit().run(Stream.of(tableProperties));
+        findPartitionsToSplit().run(tableProperties);
 
         // The
         assertThat(receivePartitionSplittingMessages()).isEmpty();
@@ -141,7 +140,7 @@ public class FindPartitionsToSplitIT {
         writeFiles(createEvenRecordList(100, 10));
 
         // When
-        findPartitionsToSplit().run(Stream.of(tableProperties));
+        findPartitionsToSplit().run(tableProperties);
 
         // Then
         List<Message> messages = receivePartitionSplittingMessages();
@@ -163,7 +162,7 @@ public class FindPartitionsToSplitIT {
         writeFiles(createAscendingRecordList(100, 10));
 
         // When
-        findPartitionsToSplit().run(Stream.of(tableProperties));
+        findPartitionsToSplit().run(tableProperties);
 
         // Then
         List<Message> messages = receivePartitionSplittingMessages();

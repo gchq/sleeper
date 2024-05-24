@@ -19,9 +19,7 @@ import sleeper.core.key.Key;
 import sleeper.core.range.Region;
 import sleeper.core.range.RegionCanonicaliser;
 import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.PrimitiveType;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -37,7 +35,6 @@ import java.util.Optional;
  * their minimum but not contain their maximum.
  */
 public class Partition {
-    private final List<PrimitiveType> rowKeyTypes;
     private final Region region;
     private final String id;
     private final boolean leafPartition;
@@ -47,7 +44,6 @@ public class Partition {
 
     private Partition(Partition.Builder builder) {
         region = Objects.requireNonNull(builder.region, "region must not be null");
-        rowKeyTypes = Objects.requireNonNull(builder.rowKeyTypes, "rowKeyTypes must not be null");
         id = Objects.requireNonNull(builder.id, "id must not be null");
         leafPartition = builder.leafPartition;
         parentPartitionId = builder.parentPartitionId;
@@ -62,8 +58,25 @@ public class Partition {
         return new Builder();
     }
 
-    public List<PrimitiveType> getRowKeyTypes() {
-        return rowKeyTypes;
+    /**
+     * Checks if a row key is in this partition. This depends on the ranges the partition covers.
+     *
+     * @param  schema schema of the Sleeper table
+     * @param  rowKey values of row key to check
+     * @return        true if the row key is in the partition
+     */
+    public boolean isRowKeyInPartition(Schema schema, Key rowKey) {
+        return region.isKeyInRegion(schema, rowKey);
+    }
+
+    /**
+     * Checks if a region overlaps this partition.
+     *
+     * @param  otherRegion region to check
+     * @return             true if any part of the region is in this partition
+     */
+    public boolean doesRegionOverlapPartition(Region otherRegion) {
+        return region.doesRegionOverlap(otherRegion);
     }
 
     public Region getRegion() {
@@ -90,14 +103,6 @@ public class Partition {
         return dimension;
     }
 
-    public boolean isRowKeyInPartition(Schema schema, Key rowKey) {
-        return region.isKeyInRegion(schema, rowKey);
-    }
-
-    public boolean doesRegionOverlapPartition(Region otherRegion) {
-        return region.doesRegionOverlap(otherRegion);
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -108,8 +113,7 @@ public class Partition {
         }
         Partition partition = (Partition) o;
 
-        return Objects.equals(rowKeyTypes, partition.rowKeyTypes)
-                && leafPartition == partition.leafPartition
+        return leafPartition == partition.leafPartition
                 && Objects.equals(region, partition.region)
                 && Objects.equals(id, partition.id)
                 && Objects.equals(parentPartitionId, partition.parentPartitionId)
@@ -119,15 +123,14 @@ public class Partition {
 
     @Override
     public int hashCode() {
-        return Objects.hash(rowKeyTypes, region, id, leafPartition,
+        return Objects.hash(region, id, leafPartition,
                 parentPartitionId, childPartitionIds, dimension);
     }
 
     @Override
     public String toString() {
         return "Partition{"
-                + "rowKeyTypes=" + rowKeyTypes
-                + ", region=" + region
+                + "region=" + region
                 + ", id='" + id + '\''
                 + ", leafPartition=" + leafPartition
                 + ", parentPartitionId='" + parentPartitionId + '\''
@@ -136,8 +139,20 @@ public class Partition {
                 + '}';
     }
 
+    public Builder toBuilder() {
+        return builder()
+                .region(region)
+                .id(id)
+                .leafPartition(leafPartition)
+                .childPartitionIds(childPartitionIds)
+                .parentPartitionId(parentPartitionId)
+                .dimension(dimension);
+    }
+
+    /**
+     * Builder to create a partition object.
+     */
     public static final class Builder {
-        private List<PrimitiveType> rowKeyTypes;
         private Region region;
         private String id;
         private boolean leafPartition;
@@ -148,44 +163,70 @@ public class Partition {
         private Builder() {
         }
 
-        public Builder rowKeyTypes(List<PrimitiveType> rowKeyTypes) {
-            this.rowKeyTypes = rowKeyTypes;
-            return this;
-        }
-
-        public Builder rowKeyTypes(PrimitiveType... rowKeyTypes) {
-            return this.rowKeyTypes(Arrays.asList(rowKeyTypes));
-        }
-
+        /**
+         * Sets the region covered by the partition.
+         *
+         * @param  region the region
+         * @return        the builder
+         */
         public Builder region(Region region) {
             this.region = region;
             return this;
         }
 
+        /**
+         * Sets the ID of the partition.
+         *
+         * @param  id a unique identifier
+         * @return    the builder
+         */
         public Builder id(String id) {
             this.id = id;
             return this;
         }
 
+        /**
+         * Sets whether this is a leaf partition.
+         *
+         * @param  leafPartition true if the partition has no child partitions, false otherwise
+         * @return               the builder
+         */
         public Builder leafPartition(boolean leafPartition) {
             this.leafPartition = leafPartition;
             return this;
         }
 
+        /**
+         * Sets the parent of the partition. This is the ID of the partition that was split to create this partition.
+         * Can be null if this is the root partition of the Sleeper table.
+         *
+         * @param  parentPartitionId the ID of the parent partition
+         * @return                   the builder
+         */
         public Builder parentPartitionId(String parentPartitionId) {
             this.parentPartitionId = parentPartitionId;
             return this;
         }
 
+        /**
+         * Sets the children of the partition. This is the IDs of any partitions that were created by splitting this
+         * partition. This will default to an empty list, and must be empty for a leaf partition.
+         *
+         * @param  childPartitionIds the IDs of the child partitions
+         * @return                   the builder
+         */
         public Builder childPartitionIds(List<String> childPartitionIds) {
             this.childPartitionIds = childPartitionIds;
             return this;
         }
 
-        public Builder childPartitionIds(String... childPartitionIds) {
-            return this.childPartitionIds(Arrays.asList(childPartitionIds));
-        }
-
+        /**
+         * Sets the dimension this partition was split on. If this partition has been split, this should be the index of
+         * the row key in the schema that this partition was split on.
+         *
+         * @param  dimension the index of the row key used as the split point
+         * @return           the builder
+         */
         public Builder dimension(int dimension) {
             this.dimension = dimension;
             return this;
@@ -202,15 +243,5 @@ public class Partition {
         public Region getRegion() {
             return region;
         }
-    }
-
-    public Builder toBuilder() {
-        return builder().rowKeyTypes(rowKeyTypes)
-                .region(region)
-                .id(id)
-                .leafPartition(leafPartition)
-                .childPartitionIds(childPartitionIds)
-                .parentPartitionId(parentPartitionId)
-                .dimension(dimension);
     }
 }

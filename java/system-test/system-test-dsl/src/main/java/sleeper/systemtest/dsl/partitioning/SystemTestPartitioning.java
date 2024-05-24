@@ -36,22 +36,17 @@ public class SystemTestPartitioning {
     private final SystemTestDrivers drivers;
     private final SystemTestInstanceContext instance;
 
-    public SystemTestPartitioning(SystemTestContext context, SystemTestDrivers drivers) {
+    public SystemTestPartitioning(SystemTestContext context) {
         this.context = context;
-        this.drivers = drivers;
+        this.drivers = context.instance().adminDrivers();
         this.instance = context.instance();
     }
 
     public void split() {
-        WaitForPartitionSplitting waitForPartitionSplitting = WaitForPartitionSplitting
-                .forCurrentPartitionsNeedingSplitting(
-                        instance.getTablePropertiesProvider(),
-                        instance.getStateStoreProvider());
+        WaitForPartitionSplitting wait = WaitForPartitionSplitting.forCurrentPartitionsNeedingSplitting(instance);
         drivers.partitionSplitting(context).splitPartitions();
         try {
-            waitForPartitionSplitting.pollUntilFinished(
-                    instance.getTablePropertiesProvider(),
-                    instance.getStateStoreProvider());
+            wait.pollUntilFinished(instance);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);

@@ -46,7 +46,7 @@ public class SplitFileReferencesTest {
 
     @BeforeEach
     void setUp() {
-        store.fixTime(DEFAULT_UPDATE_TIME);
+        store.fixFileUpdateTime(DEFAULT_UPDATE_TIME);
     }
 
     @Test

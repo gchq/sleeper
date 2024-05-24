@@ -16,6 +16,8 @@
 
 package sleeper.systemtest.dsl.reporting;
 
+import sleeper.systemtest.dsl.SystemTestContext;
+import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.util.TestContext;
 
 import java.util.ArrayList;
@@ -35,12 +37,8 @@ public class SystemTestReports {
         return new Builder(context);
     }
 
-    public static SystemTestBuilder builder(
-            ReportingContext context,
-            PartitionReportDriver partitionDriver,
-            IngestReportsDriver ingestDriver,
-            CompactionReportsDriver compactionDriver) {
-        return new SystemTestBuilder(context, partitionDriver, ingestDriver, compactionDriver);
+    public static SystemTestBuilder builder(SystemTestContext context) {
+        return new SystemTestBuilder(context);
     }
 
     public void print(TestContext testContext) {
@@ -71,15 +69,12 @@ public class SystemTestReports {
         private final IngestReportsDriver ingestDriver;
         private final CompactionReportsDriver compactionDriver;
 
-        private SystemTestBuilder(
-                ReportingContext context,
-                PartitionReportDriver partitionDriver,
-                IngestReportsDriver ingestDriver,
-                CompactionReportsDriver compactionDriver) {
-            super(context);
-            this.partitionDriver = partitionDriver;
-            this.ingestDriver = ingestDriver;
-            this.compactionDriver = compactionDriver;
+        private SystemTestBuilder(SystemTestContext context) {
+            super(context.reporting());
+            SystemTestDrivers drivers = context.instance().adminDrivers();
+            this.partitionDriver = drivers.partitionReports(context);
+            this.ingestDriver = drivers.ingestReports(context);
+            this.compactionDriver = drivers.compactionReports(context);
         }
 
         public Builder ingestTasksAndJobs() {

@@ -25,6 +25,7 @@ import sleeper.systemtest.dsl.ingest.IngestByAnyQueueDriver;
 import sleeper.systemtest.dsl.ingest.IngestByQueue;
 import sleeper.systemtest.dsl.ingest.IngestLocalFileByAnyQueueDriver;
 import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
+import sleeper.systemtest.dsl.instance.AssumeAdminRoleDriver;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
 import sleeper.systemtest.dsl.instance.SleeperTablesDriver;
@@ -38,6 +39,7 @@ import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
 import sleeper.systemtest.dsl.reporting.CompactionReportsDriver;
 import sleeper.systemtest.dsl.reporting.IngestReportsDriver;
 import sleeper.systemtest.dsl.reporting.PartitionReportDriver;
+import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
 import sleeper.systemtest.dsl.sourcedata.DataGenerationTasksDriver;
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
@@ -54,6 +56,8 @@ public interface SystemTestDrivers {
     SystemTestDeploymentDriver systemTestDeployment(SystemTestParameters parameters);
 
     SleeperInstanceDriver instance(SystemTestParameters parameters);
+
+    AssumeAdminRoleDriver assumeAdminRole();
 
     SleeperTablesDriver tables(SystemTestParameters parameters);
 
@@ -80,6 +84,8 @@ public interface SystemTestDrivers {
     QueryAllTablesDriver queryByQueue(SystemTestContext context);
 
     QueryAllTablesDriver directQuery(SystemTestContext context);
+
+    QueryAllTablesDriver queryByWebSocket(SystemTestContext context);
 
     ClearQueryResultsDriver clearQueryResults(SystemTestContext context);
 
@@ -108,4 +114,6 @@ public interface SystemTestDrivers {
     TableMetricsDriver tableMetrics(SystemTestContext context);
 
     PurgeQueueDriver purgeQueues(SystemTestContext context);
+
+    SnapshotsDriver snapshots();
 }

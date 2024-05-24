@@ -16,13 +16,9 @@
 
 package sleeper.systemtest.datageneration;
 
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.ingest.batcher.submitter.FileIngestRequestSerDe;
 
 import java.util.List;
@@ -37,12 +33,10 @@ public class IngestRandomDataViaBatcher {
     private IngestRandomDataViaBatcher() {
     }
 
-    public static void sendRequest(String dir, InstanceProperties instanceProperties, TableProperties tableProperties) {
-        AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
-        String queueUrl = instanceProperties.get(INGEST_BATCHER_SUBMIT_QUEUE_URL);
-        String jsonRequest = FileIngestRequestSerDe.toJson(List.of(dir), tableProperties.get(TABLE_NAME));
+    public static void sendRequest(String dir, InstanceIngestSession session) {
+        String queueUrl = session.instanceProperties().get(INGEST_BATCHER_SUBMIT_QUEUE_URL);
+        String jsonRequest = FileIngestRequestSerDe.toJson(List.of(dir), session.tableProperties().get(TABLE_NAME));
         LOGGER.debug("Sending message to ingest batcher queue {}: {}", queueUrl, jsonRequest);
-        sqsClient.sendMessage(queueUrl, jsonRequest);
-        sqsClient.shutdown();
+        session.sqs().sendMessage(queueUrl, jsonRequest);
     }
 }

@@ -17,6 +17,7 @@ package sleeper.cdk.stack.bulkimport;
 
 import com.google.common.collect.Lists;
 import software.amazon.awscdk.NestedStack;
+import software.amazon.awscdk.services.cloudwatch.IMetric;
 import software.amazon.awscdk.services.ec2.IVpc;
 import software.amazon.awscdk.services.ec2.SecurityGroup;
 import software.amazon.awscdk.services.ec2.Vpc;
@@ -41,6 +42,7 @@ import software.amazon.awscdk.services.iam.Role;
 import software.amazon.awscdk.services.iam.RoleProps;
 import software.amazon.awscdk.services.iam.ServicePrincipal;
 import software.amazon.awscdk.services.lambda.IFunction;
+import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
@@ -48,7 +50,6 @@ import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.stack.CoreStacks;
 import sleeper.cdk.stack.IngestStatusStoreResources;
-import sleeper.cdk.stack.TopicStack;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.Collections;
@@ -92,20 +93,24 @@ public class EmrServerlessBulkImportStack extends NestedStack {
     private final Queue bulkImportJobQueue;
 
     public EmrServerlessBulkImportStack(
-            Construct scope, String id,
-            InstanceProperties instanceProperties, BuiltJars jars,
-            BulkImportBucketStack importBucketStack, TopicStack errorsTopicStack,
+            Construct scope,
+            String id,
+            InstanceProperties instanceProperties,
+            BuiltJars jars,
+            Topic errorsTopic,
+            BulkImportBucketStack importBucketStack,
             CoreStacks coreStacks,
-            IngestStatusStoreResources statusStoreResources) {
+            IngestStatusStoreResources statusStoreResources,
+            List<IMetric> errorMetrics) {
         super(scope, id);
         createEmrServerlessApplication(instanceProperties);
         IRole emrRole = createEmrServerlessRole(
                 instanceProperties, importBucketStack, statusStoreResources, coreStacks);
         CommonEmrBulkImportHelper commonHelper = new CommonEmrBulkImportHelper(this,
-                "EMRServerless", instanceProperties, coreStacks, statusStoreResources);
+                "EMRServerless", instanceProperties, coreStacks, statusStoreResources, errorMetrics);
         bulkImportJobQueue = commonHelper.createJobQueue(
                 BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL, BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_ARN,
-                errorsTopicStack.getTopic());
+                errorsTopic);
 
         IFunction jobStarter = commonHelper.createJobStarterFunction("EMRServerless",
                 bulkImportJobQueue, jars, importBucketStack.getImportBucket(), List.of(emrRole));

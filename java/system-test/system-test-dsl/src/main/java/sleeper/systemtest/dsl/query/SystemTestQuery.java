@@ -25,21 +25,31 @@ import java.util.Map;
 
 public class SystemTestQuery {
     private final SystemTestContext context;
-    private final SystemTestDrivers drivers;
+    private final SystemTestDrivers baseDrivers;
+    private final SystemTestDrivers adminDrivers;
     private QueryAllTablesDriver driver = null;
 
-    public SystemTestQuery(SystemTestContext context, SystemTestDrivers drivers) {
+    public SystemTestQuery(SystemTestContext context, SystemTestDrivers baseDrivers) {
         this.context = context;
-        this.drivers = drivers;
+        this.baseDrivers = baseDrivers;
+        this.adminDrivers = context.instance().adminDrivers();
     }
 
     public SystemTestQuery byQueue() {
-        driver = drivers.queryByQueue(context);
+        driver = adminDrivers.queryByQueue(context);
         return this;
     }
 
     public SystemTestQuery direct() {
-        driver = drivers.directQuery(context);
+        driver = adminDrivers.directQuery(context);
+        return this;
+    }
+
+    public SystemTestQuery webSocket() {
+        // Note that this relies on permissions of the base credentials,
+        // as the instance admin does not currently have working permissions for the web socket.
+        // TODO add the correct permissions to the instance admin role
+        driver = baseDrivers.queryByWebSocket(context);
         return this;
     }
 
@@ -56,7 +66,7 @@ public class SystemTestQuery {
     }
 
     public void emptyResultsBucket() {
-        drivers.clearQueryResults(context).deleteAllQueryResults();
+        adminDrivers.clearQueryResults(context).deleteAllQueryResults();
     }
 
     private QueryCreator queryCreator() {

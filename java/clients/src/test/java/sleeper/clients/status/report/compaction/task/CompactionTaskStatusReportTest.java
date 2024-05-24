@@ -18,7 +18,7 @@ package sleeper.clients.status.report.compaction.task;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.status.report.CompactionTaskStatusReport;
-import sleeper.clients.testutil.ToStringPrintStream;
+import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.testutils.InMemoryCompactionTaskStatusStore;
 
@@ -31,7 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.status.report.compaction.task.CompactionTaskStatusReportTestHelper.finishedTask;
 import static sleeper.clients.status.report.compaction.task.CompactionTaskStatusReportTestHelper.startedTask;
 import static sleeper.clients.testutil.ClientTestUtils.example;
-import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
+import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 
 public class CompactionTaskStatusReportTest {
 
@@ -100,7 +100,7 @@ public class CompactionTaskStatusReportTest {
     }
 
     private String getReport(CompactionTaskQuery query, Function<PrintStream, CompactionTaskStatusReporter> getReporter) {
-        ToStringPrintStream output = new ToStringPrintStream();
+        ToStringConsoleOutput output = new ToStringConsoleOutput();
         new CompactionTaskStatusReport(store,
                 getReporter.apply(output.getPrintStream()),
                 query).run();

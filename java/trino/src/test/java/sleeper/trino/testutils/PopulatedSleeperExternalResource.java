@@ -45,7 +45,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.ingest.IngestFactory;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
-import sleeper.statestore.s3.S3StateStoreCreator;
+import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 import sleeper.trino.SleeperConfig;
 import sleeper.trino.remotesleeperconnection.HadoopConfigurationProvider;
 
@@ -142,7 +142,7 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
     }
 
     public StateStore getStateStore(String tableName) {
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, configuration);
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, configuration);
         return stateStoreProvider.getStateStore(getTableProperties(tableName));
     }
 
@@ -165,14 +165,14 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
         instanceProperties.saveToS3(s3Client);
         DynamoDBTableIndexCreator.create(dynamoDBClient, instanceProperties);
         new DynamoDBStateStoreCreator(instanceProperties, dynamoDBClient).create();
-        new S3StateStoreCreator(instanceProperties, dynamoDBClient).create();
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoDBClient).create();
 
         this.tableDefinitions.forEach(tableDefinition -> {
             try {
                 TableProperties tableProperties = createTable(
                         instanceProperties,
                         tableDefinition);
-                StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, configuration);
+                StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, configuration);
                 StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
                 stateStore.initialise(new PartitionsFromSplitPoints(tableDefinition.schema, tableDefinition.splitPoints).construct());
                 ingestData(instanceProperties, stateStoreProvider, tableProperties, tableDefinition.recordStream.iterator());

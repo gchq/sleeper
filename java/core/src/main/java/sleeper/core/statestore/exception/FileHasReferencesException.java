@@ -19,6 +19,9 @@ package sleeper.core.statestore.exception;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.StateStoreException;
 
+/**
+ * An exception for when a file could not be deleted because it still has references.
+ */
 public class FileHasReferencesException extends StateStoreException {
     public FileHasReferencesException(AllReferencesToAFile fileReferences) {
         this(fileReferences.getFilename(), fileReferences.getTotalReferenceCount());

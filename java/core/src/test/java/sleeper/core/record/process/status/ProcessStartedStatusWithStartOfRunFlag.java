@@ -19,8 +19,12 @@ package sleeper.core.record.process.status;
 import java.time.Instant;
 import java.util.Objects;
 
-import static sleeper.core.record.process.status.TestRunStatusUpdates.defaultUpdateTime;
+import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 
+/**
+ * A test implementation of process run started update. This class allows for setting the
+ * {@link ProcessRunStartedUpdate#isStartOfRun} flag.
+ */
 public class ProcessStartedStatusWithStartOfRunFlag implements ProcessRunStartedUpdate {
 
     private final Instant updateTime;
@@ -33,6 +37,12 @@ public class ProcessStartedStatusWithStartOfRunFlag implements ProcessRunStarted
         this.isStartOfRun = isStartOfRun;
     }
 
+    /**
+     * Creates an instance of this class that is not marked as being the start of a job run.
+     *
+     * @param  startTime the start time
+     * @return           an instance of this class that is not marked as being the start of a job run
+     */
     public static ProcessStartedStatusWithStartOfRunFlag startedStatusNotStartOfRun(Instant startTime) {
         return new ProcessStartedStatusWithStartOfRunFlag(defaultUpdateTime(startTime), startTime, false);
     }

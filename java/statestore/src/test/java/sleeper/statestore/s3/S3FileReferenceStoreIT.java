@@ -27,7 +27,6 @@ import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.SplitFileReferences;
-import sleeper.core.statestore.SplitRequestsFailedException;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.FileAlreadyExistsException;
 import sleeper.core.statestore.exception.FileHasReferencesException;
@@ -37,6 +36,7 @@ import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.core.statestore.exception.NewReferenceSameAsOldReferenceException;
+import sleeper.core.statestore.exception.SplitRequestsFailedException;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -83,7 +83,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
             FileReference file3 = factory.rootFile("file3", 100L);
 
             // When
-            store.fixTime(fixedUpdateTime);
+            store.fixFileUpdateTime(fixedUpdateTime);
             store.addFile(file1);
             store.addFiles(List.of(file2, file3));
 
@@ -103,7 +103,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
             FileReference file = factory.rootFile("file1", 100L);
 
             // When
-            store.fixTime(updateTime);
+            store.fixFileUpdateTime(updateTime);
             store.addFile(file);
 
             // Then
@@ -118,7 +118,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
             FileReference rootFile = factory.rootFile("file1", 100L);
             FileReference leftFile = splitFile(rootFile, "L");
             FileReference rightFile = splitFile(rootFile, "R");
-            store.fixTime(updateTime);
+            store.fixFileUpdateTime(updateTime);
             store.addFiles(List.of(leftFile, rightFile));
 
             // When / Then
@@ -135,7 +135,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
             FileReference rootFile = factory.rootFile("file1", 100L);
             FileReference leftFile = splitFile(rootFile, "L");
             FileReference rightFile = splitFile(rootFile, "R");
-            store.fixTime(updateTime);
+            store.fixFileUpdateTime(updateTime);
             store.addFilesWithReferences(List.of(fileWithReferences(List.of(leftFile, rightFile))));
 
             // When / Then
@@ -158,7 +158,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
             FileReference leftFile1 = splitFile(file1, "L");
             FileReference rightFile1 = splitFile(file1, "R");
             FileReference file2 = factory.rootFile("file2", 100L);
-            store.fixTime(updateTime);
+            store.fixFileUpdateTime(updateTime);
             store.addFilesWithReferences(List.of(
                     fileWithReferences(List.of(leftFile1, rightFile1)),
                     fileWithReferences(List.of(file2))));
@@ -179,7 +179,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
         void shouldAddFileWithNoReferencesForGC() throws Exception {
             // Given
             Instant updateTime = Instant.parse("2023-12-01T10:45:00Z");
-            store.fixTime(updateTime);
+            store.fixFileUpdateTime(updateTime);
             store.addFilesWithReferences(List.of(fileWithNoReferences("test-file")));
 
             // When / Then
@@ -196,7 +196,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
             // Given
             Instant updateTime = Instant.parse("2023-12-01T10:45:00Z");
             FileReference file = factory.rootFile("file1", 100L);
-            store.fixTime(updateTime);
+            store.fixFileUpdateTime(updateTime);
             store.addFile(file);
 
             // When / Then
@@ -772,7 +772,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
             // Given
             Instant updateTime = Instant.parse("2023-10-04T14:08:00Z");
             Instant latestTimeForGc = Instant.parse("2023-10-04T14:09:00Z");
-            store.fixTime(updateTime);
+            store.fixFileUpdateTime(updateTime);
             store.addFilesWithReferences(List.of(fileWithNoReferences("readyForGc")));
 
             // When / Then
@@ -785,7 +785,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
             // Given
             Instant updateTime = Instant.parse("2023-10-04T14:08:00Z");
             Instant latestTimeForGc = Instant.parse("2023-10-04T14:07:00Z");
-            store.fixTime(updateTime);
+            store.fixFileUpdateTime(updateTime);
             store.addFilesWithReferences(List.of(fileWithNoReferences("readyForGc")));
 
             // When / Then
@@ -803,7 +803,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
             FileReference leftFile = splitFile(rootFile, "L");
             FileReference rightFile = splitFile(rootFile, "R");
             FileReference compactionOutputFile = factory.partitionFile("L", "compactedFile", 100L);
-            store.fixTime(updateTime);
+            store.fixFileUpdateTime(updateTime);
             store.addFiles(List.of(leftFile, rightFile));
             store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "L", List.of("splitFile"))));
@@ -826,7 +826,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
             FileReference rightFile = splitFile(rootFile, "R");
             FileReference leftOutputFile = factory.partitionFile("L", "leftOutput", 100L);
             FileReference rightOutputFile = factory.partitionFile("R", "rightOutput", 100L);
-            store.fixTime(updateTime);
+            store.fixFileUpdateTime(updateTime);
             store.addFiles(List.of(leftFile, rightFile));
             store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "L", List.of("readyForGc")),
@@ -857,15 +857,15 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
             FileReference rightOutputFile = factory.partitionFile("R", "rightOutput", 100L);
 
             // And ingest and compactions happened at the expected times
-            store.fixTime(ingestTime);
+            store.fixFileUpdateTime(ingestTime);
             store.addFiles(List.of(leftFile, rightFile));
             store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "L", List.of("readyForGc")),
                     assignJobOnPartitionToFiles("job2", "R", List.of("readyForGc"))));
-            store.fixTime(firstCompactionTime);
+            store.fixFileUpdateTime(firstCompactionTime);
             store.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
                     "job1", "L", List.of("readyForGc"), leftOutputFile)));
-            store.fixTime(secondCompactionTime);
+            store.fixFileUpdateTime(secondCompactionTime);
             store.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
                     "job2", "R", List.of("readyForGc"), rightOutputFile)));
 

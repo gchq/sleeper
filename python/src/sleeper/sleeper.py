@@ -121,7 +121,11 @@ class SleeperClient:
 
     def exact_key_query(self, table_name: str, keys, query_id: str = None) -> list:
         """
-        Query a Sleeper table for records where the key matches a given list of query keys.
+        Query a Sleeper table for records where the key matches a given list of query keys. This query is executed in
+        a lambda function and the results are written to S3. Once the query has finished the results are loaded from
+        S3. This means that there can be significant latency before the results are returned. Note that the first query
+        will be significantly slower than subsequent ones as the lambda needs to start up, unless the KeepLambdaWarm
+        stack is deployed.
 
         :param table_name: the table to query
         :param keys: either a single dict where the key is the row-key field name and the value is a list of values 
@@ -169,7 +173,11 @@ class SleeperClient:
 
     def range_key_query(self, table_name: str, regions: list, query_id: str = None) -> list:
         """
-        Query a Sleeper table for records where the key is within one of the provided list of ranges.
+        Query a Sleeper table for records where the key is within one of the provided list of ranges. This query is
+        executed in a lambda function and the results are written to S3. Once the query has finished the results are
+        loaded from S3. This means that there can be significant latency before the results are returned. Note that the
+        first query will be significantly slower than subsequent ones as the lambda needs to start up, unless the
+        KeepLambdaWarm stack is deployed.
 
         :param table_name: the table to query
         :param regions: a list of regions; each region should be a dictionary where the key is a row key field name

@@ -41,7 +41,7 @@ public class DynamoDBStateStoreStack extends NestedStack {
     private final Table partitionTable;
 
     public DynamoDBStateStoreStack(
-            Construct scope, String id, InstanceProperties instanceProperties, ManagedPoliciesStack policiesStack) {
+            Construct scope, String id, InstanceProperties instanceProperties) {
         super(scope, id);
         String instanceId = instanceProperties.get(ID);
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
@@ -107,29 +107,23 @@ public class DynamoDBStateStoreStack extends NestedStack {
                 .build();
 
         instanceProperties.set(PARTITION_TABLENAME, partitionTable.getTableName());
-        partitionTable.grantReadData(policiesStack.getIngestPolicy());
-        activeFilesTable.grantReadWriteData(policiesStack.getIngestPolicy());
     }
 
-    public void grantReadActiveFileMetadata(IGrantable grantee) {
-        activeFilesTable.grantReadData(grantee);
-        fileReferenceCountTable.grantReadData(grantee);
-    }
-
-    public void grantReadWriteActiveFileMetadata(IGrantable grantee) {
-        activeFilesTable.grantReadWriteData(grantee);
-        fileReferenceCountTable.grantReadWriteData(grantee);
-    }
-
-    public void grantReadWriteReadyForGCFileMetadata(IGrantable grantee) {
-        fileReferenceCountTable.grantReadWriteData(grantee);
-    }
-
-    public void grantReadPartitionMetadata(IGrantable grantee) {
-        partitionTable.grantReadData(grantee);
-    }
-
-    public void grantReadWritePartitionMetadata(IGrantable grantee) {
-        partitionTable.grantReadWriteData(grantee);
+    public void grantAccess(StateStoreGrants grants, IGrantable grantee) {
+        if (grants.canWriteActiveFiles()) {
+            activeFilesTable.grantReadWriteData(grantee);
+        } else if (grants.canReadActiveFiles()) {
+            activeFilesTable.grantReadData(grantee);
+        }
+        if (grants.canWriteActiveOrReadyForGCFiles()) {
+            fileReferenceCountTable.grantReadWriteData(grantee);
+        } else if (grants.canReadActiveOrReadyForGCFiles()) {
+            fileReferenceCountTable.grantReadData(grantee);
+        }
+        if (grants.canWritePartitions()) {
+            partitionTable.grantReadWriteData(grantee);
+        } else if (grants.canReadPartitions()) {
+            partitionTable.grantReadData(grantee);
+        }
     }
 }

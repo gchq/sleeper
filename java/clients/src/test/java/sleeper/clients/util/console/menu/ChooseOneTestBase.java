@@ -16,11 +16,11 @@
 package sleeper.clients.util.console.menu;
 
 import sleeper.clients.testutil.TestConsoleInput;
-import sleeper.clients.testutil.ToStringPrintStream;
+import sleeper.clients.testutil.ToStringConsoleOutput;
 
 public abstract class ChooseOneTestBase {
 
-    protected final ToStringPrintStream out = new ToStringPrintStream();
+    protected final ToStringConsoleOutput out = new ToStringConsoleOutput();
     protected final TestConsoleInput in = new TestConsoleInput(out.consoleOut());
     private final ChooseOne chooseOne = new ChooseOne(out.consoleOut(), in.consoleIn());
 

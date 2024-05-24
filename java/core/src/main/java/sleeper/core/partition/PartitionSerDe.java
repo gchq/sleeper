@@ -46,23 +46,34 @@ public class PartitionSerDe {
     public static final String REGION = "region";
     public static final String DIMENSION = "dimension";
 
-    private final Schema schema;
     private final Gson gson;
     private final Gson gsonPrettyPrinting;
 
     public PartitionSerDe(Schema schema) {
-        this.schema = schema;
         GsonBuilder builder = new GsonBuilder()
-                .registerTypeAdapter(Partition.class, new PartitionJsonSerDe(this.schema))
+                .registerTypeAdapter(Partition.class, new PartitionJsonSerDe(schema))
                 .serializeNulls();
         this.gson = builder.create();
         this.gsonPrettyPrinting = builder.setPrettyPrinting().create();
     }
 
+    /**
+     * Serialises a partition to JSON.
+     *
+     * @param  partition the partition
+     * @return           a JSON representation of the partition
+     */
     public String toJson(Partition partition) {
         return gson.toJson(partition);
     }
 
+    /**
+     * Serialises a partition to JSON.
+     *
+     * @param  partition   the partition
+     * @param  prettyPrint true if the JSON should be formatted for readability
+     * @return             a JSON representation of the partition
+     */
     public String toJson(Partition partition, boolean prettyPrint) {
         if (prettyPrint) {
             return gsonPrettyPrinting.toJson(partition);
@@ -70,16 +81,23 @@ public class PartitionSerDe {
         return toJson(partition);
     }
 
+    /**
+     * Deserialises a partition from JSON.
+     *
+     * @param  jsonSchema the JSON
+     * @return            the partition represented by the JSON
+     */
     public Partition fromJson(String jsonSchema) {
         return gson.fromJson(jsonSchema, Partition.class);
     }
 
+    /**
+     * A GSON plugin to serialise/deserialise a partition.
+     */
     public static class PartitionJsonSerDe implements JsonSerializer<Partition>, JsonDeserializer<Partition> {
-        private final Schema schema;
         private final RegionJsonSerDe regionJsonSerDe;
 
         public PartitionJsonSerDe(Schema schema) {
-            this.schema = schema;
             this.regionJsonSerDe = new RegionJsonSerDe(schema);
         }
 
@@ -127,7 +145,6 @@ public class PartitionSerDe {
             Region region = regionJsonSerDe.deserialize(json.get(REGION), null, context);
             int dimension = json.get(DIMENSION).getAsInt();
             return Partition.builder()
-                    .rowKeyTypes(schema.getRowKeyTypes())
                     .region(region)
                     .id(partitionId)
                     .leafPartition(isLeafPartition)

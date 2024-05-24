@@ -24,11 +24,8 @@ import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
-import sleeper.core.table.InvokeForTableRequest;
-import sleeper.core.table.InvokeForTableRequestSerDe;
 import sleeper.core.table.TableIndex;
-import sleeper.core.table.TableNotFoundException;
-import sleeper.core.table.TableStatus;
+import sleeper.invoke.tables.InvokeForTables;
 
 import java.util.List;
 import java.util.stream.Stream;
@@ -58,14 +55,8 @@ public class TriggerGarbageCollectionClient {
             InstanceProperties instanceProperties = new InstanceProperties();
             instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
             TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
-            List<TableStatus> tables = tableNames.stream()
-                    .map(name -> tableIndex.getTableByName(name)
-                            .orElseThrow(() -> TableNotFoundException.withTableName(name)))
-                    .collect(toUnmodifiableList());
             String queueUrl = instanceProperties.get(GARBAGE_COLLECTOR_QUEUE_URL);
-            InvokeForTableRequestSerDe serDe = new InvokeForTableRequestSerDe();
-            InvokeForTableRequest.forTables(tables.stream(), tables.size(),
-                    request -> sqsClient.sendMessage(queueUrl, serDe.toJson(request)));
+            InvokeForTables.sendOneMessagePerTableByName(sqsClient, queueUrl, tableIndex, tableNames);
         } finally {
             s3Client.shutdown();
             dynamoClient.shutdown();

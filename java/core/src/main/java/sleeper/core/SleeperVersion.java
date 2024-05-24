@@ -21,6 +21,9 @@ import java.io.UncheckedIOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
+/**
+ * Retrieves the version number of Sleeper currently being used.
+ */
 public class SleeperVersion {
 
     private SleeperVersion() {

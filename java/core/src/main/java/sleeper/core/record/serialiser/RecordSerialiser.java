@@ -47,6 +47,13 @@ public class RecordSerialiser {
         this.schema = schema;
     }
 
+    /**
+     * Serialises a record to a byte array.
+     *
+     * @param  record      the record to serialise
+     * @return             a byte array representing the record
+     * @throws IOException if a field type is unknown
+     */
     public byte[] serialise(Record record) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(baos);
@@ -81,6 +88,13 @@ public class RecordSerialiser {
         return baos.toByteArray();
     }
 
+    /**
+     * Deserialises a byte array to a record.
+     *
+     * @param  serialised  a byte array representing the record
+     * @return             the deserialised record
+     * @throws IOException if a field type is unknown
+     */
     public Record deserialise(byte[] serialised) throws IOException {
         ByteArrayInputStream bais = new ByteArrayInputStream(serialised);
         DataInputStream dis = new DataInputStream(bais);

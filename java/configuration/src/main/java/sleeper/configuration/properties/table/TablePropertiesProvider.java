@@ -47,11 +47,11 @@ public class TablePropertiesProvider {
     private final Map<String, CacheEntry> cacheByName = new HashMap<>();
 
     public TablePropertiesProvider(InstanceProperties instanceProperties, AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient) {
-        this(instanceProperties, s3Client, dynamoDBClient, Instant::now);
+        this(instanceProperties, S3TableProperties.getStore(instanceProperties, s3Client, dynamoDBClient));
     }
 
-    protected TablePropertiesProvider(InstanceProperties instanceProperties, AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, Supplier<Instant> timeSupplier) {
-        this(instanceProperties, S3TableProperties.getStore(instanceProperties, s3Client, dynamoDBClient), timeSupplier);
+    public TablePropertiesProvider(InstanceProperties instanceProperties, TablePropertiesStore propertiesStore) {
+        this(instanceProperties, propertiesStore, Instant::now);
     }
 
     public TablePropertiesProvider(InstanceProperties instanceProperties, TablePropertiesStore propertiesStore, Supplier<Instant> timeSupplier) {

@@ -43,14 +43,16 @@ public class SystemTestCluster {
     private GeneratedIngestSourceFiles lastGeneratedFiles = null;
     private final List<String> jobIds = new ArrayList<>();
 
-    public SystemTestCluster(SystemTestContext context, SystemTestDrivers drivers) {
+    public SystemTestCluster(
+            SystemTestContext context, SystemTestDrivers baseDrivers) {
+        SystemTestDrivers instanceAdminDrivers = context.instance().adminDrivers();
         this.context = context.systemTest();
-        driver = drivers.dataGenerationTasks(context);
-        ingestByQueue = drivers.ingestByQueue(context);
-        sourceFiles = drivers.generatedSourceFiles(context.parameters(), context.systemTest());
-        tasksDriver = drivers.invokeIngestTasks(context);
-        waitForIngestJobs = drivers.waitForIngest(context);
-        waitForBulkImportJobs = drivers.waitForBulkImport(context);
+        driver = baseDrivers.dataGenerationTasks(context);
+        ingestByQueue = instanceAdminDrivers.ingestByQueue(context);
+        sourceFiles = baseDrivers.generatedSourceFiles(context.parameters(), context.systemTest());
+        tasksDriver = instanceAdminDrivers.invokeIngestTasks(context);
+        waitForIngestJobs = instanceAdminDrivers.waitForIngest(context);
+        waitForBulkImportJobs = instanceAdminDrivers.waitForBulkImport(context);
     }
 
     public SystemTestCluster updateProperties(Consumer<SystemTestStandaloneProperties> config) {

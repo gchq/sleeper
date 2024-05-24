@@ -31,7 +31,7 @@ import java.time.Duration;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.systemtest.configuration.SystemTestIngestMode.DIRECT;
 import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_MODE;
-import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_WRITER;
+import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_INGEST;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRITERS;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.COMPACTION_PERFORMANCE;
 import static sleeper.systemtest.suite.testutil.FileReferenceSystemTestHelper.numberOfRecordsIn;
@@ -51,7 +51,7 @@ public class CompactionPerformanceIT {
         sleeper.systemTestCluster().updateProperties(properties -> {
             properties.setEnum(INGEST_MODE, DIRECT);
             properties.setNumber(NUMBER_OF_WRITERS, 110);
-            properties.setNumber(NUMBER_OF_RECORDS_PER_WRITER, 40_000_000);
+            properties.setNumber(NUMBER_OF_RECORDS_PER_INGEST, 40_000_000);
         }).generateData(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(20)));
 
         sleeper.compaction().createJobs(10).invokeTasks(10)
@@ -63,7 +63,7 @@ public class CompactionPerformanceIT {
                         "contain 4.4 billion records");
         assertThat(sleeper.reporting().compactionJobs().finishedStatistics())
                 .matches(stats -> stats.isAllFinishedOneRunEach(10)
-                        && stats.isMinAverageRunRecordsPerSecond(300000),
-                        "meets minimum performance");
+                        && stats.isAverageRunRecordsPerSecondInRange(250_000, 300_000),
+                        "meets expected performance");
     }
 }

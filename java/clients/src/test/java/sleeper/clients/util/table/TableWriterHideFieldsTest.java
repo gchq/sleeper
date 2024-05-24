@@ -17,7 +17,7 @@ package sleeper.clients.util.table;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.clients.testutil.ToStringPrintStream;
+import sleeper.clients.testutil.ToStringConsoleOutput;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.testutil.ClientTestUtils.example;
@@ -31,7 +31,7 @@ class TableWriterHideFieldsTest {
         TableField field1 = factoryBuilder.addField("First");
         TableField field2 = factoryBuilder.addField("Field");
         TableWriterFactory factory = factoryBuilder.build();
-        ToStringPrintStream output = new ToStringPrintStream();
+        ToStringConsoleOutput output = new ToStringConsoleOutput();
 
         // When
         factory.tableBuilder()
@@ -52,7 +52,7 @@ class TableWriterHideFieldsTest {
         TableField field1 = factoryBuilder.addField("Field");
         TableField field2 = factoryBuilder.addField("Other");
         TableWriterFactory factory = factoryBuilder.build();
-        ToStringPrintStream output = new ToStringPrintStream();
+        ToStringConsoleOutput output = new ToStringConsoleOutput();
 
         // When
         factory.tableBuilder()

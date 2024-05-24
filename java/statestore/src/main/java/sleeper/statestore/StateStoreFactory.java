@@ -16,6 +16,7 @@
 package sleeper.statestore;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.s3.AmazonS3;
 import org.apache.hadoop.conf.Configuration;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -23,17 +24,21 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.s3.S3StateStore;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStoreNoSnapshots;
 
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 
 public class StateStoreFactory {
-    private final AmazonDynamoDB dynamoDB;
     private final InstanceProperties instanceProperties;
+    private final AmazonS3 s3;
+    private final AmazonDynamoDB dynamoDB;
     private final Configuration configuration;
 
-    public StateStoreFactory(AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties, Configuration configuration) {
-        this.dynamoDB = dynamoDB;
+    public StateStoreFactory(InstanceProperties instanceProperties, AmazonS3 s3, AmazonDynamoDB dynamoDB, Configuration configuration) {
         this.instanceProperties = instanceProperties;
+        this.s3 = s3;
+        this.dynamoDB = dynamoDB;
         this.configuration = configuration;
     }
 
@@ -44,6 +49,12 @@ public class StateStoreFactory {
         }
         if (stateStoreClassName.equals(S3StateStore.class.getName())) {
             return new S3StateStore(instanceProperties, tableProperties, dynamoDB, configuration);
+        }
+        if (stateStoreClassName.equals(DynamoDBTransactionLogStateStore.class.getName())) {
+            return DynamoDBTransactionLogStateStore.create(instanceProperties, tableProperties, dynamoDB, s3, configuration);
+        }
+        if (stateStoreClassName.equals(DynamoDBTransactionLogStateStoreNoSnapshots.class.getName())) {
+            return DynamoDBTransactionLogStateStoreNoSnapshots.create(instanceProperties, tableProperties, dynamoDB, s3);
         }
         throw new RuntimeException("Unknown StateStore class: " + stateStoreClassName);
     }

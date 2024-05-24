@@ -47,6 +47,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_BY_QUEUE_ROLE_ARN;
 import static sleeper.configuration.properties.instance.CommonProperty.FARGATE_VERSION;
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
@@ -73,10 +74,12 @@ public class RunWriteRandomDataTaskOnECS {
         this.ecsClient = ecsClient;
         this.args = List.of(
                 instanceProperties.get(CONFIG_BUCKET),
-                tableProperties.get(TABLE_NAME));
+                tableProperties.get(TABLE_NAME),
+                instanceProperties.get(INGEST_BY_QUEUE_ROLE_ARN));
     }
 
-    public RunWriteRandomDataTaskOnECS(InstanceProperties instanceProperties, TableProperties tableProperties,
+    public RunWriteRandomDataTaskOnECS(
+            InstanceProperties instanceProperties, TableProperties tableProperties,
             SystemTestStandaloneProperties systemTestProperties, AmazonECS ecsClient) {
         this.instanceProperties = instanceProperties;
         this.systemTestProperties = systemTestProperties;
@@ -84,6 +87,7 @@ public class RunWriteRandomDataTaskOnECS {
         this.args = List.of(
                 instanceProperties.get(CONFIG_BUCKET),
                 tableProperties.get(TABLE_NAME),
+                instanceProperties.get(INGEST_BY_QUEUE_ROLE_ARN),
                 systemTestProperties.get(SYSTEM_TEST_BUCKET_NAME));
     }
 
@@ -130,17 +134,19 @@ public class RunWriteRandomDataTaskOnECS {
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         AmazonDynamoDB dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
         AmazonECS ecsClient = AmazonECSClientBuilder.defaultClient();
-        SystemTestProperties systemTestProperties = new SystemTestProperties();
-        systemTestProperties.loadFromS3GivenInstanceId(s3Client, args[0]);
-        TableProperties tableProperties = new TablePropertiesProvider(systemTestProperties, s3Client, dynamoClient).getByName(args[1]);
-        RunWriteRandomDataTaskOnECS runWriteRandomDataTaskOnECS = new RunWriteRandomDataTaskOnECS(systemTestProperties, tableProperties, ecsClient);
-        List<RunTaskResult> results = runWriteRandomDataTaskOnECS.run();
-        if (args.length > 2) {
-            TasksJson.writeToFile(results, Paths.get(args[2]));
+        try {
+            SystemTestProperties systemTestProperties = new SystemTestProperties();
+            systemTestProperties.loadFromS3GivenInstanceId(s3Client, args[0]);
+            TableProperties tableProperties = new TablePropertiesProvider(systemTestProperties, s3Client, dynamoClient).getByName(args[1]);
+            RunWriteRandomDataTaskOnECS runWriteRandomDataTaskOnECS = new RunWriteRandomDataTaskOnECS(systemTestProperties, tableProperties, ecsClient);
+            List<RunTaskResult> results = runWriteRandomDataTaskOnECS.run();
+            if (args.length > 2) {
+                TasksJson.writeToFile(results, Paths.get(args[2]));
+            }
+        } finally {
+            s3Client.shutdown();
+            dynamoClient.shutdown();
+            ecsClient.shutdown();
         }
-
-        s3Client.shutdown();
-        dynamoClient.shutdown();
-        ecsClient.shutdown();
     }
 }

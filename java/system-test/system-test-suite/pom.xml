@@ -22,7 +22,7 @@
     <parent>
         <groupId>sleeper</groupId>
         <artifactId>system-test</artifactId>
-        <version>0.23.0-SNAPSHOT</version>
+        <version>0.24.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>system-test-suite</artifactId>
@@ -60,6 +60,11 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.approvaltests</groupId>
+            <artifactId>approvaltests</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

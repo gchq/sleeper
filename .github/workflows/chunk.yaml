@@ -16,36 +16,36 @@ jobs:
           java-version: '17'
           distribution: 'corretto'
       - name: Cache dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
-          path: java/.m2/repository
+          path: ${{ runner.temp }}/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-
       - name: Resolve dependencies
-        run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -Dmaven.repo.local=.m2/repository
+        run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
         working-directory: ./java
       - name: Get chunk configuration
         id: config
         working-directory: ./java/build
         run: |
           mvn compile exec:java -q -Dexec.mainClass=sleeper.build.chunks.GetChunkConfig \
-            -Dmaven.repo.local=../.m2/repository \
+            -Dmaven.repo.local=${{ runner.temp }}/.m2/repository \
             -Dexec.args="${{ inputs.chunkId }} github_actions_outputs ${{ github.workspace }}/.github/config/chunks.yaml" \
             >> $GITHUB_OUTPUT
       - name: Compile
-        run: mvn --batch-mode clean install -am -pl ${{ steps.config.outputs.moduleList }} -Pquick,skipShade -Dmaven.repo.local=.m2/repository
+        run: mvn --batch-mode clean install -am -pl ${{ steps.config.outputs.moduleList }} -Pquick,skipShade -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
         working-directory: ./java
       - name: Test
         id: test
-        run: mvn --batch-mode --fail-at-end verify -pl ${{ steps.config.outputs.moduleList }} -Dmaven.repo.local=.m2/repository -e
+        run: mvn --batch-mode --fail-at-end verify -pl ${{ steps.config.outputs.moduleList }} -Dmaven.repo.local=${{ runner.temp }}/.m2/repository -e
         working-directory: ./java
       - name: Generate site
         id: site
         if: failure() && steps.test.conclusion == 'failure'
         run: |
           mvn --batch-mode clean site-deploy -PcleanForSite -pl sleeper:aws,${{ steps.config.outputs.moduleList }} \
-            -Dmaven.repo.local=.m2/repository
+            -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
         working-directory: ./java
       - name: Upload site as artifact
         if: failure() && steps.site.conclusion == 'success'

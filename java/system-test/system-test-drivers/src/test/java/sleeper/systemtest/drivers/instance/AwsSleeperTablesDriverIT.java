@@ -36,6 +36,7 @@ import sleeper.core.CommonTestConstants;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 import sleeper.statestore.s3.S3StateStoreCreator;
+import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 import sleeper.systemtest.dsl.instance.SleeperTablesDriver;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -74,6 +75,7 @@ public class AwsSleeperTablesDriverIT {
         DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
         new DynamoDBStateStoreCreator(instanceProperties, dynamoDB).create();
         new S3StateStoreCreator(instanceProperties, dynamoDB).create();
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoDB).create();
     }
 
     @Test
