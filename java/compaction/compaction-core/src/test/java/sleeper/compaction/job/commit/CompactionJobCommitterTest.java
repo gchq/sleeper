@@ -131,7 +131,8 @@ public class CompactionJobCommitterTest extends CompactionJobCommitterTestBase {
             // When
             assertThatThrownBy(() -> jobCommitter(noJitter()).apply(commit))
                     .isInstanceOf(TimedOutWaitingForFileAssignmentsException.class)
-                    .hasCauseInstanceOf(FileReferenceNotAssignedToJobException.class);
+                    .cause().isInstanceOf(ReplaceRequestsFailedException.class)
+                    .cause().isInstanceOf(FileReferenceNotAssignedToJobException.class);
 
             // Then
             assertThat(stateStore().getFileReferences()).containsExactly(file);

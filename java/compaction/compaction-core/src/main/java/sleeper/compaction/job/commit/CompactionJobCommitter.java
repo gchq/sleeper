@@ -83,7 +83,7 @@ public class CompactionJobCommitter {
         // Compaction jobs are sent for execution before updating the state store to assign the input files to the job.
         // Sometimes the compaction can finish before the job assignment is finished. We wait for the job assignment
         // rather than immediately failing the job run.
-        FileReferenceNotAssignedToJobException failure = null;
+        ReplaceRequestsFailedException failure = null;
         for (int attempts = 0; attempts < jobAssignmentWaitAttempts; attempts++) {
             jobAssignmentWaitBackoff.waitBeforeAttempt(attempts);
             try {
@@ -91,8 +91,8 @@ public class CompactionJobCommitter {
                         replaceJobFileReferences(job.getId(), job.getPartitionId(), job.getInputFiles(), fileReference)));
                 return;
             } catch (ReplaceRequestsFailedException e) {
-                if (e.getCause() instanceof FileReferenceNotAssignedToJobException) {
-                    failure = (FileReferenceNotAssignedToJobException) e.getCause();
+                if (e.getFailures().stream().anyMatch(e1 -> e1 instanceof FileReferenceNotAssignedToJobException)) {
+                    failure = e;
                 } else {
                     throw e;
                 }
