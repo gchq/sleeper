@@ -151,7 +151,7 @@ public class ExponentialBackoffWithJitterTest {
         ExponentialBackoffWithJitter backoff = new ExponentialBackoffWithJitter(
                 waitRange, randomJitterFraction, recordWaits(foundWaits));
         for (int i = 1; i <= attempts; i++) {
-            backoff.waitBeforeAttemptNew(i);
+            backoff.waitBeforeAttempt(i);
         }
     }
 }

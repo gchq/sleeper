@@ -46,24 +46,13 @@ public class ExponentialBackoffWithJitter {
     }
 
     /**
-     * Waits for a time calculated from the number of attempts that have been made so far.
-     *
-     * @param  attempt              the number of attempts so far
-     * @return                      the number of milliseconds waited for
-     * @throws InterruptedException if the current thread was interrupted
-     */
-    public long waitBeforeAttempt(int attempt) throws InterruptedException {
-        return waitBeforeAttemptNew(attempt + 1);
-    }
-
-    /**
      * Waits for a time calculated from the number of attempts.
      *
      * @param  attempt              the number of the attempt that is about to be made, starting at 1
      * @return                      the number of milliseconds waited for
      * @throws InterruptedException if the current thread was interrupted
      */
-    public long waitBeforeAttemptNew(int attempt) throws InterruptedException {
+    public long waitBeforeAttempt(int attempt) throws InterruptedException {
         if (attempt == 1) { // No wait on first attempt
             return 0;
         }
