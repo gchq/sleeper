@@ -1006,7 +1006,7 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreOneTableTest
             assertThat(store.getFileReferences())
                     .containsExactly(activeFile);
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME))
-                    .containsExactly("gcFile");
+                    .isEmpty();
         }
     }
 
