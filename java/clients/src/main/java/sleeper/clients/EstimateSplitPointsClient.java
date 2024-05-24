@@ -61,12 +61,17 @@ public class EstimateSplitPointsClient {
         String schemaJson = Files.readString(schemaFile);
         Schema schema = new SchemaSerDe().fromJson(schemaJson);
         Configuration conf = HadoopConfigurationProvider.getConfigurationForClient();
-        List<Object> splitPoints;
-        try (CloseableIterator<Record> iterator = openRecordIterator(schema, conf, parquetPaths)) {
-            splitPoints = new EstimateSplitPoints(schema, () -> iterator, numPartitions, sketchSize).estimate();
-        }
+        List<Object> splitPoints = estimate(schema, conf, numPartitions, sketchSize, parquetPaths);
         try (BufferedWriter writer = Files.newBufferedWriter(outputFile, StandardCharsets.UTF_8)) {
             writeSplitPoints(splitPoints, writer, false);
+        }
+    }
+
+    public static List<Object> estimate(
+            Schema schema, Configuration conf, int numPartitions, int sketchSize,
+            List<org.apache.hadoop.fs.Path> parquetPaths) throws IOException {
+        try (CloseableIterator<Record> iterator = openRecordIterator(schema, conf, parquetPaths)) {
+            return new EstimateSplitPoints(schema, () -> iterator, numPartitions, sketchSize).estimate();
         }
     }
 
