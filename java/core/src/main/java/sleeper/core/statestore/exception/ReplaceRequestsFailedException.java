@@ -22,7 +22,15 @@ import java.util.List;
 
 /**
  * An exception for when some file references could not be replaced. Some may have been successful, and this tracks
- * which succeeded and which failed.
+ * which succeeded and which failed. Here are some possible failures:
+ * <ul>
+ * <li>{@link FileNotFoundException} if any of the input files do not exist</li>
+ * <li>{@link FileReferenceNotFoundException} if any of the input files are not referenced in the partition</li>
+ * <li>{@link FileReferenceNotAssignedToJobException} if any of the input files are not assigned to the job</li>
+ * <li>{@link NewReferenceSameAsOldReferenceException} if the output file has the same filename as any of the
+ * inputs</li>
+ * <li>{@link FileAlreadyExistsException} if the output file already exists</li>
+ * </ul>
  */
 public class ReplaceRequestsFailedException extends StateStoreException {
     private final transient List<ReplaceFileReferencesRequest> successfulRequests;
