@@ -133,6 +133,7 @@ import static sleeper.configuration.properties.instance.CompactionProperty.COMPA
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LAMBDA_MEMORY_IN_MB;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_MAX_RETRIES;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_CPU_ARCHITECTURE;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES;
@@ -227,7 +228,7 @@ public class CompactionStack extends NestedStack {
                 .queueName(dlQueueName)
                 .build();
         DeadLetterQueue compactionJobDefinitionsDeadLetterQueue = DeadLetterQueue.builder()
-                .maxReceiveCount(3)
+                .maxReceiveCount(instanceProperties.getInt(COMPACTION_JOB_MAX_RETRIES))
                 .queue(compactionDLQ)
                 .build();
         String queueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-CompactionJobQ");
