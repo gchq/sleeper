@@ -79,7 +79,10 @@ public class EmrBulkImportStack extends NestedStack {
         conditions.put("StringEquals", tagKeyCondition);
 
         bulkImportJobStarter.addToRolePolicy(PolicyStatement.Builder.create()
-                .actions(Lists.newArrayList("elasticmapreduce:RunJobFlow"))
+                .actions(Lists.newArrayList(
+                        "elasticmapreduce:RunJobFlow",
+                        "elasticmapreduce:AddTags"
+                ))
                 .effect(Effect.ALLOW)
                 .resources(Lists.newArrayList("*"))
                 .conditions(conditions)
