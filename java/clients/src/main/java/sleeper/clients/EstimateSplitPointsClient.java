@@ -15,6 +15,8 @@
  */
 package sleeper.clients;
 
+import org.apache.hadoop.conf.Configuration;
+
 import sleeper.configuration.EstimateSplitPoints;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.ConcatenatingIterator;
@@ -23,6 +25,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
+import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -57,8 +60,9 @@ public class EstimateSplitPointsClient {
 
         String schemaJson = Files.readString(schemaFile);
         Schema schema = new SchemaSerDe().fromJson(schemaJson);
+        Configuration conf = HadoopConfigurationProvider.getConfigurationForClient();
         List<Object> splitPoints;
-        try (CloseableIterator<Record> iterator = openRecordIterator(schema, parquetPaths)) {
+        try (CloseableIterator<Record> iterator = openRecordIterator(schema, conf, parquetPaths)) {
             splitPoints = new EstimateSplitPoints(schema, () -> iterator, numPartitions, sketchSize).estimate();
         }
         try (BufferedWriter writer = Files.newBufferedWriter(outputFile, StandardCharsets.UTF_8)) {
@@ -66,16 +70,20 @@ public class EstimateSplitPointsClient {
         }
     }
 
-    private static ConcatenatingIterator openRecordIterator(Schema schema, List<org.apache.hadoop.fs.Path> parquetPaths) {
+    private static ConcatenatingIterator openRecordIterator(
+            Schema schema, Configuration conf, List<org.apache.hadoop.fs.Path> parquetPaths) {
         return new ConcatenatingIterator(parquetPaths.stream()
-                .map(path -> recordIteratorSupplier(schema, path))
+                .map(path -> recordIteratorSupplier(schema, conf, path))
                 .collect(toUnmodifiableList()));
     }
 
-    private static Supplier<CloseableIterator<Record>> recordIteratorSupplier(Schema schema, org.apache.hadoop.fs.Path dataFile) {
+    private static Supplier<CloseableIterator<Record>> recordIteratorSupplier(
+            Schema schema, Configuration conf, org.apache.hadoop.fs.Path dataFile) {
         return () -> {
             try {
-                return new ParquetReaderIterator(new ParquetRecordReader.Builder(dataFile, schema).build());
+                return new ParquetReaderIterator(new ParquetRecordReader.Builder(dataFile, schema)
+                        .withConf(conf)
+                        .build());
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
