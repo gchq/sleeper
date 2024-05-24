@@ -35,6 +35,7 @@ import sleeper.core.statestore.exception.FileReferenceAlreadyExistsException;
 import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
+import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.core.statestore.exception.SplitRequestsFailedException;
 import sleeper.statestore.StateStoreFileUtils;
 
@@ -186,8 +187,12 @@ class S3FileReferenceStore implements FileReferenceStore {
     @Override
     public void atomicallyReplaceFileReferencesWithNewOnes(List<ReplaceFileReferencesRequest> requests) throws StateStoreException {
         Instant updateTime = clock.instant();
-        for (ReplaceFileReferencesRequest request : requests) {
-            FileReference.validateNewReferenceForJobOutput(request.getInputFiles(), request.getNewReference());
+        try {
+            for (ReplaceFileReferencesRequest request : requests) {
+                FileReference.validateNewReferenceForJobOutput(request.getInputFiles(), request.getNewReference());
+            }
+        } catch (StateStoreException e) {
+            throw new ReplaceRequestsFailedException(requests, e);
         }
         FileReferencesConditionCheck condition = list -> {
             Map<String, AllReferencesToAFile> filesByName = list.stream()
@@ -236,7 +241,11 @@ class S3FileReferenceStore implements FileReferenceStore {
                 }),
                 newFileReferences.stream())
                 .collect(Collectors.toUnmodifiableList());
-        updateS3Files(update, condition);
+        try {
+            updateS3Files(update, condition);
+        } catch (StateStoreException e) {
+            throw new ReplaceRequestsFailedException(requests, e);
+        }
     }
 
     @Override

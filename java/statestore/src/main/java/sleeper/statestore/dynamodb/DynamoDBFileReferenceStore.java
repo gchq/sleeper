@@ -51,6 +51,7 @@ import sleeper.core.statestore.exception.FileNotFoundException;
 import sleeper.core.statestore.exception.FileReferenceAlreadyExistsException;
 import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
+import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.core.statestore.exception.SplitRequestsFailedException;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
@@ -245,12 +246,25 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
 
     @Override
     public void atomicallyReplaceFileReferencesWithNewOnes(List<ReplaceFileReferencesRequest> requests) throws StateStoreException {
+        List<ReplaceFileReferencesRequest> succeeded = new ArrayList<>();
+        List<ReplaceFileReferencesRequest> failed = new ArrayList<>();
+        List<Exception> failures = new ArrayList<>();
         for (ReplaceFileReferencesRequest request : requests) {
-            atomicallyReplaceFileReferencesWithNewOne(request);
+            try {
+                atomicallyReplaceFileReferencesWithNewOne(request);
+                succeeded.add(request);
+            } catch (StateStoreException | RuntimeException e) {
+                LOGGER.error("Failed replacing file references for job {}", request.getJobId(), e);
+                failures.add(e);
+                failed.add(request);
+            }
+        }
+        if (!failures.isEmpty()) {
+            throw new ReplaceRequestsFailedException(succeeded, failed, failures);
         }
     }
 
-    public void atomicallyReplaceFileReferencesWithNewOne(ReplaceFileReferencesRequest request) throws StateStoreException {
+    private void atomicallyReplaceFileReferencesWithNewOne(ReplaceFileReferencesRequest request) throws StateStoreException {
         FileReference newReference = request.getNewReference();
         FileReference.validateNewReferenceForJobOutput(request.getInputFiles(), newReference);
         // Delete record for file for current status
