@@ -27,6 +27,15 @@ public class ReplaceFileReferencesRequest {
     private final List<String> inputFiles;
     private final FileReference newReference;
 
+    /**
+     * Creates a request to commit one job.
+     *
+     * @param  jobId        the job ID
+     * @param  partitionId  the ID of the partition the job ran against
+     * @param  inputFiles   the filenames of the job's input files
+     * @param  newReference the new reference to replace the input file references on the partition
+     * @return              the request
+     */
     public static ReplaceFileReferencesRequest replaceJobFileReferences(
             String jobId, String partitionId, List<String> inputFiles, FileReference newReference) {
         return new ReplaceFileReferencesRequest(jobId, partitionId, inputFiles, newReference);
