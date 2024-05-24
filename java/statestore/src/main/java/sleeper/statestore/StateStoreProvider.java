@@ -38,7 +38,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
  */
 public class StateStoreProvider {
     private final int cacheSize;
-    private final StateStoreCreator stateStoreFactory;
+    private final Factory stateStoreFactory;
     private final Map<String, StateStore> tableIdToStateStoreCache;
     private final Queue<String> tableIds;
 
@@ -47,11 +47,11 @@ public class StateStoreProvider {
         this(instanceProperties, new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, configuration)::getStateStore);
     }
 
-    public StateStoreProvider(InstanceProperties instanceProperties, StateStoreCreator stateStoreFactory) {
+    public StateStoreProvider(InstanceProperties instanceProperties, Factory stateStoreFactory) {
         this(instanceProperties.getInt(STATESTORE_PROVIDER_CACHE_SIZE), stateStoreFactory);
     }
 
-    protected StateStoreProvider(int cacheSize, StateStoreCreator stateStoreFactory) {
+    protected StateStoreProvider(int cacheSize, Factory stateStoreFactory) {
         this.cacheSize = cacheSize;
         this.stateStoreFactory = stateStoreFactory;
         this.tableIdToStateStoreCache = new HashMap<>();
@@ -80,7 +80,7 @@ public class StateStoreProvider {
     /**
      * Creates an instance of the state store client for a Sleeper table. Implemented by {@link StateStoreFactory}.
      */
-    public interface StateStoreCreator {
+    public interface Factory {
 
         /**
          * Creates a state store client.
