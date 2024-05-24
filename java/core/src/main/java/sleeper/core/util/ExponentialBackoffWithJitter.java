@@ -53,7 +53,18 @@ public class ExponentialBackoffWithJitter {
      * @throws InterruptedException if the current thread was interrupted
      */
     public long waitBeforeAttempt(int attempt) throws InterruptedException {
-        if (attempt == 0) { // No wait on first attempt
+        return waitBeforeAttemptNew(attempt + 1);
+    }
+
+    /**
+     * Waits for a time calculated from the number of attempts.
+     *
+     * @param  attempt              the number of the attempt that is about to be made, starting at 1
+     * @return                      the number of milliseconds waited for
+     * @throws InterruptedException if the current thread was interrupted
+     */
+    public long waitBeforeAttemptNew(int attempt) throws InterruptedException {
+        if (attempt == 1) { // No wait on first attempt
             return 0;
         }
         long waitMillis = getWaitMillisBeforeAttempt(attempt);
@@ -65,7 +76,7 @@ public class ExponentialBackoffWithJitter {
     private long getWaitMillisBeforeAttempt(int attempt) {
         double waitCeilingInSeconds = Math.min(
                 waitRange.maxWaitCeilingSecs,
-                waitRange.firstWaitCeilingSecs * 0.5 * Math.pow(2.0, attempt));
+                waitRange.firstWaitCeilingSecs * 0.5 * Math.pow(2.0, attempt - 1));
         return (long) (randomJitterFraction.getAsDouble() * waitCeilingInSeconds * 1000L);
     }
 

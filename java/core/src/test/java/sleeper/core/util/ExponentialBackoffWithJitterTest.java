@@ -150,8 +150,8 @@ public class ExponentialBackoffWithJitterTest {
             int attempts, WaitRange waitRange, DoubleSupplier randomJitterFraction) throws Exception {
         ExponentialBackoffWithJitter backoff = new ExponentialBackoffWithJitter(
                 waitRange, randomJitterFraction, recordWaits(foundWaits));
-        for (int i = 0; i < attempts; i++) {
-            backoff.waitBeforeAttempt(i);
+        for (int i = 1; i <= attempts; i++) {
+            backoff.waitBeforeAttemptNew(i);
         }
     }
 }
