@@ -151,7 +151,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
         }
     }
 
-    public void atomicallyReplaceFileReferencesWithNewOne(ReplaceFileReferencesRequest request) throws StateStoreException {
+    private void atomicallyReplaceFileReferencesWithNewOne(ReplaceFileReferencesRequest request) throws StateStoreException {
         for (String filename : request.getInputFiles()) {
             AllReferencesToAFile file = filesByFilename.get(filename);
             if (file == null) {
