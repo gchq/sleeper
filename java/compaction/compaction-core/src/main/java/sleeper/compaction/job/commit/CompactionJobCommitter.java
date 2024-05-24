@@ -24,6 +24,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
+import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
 
@@ -89,8 +90,12 @@ public class CompactionJobCommitter {
                 stateStore.atomicallyReplaceFileReferencesWithNewOnes(List.of(
                         replaceJobFileReferences(job.getId(), job.getPartitionId(), job.getInputFiles(), fileReference)));
                 return;
-            } catch (FileReferenceNotAssignedToJobException e) {
-                failure = e;
+            } catch (ReplaceRequestsFailedException e) {
+                if (e.getCause() instanceof FileReferenceNotAssignedToJobException) {
+                    failure = (FileReferenceNotAssignedToJobException) e.getCause();
+                } else {
+                    throw e;
+                }
             }
         }
         throw new TimedOutWaitingForFileAssignmentsException(failure);
