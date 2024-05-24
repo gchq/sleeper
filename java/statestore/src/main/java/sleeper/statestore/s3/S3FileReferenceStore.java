@@ -185,7 +185,7 @@ class S3FileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public void atomicallyReplaceFileReferencesWithNewOnes(List<ReplaceFileReferencesRequest> requests) throws StateStoreException {
+    public void atomicallyReplaceFileReferencesWithNewOnes(List<ReplaceFileReferencesRequest> requests) throws ReplaceRequestsFailedException {
         Instant updateTime = clock.instant();
         try {
             for (ReplaceFileReferencesRequest request : requests) {

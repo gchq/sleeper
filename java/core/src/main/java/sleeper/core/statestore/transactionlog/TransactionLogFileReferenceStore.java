@@ -74,7 +74,7 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public void atomicallyReplaceFileReferencesWithNewOnes(List<ReplaceFileReferencesRequest> requests) throws StateStoreException {
+    public void atomicallyReplaceFileReferencesWithNewOnes(List<ReplaceFileReferencesRequest> requests) throws ReplaceRequestsFailedException {
         try {
             head.addTransaction(clock.instant(), new ReplaceFileReferencesTransaction(requests));
         } catch (StateStoreException e) {

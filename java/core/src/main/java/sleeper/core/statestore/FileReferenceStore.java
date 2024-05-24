@@ -19,9 +19,8 @@ import sleeper.core.statestore.exception.FileAlreadyExistsException;
 import sleeper.core.statestore.exception.FileHasReferencesException;
 import sleeper.core.statestore.exception.FileNotFoundException;
 import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
-import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
-import sleeper.core.statestore.exception.NewReferenceSameAsOldReferenceException;
+import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.core.statestore.exception.SplitRequestsFailedException;
 
 import java.time.Instant;
@@ -117,15 +116,10 @@ public interface FileReferenceStore {
      * This will decrement the number of references for each of the input files. If no other references exist for those
      * files, they will become available for garbage collection.
      *
-     * @param  requests                                requests for jobs to each have their results atomically applied
-     * @throws FileNotFoundException                   if any of the input files do not exist
-     * @throws FileReferenceNotFoundException          if any of the input files are not referenced in the partition
-     * @throws FileReferenceNotAssignedToJobException  if any of the input files are not assigned to the job
-     * @throws NewReferenceSameAsOldReferenceException if the output file has the same filename as any of the inputs
-     * @throws FileAlreadyExistsException              if the output file already exists
-     * @throws StateStoreException                     if the update fails for another reason
+     * @param  requests                       requests for jobs to each have their results atomically applied
+     * @throws ReplaceRequestsFailedException if any of the updates fail
      */
-    void atomicallyReplaceFileReferencesWithNewOnes(List<ReplaceFileReferencesRequest> requests) throws StateStoreException;
+    void atomicallyReplaceFileReferencesWithNewOnes(List<ReplaceFileReferencesRequest> requests) throws ReplaceRequestsFailedException;
 
     /**
      * Atomically updates the job field of file references, as long as the job field is currently unset. This will be

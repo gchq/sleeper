@@ -245,7 +245,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public void atomicallyReplaceFileReferencesWithNewOnes(List<ReplaceFileReferencesRequest> requests) throws StateStoreException {
+    public void atomicallyReplaceFileReferencesWithNewOnes(List<ReplaceFileReferencesRequest> requests) throws ReplaceRequestsFailedException {
         List<ReplaceFileReferencesRequest> succeeded = new ArrayList<>();
         List<ReplaceFileReferencesRequest> failed = new ArrayList<>();
         List<Exception> failures = new ArrayList<>();
