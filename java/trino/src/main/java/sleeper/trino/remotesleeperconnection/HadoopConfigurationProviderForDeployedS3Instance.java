@@ -40,6 +40,7 @@ public class HadoopConfigurationProviderForDeployedS3Instance implements HadoopC
         Configuration configuration = getConfigurationForECS(instanceProperties);
         configuration.setClassLoader(HadoopConfigurationProviderForDeployedS3Instance.class.getClassLoader());
         configuration.set("fs.s3a.aws.credentials.provider", DefaultAWSCredentialsProviderChain.class.getName());
+        configuration.set("fs.s3a.impl", org.apache.hadoop.fs.s3a.S3AFileSystem.class.getName());
         configuration.set("fs.file.impl", org.apache.hadoop.fs.LocalFileSystem.class.getName());
         return configuration;
     }

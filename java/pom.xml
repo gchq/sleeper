@@ -21,7 +21,7 @@
     <groupId>sleeper</groupId>
     <artifactId>aws</artifactId>
     <packaging>pom</packaging>
-    <version>0.23.0-SNAPSHOT</version>
+    <version>0.24.0-SNAPSHOT</version>
 
     <modules>
         <module>core</module>
@@ -83,7 +83,7 @@
         -->
         <snappy.version>1.1.10.5</snappy.version>
         <!-- Hadoop declares an old version of Protobuf with vulnerabilities. Managed from 2.5.0. -->
-        <protobuf.version>4.26.1</protobuf.version>
+        <protobuf.version>4.27.0</protobuf.version>
         <!-- Hadoop declares an old version of Nimbus with vulnerabilities. Managed from 9.8.1. -->
         <nimbus-jose-jwt.version>9.39.1</nimbus-jose-jwt.version>
         <!-- Hadoop declares an old version of Avro with vulnerabilities. Managed from 1.7.7. -->
@@ -110,7 +110,7 @@
         <!-- jungrapht-visualization-samples also declares an old version, which is a dependency of the build module. -->
         <logback.version>1.5.6</logback.version>
         <aws-java-sdk.version>1.12.498</aws-java-sdk.version>
-        <aws-java-sdk-v2.version>2.25.57</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.25.59</aws-java-sdk-v2.version>
         <aws-crt.version>0.29.19</aws-crt.version>
         <aws-lambda-java-events.version>3.11.5</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.2.3</aws-lambda-java-core.version>
@@ -119,7 +119,7 @@
         <commons-codec.version>1.17.0</commons-codec.version>
         <commons-io.version>2.16.1</commons-io.version>
         <commons-configuration.version>2.10.1</commons-configuration.version>
-        <commons-compress.version>1.26.1</commons-compress.version>
+        <commons-compress.version>1.26.2</commons-compress.version>
         <commons-text.version>1.12.0</commons-text.version>
         <janino.version>3.1.12</janino.version>
         <commons-net.version>3.10.0</commons-net.version>

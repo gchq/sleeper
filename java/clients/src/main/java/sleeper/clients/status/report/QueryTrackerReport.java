@@ -79,7 +79,7 @@ public class QueryTrackerReport {
             QueryTrackerReporter reporter = getReporter(args, 1);
             TrackerQuery queryType = optionalArgument(args, 2)
                     .map(QueryTrackerReport::readTypeArgument)
-                    .orElse(promptForQueryType());
+                    .orElseGet(QueryTrackerReport::promptForQueryType);
             InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(s3Client, instanceId);
             QueryTrackerStore queryTrackerStore = new DynamoDBQueryTracker(instanceProperties, dynamoDBClient);
             new QueryTrackerReport(queryTrackerStore, queryType, reporter).run();
@@ -104,7 +104,12 @@ public class QueryTrackerReport {
     }
 
     private static TrackerQuery readTypeArgument(String type) {
-        return QUERY_TYPES.getOrDefault(type, promptForQueryType());
+        if (QUERY_TYPES.containsKey(type)) {
+            return QUERY_TYPES.get(type);
+        } else {
+            System.out.println("Invalid query type: " + type);
+            return promptForQueryType();
+        }
     }
 
     private static TrackerQuery promptForQueryType() {
