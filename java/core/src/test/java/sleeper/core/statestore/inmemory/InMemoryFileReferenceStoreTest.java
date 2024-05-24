@@ -35,6 +35,7 @@ import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.core.statestore.exception.NewReferenceSameAsOldReferenceException;
+import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.core.statestore.exception.SplitRequestsFailedException;
 
 import java.time.Duration;
@@ -654,7 +655,8 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             // Then
             assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOnes(List.of(
                     replaceJobFileReferences("job1", "root", List.of("oldFile"), newFile))))
-                    .isInstanceOf(FileReferenceNotFoundException.class);
+                    .isInstanceOf(ReplaceRequestsFailedException.class)
+                    .hasCauseInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).containsExactly(newFile);
             assertThat(store.getFileReferencesWithNoJobId()).containsExactly(newFile);
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME))
@@ -674,7 +676,8 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             // When / Then
             assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOnes(List.of(
                     replaceJobFileReferences("job1", "root", List.of("oldFile"), newFile))))
-                    .isInstanceOf(FileReferenceNotAssignedToJobException.class);
+                    .isInstanceOf(ReplaceRequestsFailedException.class)
+                    .hasCauseInstanceOf(FileReferenceNotAssignedToJobException.class);
         }
 
         @Test
@@ -685,7 +688,8 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             // When / Then
             assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOnes(List.of(
                     replaceJobFileReferences("job1", "root", List.of("oldFile"), newFile))))
-                    .isInstanceOf(FileNotFoundException.class);
+                    .isInstanceOf(ReplaceRequestsFailedException.class)
+                    .hasCauseInstanceOf(FileNotFoundException.class);
             assertThat(store.getFileReferences()).isEmpty();
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
         }
@@ -702,7 +706,8 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             // When / Then
             assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOnes(List.of(
                     replaceJobFileReferences("job1", "root", List.of("oldFile1", "oldFile2"), newFile))))
-                    .isInstanceOf(FileNotFoundException.class);
+                    .isInstanceOf(ReplaceRequestsFailedException.class)
+                    .hasCauseInstanceOf(FileNotFoundException.class);
             assertThat(store.getFileReferences()).containsExactly(withJobId("job1", oldFile1));
             assertThat(store.getFileReferencesWithNoJobId()).isEmpty();
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
@@ -719,7 +724,8 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             // When / Then
             assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOnes(List.of(
                     replaceJobFileReferences("job1", "root", List.of("file"), factory.rootFile("file2", 100L)))))
-                    .isInstanceOf(FileReferenceNotFoundException.class);
+                    .isInstanceOf(ReplaceRequestsFailedException.class)
+                    .hasCauseInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).containsExactly(existingReference);
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
         }
@@ -735,7 +741,8 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             // When / Then
             assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOnes(List.of(
                     replaceJobFileReferences("job1", "root", List.of("file1"), file))))
-                    .isInstanceOf(NewReferenceSameAsOldReferenceException.class);
+                    .isInstanceOf(ReplaceRequestsFailedException.class)
+                    .hasCauseInstanceOf(NewReferenceSameAsOldReferenceException.class);
             assertThat(store.getFileReferences()).containsExactly(withJobId("job1", file));
             assertThat(store.getFileReferencesWithNoJobId()).isEmpty();
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
@@ -755,7 +762,8 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             // When / Then
             assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOnes(List.of(
                     replaceJobFileReferences("job1", "L", List.of("oldFile"), newReference))))
-                    .isInstanceOf(FileAlreadyExistsException.class);
+                    .isInstanceOf(ReplaceRequestsFailedException.class)
+                    .hasCauseInstanceOf(FileAlreadyExistsException.class);
             assertThat(store.getFileReferences()).containsExactlyInAnyOrder(
                     withJobId("job1", existingReference), newReference);
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();

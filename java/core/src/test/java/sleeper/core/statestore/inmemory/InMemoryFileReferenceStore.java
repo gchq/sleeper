@@ -15,6 +15,9 @@
  */
 package sleeper.core.statestore.inmemory;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.AssignJobIdRequest;
@@ -31,11 +34,13 @@ import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.core.statestore.exception.NewReferenceSameAsOldReferenceException;
+import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.core.statestore.exception.SplitRequestsFailedException;
 
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -52,6 +57,7 @@ import static sleeper.core.statestore.AllReferencesToAFile.fileWithOneReference;
  * An in-memory file reference store implementation backed by a TreeMap.
  */
 public class InMemoryFileReferenceStore implements FileReferenceStore {
+    public static final Logger LOGGER = LoggerFactory.getLogger(InMemoryFileReferenceStore.class);
 
     private final Map<String, AllReferencesToAFile> filesByFilename = new TreeMap<>();
     private Clock clock = Clock.systemUTC();
@@ -146,8 +152,21 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
 
     @Override
     public void atomicallyReplaceFileReferencesWithNewOnes(List<ReplaceFileReferencesRequest> requests) throws StateStoreException {
+        List<ReplaceFileReferencesRequest> succeeded = new ArrayList<>();
+        List<ReplaceFileReferencesRequest> failed = new ArrayList<>();
+        List<Exception> failures = new ArrayList<>();
         for (ReplaceFileReferencesRequest request : requests) {
-            atomicallyReplaceFileReferencesWithNewOne(request);
+            try {
+                atomicallyReplaceFileReferencesWithNewOne(request);
+                succeeded.add(request);
+            } catch (StateStoreException | RuntimeException e) {
+                LOGGER.error("Failed replacing file references for job {}", request.getJobId(), e);
+                failures.add(e);
+                failed.add(request);
+            }
+        }
+        if (!failures.isEmpty()) {
+            throw new ReplaceRequestsFailedException(succeeded, failed, failures);
         }
     }
 
