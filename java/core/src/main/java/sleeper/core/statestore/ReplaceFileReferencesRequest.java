@@ -16,6 +16,7 @@
 package sleeper.core.statestore;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * A request to apply the results of a compaction in the state store. The old references will be deleted and a new
@@ -48,6 +49,17 @@ public class ReplaceFileReferencesRequest {
         this.newReference = newReference;
     }
 
+    /**
+     * Creates a copy of this request with the update time removed in the file reference. Used when storing a
+     * transaction to apply this request where the update time is held separately.
+     *
+     * @return the copy
+     */
+    public ReplaceFileReferencesRequest withNoUpdateTime() {
+        return new ReplaceFileReferencesRequest(jobId, partitionId, inputFiles,
+                newReference.toBuilder().lastStateStoreUpdateTime(null).build());
+    }
+
     public String getJobId() {
         return jobId;
     }
@@ -62,6 +74,28 @@ public class ReplaceFileReferencesRequest {
 
     public FileReference getNewReference() {
         return newReference;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(jobId, partitionId, inputFiles, newReference);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof ReplaceFileReferencesRequest)) {
+            return false;
+        }
+        ReplaceFileReferencesRequest other = (ReplaceFileReferencesRequest) obj;
+        return Objects.equals(jobId, other.jobId) && Objects.equals(partitionId, other.partitionId) && Objects.equals(inputFiles, other.inputFiles) && Objects.equals(newReference, other.newReference);
+    }
+
+    @Override
+    public String toString() {
+        return "ReplaceFileReferencesRequest{jobId=" + jobId + ", partitionId=" + partitionId + ", inputFiles=" + inputFiles + ", newReference=" + newReference + "}";
     }
 
 }
