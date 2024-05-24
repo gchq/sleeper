@@ -27,6 +27,10 @@ import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
 
+import java.util.List;
+
+import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
+
 public class CompactionJobCommitter {
     public static final Logger LOGGER = LoggerFactory.getLogger(CompactionJobCommitter.class);
 
@@ -82,7 +86,8 @@ public class CompactionJobCommitter {
         for (int attempts = 0; attempts < jobAssignmentWaitAttempts; attempts++) {
             jobAssignmentWaitBackoff.waitBeforeAttempt(attempts);
             try {
-                stateStore.atomicallyReplaceFileReferencesWithNewOne(job.getId(), job.getPartitionId(), job.getInputFiles(), fileReference);
+                stateStore.atomicallyReplaceFileReferencesWithNewOnes(List.of(
+                        replaceJobFileReferences(job.getId(), job.getPartitionId(), job.getInputFiles(), fileReference)));
                 return;
             } catch (FileReferenceNotAssignedToJobException e) {
                 failure = e;
