@@ -68,8 +68,10 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.ingest.IngestFactory;
 import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.io.parquet.record.ParquetRecordReader;
@@ -94,7 +96,7 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static sleeper.compaction.job.execution.testutils.CompactSortedFilesTestUtils.assignJobIdsToInputFiles;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -299,8 +301,10 @@ public class ECSCompactionTaskRunnerLocalStackIT {
             // Given
             configureJobQueuesWithMaxReceiveCount(2);
             StateStore stateStore = mock(StateStore.class);
-            doThrow(new StateStoreException("Failed to update state store"))
-                    .when(stateStore).atomicallyReplaceFileReferencesWithNewOnes(anyList());
+            doAnswer(invocation -> {
+                List<ReplaceFileReferencesRequest> requests = invocation.getArgument(0);
+                throw new ReplaceRequestsFailedException(requests, new IllegalStateException("Failed to update state store"));
+            }).when(stateStore).atomicallyReplaceFileReferencesWithNewOnes(anyList());
             FileReference fileReference1 = ingestFileWith100Records();
             FileReference fileReference2 = ingestFileWith100Records();
             String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", fileReference1, fileReference2);
@@ -322,8 +326,10 @@ public class ECSCompactionTaskRunnerLocalStackIT {
             // Given
             configureJobQueuesWithMaxReceiveCount(1);
             StateStore stateStore = mock(StateStore.class);
-            doThrow(new StateStoreException("Failed to update state store"))
-                    .when(stateStore).atomicallyReplaceFileReferencesWithNewOnes(anyList());
+            doAnswer(invocation -> {
+                List<ReplaceFileReferencesRequest> requests = invocation.getArgument(0);
+                throw new ReplaceRequestsFailedException(requests, new IllegalStateException("Failed to update state store"));
+            }).when(stateStore).atomicallyReplaceFileReferencesWithNewOnes(anyList());
             FileReference fileReference1 = ingestFileWith100Records();
             FileReference fileReference2 = ingestFileWith100Records();
             String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", fileReference1, fileReference2);
