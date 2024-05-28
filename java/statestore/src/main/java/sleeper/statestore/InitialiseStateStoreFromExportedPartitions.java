@@ -49,6 +49,13 @@ public class InitialiseStateStoreFromExportedPartitions {
     private InitialiseStateStoreFromExportedPartitions() {
     }
 
+    /**
+     * Initialises a state store from exported partitions from the command line.
+     *
+     * @param  args                the command line arguments
+     * @throws StateStoreException if the state store initialisation fails
+     * @throws IOException         if we could not read the partitions file
+     */
     public static void main(String[] args) throws StateStoreException, IOException {
         if (3 != args.length) {
             System.out.println("Usage: <instance-id> <table-name> <partitions-file>");

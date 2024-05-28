@@ -35,6 +35,10 @@ import java.util.Optional;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 
+/**
+ * Stores snapshots derived from a transaction log. Holds an index of snapshots in DynamoDB, and stores snapshot data in
+ * S3.
+ */
 public class DynamoDBTransactionLogSnapshotStore {
     public static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBTransactionLogSnapshotStore.class);
 
@@ -68,24 +72,50 @@ public class DynamoDBTransactionLogSnapshotStore {
         this.configuration = configuration;
     }
 
+    /**
+     * Loads the latest snapshot of files if it meets a minimum transaction number. Used by the state store to implement
+     * {@link sleeper.core.statestore.transactionlog.TransactionLogSnapshotLoader}.
+     *
+     * @param  transactionNumber the minimum transaction number to load snapshot data from S3
+     * @return                   the latest snapshot if there is one that meets the minimum transaction number
+     */
     public Optional<TransactionLogSnapshot> loadLatestFilesSnapshotIfAtMinimumTransaction(long transactionNumber) {
         return latestMetadataLoader.load().getFilesSnapshot()
                 .filter(metadata -> metadata.getTransactionNumber() >= transactionNumber)
                 .map(this::loadFilesSnapshot);
     }
 
+    /**
+     * Loads the latest snapshot of partitions if it meets a minimum transaction number. Used by the state store to
+     * implement {@link sleeper.core.statestore.transactionlog.TransactionLogSnapshotLoader}.
+     *
+     * @param  transactionNumber the minimum transaction number to load snapshot data from S3
+     * @return                   the latest snapshot if there is one that meets the minimum transaction number
+     */
     public Optional<TransactionLogSnapshot> loadLatestPartitionsSnapshotIfAtMinimumTransaction(long transactionNumber) {
         return latestMetadataLoader.load().getPartitionsSnapshot()
                 .filter(metadata -> metadata.getTransactionNumber() >= transactionNumber)
                 .map(this::loadPartitionsSnapshot);
     }
 
+    /**
+     * Loads the snapshot of files based on metadata for the latest snapshot held in the index.
+     *
+     * @param  snapshots the metadata
+     * @return           the snapshot, or the initial state if there was no snapshot in the index
+     */
     public TransactionLogSnapshot loadFilesSnapshot(LatestSnapshots snapshots) {
         return snapshots.getFilesSnapshot()
                 .map(this::loadFilesSnapshot)
                 .orElseGet(TransactionLogSnapshot::filesInitialState);
     }
 
+    /**
+     * Loads the snapshot of partitions based on metadata for the latest snapshot held in the index.
+     *
+     * @param  snapshots the metadata
+     * @return           the snapshot, or the initial state if there was no snapshot in the index
+     */
     public TransactionLogSnapshot loadPartitionsSnapshot(LatestSnapshots snapshots) {
         return snapshots.getPartitionsSnapshot()
                 .map(this::loadPartitionsSnapshot)
@@ -108,6 +138,13 @@ public class DynamoDBTransactionLogSnapshotStore {
         }
     }
 
+    /**
+     * Saves a snapshot of files to S3 and to the index. Deletes the file if the metadata fails to save in the index.
+     *
+     * @param  snapshot                   the snapshot
+     * @throws IOException                if the snapshot fails to save to S3
+     * @throws DuplicateSnapshotException if there is already a snapshot for the given transaction number
+     */
     public void saveFilesSnapshot(TransactionLogSnapshot snapshot) throws IOException, DuplicateSnapshotException {
         TransactionLogSnapshotMetadata snapshotMetadata = TransactionLogSnapshotMetadata.forFiles(
                 getBasePath(), snapshot.getTransactionNumber());
@@ -124,6 +161,14 @@ public class DynamoDBTransactionLogSnapshotStore {
         }
     }
 
+    /**
+     * Saves a snapshot of partitions to S3 and to the index. Deletes the file if the metadata fails to save in the
+     * index.
+     *
+     * @param  snapshot                   the snapshot
+     * @throws IOException                if the snapshot fails to save to S3
+     * @throws DuplicateSnapshotException if there is already a snapshot for the given transaction number
+     */
     public void savePartitionsSnapshot(TransactionLogSnapshot snapshot) throws IOException, DuplicateSnapshotException {
         TransactionLogSnapshotMetadata snapshotMetadata = TransactionLogSnapshotMetadata.forPartitions(
                 getBasePath(), snapshot.getTransactionNumber());
@@ -145,11 +190,30 @@ public class DynamoDBTransactionLogSnapshotStore {
                 + tableProperties.get(TableProperty.TABLE_ID);
     }
 
+    /**
+     * Loads the metadata of the latest snapshots from the index.
+     */
     public interface LatestSnapshotsMetadataLoader {
+
+        /**
+         * Loads the latest snapshots metadata.
+         *
+         * @return the metadata
+         */
         LatestSnapshots load();
     }
 
+    /**
+     * Saves the metadata of a snapshot in the index.
+     */
     public interface SnapshotMetadataSaver {
+
+        /**
+         * Saves the snapshot metadata.
+         *
+         * @param  snapshot                   the metadata
+         * @throws DuplicateSnapshotException if there is already a snapshot for the given transaction number
+         */
         void save(TransactionLogSnapshotMetadata snapshot) throws DuplicateSnapshotException;
     }
 }

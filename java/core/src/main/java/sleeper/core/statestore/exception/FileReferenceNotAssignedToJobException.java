@@ -19,6 +19,9 @@ package sleeper.core.statestore.exception;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStoreException;
 
+/**
+ * An exception for when a job could not be committed because a file reference is not assigned to that job.
+ */
 public class FileReferenceNotAssignedToJobException extends StateStoreException {
 
     public FileReferenceNotAssignedToJobException(FileReference fileReference, String jobId) {

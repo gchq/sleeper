@@ -1,16 +1,20 @@
 {
-  "jobId": "job",
-  "partitionId": "root",
-  "inputFiles": [
-    "file1.parquet",
-    "file2.parquet"
-  ],
-  "newReference": {
-    "filename": "file3.parquet",
-    "partitionId": "root",
-    "numberOfRecords": 100,
-    "jobId": null,
-    "countApproximate": false,
-    "onlyContainsDataForThisPartition": true
-  }
+  "jobs": [
+    {
+      "jobId": "job",
+      "partitionId": "root",
+      "inputFiles": [
+        "file1.parquet",
+        "file2.parquet"
+      ],
+      "newReference": {
+        "filename": "file3.parquet",
+        "partitionId": "root",
+        "numberOfRecords": 100,
+        "jobId": null,
+        "countApproximate": false,
+        "onlyContainsDataForThisPartition": true
+      }
+    }
+  ]
 }

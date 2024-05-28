@@ -17,15 +17,33 @@ package sleeper.statestore.transactionlog;
 
 import java.util.Objects;
 
+/**
+ * Metadata about a snapshot derived from a transaction log, to be held in an index.
+ */
 public class TransactionLogSnapshotMetadata {
     private final String path;
     private final SnapshotType type;
     private final long transactionNumber;
 
+    /**
+     * Creates metadata about a snapshot of files. Generates a path to the file in which the snapshot will be stored.
+     *
+     * @param  basePath          the base path under which data is held for the given Sleeper table
+     * @param  transactionNumber the transaction number the snapshot was made against
+     * @return                   the metadata
+     */
     public static TransactionLogSnapshotMetadata forFiles(String basePath, long transactionNumber) {
         return new TransactionLogSnapshotMetadata(getFilesPath(basePath, transactionNumber), SnapshotType.FILES, transactionNumber);
     }
 
+    /**
+     * Creates metadata about a snapshot of partitions. Generates a path to the file in which the snapshot will be
+     * stored.
+     *
+     * @param  basePath          the base path under which data is held for the given Sleeper table
+     * @param  transactionNumber the transaction number the snapshot was made against
+     * @return                   the metadata
+     */
     public static TransactionLogSnapshotMetadata forPartitions(String basePath, long transactionNumber) {
         return new TransactionLogSnapshotMetadata(getPartitionsPath(basePath, transactionNumber), SnapshotType.PARTITIONS, transactionNumber);
     }

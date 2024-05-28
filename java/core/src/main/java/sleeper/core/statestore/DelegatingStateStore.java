@@ -19,12 +19,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.partition.Partition;
+import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
+import sleeper.core.statestore.exception.SplitRequestsFailedException;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
+/**
+ * A state store implementation that delegates to implementations of a file reference and partition store.
+ */
 public class DelegatingStateStore implements StateStore {
     public static final Logger LOGGER = LoggerFactory.getLogger(DelegatingStateStore.class);
     private final FileReferenceStore fileReferenceStore;
@@ -68,8 +73,8 @@ public class DelegatingStateStore implements StateStore {
     }
 
     @Override
-    public void atomicallyReplaceFileReferencesWithNewOne(String jobId, String partitionId, List<String> filesProcessed, FileReference newReference) throws StateStoreException {
-        fileReferenceStore.atomicallyReplaceFileReferencesWithNewOne(jobId, partitionId, filesProcessed, newReference);
+    public void atomicallyReplaceFileReferencesWithNewOnes(List<ReplaceFileReferencesRequest> requests) throws ReplaceRequestsFailedException {
+        fileReferenceStore.atomicallyReplaceFileReferencesWithNewOnes(requests);
     }
 
     @Override
@@ -133,6 +138,11 @@ public class DelegatingStateStore implements StateStore {
         fileReferenceStore.initialise();
     }
 
+    /**
+     * Initialises just the file reference store.
+     *
+     * @throws StateStoreException thrown if the initialisation fails
+     */
     public void setInitialFileReferences() throws StateStoreException {
         fileReferenceStore.initialise();
     }

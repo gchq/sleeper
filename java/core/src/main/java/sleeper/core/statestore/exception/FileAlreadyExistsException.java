@@ -18,6 +18,9 @@ package sleeper.core.statestore.exception;
 
 import sleeper.core.statestore.StateStoreException;
 
+/**
+ * An exception for when a file could not be added because it already exists.
+ */
 public class FileAlreadyExistsException extends StateStoreException {
     public FileAlreadyExistsException(String filename) {
         this(filename, null);

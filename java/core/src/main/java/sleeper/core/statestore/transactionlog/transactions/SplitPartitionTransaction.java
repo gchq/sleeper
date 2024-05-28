@@ -28,6 +28,10 @@ import java.util.Set;
 
 import static java.util.stream.Collectors.toUnmodifiableSet;
 
+/**
+ * A transaction to add new partitions to the tree. This is done by setting child partitions for a partition that was
+ * previously a leaf partition. This will turn the leaf partition into a parent and add new leaf partitions below it.
+ */
 public class SplitPartitionTransaction implements PartitionTransaction {
 
     private final Partition parent;

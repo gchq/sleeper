@@ -41,6 +41,7 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
+import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
 import static sleeper.core.statestore.SplitFileReference.referenceForChildPartition;
 import static sleeper.core.statestore.SplitFileReferenceRequest.splitFileToChildPartitions;
 
@@ -68,8 +69,8 @@ public class TransactionSerDeTest {
         FileReferenceTransaction transaction = new AddFilesTransaction(
                 AllReferencesToAFile.newFilesWithReferences(Stream.of(
                         fileFactory.rootFile("file1.parquet", 100),
-                        fileFactory.rootFile("file2.parquet", 200)),
-                        updateTime)
+                        fileFactory.rootFile("file2.parquet", 200)))
+                        .map(file -> file.withCreatedUpdateTime(updateTime))
                         .collect(toUnmodifiableList()));
 
         // When / Then
@@ -91,8 +92,9 @@ public class TransactionSerDeTest {
         FileReferenceTransaction transaction = new AddFilesTransaction(
                 AllReferencesToAFile.newFilesWithReferences(Stream.of(
                         referenceForChildPartition(file, "L"),
-                        referenceForChildPartition(file, "R")),
-                        updateTime).collect(toUnmodifiableList()));
+                        referenceForChildPartition(file, "R")))
+                        .map(fileWithReferences -> fileWithReferences.withCreatedUpdateTime(updateTime))
+                        .collect(toUnmodifiableList()));
 
         // When / Then
         whenSerDeThenMatchAndVerify(schema, transaction);
@@ -203,9 +205,10 @@ public class TransactionSerDeTest {
         PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
         Instant updateTime = Instant.parse("2023-03-26T10:05:01Z");
         FileReferenceFactory fileFactory = FileReferenceFactory.fromUpdatedAt(partitions, updateTime);
-        FileReferenceTransaction transaction = new ReplaceFileReferencesTransaction(
-                "job", "root", List.of("file1.parquet", "file2.parquet"),
-                fileFactory.rootFile("file3.parquet", 100));
+        FileReferenceTransaction transaction = new ReplaceFileReferencesTransaction(List.of(
+                replaceJobFileReferences(
+                        "job", "root", List.of("file1.parquet", "file2.parquet"),
+                        fileFactory.rootFile("file3.parquet", 100))));
 
         // When / Then
         whenSerDeThenMatchAndVerify(schema, transaction);

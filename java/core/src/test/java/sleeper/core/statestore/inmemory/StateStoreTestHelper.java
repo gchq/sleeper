@@ -23,35 +23,81 @@ import sleeper.core.statestore.StateStore;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * A test helper for creating in-memory implementations of the state store.
+ */
 public class StateStoreTestHelper {
 
     private StateStoreTestHelper() {
     }
 
+    /**
+     * Creates an in-memory state store with the given partitions, where the partitions cannot be changed.
+     *
+     * @param  partitions the partitions
+     * @return            the state store
+     */
     public static StateStore inMemoryStateStoreWithFixedPartitions(Partition... partitions) {
         return inMemoryStateStoreWithFixedPartitions(Arrays.asList(partitions));
     }
 
+    /**
+     * Creates an in-memory state store with the given partitions, where the partitions cannot be changed.
+     *
+     * @param  partitions the partitions
+     * @return            the state store
+     */
     public static StateStore inMemoryStateStoreWithFixedPartitions(List<Partition> partitions) {
         return new DelegatingStateStore(new InMemoryFileReferenceStore(), new FixedPartitionStore(partitions));
     }
 
+    /**
+     * Creates an in-memory state store with a single root partition derived from a schema, where the partitions cannot
+     * be changed.
+     *
+     * @param  schema the schema
+     * @return        the state store
+     */
     public static StateStore inMemoryStateStoreWithFixedSinglePartition(Schema schema) {
         return new DelegatingStateStore(new InMemoryFileReferenceStore(), new FixedPartitionStore(schema));
     }
 
+    /**
+     * Creates an in-memory state store initialised with a single root partition derived from a schema.
+     *
+     * @param  schema the schema
+     * @return        the state store
+     */
     public static StateStore inMemoryStateStoreWithSinglePartition(Schema schema) {
         return new DelegatingStateStore(new InMemoryFileReferenceStore(), InMemoryPartitionStore.withSinglePartition(schema));
     }
 
+    /**
+     * Creates an in-memory state store that has not been initialised. No partitions will be present.
+     *
+     * @param  schema the schema
+     * @return        the state store
+     */
     public static StateStore inMemoryStateStoreUninitialised(Schema schema) {
         return new DelegatingStateStore(new InMemoryFileReferenceStore(), new InMemoryPartitionStore(schema));
     }
 
+    /**
+     * Creates an in-memory state store initialised with the given partitions.
+     *
+     * @param  partitions the partitions
+     * @return            the state store
+     */
     public static StateStore inMemoryStateStoreWithPartitions(List<Partition> partitions) {
         return new DelegatingStateStore(new InMemoryFileReferenceStore(), new InMemoryPartitionStore(partitions));
     }
 
+    /**
+     * Creates an in-memory state store that has not been initialised. No partitions will be present. This must be
+     * initialised with partitions explicitly, as the schema will not be available to derive a root partition.
+     *
+     * @return the state store
+     */
     public static StateStore inMemoryStateStoreWithNoPartitions() {
         return new DelegatingStateStore(new InMemoryFileReferenceStore(), new InMemoryPartitionStore(List.of()));
     }

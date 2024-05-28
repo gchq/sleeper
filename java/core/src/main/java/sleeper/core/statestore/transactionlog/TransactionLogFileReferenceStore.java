@@ -23,9 +23,11 @@ import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceStore;
+import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.SplitFileReferenceRequest;
-import sleeper.core.statestore.SplitRequestsFailedException;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
+import sleeper.core.statestore.exception.SplitRequestsFailedException;
 import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
 import sleeper.core.statestore.transactionlog.transactions.AssignJobIdsTransaction;
 import sleeper.core.statestore.transactionlog.transactions.ClearFilesTransaction;
@@ -43,6 +45,9 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 
+/**
+ * A file reference store backed by a log of transactions. Part of {@link TransactionLogStateStore}.
+ */
 class TransactionLogFileReferenceStore implements FileReferenceStore {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(TransactionLogFileReferenceStore.class);
@@ -69,9 +74,12 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public void atomicallyReplaceFileReferencesWithNewOne(String jobId, String partitionId, List<String> inputFiles, FileReference newReference) throws StateStoreException {
-        head.addTransaction(clock.instant(), new ReplaceFileReferencesTransaction(
-                jobId, partitionId, inputFiles, newReference));
+    public void atomicallyReplaceFileReferencesWithNewOnes(List<ReplaceFileReferencesRequest> requests) throws ReplaceRequestsFailedException {
+        try {
+            head.addTransaction(clock.instant(), new ReplaceFileReferencesTransaction(requests));
+        } catch (StateStoreException e) {
+            throw new ReplaceRequestsFailedException(requests, e);
+        }
     }
 
     @Override

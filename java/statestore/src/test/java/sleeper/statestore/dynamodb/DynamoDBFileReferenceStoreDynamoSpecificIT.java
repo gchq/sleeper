@@ -25,9 +25,9 @@ import sleeper.core.statestore.AllReferencesToAFileTestHelper;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.SplitFileReference;
 import sleeper.core.statestore.SplitFileReferenceRequest;
-import sleeper.core.statestore.SplitRequestsFailedException;
 import sleeper.core.statestore.exception.FileNotFoundException;
 import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
+import sleeper.core.statestore.exception.SplitRequestsFailedException;
 
 import java.time.Duration;
 import java.time.Instant;

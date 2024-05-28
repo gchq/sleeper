@@ -22,39 +22,80 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.reflect.TypeToken;
 
+import sleeper.core.statestore.transactionlog.transactions.TransactionSerDe;
 import sleeper.core.util.GsonConfig;
 
 import java.util.Collection;
 import java.util.List;
 
+/**
+ * Serialises a file reference to and from a JSON string.
+ */
 public class FileReferenceSerDe {
     private final Gson gson = GsonConfig.standardBuilder().create();
 
+    /**
+     * Serialises a file reference to JSON.
+     *
+     * @param  file the file reference
+     * @return      the JSON string
+     */
     public String toJson(FileReference file) {
         return gson.toJson(file);
     }
 
+    /**
+     * Deserialises a file reference from JSON.
+     *
+     * @param  json the JSON string
+     * @return      the file reference
+     */
     public FileReference fromJson(String json) {
         return gson.fromJson(json, FileReference.class);
     }
 
+    /**
+     * Serialises file references as a JSON array.
+     *
+     * @param  files the file references
+     * @return       the JSON string
+     */
     public String collectionToJson(Collection<FileReference> files) {
         JsonArray array = new JsonArray();
         files.forEach(reference -> array.add(gson.toJsonTree(reference)));
         return gson.toJson(array);
     }
 
+    /**
+     * Deserialises file references from a JSON array.
+     *
+     * @param  json the JSON string
+     * @return      the file references
+     */
     public List<FileReference> listFromJson(String json) {
         return gson.fromJson(json, new ListType());
     }
 
+    /**
+     * A GSON type token for a list of file references.
+     */
     private static class ListType extends TypeToken<List<FileReference>> {
     }
 
+    /**
+     * Creates GSON configuration to exclude update times when serialising file references. This is used with
+     * {@link AllReferencesToAFileSerDe#noUpdateTimes} in {@link TransactionSerDe}.
+     *
+     * @return the GSON configuration
+     */
     public static ExclusionStrategy excludeUpdateTimes() {
         return new ExcludeUpdateTimes();
     }
 
+    /**
+     * GSON configuration to exclude update times when serialising file references. This is used with
+     * {@link AllReferencesToAFileSerDe#noUpdateTimes} in {@link TransactionSerDe}.
+     */
     private static class ExcludeUpdateTimes implements ExclusionStrategy {
 
         @Override

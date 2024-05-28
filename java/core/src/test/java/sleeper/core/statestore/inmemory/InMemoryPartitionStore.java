@@ -27,6 +27,9 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * An in-memory partition store implementation backed by a list.
+ */
 public class InMemoryPartitionStore implements PartitionStore {
 
     private Schema schema;
@@ -40,6 +43,12 @@ public class InMemoryPartitionStore implements PartitionStore {
         this.schema = schema;
     }
 
+    /**
+     * Creates an in-memory partition store with a single root partition. This will be derived from the given schema.
+     *
+     * @param  schema the schema
+     * @return        the store
+     */
     public static PartitionStore withSinglePartition(Schema schema) {
         InMemoryPartitionStore store = new InMemoryPartitionStore(schema);
         store.initialise();

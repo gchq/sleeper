@@ -29,6 +29,9 @@ import java.util.stream.Collectors;
 import static java.util.function.Predicate.not;
 import static sleeper.core.statestore.SplitFileReferenceRequest.splitFileToChildPartitions;
 
+/**
+ * Updates the state store to push references to all files down the partition tree towards the leaf partitions.
+ */
 public class SplitFileReferences {
     private static final Logger LOGGER = LoggerFactory.getLogger(SplitFileReferences.class);
     private final StateStore stateStore;
@@ -37,10 +40,22 @@ public class SplitFileReferences {
         this.stateStore = stateStore;
     }
 
+    /**
+     * Creates an instance of this class to update the given state store.
+     *
+     * @param  store the state store
+     * @return       the new instance
+     */
     public static SplitFileReferences from(StateStore store) {
         return new SplitFileReferences(store);
     }
 
+    /**
+     * Performs splits on any file references that need splitting. Updates the state store, and pushes each file one
+     * level down the partition tree.
+     *
+     * @throws StateStoreException thrown if the state store fails to update
+     */
     public void split() throws StateStoreException {
         Map<String, List<FileReference>> fileReferencesByPartitionId = stateStore.getFileReferencesWithNoJobId().stream()
                 .collect(Collectors.groupingBy(FileReference::getPartitionId));

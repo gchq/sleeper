@@ -23,12 +23,30 @@ import sleeper.core.table.TableStatus;
 
 import java.util.Optional;
 
+/**
+ * Creates snapshots of the state derived from a transaction log.
+ */
 public class TransactionLogSnapshotCreator {
     public static final Logger LOGGER = LoggerFactory.getLogger(TransactionLogSnapshotCreator.class);
 
     private TransactionLogSnapshotCreator() {
     }
 
+    /**
+     * Creates a snapshot if there are new transactions in the log since the last snapshot. Seeks through the log
+     * starting at the transaction the last snapshot was made against, and applies each transaction to the state.
+     * <p>
+     * The state object held in the previous snapshot will be mutated and reused in the new snapshot object if one is
+     * made.
+     *
+     * @param  <T>                 the type of the state derived from the log
+     * @param  lastSnapshot        the last snapshot
+     * @param  logStore            the transaction log to read from
+     * @param  transactionType     the type of transactions to read from the log
+     * @param  tableStatus         the Sleeper table the log is for, to be used in logging
+     * @return                     the new snapshot, if there were updates since the last snapshot
+     * @throws StateStoreException if there are any failures updating the state from the log
+     */
     public static <T> Optional<TransactionLogSnapshot> createSnapshotIfChanged(
             TransactionLogSnapshot lastSnapshot,
             TransactionLogStore logStore,
