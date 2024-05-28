@@ -129,7 +129,7 @@ public class Utils {
     /**
      * Returns a cleaned up version of the Sleeper instance ID for use in resource names. Note that the instance ID
      * has a maximum length of 20 characters. See
-     * {@link sleeper.configuration.properties.instance.CommonProperty#ID_MAX_LENGTH};
+     * {@link sleeper.configuration.properties.instance.CommonProperty#ID_MAX_LENGTH}.
      *
      * @param  properties the instance properties
      * @return            the cleaned up instance ID
