@@ -15,12 +15,15 @@
  */
 package sleeper.statestore;
 
+import org.apache.arrow.memory.ArrowBuf;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.vector.TimeStampMilliVector;
 import org.apache.arrow.vector.VarCharVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.arrow.vector.complex.ListVector;
+import org.apache.arrow.vector.complex.impl.UnionListReader;
 import org.apache.arrow.vector.complex.impl.UnionListWriter;
+import org.apache.arrow.vector.complex.writer.BaseWriter.StructWriter;
 import org.apache.arrow.vector.ipc.ArrowStreamReader;
 import org.apache.arrow.vector.ipc.ArrowStreamWriter;
 import org.apache.arrow.vector.types.Types;
@@ -30,6 +33,7 @@ import org.apache.arrow.vector.types.pojo.FieldType;
 import org.apache.arrow.vector.types.pojo.Schema;
 
 import sleeper.core.statestore.AllReferencesToAFile;
+import sleeper.core.statestore.FileReference;
 
 import java.io.IOException;
 import java.nio.channels.ReadableByteChannel;
@@ -79,25 +83,19 @@ public class StateStoreFilesArrowFormat {
             vectorSchemaRoot.allocateNew();
             writer.start();
             int rowNumber = 0;
+            VarCharVector filenameVector = (VarCharVector) vectorSchemaRoot.getVector(FILENAME);
+            TimeStampMilliVector updateTimeVector = (TimeStampMilliVector) vectorSchemaRoot.getVector(UPDATE_TIME);
+            ListVector referencesVector = (ListVector) vectorSchemaRoot.getVector(REFERENCES);
             for (AllReferencesToAFile file : files) {
-                VarCharVector filenameVector = (VarCharVector) vectorSchemaRoot.getVector(FILENAME);
                 filenameVector.setSafe(rowNumber, file.getFilename().getBytes(StandardCharsets.UTF_8));
-                TimeStampMilliVector updateTimeVector = (TimeStampMilliVector) vectorSchemaRoot.getVector(UPDATE_TIME);
                 updateTimeVector.setSafe(rowNumber, file.getLastStateStoreUpdateTime().toEpochMilli());
-                ListVector referencesVector = (ListVector) vectorSchemaRoot.getVector(REFERENCES);
-                writeReferences(file, rowNumber, referencesVector.getWriter());
+                writeReferences(file, rowNumber, allocator, referencesVector.getWriter());
                 rowNumber++;
                 vectorSchemaRoot.setRowCount(rowNumber);
             }
             writer.writeBatch();
             writer.end();
         }
-    }
-
-    private static void writeReferences(AllReferencesToAFile file, int fileNumber, UnionListWriter writer) {
-        writer.startList();
-        writer.setPosition(fileNumber);
-        writer.endList();
     }
 
     /**
@@ -113,16 +111,67 @@ public class StateStoreFilesArrowFormat {
             VectorSchemaRoot vectorSchemaRoot = reader.getVectorSchemaRoot();
             VarCharVector filenameVector = (VarCharVector) vectorSchemaRoot.getVector(FILENAME);
             TimeStampMilliVector updateTimeVector = (TimeStampMilliVector) vectorSchemaRoot.getVector(UPDATE_TIME);
+            ListVector referencesVector = (ListVector) vectorSchemaRoot.getVector(REFERENCES);
             for (int index = 0; index < vectorSchemaRoot.getRowCount(); index++) {
                 String filename = filenameVector.getObject(index).toString();
                 Instant updateTime = Instant.ofEpochMilli(updateTimeVector.get(index));
                 files.add(AllReferencesToAFile.builder()
                         .filename(filename)
                         .lastStateStoreUpdateTime(updateTime)
-                        .internalReferences(List.of())
+                        .internalReferences(readReferences(filename, referencesVector.getReader()))
                         .build());
             }
         }
         return files;
+    }
+
+    private static void writeReferences(AllReferencesToAFile file, int fileNumber, BufferAllocator allocator, UnionListWriter writer) {
+        writer.setPosition(fileNumber);
+        writer.startList();
+        for (FileReference reference : file.getInternalReferences()) {
+            StructWriter struct = writer.struct();
+            struct.start();
+            writeVarChar(struct, allocator, PARTITION_ID, reference.getPartitionId());
+            writeTimeStampMilli(struct, REFERENCE_UPDATE_TIME, reference.getLastStateStoreUpdateTime());
+            writeVarCharNullable(struct, allocator, JOB_ID, reference.getJobId());
+            writeUInt8(struct, NUMBER_OF_RECORDS, reference.getNumberOfRecords());
+            writeBit(struct, COUNT_APPROXIMATE, reference.isCountApproximate());
+            writeBit(struct, ONLY_CONTAINS_DATA_FOR_THIS_PARTITION, reference.onlyContainsDataForThisPartition());
+            struct.end();
+        }
+        writer.endList();
+    }
+
+    private static List<FileReference> readReferences(String filename, UnionListReader reader) {
+        List<FileReference> references = new ArrayList<>();
+        return references;
+    }
+
+    private static void writeVarChar(StructWriter struct, BufferAllocator allocator, Field field, String value) {
+        byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
+        try (ArrowBuf buffer = allocator.buffer(bytes.length)) {
+            buffer.setBytes(0, bytes);
+            struct.varChar(field.getName()).writeVarChar(0, bytes.length, buffer);
+        }
+    }
+
+    private static void writeVarCharNullable(StructWriter struct, BufferAllocator allocator, Field field, String value) {
+        if (value == null) {
+            struct.varChar(field.getName()).writeNull();
+            return;
+        }
+        writeVarChar(struct, allocator, field, value);
+    }
+
+    private static void writeTimeStampMilli(StructWriter struct, Field field, Instant value) {
+        struct.timeStampMilli(field.getName()).writeTimeStampMilli(value.toEpochMilli());
+    }
+
+    private static void writeUInt8(StructWriter struct, Field field, long value) {
+        struct.uInt8(field.getName()).writeUInt8(value);
+    }
+
+    private static void writeBit(StructWriter struct, Field field, boolean value) {
+        struct.bit(field.getName()).writeBit(value ? 1 : 0);
     }
 }
