@@ -172,10 +172,11 @@ public class Utils {
     }
 
     public static LogDriver createECSContainerLogDriver(Construct scope, InstanceProperties instanceProperties, String id) {
+        String logGroupName = String.join("-", "sleeper", cleanInstanceId(instanceProperties), id);
         AwsLogDriverProps logDriverProps = AwsLogDriverProps.builder()
-                .streamPrefix(instanceProperties.get(ID) + "-" + id)
+                .streamPrefix(logGroupName)
                 .logGroup(LogGroup.Builder.create(scope, id)
-                        .logGroupName(instanceProperties.get(ID) + "-" + id)
+                        .logGroupName(logGroupName)
                         .retention(getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
                         .build())
                 .build();
