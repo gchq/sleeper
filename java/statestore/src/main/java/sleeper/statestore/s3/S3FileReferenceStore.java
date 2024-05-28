@@ -25,6 +25,7 @@ import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceStore;
+import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.FileAlreadyExistsException;
@@ -34,6 +35,7 @@ import sleeper.core.statestore.exception.FileReferenceAlreadyExistsException;
 import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
+import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.core.statestore.exception.SplitRequestsFailedException;
 import sleeper.statestore.StateStoreParquetSerDe;
 
@@ -187,11 +189,15 @@ class S3FileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public void atomicallyReplaceFileReferencesWithNewOne(
-            String jobId, String partitionId, List<String> inputFiles, FileReference newReference) throws StateStoreException {
+    public void atomicallyReplaceFileReferencesWithNewOnes(List<ReplaceFileReferencesRequest> requests) throws ReplaceRequestsFailedException {
         Instant updateTime = clock.instant();
-        Set<String> inputFilesSet = new HashSet<>(inputFiles);
-        FileReference.validateNewReferenceForJobOutput(inputFilesSet, newReference);
+        try {
+            for (ReplaceFileReferencesRequest request : requests) {
+                FileReference.validateNewReferenceForJobOutput(request.getInputFiles(), request.getNewReference());
+            }
+        } catch (StateStoreException e) {
+            throw new ReplaceRequestsFailedException(requests, e);
+        }
         FileReferencesConditionCheck condition = list -> {
             Map<String, AllReferencesToAFile> filesByName = list.stream()
                     .collect(Collectors.toMap(AllReferencesToAFile::getFilename, Function.identity()));
@@ -202,35 +208,48 @@ class S3FileReferenceStore implements FileReferenceStore {
                 }
             }
             StateStoreException exception = null;
-            if (filesByName.containsKey(newReference.getFilename())) {
-                exception = new FileAlreadyExistsException(newReference.getFilename());
-            }
-            for (String filename : inputFiles) {
-                if (!filesByName.containsKey(filename)) {
-                    exception = new FileNotFoundException(filename);
-                } else if (!activePartitionFiles.containsKey(partitionId + DELIMITER + filename)) {
-                    exception = new FileReferenceNotFoundException(filename, partitionId);
-                } else {
-                    FileReference fileReference = activePartitionFiles.get(partitionId + DELIMITER + filename);
-                    if (!jobId.equals(fileReference.getJobId())) {
-                        exception = new FileReferenceNotAssignedToJobException(fileReference, jobId);
+            for (ReplaceFileReferencesRequest request : requests) {
+                if (filesByName.containsKey(request.getNewReference().getFilename())) {
+                    exception = new FileAlreadyExistsException(request.getNewReference().getFilename());
+                }
+                for (String filename : request.getInputFiles()) {
+                    if (!filesByName.containsKey(filename)) {
+                        exception = new FileNotFoundException(filename);
+                    } else if (!activePartitionFiles.containsKey(request.getPartitionId() + DELIMITER + filename)) {
+                        exception = new FileReferenceNotFoundException(filename, request.getPartitionId());
+                    } else {
+                        FileReference fileReference = activePartitionFiles.get(request.getPartitionId() + DELIMITER + filename);
+                        if (!request.getJobId().equals(fileReference.getJobId())) {
+                            exception = new FileReferenceNotAssignedToJobException(fileReference, request.getJobId());
+                        }
                     }
                 }
             }
             return Optional.ofNullable(exception);
         };
-
+        Map<String, List<String>> inputFileToPartitionIds = requests.stream()
+                .flatMap(request -> request.getInputFiles().stream().map(file -> List.of(file, request.getPartitionId())))
+                .collect(Collectors.groupingBy(list -> list.get(0),
+                        Collectors.mapping(list -> list.get(1), Collectors.toList())));
+        List<AllReferencesToAFile> newFileReferences = requests.stream()
+                .map(ReplaceFileReferencesRequest::getNewReference)
+                .map(newReference -> fileWithOneReference(newReference, updateTime))
+                .collect(Collectors.toList());
         Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> update = existingFiles -> Stream.concat(
                 existingFiles.stream().map(existingFile -> {
-                    if (inputFilesSet.contains(existingFile.getFilename())) {
-                        return existingFile.removeReferenceForPartition(partitionId, updateTime);
-                    } else {
-                        return existingFile;
+                    List<String> partitionIds = inputFileToPartitionIds.getOrDefault(existingFile.getFilename(), List.of());
+                    for (String partitionId : partitionIds) {
+                        existingFile = existingFile.removeReferenceForPartition(partitionId, updateTime);
                     }
+                    return existingFile;
                 }),
-                Stream.of(fileWithOneReference(newReference, updateTime)))
+                newFileReferences.stream())
                 .collect(Collectors.toUnmodifiableList());
-        updateS3Files(update, condition);
+        try {
+            updateS3Files(update, condition);
+        } catch (StateStoreException e) {
+            throw new ReplaceRequestsFailedException(requests, e);
+        }
     }
 
     @Override
