@@ -113,7 +113,6 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_FARGATE_DEFINITION_FAMILY;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 import static sleeper.configuration.properties.instance.CommonProperty.TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB;
 import static sleeper.configuration.properties.instance.CommonProperty.TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS;
@@ -334,14 +333,15 @@ public class CompactionStack extends NestedStack {
 
     private Queue sqsQueueForCompactionJobCreation(CoreStacks coreStacks, Topic topic, List<IMetric> errorMetrics) {
         // Create queue for compaction job creation invocation
+        String instanceId = Utils.cleanInstanceId(instanceProperties);
         Queue deadLetterQueue = Queue.Builder
                 .create(this, "CompactionJobCreationDLQ")
-                .queueName(String.join("-", "sleeper", instanceProperties.get(ID), "CompactionJobCreationDLQ.fifo"))
+                .queueName(String.join("-", "sleeper", instanceId, "CompactionJobCreationDLQ.fifo"))
                 .fifo(true)
                 .build();
         Queue queue = Queue.Builder
                 .create(this, "CompactionJobCreationQueue")
-                .queueName(String.join("-", "sleeper", instanceProperties.get(ID), "CompactionJobCreationQ.fifo"))
+                .queueName(String.join("-", "sleeper", instanceId, "CompactionJobCreationQ.fifo"))
                 .deadLetterQueue(DeadLetterQueue.builder()
                         .maxReceiveCount(1)
                         .queue(deadLetterQueue)
@@ -430,14 +430,15 @@ public class CompactionStack extends NestedStack {
     }
 
     private Queue sqsQueueForCompactionJobCommitter(Topic topic, List<IMetric> errorMetrics) {
+        String instanceId = Utils.cleanInstanceId(instanceProperties);
         Queue deadLetterQueue = Queue.Builder
                 .create(this, "CompactionJobCommitterDLQ")
-                .queueName(String.join("-", "sleeper", instanceProperties.get(ID), "CompactionJobCommitterDLQ.fifo"))
+                .queueName(String.join("-", "sleeper", instanceId, "CompactionJobCommitterDLQ.fifo"))
                 .fifo(true)
                 .build();
         Queue queue = Queue.Builder
                 .create(this, "CompactionJobCommitterQueue")
-                .queueName(String.join("-", "sleeper", instanceProperties.get(ID), "CompactionJobCommitterQ.fifo"))
+                .queueName(String.join("-", "sleeper", instanceId, "CompactionJobCommitterQ.fifo"))
                 .deadLetterQueue(DeadLetterQueue.builder()
                         .maxReceiveCount(1)
                         .queue(deadLetterQueue)
@@ -577,7 +578,7 @@ public class CompactionStack extends NestedStack {
         Pair<Integer, Integer> requirements = Requirements.getArchRequirements(architecture, instanceProperties);
         return FargateTaskDefinition.Builder
                 .create(this, "CompactionFargateTaskDefinition")
-                .family(instanceProperties.get(ID) + "CompactionFargateTaskFamily")
+                .family(String.join("-", "sleeper", Utils.cleanInstanceId(instanceProperties), "CompactionTaskOnFargate"))
                 .cpu(requirements.getLeft())
                 .memoryLimitMiB(requirements.getRight())
                 .runtimePlatform(RuntimePlatform.builder()
@@ -590,7 +591,7 @@ public class CompactionStack extends NestedStack {
     private Ec2TaskDefinition compactionEC2TaskDefinition() {
         return Ec2TaskDefinition.Builder
                 .create(this, "CompactionEC2TaskDefinition")
-                .family(instanceProperties.get(ID) + "CompactionEC2TaskFamily")
+                .family(String.join("-", Utils.cleanInstanceId(instanceProperties), "CompactionTaskOnEC2"))
                 .networkMode(NetworkMode.BRIDGE)
                 .build();
     }
