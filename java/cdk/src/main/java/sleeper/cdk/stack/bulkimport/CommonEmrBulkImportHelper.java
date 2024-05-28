@@ -40,13 +40,11 @@ import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import static sleeper.cdk.Utils.createAlarmForDlq;
 import static sleeper.cdk.Utils.createLambdaLogGroup;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 
 public class CommonEmrBulkImportHelper {
@@ -76,7 +74,7 @@ public class CommonEmrBulkImportHelper {
     // will have its own queue. The shortId is used to ensure the names of
     // the queues are different.
     public Queue createJobQueue(CdkDefinedInstanceProperty jobQueueUrl, CdkDefinedInstanceProperty jobQueueArn, Topic errorsTopic) {
-        String instanceId = instanceProperties.get(ID);
+        String instanceId = Utils.cleanInstanceId(instanceProperties);
         Queue queueForDLs = Queue.Builder
                 .create(scope, "BulkImport" + platform + "JobDeadLetterQueue")
                 .queueName(String.join("-", "sleeper", instanceId, "BulkImport" + platform + "DLQ"))
@@ -116,14 +114,13 @@ public class CommonEmrBulkImportHelper {
     public IFunction createJobStarterFunction(
             String bulkImportPlatform, Queue jobQueue, BuiltJars jars, IBucket importBucket,
             List<IRole> passRoles) {
-        String instanceId = instanceProperties.get(ID);
         Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
         env.put("BULK_IMPORT_PLATFORM", bulkImportPlatform);
         IBucket jarsBucket = Bucket.fromBucketName(scope, "CodeBucketEMR", instanceProperties.get(JARS_BUCKET));
         LambdaCode bulkImportStarterJar = jars.lambdaCode(BuiltJar.BULK_IMPORT_STARTER, jarsBucket);
 
         String functionName = String.join("-", "sleeper",
-                instanceId.toLowerCase(Locale.ROOT), platform, "import-starter");
+                Utils.cleanInstanceId(instanceProperties), platform, "import-starter");
 
         IFunction function = bulkImportStarterJar.buildFunction(scope, "BulkImport" + platform + "JobStarter", builder -> builder
                 .functionName(functionName)
