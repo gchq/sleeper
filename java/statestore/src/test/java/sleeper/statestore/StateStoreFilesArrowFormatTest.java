@@ -38,10 +38,9 @@ public class StateStoreFilesArrowFormatTest {
     @Test
     void shouldWriteOneFileWithNoReferencesInArrowFormat() throws Exception {
         // Given
-        Instant updateTime = Instant.parse("2024-05-28T13:25:01.123Z");
         AllReferencesToAFile file = AllReferencesToAFile.builder()
                 .filename("test.parquet")
-                .lastStateStoreUpdateTime(updateTime)
+                .lastStateStoreUpdateTime(Instant.parse("2024-05-28T13:25:01.123Z"))
                 .internalReferences(List.of())
                 .build();
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
@@ -51,6 +50,28 @@ public class StateStoreFilesArrowFormatTest {
 
         // Then
         assertThat(read(bytes)).containsExactly(file);
+    }
+
+    @Test
+    void shouldWriteTwoFilesWithNoReferencesInArrowFormat() throws Exception {
+        // Given
+        AllReferencesToAFile file1 = AllReferencesToAFile.builder()
+                .filename("file1.parquet")
+                .lastStateStoreUpdateTime(Instant.parse("2024-05-28T14:57:01.123Z"))
+                .internalReferences(List.of())
+                .build();
+        AllReferencesToAFile file2 = AllReferencesToAFile.builder()
+                .filename("file2.parquet")
+                .lastStateStoreUpdateTime(Instant.parse("2024-05-28T14:58:01.123Z"))
+                .internalReferences(List.of())
+                .build();
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+
+        // When
+        write(List.of(file1, file2), bytes);
+
+        // Then
+        assertThat(read(bytes)).containsExactly(file1, file2);
     }
 
     @Test

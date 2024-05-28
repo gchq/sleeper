@@ -89,14 +89,16 @@ public class StateStoreFilesArrowFormat {
             reader.loadNextBatch();
             VectorSchemaRoot vectorSchemaRoot = reader.getVectorSchemaRoot();
             VarCharVector filenameVector = (VarCharVector) vectorSchemaRoot.getVector(FILENAME);
-            String filename = filenameVector.getObject(0).toString();
             TimeStampMilliVector updateTimeVector = (TimeStampMilliVector) vectorSchemaRoot.getVector(UPDATE_TIME);
-            Instant updateTime = Instant.ofEpochMilli(updateTimeVector.get(0));
-            files.add(AllReferencesToAFile.builder()
-                    .filename(filename)
-                    .lastStateStoreUpdateTime(updateTime)
-                    .internalReferences(List.of())
-                    .build());
+            for (int index = 0; index < vectorSchemaRoot.getRowCount(); index++) {
+                String filename = filenameVector.getObject(index).toString();
+                Instant updateTime = Instant.ofEpochMilli(updateTimeVector.get(index));
+                files.add(AllReferencesToAFile.builder()
+                        .filename(filename)
+                        .lastStateStoreUpdateTime(updateTime)
+                        .internalReferences(List.of())
+                        .build());
+            }
         }
         return files;
     }
