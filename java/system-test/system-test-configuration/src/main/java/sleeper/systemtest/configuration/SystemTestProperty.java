@@ -32,8 +32,8 @@ import static sleeper.configuration.Utils.describeEnumValuesInLowerCase;
 @SuppressFBWarnings("IC_SUPERCLASS_USES_SUBCLASS_DURING_INITIALIZATION")
 public interface SystemTestProperty extends InstanceProperty {
     SystemTestProperty SYSTEM_TEST_ID = Index.propertyBuilder("sleeper.systemtest.standalone.id")
-            .description("The id of the deployment, when deploying standalone.")
-            .validationPredicate(value -> Utils.isNonNullNonEmptyStringWithMaxLength(value, 12))
+            .description("The id of the deployment, if deploying standalone.")
+            .validationPredicate(value -> value == null || value.length() <= 12)
             .editable(false).build();
     SystemTestProperty SYSTEM_TEST_ACCOUNT = Index.propertyBuilder("sleeper.systemtest.standalone.account")
             .description("The AWS account when deploying standalone.")
