@@ -174,8 +174,7 @@ public final class EksBulkImportStack extends NestedStack {
 
         instanceProperties.set(CdkDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_ENDPOINT, bulkImportCluster.getClusterEndpoint());
 
-        String uniqueBulkImportId = Utils.truncateToMaxSize("sleeper-" + instanceProperties.get(ID)
-                .replace(".", "-") + "-eks-bulk-import", 63);
+        String uniqueBulkImportId = "sleeper-" + Utils.cleanInstanceId(instanceProperties) + "-eks-bulk-import";
 
         KubernetesManifest namespace = createNamespace(bulkImportCluster, uniqueBulkImportId);
         instanceProperties.set(CdkDefinedInstanceProperty.BULK_IMPORT_EKS_NAMESPACE, uniqueBulkImportId);

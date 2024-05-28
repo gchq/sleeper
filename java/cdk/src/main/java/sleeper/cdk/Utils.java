@@ -51,6 +51,7 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
@@ -123,6 +124,12 @@ public class Utils {
 
     public static String truncateTo64Characters(String input) {
         return truncateToMaxSize(input, 64);
+    }
+
+    public static String cleanInstanceId(InstanceProperties properties) {
+        return properties.get(ID)
+                .toLowerCase(Locale.ROOT)
+                .replace(".", "-");
     }
 
     /**
