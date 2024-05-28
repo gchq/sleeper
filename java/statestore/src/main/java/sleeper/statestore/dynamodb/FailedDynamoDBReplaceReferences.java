@@ -35,6 +35,10 @@ import java.util.TreeMap;
 
 import static sleeper.dynamodb.tools.DynamoDBUtils.isConditionCheckFailure;
 
+/**
+ * Reads a DynamoDB transaction cancellation and converts it into a state store exception when replacing file
+ * references to apply the results of a job.
+ */
 class FailedDynamoDBReplaceReferences {
 
     private final TransactionCanceledException e;

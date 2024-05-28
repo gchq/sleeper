@@ -84,8 +84,8 @@ public class CompactionJobCommitter {
         // Sometimes the compaction can finish before the job assignment is finished. We wait for the job assignment
         // rather than immediately failing the job run.
         ReplaceRequestsFailedException failure = null;
-        for (int attempts = 0; attempts < jobAssignmentWaitAttempts; attempts++) {
-            jobAssignmentWaitBackoff.waitBeforeAttempt(attempts);
+        for (int attempt = 1; attempt <= jobAssignmentWaitAttempts; attempt++) {
+            jobAssignmentWaitBackoff.waitBeforeAttempt(attempt);
             try {
                 stateStore.atomicallyReplaceFileReferencesWithNewOnes(List.of(
                         replaceJobFileReferences(job.getId(), job.getPartitionId(), job.getInputFiles(), fileReference)));

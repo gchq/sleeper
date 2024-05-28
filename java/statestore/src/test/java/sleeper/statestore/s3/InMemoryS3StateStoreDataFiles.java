@@ -21,12 +21,24 @@ import sleeper.core.statestore.StateStoreException;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * An in-memory implementation of storing state store state in S3. Used in tests with {@link S3StateStoreDataFile}.
+ *
+ * @param <T> type of the state stored
+ */
 public class InMemoryS3StateStoreDataFiles<T> {
 
     private final Map<String, T> dataByPath = new HashMap<>();
     private String failOnLoad;
     private String failOnWrite;
 
+    /**
+     * Retrieves the data held at a given path.
+     *
+     * @param  path                the path
+     * @return                     the data
+     * @throws StateStoreException if the store was configured to fail to load data
+     */
     public T load(String path) throws StateStoreException {
         if (failOnLoad != null) {
             String message = failOnLoad;
@@ -36,6 +48,13 @@ public class InMemoryS3StateStoreDataFiles<T> {
         return dataByPath.get(path);
     }
 
+    /**
+     * Writes data at a given path.
+     *
+     * @param  data                the data
+     * @param  path                the path
+     * @throws StateStoreException if the store was configured to fail to write data
+     */
     public void write(T data, String path) throws StateStoreException {
         if (failOnWrite != null) {
             String message = failOnWrite;
@@ -45,7 +64,12 @@ public class InMemoryS3StateStoreDataFiles<T> {
         dataByPath.put(path, data);
     }
 
-    public void delete(String path) throws StateStoreException {
+    /**
+     * Deletes data at a given path.
+     *
+     * @param path the path
+     */
+    public void delete(String path) {
         dataByPath.remove(path);
     }
 

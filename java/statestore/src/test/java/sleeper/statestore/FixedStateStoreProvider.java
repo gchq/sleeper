@@ -24,6 +24,10 @@ import java.util.Objects;
 
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
+/**
+ * Test helper to implement state store provider with fixed state stores. Replaces {@link StateStoreFactory} with
+ * pre-built state store instances.
+ */
 public class FixedStateStoreProvider extends StateStoreProvider {
     private static final int DEFAULT_STATESTORE_CACHE_SIZE = 10;
 

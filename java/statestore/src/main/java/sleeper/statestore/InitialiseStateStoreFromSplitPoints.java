@@ -59,6 +59,9 @@ public class InitialiseStateStoreFromSplitPoints {
         this.splitPoints = splitPoints;
     }
 
+    /**
+     * Initialises the state store.
+     */
     public void run() {
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         try {
@@ -68,7 +71,13 @@ public class InitialiseStateStoreFromSplitPoints {
         }
     }
 
-    public static void main(String[] args) throws StateStoreException, IOException {
+    /**
+     * Initialises a state store from the command line.
+     *
+     * @param  args        the command line arguments
+     * @throws IOException if the split points file could not be read
+     */
+    public static void main(String[] args) throws IOException {
         if (2 != args.length && 3 != args.length && 4 != args.length) {
             System.out.println("Usage: <instance-id> <table-name> <optional split points file> <optional boolean strings base64 encoded>");
             return;
