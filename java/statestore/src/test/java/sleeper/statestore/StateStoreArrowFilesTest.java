@@ -15,6 +15,8 @@
  */
 package sleeper.statestore;
 
+import org.apache.arrow.memory.BufferAllocator;
+import org.apache.arrow.memory.RootAllocator;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -31,6 +33,8 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class StateStoreArrowFilesTest {
+
+    private final BufferAllocator allocator = new RootAllocator();
 
     @Test
     @Disabled("TODO")
@@ -56,7 +60,7 @@ public class StateStoreArrowFilesTest {
     }
 
     private void write(List<AllReferencesToAFile> files, ByteArrayOutputStream stream) {
-        StateStoreArrowFiles.write(files, Channels.newChannel(stream));
+        StateStoreArrowFiles.write(files, allocator, Channels.newChannel(stream));
     }
 
     private List<AllReferencesToAFile> read(ByteArrayOutputStream stream) {
