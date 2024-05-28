@@ -53,12 +53,6 @@ public class RunIngestTasksLambda {
                 ContainerConstants.INGEST_CONTAINER_NAME);
     }
 
-    /**
-     * The entry point for this lambda.
-     *
-     * @param event   the scheduled event
-     * @param context the lambda context
-     */
     public void eventHandler(ScheduledEvent event, Context context) {
         runTasks.run();
     }
