@@ -16,6 +16,8 @@
 package sleeper.statestore;
 
 import org.apache.arrow.memory.BufferAllocator;
+import org.apache.arrow.vector.TimeStampMilliVector;
+import org.apache.arrow.vector.VarCharVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.arrow.vector.ipc.ArrowStreamWriter;
 import org.apache.arrow.vector.types.Types;
@@ -28,6 +30,7 @@ import sleeper.core.statestore.AllReferencesToAFile;
 import java.io.IOException;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Stream;
@@ -58,10 +61,17 @@ public class StateStoreFilesArrowFormat {
             vectorSchemaRoot.getFieldVectors().forEach(fieldVector -> fieldVector.setInitialCapacity(files.size()));
             vectorSchemaRoot.allocateNew();
             writer.start();
+            int rowNumber = 0;
             for (AllReferencesToAFile file : files) {
-                vectorSchemaRoot.getVector(FILENAME);
+                VarCharVector filenameVector = (VarCharVector) vectorSchemaRoot.getVector(FILENAME);
+                filenameVector.setSafe(rowNumber, file.getFilename().getBytes(StandardCharsets.UTF_8));
+                TimeStampMilliVector updateTimeVector = (TimeStampMilliVector) vectorSchemaRoot.getVector(UPDATE_TIME);
+                updateTimeVector.setSafe(rowNumber, file.getLastStateStoreUpdateTime().toEpochMilli());
+                rowNumber++;
+                vectorSchemaRoot.setRowCount(rowNumber);
             }
-
+            writer.writeBatch();
+            writer.end();
         }
     }
 
