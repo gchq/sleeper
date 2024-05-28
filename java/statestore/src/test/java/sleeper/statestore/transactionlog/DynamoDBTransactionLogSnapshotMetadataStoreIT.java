@@ -45,7 +45,7 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.dynamodb.tools.GenericContainerAwsV1ClientHelper.buildAwsV1Client;
 
 @Testcontainers
-public class DynamoDBTransactionLogSnapshotStoreIT {
+public class DynamoDBTransactionLogSnapshotMetadataStoreIT {
     @Container
     private static DynamoDBContainer dynamoDb = new DynamoDBContainer();
     private static AmazonDynamoDB dynamoDBClient;
