@@ -58,8 +58,6 @@
     <suppress files="[\\/]garbage-collector[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]statestore[\\/]src[\\/].*" id="missingJavadocMethod"/>
     <suppress files="[\\/]statestore[\\/]src[\\/].*" id="missingJavadocType"/>
-    <suppress files="[\\/]ingest[\\/].*" id="missingJavadocMethod"/>
-    <suppress files="[\\/]ingest[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]query[\\/].*" id="missingJavadocMethod"/>
     <suppress files="[\\/]query[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]trino[\\/].*" id="missingJavadocMethod"/>
