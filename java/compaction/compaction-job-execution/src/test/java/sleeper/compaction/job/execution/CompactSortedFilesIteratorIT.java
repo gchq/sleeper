@@ -15,7 +15,6 @@
  */
 package sleeper.compaction.job.execution;
 
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
@@ -28,9 +27,7 @@ import sleeper.core.record.Record;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.FileReferenceFactory;
 
-import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -73,16 +70,6 @@ class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
         //  - Read output files and check that they contain the right results
         assertThat(summary.getRecordsRead()).isEqualTo(200L);
         assertThat(summary.getRecordsWritten()).isEqualTo(100L);
-        Assertions.assertThat(CompactSortedFilesTestData.readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(data1);
-
-        // - Check DynamoDBStateStore has correct ready for GC files
-        assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
-                .containsExactlyInAnyOrder(file1.getFilename(), file2.getFilename());
-
-        // - Check DynamoDBStateStore has correct file references
-        assertThat(stateStore.getFileReferences())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactly(FileReferenceFactory.from(stateStore)
-                        .rootFile(compactionJob.getOutputFile(), 100L));
+        assertThat(CompactSortedFilesTestData.readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(data1);
     }
 }

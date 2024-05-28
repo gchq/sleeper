@@ -107,7 +107,7 @@ class SingleFileWritingIteratorIT {
             assertThat(fileWritingIterator).toIterable()
                     .containsExactly(RowFactory.create(
                             "test-partition",
-                            "file://" + tempFolder + "/" + tableProperties.get(TABLE_ID) + "/partition_test-partition/test-file.parquet",
+                            "file://" + tempFolder + "/" + tableProperties.get(TABLE_ID) + "/data/partition_test-partition/test-file.parquet",
                             4));
         }
     }

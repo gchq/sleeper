@@ -19,7 +19,9 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
+import com.amazonaws.services.lambda.runtime.events.SQSBatchResponse;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
+import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
@@ -27,32 +29,36 @@ import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.core.table.InvokeForTableRequest;
-import sleeper.core.table.InvokeForTableRequestSerDe;
+import sleeper.core.statestore.StateStoreException;
+import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.splitter.FindPartitionsToSplit;
 import sleeper.statestore.StateStoreProvider;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
+import static java.util.stream.Collectors.groupingBy;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
  * This is triggered when a table batch arrives on the SQS queue. It runs
  * {@link FindPartitionsToSplit} for each table in the batch.
  */
-@SuppressWarnings("unused")
-public class FindPartitionsToSplitLambda implements RequestHandler<SQSEvent, Void> {
-    private final AmazonSQS sqsClient;
-    private final InstanceProperties instanceProperties;
-    private final StateStoreProvider stateStoreProvider;
-    private final InvokeForTableRequestSerDe serDe = new InvokeForTableRequestSerDe();
-
+public class FindPartitionsToSplitLambda implements RequestHandler<SQSEvent, SQSBatchResponse> {
     private static final Logger LOGGER = LoggerFactory.getLogger(FindPartitionsToSplitLambda.class);
+
     private final TablePropertiesProvider tablePropertiesProvider;
+    private final PropertiesReloader propertiesReloader;
+    private final FindPartitionsToSplit findPartitionsToSplit;
 
     public FindPartitionsToSplitLambda() {
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
@@ -60,33 +66,66 @@ public class FindPartitionsToSplitLambda implements RequestHandler<SQSEvent, Voi
         if (null == s3Bucket) {
             throw new RuntimeException("Couldn't get S3 bucket from environment variable");
         }
-        this.instanceProperties = new InstanceProperties();
-        this.instanceProperties.loadFromS3(s3Client, s3Bucket);
+        InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.loadFromS3(s3Client, s3Bucket);
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
-        this.sqsClient = AmazonSQSClientBuilder.defaultClient();
-        this.stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties));
-        this.tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
+        AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient,
+                HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties));
+        tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
+        propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
+        findPartitionsToSplit = new FindPartitionsToSplit(instanceProperties, stateStoreProvider,
+                new SqsSplitPartitionJobSender(tablePropertiesProvider, instanceProperties, sqsClient)::send);
     }
 
     @Override
-    public Void handleRequest(SQSEvent event, Context context) {
+    public SQSBatchResponse handleRequest(SQSEvent event, Context context) {
         Instant startTime = Instant.now();
-        LOGGER.info("Lambda triggered at {}", startTime);
-        event.getRecords().stream()
-                .map(SQSEvent.SQSMessage::getBody)
-                .peek(body -> LOGGER.info("Received message: {}", body))
-                .map(serDe::fromJson)
-                .forEach(this::run);
+        LOGGER.info("Lambda started at {}", startTime);
+        propertiesReloader.reloadIfNeeded();
+
+        Map<String, List<SQSMessage>> messagesByTableId = event.getRecords().stream()
+                .collect(groupingBy(SQSEvent.SQSMessage::getBody));
+        List<SQSBatchResponse.BatchItemFailure> batchItemFailures = new ArrayList<SQSBatchResponse.BatchItemFailure>();
+        List<TableProperties> tables = loadTables(messagesByTableId, batchItemFailures);
+        for (TableProperties tableProperties : tables) {
+            try {
+                findPartitionsToSplit.run(tableProperties);
+            } catch (StateStoreException | RuntimeException e) {
+                TableStatus tableStatus = tableProperties.getStatus();
+                LOGGER.error("Failed for table {}", tableStatus, e);
+                messagesByTableId.get(tableStatus.getTableUniqueId()).stream()
+                        .map(SQSMessage::getMessageId)
+                        .map(SQSBatchResponse.BatchItemFailure::new)
+                        .forEach(batchItemFailures::add);
+            }
+        }
 
         Instant finishTime = Instant.now();
-        LOGGER.info("Lambda finished at {} (ran for {})", finishTime, LoggedDuration.withFullOutput(startTime, finishTime));
-        return null;
+        LOGGER.info("Lambda finished at {} (ran for {}), {} failures",
+                finishTime, LoggedDuration.withFullOutput(startTime, finishTime), batchItemFailures.size());
+        return new SQSBatchResponse(batchItemFailures);
     }
 
-    private void run(InvokeForTableRequest tableRequest) {
-        new FindPartitionsToSplit(instanceProperties, stateStoreProvider,
-                new SqsSplitPartitionJobSender(tablePropertiesProvider, instanceProperties, sqsClient)::send)
-                .run(tableRequest.getTableIds().stream()
-                        .map(tablePropertiesProvider::getById));
+    private List<TableProperties> loadTables(
+            Map<String, List<SQSMessage>> messagesByTableId,
+            List<SQSBatchResponse.BatchItemFailure> batchItemFailures) {
+        List<TableProperties> tables = new ArrayList<>();
+        for (Entry<String, List<SQSMessage>> tableAndMessages : messagesByTableId.entrySet()) {
+            String tableId = tableAndMessages.getKey();
+            List<SQSMessage> tableMessages = tableAndMessages.getValue();
+            try {
+                TableProperties tableProperties = tablePropertiesProvider.getById(tableId);
+                LOGGER.info("Received {} messages for table {}", tableMessages.size(), tableProperties.getStatus());
+                tables.add(tableProperties);
+            } catch (RuntimeException e) {
+                LOGGER.error("Failed loading properties for table {}", tableId, e);
+                tableMessages.stream()
+                        .map(SQSMessage::getMessageId)
+                        .map(SQSBatchResponse.BatchItemFailure::new)
+                        .forEach(batchItemFailures::add);
+            }
+        }
+        return tables;
     }
 }

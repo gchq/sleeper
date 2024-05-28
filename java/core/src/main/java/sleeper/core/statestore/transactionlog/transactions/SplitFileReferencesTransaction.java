@@ -32,6 +32,10 @@ import java.util.Objects;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 
+/**
+ * A transaction to replace file references with new references to the same file on other partitions. Used when a file
+ * is referenced on a partition that has child partitions, to push it down the partition tree.
+ */
 public class SplitFileReferencesTransaction implements FileReferenceTransaction {
 
     private final List<SplitFileReferenceRequest> requests;

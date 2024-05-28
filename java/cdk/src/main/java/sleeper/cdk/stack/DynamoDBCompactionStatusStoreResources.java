@@ -90,10 +90,10 @@ public final class DynamoDBCompactionStatusStoreResources implements CompactionS
                 .pointInTimeRecovery(false)
                 .build();
 
-        grantWriteJobEvent(coreStacks.getInvokeCompactionPolicy());
-        updatesTable.grantReadData(coreStacks.getReportingPolicy());
-        jobsTable.grantReadData(coreStacks.getReportingPolicy());
-        tasksTable.grantReadData(coreStacks.getReportingPolicy());
+        grantWriteJobEvent(coreStacks.getInvokeCompactionPolicyForGrants());
+        updatesTable.grantReadData(coreStacks.getReportingPolicyForGrants());
+        jobsTable.grantReadData(coreStacks.getReportingPolicyForGrants());
+        tasksTable.grantReadData(coreStacks.getReportingPolicyForGrants());
     }
 
     @Override

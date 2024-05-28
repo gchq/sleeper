@@ -23,12 +23,10 @@ import sleeper.configuration.properties.validation.IngestFileWritingStrategy;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
-import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 
 import java.nio.file.Path;
-import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -86,9 +84,7 @@ public class ParallelCompactionsTest {
 
         // When we run compaction
         sleeper.compaction()
-                .forceStartTasks(NUMBER_OF_COMPACTIONS,
-                        PollWithRetries.intervalAndPollingTimeout(
-                                Duration.ofSeconds(10), Duration.ofMinutes(5)))
+                .forceStartTasks(NUMBER_OF_COMPACTIONS)
                 .createJobs(NUMBER_OF_COMPACTIONS)
                 .waitForJobs();
 

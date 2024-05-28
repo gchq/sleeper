@@ -101,7 +101,7 @@
         doesn't have a fixed version.
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.bouncycastle/bcprov\-jdk15on@.*$</packageUrl>
-        <vulnerabilityName regex="true">CVE-2023-33201|CVE-2024-29857|CVE-2024-30172|CVE-2024-30171</vulnerabilityName>
+        <vulnerabilityName regex="true">CVE-2023-33201|CVE-2024-29857|CVE-2024-30172|CVE-2024-30171|CVE-2024-34447</vulnerabilityName>
     </suppress>
     <suppress>
         <notes><![CDATA[

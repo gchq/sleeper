@@ -29,6 +29,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
+/**
+ * A test helper for setting up partitions and files in a state store. Partitions are defined separately in a
+ * {@link PartitionsBuilder}, which can then be passed into this class to define files.
+ */
 public class StateStoreTestBuilder {
 
     private static final Instant DEFAULT_UPDATE_TIME = Instant.parse("2022-12-08T11:03:00.001Z");
@@ -47,27 +51,71 @@ public class StateStoreTestBuilder {
         this(partitionsBuilder.buildTree());
     }
 
+    /**
+     * Creates a state builder with the partition tree declared in the given builder. Will build the partition tree
+     * immediately, based on the current state in the partitions builder.
+     *
+     * @param  partitionsBuilder the partitions builder
+     * @return                   the state builder
+     */
     public static StateStoreTestBuilder from(PartitionsBuilder partitionsBuilder) {
         return new StateStoreTestBuilder(partitionsBuilder);
     }
 
+    /**
+     * Creates a state builder with a single root partition derived from the given schema.
+     *
+     * @param  schema the schema
+     * @return        the state builder
+     */
     public static StateStoreTestBuilder withSinglePartition(Schema schema) {
         return withSinglePartition(schema, "root");
     }
 
+    /**
+     * Creates a state builder with a single root partition derived from the given schema, with the given ID.
+     *
+     * @param  schema      the schema
+     * @param  partitionId the partition ID
+     * @return             the state builder
+     */
     public static StateStoreTestBuilder withSinglePartition(Schema schema, String partitionId) {
         return from(new PartitionsBuilder(schema).singlePartition(partitionId));
     }
 
+    /**
+     * Declares a single file in every leaf partition with a given number of records.
+     *
+     * @param  records the number of records
+     * @return         the builder
+     */
     public StateStoreTestBuilder singleFileInEachLeafPartitionWithRecords(long records) {
         return addFiles(partitions.stream().filter(Partition::isLeafPartition)
                 .map(partition -> partitionSingleFile(partition, records)));
     }
 
+    /**
+     * Declares a file in a given partition.
+     *
+     * @param  partitionId the ID of the partition the file will be referenced in
+     * @param  filename    the filename
+     * @param  records     the number of records
+     * @return             the builder
+     */
     public StateStoreTestBuilder partitionFileWithRecords(String partitionId, String filename, long records) {
         return addFile(partitionFile(tree.getPartition(partitionId), filename, records));
     }
 
+    /**
+     * Splits a previously declared file reference to be referenced on two partitions. The partitions should be child
+     * partitions of the partition the file is currently referenced on. This assumes the file has previously only been
+     * declared on a single partition.
+     *
+     * @param  filename       the filename
+     * @param  leftPartition  the ID of the left child partition
+     * @param  rightPartition the ID of the right child partition
+     * @return                the builder
+     */
     public StateStoreTestBuilder splitFileToPartitions(String filename, String leftPartition, String rightPartition) {
         FileReference fileToSplit = files.stream()
                 .filter(fileReference -> fileReference.getFilename().equals(filename))
@@ -78,10 +126,20 @@ public class StateStoreTestBuilder {
         return this;
     }
 
+    /**
+     * Creates an in-memory state store and sets the declared state.
+     *
+     * @return the state store
+     */
     public StateStore buildStateStore() {
         return setupStateStore(StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions(partitions));
     }
 
+    /**
+     * Sets the declared state in a given state store.
+     *
+     * @return the state store
+     */
     public StateStore setupStateStore(StateStore store) {
         try {
             store.initialise(partitions);

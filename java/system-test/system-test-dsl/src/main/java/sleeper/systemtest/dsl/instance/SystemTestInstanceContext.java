@@ -136,6 +136,10 @@ public class SystemTestInstanceContext {
         return currentTables.getTablePropertiesByName(tableName);
     }
 
+    public Optional<TableProperties> getTablePropertiesByDeployedId(String tableId) {
+        return currentTables.getTablePropertiesById(tableId);
+    }
+
     public TablePropertiesProvider getTablePropertiesProvider() {
         return currentTables.getTablePropertiesProvider();
     }
@@ -170,7 +174,7 @@ public class SystemTestInstanceContext {
     }
 
     public StateStore getStateStore(TableProperties tableProperties) {
-        return getStateStoreProvider().getStateStore(tableProperties);
+        return currentTables.getStateStore(tableProperties);
     }
 
     public String getTableName() {

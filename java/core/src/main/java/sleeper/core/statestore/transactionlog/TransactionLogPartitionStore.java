@@ -32,6 +32,9 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 
+/**
+ * A partition store backed by a log of transactions. Part of {@link TransactionLogStateStore}.
+ */
 class TransactionLogPartitionStore implements PartitionStore {
 
     private final Schema schema;

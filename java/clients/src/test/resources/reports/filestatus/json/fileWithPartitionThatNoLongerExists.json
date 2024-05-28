@@ -1,0 +1,64 @@
+{
+    "moreThanMax": false,
+    "leafPartitionCount": 1,
+    "nonLeafPartitionCount": 0,
+    "statistics": {
+        "records": {
+            "allPartitions": {
+                "totalRecords": 3000,
+                "totalRecordsApprox": 0,
+                "totalRecordsKnown": 3000
+            },
+            "leafPartitions": {
+                "totalRecords": 0,
+                "totalRecordsApprox": 0,
+                "totalRecordsKnown": 0
+            },
+            "nonLeafPartitions": {
+                "totalRecords": 0,
+                "totalRecordsApprox": 0,
+                "totalRecordsKnown": 0
+            }
+        },
+        "fileReferences": {
+            "totalFiles": 2,
+            "totalReferences": 2,
+            "leafPartitions": {
+                "totalReferences": 0
+            },
+            "nonLeafPartitions": {
+                "totalReferences": 0
+            }
+        }
+    },
+    "files": [
+        {
+            "filename": "file1.parquet",
+            "lastUpdateTime": "2022-08-22T14:20:00.001Z",
+            "totalReferenceCount": 1,
+            "internalReferences": [
+                {
+                    "partitionId": "A",
+                    "numberOfRecords": 1000,
+                    "lastUpdateTime": "2022-08-22T14:20:00.001Z",
+                    "countApproximate": false,
+                    "onlyContainsDataForThisPartition": true
+                }
+            ]
+        },
+        {
+            "filename": "file2.parquet",
+            "lastUpdateTime": "2022-08-22T14:20:00.001Z",
+            "totalReferenceCount": 1,
+            "internalReferences": [
+                {
+                    "partitionId": "A",
+                    "numberOfRecords": 2000,
+                    "lastUpdateTime": "2022-08-22T14:20:00.001Z",
+                    "countApproximate": false,
+                    "onlyContainsDataForThisPartition": true
+                }
+            ]
+        }
+    ]
+}

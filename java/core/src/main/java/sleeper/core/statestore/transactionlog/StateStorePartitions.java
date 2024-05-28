@@ -23,24 +23,50 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+/**
+ * Holds the state of partitions, for a state store backed by a transaction log. This object is mutable, is cached
+ * in memory in the state store, and is updated by applying each transaction in the log in sequence. This is not thread
+ * safe.
+ * <p>
+ * The methods to update this object should only ever be called by the transactions.
+ */
 public class StateStorePartitions {
 
     private final Map<String, Partition> partitionById = new HashMap<>();
 
+    /**
+     * Retrieves all partitions in the state store.
+     *
+     * @return the partitions
+     */
     public Collection<Partition> all() {
         return partitionById.values();
     }
 
+    /**
+     * Retreives all information held about a specific partition.
+     *
+     * @param  id the partition ID
+     * @return    the partition if it exists in the state store
+     */
+    public Optional<Partition> byId(String id) {
+        return Optional.ofNullable(partitionById.get(id));
+    }
+
+    /**
+     * Deletes all partitions and empties the state. Should only be called by a transaction.
+     */
     public void clear() {
         partitionById.clear();
     }
 
+    /**
+     * Adds or updates a partition in the state, by its ID. Should only be called by a transaction.
+     *
+     * @param partition the partition
+     */
     public void put(Partition partition) {
         partitionById.put(partition.getId(), partition);
-    }
-
-    public Optional<Partition> byId(String id) {
-        return Optional.ofNullable(partitionById.get(id));
     }
 
     @Override

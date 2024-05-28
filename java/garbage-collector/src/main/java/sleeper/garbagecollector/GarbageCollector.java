@@ -23,10 +23,8 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.table.InvokeForTableRequest;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
 import sleeper.garbagecollector.FailedGarbageCollectionException.TableFailures;
@@ -39,7 +37,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.configuration.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 
@@ -51,36 +48,29 @@ public class GarbageCollector {
     private static final Logger LOGGER = LoggerFactory.getLogger(GarbageCollector.class);
 
     private final DeleteFile deleteFile;
-    private final TablePropertiesProvider tablePropertiesProvider;
+    private final InstanceProperties instanceProperties;
     private final StateStoreProvider stateStoreProvider;
-    private final int garbageCollectorBatchSize;
 
     public GarbageCollector(Configuration conf,
             InstanceProperties instanceProperties,
-            TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider) {
         this(filename -> deleteFileAndSketches(filename, conf),
-                instanceProperties, tablePropertiesProvider, stateStoreProvider);
+                instanceProperties, stateStoreProvider);
     }
 
     public GarbageCollector(DeleteFile deleteFile,
             InstanceProperties instanceProperties,
-            TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider) {
         this.deleteFile = deleteFile;
-        this.tablePropertiesProvider = tablePropertiesProvider;
+        this.instanceProperties = instanceProperties;
         this.stateStoreProvider = stateStoreProvider;
-        this.garbageCollectorBatchSize = instanceProperties.getInt(GARBAGE_COLLECTOR_BATCH_SIZE);
     }
 
-    public void run(InvokeForTableRequest request) throws FailedGarbageCollectionException {
-        runAtTime(Instant.now(), request);
+    public void run(List<TableProperties> tables) throws FailedGarbageCollectionException {
+        runAtTime(Instant.now(), tables);
     }
 
-    public void runAtTime(Instant startTime, InvokeForTableRequest request) throws FailedGarbageCollectionException {
-        List<TableProperties> tables = request.getTableIds().stream()
-                .map(tablePropertiesProvider::getById)
-                .collect(toUnmodifiableList());
+    public void runAtTime(Instant startTime, List<TableProperties> tables) throws FailedGarbageCollectionException {
         LOGGER.info("Obtained list of {} tables", tables.size());
         int totalDeleted = 0;
         List<TableFailures> failedTables = new ArrayList<>();
@@ -106,6 +96,7 @@ public class GarbageCollector {
     }
 
     private void deleteInBatches(TableProperties tableProperties, Instant startTime, TableFilesDeleted deleted) throws StateStoreException {
+        int garbageCollectorBatchSize = instanceProperties.getInt(GARBAGE_COLLECTOR_BATCH_SIZE);
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         Iterator<String> readyForGC = getReadyForGCIterator(tableProperties, startTime, stateStore);
         List<String> batch = new ArrayList<>();

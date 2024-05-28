@@ -30,9 +30,7 @@ public class TrackerQueryPrompt {
                 "c (Completed queries)\n" +
                 "f (Failed queries)\n\n" +
                 "Enter query type: ");
-        if ("".equals(type)) {
-            return null;
-        } else if (type.equalsIgnoreCase("a")) {
+        if (type.equalsIgnoreCase("a")) {
             return TrackerQuery.ALL;
         } else if (type.equalsIgnoreCase("q")) {
             return TrackerQuery.QUEUED;

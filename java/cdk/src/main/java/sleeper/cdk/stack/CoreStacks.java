@@ -116,31 +116,35 @@ public class CoreStacks {
         policiesStack.grantReadIngestSources(grantee);
     }
 
-    public IGrantable getIngestPolicy() {
-        return policiesStack.getIngestPolicy();
+    public IGrantable getDirectIngestPolicyForGrants() {
+        return policiesStack.getDirectIngestPolicyForGrants();
     }
 
-    public IGrantable getQueryPolicy() {
-        return policiesStack.getQueryPolicy();
+    public IGrantable getIngestByQueuePolicyForGrants() {
+        return policiesStack.getIngestByQueuePolicyForGrants();
     }
 
-    public IGrantable getReportingPolicy() {
-        return policiesStack.getReportingPolicy();
+    public IGrantable getQueryPolicyForGrants() {
+        return policiesStack.getQueryPolicyForGrants();
+    }
+
+    public ManagedPolicy getReportingPolicyForGrants() {
+        return policiesStack.getReportingPolicyForGrants();
     }
 
     public void grantInvokeScheduled(IFunction function) {
         policiesStack.grantInvokeScheduled(function);
     }
 
-    public void grantInvokeScheduled(IFunction triggerFunction, IQueue tableBatchQueue) {
-        policiesStack.grantInvokeScheduled(triggerFunction, tableBatchQueue);
+    public void grantInvokeScheduled(IFunction triggerFunction, IQueue invokeQueue) {
+        policiesStack.grantInvokeScheduled(triggerFunction, invokeQueue);
     }
 
-    public ManagedPolicy getInvokeCompactionPolicy() {
-        return policiesStack.getInvokeCompactionPolicy();
+    public ManagedPolicy getInvokeCompactionPolicyForGrants() {
+        return policiesStack.getInvokeCompactionPolicyForGrants();
     }
 
-    public IGrantable getPurgeQueuesPolicy() {
-        return policiesStack.getPurgeQueuesPolicy();
+    public IGrantable getPurgeQueuesPolicyForGrants() {
+        return policiesStack.getPurgeQueuesPolicyForGrants();
     }
 }

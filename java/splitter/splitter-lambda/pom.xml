@@ -19,7 +19,7 @@
     <parent>
         <artifactId>splitter</artifactId>
         <groupId>sleeper</groupId>
-        <version>0.23.0-SNAPSHOT</version>
+        <version>0.24.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -60,6 +60,11 @@
         <dependency>
             <groupId>sleeper</groupId>
             <artifactId>splitter-core</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>common-invoke-tables</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <!-- Test dependencies -->

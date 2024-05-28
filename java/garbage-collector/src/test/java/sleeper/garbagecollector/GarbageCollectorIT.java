@@ -24,7 +24,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
@@ -36,7 +35,6 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.table.InvokeForTableRequest;
 import sleeper.garbagecollector.FailedGarbageCollectionException.FileFailure;
 import sleeper.garbagecollector.FailedGarbageCollectionException.TableFailures;
 import sleeper.garbagecollector.GarbageCollector.DeleteFile;
@@ -53,7 +51,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -62,7 +59,6 @@ import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYST
 import static sleeper.configuration.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithNoReferences;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
@@ -300,10 +296,9 @@ public class GarbageCollectorIT {
                 }
                 deletedFiles.add(filename);
             });
-            InvokeForTableRequest request = invokeForAllTables();
 
             // And / Then
-            assertThatThrownBy(() -> collector.runAtTime(currentTime, request))
+            assertThatThrownBy(() -> collector.runAtTime(currentTime, tables))
                     .isInstanceOfSatisfying(FailedGarbageCollectionException.class,
                             e -> assertThat(e.getTableFailures())
                                     .usingRecursiveFieldByFieldElementComparator()
@@ -381,26 +376,17 @@ public class GarbageCollectorIT {
     }
 
     private void collectGarbageAtTime(Instant time) throws Exception {
-        collector().runAtTime(time, invokeForAllTables());
+        collector().runAtTime(time, tables);
     }
 
     private GarbageCollector collector() throws Exception {
         return new GarbageCollector(new Configuration(), instanceProperties,
-                new FixedTablePropertiesProvider(tables),
                 new FixedStateStoreProvider(stateStoreByTableName));
     }
 
     private GarbageCollector collectorWithDeleteAction(DeleteFile deleteFile) throws Exception {
         return new GarbageCollector(deleteFile, instanceProperties,
-                new FixedTablePropertiesProvider(tables),
                 new FixedStateStoreProvider(stateStoreByTableName));
-    }
-
-    private InvokeForTableRequest invokeForAllTables() {
-        List<String> tableIds = tables.stream()
-                .map(table -> table.get(TABLE_ID))
-                .collect(toUnmodifiableList());
-        return new InvokeForTableRequest(tableIds);
     }
 
     private static Schema getSchema() {

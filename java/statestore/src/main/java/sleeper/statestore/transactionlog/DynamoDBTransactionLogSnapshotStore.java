@@ -16,228 +16,204 @@
 package sleeper.statestore.transactionlog;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.Put;
-import com.amazonaws.services.dynamodbv2.model.QueryRequest;
-import com.amazonaws.services.dynamodbv2.model.QueryResult;
-import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
-import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
-import com.amazonaws.services.dynamodbv2.model.Update;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
-import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
+import sleeper.core.statestore.transactionlog.TransactionLogSnapshot;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotMetadataStore.LatestSnapshots;
 
-import java.time.Instant;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.Optional;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME;
-import static sleeper.dynamodb.tools.DynamoDBAttributes.createNumberAttribute;
-import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
-import static sleeper.dynamodb.tools.DynamoDBAttributes.getLongAttribute;
-import static sleeper.dynamodb.tools.DynamoDBAttributes.getStringAttribute;
-import static sleeper.dynamodb.tools.DynamoDBUtils.hasConditionalCheckFailure;
-import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 
+/**
+ * Stores snapshots derived from a transaction log. Holds an index of snapshots in DynamoDB, and stores snapshot data in
+ * S3.
+ */
 public class DynamoDBTransactionLogSnapshotStore {
-    private static final String DELIMITER = "|";
-    public static final String TABLE_ID = DynamoDBTransactionLogStateStore.TABLE_ID;
-    public static final String TABLE_ID_AND_SNAPSHOT_TYPE = "TABLE_ID_AND_SNAPSHOT_TYPE";
-    private static final String PATH = "PATH";
-    public static final String TRANSACTION_NUMBER = DynamoDBTransactionLogStateStore.TRANSACTION_NUMBER;
-    private static final String UPDATE_TIME = "UPDATE_TIME";
-    private static final String SNAPSHOT_TYPE = "SNAPSHOT_TYPE";
-    private static final String FILES_TRANSACTION_NUMBER = "FILES_TRANSACTION_NUMBER";
-    private static final String PARTITIONS_TRANSACTION_NUMBER = "PARTITIONS_TRANSACTION_NUMBER";
-    private static final String FILES_SNAPSHOT_PATH = "FILES_SNAPSHOT_PATH";
-    private static final String PARTITIONS_SNAPSHOT_PATH = "PARTITIONS_SNAPSHOT_PATH";
-    private final String allSnapshotsTable;
-    private final String latestSnapshotsTable;
-    private final String sleeperTableId;
-    private final AmazonDynamoDB dynamo;
-    private final Supplier<Instant> timeSupplier;
+    public static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBTransactionLogSnapshotStore.class);
 
-    public DynamoDBTransactionLogSnapshotStore(InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamo, Supplier<Instant> timeSupplier) {
-        this.allSnapshotsTable = instanceProperties.get(TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME);
-        this.latestSnapshotsTable = instanceProperties.get(TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME);
-        this.sleeperTableId = tableProperties.get(TableProperty.TABLE_ID);
-        this.dynamo = dynamo;
-        this.timeSupplier = timeSupplier;
+    private final LatestSnapshotsMetadataLoader latestMetadataLoader;
+    private final SnapshotMetadataSaver metadataSaver;
+    private final TransactionLogSnapshotSerDe snapshotSerDe;
+    private final InstanceProperties instanceProperties;
+    private final TableProperties tableProperties;
+    private final Configuration configuration;
+
+    public DynamoDBTransactionLogSnapshotStore(
+            InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamo, Configuration configuration) {
+        this(new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamo),
+                instanceProperties, tableProperties, configuration);
     }
 
-    public void saveFiles(String snapshotPath, long transactionNumber) throws DuplicateSnapshotException {
-        saveSnapshot(SnapshotType.FILES, snapshotPath, transactionNumber);
+    private DynamoDBTransactionLogSnapshotStore(
+            DynamoDBTransactionLogSnapshotMetadataStore metadataStore,
+            InstanceProperties instanceProperties, TableProperties tableProperties, Configuration configuration) {
+        this(metadataStore::getLatestSnapshots, metadataStore::saveSnapshot, instanceProperties, tableProperties, configuration);
     }
 
-    public void savePartitions(String snapshotPath, long transactionNumber) throws DuplicateSnapshotException {
-        saveSnapshot(SnapshotType.PARTITIONS, snapshotPath, transactionNumber);
+    DynamoDBTransactionLogSnapshotStore(
+            LatestSnapshotsMetadataLoader latestMetadataLoader, SnapshotMetadataSaver metadataSaver,
+            InstanceProperties instanceProperties, TableProperties tableProperties, Configuration configuration) {
+        this.latestMetadataLoader = latestMetadataLoader;
+        this.metadataSaver = metadataSaver;
+        this.snapshotSerDe = new TransactionLogSnapshotSerDe(tableProperties.getSchema(), configuration);
+        this.instanceProperties = instanceProperties;
+        this.tableProperties = tableProperties;
+        this.configuration = configuration;
     }
 
-    private void saveSnapshot(SnapshotType snapshotType, String snapshotPath, long transactionNumber) throws DuplicateSnapshotException {
-        Instant updateTime = timeSupplier.get();
+    /**
+     * Loads the latest snapshot of files if it meets a minimum transaction number. Used by the state store to implement
+     * {@link sleeper.core.statestore.transactionlog.TransactionLogSnapshotLoader}.
+     *
+     * @param  transactionNumber the minimum transaction number to load snapshot data from S3
+     * @return                   the latest snapshot if there is one that meets the minimum transaction number
+     */
+    public Optional<TransactionLogSnapshot> loadLatestFilesSnapshotIfAtMinimumTransaction(long transactionNumber) {
+        return latestMetadataLoader.load().getFilesSnapshot()
+                .filter(metadata -> metadata.getTransactionNumber() >= transactionNumber)
+                .map(this::loadFilesSnapshot);
+    }
+
+    /**
+     * Loads the latest snapshot of partitions if it meets a minimum transaction number. Used by the state store to
+     * implement {@link sleeper.core.statestore.transactionlog.TransactionLogSnapshotLoader}.
+     *
+     * @param  transactionNumber the minimum transaction number to load snapshot data from S3
+     * @return                   the latest snapshot if there is one that meets the minimum transaction number
+     */
+    public Optional<TransactionLogSnapshot> loadLatestPartitionsSnapshotIfAtMinimumTransaction(long transactionNumber) {
+        return latestMetadataLoader.load().getPartitionsSnapshot()
+                .filter(metadata -> metadata.getTransactionNumber() >= transactionNumber)
+                .map(this::loadPartitionsSnapshot);
+    }
+
+    /**
+     * Loads the snapshot of files based on metadata for the latest snapshot held in the index.
+     *
+     * @param  snapshots the metadata
+     * @return           the snapshot, or the initial state if there was no snapshot in the index
+     */
+    public TransactionLogSnapshot loadFilesSnapshot(LatestSnapshots snapshots) {
+        return snapshots.getFilesSnapshot()
+                .map(this::loadFilesSnapshot)
+                .orElseGet(TransactionLogSnapshot::filesInitialState);
+    }
+
+    /**
+     * Loads the snapshot of partitions based on metadata for the latest snapshot held in the index.
+     *
+     * @param  snapshots the metadata
+     * @return           the snapshot, or the initial state if there was no snapshot in the index
+     */
+    public TransactionLogSnapshot loadPartitionsSnapshot(LatestSnapshots snapshots) {
+        return snapshots.getPartitionsSnapshot()
+                .map(this::loadPartitionsSnapshot)
+                .orElseGet(TransactionLogSnapshot::partitionsInitialState);
+    }
+
+    private TransactionLogSnapshot loadFilesSnapshot(TransactionLogSnapshotMetadata metadata) {
         try {
-            List<TransactWriteItem> writes = List.of(
-                    new TransactWriteItem()
-                            .withPut(putNewSnapshot(snapshotType, snapshotPath, transactionNumber, updateTime)),
-                    new TransactWriteItem()
-                            .withUpdate(updateLatestSnapshot(snapshotType, snapshotPath, transactionNumber, updateTime)));
-            TransactWriteItemsRequest transactWriteItemsRequest = new TransactWriteItemsRequest()
-                    .withTransactItems(writes)
-                    .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
-            dynamo.transactWriteItems(transactWriteItemsRequest);
-        } catch (TransactionCanceledException e) {
-            if (hasConditionalCheckFailure(e)) {
-                throw new DuplicateSnapshotException(snapshotPath, e);
-            }
+            return new TransactionLogSnapshot(snapshotSerDe.loadFiles(metadata), metadata.getTransactionNumber());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 
-    private Put putNewSnapshot(SnapshotType snapshotType, String snapshotPath, long transactionNumber, Instant updateTime) {
-        return new Put()
-                .withTableName(allSnapshotsTable)
-                .withItem(new DynamoDBRecordBuilder()
-                        .string(TABLE_ID_AND_SNAPSHOT_TYPE, tableAndType(sleeperTableId, snapshotType))
-                        .string(TABLE_ID, sleeperTableId)
-                        .string(PATH, snapshotPath)
-                        .number(TRANSACTION_NUMBER, transactionNumber)
-                        .number(UPDATE_TIME, updateTime.toEpochMilli())
-                        .string(SNAPSHOT_TYPE, snapshotType.name())
-                        .build());
-    }
-
-    private Update updateLatestSnapshot(SnapshotType snapshotType, String snapshotPath, long transactionNumber, Instant updateTime) {
-        String pathKey;
-        String transactionNumberKey;
-        if (snapshotType == SnapshotType.FILES) {
-            pathKey = FILES_SNAPSHOT_PATH;
-            transactionNumberKey = FILES_TRANSACTION_NUMBER;
-        } else {
-            pathKey = PARTITIONS_SNAPSHOT_PATH;
-            transactionNumberKey = PARTITIONS_TRANSACTION_NUMBER;
-        }
-        return new Update()
-                .withTableName(latestSnapshotsTable)
-                .withKey(Map.of(TABLE_ID, createStringAttribute(sleeperTableId)))
-                .withUpdateExpression("SET " +
-                        "#Path = :path, " +
-                        "#TransactionNumber = :transaction_number, " +
-                        "#UpdateTime = :update_time")
-                .withConditionExpression("#TransactionNumber <> :transaction_number")
-                .withExpressionAttributeNames(Map.of(
-                        "#Path", pathKey,
-                        "#TransactionNumber", transactionNumberKey,
-                        "#UpdateTime", UPDATE_TIME))
-                .withExpressionAttributeValues(Map.of(
-                        ":path", createStringAttribute(snapshotPath),
-                        ":transaction_number", createNumberAttribute(transactionNumber),
-                        ":update_time", createNumberAttribute(updateTime.toEpochMilli())));
-    }
-
-    public List<TransactionLogSnapshot> getFilesSnapshots() {
-        return getSnapshots(SnapshotType.FILES)
-                .collect(Collectors.toList());
-    }
-
-    public List<TransactionLogSnapshot> getPartitionsSnapshots() {
-        return getSnapshots(SnapshotType.PARTITIONS)
-                .collect(Collectors.toList());
-    }
-
-    private Stream<TransactionLogSnapshot> getSnapshots(SnapshotType type) {
-        return streamPagedItems(dynamo, new QueryRequest()
-                .withTableName(allSnapshotsTable)
-                .withConsistentRead(true)
-                .withKeyConditionExpression("#TableIdAndType = :table_and_type")
-                .withExpressionAttributeNames(Map.of("#TableIdAndType", TABLE_ID_AND_SNAPSHOT_TYPE))
-                .withExpressionAttributeValues(new DynamoDBRecordBuilder()
-                        .string(":table_and_type", tableAndType(sleeperTableId, type))
-                        .build())
-                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL))
-                .map(DynamoDBTransactionLogSnapshotStore::getSnapshotFromItem);
-    }
-
-    public Optional<LatestSnapshots> getLatestSnapshots() {
-        QueryResult result = dynamo.query(new QueryRequest()
-                .withTableName(latestSnapshotsTable)
-                .withKeyConditionExpression("#TableId = :table_id")
-                .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID))
-                .withExpressionAttributeValues(new DynamoDBRecordBuilder()
-                        .string(":table_id", sleeperTableId)
-                        .build()));
-        if (result.getCount() > 0) {
-            return Optional.of(getLatestSnapshotsFromItem(result.getItems().get(0)));
-        } else {
-            return Optional.empty();
+    private TransactionLogSnapshot loadPartitionsSnapshot(TransactionLogSnapshotMetadata metadata) {
+        try {
+            return new TransactionLogSnapshot(snapshotSerDe.loadPartitions(metadata), metadata.getTransactionNumber());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 
-    private static LatestSnapshots getLatestSnapshotsFromItem(Map<String, AttributeValue> item) {
-        return new LatestSnapshots(getFilesSnapshotFromItem(item), getPartitionsSnapshotFromItem(item));
-    }
+    /**
+     * Saves a snapshot of files to S3 and to the index. Deletes the file if the metadata fails to save in the index.
+     *
+     * @param  snapshot                   the snapshot
+     * @throws IOException                if the snapshot fails to save to S3
+     * @throws DuplicateSnapshotException if there is already a snapshot for the given transaction number
+     */
+    public void saveFilesSnapshot(TransactionLogSnapshot snapshot) throws IOException, DuplicateSnapshotException {
+        TransactionLogSnapshotMetadata snapshotMetadata = TransactionLogSnapshotMetadata.forFiles(
+                getBasePath(), snapshot.getTransactionNumber());
 
-    private static TransactionLogSnapshot getFilesSnapshotFromItem(Map<String, AttributeValue> item) {
-        return new TransactionLogSnapshot(getStringAttribute(item, FILES_SNAPSHOT_PATH), SnapshotType.FILES,
-                getLongAttribute(item, FILES_TRANSACTION_NUMBER, 0));
-    }
-
-    private static TransactionLogSnapshot getPartitionsSnapshotFromItem(Map<String, AttributeValue> item) {
-        return new TransactionLogSnapshot(getStringAttribute(item, PARTITIONS_SNAPSHOT_PATH), SnapshotType.PARTITIONS,
-                getLongAttribute(item, PARTITIONS_TRANSACTION_NUMBER, 0));
-    }
-
-    private static String tableAndType(String table, SnapshotType type) {
-        return table + DELIMITER + type.name();
-    }
-
-    private static TransactionLogSnapshot getSnapshotFromItem(Map<String, AttributeValue> item) {
-        SnapshotType type = SnapshotType.valueOf(item.get(SNAPSHOT_TYPE).getS());
-        return new TransactionLogSnapshot(getStringAttribute(item, PATH), type, getLongAttribute(item, TRANSACTION_NUMBER, 0));
-    }
-
-    public static class LatestSnapshots {
-        TransactionLogSnapshot filesSnapshot;
-        TransactionLogSnapshot partitionsSnapshot;
-
-        public LatestSnapshots(TransactionLogSnapshot filesSnapshot, TransactionLogSnapshot partitionsSnapshot) {
-            this.filesSnapshot = filesSnapshot;
-            this.partitionsSnapshot = partitionsSnapshot;
+        snapshotSerDe.saveFiles(snapshotMetadata, snapshot.getState());
+        try {
+            metadataSaver.save(snapshotMetadata);
+        } catch (DuplicateSnapshotException | RuntimeException e) {
+            LOGGER.info("Failed to save snapshot to Dynamo DB. Deleting snapshot file.");
+            Path path = new Path(snapshotMetadata.getPath());
+            FileSystem fs = path.getFileSystem(configuration);
+            fs.delete(path, false);
+            throw e;
         }
-
-        public TransactionLogSnapshot getFilesSnapshot() {
-            return filesSnapshot;
-        }
-
-        public TransactionLogSnapshot getPartitionsSnapshot() {
-            return partitionsSnapshot;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(filesSnapshot, partitionsSnapshot);
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (!(obj instanceof LatestSnapshots)) {
-                return false;
-            }
-            LatestSnapshots other = (LatestSnapshots) obj;
-            return Objects.equals(filesSnapshot, other.filesSnapshot) && Objects.equals(partitionsSnapshot, other.partitionsSnapshot);
-        }
-
     }
 
+    /**
+     * Saves a snapshot of partitions to S3 and to the index. Deletes the file if the metadata fails to save in the
+     * index.
+     *
+     * @param  snapshot                   the snapshot
+     * @throws IOException                if the snapshot fails to save to S3
+     * @throws DuplicateSnapshotException if there is already a snapshot for the given transaction number
+     */
+    public void savePartitionsSnapshot(TransactionLogSnapshot snapshot) throws IOException, DuplicateSnapshotException {
+        TransactionLogSnapshotMetadata snapshotMetadata = TransactionLogSnapshotMetadata.forPartitions(
+                getBasePath(), snapshot.getTransactionNumber());
+        snapshotSerDe.savePartitions(snapshotMetadata, snapshot.getState());
+        try {
+            metadataSaver.save(snapshotMetadata);
+        } catch (DuplicateSnapshotException | RuntimeException e) {
+            LOGGER.info("Failed to save snapshot to Dynamo DB. Deleting snapshot file.");
+            Path path = new Path(snapshotMetadata.getPath());
+            FileSystem fs = path.getFileSystem(configuration);
+            fs.delete(path, false);
+            throw e;
+        }
+    }
+
+    private String getBasePath() {
+        return instanceProperties.get(FILE_SYSTEM)
+                + instanceProperties.get(DATA_BUCKET) + "/"
+                + tableProperties.get(TableProperty.TABLE_ID);
+    }
+
+    /**
+     * Loads the metadata of the latest snapshots from the index.
+     */
+    public interface LatestSnapshotsMetadataLoader {
+
+        /**
+         * Loads the latest snapshots metadata.
+         *
+         * @return the metadata
+         */
+        LatestSnapshots load();
+    }
+
+    /**
+     * Saves the metadata of a snapshot in the index.
+     */
+    public interface SnapshotMetadataSaver {
+
+        /**
+         * Saves the snapshot metadata.
+         *
+         * @param  snapshot                   the metadata
+         * @throws DuplicateSnapshotException if there is already a snapshot for the given transaction number
+         */
+        void save(TransactionLogSnapshotMetadata snapshot) throws DuplicateSnapshotException;
+    }
 }

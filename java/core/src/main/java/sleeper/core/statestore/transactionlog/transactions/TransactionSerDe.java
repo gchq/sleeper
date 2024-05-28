@@ -27,6 +27,9 @@ import sleeper.core.statestore.FileReferenceSerDe;
 import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.util.GsonConfig;
 
+/**
+ * Serialises and deserialises transactions to and from JSON. This can be used to store the transactions in a log.
+ */
 public class TransactionSerDe {
     private final Gson gson;
     private final Gson gsonPrettyPrint;
@@ -41,14 +44,33 @@ public class TransactionSerDe {
         gsonPrettyPrint = builder.setPrettyPrinting().create();
     }
 
+    /**
+     * Serialises a transaction to JSON.
+     *
+     * @param  transaction the transaction
+     * @return             the JSON
+     */
     public String toJson(StateStoreTransaction<?> transaction) {
         return gson.toJson(transaction);
     }
 
+    /**
+     * Serialises a transaction to JSON. Formats the JSON to be human-readable.
+     *
+     * @param  transaction the transaction
+     * @return             the JSON
+     */
     public String toJsonPrettyPrint(StateStoreTransaction<?> transaction) {
         return gsonPrettyPrint.toJson(transaction);
     }
 
+    /**
+     * Deserialises a transaction from JSON.
+     *
+     * @param  type the type of transaction (expected to be held in the log entry)
+     * @param  json the JSON
+     * @return      the transaction
+     */
     public StateStoreTransaction<?> toTransaction(TransactionType type, String json) {
         return gson.fromJson(json, type.getType());
     }

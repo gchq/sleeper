@@ -19,6 +19,9 @@ package sleeper.core.statestore.exception;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStoreException;
 
+/**
+ * An exception for when a file reference could not be created because the file is already referenced on that partition.
+ */
 public class FileReferenceAlreadyExistsException extends StateStoreException {
     public FileReferenceAlreadyExistsException(FileReference fileReference) {
         this(fileReference, null);

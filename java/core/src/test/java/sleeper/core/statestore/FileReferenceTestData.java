@@ -18,6 +18,9 @@ package sleeper.core.statestore;
 import java.time.Duration;
 import java.time.Instant;
 
+/**
+ * Test helpers for setting up test file references.
+ */
 public class FileReferenceTestData {
     private FileReferenceTestData() {
     }
@@ -26,10 +29,25 @@ public class FileReferenceTestData {
     public static final Instant AFTER_DEFAULT_UPDATE_TIME = DEFAULT_UPDATE_TIME.plus(Duration.ofMinutes(1));
     public static final long DEFAULT_NUMBER_OF_RECORDS = 100L;
 
+    /**
+     * Sets up a file reference on the root partition. Only use this when most fields won't matter, including the
+     * partition ID, the state store update time. For most use cases {@link FileReferenceFactory} is preferable.
+     *
+     * @param  filename the filename
+     * @return          the file reference
+     */
     public static FileReference defaultFileOnRootPartition(String filename) {
         return defaultFileOnRootPartitionWithRecords(filename, DEFAULT_NUMBER_OF_RECORDS);
     }
 
+    /**
+     * Sets up a file reference on the root partition. Only use this when most fields won't matter, including the
+     * partition ID, the state store update time. For most use cases {@link FileReferenceFactory} is preferable.
+     *
+     * @param  filename the filename
+     * @param  records  the number of records in the file
+     * @return          the file reference
+     */
     public static FileReference defaultFileOnRootPartitionWithRecords(String filename, long records) {
         return FileReference.builder()
                 .filename(filename)
@@ -41,15 +59,37 @@ public class FileReferenceTestData {
                 .build();
     }
 
+    /**
+     * Creates a new reference to a file on a child partition. Used when splitting a parent file reference into exactly
+     * two. This must split to a direct child partition of the one the file is originally referenced on.
+     *
+     * @param  parentFile       the parent file being split
+     * @param  childPartitionId the ID of the partition to reference the file on
+     * @return                  the file reference
+     */
     public static FileReference splitFile(FileReference parentFile, String childPartitionId) {
         return SplitFileReference.referenceForChildPartition(parentFile, childPartitionId)
                 .toBuilder().lastStateStoreUpdateTime(DEFAULT_UPDATE_TIME).build();
     }
 
+    /**
+     * Creates a copy of a file reference with the specified last update time.
+     *
+     * @param  updateTime the update time
+     * @param  file       the file reference
+     * @return            the copy
+     */
     public static FileReference withLastUpdate(Instant updateTime, FileReference file) {
         return file.toBuilder().lastStateStoreUpdateTime(updateTime).build();
     }
 
+    /**
+     * Creates a copy of a file reference assigned to the specified job.
+     *
+     * @param  jobId the ID of the job
+     * @param  file  the file reference
+     * @return       the copy
+     */
     public static FileReference withJobId(String jobId, FileReference file) {
         return file.toBuilder().jobId(jobId).build();
     }

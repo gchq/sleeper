@@ -24,8 +24,8 @@ import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceStore;
 import sleeper.core.statestore.SplitFileReferenceRequest;
-import sleeper.core.statestore.SplitRequestsFailedException;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.exception.SplitRequestsFailedException;
 import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
 import sleeper.core.statestore.transactionlog.transactions.AssignJobIdsTransaction;
 import sleeper.core.statestore.transactionlog.transactions.ClearFilesTransaction;
@@ -43,6 +43,9 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 
+/**
+ * A file reference store backed by a log of transactions. Part of {@link TransactionLogStateStore}.
+ */
 class TransactionLogFileReferenceStore implements FileReferenceStore {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(TransactionLogFileReferenceStore.class);

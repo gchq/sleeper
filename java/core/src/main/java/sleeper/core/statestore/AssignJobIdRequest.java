@@ -36,6 +36,14 @@ public class AssignJobIdRequest {
         this.filenames = filenames;
     }
 
+    /**
+     * Builds a request to assign files on a single partition to a job.
+     *
+     * @param  jobId       the ID of the job
+     * @param  partitionId the ID of the partition
+     * @param  filenames   the filenames that identify the files in the state store
+     * @return             the request
+     */
     public static AssignJobIdRequest assignJobOnPartitionToFiles(String jobId, String partitionId, List<String> filenames) {
         return new AssignJobIdRequest(jobId, partitionId, filenames);
     }

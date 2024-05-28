@@ -22,6 +22,9 @@ import sleeper.core.statestore.transactionlog.StateStoreFiles;
 import java.time.Instant;
 import java.util.Objects;
 
+/**
+ * A transaction to delete all files in the state store.
+ */
 public class ClearFilesTransaction implements FileReferenceTransaction {
 
     @Override

@@ -17,30 +17,55 @@ package sleeper.statestore.transactionlog;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
+import org.apache.hadoop.conf.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.FILE_TRANSACTION_LOG_TABLENAME;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_TRANSACTION_LOG_TABLENAME;
-
-public class DynamoDBTransactionLogStateStore extends TransactionLogStateStore {
+/**
+ * An implementation of the state store backed by a transaction log held in DynamoDB and S3.
+ */
+public class DynamoDBTransactionLogStateStore {
+    public static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBTransactionLogStateStore.class);
     public static final String TABLE_ID = "TABLE_ID";
     public static final String TRANSACTION_NUMBER = "TRANSACTION_NUMBER";
 
-    public DynamoDBTransactionLogStateStore(
-            InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamoDB, AmazonS3 s3) {
-        super(builderFrom(instanceProperties, tableProperties, dynamoDB, s3));
+    private DynamoDBTransactionLogStateStore() {
     }
 
+    /**
+     * Creates the state store for the given Sleeper table.
+     *
+     * @param  instanceProperties the Sleeper instance properties
+     * @param  tableProperties    the Sleeper table properties
+     * @param  dynamoDB           the client for interacting with DynamoDB
+     * @param  s3                 the client for interacting with S3
+     * @param  configuration      the Hadoop configuration for interacting with Parquet
+     * @return                    the state store
+     */
+    public static TransactionLogStateStore create(
+            InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamoDB, AmazonS3 s3, Configuration configuration) {
+        return builderFrom(instanceProperties, tableProperties, dynamoDB, s3, configuration).build();
+    }
+
+    /**
+     * Creates a builder for the state store for the given Sleeper table.
+     *
+     * @param  instanceProperties the Sleeper instance properties
+     * @param  tableProperties    the Sleeper table properties
+     * @param  dynamoDB           the client for interacting with DynamoDB
+     * @param  s3                 the client for interacting with S3
+     * @param  configuration      the Hadoop configuration for interacting with Parquet
+     * @return                    the builder
+     */
     public static TransactionLogStateStore.Builder builderFrom(
-            InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamoDB, AmazonS3 s3) {
-        return builder()
-                .sleeperTable(tableProperties.getStatus())
-                .schema(tableProperties.getSchema())
-                .filesLogStore(new DynamoDBTransactionLogStore(instanceProperties.get(FILE_TRANSACTION_LOG_TABLENAME), instanceProperties, tableProperties, dynamoDB, s3))
-                .partitionsLogStore(new DynamoDBTransactionLogStore(instanceProperties.get(PARTITION_TRANSACTION_LOG_TABLENAME), instanceProperties, tableProperties, dynamoDB, s3));
+            InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamoDB, AmazonS3 s3, Configuration configuration) {
+        DynamoDBTransactionLogSnapshotStore snapshotStore = new DynamoDBTransactionLogSnapshotStore(instanceProperties, tableProperties, dynamoDB, configuration);
+        return DynamoDBTransactionLogStateStoreNoSnapshots.builderFrom(instanceProperties, tableProperties, dynamoDB, s3)
+                .filesSnapshotLoader(snapshotStore::loadLatestFilesSnapshotIfAtMinimumTransaction)
+                .partitionsSnapshotLoader(snapshotStore::loadLatestPartitionsSnapshotIfAtMinimumTransaction);
     }
-
 }

@@ -84,7 +84,7 @@ public class InMemoryTransactionLogStoreTest {
                 new DeleteFilesTransaction(List.of("file1.parquet")));
         TransactionLogEntry entry2 = logEntry(1,
                 new DeleteFilesTransaction(List.of("file2.parquet")));
-        store.beforeNextAddTransaction(
+        store.atStartOfNextAddTransaction(
                 () -> store.addTransaction(entry1));
 
         // When / Then
@@ -99,7 +99,7 @@ public class InMemoryTransactionLogStoreTest {
     void shouldFailToAddTransactionWhenExceptionWasThrownExplicitly() throws Exception {
         // Given
         RuntimeException failure = new RuntimeException("Fail test");
-        store.beforeNextAddTransaction(() -> {
+        store.atStartOfNextAddTransaction(() -> {
             throw failure;
         });
 
@@ -114,7 +114,7 @@ public class InMemoryTransactionLogStoreTest {
     void shouldFailToReadTransactionsWhenExceptionWasThrownExplicitly() throws Exception {
         // Given
         RuntimeException failure = new RuntimeException("Fail test");
-        store.beforeNextReadTransactions(() -> {
+        store.atStartOfNextReadTransactions(() -> {
             throw failure;
         });
 

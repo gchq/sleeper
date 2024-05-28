@@ -15,6 +15,7 @@ on:
       - 'java/parquet/**'
       - 'java/common/common-job/**'
       - 'java/common/common-task/**'
+      - 'java/common/common-invoke-tables/**'
       - 'java/build/**'
       - 'java/common/dynamodb-tools/**'
 

@@ -49,6 +49,10 @@ import static sleeper.dynamodb.tools.DynamoDBAttributes.getNumberAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
 
+/**
+ * Stores a transaction log in DynamoDB and S3. If a transaction is too big to fit in a DynamoDB item, the body of the
+ * transaction is stored in S3.
+ */
 class DynamoDBTransactionLogStore implements TransactionLogStore {
     public static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBTransactionLogStore.class);
 

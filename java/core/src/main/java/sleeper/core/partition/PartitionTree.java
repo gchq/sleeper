@@ -28,6 +28,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.util.stream.Collectors.toList;
+
 /**
  * Represents a tree of partitions. It can be used to traverse or query the tree, e.g. to find all ancestors of a
  * partition, partitions that are either parents of the partition, or grandparents, or great-grandparents.
@@ -72,14 +74,7 @@ public class PartitionTree {
         if (!idToPartition.containsKey(partitionId)) {
             throw new IllegalArgumentException("No partition of id " + partitionId);
         }
-
-        List<String> ancestors = new ArrayList<>();
-        String parent = idToPartition.get(partitionId).getParentPartitionId();
-        while (null != parent) {
-            ancestors.add(parent);
-            parent = null == idToPartition.get(parent) ? null : idToPartition.get(parent).getParentPartitionId();
-        }
-        return ancestors;
+        return ancestorsOf(idToPartition.get(partitionId)).map(Partition::getId).collect(toList());
     }
 
     /**
@@ -93,14 +88,33 @@ public class PartitionTree {
         if (!idToPartition.containsKey(partitionId)) {
             throw new IllegalArgumentException("No partition of id " + partitionId);
         }
+        return ancestorsOf(idToPartition.get(partitionId)).collect(toList());
+    }
 
-        List<Partition> ancestors = new ArrayList<>();
-        String parentId = idToPartition.get(partitionId).getParentPartitionId();
-        while (null != parentId) {
-            ancestors.add(idToPartition.get(parentId));
-            parentId = idToPartition.get(parentId).getParentPartitionId();
+    /**
+     * Streams through all partitions that were split to result in the given partition. Starts with the most recent
+     * parent, and includes all ancestors of that parent ending with the root partition.
+     *
+     * @param  partition the ID of the partition to find ancestors of
+     * @return           all of the partition's ancestors
+     */
+    public Stream<Partition> ancestorsOf(Partition partition) {
+        return Stream.iterate(getParent(partition),
+                currentPartition -> currentPartition != null,
+                currentPartition -> getParent(currentPartition));
+    }
+
+    /**
+     * Retrieves the parent of a partition.
+     *
+     * @param  partition the partition
+     * @return           its parent, or null if it has no parent
+     */
+    public Partition getParent(Partition partition) {
+        if (partition.getParentPartitionId() == null) {
+            return null;
         }
-        return ancestors;
+        return idToPartition.get(partition.getParentPartitionId());
     }
 
     /**

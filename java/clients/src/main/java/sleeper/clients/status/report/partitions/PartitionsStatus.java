@@ -65,10 +65,10 @@ public class PartitionsStatus {
         return partitions.stream().filter(PartitionStatus::isLeafPartition).count();
     }
 
-    public long getNumLeafPartitionsThatNeedSplitting() {
+    public long getNumLeafPartitionsThatWillBeSplit() {
         return partitions.stream()
                 .filter(PartitionStatus::isLeafPartition)
-                .filter(PartitionStatus::isNeedsSplitting)
+                .filter(PartitionStatus::willBeSplit)
                 .count();
     }
 

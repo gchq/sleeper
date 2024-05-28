@@ -160,4 +160,21 @@ public class FilesStatusReportTest extends FilesStatusReportTestBase {
                 .isEqualTo(example("reports/filestatus/json/splitFile.json"));
     }
 
+    @Test
+    public void shouldReportFilesStatusWhenPartitionsNoLongerExist() throws Exception {
+        // Given
+        PartitionTree partitions = new PartitionsBuilder(schema).rootFirst("A").buildTree();
+        stateStore.initialise(partitions.getAllPartitions());
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(partitions, lastStateStoreUpdate);
+        FileReference file1 = fileReferenceFactory.rootFile("file1.parquet", 1000L);
+        FileReference file2 = fileReferenceFactory.rootFile("file2.parquet", 2000L);
+        stateStore.initialise(new PartitionsBuilder(schema).rootFirst("B").buildList());
+        stateStore.addFiles(List.of(file1, file2));
+
+        // When / Then
+        assertThat(verboseReportString(StandardFileStatusReporter::new))
+                .isEqualTo(example("reports/filestatus/standard/fileWithPartitionThatNoLongerExists.txt"));
+        assertThatJson(verboseReportString(JsonFileStatusReporter::new))
+                .isEqualTo(example("reports/filestatus/json/fileWithPartitionThatNoLongerExists.json"));
+    }
 }

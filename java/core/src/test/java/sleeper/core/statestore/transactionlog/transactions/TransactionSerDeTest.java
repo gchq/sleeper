@@ -68,8 +68,8 @@ public class TransactionSerDeTest {
         FileReferenceTransaction transaction = new AddFilesTransaction(
                 AllReferencesToAFile.newFilesWithReferences(Stream.of(
                         fileFactory.rootFile("file1.parquet", 100),
-                        fileFactory.rootFile("file2.parquet", 200)),
-                        updateTime)
+                        fileFactory.rootFile("file2.parquet", 200)))
+                        .map(file -> file.withCreatedUpdateTime(updateTime))
                         .collect(toUnmodifiableList()));
 
         // When / Then
@@ -91,8 +91,9 @@ public class TransactionSerDeTest {
         FileReferenceTransaction transaction = new AddFilesTransaction(
                 AllReferencesToAFile.newFilesWithReferences(Stream.of(
                         referenceForChildPartition(file, "L"),
-                        referenceForChildPartition(file, "R")),
-                        updateTime).collect(toUnmodifiableList()));
+                        referenceForChildPartition(file, "R")))
+                        .map(fileWithReferences -> fileWithReferences.withCreatedUpdateTime(updateTime))
+                        .collect(toUnmodifiableList()));
 
         // When / Then
         whenSerDeThenMatchAndVerify(schema, transaction);
