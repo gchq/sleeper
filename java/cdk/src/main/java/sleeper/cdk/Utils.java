@@ -115,17 +115,6 @@ public class Utils {
         return sb.toString();
     }
 
-    public static String truncateToMaxSize(String input, int maxSize) {
-        if (input.length() > maxSize) {
-            return input.substring(0, maxSize);
-        }
-        return input;
-    }
-
-    public static String truncateTo64Characters(String input) {
-        return truncateToMaxSize(input, 64);
-    }
-
     /**
      * Returns a cleaned up version of the Sleeper instance ID for use in resource names. Note that the instance ID
      * has a maximum length of 20 characters. See
