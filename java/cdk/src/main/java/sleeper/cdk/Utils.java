@@ -126,6 +126,14 @@ public class Utils {
         return truncateToMaxSize(input, 64);
     }
 
+    /**
+     * Returns a cleaned up version of the Sleeper instance ID for use in resource names. Note that the instance ID
+     * has a maximum length of 20 characters. See
+     * {@link sleeper.configuration.properties.instance.CommonProperty#ID_MAX_LENGTH};
+     *
+     * @param  properties the instance properties
+     * @return            the cleaned up instance ID
+     */
     public static String cleanInstanceId(InstanceProperties properties) {
         return properties.get(ID)
                 .toLowerCase(Locale.ROOT)
