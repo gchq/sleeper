@@ -120,7 +120,7 @@ public class CommonEmrBulkImportHelper {
         LambdaCode bulkImportStarterJar = jars.lambdaCode(BuiltJar.BULK_IMPORT_STARTER, jarsBucket);
 
         String functionName = String.join("-", "sleeper",
-                Utils.cleanInstanceId(instanceProperties), platform, "import-starter");
+                Utils.cleanInstanceId(instanceProperties), "bulk-import", platform, "start");
 
         IFunction function = bulkImportStarterJar.buildFunction(scope, "BulkImport" + platform + "JobStarter", builder -> builder
                 .functionName(functionName)
