@@ -19,11 +19,14 @@ import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.vector.TimeStampMilliVector;
 import org.apache.arrow.vector.VarCharVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
+import org.apache.arrow.vector.complex.ListVector;
+import org.apache.arrow.vector.complex.impl.UnionListWriter;
 import org.apache.arrow.vector.ipc.ArrowStreamReader;
 import org.apache.arrow.vector.ipc.ArrowStreamWriter;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.pojo.ArrowType.Utf8;
 import org.apache.arrow.vector.types.pojo.Field;
+import org.apache.arrow.vector.types.pojo.FieldType;
 import org.apache.arrow.vector.types.pojo.Schema;
 
 import sleeper.core.statestore.AllReferencesToAFile;
@@ -44,7 +47,19 @@ public class StateStoreFilesArrowFormat {
 
     private static final Field FILENAME = Field.notNullable("filename", Utf8.INSTANCE);
     private static final Field UPDATE_TIME = Field.notNullable("updateTime", Types.MinorType.TIMESTAMPMILLI.getType());
-    private static final Schema FILES_SCHEMA = new Schema(List.of(FILENAME, UPDATE_TIME));
+    private static final Field PARTITION_ID = Field.notNullable("partitionId", Utf8.INSTANCE);
+    private static final Field REFERENCE_UPDATE_TIME = Field.notNullable("updateTime", Types.MinorType.TIMESTAMPMILLI.getType());
+    private static final Field JOB_ID = Field.nullable("jobId", Utf8.INSTANCE);
+    private static final Field NUMBER_OF_RECORDS = Field.notNullable("numberOfRecords", Types.MinorType.UINT8.getType());
+    private static final Field COUNT_APPROXIMATE = Field.notNullable("countApproximate", Types.MinorType.BIT.getType());
+    private static final Field ONLY_CONTAINS_DATA_FOR_THIS_PARTITION = Field.notNullable("onlyContainsDataForThisPartition", Types.MinorType.BIT.getType());
+    private static final Field REFERENCE = new Field("reference",
+            FieldType.notNullable(Types.MinorType.STRUCT.getType()),
+            List.of(PARTITION_ID, REFERENCE_UPDATE_TIME, JOB_ID,
+                    NUMBER_OF_RECORDS, COUNT_APPROXIMATE, ONLY_CONTAINS_DATA_FOR_THIS_PARTITION));
+    private static final Field REFERENCES = new Field("partitionReferences",
+            FieldType.notNullable(Types.MinorType.LIST.getType()), List.of(REFERENCE));
+    private static final Schema FILES_SCHEMA = new Schema(List.of(FILENAME, UPDATE_TIME, REFERENCES));
 
     private StateStoreFilesArrowFormat() {
     }
@@ -69,12 +84,20 @@ public class StateStoreFilesArrowFormat {
                 filenameVector.setSafe(rowNumber, file.getFilename().getBytes(StandardCharsets.UTF_8));
                 TimeStampMilliVector updateTimeVector = (TimeStampMilliVector) vectorSchemaRoot.getVector(UPDATE_TIME);
                 updateTimeVector.setSafe(rowNumber, file.getLastStateStoreUpdateTime().toEpochMilli());
+                ListVector referencesVector = (ListVector) vectorSchemaRoot.getVector(REFERENCES);
+                writeReferences(file, rowNumber, referencesVector.getWriter());
                 rowNumber++;
                 vectorSchemaRoot.setRowCount(rowNumber);
             }
             writer.writeBatch();
             writer.end();
         }
+    }
+
+    private static void writeReferences(AllReferencesToAFile file, int fileNumber, UnionListWriter writer) {
+        writer.startList();
+        writer.setPosition(fileNumber);
+        writer.endList();
     }
 
     /**
