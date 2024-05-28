@@ -47,7 +47,6 @@ import sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 import static sleeper.cdk.Utils.createAlarmForDlq;
@@ -83,11 +82,12 @@ public class IngestBatcherStack extends NestedStack {
             IngestStacks ingestStacks,
             List<IMetric> errorMetrics) {
         super(scope, id);
+        String instanceId = Utils.cleanInstanceId(instanceProperties);
 
         // Queue to submit files to the batcher
         Queue submitDLQ = Queue.Builder
                 .create(this, "IngestBatcherSubmitDLQ")
-                .queueName(Utils.truncateTo64Characters(instanceProperties.get(ID) + "-IngestBatcherSubmitDLQ"))
+                .queueName(String.join("-", "sleeper", instanceId, "IngestBatcherSubmitDLQ"))
                 .build();
         DeadLetterQueue ingestJobDeadLetterQueue = DeadLetterQueue.builder()
                 .maxReceiveCount(1)
@@ -95,7 +95,7 @@ public class IngestBatcherStack extends NestedStack {
                 .build();
         submitQueue = Queue.Builder
                 .create(this, "IngestBatcherSubmitQueue")
-                .queueName(Utils.truncateTo64Characters(instanceProperties.get(ID) + "-IngestBatcherSubmitQ"))
+                .queueName(String.join("-", "sleeper", instanceId, "IngestBatcherSubmitQ"))
                 .deadLetterQueue(ingestJobDeadLetterQueue)
                 .visibilityTimeout(Duration.seconds(instanceProperties.getInt(QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS)))
                 .build();
@@ -132,10 +132,8 @@ public class IngestBatcherStack extends NestedStack {
         LambdaCode submitterJar = jars.lambdaCode(BuiltJar.INGEST_BATCHER_SUBMITTER, jarsBucket);
         LambdaCode jobCreatorJar = jars.lambdaCode(BuiltJar.INGEST_BATCHER_JOB_CREATOR, jarsBucket);
 
-        String submitterName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "submit-ingest-batcher"));
-        String jobCreatorName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "batch-ingest-jobs"));
+        String submitterName = String.join("-", "sleeper", instanceId, "ingest-batcher-submit-files");
+        String jobCreatorName = String.join("-", "sleeper", instanceId, "ingest-batcher-create-jobs");
 
         Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
 
