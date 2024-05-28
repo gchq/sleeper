@@ -55,6 +55,8 @@ public class ExponentialBackoffWithJitter {
     public long waitBeforeAttempt(int attempt) throws InterruptedException {
         if (attempt == 1) { // No wait on first attempt
             return 0;
+        } else if (attempt < 1) {
+            throw new IllegalArgumentException("Attempt count must start at 1, found " + attempt);
         }
         long waitMillis = getWaitMillisBeforeAttempt(attempt);
         LOGGER.debug("Sleeping for {}", LoggedDuration.withFullOutput(Duration.ofMillis(waitMillis)));
@@ -65,7 +67,7 @@ public class ExponentialBackoffWithJitter {
     private long getWaitMillisBeforeAttempt(int attempt) {
         double waitCeilingInSeconds = Math.min(
                 waitRange.maxWaitCeilingSecs,
-                waitRange.firstWaitCeilingSecs * 0.5 * Math.pow(2.0, attempt - 1));
+                waitRange.firstWaitCeilingSecs * Math.pow(2.0, attempt - 2)); // First retry is attempt 2
         return (long) (randomJitterFraction.getAsDouble() * waitCeilingInSeconds * 1000L);
     }
 

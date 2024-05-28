@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.function.DoubleSupplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.constantJitterFraction;
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.fixJitterSeed;
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.noJitter;
@@ -138,6 +139,20 @@ public class ExponentialBackoffWithJitterTest {
                 Duration.parse("PT26.375S"));
     }
 
+    @Test
+    void shouldRefuseAttemptZero() {
+        ExponentialBackoffWithJitter backoff = backoff();
+        assertThatThrownBy(() -> backoff.waitBeforeAttempt(0))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void shouldRefuseNegativeAttempt() {
+        ExponentialBackoffWithJitter backoff = backoff();
+        assertThatThrownBy(() -> backoff.waitBeforeAttempt(-1))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
     private void makeAttempts(int attempts) throws Exception {
         makeAttempts(attempts, fixJitterSeed());
     }
@@ -153,5 +168,9 @@ public class ExponentialBackoffWithJitterTest {
         for (int i = 1; i <= attempts; i++) {
             backoff.waitBeforeAttempt(i);
         }
+    }
+
+    private ExponentialBackoffWithJitter backoff() {
+        return new ExponentialBackoffWithJitter(WAIT_RANGE, fixJitterSeed(), recordWaits(foundWaits));
     }
 }
