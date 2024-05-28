@@ -39,7 +39,6 @@ import sleeper.configuration.properties.SleeperScheduleRule;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.List;
-import java.util.Locale;
 
 import static sleeper.cdk.Utils.createAlarmForDlq;
 import static sleeper.cdk.Utils.createLambdaLogGroup;
@@ -49,7 +48,6 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_SNAPSHOT_CREATION_QUEUE_ARN;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_SNAPSHOT_CREATION_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_SNAPSHOT_CREATION_RULE;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB;
 import static sleeper.configuration.properties.instance.CommonProperty.TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS;
@@ -66,10 +64,9 @@ public class TransactionLogSnapshotCreationStack extends NestedStack {
         super(scope, id);
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
         LambdaCode statestoreJar = jars.lambdaCode(BuiltJar.STATESTORE_LAMBDA, jarsBucket);
-        String triggerFunctionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "transaction-log-snapshot-creation-trigger"));
-        String creationFunctionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "transaction-log-snapshot-creation"));
+        String instanceId = Utils.cleanInstanceId(instanceProperties);
+        String triggerFunctionName = String.join("-", "sleeper", instanceId, "transaction-log-snapshot-trigger");
+        String creationFunctionName = String.join("-", "sleeper", instanceId, "transaction-log-snapshot-creator");
         IFunction snapshotCreationTrigger = statestoreJar.buildFunction(this, "TransactionLogSnapshotCreationTrigger", builder -> builder
                 .functionName(triggerFunctionName)
                 .description("Creates batches of Sleeper tables to create transaction log snapshots for and puts them on a queue to be processed")
@@ -101,12 +98,12 @@ public class TransactionLogSnapshotCreationStack extends NestedStack {
 
         Queue deadLetterQueue = Queue.Builder
                 .create(this, "TransactionLogSnapshotDeadLetterQueue")
-                .queueName(String.join("-", "sleeper", instanceProperties.get(ID), "TransactionLogSnapshotDLQ.fifo"))
+                .queueName(String.join("-", "sleeper", instanceId, "TransactionLogSnapshotDLQ.fifo"))
                 .fifo(true)
                 .build();
         Queue queue = Queue.Builder
                 .create(this, "TransactionLogSnapshotQueue")
-                .queueName(String.join("-", "sleeper", instanceProperties.get(ID), "TransactionLogSnapshotQ.fifo"))
+                .queueName(String.join("-", "sleeper", instanceId, "TransactionLogSnapshotQ.fifo"))
                 .deadLetterQueue(DeadLetterQueue.builder()
                         .maxReceiveCount(1)
                         .queue(deadLetterQueue)
