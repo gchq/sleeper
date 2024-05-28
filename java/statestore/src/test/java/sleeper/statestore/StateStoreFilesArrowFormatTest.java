@@ -29,7 +29,6 @@ import java.nio.channels.Channels;
 import java.time.Instant;
 import java.util.List;
 
-import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class StateStoreFilesArrowFormatTest {
@@ -37,7 +36,6 @@ public class StateStoreFilesArrowFormatTest {
     private final BufferAllocator allocator = new RootAllocator();
 
     @Test
-    @Disabled("TODO")
     void shouldWriteOneFileWithNoReferencesInArrowFormat() throws Exception {
         // Given
         Instant updateTime = Instant.parse("2024-05-28T13:25:01.123Z");
@@ -82,10 +80,9 @@ public class StateStoreFilesArrowFormatTest {
         StateStoreFilesArrowFormat.write(files, allocator, Channels.newChannel(stream));
     }
 
-    private List<AllReferencesToAFile> read(ByteArrayOutputStream stream) {
-        return StateStoreFilesArrowFormat.read(Channels.newChannel(
-                new ByteArrayInputStream(stream.toByteArray())))
-                .collect(toUnmodifiableList());
+    private List<AllReferencesToAFile> read(ByteArrayOutputStream stream) throws Exception {
+        return StateStoreFilesArrowFormat.read(allocator,
+                Channels.newChannel(new ByteArrayInputStream(stream.toByteArray())));
     }
 
 }

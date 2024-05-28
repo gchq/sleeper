@@ -19,6 +19,7 @@ import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.vector.TimeStampMilliVector;
 import org.apache.arrow.vector.VarCharVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
+import org.apache.arrow.vector.ipc.ArrowStreamReader;
 import org.apache.arrow.vector.ipc.ArrowStreamWriter;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.pojo.ArrowType.Utf8;
@@ -31,9 +32,10 @@ import java.io.IOException;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.stream.Stream;
 
 /**
  * Reads and writes the state of files in a state store to an Arrow file.
@@ -81,8 +83,21 @@ public class StateStoreFilesArrowFormat {
      * @param  channel the channel
      * @return         the files in the state store
      */
-    public static Stream<AllReferencesToAFile> read(ReadableByteChannel channel) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'read'");
+    public static List<AllReferencesToAFile> read(BufferAllocator allocator, ReadableByteChannel channel) throws IOException {
+        List<AllReferencesToAFile> files = new ArrayList<>();
+        try (ArrowStreamReader reader = new ArrowStreamReader(channel, allocator)) {
+            reader.loadNextBatch();
+            VectorSchemaRoot vectorSchemaRoot = reader.getVectorSchemaRoot();
+            VarCharVector filenameVector = (VarCharVector) vectorSchemaRoot.getVector(FILENAME);
+            String filename = filenameVector.getObject(0).toString();
+            TimeStampMilliVector updateTimeVector = (TimeStampMilliVector) vectorSchemaRoot.getVector(UPDATE_TIME);
+            Instant updateTime = Instant.ofEpochMilli(updateTimeVector.get(0));
+            files.add(AllReferencesToAFile.builder()
+                    .filename(filename)
+                    .lastStateStoreUpdateTime(updateTime)
+                    .internalReferences(List.of())
+                    .build());
+        }
+        return files;
     }
 }
