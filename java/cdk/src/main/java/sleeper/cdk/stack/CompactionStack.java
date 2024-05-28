@@ -222,7 +222,8 @@ public class CompactionStack extends NestedStack {
 
     private Queue sqsQueueForCompactionJobs(CoreStacks coreStacks, Topic topic, List<IMetric> errorMetrics) {
         // Create queue for compaction job definitions
-        String dlQueueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-CompactionJobDLQ");
+        String instanceId = Utils.cleanInstanceId(instanceProperties);
+        String dlQueueName = String.join("-", "sleeper", instanceId, "CompactionJobDLQ");
         compactionDLQ = Queue.Builder
                 .create(this, "CompactionJobDefinitionsDeadLetterQueue")
                 .queueName(dlQueueName)
@@ -231,7 +232,7 @@ public class CompactionStack extends NestedStack {
                 .maxReceiveCount(instanceProperties.getInt(COMPACTION_JOB_MAX_RETRIES))
                 .queue(compactionDLQ)
                 .build();
-        String queueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-CompactionJobQ");
+        String queueName = String.join("-", "sleeper", instanceId, "CompactionJobQ");
         compactionJobQ = Queue.Builder
                 .create(this, "CompactionJobDefinitionsQueue")
                 .queueName(queueName)
@@ -272,10 +273,9 @@ public class CompactionStack extends NestedStack {
         // Function to create compaction jobs
         Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
 
-        String triggerFunctionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "compaction-job-creation-trigger"));
-        String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "compaction-job-creation-handler"));
+        String instanceId = Utils.cleanInstanceId(instanceProperties);
+        String triggerFunctionName = String.join("-", "sleeper", instanceId, "compaction-job-creation-trigger");
+        String functionName = String.join("-", "sleeper", instanceId, "compaction-job-creation-handler");
 
         IFunction triggerFunction = jobCreatorJar.buildFunction(this, "CompactionJobsCreationTrigger", builder -> builder
                 .functionName(triggerFunctionName)
@@ -369,8 +369,8 @@ public class CompactionStack extends NestedStack {
                 .vpcId(instanceProperties.get(VPC_ID))
                 .build();
         IVpc vpc = Vpc.fromLookup(this, "VPC1", vpcLookupOptions);
-        String clusterName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "compaction-cluster"));
+        String clusterName = String.join("-", "sleeper",
+                Utils.cleanInstanceId(instanceProperties), "compaction-cluster");
         Cluster cluster = Cluster.Builder
                 .create(this, "CompactionCluster")
                 .clusterName(clusterName)
@@ -463,8 +463,8 @@ public class CompactionStack extends NestedStack {
             IBucket jarsBucket, LambdaCode jobCommitterJar, Queue jobCommitterQueue) {
         Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
 
-        String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "compaction-job-committer"));
+        String functionName = String.join("-", "sleeper",
+                Utils.cleanInstanceId(instanceProperties), "compaction-job-committer");
 
         IFunction handlerFunction = jobCommitterJar.buildFunction(this, "CompactionJobCommitter", builder -> builder
                 .functionName(functionName)
@@ -630,8 +630,8 @@ public class CompactionStack extends NestedStack {
         // Run tasks function
         Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
 
-        String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "compaction-custom-termination"));
+        String functionName = String.join("-", "sleeper",
+                Utils.cleanInstanceId(instanceProperties), "compaction-custom-termination");
 
         IFunction handler = taskCreatorJar.buildFunction(this, "CompactionTerminator", builder -> builder
                 .functionName(functionName)
@@ -659,8 +659,8 @@ public class CompactionStack extends NestedStack {
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     private void lambdaToCreateCompactionTasks(
             CoreStacks coreStacks, LambdaCode taskCreatorJar, Queue compactionJobsQueue) {
-        String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "compaction-tasks-creator"));
+        String functionName = String.join("-", "sleeper",
+                Utils.cleanInstanceId(instanceProperties), "compaction-tasks-creator");
 
         IFunction handler = taskCreatorJar.buildFunction(this, "CompactionTasksCreator", builder -> builder
                 .functionName(functionName)
