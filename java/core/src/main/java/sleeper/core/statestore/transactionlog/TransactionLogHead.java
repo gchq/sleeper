@@ -85,9 +85,9 @@ class TransactionLogHead<T> {
         LOGGER.info("Adding transaction of type {} to table {}",
                 transaction.getClass().getSimpleName(), sleeperTable);
         Exception failure = new IllegalArgumentException("No attempts made");
-        for (int attempts = 0; attempts < maxAddTransactionAttempts; attempts++) {
+        for (int attempt = 1; attempt <= maxAddTransactionAttempts; attempt++) {
             try {
-                retryBackoff.waitBeforeAttempt(attempts);
+                retryBackoff.waitBeforeAttempt(attempt);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new StateStoreException("Interrupted while waiting to retry", e);
@@ -99,7 +99,7 @@ class TransactionLogHead<T> {
                 logStore.addTransaction(new TransactionLogEntry(transactionNumber, updateTime, transaction));
             } catch (DuplicateTransactionNumberException e) {
                 LOGGER.warn("Failed adding transaction on attempt {} of {} for table {}, failure: {}",
-                        attempts + 1, maxAddTransactionAttempts, sleeperTable, e.toString());
+                        attempt, maxAddTransactionAttempts, sleeperTable, e.toString());
                 failure = e;
                 continue;
             } catch (RuntimeException e) {
@@ -109,7 +109,7 @@ class TransactionLogHead<T> {
             lastTransactionNumber = transactionNumber;
             failure = null;
             LOGGER.info("Added transaction of type {} to table {} with {} attempts, took {}",
-                    transaction.getClass().getSimpleName(), sleeperTable, attempts + 1,
+                    transaction.getClass().getSimpleName(), sleeperTable, attempt,
                     LoggedDuration.withShortOutput(startTime, Instant.now()));
             break;
         }
