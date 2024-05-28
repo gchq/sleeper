@@ -94,7 +94,7 @@ public final class WebSocketQueryStack extends NestedStack {
         coreStacks.grantReadTablesConfig(webSocketApiHandler);
 
         CfnApi api = CfnApi.Builder.create(this, "api")
-                .name(String.join("-", "sleeper", instanceId, "query-api"))
+                .name(String.join("-", "sleeper", instanceId, "query-websocket-api"))
                 .description("Sleeper Query API")
                 .protocolType("WEBSOCKET")
                 .routeSelectionExpression("$request.body.action")
