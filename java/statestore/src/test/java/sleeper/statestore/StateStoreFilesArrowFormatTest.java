@@ -32,13 +32,32 @@ import java.util.List;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class StateStoreArrowFilesTest {
+public class StateStoreFilesArrowFormatTest {
 
     private final BufferAllocator allocator = new RootAllocator();
 
     @Test
     @Disabled("TODO")
-    void shouldWriteOneFileInArrowFormat() {
+    void shouldWriteOneFileWithNoReferencesInArrowFormat() throws Exception {
+        // Given
+        Instant updateTime = Instant.parse("2024-05-28T13:25:01.123Z");
+        AllReferencesToAFile file = AllReferencesToAFile.builder()
+                .filename("test.parquet")
+                .lastStateStoreUpdateTime(updateTime)
+                .internalReferences(List.of())
+                .build();
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+
+        // When
+        write(List.of(file), bytes);
+
+        // Then
+        assertThat(read(bytes)).containsExactly(file);
+    }
+
+    @Test
+    @Disabled("TODO")
+    void shouldWriteOneFileWithOneReferenceInArrowFormat() throws Exception {
         // Given
         FileReference reference = FileReference.builder()
                 .filename("test.parquet")
@@ -59,12 +78,12 @@ public class StateStoreArrowFilesTest {
         assertThat(read(bytes)).containsExactly(file);
     }
 
-    private void write(List<AllReferencesToAFile> files, ByteArrayOutputStream stream) {
-        StateStoreArrowFiles.write(files, allocator, Channels.newChannel(stream));
+    private void write(List<AllReferencesToAFile> files, ByteArrayOutputStream stream) throws Exception {
+        StateStoreFilesArrowFormat.write(files, allocator, Channels.newChannel(stream));
     }
 
     private List<AllReferencesToAFile> read(ByteArrayOutputStream stream) {
-        return StateStoreArrowFiles.read(Channels.newChannel(
+        return StateStoreFilesArrowFormat.read(Channels.newChannel(
                 new ByteArrayInputStream(stream.toByteArray())))
                 .collect(toUnmodifiableList());
     }

@@ -32,15 +32,26 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Stream;
 
-public class StateStoreArrowFiles {
+/**
+ * Reads and writes the state of files in a state store to an Arrow file.
+ */
+public class StateStoreFilesArrowFormat {
 
     private static final Field FILENAME = Field.notNullable("filename", Utf8.INSTANCE);
     private static final Field UPDATE_TIME = Field.notNullable("updateTime", Types.MinorType.TIMESTAMPMILLI.getType());
     private static final Schema FILES_SCHEMA = new Schema(List.of(FILENAME, UPDATE_TIME));
 
-    private StateStoreArrowFiles() {
+    private StateStoreFilesArrowFormat() {
     }
 
+    /**
+     * Writes the state of files in Arrow format.
+     *
+     * @param  files       the files in the state store
+     * @param  allocator   the buffer allocator
+     * @param  channel     the channel
+     * @throws IOException if writing to the channel fails
+     */
     public static void write(Collection<AllReferencesToAFile> files, BufferAllocator allocator, WritableByteChannel channel) throws IOException {
         try (VectorSchemaRoot vectorSchemaRoot = VectorSchemaRoot.create(FILES_SCHEMA, allocator);
                 ArrowStreamWriter writer = new ArrowStreamWriter(vectorSchemaRoot, null, channel)) {
@@ -54,6 +65,12 @@ public class StateStoreArrowFiles {
         }
     }
 
+    /**
+     * Reads the state of files from Arrow format.
+     *
+     * @param  channel the channel
+     * @return         the files in the state store
+     */
     public static Stream<AllReferencesToAFile> read(ReadableByteChannel channel) {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'read'");
