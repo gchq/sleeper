@@ -42,11 +42,12 @@ public class StateStorePartitionsArrowFormatTest {
     private final BufferAllocator allocator = new RootAllocator();
 
     @Test
-    void shouldWriteOnePartitionWithOneStringField() throws Exception {
+    void shouldWritePartitionsSplitOnOneStringField() throws Exception {
         // Given
         Schema schema = schemaWithKey("key", new StringType());
         PartitionTree tree = new PartitionsBuilder(schema)
                 .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", "mmm")
                 .buildTree();
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 
@@ -58,11 +59,12 @@ public class StateStorePartitionsArrowFormatTest {
     }
 
     @Test
-    void shouldWriteOnePartitionWithOneLongField() throws Exception {
+    void shouldWritePartitionsSplitOnOneLongField() throws Exception {
         // Given
         Schema schema = schemaWithKey("key", new LongType());
         PartitionTree tree = new PartitionsBuilder(schema)
                 .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", 123L)
                 .buildTree();
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 
@@ -74,11 +76,12 @@ public class StateStorePartitionsArrowFormatTest {
     }
 
     @Test
-    void shouldWriteOnePartitionWithOneIntField() throws Exception {
+    void shouldWritePartitionsSplitOnOneIntField() throws Exception {
         // Given
         Schema schema = schemaWithKey("key", new IntType());
         PartitionTree tree = new PartitionsBuilder(schema)
                 .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", 123)
                 .buildTree();
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 
@@ -90,11 +93,12 @@ public class StateStorePartitionsArrowFormatTest {
     }
 
     @Test
-    void shouldWriteOnePartitionWithOneByteArrayField() throws Exception {
+    void shouldWritePartitionsSplitOnOneByteArrayField() throws Exception {
         // Given
         Schema schema = schemaWithKey("key", new ByteArrayType());
         PartitionTree tree = new PartitionsBuilder(schema)
                 .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", new byte[]{123})
                 .buildTree();
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 
@@ -152,6 +156,27 @@ public class StateStorePartitionsArrowFormatTest {
                 .splitToNewChildren("root", "L", "R", "mmm")
                 .splitToNewChildren("L", "LL", "LR", "ccc")
                 .splitToNewChildren("R", "RL", "RR", "ttt")
+                .buildTree();
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+
+        // When
+        write(tree.getAllPartitions(), bytes);
+
+        // Then
+        assertThat(read(bytes)).isEqualTo(tree.getAllPartitions());
+    }
+
+    @Test
+    void shouldWriteMultiplePartitionsSplitOnDifferentDimensions() throws Exception {
+        // Given
+        Schema schema = Schema.builder().rowKeyFields(
+                new Field("key1", new StringType()),
+                new Field("key2", new StringType())).build();
+        PartitionTree tree = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildrenOnDimension("root", "L", "R", 0, "mmm")
+                .splitToNewChildrenOnDimension("L", "LL", "LR", 1, "ccc")
+                .splitToNewChildrenOnDimension("R", "RL", "RR", 1, "ttt")
                 .buildTree();
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 
