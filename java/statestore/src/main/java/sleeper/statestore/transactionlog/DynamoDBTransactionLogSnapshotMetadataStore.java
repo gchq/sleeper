@@ -220,8 +220,8 @@ public class DynamoDBTransactionLogSnapshotMetadataStore {
         return new TransactionLogSnapshotMetadata(getStringAttribute(item, PATH), type, getLongAttribute(item, TRANSACTION_NUMBER, 0));
     }
 
-    public Stream<TransactionLogSnapshotMetadata> getOldestSnapshots() {
-        long expiryDate = timeSupplier.get().toEpochMilli() - expiryInDays.toMillis();
+    public Stream<TransactionLogSnapshotMetadata> getOldestSnapshots(Instant time) {
+        long expiryDate = time.toEpochMilli() - expiryInDays.toMillis();
         LatestSnapshots latestSnapshots = getLatestSnapshots();
         return Stream.concat(
                 getSnapshotsBefore(latestSnapshots.getFilesSnapshot()

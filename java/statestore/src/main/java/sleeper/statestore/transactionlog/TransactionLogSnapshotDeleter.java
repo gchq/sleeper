@@ -27,7 +27,6 @@ import sleeper.configuration.properties.table.TableProperties;
 
 import java.io.IOException;
 import java.time.Instant;
-import java.util.function.Supplier;
 
 public class TransactionLogSnapshotDeleter {
     public static final Logger LOGGER = LoggerFactory.getLogger(TransactionLogSnapshotDeleter.class);
@@ -36,13 +35,13 @@ public class TransactionLogSnapshotDeleter {
 
     public TransactionLogSnapshotDeleter(
             InstanceProperties instanceProperties, TableProperties tableProperties,
-            AmazonDynamoDB dynamoDB, Configuration configuration, Supplier<Instant> timeSupplier) {
+            AmazonDynamoDB dynamoDB, Configuration configuration) {
         this.configuration = configuration;
-        this.metadataStore = new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamoDB, timeSupplier);
+        this.metadataStore = new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamoDB);
     }
 
-    public void deleteSnapshots() {
-        metadataStore.getOldestSnapshots()
+    public void deleteSnapshots(Instant time) {
+        metadataStore.getOldestSnapshots(time)
                 .forEach(snapshot -> {
                     LOGGER.info("Deleting snapshot {}", snapshot);
                     try {

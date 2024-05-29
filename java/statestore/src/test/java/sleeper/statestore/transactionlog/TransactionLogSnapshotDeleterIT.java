@@ -202,8 +202,8 @@ public class TransactionLogSnapshotDeleterIT extends TransactionLogStateStoreTes
 
     private void deleteSnapshotsAt(TableProperties table, Instant deletionTime) {
         new TransactionLogSnapshotDeleter(
-                instanceProperties, table, dynamoDBClient, configuration, () -> deletionTime)
-                .deleteSnapshots();
+                instanceProperties, table, dynamoDBClient, configuration)
+                .deleteSnapshots(deletionTime);
     }
 
     private DynamoDBTransactionLogSnapshotMetadataStore snapshotStore(TableProperties table) {

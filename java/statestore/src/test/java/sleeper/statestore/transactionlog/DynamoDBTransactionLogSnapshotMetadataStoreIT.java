@@ -249,15 +249,14 @@ public class DynamoDBTransactionLogSnapshotMetadataStoreIT {
                     Instant.parse("2024-04-24T15:45:00Z"),
                     Instant.parse("2024-04-25T15:15:00Z"),
                     Instant.parse("2024-04-26T15:45:00Z"),
-                    Instant.parse("2024-04-26T16:00:00Z"),
-                    Instant.parse("2024-04-26T16:30:00Z")).iterator()::next);
+                    Instant.parse("2024-04-26T16:00:00Z")).iterator()::next);
             snapshotStore.saveSnapshot(filesSnapshot(1));
             snapshotStore.saveSnapshot(filesSnapshot(2));
             snapshotStore.saveSnapshot(filesSnapshot(3));
             snapshotStore.saveSnapshot(filesSnapshot(4));
 
             // When / Then
-            assertThat(snapshotStore.getOldestSnapshots())
+            assertThat(snapshotStore.getOldestSnapshots(Instant.parse("2024-04-26T16:30:00Z")))
                     .containsExactly(filesSnapshot(1), filesSnapshot(2));
         }
 
@@ -265,13 +264,11 @@ public class DynamoDBTransactionLogSnapshotMetadataStoreIT {
         void shouldIgnoreLatestSnapshotIfItIsOldEnough() throws Exception {
             // Given
             tableProperties.setNumber(TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS, 1);
-            DynamoDBTransactionLogSnapshotMetadataStore snapshotStore = snapshotStore(List.of(
-                    Instant.parse("2024-04-24T15:45:00Z"),
-                    Instant.parse("2024-04-26T16:00:00Z")).iterator()::next);
+            DynamoDBTransactionLogSnapshotMetadataStore snapshotStore = snapshotStore(() -> Instant.parse("2024-04-24T15:45:00Z"));
             snapshotStore.saveSnapshot(filesSnapshot(1));
 
             // When / Then
-            assertThat(snapshotStore.getOldestSnapshots())
+            assertThat(snapshotStore.getOldestSnapshots(Instant.parse("2024-04-26T16:00:00Z")))
                     .isEmpty();
         }
     }
