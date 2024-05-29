@@ -24,6 +24,7 @@ import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -84,11 +85,11 @@ public class TransactionLogSnapshotDeletionLambda implements RequestHandler<SQSE
 
     private void deleteSnapshots(List<TableProperties> tables, Map<String, List<SQSMessage>> messagesByTableId,
             List<SQSBatchResponse.BatchItemFailure> batchItemFailures) {
+        Configuration configuration = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
         for (TableProperties table : tables) {
             LOGGER.info("Deleting old snapshots for table {}", table.getStatus());
             try {
-                new TransactionLogSnapshotDeleter(instanceProperties, table, dynamoClient,
-                        HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties), Instant::now)
+                new TransactionLogSnapshotDeleter(instanceProperties, table, dynamoClient, configuration, Instant::now)
                         .deleteSnapshots();
             } catch (RuntimeException e) {
                 LOGGER.error("Failed deleting old snapshots for table {}", table.getStatus(), e);
