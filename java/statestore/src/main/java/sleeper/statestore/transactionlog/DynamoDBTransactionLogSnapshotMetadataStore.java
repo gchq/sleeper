@@ -31,7 +31,6 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -43,7 +42,6 @@ import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createNumberAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getLongAttribute;
@@ -71,7 +69,6 @@ public class DynamoDBTransactionLogSnapshotMetadataStore {
     private final String sleeperTableId;
     private final AmazonDynamoDB dynamo;
     private final Supplier<Instant> timeSupplier;
-    private final Duration expiryInDays;
 
     public DynamoDBTransactionLogSnapshotMetadataStore(InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamo) {
         this(instanceProperties, tableProperties, dynamo, Instant::now);
@@ -83,7 +80,6 @@ public class DynamoDBTransactionLogSnapshotMetadataStore {
         this.sleeperTableId = tableProperties.get(TableProperty.TABLE_ID);
         this.dynamo = dynamo;
         this.timeSupplier = timeSupplier;
-        this.expiryInDays = Duration.ofDays(tableProperties.getInt(TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS));
     }
 
     /**
@@ -221,21 +217,20 @@ public class DynamoDBTransactionLogSnapshotMetadataStore {
     }
 
     /**
-     * Retrieves metadata of snapshots older than a certain time. Note that this excludes latest snapshots.
+     * Retrieves metadata of snapshots older than an expiry date. Note that this excludes latest snapshots.
      *
-     * @param  time the time used to decide which snapshots are oldest
-     * @return      a stream of snapshots that were last updated before the provided time
+     * @param  expiryDate the time used to decide which snapshots to retrieve
+     * @return            a stream of snapshots that were last updated before the provided time
      */
-    public Stream<TransactionLogSnapshotMetadata> getOldestSnapshots(Instant time) {
-        long expiryDate = time.toEpochMilli() - expiryInDays.toMillis();
+    public Stream<TransactionLogSnapshotMetadata> getSnapshotsBefore(Instant expiryDate) {
         LatestSnapshots latestSnapshots = getLatestSnapshots();
         return Stream.concat(
                 getSnapshotsBefore(latestSnapshots.getFilesSnapshot()
                         .map(TransactionLogSnapshotMetadata::getTransactionNumber)
-                        .orElse(0L), SnapshotType.FILES, expiryDate),
+                        .orElse(0L), SnapshotType.FILES, expiryDate.toEpochMilli()),
                 getSnapshotsBefore(latestSnapshots.getPartitionsSnapshot()
                         .map(TransactionLogSnapshotMetadata::getTransactionNumber)
-                        .orElse(0L), SnapshotType.PARTITIONS, expiryDate));
+                        .orElse(0L), SnapshotType.PARTITIONS, expiryDate.toEpochMilli()));
     }
 
     private Stream<TransactionLogSnapshotMetadata> getSnapshotsBefore(long latestSnapshotNumber, SnapshotType type, long time) {

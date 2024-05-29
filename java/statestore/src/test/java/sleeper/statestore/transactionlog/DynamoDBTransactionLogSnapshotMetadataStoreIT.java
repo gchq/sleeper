@@ -256,7 +256,7 @@ public class DynamoDBTransactionLogSnapshotMetadataStoreIT {
             snapshotStore.saveSnapshot(filesSnapshot(4));
 
             // When / Then
-            assertThat(snapshotStore.getOldestSnapshots(Instant.parse("2024-04-26T16:30:00Z")))
+            assertThat(snapshotStore.getSnapshotsBefore(Instant.parse("2024-04-26T16:30:00Z")))
                     .containsExactly(filesSnapshot(1), filesSnapshot(2));
         }
 
@@ -268,7 +268,7 @@ public class DynamoDBTransactionLogSnapshotMetadataStoreIT {
             snapshotStore.saveSnapshot(filesSnapshot(1));
 
             // When / Then
-            assertThat(snapshotStore.getOldestSnapshots(Instant.parse("2024-04-26T16:00:00Z")))
+            assertThat(snapshotStore.getSnapshotsBefore(Instant.parse("2024-04-26T16:00:00Z")))
                     .isEmpty();
         }
     }

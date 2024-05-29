@@ -26,7 +26,10 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.time.Instant;
+
+import static sleeper.configuration.properties.table.TableProperty.TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS;
 
 /**
  * Searches for snapshots older than a certain time, then deletes them.
@@ -35,22 +38,25 @@ public class TransactionLogSnapshotDeleter {
     public static final Logger LOGGER = LoggerFactory.getLogger(TransactionLogSnapshotDeleter.class);
     private final Configuration configuration;
     private final DynamoDBTransactionLogSnapshotMetadataStore metadataStore;
+    private final Duration expiryInDays;
 
     public TransactionLogSnapshotDeleter(
             InstanceProperties instanceProperties, TableProperties tableProperties,
             AmazonDynamoDB dynamoDB, Configuration configuration) {
         this.configuration = configuration;
         this.metadataStore = new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamoDB);
+        this.expiryInDays = Duration.ofDays(tableProperties.getInt(TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS));
     }
 
     /**
-     * Searches for snapshots older than a certain time, then deletes the snapshot file in addition to the snapshot
-     * metadata in the metadata store.
+     * Searches for snapshots that have expired based on the current time, then deletes the snapshot file in addition to
+     * the snapshot metadata in the metadata store.
      *
-     * @param time the time used to decide which snapshots are oldest
+     * @param currentTime the current time
      */
-    public void deleteSnapshots(Instant time) {
-        metadataStore.getOldestSnapshots(time)
+    public void deleteSnapshots(Instant currentTime) {
+        Instant expiryDate = currentTime.minus(expiryInDays);
+        metadataStore.getSnapshotsBefore(expiryDate)
                 .forEach(snapshot -> {
                     LOGGER.info("Deleting snapshot {}", snapshot);
                     try {
