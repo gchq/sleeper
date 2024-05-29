@@ -37,8 +37,7 @@ import java.util.function.Supplier;
 import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobRejected;
 
 /**
- * Deserialises a JSON string to a generic type of job. This class also performs validation on the job, which includes
- * expanding directores if a directory was provided as a file. Any validation failures are recorded in the
+ * Deserialises and validates a JSON string to a type of ingest job. Any validation failures are recorded in the
  * {@link IngestJobStatusStore}.
  *
  * @param <T> the type of ingest job
@@ -82,7 +81,14 @@ public class IngestJobMessageHandler<T> {
     }
 
     /**
-     * Deserialise a JSON string to an ingest job, then performs validation on the job.
+     * Deserialise a JSON string to an ingest job. This also performs validation on the job, which includes the
+     * following:
+     * - Checks if the files provided in the job exist. If the input files are directories, they will be expanded and
+     * files inside these directories will be added to the job. If no files exist the job will be rejected.
+     * - Finds the table ID of the table from the table name provided by the job. If no table exists with that name the
+     * job will be rejected.
+     * - Generates a random job ID if one was not provided by the job. Jobs that have been deserialised without a job ID
+     * will not fail validation.
      *
      * @param  message the JSON string
      * @return         an optional containing the validated job, or an empty optional if the deserialisation or
