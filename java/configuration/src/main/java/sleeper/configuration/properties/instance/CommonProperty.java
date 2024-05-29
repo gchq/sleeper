@@ -214,7 +214,7 @@ public interface CommonProperty {
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
     UserDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_DELETION_BATCH_SIZE = Index.propertyBuilder("sleeper.metadata.transactionlog.snapshot.deletion.batch.size")
-            .description("The number of tables to deletion old transaction log snapshots for in a single invocation. This will be the batch size" +
+            .description("The number of tables to delete old transaction log snapshots for in a single invocation. This will be the batch size" +
                     " for a lambda as an SQS FIFO event source. This can be a maximum of 10.")
             .defaultValue("1")
             .validationPredicate(Utils::isPositiveIntegerLtEq10)
