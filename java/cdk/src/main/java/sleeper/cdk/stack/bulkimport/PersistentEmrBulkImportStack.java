@@ -52,7 +52,6 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_ARN;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_MASTER_DNS;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.instance.EMRProperty.BULK_IMPORT_EMR_EBS_VOLUMES_PER_INSTANCE;
 import static sleeper.configuration.properties.instance.EMRProperty.BULK_IMPORT_EMR_EBS_VOLUME_SIZE_IN_GB;
@@ -151,7 +150,8 @@ public class PersistentEmrBulkImportStack extends NestedStack {
         JobFlowInstancesConfigProperty jobFlowInstancesConfigProperty = jobFlowInstancesConfigPropertyBuilder.build();
 
         CfnClusterProps.Builder propsBuilder = CfnClusterProps.builder()
-                .name(String.join("-", "sleeper", instanceProperties.get(ID), "persistentEMR"))
+                .name(String.join("-", "sleeper",
+                        Utils.cleanInstanceId(instanceProperties), "bulk-import-persistent-emr"))
                 .visibleToAllUsers(true)
                 .securityConfiguration(commonStack.getSecurityConfiguration().getName())
                 .releaseLabel(instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_RELEASE_LABEL))

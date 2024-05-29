@@ -43,7 +43,6 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 
 import static sleeper.cdk.Utils.createAlarmForDlq;
 import static sleeper.cdk.Utils.createLambdaLogGroup;
@@ -54,7 +53,6 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_QUEUE_ARN;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_RULE;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.METRICS_TABLE_BATCH_SIZE;
 import static sleeper.configuration.properties.instance.CommonProperty.TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB;
@@ -67,10 +65,9 @@ public class TableMetricsStack extends NestedStack {
         super(scope, id);
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
         LambdaCode metricsJar = jars.lambdaCode(BuiltJar.METRICS, jarsBucket);
-        String triggerFunctionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "metrics-trigger"));
-        String publishFunctionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "metrics-publisher"));
+        String instanceId = Utils.cleanInstanceId(instanceProperties);
+        String triggerFunctionName = String.join("-", "sleeper", instanceId, "metrics-trigger");
+        String publishFunctionName = String.join("-", "sleeper", instanceId, "metrics-publisher");
         // Metrics generation and publishing
         IFunction tableMetricsTrigger = metricsJar.buildFunction(this, "MetricsTrigger", builder -> builder
                 .functionName(triggerFunctionName)
@@ -104,12 +101,12 @@ public class TableMetricsStack extends NestedStack {
 
         Queue deadLetterQueue = Queue.Builder
                 .create(this, "MetricsJobDeadLetterQueue")
-                .queueName(String.join("-", "sleeper", instanceProperties.get(ID), "MetricsJobDLQ.fifo"))
+                .queueName(String.join("-", "sleeper", instanceId, "MetricsJobDLQ.fifo"))
                 .fifo(true)
                 .build();
         Queue queue = Queue.Builder
                 .create(this, "MetricsJobQueue")
-                .queueName(String.join("-", "sleeper", instanceProperties.get(ID), "MetricsJobQ.fifo"))
+                .queueName(String.join("-", "sleeper", instanceId, "MetricsJobQ.fifo"))
                 .deadLetterQueue(DeadLetterQueue.builder()
                         .maxReceiveCount(1)
                         .queue(deadLetterQueue)

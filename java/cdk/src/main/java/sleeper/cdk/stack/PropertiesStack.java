@@ -31,11 +31,9 @@ import sleeper.cdk.jars.LambdaCode;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.HashMap;
-import java.util.Locale;
 
 import static sleeper.cdk.Utils.createCustomResourceProviderLogGroup;
 import static sleeper.cdk.Utils.createLambdaLogGroup;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 
 /**
@@ -54,8 +52,8 @@ public class PropertiesStack extends NestedStack {
         HashMap<String, Object> properties = new HashMap<>();
         properties.put("properties", instanceProperties.saveAsString());
 
-        String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "properties-writer"));
+        String functionName = String.join("-", "sleeper",
+                Utils.cleanInstanceId(instanceProperties), "properties-writer");
 
         IFunction propertiesWriterLambda = jar.buildFunction(this, "PropertiesWriterLambda", builder -> builder
                 .functionName(functionName)
