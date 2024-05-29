@@ -21,26 +21,35 @@ import org.apache.arrow.vector.UInt4Vector;
 import org.apache.arrow.vector.VarCharVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.arrow.vector.complex.ListVector;
+import org.apache.arrow.vector.complex.impl.UnionListReader;
 import org.apache.arrow.vector.complex.impl.UnionListWriter;
+import org.apache.arrow.vector.complex.reader.FieldReader;
 import org.apache.arrow.vector.complex.writer.BaseWriter.StructWriter;
+import org.apache.arrow.vector.ipc.ArrowStreamReader;
 import org.apache.arrow.vector.ipc.ArrowStreamWriter;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.pojo.ArrowType.Utf8;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.types.pojo.FieldType;
 import org.apache.arrow.vector.types.pojo.Schema;
+import org.apache.arrow.vector.util.Text;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.range.Range;
 import sleeper.core.range.Region;
+import sleeper.core.schema.type.StringType;
 
 import java.io.IOException;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 import static sleeper.statestore.ArrowFormatUtils.writeVarChar;
+import static sleeper.statestore.ArrowFormatUtils.writeVarCharNullable;
 
 /**
  * Reads and writes the state of partitions in a state store to an Arrow file.
@@ -56,7 +65,7 @@ public class StateStorePartitionsArrowFormat {
 
     private static final Field FIELD = Field.notNullable("field", Utf8.INSTANCE);
     private static final Field MIN = Field.notNullable("min", Utf8.INSTANCE);
-    private static final Field MAX = Field.notNullable("max", Utf8.INSTANCE);
+    private static final Field MAX = Field.nullable("max", Utf8.INSTANCE);
     private static final Field RANGE = new Field("range",
             FieldType.notNullable(Types.MinorType.STRUCT.getType()), List.of(FIELD, MIN, MAX));
     private static final Field REGION = new Field("region",
@@ -113,6 +122,37 @@ public class StateStorePartitionsArrowFormat {
         }
     }
 
+    /**
+     * Reads the state of partitions from Arrow format.
+     *
+     * @param  channel the channel to read from
+     * @return         the partitions in the state store
+     */
+    public static List<Partition> read(BufferAllocator allocator, ReadableByteChannel channel) throws IOException {
+        List<Partition> partitions = new ArrayList<>();
+        try (ArrowStreamReader reader = new ArrowStreamReader(channel, allocator)) {
+            reader.loadNextBatch();
+            VectorSchemaRoot vectorSchemaRoot = reader.getVectorSchemaRoot();
+            VarCharVector idVector = (VarCharVector) vectorSchemaRoot.getVector(ID);
+            VarCharVector parentIdVector = (VarCharVector) vectorSchemaRoot.getVector(PARENT_ID);
+            ListVector childIdsVector = (ListVector) vectorSchemaRoot.getVector(CHILD_IDS);
+            BitVector isLeafVector = (BitVector) vectorSchemaRoot.getVector(IS_LEAF);
+            UInt4Vector dimensionVector = (UInt4Vector) vectorSchemaRoot.getVector(DIMENSION);
+            ListVector regionVector = (ListVector) vectorSchemaRoot.getVector(REGION);
+            for (int rowNumber = 0; rowNumber < vectorSchemaRoot.getRowCount(); rowNumber++) {
+                partitions.add(Partition.builder()
+                        .id(idVector.getObject(rowNumber).toString())
+                        .parentPartitionId(Optional.ofNullable(parentIdVector.getObject(rowNumber)).map(Text::toString).orElse(null))
+                        .leafPartition(isLeafVector.getObject(rowNumber))
+                        .childPartitionIds(readChildIds(childIdsVector, rowNumber))
+                        .dimension(Optional.ofNullable(dimensionVector.getObject(rowNumber)).orElse(-1))
+                        .region(readRegion(regionVector, rowNumber))
+                        .build());
+            }
+        }
+        return partitions;
+    }
+
     private static void writeChildIds(Partition partition, int rowNumber, BufferAllocator allocator, UnionListWriter writer) {
         writer.setPosition(rowNumber);
         writer.startList();
@@ -130,9 +170,34 @@ public class StateStorePartitionsArrowFormat {
             struct.start();
             writeVarChar(struct, allocator, FIELD, range.getFieldName());
             writeVarChar(struct, allocator, MIN, (String) range.getMin());
-            writeVarChar(struct, allocator, MAX, (String) range.getMax());
+            writeVarCharNullable(struct, allocator, MAX, (String) range.getMax());
             struct.end();
         }
         writer.endList();
+    }
+
+    private static List<String> readChildIds(ListVector childIdsVector, int rowNumber) {
+        List<String> childIds = new ArrayList<>();
+        UnionListReader listReader = childIdsVector.getReader();
+        listReader.setPosition(rowNumber);
+        FieldReader reader = listReader.reader();
+        while (listReader.next()) {
+            childIds.add(reader.readText().toString());
+        }
+        return childIds;
+    }
+
+    private static Region readRegion(ListVector regionVector, int rowNumber) {
+        List<Range> ranges = new ArrayList<>();
+        UnionListReader listReader = regionVector.getReader();
+        listReader.setPosition(rowNumber);
+        FieldReader reader = listReader.reader();
+        while (listReader.next()) {
+            ranges.add(new Range(
+                    new sleeper.core.schema.Field(reader.reader(FIELD.getName()).readText().toString(), new StringType()),
+                    reader.reader(MIN.getName()).readText().toString(),
+                    Optional.ofNullable(reader.reader(MAX.getName()).readText()).map(Text::toString).orElse(null)));
+        }
+        return new Region(ranges);
     }
 }

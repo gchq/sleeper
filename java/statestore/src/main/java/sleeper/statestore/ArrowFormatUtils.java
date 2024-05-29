@@ -45,6 +45,21 @@ public class ArrowFormatUtils {
     }
 
     /**
+     * Write a nullable string value to an Arrow VarChar field.
+     *
+     * @param writer    the writer
+     * @param allocator the allocator
+     * @param value     the value
+     */
+    public static void writeVarCharNullable(VarCharWriter writer, BufferAllocator allocator, String value) {
+        if (value == null) {
+            writer.writeNull();
+            return;
+        }
+        writeVarChar(writer, allocator, value);
+    }
+
+    /**
      * Write a string value to an Arrow VarChar field.
      *
      * @param writer    the writer
@@ -68,11 +83,7 @@ public class ArrowFormatUtils {
      * @param value     the value
      */
     public static void writeVarCharNullable(StructWriter struct, BufferAllocator allocator, Field field, String value) {
-        if (value == null) {
-            struct.varChar(field.getName()).writeNull();
-            return;
-        }
-        writeVarChar(struct, allocator, field, value);
+        writeVarCharNullable(struct.varChar(field.getName()), allocator, value);
     }
 
     /**

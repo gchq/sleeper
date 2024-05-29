@@ -15,7 +15,8 @@
  */
 package sleeper.statestore;
 
-import org.junit.jupiter.api.Disabled;
+import org.apache.arrow.memory.BufferAllocator;
+import org.apache.arrow.memory.RootAllocator;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.Partition;
@@ -24,7 +25,9 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.nio.channels.Channels;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,8 +35,9 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class StateStorePartitionsArrowFormatTest {
 
+    private final BufferAllocator allocator = new RootAllocator();
+
     @Test
-    @Disabled("TODO")
     void shouldWriteOnePartitionWithOneStringField() throws Exception {
         // Given
         Schema schema = schemaWithKey("key", new StringType());
@@ -50,9 +54,11 @@ public class StateStorePartitionsArrowFormatTest {
     }
 
     private void write(List<Partition> partitions, ByteArrayOutputStream stream) throws Exception {
+        StateStorePartitionsArrowFormat.write(partitions, allocator, Channels.newChannel(stream));
     }
 
     private List<Partition> read(ByteArrayOutputStream stream) throws Exception {
-        return List.of();
+        return StateStorePartitionsArrowFormat.read(allocator,
+                Channels.newChannel(new ByteArrayInputStream(stream.toByteArray())));
     }
 }
