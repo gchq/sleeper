@@ -37,6 +37,8 @@ import org.apache.arrow.vector.util.Text;
 import sleeper.core.partition.Partition;
 import sleeper.core.range.Range;
 import sleeper.core.range.Region;
+import sleeper.core.schema.type.ByteArrayType;
+import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
@@ -54,6 +56,8 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toMap;
 import static sleeper.statestore.ArrowFormatUtils.writeBigIntNullable;
+import static sleeper.statestore.ArrowFormatUtils.writeIntNullable;
+import static sleeper.statestore.ArrowFormatUtils.writeVarBinaryNullable;
 import static sleeper.statestore.ArrowFormatUtils.writeVarChar;
 import static sleeper.statestore.ArrowFormatUtils.writeVarCharNullable;
 
@@ -82,7 +86,8 @@ public class StateStorePartitionsArrowFormat {
     private static final Schema SCHEMA = new Schema(List.of(
             ID, PARENT_ID, CHILD_IDS, IS_LEAF, DIMENSION, REGION));
 
-    private static final Map<String, Type> FIELD_TYPE_BY_STRING = Stream.of(new StringType(), new LongType())
+    private static final Map<String, Type> FIELD_TYPE_BY_STRING = Stream.of(
+            new StringType(), new LongType(), new IntType(), new ByteArrayType())
             .collect(toMap(type -> type.getClass().getSimpleName(), type -> type));
 
     private StateStorePartitionsArrowFormat() {
@@ -237,6 +242,16 @@ public class StateStorePartitionsArrowFormat {
         } else {
             writeBigIntNullable(struct.bigInt("long"), null);
         }
+        if (fieldType instanceof IntType) {
+            writeIntNullable(struct.integer("int"), (Integer) value);
+        } else {
+            writeIntNullable(struct.integer("int"), null);
+        }
+        if (fieldType instanceof ByteArrayType) {
+            writeVarBinaryNullable(struct.varBinary("bytes"), allocator, (byte[]) value);
+        } else {
+            writeVarBinaryNullable(struct.varBinary("bytes"), allocator, null);
+        }
         struct.end();
     }
 
@@ -246,6 +261,10 @@ public class StateStorePartitionsArrowFormat {
                     .map(Text::toString).orElse(null);
         } else if (fieldType instanceof LongType) {
             return reader.reader("long").readLong();
+        } else if (fieldType instanceof IntType) {
+            return reader.reader("int").readInteger();
+        } else if (fieldType instanceof ByteArrayType) {
+            return reader.reader("bytes").readByteArray();
         } else {
             throw new IllegalArgumentException("Unrecognised field type: " + fieldType);
         }
@@ -254,6 +273,8 @@ public class StateStorePartitionsArrowFormat {
     private static List<Field> createRowKeyTypeFields() {
         return List.of(
                 Field.nullable("string", Utf8.INSTANCE),
-                Field.nullable("long", Types.MinorType.BIGINT.getType()));
+                Field.nullable("long", Types.MinorType.BIGINT.getType()),
+                Field.nullable("int", Types.MinorType.INT.getType()),
+                Field.nullable("bytes", Types.MinorType.VARBINARY.getType()));
     }
 }

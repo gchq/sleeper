@@ -19,7 +19,9 @@ import org.apache.arrow.memory.ArrowBuf;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.vector.complex.writer.BaseWriter.StructWriter;
 import org.apache.arrow.vector.complex.writer.BigIntWriter;
+import org.apache.arrow.vector.complex.writer.IntWriter;
 import org.apache.arrow.vector.complex.writer.UInt8Writer;
+import org.apache.arrow.vector.complex.writer.VarBinaryWriter;
 import org.apache.arrow.vector.complex.writer.VarCharWriter;
 import org.apache.arrow.vector.types.pojo.Field;
 
@@ -147,6 +149,37 @@ public class ArrowFormatUtils {
             return;
         }
         writer.writeBigInt(value);
+    }
+
+    /**
+     * Write a nullable int value to an Int field.
+     *
+     * @param writer the writer
+     * @param value  the value
+     */
+    public static void writeIntNullable(IntWriter writer, Integer value) {
+        if (value == null) {
+            writer.writeNull();
+            return;
+        }
+        writer.writeInt(value);
+    }
+
+    /**
+     * Write a nullable byte array value to a VarBinary field.
+     *
+     * @param writer the writer
+     * @param value  the value
+     */
+    public static void writeVarBinaryNullable(VarBinaryWriter writer, BufferAllocator allocator, byte[] value) {
+        if (value == null) {
+            writer.writeNull();
+            return;
+        }
+        try (ArrowBuf buffer = allocator.buffer(value.length)) {
+            buffer.setBytes(0, value);
+            writer.writeVarBinary(0, value.length, buffer);
+        }
     }
 
     /**

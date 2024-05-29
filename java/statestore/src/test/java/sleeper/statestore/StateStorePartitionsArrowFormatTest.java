@@ -24,6 +24,8 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.ByteArrayType;
+import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 
@@ -43,6 +45,54 @@ public class StateStorePartitionsArrowFormatTest {
     void shouldWriteOnePartitionWithOneStringField() throws Exception {
         // Given
         Schema schema = schemaWithKey("key", new StringType());
+        PartitionTree tree = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .buildTree();
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+
+        // When
+        write(tree.getAllPartitions(), bytes);
+
+        // Then
+        assertThat(read(bytes)).isEqualTo(tree.getAllPartitions());
+    }
+
+    @Test
+    void shouldWriteOnePartitionWithOneLongField() throws Exception {
+        // Given
+        Schema schema = schemaWithKey("key", new LongType());
+        PartitionTree tree = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .buildTree();
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+
+        // When
+        write(tree.getAllPartitions(), bytes);
+
+        // Then
+        assertThat(read(bytes)).isEqualTo(tree.getAllPartitions());
+    }
+
+    @Test
+    void shouldWriteOnePartitionWithOneIntField() throws Exception {
+        // Given
+        Schema schema = schemaWithKey("key", new IntType());
+        PartitionTree tree = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .buildTree();
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+
+        // When
+        write(tree.getAllPartitions(), bytes);
+
+        // Then
+        assertThat(read(bytes)).isEqualTo(tree.getAllPartitions());
+    }
+
+    @Test
+    void shouldWriteOnePartitionWithOneByteArrayField() throws Exception {
+        // Given
+        Schema schema = schemaWithKey("key", new ByteArrayType());
         PartitionTree tree = new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .buildTree();
@@ -82,22 +132,6 @@ public class StateStorePartitionsArrowFormatTest {
                 .splitToNewChildren("root", "L", "R", "mmm")
                 .splitToNewChildren("L", "LL", "LR", "ccc")
                 .splitToNewChildren("R", "RL", "RR", "ttt")
-                .buildTree();
-        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-
-        // When
-        write(tree.getAllPartitions(), bytes);
-
-        // Then
-        assertThat(read(bytes)).isEqualTo(tree.getAllPartitions());
-    }
-
-    @Test
-    void shouldWriteOnePartitionWithOneLongField() throws Exception {
-        // Given
-        Schema schema = schemaWithKey("key", new LongType());
-        PartitionTree tree = new PartitionsBuilder(schema)
-                .rootFirst("root")
                 .buildTree();
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 
