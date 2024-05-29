@@ -77,7 +77,7 @@ public class StateStoreFilesArrowFormat {
      *
      * @param  files       the files in the state store
      * @param  allocator   the buffer allocator
-     * @param  channel     the channel
+     * @param  channel     the channel to write to
      * @throws IOException if writing to the channel fails
      */
     public static void write(Collection<AllReferencesToAFile> files, BufferAllocator allocator, WritableByteChannel channel) throws IOException {
@@ -105,7 +105,7 @@ public class StateStoreFilesArrowFormat {
     /**
      * Reads the state of files from Arrow format.
      *
-     * @param  channel the channel
+     * @param  channel the channel to read from
      * @return         the files in the state store
      */
     public static List<AllReferencesToAFile> read(BufferAllocator allocator, ReadableByteChannel channel) throws IOException {
