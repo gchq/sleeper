@@ -22,17 +22,19 @@ import sleeper.ingest.IngestResult;
 import java.io.IOException;
 
 /**
- * An interface for processing an ingest job.
+ * Runs an ingest job by sorting the input files, writing the files to a Sleeper table, and adding them to the
+ * state store.
  */
 public interface IngestJobHandler {
     /**
-     * Processes an ingest job.
+     * Runs an ingest job by sorting the input files, writing the files to a Sleeper table, and adding them to the
+     * state store.
      *
-     * @param  job                 the ingest job to process
+     * @param  job                 the ingest job to run
      * @return                     an {@link IngestResult} object
-     * @throws IteratorException   -
-     * @throws StateStoreException -
-     * @throws IOException         -
+     * @throws IteratorException   if an error occurs sorting the files
+     * @throws StateStoreException if an error occurs adding the files to the state store
+     * @throws IOException         if an error occurs reading or writing files
      */
     IngestResult ingest(IngestJob job) throws IteratorException, StateStoreException, IOException;
 }
