@@ -69,6 +69,17 @@ public class DynamoDBTransactionLogSnapshotCreator {
         return from(instanceProperties, tableProperties, s3Client, dynamoDBClient, configuration, Instant::now);
     }
 
+    /**
+     * Builds a snapshot creator for a given Sleeper table.
+     *
+     * @param  instanceProperties the Sleeper instance properties
+     * @param  tableProperties    the Sleeper table properties
+     * @param  s3Client           the client for interacting with S3
+     * @param  dynamoDBClient     the client for interacting with DynamoDB
+     * @param  configuration      the Hadoop configuration for interacting with Parquet
+     * @param  timeSupplier       the time supplier
+     * @return                    the snapshot creator
+     */
     public static DynamoDBTransactionLogSnapshotCreator from(
             InstanceProperties instanceProperties, TableProperties tableProperties,
             AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, Configuration configuration, Supplier<Instant> timeSupplier) {
