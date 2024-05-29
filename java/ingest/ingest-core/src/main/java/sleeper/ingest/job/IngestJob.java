@@ -21,7 +21,9 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Defines a job that will ingest data from one or more files to a Sleeper table.
+ * A job that will ingest data from one or more files to a Sleeper table. This involves taking the input files, sorting
+ * the data in them, writing the data to files split across partitions in the Sleeper table, and adding those new files
+ * to the state store.
  */
 public class IngestJob {
     private final String id;
@@ -105,7 +107,7 @@ public class IngestJob {
         }
 
         /**
-         * Sets the ingest job ID.
+         * Sets the ingest job ID. This must be unique across all jobs in the Sleeper table.
          *
          * @param  id the ingest job ID
          * @return    the builder
@@ -116,7 +118,7 @@ public class IngestJob {
         }
 
         /**
-         * Sets the table name.
+         * Sets the table name of the table to write to.
          *
          * @param  tableName the table name
          * @return           the builder
@@ -127,9 +129,10 @@ public class IngestJob {
         }
 
         /**
-         * Sets the table ID.
+         * Sets the internal table ID of the sleeper table to write to. This should only ever be set internally by
+         * Sleeper.
          *
-         * @param  tableId the table ID
+         * @param  tableId the internal table ID
          * @return         the builder
          */
         public Builder tableId(String tableId) {
