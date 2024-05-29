@@ -124,6 +124,26 @@ public class StateStorePartitionsArrowFormatTest {
     }
 
     @Test
+    void shouldWriteOnePartitionWithMultipleFieldsOfDifferentTypes() throws Exception {
+        // Given
+        Schema schema = Schema.builder().rowKeyFields(
+                new Field("key1", new StringType()),
+                new Field("key2", new LongType()),
+                new Field("key3", new IntType()),
+                new Field("key4", new ByteArrayType())).build();
+        PartitionTree tree = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .buildTree();
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+
+        // When
+        write(tree.getAllPartitions(), bytes);
+
+        // Then
+        assertThat(read(bytes)).isEqualTo(tree.getAllPartitions());
+    }
+
+    @Test
     void shouldWriteMultiplePartitionsWithOneStringField() throws Exception {
         // Given
         Schema schema = schemaWithKey("key", new StringType());
