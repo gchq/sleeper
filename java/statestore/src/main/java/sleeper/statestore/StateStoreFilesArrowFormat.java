@@ -23,6 +23,7 @@ import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.arrow.vector.complex.ListVector;
 import org.apache.arrow.vector.complex.impl.UnionListReader;
 import org.apache.arrow.vector.complex.impl.UnionListWriter;
+import org.apache.arrow.vector.complex.reader.FieldReader;
 import org.apache.arrow.vector.complex.writer.BaseWriter.StructWriter;
 import org.apache.arrow.vector.ipc.ArrowStreamReader;
 import org.apache.arrow.vector.ipc.ArrowStreamWriter;
@@ -31,6 +32,7 @@ import org.apache.arrow.vector.types.pojo.ArrowType.Utf8;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.types.pojo.FieldType;
 import org.apache.arrow.vector.types.pojo.Schema;
+import org.apache.arrow.vector.util.Text;
 
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
@@ -40,9 +42,11 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Reads and writes the state of files in a state store to an Arrow file.
@@ -112,13 +116,14 @@ public class StateStoreFilesArrowFormat {
             VarCharVector filenameVector = (VarCharVector) vectorSchemaRoot.getVector(FILENAME);
             TimeStampMilliVector updateTimeVector = (TimeStampMilliVector) vectorSchemaRoot.getVector(UPDATE_TIME);
             ListVector referencesVector = (ListVector) vectorSchemaRoot.getVector(REFERENCES);
-            for (int index = 0; index < vectorSchemaRoot.getRowCount(); index++) {
-                String filename = filenameVector.getObject(index).toString();
-                Instant updateTime = Instant.ofEpochMilli(updateTimeVector.get(index));
+            for (int rowNumber = 0; rowNumber < vectorSchemaRoot.getRowCount(); rowNumber++) {
+                String filename = filenameVector.getObject(rowNumber).toString();
+                List<FileReference> references = readReferences(filename, referencesVector, rowNumber);
                 files.add(AllReferencesToAFile.builder()
                         .filename(filename)
-                        .lastStateStoreUpdateTime(updateTime)
-                        .internalReferences(readReferences(filename, referencesVector.getReader()))
+                        .lastStateStoreUpdateTime(Instant.ofEpochMilli(updateTimeVector.get(rowNumber)))
+                        .internalReferences(references)
+                        .totalReferenceCount(references.size())
                         .build());
             }
         }
@@ -142,8 +147,22 @@ public class StateStoreFilesArrowFormat {
         writer.endList();
     }
 
-    private static List<FileReference> readReferences(String filename, UnionListReader reader) {
+    private static List<FileReference> readReferences(String filename, ListVector referencesVector, int rowNumber) {
         List<FileReference> references = new ArrayList<>();
+        UnionListReader listReader = referencesVector.getReader();
+        listReader.setPosition(rowNumber);
+        FieldReader reader = listReader.reader();
+        while (listReader.next()) {
+            references.add(FileReference.builder()
+                    .filename(filename)
+                    .partitionId(reader.reader(PARTITION_ID.getName()).readText().toString())
+                    .lastStateStoreUpdateTime(reader.reader(REFERENCE_UPDATE_TIME.getName()).readLocalDateTime().toInstant(ZoneOffset.UTC))
+                    .jobId(Optional.ofNullable(reader.reader(JOB_ID.getName()).readText()).map(Text::toString).orElse(null))
+                    .numberOfRecords(reader.reader(NUMBER_OF_RECORDS.getName()).readLong())
+                    .countApproximate(reader.reader(COUNT_APPROXIMATE.getName()).readBoolean())
+                    .onlyContainsDataForThisPartition(reader.reader(ONLY_CONTAINS_DATA_FOR_THIS_PARTITION.getName()).readBoolean())
+                    .build());
+        }
         return references;
     }
 

@@ -17,7 +17,6 @@ package sleeper.statestore;
 
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.statestore.AllReferencesToAFile;
@@ -30,19 +29,18 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithNoReferences;
+import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithReferences;
 
 public class StateStoreFilesArrowFormatTest {
 
     private final BufferAllocator allocator = new RootAllocator();
 
     @Test
-    void shouldWriteOneFileWithNoReferencesInArrowFormat() throws Exception {
+    void shouldWriteOneFileWithNoReferences() throws Exception {
         // Given
-        AllReferencesToAFile file = AllReferencesToAFile.builder()
-                .filename("test.parquet")
-                .lastStateStoreUpdateTime(Instant.parse("2024-05-28T13:25:01.123Z"))
-                .internalReferences(List.of())
-                .build();
+        Instant updateTime = Instant.parse("2024-05-28T13:25:01.123Z");
+        AllReferencesToAFile file = fileWithNoReferences("test.parquet", updateTime);
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 
         // When
@@ -53,18 +51,12 @@ public class StateStoreFilesArrowFormatTest {
     }
 
     @Test
-    void shouldWriteTwoFilesWithNoReferencesInArrowFormat() throws Exception {
+    void shouldWriteTwoFilesWithNoReferences() throws Exception {
         // Given
-        AllReferencesToAFile file1 = AllReferencesToAFile.builder()
-                .filename("file1.parquet")
-                .lastStateStoreUpdateTime(Instant.parse("2024-05-28T14:57:01.123Z"))
-                .internalReferences(List.of())
-                .build();
-        AllReferencesToAFile file2 = AllReferencesToAFile.builder()
-                .filename("file2.parquet")
-                .lastStateStoreUpdateTime(Instant.parse("2024-05-28T14:58:01.123Z"))
-                .internalReferences(List.of())
-                .build();
+        AllReferencesToAFile file1 = fileWithNoReferences(
+                "file1.parquet", Instant.parse("2024-05-28T14:57:01.123Z"));
+        AllReferencesToAFile file2 = fileWithNoReferences(
+                "file2.parquet", Instant.parse("2024-05-28T14:58:01.123Z"));
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 
         // When
@@ -75,8 +67,7 @@ public class StateStoreFilesArrowFormatTest {
     }
 
     @Test
-    @Disabled("TODO")
-    void shouldWriteOneFileWithOneReferenceInArrowFormat() throws Exception {
+    void shouldWriteOneFileWithOneReference() throws Exception {
         // Given
         FileReference reference = FileReference.builder()
                 .filename("test.parquet")
@@ -97,6 +88,36 @@ public class StateStoreFilesArrowFormatTest {
         assertThat(read(bytes)).containsExactly(file);
     }
 
+    @Test
+    void shouldWriteOneFileWithTwoReferences() throws Exception {
+        // Given
+        FileReference reference1 = FileReference.builder()
+                .filename("file.parquet")
+                .partitionId("A")
+                .numberOfRecords(123L)
+                .jobId("test-job-1")
+                .countApproximate(true)
+                .onlyContainsDataForThisPartition(false)
+                .build();
+        FileReference reference2 = FileReference.builder()
+                .filename("file.parquet")
+                .partitionId("B")
+                .numberOfRecords(456L)
+                .jobId("test-job-2")
+                .countApproximate(true)
+                .onlyContainsDataForThisPartition(false)
+                .build();
+        AllReferencesToAFile file = fileWithReferences(reference1, reference2)
+                .withCreatedUpdateTime(Instant.parse("2024-05-28T13:25:01.123Z"));
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+
+        // When
+        write(List.of(file), bytes);
+
+        // Then
+        assertThat(read(bytes)).containsExactly(file);
+    }
+
     private void write(List<AllReferencesToAFile> files, ByteArrayOutputStream stream) throws Exception {
         StateStoreFilesArrowFormat.write(files, allocator, Channels.newChannel(stream));
     }
@@ -105,5 +126,4 @@ public class StateStoreFilesArrowFormatTest {
         return StateStoreFilesArrowFormat.read(allocator,
                 Channels.newChannel(new ByteArrayInputStream(stream.toByteArray())));
     }
-
 }
