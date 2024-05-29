@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 
@@ -41,6 +42,24 @@ public class StateStorePartitionsArrowFormatTest {
     void shouldWriteOnePartitionWithOneStringField() throws Exception {
         // Given
         Schema schema = schemaWithKey("key", new StringType());
+        PartitionTree tree = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .buildTree();
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+
+        // When
+        write(tree.getAllPartitions(), bytes);
+
+        // Then
+        assertThat(read(bytes)).isEqualTo(tree.getAllPartitions());
+    }
+
+    @Test
+    void shouldWriteOnePartitionWithMultipleStringFields() throws Exception {
+        // Given
+        Schema schema = Schema.builder().rowKeyFields(
+                new Field("key1", new StringType()),
+                new Field("key2", new StringType())).build();
         PartitionTree tree = new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .buildTree();
