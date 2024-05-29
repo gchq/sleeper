@@ -22,7 +22,7 @@ import java.time.Instant;
 import java.util.Objects;
 
 /**
- * A event class for when an ingest job was started. Used in the ingest job status store.
+ * A event for when an ingest job was started. Used in the ingest job status store.
  */
 public class IngestJobStartedEvent {
     private final String jobId;
@@ -48,7 +48,9 @@ public class IngestJobStartedEvent {
     }
 
     /**
-     * Creates an instance of this class.
+     * Creates an instance of this class. This constructor is specifically for ingest jobs and is the first event that
+     * happens in an ingest task. This is not used for bulk import jobs, as they are started by being assigned to a
+     * task.
      *
      * @param  taskId    the task ID
      * @param  job       the ingest job
@@ -60,7 +62,9 @@ public class IngestJobStartedEvent {
     }
 
     /**
-     * Creates an instance of this class.
+     * Creates an instance of this class. This constructor is specifically for ingest jobs and is the first event that
+     * happens in an ingest task. This is not used for bulk import jobs, as they are started by being assigned to a
+     * task.
      *
      * @param  job       the ingest job
      * @param  startTime the start time
@@ -74,7 +78,9 @@ public class IngestJobStartedEvent {
     }
 
     /**
-     * Creates an instance of this class for an ingest job that has been validated.
+     * Creates an instance of this class for an ingest job that has been validated. This constructor is used for bulk
+     * import jobs, since the job run starts when it is accepted in the bulk import job starter. That is also when it is
+     * assigned to a task.
      *
      * @param  job       the ingest job
      * @param  startTime the start time
