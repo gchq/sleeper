@@ -18,9 +18,6 @@ package sleeper.statestore;
 import org.apache.arrow.memory.ArrowBuf;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.vector.complex.writer.BaseWriter.StructWriter;
-import org.apache.arrow.vector.complex.writer.BigIntWriter;
-import org.apache.arrow.vector.complex.writer.IntWriter;
-import org.apache.arrow.vector.complex.writer.UInt8Writer;
 import org.apache.arrow.vector.complex.writer.VarBinaryWriter;
 import org.apache.arrow.vector.complex.writer.VarCharWriter;
 import org.apache.arrow.vector.types.pojo.Field;
@@ -113,69 +110,12 @@ public class ArrowFormatUtils {
     }
 
     /**
-     * Write a nullable long value to an Arrow struct.
-     *
-     * @param struct the struct writer
-     * @param field  the field
-     * @param value  the value
-     */
-    public static void writeUInt8Nullable(StructWriter struct, Field field, Long value) {
-        writeUInt8Nullable(struct.uInt8(field.getName()), value);
-    }
-
-    /**
-     * Write a nullable long value to an UInt8 field.
-     *
-     * @param writer the writer
-     * @param value  the value
-     */
-    public static void writeUInt8Nullable(UInt8Writer writer, Long value) {
-        if (value == null) {
-            writer.writeNull();
-            return;
-        }
-        writer.writeUInt8(value);
-    }
-
-    /**
-     * Write a nullable long value to a BigInt field.
-     *
-     * @param writer the writer
-     * @param value  the value
-     */
-    public static void writeBigIntNullable(BigIntWriter writer, Long value) {
-        if (value == null) {
-            writer.writeNull();
-            return;
-        }
-        writer.writeBigInt(value);
-    }
-
-    /**
-     * Write a nullable int value to an Int field.
-     *
-     * @param writer the writer
-     * @param value  the value
-     */
-    public static void writeIntNullable(IntWriter writer, Integer value) {
-        if (value == null) {
-            writer.writeNull();
-            return;
-        }
-        writer.writeInt(value);
-    }
-
-    /**
      * Write a nullable byte array value to a VarBinary field.
      *
      * @param writer the writer
      * @param value  the value
      */
-    public static void writeVarBinaryNullable(VarBinaryWriter writer, BufferAllocator allocator, byte[] value) {
-        if (value == null) {
-            writer.writeNull();
-            return;
-        }
+    public static void writeVarBinary(VarBinaryWriter writer, BufferAllocator allocator, byte[] value) {
         try (ArrowBuf buffer = allocator.buffer(value.length)) {
             buffer.setBytes(0, value);
             writer.writeVarBinary(0, value.length, buffer);

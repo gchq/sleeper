@@ -55,11 +55,8 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toMap;
-import static sleeper.statestore.ArrowFormatUtils.writeBigIntNullable;
-import static sleeper.statestore.ArrowFormatUtils.writeIntNullable;
-import static sleeper.statestore.ArrowFormatUtils.writeVarBinaryNullable;
+import static sleeper.statestore.ArrowFormatUtils.writeVarBinary;
 import static sleeper.statestore.ArrowFormatUtils.writeVarChar;
-import static sleeper.statestore.ArrowFormatUtils.writeVarCharNullable;
 
 /**
  * Reads and writes the state of partitions in a state store to an Arrow file.
@@ -236,16 +233,16 @@ public class StateStorePartitionsArrowFormat {
         }
         struct.start();
         if (fieldType instanceof StringType) {
-            writeVarCharNullable(struct.varChar("string"), allocator, (String) value);
+            writeVarChar(struct.varChar("string"), allocator, (String) value);
         }
         if (fieldType instanceof LongType) {
-            writeBigIntNullable(struct.bigInt("long"), (Long) value);
+            struct.bigInt("long").writeBigInt((long) value);
         }
         if (fieldType instanceof IntType) {
-            writeIntNullable(struct.integer("int"), (Integer) value);
+            struct.integer("int").writeInt((int) value);
         }
         if (fieldType instanceof ByteArrayType) {
-            writeVarBinaryNullable(struct.varBinary("bytes"), allocator, (byte[]) value);
+            writeVarBinary(struct.varBinary("bytes"), allocator, (byte[]) value);
         }
         struct.end();
     }
