@@ -27,6 +27,7 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
@@ -53,6 +54,7 @@ public class TransactionLogSnapshotDeletionLambda implements RequestHandler<SQSE
     private final AmazonDynamoDB dynamoClient;
     private final InstanceProperties instanceProperties = new InstanceProperties();
     private final TablePropertiesProvider tablePropertiesProvider;
+    private final PropertiesReloader propertiesReloader;
 
     public TransactionLogSnapshotDeletionLambda() {
         s3Client = AmazonS3ClientBuilder.defaultClient();
@@ -60,12 +62,14 @@ public class TransactionLogSnapshotDeletionLambda implements RequestHandler<SQSE
         String configBucketName = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
         instanceProperties.loadFromS3(s3Client, configBucketName);
         tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
+        propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
     }
 
     @Override
     public SQSBatchResponse handleRequest(SQSEvent event, Context context) {
         Instant startTime = Instant.now();
         LOGGER.info("Lambda started at {}", startTime);
+        propertiesReloader.reloadIfNeeded();
 
         Map<String, List<SQSMessage>> messagesByTableId = event.getRecords().stream()
                 .collect(Collectors.groupingBy(SQSEvent.SQSMessage::getBody));
