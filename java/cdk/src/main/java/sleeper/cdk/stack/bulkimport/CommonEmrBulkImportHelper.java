@@ -93,7 +93,7 @@ public class CommonEmrBulkImportHelper {
                 .create(scope, "BulkImport" + platform + "JobQueue")
                 .deadLetterQueue(deadLetterQueue)
                 .visibilityTimeout(Duration.minutes(3))
-                .queueName(instanceId + "-BulkImport" + platform + "Q")
+                .queueName(String.join("-", "sleeper", instanceId, "BulkImport" + platform + "Q"))
                 .build();
 
         instanceProperties.set(jobQueueUrl, emrBulkImportJobQueue.getQueueUrl());
