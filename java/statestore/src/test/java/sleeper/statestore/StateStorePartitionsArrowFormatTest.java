@@ -31,8 +31,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class StateStorePartitionsArrowFormatTest {
+
     @Test
-    @Disabled
+    @Disabled("TODO")
     void shouldWriteOnePartitionWithOneStringField() throws Exception {
         // Given
         Schema schema = schemaWithKey("key", new StringType());
