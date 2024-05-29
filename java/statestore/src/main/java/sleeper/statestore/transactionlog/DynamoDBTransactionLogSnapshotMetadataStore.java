@@ -220,6 +220,12 @@ public class DynamoDBTransactionLogSnapshotMetadataStore {
         return new TransactionLogSnapshotMetadata(getStringAttribute(item, PATH), type, getLongAttribute(item, TRANSACTION_NUMBER, 0));
     }
 
+    /**
+     * Retrieves metadata of snapshots older than a certain time. Note that this excludes latest snapshots.
+     *
+     * @param  time the time used to decide which snapshots are oldest
+     * @return      a stream of snapshots that were last updated before the provided time
+     */
     public Stream<TransactionLogSnapshotMetadata> getOldestSnapshots(Instant time) {
         long expiryDate = time.toEpochMilli() - expiryInDays.toMillis();
         LatestSnapshots latestSnapshots = getLatestSnapshots();
@@ -248,7 +254,7 @@ public class DynamoDBTransactionLogSnapshotMetadataStore {
                 .filter(snapshot -> snapshot.getTransactionNumber() != latestSnapshotNumber);
     }
 
-    public void deleteSnapshot(TransactionLogSnapshotMetadata snapshot) {
+    void deleteSnapshot(TransactionLogSnapshotMetadata snapshot) {
         dynamo.deleteItem(allSnapshotsTable, getKeyFromSnapshot(snapshot));
     }
 

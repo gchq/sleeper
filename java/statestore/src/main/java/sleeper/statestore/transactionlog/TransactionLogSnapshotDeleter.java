@@ -28,6 +28,9 @@ import sleeper.configuration.properties.table.TableProperties;
 import java.io.IOException;
 import java.time.Instant;
 
+/**
+ * Searches for snapshots older than a certain time, then deletes them.
+ */
 public class TransactionLogSnapshotDeleter {
     public static final Logger LOGGER = LoggerFactory.getLogger(TransactionLogSnapshotDeleter.class);
     private final Configuration configuration;
@@ -40,6 +43,12 @@ public class TransactionLogSnapshotDeleter {
         this.metadataStore = new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamoDB);
     }
 
+    /**
+     * Searches for snapshots older than a certain time, then deletes the snapshot file in addition to the snapshot
+     * metadata in the metadata store.
+     *
+     * @param time the time used to decide which snapshots are oldest
+     */
     public void deleteSnapshots(Instant time) {
         metadataStore.getOldestSnapshots(time)
                 .forEach(snapshot -> {
