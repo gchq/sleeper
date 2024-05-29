@@ -72,6 +72,25 @@ public class StateStorePartitionsArrowFormatTest {
         assertThat(read(bytes)).isEqualTo(tree.getAllPartitions());
     }
 
+    @Test
+    void shouldWriteMultiplePartitionsWithOneStringField() throws Exception {
+        // Given
+        Schema schema = schemaWithKey("key", new StringType());
+        PartitionTree tree = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", "mmm")
+                .splitToNewChildren("L", "LL", "LR", "ccc")
+                .splitToNewChildren("R", "RL", "RR", "ttt")
+                .buildTree();
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+
+        // When
+        write(tree.getAllPartitions(), bytes);
+
+        // Then
+        assertThat(read(bytes)).isEqualTo(tree.getAllPartitions());
+    }
+
     private void write(List<Partition> partitions, ByteArrayOutputStream stream) throws Exception {
         StateStorePartitionsArrowFormat.write(partitions, allocator, Channels.newChannel(stream));
     }
