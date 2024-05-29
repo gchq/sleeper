@@ -37,7 +37,9 @@ import org.apache.arrow.vector.util.Text;
 import sleeper.core.partition.Partition;
 import sleeper.core.range.Range;
 import sleeper.core.range.Region;
+import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
+import sleeper.core.schema.type.Type;
 
 import java.io.IOException;
 import java.nio.channels.ReadableByteChannel;
@@ -48,6 +50,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
+import static sleeper.statestore.ArrowFormatUtils.writeUInt8Nullable;
 import static sleeper.statestore.ArrowFormatUtils.writeVarChar;
 import static sleeper.statestore.ArrowFormatUtils.writeVarCharNullable;
 
@@ -63,11 +66,16 @@ public class StateStorePartitionsArrowFormat {
     private static final Field IS_LEAF = Field.notNullable("isLeaf", Types.MinorType.BIT.getType());
     private static final Field DIMENSION = Field.nullable("dimension", Types.MinorType.UINT4.getType());
 
-    private static final Field FIELD = Field.notNullable("field", Utf8.INSTANCE);
-    private static final Field MIN = Field.notNullable("min", Utf8.INSTANCE);
-    private static final Field MAX = Field.nullable("max", Utf8.INSTANCE);
+    private static final Field FIELD_NAME = Field.notNullable("fieldName", Utf8.INSTANCE);
+    private static final Field FIELD_TYPE = Field.notNullable("fieldType", Utf8.INSTANCE);
+    private static final Field ROW_KEY_STRING = Field.nullable("rowKeyString", Utf8.INSTANCE);
+    private static final Field ROW_KEY_LONG = Field.nullable("rowKeyLong", Types.MinorType.BIGINT.getType());
+    private static final Field MIN = new Field("min",
+            FieldType.notNullable(Types.MinorType.STRUCT.getType()), List.of(ROW_KEY_STRING, ROW_KEY_LONG));
+    private static final Field MAX = new Field("max",
+            FieldType.nullable(Types.MinorType.STRUCT.getType()), List.of(ROW_KEY_STRING, ROW_KEY_LONG));
     private static final Field RANGE = new Field("range",
-            FieldType.notNullable(Types.MinorType.STRUCT.getType()), List.of(FIELD, MIN, MAX));
+            FieldType.notNullable(Types.MinorType.STRUCT.getType()), List.of(FIELD_NAME, FIELD_TYPE, MIN, MAX));
     private static final Field REGION = new Field("region",
             FieldType.notNullable(Types.MinorType.LIST.getType()), List.of(RANGE));
     private static final Schema SCHEMA = new Schema(List.of(
@@ -168,12 +176,28 @@ public class StateStorePartitionsArrowFormat {
         for (Range range : region.getRanges()) {
             StructWriter struct = writer.struct();
             struct.start();
-            writeVarChar(struct, allocator, FIELD, range.getFieldName());
-            writeVarChar(struct, allocator, MIN, (String) range.getMin());
-            writeVarCharNullable(struct, allocator, MAX, (String) range.getMax());
+            writeVarChar(struct, allocator, FIELD_NAME, range.getFieldName());
+            writeVarChar(struct, allocator, FIELD_TYPE, range.getFieldType().getClass().getSimpleName());
+            writeRowKeyValue(range.getFieldType(), range.getMin(), allocator, struct.struct(MIN.getName()));
+            writeRowKeyValue(range.getFieldType(), range.getMax(), allocator, struct.struct(MAX.getName()));
             struct.end();
         }
         writer.endList();
+    }
+
+    private static void writeRowKeyValue(Type fieldType, Object value, BufferAllocator allocator, StructWriter struct) {
+        struct.start();
+        if (fieldType instanceof StringType) {
+            writeVarCharNullable(struct, allocator, ROW_KEY_STRING, (String) value);
+        } else {
+            writeVarCharNullable(struct, allocator, ROW_KEY_STRING, null);
+        }
+        if (fieldType instanceof LongType) {
+            writeUInt8Nullable(struct, ROW_KEY_LONG, (Long) value);
+        } else {
+            writeUInt8Nullable(struct, ROW_KEY_LONG, null);
+        }
+        struct.end();
     }
 
     private static List<String> readChildIds(ListVector childIdsVector, int rowNumber) {
@@ -194,7 +218,7 @@ public class StateStorePartitionsArrowFormat {
         FieldReader reader = listReader.reader();
         while (listReader.next()) {
             ranges.add(new Range(
-                    new sleeper.core.schema.Field(reader.reader(FIELD.getName()).readText().toString(), new StringType()),
+                    new sleeper.core.schema.Field(reader.reader(FIELD_NAME.getName()).readText().toString(), new StringType()),
                     reader.reader(MIN.getName()).readText().toString(),
                     Optional.ofNullable(reader.reader(MAX.getName()).readText()).map(Text::toString).orElse(null)));
         }

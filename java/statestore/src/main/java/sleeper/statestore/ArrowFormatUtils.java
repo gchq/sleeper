@@ -18,6 +18,7 @@ package sleeper.statestore;
 import org.apache.arrow.memory.ArrowBuf;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.vector.complex.writer.BaseWriter.StructWriter;
+import org.apache.arrow.vector.complex.writer.UInt8Writer;
 import org.apache.arrow.vector.complex.writer.VarCharWriter;
 import org.apache.arrow.vector.types.pojo.Field;
 
@@ -106,6 +107,22 @@ public class ArrowFormatUtils {
      */
     public static void writeUInt8(StructWriter struct, Field field, long value) {
         struct.uInt8(field.getName()).writeUInt8(value);
+    }
+
+    /**
+     * Write a nullable long value to an Arrow struct.
+     *
+     * @param struct the struct writer
+     * @param field  the field
+     * @param value  the value
+     */
+    public static void writeUInt8Nullable(StructWriter struct, Field field, Long value) {
+        UInt8Writer writer = struct.uInt8(field.getName());
+        if (value == null) {
+            writer.writeNull();
+            return;
+        }
+        writer.writeUInt8(value);
     }
 
     /**
