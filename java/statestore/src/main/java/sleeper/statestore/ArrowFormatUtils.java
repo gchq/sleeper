@@ -88,6 +88,19 @@ public class ArrowFormatUtils {
     }
 
     /**
+     * Write a nullable byte array value to a VarBinary field.
+     *
+     * @param writer the writer
+     * @param value  the value
+     */
+    public static void writeVarBinary(VarBinaryWriter writer, BufferAllocator allocator, byte[] value) {
+        try (ArrowBuf buffer = allocator.buffer(value.length)) {
+            buffer.setBytes(0, value);
+            writer.writeVarBinary(0, value.length, buffer);
+        }
+    }
+
+    /**
      * Write a timestamp in milliseconds to an Arrow struct.
      *
      * @param struct the struct writer
@@ -107,19 +120,6 @@ public class ArrowFormatUtils {
      */
     public static void writeUInt8(StructWriter struct, Field field, long value) {
         struct.uInt8(field.getName()).writeUInt8(value);
-    }
-
-    /**
-     * Write a nullable byte array value to a VarBinary field.
-     *
-     * @param writer the writer
-     * @param value  the value
-     */
-    public static void writeVarBinary(VarBinaryWriter writer, BufferAllocator allocator, byte[] value) {
-        try (ArrowBuf buffer = allocator.buffer(value.length)) {
-            buffer.setBytes(0, value);
-            writer.writeVarBinary(0, value.length, buffer);
-        }
     }
 
     /**
