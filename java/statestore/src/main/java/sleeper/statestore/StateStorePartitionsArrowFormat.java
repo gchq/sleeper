@@ -68,12 +68,13 @@ public class StateStorePartitionsArrowFormat {
 
     private static final Field FIELD_NAME = Field.notNullable("fieldName", Utf8.INSTANCE);
     private static final Field FIELD_TYPE = Field.notNullable("fieldType", Utf8.INSTANCE);
-    private static final Field ROW_KEY_STRING = Field.nullable("rowKeyString", Utf8.INSTANCE);
-    private static final Field ROW_KEY_LONG = Field.nullable("rowKeyLong", Types.MinorType.BIGINT.getType());
+    private static final Field ROW_KEY_STRING = Field.nullable("string", Utf8.INSTANCE);
+    private static final Field ROW_KEY_LONG = Field.nullable("long", Types.MinorType.BIGINT.getType());
+    private static final List<Field> ROW_KEY_TYPES = List.of(ROW_KEY_STRING, ROW_KEY_LONG);
     private static final Field MIN = new Field("min",
-            FieldType.notNullable(Types.MinorType.STRUCT.getType()), List.of(ROW_KEY_STRING, ROW_KEY_LONG));
+            FieldType.notNullable(Types.MinorType.STRUCT.getType()), ROW_KEY_TYPES);
     private static final Field MAX = new Field("max",
-            FieldType.nullable(Types.MinorType.STRUCT.getType()), List.of(ROW_KEY_STRING, ROW_KEY_LONG));
+            FieldType.nullable(Types.MinorType.STRUCT.getType()), ROW_KEY_TYPES);
     private static final Field RANGE = new Field("range",
             FieldType.notNullable(Types.MinorType.STRUCT.getType()), List.of(FIELD_NAME, FIELD_TYPE, MIN, MAX));
     private static final Field REGION = new Field("region",
