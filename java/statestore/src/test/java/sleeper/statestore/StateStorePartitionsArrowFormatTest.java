@@ -17,7 +17,6 @@ package sleeper.statestore;
 
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.Partition;
@@ -36,7 +35,6 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
-@Disabled
 public class StateStorePartitionsArrowFormatTest {
 
     private final BufferAllocator allocator = new RootAllocator();

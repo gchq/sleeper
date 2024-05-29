@@ -48,9 +48,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 
-import static sleeper.statestore.ArrowFormatUtils.writeUInt8Nullable;
+import static java.util.stream.Collectors.toMap;
+import static sleeper.statestore.ArrowFormatUtils.writeBigIntNullable;
 import static sleeper.statestore.ArrowFormatUtils.writeVarChar;
 import static sleeper.statestore.ArrowFormatUtils.writeVarCharNullable;
 
@@ -68,19 +71,19 @@ public class StateStorePartitionsArrowFormat {
 
     private static final Field FIELD_NAME = Field.notNullable("fieldName", Utf8.INSTANCE);
     private static final Field FIELD_TYPE = Field.notNullable("fieldType", Utf8.INSTANCE);
-    private static final Field ROW_KEY_STRING = Field.nullable("string", Utf8.INSTANCE);
-    private static final Field ROW_KEY_LONG = Field.nullable("long", Types.MinorType.BIGINT.getType());
-    private static final List<Field> ROW_KEY_TYPES = List.of(ROW_KEY_STRING, ROW_KEY_LONG);
     private static final Field MIN = new Field("min",
-            FieldType.notNullable(Types.MinorType.STRUCT.getType()), ROW_KEY_TYPES);
+            FieldType.notNullable(Types.MinorType.STRUCT.getType()), createRowKeyTypeFields());
     private static final Field MAX = new Field("max",
-            FieldType.nullable(Types.MinorType.STRUCT.getType()), ROW_KEY_TYPES);
+            FieldType.nullable(Types.MinorType.STRUCT.getType()), createRowKeyTypeFields());
     private static final Field RANGE = new Field("range",
             FieldType.notNullable(Types.MinorType.STRUCT.getType()), List.of(FIELD_NAME, FIELD_TYPE, MIN, MAX));
     private static final Field REGION = new Field("region",
             FieldType.notNullable(Types.MinorType.LIST.getType()), List.of(RANGE));
     private static final Schema SCHEMA = new Schema(List.of(
             ID, PARENT_ID, CHILD_IDS, IS_LEAF, DIMENSION, REGION));
+
+    private static final Map<String, Type> FIELD_TYPE_BY_STRING = Stream.of(new StringType(), new LongType())
+            .collect(toMap(type -> type.getClass().getSimpleName(), type -> type));
 
     private StateStorePartitionsArrowFormat() {
     }
@@ -171,6 +174,17 @@ public class StateStorePartitionsArrowFormat {
         writer.endList();
     }
 
+    private static List<String> readChildIds(ListVector childIdsVector, int rowNumber) {
+        List<String> childIds = new ArrayList<>();
+        UnionListReader listReader = childIdsVector.getReader();
+        listReader.setPosition(rowNumber);
+        FieldReader reader = listReader.reader();
+        while (listReader.next()) {
+            childIds.add(reader.readText().toString());
+        }
+        return childIds;
+    }
+
     private static void writeRegion(Region region, int rowNumber, BufferAllocator allocator, UnionListWriter writer) {
         writer.setPosition(rowNumber);
         writer.startList();
@@ -186,43 +200,60 @@ public class StateStorePartitionsArrowFormat {
         writer.endList();
     }
 
-    private static void writeRowKeyValue(Type fieldType, Object value, BufferAllocator allocator, StructWriter struct) {
-        struct.start();
-        if (fieldType instanceof StringType) {
-            writeVarCharNullable(struct, allocator, ROW_KEY_STRING, (String) value);
-        } else {
-            writeVarCharNullable(struct, allocator, ROW_KEY_STRING, null);
-        }
-        if (fieldType instanceof LongType) {
-            writeUInt8Nullable(struct, ROW_KEY_LONG, (Long) value);
-        } else {
-            writeUInt8Nullable(struct, ROW_KEY_LONG, null);
-        }
-        struct.end();
-    }
-
-    private static List<String> readChildIds(ListVector childIdsVector, int rowNumber) {
-        List<String> childIds = new ArrayList<>();
-        UnionListReader listReader = childIdsVector.getReader();
-        listReader.setPosition(rowNumber);
-        FieldReader reader = listReader.reader();
-        while (listReader.next()) {
-            childIds.add(reader.readText().toString());
-        }
-        return childIds;
-    }
-
     private static Region readRegion(ListVector regionVector, int rowNumber) {
         List<Range> ranges = new ArrayList<>();
         UnionListReader listReader = regionVector.getReader();
         listReader.setPosition(rowNumber);
         FieldReader reader = listReader.reader();
         while (listReader.next()) {
+            String fieldName = reader.reader(FIELD_NAME.getName()).readText().toString();
+            Type fieldType = readFieldType(reader);
             ranges.add(new Range(
-                    new sleeper.core.schema.Field(reader.reader(FIELD_NAME.getName()).readText().toString(), new StringType()),
-                    reader.reader(MIN.getName()).readText().toString(),
-                    Optional.ofNullable(reader.reader(MAX.getName()).readText()).map(Text::toString).orElse(null)));
+                    new sleeper.core.schema.Field(fieldName, fieldType),
+                    readRowKeyValue(reader.reader(MIN.getName()), fieldType),
+                    readRowKeyValue(reader.reader(MAX.getName()), fieldType)));
         }
         return new Region(ranges);
+    }
+
+    private static Type readFieldType(FieldReader reader) {
+        String typeString = reader.reader(FIELD_TYPE.getName()).readText().toString();
+        Type type = FIELD_TYPE_BY_STRING.get(typeString);
+        if (type == null) {
+            throw new IllegalArgumentException("Unrecognised field type: " + typeString);
+        }
+        return type;
+    }
+
+    private static void writeRowKeyValue(Type fieldType, Object value, BufferAllocator allocator, StructWriter struct) {
+        struct.start();
+        if (fieldType instanceof StringType) {
+            writeVarCharNullable(struct.varChar("string"), allocator, (String) value);
+        } else {
+            writeVarCharNullable(struct.varChar("string"), allocator, null);
+        }
+        if (fieldType instanceof LongType) {
+            writeBigIntNullable(struct.bigInt("long"), (Long) value);
+        } else {
+            writeBigIntNullable(struct.bigInt("long"), null);
+        }
+        struct.end();
+    }
+
+    private static Object readRowKeyValue(FieldReader reader, Type fieldType) {
+        if (fieldType instanceof StringType) {
+            return Optional.ofNullable(reader.reader("string").readText())
+                    .map(Text::toString).orElse(null);
+        } else if (fieldType instanceof LongType) {
+            return reader.reader("long").readLong();
+        } else {
+            throw new IllegalArgumentException("Unrecognised field type: " + fieldType);
+        }
+    }
+
+    private static List<Field> createRowKeyTypeFields() {
+        return List.of(
+                Field.nullable("string", Utf8.INSTANCE),
+                Field.nullable("long", Types.MinorType.BIGINT.getType()));
     }
 }
