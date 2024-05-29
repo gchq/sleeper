@@ -15,7 +15,6 @@
  */
 package sleeper.statestore;
 
-import org.apache.arrow.memory.ArrowBuf;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.vector.TimeStampMilliVector;
 import org.apache.arrow.vector.VarCharVector;
@@ -47,6 +46,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+
+import static sleeper.statestore.ArrowFormatUtils.writeBit;
+import static sleeper.statestore.ArrowFormatUtils.writeTimeStampMilli;
+import static sleeper.statestore.ArrowFormatUtils.writeUInt8;
+import static sleeper.statestore.ArrowFormatUtils.writeVarChar;
+import static sleeper.statestore.ArrowFormatUtils.writeVarCharNullable;
 
 /**
  * Reads and writes the state of files in a state store to an Arrow file.
@@ -164,33 +169,5 @@ public class StateStoreFilesArrowFormat {
                     .build());
         }
         return references;
-    }
-
-    private static void writeVarChar(StructWriter struct, BufferAllocator allocator, Field field, String value) {
-        byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
-        try (ArrowBuf buffer = allocator.buffer(bytes.length)) {
-            buffer.setBytes(0, bytes);
-            struct.varChar(field.getName()).writeVarChar(0, bytes.length, buffer);
-        }
-    }
-
-    private static void writeVarCharNullable(StructWriter struct, BufferAllocator allocator, Field field, String value) {
-        if (value == null) {
-            struct.varChar(field.getName()).writeNull();
-            return;
-        }
-        writeVarChar(struct, allocator, field, value);
-    }
-
-    private static void writeTimeStampMilli(StructWriter struct, Field field, Instant value) {
-        struct.timeStampMilli(field.getName()).writeTimeStampMilli(value.toEpochMilli());
-    }
-
-    private static void writeUInt8(StructWriter struct, Field field, long value) {
-        struct.uInt8(field.getName()).writeUInt8(value);
-    }
-
-    private static void writeBit(StructWriter struct, Field field, boolean value) {
-        struct.bit(field.getName()).writeBit(value ? 1 : 0);
     }
 }
