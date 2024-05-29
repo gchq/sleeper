@@ -31,6 +31,7 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.exception.FileNotFoundException;
 import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
+import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -130,7 +131,8 @@ public class CompactionJobCommitterTest extends CompactionJobCommitterTestBase {
             // When
             assertThatThrownBy(() -> jobCommitter(noJitter()).apply(commit))
                     .isInstanceOf(TimedOutWaitingForFileAssignmentsException.class)
-                    .hasCauseInstanceOf(FileReferenceNotAssignedToJobException.class);
+                    .cause().isInstanceOf(ReplaceRequestsFailedException.class)
+                    .cause().isInstanceOf(FileReferenceNotAssignedToJobException.class);
 
             // Then
             assertThat(stateStore().getFileReferences()).containsExactly(file);
@@ -155,7 +157,8 @@ public class CompactionJobCommitterTest extends CompactionJobCommitterTestBase {
 
             // When
             assertThatThrownBy(() -> jobCommitter(noJitter()).apply(commit))
-                    .isInstanceOf(FileNotFoundException.class);
+                    .isInstanceOf(ReplaceRequestsFailedException.class)
+                    .hasCauseInstanceOf(FileNotFoundException.class);
 
             // Then
             assertThat(stateStore().getFileReferences()).isEmpty();

@@ -25,6 +25,7 @@ import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceStore;
+import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.FileAlreadyExistsException;
@@ -34,8 +35,9 @@ import sleeper.core.statestore.exception.FileReferenceAlreadyExistsException;
 import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
+import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.core.statestore.exception.SplitRequestsFailedException;
-import sleeper.statestore.StateStoreFileUtils;
+import sleeper.statestore.StateStoreParquetSerDe;
 
 import java.io.IOException;
 import java.time.Clock;
@@ -63,6 +65,10 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.core.statestore.AllReferencesToAFile.fileWithOneReference;
 import static sleeper.statestore.s3.S3StateStore.CURRENT_FILES_REVISION_ID_KEY;
 
+/**
+ * A Sleeper table file reference store where the state is held in S3, and revisions of the state are indexed in
+ * DynamoDB.
+ */
 class S3FileReferenceStore implements FileReferenceStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(S3FileReferenceStore.class);
     private static final String DELIMITER = "|";
@@ -71,7 +77,7 @@ class S3FileReferenceStore implements FileReferenceStore {
     private final Configuration conf;
     private final S3RevisionIdStore s3RevisionIdStore;
     private final S3StateStoreDataFile<List<AllReferencesToAFile>> s3StateStoreFile;
-    private final StateStoreFileUtils stateStoreFileUtils;
+    private final StateStoreParquetSerDe parquetSerDe;
     private Clock clock = Clock.systemUTC();
 
     private S3FileReferenceStore(Builder builder) {
@@ -86,7 +92,7 @@ class S3FileReferenceStore implements FileReferenceStore {
                 .loadAndWriteData(this::readFilesFromParquet, this::writeFilesToParquet)
                 .hadoopConf(conf)
                 .build();
-        stateStoreFileUtils = new StateStoreFileUtils(conf);
+        parquetSerDe = new StateStoreParquetSerDe(conf);
     }
 
     static Builder builder() {
@@ -183,11 +189,15 @@ class S3FileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public void atomicallyReplaceFileReferencesWithNewOne(
-            String jobId, String partitionId, List<String> inputFiles, FileReference newReference) throws StateStoreException {
+    public void atomicallyReplaceFileReferencesWithNewOnes(List<ReplaceFileReferencesRequest> requests) throws ReplaceRequestsFailedException {
         Instant updateTime = clock.instant();
-        Set<String> inputFilesSet = new HashSet<>(inputFiles);
-        FileReference.validateNewReferenceForJobOutput(inputFilesSet, newReference);
+        try {
+            for (ReplaceFileReferencesRequest request : requests) {
+                FileReference.validateNewReferenceForJobOutput(request.getInputFiles(), request.getNewReference());
+            }
+        } catch (StateStoreException e) {
+            throw new ReplaceRequestsFailedException(requests, e);
+        }
         FileReferencesConditionCheck condition = list -> {
             Map<String, AllReferencesToAFile> filesByName = list.stream()
                     .collect(Collectors.toMap(AllReferencesToAFile::getFilename, Function.identity()));
@@ -198,35 +208,48 @@ class S3FileReferenceStore implements FileReferenceStore {
                 }
             }
             StateStoreException exception = null;
-            if (filesByName.containsKey(newReference.getFilename())) {
-                exception = new FileAlreadyExistsException(newReference.getFilename());
-            }
-            for (String filename : inputFiles) {
-                if (!filesByName.containsKey(filename)) {
-                    exception = new FileNotFoundException(filename);
-                } else if (!activePartitionFiles.containsKey(partitionId + DELIMITER + filename)) {
-                    exception = new FileReferenceNotFoundException(filename, partitionId);
-                } else {
-                    FileReference fileReference = activePartitionFiles.get(partitionId + DELIMITER + filename);
-                    if (!jobId.equals(fileReference.getJobId())) {
-                        exception = new FileReferenceNotAssignedToJobException(fileReference, jobId);
+            for (ReplaceFileReferencesRequest request : requests) {
+                if (filesByName.containsKey(request.getNewReference().getFilename())) {
+                    exception = new FileAlreadyExistsException(request.getNewReference().getFilename());
+                }
+                for (String filename : request.getInputFiles()) {
+                    if (!filesByName.containsKey(filename)) {
+                        exception = new FileNotFoundException(filename);
+                    } else if (!activePartitionFiles.containsKey(request.getPartitionId() + DELIMITER + filename)) {
+                        exception = new FileReferenceNotFoundException(filename, request.getPartitionId());
+                    } else {
+                        FileReference fileReference = activePartitionFiles.get(request.getPartitionId() + DELIMITER + filename);
+                        if (!request.getJobId().equals(fileReference.getJobId())) {
+                            exception = new FileReferenceNotAssignedToJobException(fileReference, request.getJobId());
+                        }
                     }
                 }
             }
             return Optional.ofNullable(exception);
         };
-
+        Map<String, List<String>> inputFileToPartitionIds = requests.stream()
+                .flatMap(request -> request.getInputFiles().stream().map(file -> List.of(file, request.getPartitionId())))
+                .collect(Collectors.groupingBy(list -> list.get(0),
+                        Collectors.mapping(list -> list.get(1), Collectors.toList())));
+        List<AllReferencesToAFile> newFileReferences = requests.stream()
+                .map(ReplaceFileReferencesRequest::getNewReference)
+                .map(newReference -> fileWithOneReference(newReference, updateTime))
+                .collect(Collectors.toList());
         Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> update = existingFiles -> Stream.concat(
                 existingFiles.stream().map(existingFile -> {
-                    if (inputFilesSet.contains(existingFile.getFilename())) {
-                        return existingFile.removeReferenceForPartition(partitionId, updateTime);
-                    } else {
-                        return existingFile;
+                    List<String> partitionIds = inputFileToPartitionIds.getOrDefault(existingFile.getFilename(), List.of());
+                    for (String partitionId : partitionIds) {
+                        existingFile = existingFile.removeReferenceForPartition(partitionId, updateTime);
                     }
+                    return existingFile;
                 }),
-                Stream.of(fileWithOneReference(newReference, updateTime)))
+                newFileReferences.stream())
                 .collect(Collectors.toUnmodifiableList());
-        updateS3Files(update, condition);
+        try {
+            updateS3Files(update, condition);
+        } catch (StateStoreException e) {
+            throw new ReplaceRequestsFailedException(requests, e);
+        }
     }
 
     @Override
@@ -356,6 +379,9 @@ class S3FileReferenceStore implements FileReferenceStore {
         s3StateStoreFile.updateWithAttempts(10, update, condition);
     }
 
+    /**
+     * A conditional check for whether we can perform a given update to file references.
+     */
     interface FileReferencesConditionCheck extends S3StateStoreDataFile.ConditionCheck<List<AllReferencesToAFile>> {
     }
 
@@ -378,7 +404,7 @@ class S3FileReferenceStore implements FileReferenceStore {
             return true;
         }
         try {
-            return stateStoreFileUtils.isEmpty(getFilesPath(revisionId));
+            return parquetSerDe.isEmpty(getFilesPath(revisionId));
         } catch (IOException e) {
             throw new StateStoreException("Failed to load files", e);
         }
@@ -402,7 +428,7 @@ class S3FileReferenceStore implements FileReferenceStore {
     private void writeFilesToParquet(List<AllReferencesToAFile> files, String path) throws StateStoreException {
         LOGGER.debug("Writing {} file records to {}", files.size(), path);
         try {
-            stateStoreFileUtils.saveFiles(path, files.stream());
+            parquetSerDe.saveFiles(path, files.stream());
         } catch (IOException e) {
             throw new StateStoreException("Failed to save files", e);
         }
@@ -413,7 +439,7 @@ class S3FileReferenceStore implements FileReferenceStore {
         LOGGER.debug("Loading file records from {}", path);
         List<AllReferencesToAFile> files = new ArrayList<>();
         try {
-            stateStoreFileUtils.loadFiles(path, files::add);
+            parquetSerDe.loadFiles(path, files::add);
         } catch (IOException e) {
             throw new StateStoreException("Failed to load files", e);
         }
@@ -429,6 +455,9 @@ class S3FileReferenceStore implements FileReferenceStore {
         return fileReference.getPartitionId() + DELIMITER + fileReference.getFilename();
     }
 
+    /**
+     * Builder to create a file reference store backed by S3.
+     */
     static final class Builder {
         private String stateStorePath;
         private Configuration conf;
