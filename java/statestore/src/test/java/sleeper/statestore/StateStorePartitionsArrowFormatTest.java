@@ -148,7 +148,7 @@ public class StateStorePartitionsArrowFormatTest {
     }
 
     @Test
-    void shouldWriteMultiplePartitionsWithOneStringField() throws Exception {
+    void shouldWritePartitionsSplitOnOneStringFieldOverMultipleLevels() throws Exception {
         // Given
         Schema schema = schemaWithKey("key", new StringType());
         PartitionTree tree = new PartitionsBuilder(schema)
@@ -167,7 +167,7 @@ public class StateStorePartitionsArrowFormatTest {
     }
 
     @Test
-    void shouldWriteMultiplePartitionsSplitOnDifferentDimensions() throws Exception {
+    void shouldWritePartitionsSplitOnDifferentDimensions() throws Exception {
         // Given
         Schema schema = Schema.builder().rowKeyFields(
                 new Field("key1", new StringType()),
