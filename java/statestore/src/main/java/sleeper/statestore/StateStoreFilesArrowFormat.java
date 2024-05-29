@@ -67,7 +67,7 @@ public class StateStoreFilesArrowFormat {
                     NUMBER_OF_RECORDS, COUNT_APPROXIMATE, ONLY_CONTAINS_DATA_FOR_THIS_PARTITION));
     private static final Field REFERENCES = new Field("partitionReferences",
             FieldType.notNullable(Types.MinorType.LIST.getType()), List.of(REFERENCE));
-    private static final Schema FILES_SCHEMA = new Schema(List.of(FILENAME, UPDATE_TIME, REFERENCES));
+    private static final Schema SCHEMA = new Schema(List.of(FILENAME, UPDATE_TIME, REFERENCES));
 
     private StateStoreFilesArrowFormat() {
     }
@@ -81,7 +81,7 @@ public class StateStoreFilesArrowFormat {
      * @throws IOException if writing to the channel fails
      */
     public static void write(Collection<AllReferencesToAFile> files, BufferAllocator allocator, WritableByteChannel channel) throws IOException {
-        try (VectorSchemaRoot vectorSchemaRoot = VectorSchemaRoot.create(FILES_SCHEMA, allocator);
+        try (VectorSchemaRoot vectorSchemaRoot = VectorSchemaRoot.create(SCHEMA, allocator);
                 ArrowStreamWriter writer = new ArrowStreamWriter(vectorSchemaRoot, null, channel)) {
             vectorSchemaRoot.getFieldVectors().forEach(fieldVector -> fieldVector.setInitialCapacity(files.size()));
             vectorSchemaRoot.allocateNew();

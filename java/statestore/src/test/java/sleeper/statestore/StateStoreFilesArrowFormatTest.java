@@ -89,6 +89,27 @@ public class StateStoreFilesArrowFormatTest {
     }
 
     @Test
+    void shouldWriteFileReferenceWithNoJob() throws Exception {
+        // Given
+        FileReference reference = FileReference.builder()
+                .filename("test.parquet")
+                .partitionId("root")
+                .numberOfRecords(123L)
+                .countApproximate(false)
+                .onlyContainsDataForThisPartition(true)
+                .build();
+        Instant updateTime = Instant.parse("2024-05-28T13:25:01.123Z");
+        AllReferencesToAFile file = AllReferencesToAFile.fileWithOneReference(reference, updateTime);
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+
+        // When
+        write(List.of(file), bytes);
+
+        // Then
+        assertThat(read(bytes)).containsExactly(file);
+    }
+
+    @Test
     void shouldWriteOneFileWithTwoReferences() throws Exception {
         // Given
         FileReference reference1 = FileReference.builder()
