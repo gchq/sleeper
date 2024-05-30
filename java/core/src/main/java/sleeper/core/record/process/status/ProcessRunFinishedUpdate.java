@@ -24,9 +24,9 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 public interface ProcessRunFinishedUpdate extends ProcessStatusUpdate {
 
     /**
-     * Get records processed by this run.
+     * Gets a summary of records processed by this run.
      *
-     * @return the records processed
+     * @return the summary
      */
     RecordsProcessedSummary getSummary();
 
