@@ -113,7 +113,7 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
         try {
             save(createJobCreatedUpdate(job, jobUpdateBuilder(job)));
         } catch (RuntimeException e) {
-            throw new CompactionStatusStoreException("Failed adding created status for job " + job.getId(), e);
+            throw new CompactionStatusStoreException("Failed saving created event for job " + job.getId(), e);
         }
     }
 
@@ -122,7 +122,7 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
         try {
             save(createJobStartedUpdate(startTime, taskId, jobUpdateBuilder(job)));
         } catch (RuntimeException e) {
-            throw new CompactionStatusStoreException("Failed adding started status for job " + job.getId(), e);
+            throw new CompactionStatusStoreException("Failed saving started event for job " + job.getId(), e);
         }
     }
 
@@ -131,7 +131,7 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
         try {
             save(createJobFinishedUpdate(summary, taskId, jobUpdateBuilder(job)));
         } catch (RuntimeException e) {
-            throw new CompactionStatusStoreException("Failed adding finished status for job " + job.getId(), e);
+            throw new CompactionStatusStoreException("Failed saving finished event for job " + job.getId(), e);
         }
     }
 
@@ -140,7 +140,7 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
         try {
             save(createJobFailedUpdate(runTime, taskId, failureReasons, jobUpdateBuilder(job)));
         } catch (RuntimeException e) {
-            throw new CompactionStatusStoreException("Failed adding failed status for job " + job.getId(), e);
+            throw new CompactionStatusStoreException("Failed saving failed event for job " + job.getId(), e);
         }
     }
 
