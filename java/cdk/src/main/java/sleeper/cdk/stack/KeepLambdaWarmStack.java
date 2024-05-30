@@ -36,7 +36,6 @@ import sleeper.configuration.properties.SleeperScheduleRule;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.Collections;
-import java.util.Locale;
 
 import static sleeper.cdk.Utils.createLambdaLogGroup;
 import static sleeper.cdk.Utils.shouldDeployPaused;
@@ -61,8 +60,8 @@ public class KeepLambdaWarmStack extends NestedStack {
             QueryQueueStack queryQueueStack) {
         super(scope, id);
 
-        String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "warm-query-executor"));
+        String functionName = String.join("-", "sleeper",
+                Utils.cleanInstanceId(instanceProperties), "query-keep-warm");
 
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
         LambdaCode queryJar = jars.lambdaCode(BuiltJar.QUERY, jarsBucket);

@@ -20,7 +20,7 @@ import org.apache.hadoop.conf.Configuration;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.transactionlog.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.StateStorePartitions;
-import sleeper.statestore.StateStoreFileUtils;
+import sleeper.statestore.StateStoreParquetSerDe;
 
 import java.io.IOException;
 
@@ -29,30 +29,30 @@ import java.io.IOException;
  */
 class TransactionLogSnapshotSerDe {
     private final Schema sleeperSchema;
-    private final StateStoreFileUtils stateStoreFileUtils;
+    private final StateStoreParquetSerDe parquetSerDe;
 
     TransactionLogSnapshotSerDe(Schema sleeperSchema, Configuration configuration) {
         this.sleeperSchema = sleeperSchema;
-        this.stateStoreFileUtils = new StateStoreFileUtils(configuration);
+        this.parquetSerDe = new StateStoreParquetSerDe(configuration);
     }
 
     void savePartitions(TransactionLogSnapshotMetadata snapshot, StateStorePartitions state) throws IOException {
-        stateStoreFileUtils.savePartitions(snapshot.getPath(), state, sleeperSchema);
+        parquetSerDe.savePartitions(snapshot.getPath(), state, sleeperSchema);
     }
 
     StateStorePartitions loadPartitions(TransactionLogSnapshotMetadata snapshot) throws IOException {
         StateStorePartitions partitions = new StateStorePartitions();
-        stateStoreFileUtils.loadPartitions(snapshot.getPath(), sleeperSchema, partitions::put);
+        parquetSerDe.loadPartitions(snapshot.getPath(), sleeperSchema, partitions::put);
         return partitions;
     }
 
     void saveFiles(TransactionLogSnapshotMetadata snapshot, StateStoreFiles state) throws IOException {
-        stateStoreFileUtils.saveFiles(snapshot.getPath(), state);
+        parquetSerDe.saveFiles(snapshot.getPath(), state);
     }
 
     StateStoreFiles loadFiles(TransactionLogSnapshotMetadata snapshot) throws IOException {
         StateStoreFiles files = new StateStoreFiles();
-        stateStoreFileUtils.loadFiles(snapshot.getPath(), files::add);
+        parquetSerDe.loadFiles(snapshot.getPath(), files::add);
         return files;
     }
 }

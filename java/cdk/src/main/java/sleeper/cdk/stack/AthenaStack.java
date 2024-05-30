@@ -41,7 +41,6 @@ import sleeper.cdk.jars.LambdaCode;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
@@ -51,7 +50,6 @@ import static sleeper.configuration.properties.instance.AthenaProperty.ATHENA_CO
 import static sleeper.configuration.properties.instance.AthenaProperty.ATHENA_COMPOSITE_HANDLER_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.instance.AthenaProperty.SPILL_BUCKET_AGE_OFF_IN_DAYS;
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 
 @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
@@ -63,8 +61,8 @@ public class AthenaStack extends NestedStack {
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
         LambdaCode jarCode = jars.lambdaCode(BuiltJar.ATHENA, jarsBucket);
 
-        String bucketName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "spill-bucket"));
+        String bucketName = String.join("-", "sleeper",
+                Utils.cleanInstanceId(instanceProperties), "spill-bucket");
 
         Bucket spillBucket = Bucket.Builder.create(this, "SpillBucket")
                 .bucketName(bucketName)
@@ -141,11 +139,10 @@ public class AthenaStack extends NestedStack {
     }
 
     private IFunction createConnector(String className, InstanceProperties instanceProperties, LambdaCode jar, Map<String, String> env, Integer memory, Integer timeout) {
-        String instanceId = instanceProperties.get(ID);
+        String instanceId = Utils.cleanInstanceId(instanceProperties);
         String simpleClassName = getSimpleClassName(className);
 
-        String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceId.toLowerCase(Locale.ROOT), simpleClassName, "athena-composite-handler"));
+        String functionName = String.join("-", "sleeper", instanceId, simpleClassName, "athena-handler");
 
         IFunction athenaCompositeHandler = jar.buildFunction(this, simpleClassName + "AthenaCompositeHandler", builder -> builder
                 .functionName(functionName)

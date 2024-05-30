@@ -48,12 +48,14 @@ runMavenQuickSystemTests() {
 
     "$SCRIPTS_DIR/test/maven/buildDeployTest.sh" "$SHORT_ID" "$VPC" "$SUBNETS" > "$OUTPUT_DIR/$TEST_NAME.log"
     EXIT_CODE=$?
-    echo -e "Test run complete \nSee $OUTPUT_DIR/$TEST_NAME.log for results"
 
     if [ $EXIT_CODE -ne 0 ]; then
         END_EXIT_CODE=$EXIT_CODE
     fi
 
+    echo -n "$END_EXIT_CODE $SHORT_ID" > "$OUTPUT_DIR/$TEST_NAME.status"
+    echo -e "Test run complete \nSee $OUTPUT_DIR/$TEST_NAME.log for results"
+     
     echo "-------------------------------------------------------------------------------"
     echo "Tearing down instance \"$SHORT_ID\" and \"$SHORT_ID-main\""
     echo "-------------------------------------------------------------------------------"

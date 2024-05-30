@@ -41,6 +41,7 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
+import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
 import static sleeper.core.statestore.SplitFileReference.referenceForChildPartition;
 import static sleeper.core.statestore.SplitFileReferenceRequest.splitFileToChildPartitions;
 
@@ -204,9 +205,10 @@ public class TransactionSerDeTest {
         PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
         Instant updateTime = Instant.parse("2023-03-26T10:05:01Z");
         FileReferenceFactory fileFactory = FileReferenceFactory.fromUpdatedAt(partitions, updateTime);
-        FileReferenceTransaction transaction = new ReplaceFileReferencesTransaction(
-                "job", "root", List.of("file1.parquet", "file2.parquet"),
-                fileFactory.rootFile("file3.parquet", 100));
+        FileReferenceTransaction transaction = new ReplaceFileReferencesTransaction(List.of(
+                replaceJobFileReferences(
+                        "job", "root", List.of("file1.parquet", "file2.parquet"),
+                        fileFactory.rootFile("file3.parquet", 100))));
 
         // When / Then
         whenSerDeThenMatchAndVerify(schema, transaction);

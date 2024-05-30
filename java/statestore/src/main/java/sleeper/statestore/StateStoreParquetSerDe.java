@@ -45,29 +45,62 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-public class StateStoreFileUtils {
+/**
+ * Saves and loads the state of a Sleeper table in Parquet files.
+ */
+public class StateStoreParquetSerDe {
     private static final Schema FILES_SCHEMA = initialiseFilesSchema();
     private static final Schema PARTITIONS_SCHEMA = initialisePartitionSchema();
     private final FileReferenceSerDe serDe = new FileReferenceSerDe();
     private final Configuration configuration;
 
-    public StateStoreFileUtils(Configuration configuration) {
+    public StateStoreParquetSerDe(Configuration configuration) {
         this.configuration = configuration;
     }
 
+    /**
+     * Saves the state of partitions in a Sleeper table to a Parquet file.
+     *
+     * @param  path          path to write the file to
+     * @param  partitions    the state
+     * @param  sleeperSchema the Sleeper table schema
+     * @throws IOException   if the file could not be written
+     */
     public void savePartitions(String path, StateStorePartitions partitions, Schema sleeperSchema) throws IOException {
         savePartitions(path, partitions.all(), sleeperSchema);
     }
 
+    /**
+     * Saves the state of partitions in a Sleeper table to a Parquet file.
+     *
+     * @param  path          path to write the file to
+     * @param  partitions    the state
+     * @param  sleeperSchema the Sleeper table schema
+     * @throws IOException   if the file could not be written
+     */
     public void savePartitions(String path, Collection<Partition> partitions, Schema sleeperSchema) throws IOException {
         RegionSerDe regionSerDe = new RegionSerDe(sleeperSchema);
         save(PARTITIONS_SCHEMA, path, partitions.stream().map(partition -> getRecordFromPartition(partition, regionSerDe)));
     }
 
+    /**
+     * Saves the state of files in a Sleeper table to a Parquet file.
+     *
+     * @param  path        path to write the file to
+     * @param  files       the state
+     * @throws IOException if the file could not be written
+     */
     public void saveFiles(String path, StateStoreFiles files) throws IOException {
         saveFiles(path, files.referencedAndUnreferenced());
     }
 
+    /**
+     * Saves the state of files in a Sleeper table to a Parquet file.
+     *
+     * @param  path        path to write the file to
+     * @param  files       the state
+     * @throws IOException if the file could not be written
+     */
     public void saveFiles(String path, Stream<AllReferencesToAFile> files) throws IOException {
         save(FILES_SCHEMA, path, files.map(this::getRecordFromFile));
     }
@@ -81,11 +114,26 @@ public class StateStoreFileUtils {
         }
     }
 
+    /**
+     * Loads the state of partitions in a Sleeper table from a Parquet file.
+     *
+     * @param  path              path to the file to read
+     * @param  sleeperSchema     the Sleeper table schema
+     * @param  partitionConsumer callback function to handle each loaded partition
+     * @throws IOException       if the file could not be read
+     */
     public void loadPartitions(String path, Schema sleeperSchema, Consumer<Partition> partitionConsumer) throws IOException {
         RegionSerDe regionSerDe = new RegionSerDe(sleeperSchema);
         load(PARTITIONS_SCHEMA, path, record -> partitionConsumer.accept(getPartitionFromRecord(record, regionSerDe)));
     }
 
+    /**
+     * Loads the state of files in a Sleeper table from a Parquet file.
+     *
+     * @param  path         path to the file to read
+     * @param  fileConsumer callback function to handle each loaded file
+     * @throws IOException  if the file could not be read
+     */
     public void loadFiles(String path, Consumer<AllReferencesToAFile> fileConsumer) throws IOException {
         load(FILES_SCHEMA, path, record -> fileConsumer.accept(getFileFromRecord(record)));
     }
@@ -100,6 +148,14 @@ public class StateStoreFileUtils {
         }
     }
 
+    /**
+     * Checks if a Parquet file contains no Sleeper files. This checks if the file is empty, assuming it is set up to
+     * store Sleeper files.
+     *
+     * @param  path        path to the file to read
+     * @return             true if the file is empty
+     * @throws IOException if the file could not be read
+     */
     public boolean isEmpty(String path) throws IOException {
         try (ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(path), FILES_SCHEMA)
                 .withConf(configuration).build();
