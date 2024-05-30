@@ -106,6 +106,8 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
                 .containsExactly(filesSnapshot(table1, 1));
         assertThat(snapshotStore(table1).getPartitionsSnapshots())
                 .containsExactly(partitionsSnapshot(table1, 1));
+        assertThat(snapshotFiles(table1))
+                .containsExactlyInAnyOrder("1-files.parquet", "1-partitions.parquet");
 
         StateStore stateStore2 = createStateStore(table2);
         assertThat(stateStore2.getAllPartitions()).isEqualTo(partitions2.getAllPartitions());
@@ -118,8 +120,6 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
                 .containsExactly(filesSnapshot(table2, 1));
         assertThat(snapshotStore(table2).getPartitionsSnapshots())
                 .containsExactly(partitionsSnapshot(table2, 1));
-        assertThat(snapshotFiles(table1))
-                .containsExactlyInAnyOrder("1-files.parquet", "1-partitions.parquet");
         assertThat(snapshotFiles(table2))
                 .containsExactlyInAnyOrder("1-files.parquet", "1-partitions.parquet");
     }
