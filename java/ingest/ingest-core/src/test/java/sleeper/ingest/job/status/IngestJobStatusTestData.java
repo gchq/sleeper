@@ -55,6 +55,10 @@ public class IngestJobStatusTestData {
         return jobStatus(job, finishedIngestRun(job, taskId, summary));
     }
 
+    public static IngestJobStatus failedIngestJob(IngestJob job, String taskId, ProcessRunTime runTime, List<String> failureReasons) {
+        return jobStatus(job, failedIngestRun(job, taskId, runTime, failureReasons));
+    }
+
     public static IngestJobStatus finishedIngestJobWithValidation(IngestJob job, String taskId, Instant validationTime, RecordsProcessedSummary summary) {
         return jobStatus(job, acceptedRunWhichFinished(job, taskId, validationTime, summary));
     }
@@ -153,6 +157,13 @@ public class IngestJobStatusTestData {
         return ProcessRun.finished(taskId,
                 IngestJobStartedStatus.startAndUpdateTime(job, summary.getStartTime(), defaultUpdateTime(summary.getStartTime())),
                 ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary));
+    }
+
+    public static ProcessRun failedIngestRun(
+            IngestJob job, String taskId, ProcessRunTime runTime, List<String> failureReasons) {
+        return ProcessRun.finished(taskId,
+                IngestJobStartedStatus.startAndUpdateTime(job, runTime.getStartTime(), defaultUpdateTime(runTime.getStartTime())),
+                ProcessFailedStatus.timeAndReasons(defaultUpdateTime(runTime.getFinishTime()), runTime, failureReasons));
     }
 
     public static List<IngestJobStatus> jobStatusListFrom(TestProcessStatusUpdateRecords records) {

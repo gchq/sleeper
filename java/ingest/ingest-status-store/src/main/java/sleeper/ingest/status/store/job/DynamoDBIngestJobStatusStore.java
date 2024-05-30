@@ -33,6 +33,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 import sleeper.ingest.IngestStatusStoreException;
+import sleeper.ingest.job.status.IngestJobFailedEvent;
 import sleeper.ingest.job.status.IngestJobFinishedEvent;
 import sleeper.ingest.job.status.IngestJobStartedEvent;
 import sleeper.ingest.job.status.IngestJobStatus;
@@ -59,6 +60,7 @@ import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusFormat.UPDA
 import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusFormat.UPDATE_TYPE;
 import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusFormat.VALIDATION_REJECTED_VALUE;
 import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusFormat.VALIDATION_RESULT;
+import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusFormat.createJobFailedUpdate;
 import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusFormat.createJobFinishedUpdate;
 import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusFormat.createJobStartedUpdate;
 import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusFormat.createJobValidatedUpdate;
@@ -121,6 +123,15 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
             save(createJobFinishedUpdate(event, jobUpdateBuilder(event.getTableId(), event.getJobId())));
         } catch (RuntimeException e) {
             throw new IngestStatusStoreException("Failed jobFinished for job " + event.getJobId(), e);
+        }
+    }
+
+    @Override
+    public void jobFailed(IngestJobFailedEvent event) {
+        try {
+            save(createJobFailedUpdate(event, jobUpdateBuilder(event.getTableId(), event.getJobId())));
+        } catch (RuntimeException e) {
+            throw new IngestStatusStoreException("Failed jobFailed for job " + event.getJobId(), e);
         }
     }
 

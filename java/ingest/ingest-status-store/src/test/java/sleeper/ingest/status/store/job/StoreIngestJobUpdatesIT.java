@@ -21,6 +21,7 @@ import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.status.store.testutils.DynamoDBIngestJobStatusStoreTestBase;
 
 import java.time.Instant;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ingest.job.status.IngestJobFinishedEvent.ingestJobFinished;
@@ -45,6 +46,24 @@ public class StoreIngestJobUpdatesIT extends DynamoDBIngestJobStatusStoreTestBas
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(defaultJobFinishedStatus(job, startedTime, finishedTime));
+    }
+
+    @Test
+    public void shouldReportIngestJobFailed() {
+        // Given
+        IngestJob job = jobWithFiles("file");
+        Instant startedTime = Instant.parse("2022-12-14T13:51:12.001Z");
+        Instant finishedTime = Instant.parse("2022-12-14T13:51:42.001Z");
+        List<String> failureReasons = List.of("Something went wrong");
+
+        // When
+        store.jobStarted(defaultJobStartedEvent(job, startedTime));
+        store.jobFailed(defaultJobFailedEvent(job, startedTime, finishedTime, failureReasons));
+
+        // Then
+        assertThat(getAllJobStatuses())
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .containsExactly(defaultJobFailedStatus(job, startedTime, finishedTime, failureReasons));
     }
 
     @Test

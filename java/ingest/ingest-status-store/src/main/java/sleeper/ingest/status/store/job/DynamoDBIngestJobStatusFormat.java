@@ -21,14 +21,17 @@ import org.apache.commons.codec.binary.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.record.process.status.ProcessFailedStatus;
 import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessStatusUpdate;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 import sleeper.dynamodb.tools.DynamoDBAttributes;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 import sleeper.ingest.job.status.IngestJobAcceptedStatus;
+import sleeper.ingest.job.status.IngestJobFailedEvent;
 import sleeper.ingest.job.status.IngestJobFinishedEvent;
 import sleeper.ingest.job.status.IngestJobRejectedStatus;
 import sleeper.ingest.job.status.IngestJobStartedEvent;
@@ -70,12 +73,14 @@ class DynamoDBIngestJobStatusFormat {
     static final String FINISH_TIME = "FinishTime";
     static final String RECORDS_READ = "RecordsRead";
     static final String RECORDS_WRITTEN = "RecordsWritten";
+    static final String FAILURE_REASONS = "FailureReasons";
     static final String JOB_RUN_ID = "JobRunId";
     static final String TASK_ID = "TaskId";
     static final String EXPIRY_DATE = "ExpiryDate";
     static final String UPDATE_TYPE_VALIDATED = "validated";
     static final String UPDATE_TYPE_STARTED = "started";
     static final String UPDATE_TYPE_FINISHED = "finished";
+    static final String UPDATE_TYPE_FAILED = "failed";
     static final String VALIDATION_ACCEPTED_VALUE = "ACCEPTED";
     static final String VALIDATION_REJECTED_VALUE = "REJECTED";
     static final String TABLE_ID_UNKNOWN = "-";
@@ -128,6 +133,21 @@ class DynamoDBIngestJobStatusFormat {
                 .number(FINISH_TIME, summary.getFinishTime().toEpochMilli())
                 .number(RECORDS_READ, summary.getRecordsRead())
                 .number(RECORDS_WRITTEN, summary.getRecordsWritten())
+                .build();
+    }
+
+    public static Map<String, AttributeValue> createJobFailedUpdate(
+            IngestJobFailedEvent event, DynamoDBRecordBuilder builder) {
+        ProcessRunTime runTime = event.getRunTime();
+        return builder
+                .string(UPDATE_TYPE, UPDATE_TYPE_FAILED)
+                .number(START_TIME, runTime.getStartTime().toEpochMilli())
+                .string(JOB_RUN_ID, event.getJobRunId())
+                .string(TASK_ID, event.getTaskId())
+                .number(FINISH_TIME, runTime.getFinishTime().toEpochMilli())
+                .list(FAILURE_REASONS, event.getFailureReasons().stream()
+                        .map(DynamoDBAttributes::createStringAttribute)
+                        .collect(Collectors.toList()))
                 .build();
     }
 
@@ -195,6 +215,13 @@ class DynamoDBIngestJobStatusFormat {
                                 getLongAttribute(item, RECORDS_WRITTEN, 0)),
                                 getInstantAttribute(item, START_TIME),
                                 getInstantAttribute(item, FINISH_TIME)));
+            case UPDATE_TYPE_FAILED:
+                return ProcessFailedStatus.timeAndReasons(
+                        getInstantAttribute(item, UPDATE_TIME),
+                        new ProcessRunTime(
+                                getInstantAttribute(item, START_TIME),
+                                getInstantAttribute(item, FINISH_TIME)),
+                        getStringListAttribute(item, FAILURE_REASONS));
             default:
                 LOGGER.warn("Found record with unrecognised update type: {}", item);
                 throw new IllegalArgumentException("Found record with unrecognised update type");
