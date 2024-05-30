@@ -23,9 +23,12 @@
                 "recordsRead": 1000600,
                 "recordsWritten": 500300
               },
-              "startTime": "2022-10-13T12:01:10Z",
-              "finishTime": "2022-10-13T14:01:10Z",
-              "durationInSeconds": 7200.0,
+              "runTime": {
+                "startTime": "2022-10-13T12:01:10Z",
+                "finishTime": "2022-10-13T14:01:10Z",
+                "durationInSeconds": 7200.0,
+                "timeInProcessInSeconds": 7200.0
+              },
               "recordsReadPerSecond": 138.97222222222223,
               "recordsWrittenPerSecond": 69.48611111111111
             }
@@ -58,9 +61,12 @@
                 "recordsRead": 600,
                 "recordsWritten": 300
               },
-              "startTime": "2022-10-13T12:00:10Z",
-              "finishTime": "2022-10-13T12:00:10.123Z",
-              "durationInSeconds": 0.123,
+              "runTime": {
+                "startTime": "2022-10-13T12:00:10Z",
+                "finishTime": "2022-10-13T12:00:10.123Z",
+                "durationInSeconds": 0.123,
+                "timeInProcessInSeconds": 0.123
+              },
               "recordsReadPerSecond": 4878.048780487805,
               "recordsWrittenPerSecond": 2439.0243902439024
             }
