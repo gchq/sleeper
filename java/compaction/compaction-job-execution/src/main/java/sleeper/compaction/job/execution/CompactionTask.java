@@ -27,6 +27,7 @@ import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.util.LoggedDuration;
@@ -34,6 +35,8 @@ import sleeper.core.util.LoggedDuration;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -128,14 +131,17 @@ public class CompactionTask {
             }
             try (MessageHandle message = messageOpt.get()) {
                 CompactionJob job = message.getJob();
+                Instant jobStartTime = timeSupplier.get();
                 try {
-                    RecordsProcessedSummary summary = compact(job);
+                    RecordsProcessedSummary summary = compact(job, jobStartTime);
                     taskFinishedBuilder.addJobSummary(summary);
                     message.completed();
                     totalNumberOfMessagesProcessed++;
                     numConsecutiveFailures = 0;
                     lastActiveTime = summary.getFinishTime();
                 } catch (Exception e) {
+                    Instant jobFinishTime = timeSupplier.get();
+                    jobStatusStore.jobFailed(job, new ProcessRunTime(jobStartTime, jobFinishTime), taskId, getFailureReasons(e));
                     LOGGER.error("Failed processing compaction job, putting job back on queue", e);
                     numConsecutiveFailures++;
                     message.failed();
@@ -145,8 +151,7 @@ public class CompactionTask {
         return timeSupplier.get();
     }
 
-    private RecordsProcessedSummary compact(CompactionJob job) throws Exception {
-        Instant jobStartTime = timeSupplier.get();
+    private RecordsProcessedSummary compact(CompactionJob job, Instant jobStartTime) throws Exception {
         LOGGER.info("Compaction job {}: compaction called at {}", job.getId(), jobStartTime);
         jobStatusStore.jobStarted(job, jobStartTime, taskId);
         propertiesReloader.reloadIfNeeded();
@@ -165,6 +170,16 @@ public class CompactionTask {
                 summary.getRecordsRead(), String.format("%.1f", summary.getRecordsReadPerSecond()));
         METRICS_LOGGER.info("Compaction job {}: compaction wrote {} records at {} per second", job.getId(),
                 summary.getRecordsWritten(), String.format("%.1f", summary.getRecordsWrittenPerSecond()));
+    }
+
+    private static List<String> getFailureReasons(Exception e) {
+        List<String> reasons = new ArrayList<>();
+        Throwable failure = e;
+        while (failure != null) {
+            reasons.add(failure.getMessage());
+            failure = failure.getCause();
+        }
+        return reasons;
     }
 
     @FunctionalInterface
