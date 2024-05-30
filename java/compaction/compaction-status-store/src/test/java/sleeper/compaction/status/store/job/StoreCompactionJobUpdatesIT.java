@@ -20,10 +20,12 @@ import org.junit.jupiter.api.Test;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.status.store.testutils.DynamoDBCompactionJobStatusStoreTestBase;
 import sleeper.core.partition.Partition;
+import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.FileReferenceFactory;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
@@ -73,6 +75,27 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
     }
 
     @Test
+    public void shouldReportCompactionJobFailed() {
+        // Given
+        Partition partition = singlePartition();
+        FileReferenceFactory fileFactory = fileFactory(partition);
+        CompactionJob job = jobFactory.createCompactionJob(
+                List.of(fileFactory.rootFile(100L)),
+                partition.getId());
+        List<String> failureReasons = List.of("Something went wrong");
+
+        // When
+        store.jobCreated(job);
+        store.jobStarted(job, defaultStartTime(), DEFAULT_TASK_ID);
+        store.jobFailed(job, defaultRunTime(), DEFAULT_TASK_ID, failureReasons);
+
+        // Then
+        assertThat(getAllJobStatuses())
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .containsExactly(failedStatusWithDefaults(job, failureReasons));
+    }
+
+    @Test
     public void shouldReportLatestUpdatesWhenJobIsRunMultipleTimes() {
         // Given
         Partition partition = singlePartition();
@@ -101,4 +124,55 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
                         finishedCompactionRun(DEFAULT_TASK_ID, new RecordsProcessedSummary(processed, startTime1, finishTime1))));
     }
 
+    @Test
+    public void shouldStoreTimeInProcessWhenFinished() {
+        // Given
+        Partition partition = singlePartition();
+        FileReferenceFactory fileFactory = fileFactory(partition);
+        CompactionJob job = jobFactory.createCompactionJob(
+                List.of(fileFactory.rootFile(100L)),
+                partition.getId());
+        Instant startedTime = Instant.parse("2022-12-14T13:51:12.001Z");
+        Instant finishedTime = Instant.parse("2022-12-14T13:51:42.001Z");
+        Duration timeInProcess = Duration.ofSeconds(20);
+        RecordsProcessedSummary summary = new RecordsProcessedSummary(
+                new RecordsProcessed(123L, 45L),
+                startedTime, finishedTime, timeInProcess);
+
+        // When
+        store.jobCreated(job);
+        store.jobStarted(job, startedTime, DEFAULT_TASK_ID);
+        store.jobFinished(job, summary, DEFAULT_TASK_ID);
+
+        // Then
+        assertThat(getAllJobStatuses())
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .containsExactly(finishedStatusWithDefaults(job, summary));
+    }
+
+    @Test
+    public void shouldStoreTimeInProcessWhenFailed() {
+        // Given
+        Partition partition = singlePartition();
+        FileReferenceFactory fileFactory = fileFactory(partition);
+        CompactionJob job = jobFactory.createCompactionJob(
+                List.of(fileFactory.rootFile(100L)),
+                partition.getId());
+        Instant startedTime = Instant.parse("2022-12-14T13:51:12.001Z");
+        Instant finishedTime = Instant.parse("2022-12-14T13:51:42.001Z");
+        Duration timeInProcess = Duration.ofSeconds(20);
+        ProcessRunTime runTime = new ProcessRunTime(
+                startedTime, finishedTime, timeInProcess);
+        List<String> failureReasons = List.of("Something went wrong", "More details");
+
+        // When
+        store.jobCreated(job);
+        store.jobStarted(job, startedTime, DEFAULT_TASK_ID);
+        store.jobFailed(job, runTime, DEFAULT_TASK_ID, failureReasons);
+
+        // Then
+        assertThat(getAllJobStatuses())
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .containsExactly(failedStatusWithDefaults(job, runTime, failureReasons));
+    }
 }

@@ -34,6 +34,7 @@ import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.store.CompactionStatusStoreException;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
@@ -47,6 +48,7 @@ import java.util.stream.Stream;
 
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.UPDATE_TIME;
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.createJobCreatedUpdate;
+import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.createJobFailedUpdate;
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.createJobFinishedUpdate;
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.createJobStartedUpdate;
 import static sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusFormat.UPDATE_TYPE;
@@ -130,6 +132,15 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
             save(createJobFinishedUpdate(summary, taskId, jobUpdateBuilder(job)));
         } catch (RuntimeException e) {
             throw new CompactionStatusStoreException("Failed jobFinished for job " + job.getId(), e);
+        }
+    }
+
+    @Override
+    public void jobFailed(CompactionJob job, ProcessRunTime runTime, String taskId, List<String> failureReasons) {
+        try {
+            save(createJobFailedUpdate(runTime, taskId, failureReasons, jobUpdateBuilder(job)));
+        } catch (RuntimeException e) {
+            throw new CompactionStatusStoreException("Failed jobFailed for job " + job.getId(), e);
         }
     }
 

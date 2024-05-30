@@ -56,6 +56,12 @@ public class CompactionJobStatusTestData {
                 finishedCompactionStatus(summary));
     }
 
+    public static ProcessRun failedCompactionRun(String taskId, ProcessRunTime runTime, List<String> failureReasons) {
+        return ProcessRun.finished(taskId,
+                startedCompactionStatus(runTime.getStartTime()),
+                failedCompactionStatus(runTime, failureReasons));
+    }
+
     public static CompactionJobStartedStatus startedCompactionStatus(Instant startTime) {
         return CompactionJobStartedStatus.startAndUpdateTime(startTime, defaultUpdateTime(startTime));
     }
