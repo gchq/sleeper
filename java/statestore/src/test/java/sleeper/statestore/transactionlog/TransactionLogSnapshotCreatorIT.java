@@ -289,7 +289,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
         assertThatThrownBy(() -> createSnapshots(table, failedLoad(exception)))
                 .isSameAs(exception);
         assertThat(snapshotStore(table).getFilesSnapshots()).containsExactly(filesSnapshot(table, 1));
-        assertThat(snapshotFiles(table)).containsExactly("1-files.parquet", "1-partitions.parquet");
+        assertThat(snapshotFiles(table)).containsExactlyInAnyOrder("1-files.parquet", "1-partitions.parquet");
     }
 
     private StateStore createStateStore(TableProperties tableProperties) {
