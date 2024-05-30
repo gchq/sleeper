@@ -200,7 +200,7 @@ public class TransactionLogSnapshotTestBase {
         fs.delete(new org.apache.hadoop.fs.Path(partitionsSnapshot(table, transactionNumber).getPath()), false);
     }
 
-    protected Stream<String> snapshotFilesInBucket(TableProperties tableProperties) throws Exception {
+    protected Stream<String> snapshotFiles(TableProperties tableProperties) throws Exception {
         if (!fs.exists(snapshotsPath(instanceProperties, tableProperties))) {
             return Stream.empty();
         }
