@@ -264,7 +264,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:01Z"), // Job start
-                    Instant.parse("2024-02-22T13:50:05Z"), // Job finish
+                    Instant.parse("2024-02-22T13:50:05Z"), // Job failed
                     Instant.parse("2024-02-22T13:50:06Z"))); // Task finish
             CompactionJob job = createJobOnQueue("job1");
             RuntimeException root = new RuntimeException("Root failure");
