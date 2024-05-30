@@ -20,6 +20,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.junit.jupiter.api.AfterAll;
@@ -49,6 +50,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
@@ -113,6 +115,11 @@ public class TransactionLogSnapshotTestBase {
     protected void createSnapshots(TableProperties table) {
         DynamoDBTransactionLogSnapshotMetadataStore snapshotStore = snapshotStore(table);
         createSnapshots(table, snapshotStore::getLatestSnapshots, snapshotStore::saveSnapshot);
+    }
+
+    protected void createSnapshots(TableProperties table, LatestSnapshotsMetadataLoader latestSnapshotsLoader) {
+        DynamoDBTransactionLogSnapshotMetadataStore snapshotStore = snapshotStore(table);
+        createSnapshots(table, latestSnapshotsLoader, snapshotStore::saveSnapshot);
     }
 
     protected void createSnapshots(
@@ -193,9 +200,22 @@ public class TransactionLogSnapshotTestBase {
         fs.delete(new org.apache.hadoop.fs.Path(partitionsSnapshot(table, transactionNumber).getPath()), false);
     }
 
+    protected Stream<String> snapshotFilesInBucket(TableProperties tableProperties) throws Exception {
+        if (!fs.exists(snapshotsPath(instanceProperties, tableProperties))) {
+            return Stream.empty();
+        }
+        return Stream.of(fs.listStatus(snapshotsPath(instanceProperties, tableProperties)))
+                .map(FileStatus::getPath)
+                .map(Path::getName);
+    }
+
     protected static String getBasePath(InstanceProperties instanceProperties, TableProperties tableProperties) {
         return instanceProperties.get(FILE_SYSTEM)
                 + instanceProperties.get(DATA_BUCKET) + "/"
                 + tableProperties.get(TableProperty.TABLE_ID);
+    }
+
+    private static Path snapshotsPath(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        return new Path(getBasePath(instanceProperties, tableProperties) + "/statestore/snapshots");
     }
 }

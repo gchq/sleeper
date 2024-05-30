@@ -24,10 +24,8 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotMetadataStore.LatestSnapshots;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.LatestSnapshotsMetadataLoader;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.SnapshotMetadataSaver;
-
-import java.io.FileNotFoundException;
-import java.io.UncheckedIOException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -63,6 +61,8 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
                 .containsExactly(filesSnapshot(table, 1));
         assertThat(snapshotStore(table).getPartitionsSnapshots())
                 .containsExactly(partitionsSnapshot(table, 1));
+        assertThat(snapshotFilesInBucket(table))
+                .containsExactlyInAnyOrder("1-files.parquet", "1-partitions.parquet");
     }
 
     @Test
@@ -118,6 +118,10 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
                 .containsExactly(filesSnapshot(table2, 1));
         assertThat(snapshotStore(table2).getPartitionsSnapshots())
                 .containsExactly(partitionsSnapshot(table2, 1));
+        assertThat(snapshotFilesInBucket(table1))
+                .containsExactlyInAnyOrder("1-files.parquet", "1-partitions.parquet");
+        assertThat(snapshotFilesInBucket(table2))
+                .containsExactlyInAnyOrder("1-files.parquet", "1-partitions.parquet");
     }
 
     @Test
@@ -153,6 +157,10 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
                 .containsExactly(
                         partitionsSnapshot(table, 1),
                         partitionsSnapshot(table, 2));
+        assertThat(snapshotFilesInBucket(table))
+                .containsExactlyInAnyOrder(
+                        "1-files.parquet", "1-partitions.parquet",
+                        "2-files.parquet", "2-partitions.parquet");
     }
 
     @Test
@@ -173,6 +181,8 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
                 .isEqualTo(new LatestSnapshots(
                         filesSnapshot(table, 1),
                         partitionsSnapshot(table, 1)));
+        assertThat(snapshotFilesInBucket(table))
+                .containsExactlyInAnyOrder("1-files.parquet", "1-partitions.parquet");
     }
 
     @Test
@@ -188,6 +198,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
                 .isEqualTo(LatestSnapshots.empty());
         assertThat(snapshotStore(table).getFilesSnapshots()).isEmpty();
         assertThat(snapshotStore(table).getPartitionsSnapshots()).isEmpty();
+        assertThat(snapshotFilesInBucket(table)).isEmpty();
     }
 
     @Test
@@ -205,6 +216,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
                 .isEqualTo(new LatestSnapshots(null, partitionsSnapshot(table, 1)));
         assertThat(snapshotStore(table).getFilesSnapshots()).isEmpty();
         assertThat(snapshotStore(table).getPartitionsSnapshots()).containsExactly(partitionsSnapshot(table, 1));
+        assertThat(snapshotFilesInBucket(table)).containsExactly("1-partitions.parquet");
     }
 
     @Test
@@ -223,6 +235,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
                 .isSameAs(exception);
         assertThat(snapshotStore(table).getFilesSnapshots()).isEmpty();
         assertThat(filesSnapshotFileExists(table, 1)).isFalse();
+        assertThat(snapshotFilesInBucket(table)).containsExactly("1-partitions.parquet");
     }
 
     @Test
@@ -237,48 +250,46 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
         assertThatThrownBy(() -> createSnapshots(table, failedUpdate(exception)))
                 .isSameAs(exception);
         assertThat(snapshotStore(table).getPartitionsSnapshots()).isEmpty();
-        assertThat(partitionsSnapshotFileExists(table, 1)).isFalse();
+        assertThat(snapshotFilesInBucket(table)).isEmpty();
     }
 
     @Test
     void shouldNotCreateSnapshotIfLoadingPreviousPartitionSnapshotFails() throws Exception {
-        // Given we delete the partitions file for the last snapshot
+        // Given we create a snapshot
         TableProperties table = createTable("test-table-id-1", "test-table-1");
         PartitionsBuilder partitions = new PartitionsBuilder(schema).singlePartition("root");
         StateStore stateStore = createStateStoreWithInMemoryTransactionLog(table);
         stateStore.initialise(partitions.buildList());
         createSnapshots(table);
-        TransactionLogSnapshotMetadata snapshot = getLatestPartitionsSnapshot(table);
-        deleteSnapshotFile(snapshot);
-        // And we add a transaction that would trigger a new snapshot
+        // And we add a transaction that would trigger a new snapshot creation
         partitions.splitToNewChildren("root", "L", "R", 123L)
                 .applySplit(stateStore, "root");
 
         // When / Then
-        assertThatThrownBy(() -> createSnapshots(table))
-                .isInstanceOf(UncheckedIOException.class)
-                .hasCauseInstanceOf(FileNotFoundException.class);
-        assertThat(snapshotStore(table).getPartitionsSnapshots()).containsExactly(snapshot);
+        IllegalStateException exception = new IllegalStateException();
+        assertThatThrownBy(() -> createSnapshots(table, failedLoad(exception)))
+                .isInstanceOf(RuntimeException.class);
+        assertThat(snapshotStore(table).getPartitionsSnapshots()).containsExactly(partitionsSnapshot(table, 1));
+        assertThat(snapshotFilesInBucket(table)).containsExactly("1-partitions.parquet");
     }
 
     @Test
     void shouldNotCreateSnapshotIfLoadingPreviousFileSnapshotFails() throws Exception {
-        // Given we delete the files file for the last snapshot
+        // Given Given we create a snapshot
         TableProperties table = createTable("test-table-id-1", "test-table-1");
         StateStore stateStore = createStateStoreWithInMemoryTransactionLog(table);
         stateStore.initialise();
         stateStore.addFile(FileReferenceFactory.from(stateStore).rootFile("file1.parquet", 123));
         createSnapshots(table);
-        TransactionLogSnapshotMetadata snapshot = getLatestFilesSnapshot(table);
-        deleteSnapshotFile(snapshot);
-        // And we add a transaction that would trigger a new snapshot
+        // And we add a transaction that would trigger a new snapshot creation
         stateStore.addFile(FileReferenceFactory.from(stateStore).rootFile("file2.parquet", 456));
 
         // When / Then
-        assertThatThrownBy(() -> createSnapshots(table))
-                .isInstanceOf(UncheckedIOException.class)
-                .hasCauseInstanceOf(FileNotFoundException.class);
-        assertThat(snapshotStore(table).getFilesSnapshots()).containsExactly(snapshot);
+        IllegalStateException exception = new IllegalStateException();
+        assertThatThrownBy(() -> createSnapshots(table, failedLoad(exception)))
+                .isSameAs(exception);
+        assertThat(snapshotStore(table).getFilesSnapshots()).containsExactly(filesSnapshot(table, 1));
+        assertThat(snapshotFilesInBucket(table)).containsExactly("1-files.parquet", "1-partitions.parquet");
     }
 
     private StateStore createStateStore(TableProperties tableProperties) {
@@ -286,6 +297,12 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
         stateStore.fixFileUpdateTime(DEFAULT_UPDATE_TIME);
         stateStore.fixPartitionUpdateTime(DEFAULT_UPDATE_TIME);
         return stateStore;
+    }
+
+    private LatestSnapshotsMetadataLoader failedLoad(RuntimeException exception) {
+        return () -> {
+            throw exception;
+        };
     }
 
     private SnapshotMetadataSaver failedUpdate(RuntimeException exception) {
