@@ -104,7 +104,7 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
         try {
             save(createJobValidatedUpdate(event, jobUpdateBuilder(event.getTableId(), event.getJobId())));
         } catch (RuntimeException e) {
-            throw new IngestStatusStoreException("Failed jobValidated for job " + event.getJobId(), e);
+            throw new IngestStatusStoreException("Failed saving validated event for job " + event.getJobId(), e);
         }
     }
 
@@ -113,7 +113,7 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
         try {
             save(createJobStartedUpdate(event, jobUpdateBuilder(event.getTableId(), event.getJobId())));
         } catch (RuntimeException e) {
-            throw new IngestStatusStoreException("Failed jobStarted for job " + event.getJobId(), e);
+            throw new IngestStatusStoreException("Failed saving started event for job " + event.getJobId(), e);
         }
     }
 
@@ -122,7 +122,7 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
         try {
             save(createJobFinishedUpdate(event, jobUpdateBuilder(event.getTableId(), event.getJobId())));
         } catch (RuntimeException e) {
-            throw new IngestStatusStoreException("Failed jobFinished for job " + event.getJobId(), e);
+            throw new IngestStatusStoreException("Failed saving finished event for job " + event.getJobId(), e);
         }
     }
 
@@ -131,7 +131,7 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
         try {
             save(createJobFailedUpdate(event, jobUpdateBuilder(event.getTableId(), event.getJobId())));
         } catch (RuntimeException e) {
-            throw new IngestStatusStoreException("Failed jobFailed for job " + event.getJobId(), e);
+            throw new IngestStatusStoreException("Failed saving failed event for job " + event.getJobId(), e);
         }
     }
 
