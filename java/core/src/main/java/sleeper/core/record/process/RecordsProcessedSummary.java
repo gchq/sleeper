@@ -38,8 +38,12 @@ public class RecordsProcessedSummary {
     }
 
     public RecordsProcessedSummary(RecordsProcessed recordsProcessed, Instant startTime, Instant finishTime, Duration timeInProcess) {
+        this(recordsProcessed, new ProcessRunTime(startTime, finishTime, timeInProcess));
+    }
+
+    public RecordsProcessedSummary(RecordsProcessed recordsProcessed, ProcessRunTime runTime) {
         this.recordsProcessed = Objects.requireNonNull(recordsProcessed, "recordsProcessed must not be null");
-        this.runTime = new ProcessRunTime(startTime, finishTime, timeInProcess);
+        this.runTime = Objects.requireNonNull(runTime, "runTime must not be null");
         double secondsInProcess = runTime.getTimeInProcessInSeconds();
         this.recordsReadPerSecond = recordsProcessed.getRecordsRead() / secondsInProcess;
         this.recordsWrittenPerSecond = recordsProcessed.getRecordsWritten() / secondsInProcess;
@@ -55,6 +59,16 @@ public class RecordsProcessedSummary {
         return new RecordsProcessedSummary(
                 new RecordsProcessed(0, 0),
                 startTime, Duration.ZERO);
+    }
+
+    /**
+     * Creates an instance of this class with no records processed, and the given run time.
+     *
+     * @param  runTime the run time
+     * @return         an instance of this class
+     */
+    public static RecordsProcessedSummary noRecordsProcessed(ProcessRunTime runTime) {
+        return new RecordsProcessedSummary(new RecordsProcessed(0, 0), runTime);
     }
 
     public long getRecordsRead() {
