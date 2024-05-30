@@ -25,7 +25,7 @@ import java.util.Objects;
  */
 public class ProcessRunTime {
     private final Instant startTime;
-    private final Instant endTime;
+    private final Instant finishTime;
     private final Duration duration;
     private final Duration timeInProcess;
 
@@ -39,7 +39,7 @@ public class ProcessRunTime {
 
     public ProcessRunTime(Instant startTime, Instant endTime, Duration timeInProcess) {
         this.startTime = Objects.requireNonNull(startTime, "startTime must not be null");
-        this.endTime = Objects.requireNonNull(endTime, "endTime must not be null");
+        this.finishTime = Objects.requireNonNull(endTime, "endTime must not be null");
         this.timeInProcess = Objects.requireNonNull(timeInProcess, "timeInProcess must not be null");
         this.duration = Duration.between(startTime, endTime);
     }
@@ -48,8 +48,8 @@ public class ProcessRunTime {
         return startTime;
     }
 
-    public Instant getEndTime() {
-        return endTime;
+    public Instant getFinishTime() {
+        return finishTime;
     }
 
     public Duration getDuration() {
@@ -70,7 +70,7 @@ public class ProcessRunTime {
 
     @Override
     public int hashCode() {
-        return Objects.hash(startTime, endTime, duration, timeInProcess);
+        return Objects.hash(startTime, finishTime, duration, timeInProcess);
     }
 
     @Override
@@ -82,12 +82,12 @@ public class ProcessRunTime {
             return false;
         }
         ProcessRunTime other = (ProcessRunTime) obj;
-        return Objects.equals(startTime, other.startTime) && Objects.equals(endTime, other.endTime) && Objects.equals(timeInProcess, other.timeInProcess);
+        return Objects.equals(startTime, other.startTime) && Objects.equals(finishTime, other.finishTime) && Objects.equals(timeInProcess, other.timeInProcess);
     }
 
     @Override
     public String toString() {
-        return "ProcessRunTime{startTime=" + startTime + ", endTime=" + endTime + ", timeInProcess=" + timeInProcess + "}";
+        return "ProcessRunTime{startTime=" + startTime + ", endTime=" + finishTime + ", timeInProcess=" + timeInProcess + "}";
     }
 
 }

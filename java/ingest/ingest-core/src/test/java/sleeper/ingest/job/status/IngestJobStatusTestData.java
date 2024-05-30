@@ -15,7 +15,9 @@
  */
 package sleeper.ingest.job.status;
 
+import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.record.process.status.ProcessFailedStatus;
 import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.record.process.status.ProcessRuns;
@@ -83,6 +85,22 @@ public class IngestJobStatusTestData {
                                 .updateTime(defaultUpdateTime(summary.getStartTime())).build())
                 .finishedStatus(ProcessFinishedStatus
                         .updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary))
+                .build();
+    }
+
+    public static ProcessRun acceptedRunWhichFailed(
+            IngestJob job, String taskId, Instant validationTime, ProcessRunTime runTime, List<String> failureReasons) {
+        return ProcessRun.builder()
+                .taskId(taskId)
+                .startedStatus(IngestJobAcceptedStatus.from(job,
+                        validationTime, defaultUpdateTime(validationTime)))
+                .statusUpdate(
+                        IngestJobStartedStatus.withStartOfRun(false)
+                                .inputFileCount(job.getFiles().size())
+                                .startTime(runTime.getStartTime())
+                                .updateTime(defaultUpdateTime(runTime.getStartTime())).build())
+                .finishedStatus(ProcessFailedStatus
+                        .timeAndReasons(defaultUpdateTime(runTime.getFinishTime()), runTime, failureReasons))
                 .build();
     }
 

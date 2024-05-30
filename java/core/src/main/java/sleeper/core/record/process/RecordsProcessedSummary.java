@@ -92,7 +92,7 @@ public class RecordsProcessedSummary {
     }
 
     public Instant getFinishTime() {
-        return runTime.getEndTime();
+        return runTime.getFinishTime();
     }
 
     public double getDurationInSeconds() {

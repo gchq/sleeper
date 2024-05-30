@@ -15,9 +15,10 @@
  */
 package sleeper.ingest.job.status;
 
+import sleeper.core.record.process.ProcessRunTime;
 import sleeper.ingest.job.IngestJob;
 
-import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
 
 public class IngestJobFailedEvent {
@@ -25,18 +26,24 @@ public class IngestJobFailedEvent {
     private final String tableId;
     private final String jobRunId;
     private final String taskId;
-    private final Instant finishTime;
+    private final ProcessRunTime runTime;
+    private final List<String> failureReasons;
 
     private IngestJobFailedEvent(Builder builder) {
         this.jobId = builder.jobId;
         this.tableId = builder.tableId;
         this.jobRunId = builder.jobRunId;
         this.taskId = builder.taskId;
-        this.finishTime = builder.finishTime;
+        this.runTime = builder.runTime;
+        this.failureReasons = builder.failureReasons;
     }
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    public static Builder ingestJobFailed(IngestJob job, ProcessRunTime runTime) {
+        return builder().job(job).runTime(runTime);
     }
 
     public String getJobId() {
@@ -55,13 +62,17 @@ public class IngestJobFailedEvent {
         return taskId;
     }
 
-    public Instant getFinishTime() {
-        return finishTime;
+    public ProcessRunTime getRunTime() {
+        return runTime;
+    }
+
+    public List<String> getFailureReasons() {
+        return failureReasons;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(jobId, tableId, jobRunId, taskId, finishTime);
+        return Objects.hash(jobId, tableId, jobRunId, taskId, runTime);
     }
 
     @Override
@@ -74,12 +85,12 @@ public class IngestJobFailedEvent {
         }
         IngestJobFailedEvent other = (IngestJobFailedEvent) obj;
         return Objects.equals(jobId, other.jobId) && Objects.equals(tableId, other.tableId) && Objects.equals(jobRunId, other.jobRunId) && Objects.equals(taskId, other.taskId)
-                && Objects.equals(finishTime, other.finishTime);
+                && Objects.equals(runTime, other.runTime);
     }
 
     @Override
     public String toString() {
-        return "IngestJobFailedEvent{jobId=" + jobId + ", tableId=" + tableId + ", jobRunId=" + jobRunId + ", taskId=" + taskId + ", finishTime=" + finishTime + "}";
+        return "IngestJobFailedEvent{jobId=" + jobId + ", tableId=" + tableId + ", jobRunId=" + jobRunId + ", taskId=" + taskId + ", runTime=" + runTime + "}";
     }
 
     public static final class Builder {
@@ -87,7 +98,8 @@ public class IngestJobFailedEvent {
         private String tableId;
         private String jobRunId;
         private String taskId;
-        private Instant finishTime;
+        private ProcessRunTime runTime;
+        private List<String> failureReasons;
 
         public Builder job(IngestJob job) {
             return jobId(job.getId())
@@ -114,8 +126,13 @@ public class IngestJobFailedEvent {
             return this;
         }
 
-        public Builder finishTime(Instant finishTime) {
-            this.finishTime = finishTime;
+        public Builder runTime(ProcessRunTime runTime) {
+            this.runTime = runTime;
+            return this;
+        }
+
+        public Builder failureReasons(List<String> failureReasons) {
+            this.failureReasons = failureReasons;
             return this;
         }
 
