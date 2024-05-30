@@ -229,7 +229,7 @@ public class IngestTaskTest {
             Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:01Z"), // Job start
-                    Instant.parse("2024-02-22T13:50:05Z"), // Job finish
+                    Instant.parse("2024-02-22T13:50:05Z"), // Job failed
                     Instant.parse("2024-02-22T13:50:06Z"))); // Task finish
             IngestJob job = createJobOnQueue("job1");
             RuntimeException root = new RuntimeException("Root cause details");
@@ -260,7 +260,7 @@ public class IngestTaskTest {
                     Instant.parse("2024-02-22T13:50:01Z"), // Job 1 start
                     Instant.parse("2024-02-22T13:50:02Z"), // Job 1 finish
                     Instant.parse("2024-02-22T13:50:03Z"), // Job 2 start
-                    Instant.parse("2024-02-22T13:50:05Z"), // Job 2 finish
+                    Instant.parse("2024-02-22T13:50:05Z"), // Job 2 failed
                     Instant.parse("2024-02-22T13:50:06Z"))); // Task finish
             IngestJob job1 = createJobOnQueue("job1");
             IngestJob job2 = createJobOnQueue("job2");
