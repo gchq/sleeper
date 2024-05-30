@@ -40,7 +40,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
-import static sleeper.configuration.properties.table.TableProperty.TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.dynamodb.tools.GenericContainerAwsV1ClientHelper.buildAwsV1Client;
 
@@ -244,7 +243,6 @@ public class DynamoDBTransactionLogSnapshotMetadataStoreIT {
         @Test
         void shouldGetSnapshotsThatAreOldEnough() throws Exception {
             // Given
-            tableProperties.setNumber(TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS, 1);
             DynamoDBTransactionLogSnapshotMetadataStore snapshotStore = snapshotStore(List.of(
                     Instant.parse("2024-04-24T15:45:00Z"),
                     Instant.parse("2024-04-25T15:15:00Z"),
@@ -263,7 +261,6 @@ public class DynamoDBTransactionLogSnapshotMetadataStoreIT {
         @Test
         void shouldIgnoreLatestSnapshotIfItIsOldEnough() throws Exception {
             // Given
-            tableProperties.setNumber(TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS, 1);
             DynamoDBTransactionLogSnapshotMetadataStore snapshotStore = snapshotStore(() -> Instant.parse("2024-04-24T15:45:00Z"));
             snapshotStore.saveSnapshot(filesSnapshot(1));
 
