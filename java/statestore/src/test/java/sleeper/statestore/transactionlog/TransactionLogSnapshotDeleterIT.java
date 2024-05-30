@@ -15,47 +15,20 @@
  */
 package sleeper.statestore.transactionlog;
 
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotMetadataStore.LatestSnapshots;
 
-import java.io.IOException;
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.properties.table.TableProperty.TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
-public class TransactionLogSnapshotDeleterIT extends TransactionLogStateStoreTestBase {
-    @TempDir
-    private java.nio.file.Path tempDir;
-    private final Schema schema = schemaWithKey("key", new LongType());
-    private FileSystem fs;
-
-    @BeforeEach
-    public void setup() throws IOException {
-        instanceProperties.set(FILE_SYSTEM, "file://");
-        instanceProperties.set(DATA_BUCKET, tempDir.toString());
-        fs = FileSystem.get(configuration);
-    }
+public class TransactionLogSnapshotDeleterIT extends TransactionLogSnapshotTestBase {
 
     @Test
     void shouldDeleteOldSnapshotsForOneTable() throws Exception {
@@ -192,59 +165,5 @@ public class TransactionLogSnapshotDeleterIT extends TransactionLogStateStoreTes
                 .containsExactly(filesSnapshot(table, 3));
         assertThat(snapshotStore(table).getPartitionsSnapshots())
                 .containsExactly(partitionsSnapshot(table, 2));
-    }
-
-    private void createSnapshotsAt(TableProperties table, Instant creationTime) throws Exception {
-        DynamoDBTransactionLogSnapshotCreator.from(
-                instanceProperties, table, s3Client, dynamoDBClient, configuration, () -> creationTime)
-                .createSnapshot();
-    }
-
-    private void deleteSnapshotsAt(TableProperties table, Instant deletionTime) {
-        new TransactionLogSnapshotDeleter(
-                instanceProperties, table, dynamoDBClient, configuration)
-                .deleteSnapshots(deletionTime);
-    }
-
-    private DynamoDBTransactionLogSnapshotMetadataStore snapshotStore(TableProperties table) {
-        return new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, table, dynamoDBClient);
-    }
-
-    private TableProperties createTable(String tableId, String tableName) {
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        tableProperties.set(TABLE_ID, tableId);
-        tableProperties.set(TABLE_NAME, tableName);
-        tableProperties.set(STATESTORE_CLASSNAME, DynamoDBTransactionLogStateStore.class.getName());
-        return tableProperties;
-    }
-
-    private TransactionLogSnapshotMetadata filesSnapshot(TableProperties table, long transactionNumber) {
-        return TransactionLogSnapshotMetadata.forFiles(getBasePath(instanceProperties, table), transactionNumber);
-    }
-
-    private TransactionLogSnapshotMetadata partitionsSnapshot(TableProperties table, long transactionNumber) {
-        return TransactionLogSnapshotMetadata.forPartitions(getBasePath(instanceProperties, table), transactionNumber);
-    }
-
-    private boolean filesSnapshotFileExists(TableProperties table, long transactionNumber) throws IOException {
-        return fs.exists(new Path(filesSnapshot(table, transactionNumber).getPath()));
-    }
-
-    private boolean partitionsSnapshotFileExists(TableProperties table, long transactionNumber) throws IOException {
-        return fs.exists(new Path(partitionsSnapshot(table, transactionNumber).getPath()));
-    }
-
-    private static String getBasePath(InstanceProperties instanceProperties, TableProperties tableProperties) {
-        return instanceProperties.get(FILE_SYSTEM)
-                + instanceProperties.get(DATA_BUCKET) + "/"
-                + tableProperties.get(TableProperty.TABLE_ID);
-    }
-
-    private void deleteFilesSnapshotFile(TableProperties table, long transactionNumber) throws Exception {
-        fs.delete(new Path(filesSnapshot(table, transactionNumber).getPath()), false);
-    }
-
-    private void deletePartitionsSnapshotFile(TableProperties table, long transactionNumber) throws Exception {
-        fs.delete(new org.apache.hadoop.fs.Path(partitionsSnapshot(table, transactionNumber).getPath()), false);
     }
 }

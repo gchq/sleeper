@@ -15,58 +15,25 @@
  */
 package sleeper.statestore.transactionlog;
 
-import org.apache.hadoop.fs.FileSystem;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStore;
-import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
-import sleeper.core.statestore.transactionlog.TransactionLogStore;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotMetadataStore.LatestSnapshots;
-import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.LatestSnapshotsMetadataLoader;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.SnapshotMetadataSaver;
 
 import java.io.FileNotFoundException;
 import java.io.UncheckedIOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
 
-public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTestBase {
-    @TempDir
-    private Path tempDir;
-    private final Schema schema = schemaWithKey("key", new LongType());
-    private final Map<String, TransactionLogStore> partitionTransactionStoreByTableId = new HashMap<>();
-    private final Map<String, TransactionLogStore> fileTransactionStoreByTableId = new HashMap<>();
-
-    @BeforeEach
-    public void setup() {
-        instanceProperties.set(FILE_SYSTEM, "file://");
-        instanceProperties.set(DATA_BUCKET, tempDir.toString());
-    }
+public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestBase {
 
     @Test
     void shouldCreateSnapshotsForOneTable() throws Exception {
@@ -255,7 +222,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
         assertThatThrownBy(() -> runSnapshotCreator(table, failedUpdate(exception)))
                 .isSameAs(exception);
         assertThat(snapshotStore(table).getFilesSnapshots()).isEmpty();
-        assertThat(Files.exists(filesSnapshotPath(table, 1))).isFalse();
+        assertThat(filesSnapshotFileExists(table, 1)).isFalse();
     }
 
     @Test
@@ -270,7 +237,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
         assertThatThrownBy(() -> runSnapshotCreator(table, failedUpdate(exception)))
                 .isSameAs(exception);
         assertThat(snapshotStore(table).getPartitionsSnapshots()).isEmpty();
-        assertThat(Files.exists(partitionsSnapshotPath(table, 1))).isFalse();
+        assertThat(partitionsSnapshotFileExists(table, 1)).isFalse();
     }
 
     @Test
@@ -312,94 +279,6 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogStateStoreTes
                 .isInstanceOf(UncheckedIOException.class)
                 .hasCauseInstanceOf(FileNotFoundException.class);
         assertThat(snapshotStore(table).getFilesSnapshots()).containsExactly(snapshot);
-    }
-
-    private TransactionLogSnapshotMetadata getLatestPartitionsSnapshot(TableProperties table) {
-        return snapshotStore(table).getLatestSnapshots().getPartitionsSnapshot().orElseThrow();
-    }
-
-    private TransactionLogSnapshotMetadata getLatestFilesSnapshot(TableProperties table) {
-        return snapshotStore(table).getLatestSnapshots().getFilesSnapshot().orElseThrow();
-    }
-
-    private void deleteSnapshotFile(TransactionLogSnapshotMetadata snapshot) throws Exception {
-        org.apache.hadoop.fs.Path path = new org.apache.hadoop.fs.Path(snapshot.getPath());
-        FileSystem fs = path.getFileSystem(configuration);
-        fs.delete(path, false);
-    }
-
-    private void runSnapshotCreator(TableProperties table) {
-        DynamoDBTransactionLogSnapshotMetadataStore snapshotStore = snapshotStore(table);
-        runSnapshotCreator(table, snapshotStore::getLatestSnapshots, snapshotStore::saveSnapshot);
-    }
-
-    private void runSnapshotCreator(
-            TableProperties table, SnapshotMetadataSaver snapshotSaver) {
-        DynamoDBTransactionLogSnapshotMetadataStore snapshotStore = snapshotStore(table);
-        runSnapshotCreator(table, snapshotStore::getLatestSnapshots, snapshotSaver);
-    }
-
-    private void runSnapshotCreator(
-            TableProperties table, LatestSnapshotsMetadataLoader latestSnapshotsLoader, SnapshotMetadataSaver snapshotSaver) {
-        new DynamoDBTransactionLogSnapshotCreator(
-                instanceProperties, table,
-                fileTransactionStoreByTableId.get(table.get(TABLE_ID)),
-                partitionTransactionStoreByTableId.get(table.get(TABLE_ID)),
-                configuration, latestSnapshotsLoader, snapshotSaver)
-                .createSnapshot();
-    }
-
-    private StateStore createStateStoreWithInMemoryTransactionLog(TableProperties table) {
-        StateStore stateStore = TransactionLogStateStore.builder()
-                .sleeperTable(table.getStatus())
-                .schema(table.getSchema())
-                .filesLogStore(fileTransactionStoreByTableId.get(table.get(TABLE_ID)))
-                .partitionsLogStore(partitionTransactionStoreByTableId.get(table.get(TABLE_ID)))
-                .build();
-        stateStore.fixFileUpdateTime(DEFAULT_UPDATE_TIME);
-        stateStore.fixPartitionUpdateTime(DEFAULT_UPDATE_TIME);
-        return stateStore;
-    }
-
-    private DynamoDBTransactionLogSnapshotMetadataStore snapshotStore(TableProperties table) {
-        return new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, table, dynamoDBClient);
-    }
-
-    private TableProperties createTable(String tableId, String tableName) {
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        tableProperties.set(TABLE_ID, tableId);
-        tableProperties.set(TABLE_NAME, tableName);
-        tableProperties.set(STATESTORE_CLASSNAME, DynamoDBTransactionLogStateStore.class.getName());
-        fileTransactionStoreByTableId.put(tableId, new InMemoryTransactionLogStore());
-        partitionTransactionStoreByTableId.put(tableId, new InMemoryTransactionLogStore());
-        return tableProperties;
-    }
-
-    private TransactionLogSnapshotMetadata filesSnapshot(TableProperties table, long transactionNumber) {
-        return TransactionLogSnapshotMetadata.forFiles(getBasePath(instanceProperties, table), transactionNumber);
-    }
-
-    private TransactionLogSnapshotMetadata partitionsSnapshot(TableProperties table, long transactionNumber) {
-        return TransactionLogSnapshotMetadata.forPartitions(getBasePath(instanceProperties, table), transactionNumber);
-    }
-
-    private Path filesSnapshotPath(TableProperties table, long transactionNumber) {
-        return Path.of(TransactionLogSnapshotMetadata.forFiles(getBasePathNoFs(instanceProperties, table), 1).getPath());
-    }
-
-    private Path partitionsSnapshotPath(TableProperties table, long transactionNumber) {
-        return Path.of(TransactionLogSnapshotMetadata.forPartitions(getBasePathNoFs(instanceProperties, table), 1).getPath());
-    }
-
-    private static String getBasePath(InstanceProperties instanceProperties, TableProperties tableProperties) {
-        return instanceProperties.get(FILE_SYSTEM)
-                + instanceProperties.get(DATA_BUCKET) + "/"
-                + tableProperties.get(TableProperty.TABLE_ID);
-    }
-
-    private static String getBasePathNoFs(InstanceProperties instanceProperties, TableProperties tableProperties) {
-        return instanceProperties.get(DATA_BUCKET) + "/"
-                + tableProperties.get(TableProperty.TABLE_ID);
     }
 
     private SnapshotMetadataSaver failedUpdate(RuntimeException exception) {
