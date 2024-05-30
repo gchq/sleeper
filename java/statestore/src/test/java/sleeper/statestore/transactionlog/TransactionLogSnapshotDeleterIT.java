@@ -132,7 +132,7 @@ public class TransactionLogSnapshotDeleterIT extends TransactionLogSnapshotTestB
     }
 
     @Test
-    void shouldDeleteOldSnapshotsIfSnapshotFilesHaveAlreadyBeenDeleted() throws Exception {
+    void shouldNotDeleteOldSnapshotMetadataIfSnapshotFilesHaveAlreadyBeenDeleted() throws Exception {
         // Given
         TableProperties table = createTable("test-table-id-1", "test-table-1");
         table.setNumber(TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS, 1);
@@ -160,9 +160,13 @@ public class TransactionLogSnapshotDeleterIT extends TransactionLogSnapshotTestB
                         filesSnapshot(table, 3),
                         partitionsSnapshot(table, 2)));
         assertThat(snapshotStore(table).getFilesSnapshots())
-                .containsExactly(filesSnapshot(table, 3));
+                .containsExactly(
+                        filesSnapshot(table, 1),
+                        filesSnapshot(table, 3));
         assertThat(snapshotStore(table).getPartitionsSnapshots())
-                .containsExactly(partitionsSnapshot(table, 2));
+                .containsExactly(
+                        partitionsSnapshot(table, 1),
+                        partitionsSnapshot(table, 2));
         assertThat(snapshotFiles(table))
                 .containsExactlyInAnyOrder("3-files.parquet", "2-partitions.parquet");
     }

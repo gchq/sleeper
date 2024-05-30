@@ -62,12 +62,14 @@ public class TransactionLogSnapshotDeleter {
                     try {
                         Path path = new Path(snapshot.getPath());
                         FileSystem fs = path.getFileSystem(configuration);
-                        boolean deleted = fs.delete(path, false);
-                        if (!deleted) {
+                        if (!fs.exists(path)) {
                             LOGGER.warn("Failed to delete file. File has already been deleted: {}", snapshot.getPath());
+                            return;
                         }
+                        fs.delete(path, false);
                     } catch (IOException e) {
                         LOGGER.error("Failed to delete file: {}", snapshot.getPath(), e);
+                        return;
                     }
                     metadataStore.deleteSnapshot(snapshot);
                 });
