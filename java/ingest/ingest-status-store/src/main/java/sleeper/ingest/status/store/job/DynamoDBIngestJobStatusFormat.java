@@ -40,6 +40,7 @@ import sleeper.ingest.job.status.IngestJobStatus;
 import sleeper.ingest.job.status.IngestJobValidatedEvent;
 
 import java.security.SecureRandom;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
@@ -71,6 +72,7 @@ class DynamoDBIngestJobStatusFormat {
     static final String START_OF_RUN = "StartOfRun";
     static final String START_TIME = "StartTime";
     static final String FINISH_TIME = "FinishTime";
+    static final String MILLIS_IN_PROCESS = "MillisInProcess";
     static final String RECORDS_READ = "RecordsRead";
     static final String RECORDS_WRITTEN = "RecordsWritten";
     static final String FAILURE_REASONS = "FailureReasons";
@@ -131,6 +133,7 @@ class DynamoDBIngestJobStatusFormat {
                 .string(JOB_RUN_ID, event.getJobRunId())
                 .string(TASK_ID, event.getTaskId())
                 .number(FINISH_TIME, summary.getFinishTime().toEpochMilli())
+                .number(MILLIS_IN_PROCESS, summary.getTimeInProcess().toMillis())
                 .number(RECORDS_READ, summary.getRecordsRead())
                 .number(RECORDS_WRITTEN, summary.getRecordsWritten())
                 .build();
@@ -145,6 +148,7 @@ class DynamoDBIngestJobStatusFormat {
                 .string(JOB_RUN_ID, event.getJobRunId())
                 .string(TASK_ID, event.getTaskId())
                 .number(FINISH_TIME, runTime.getFinishTime().toEpochMilli())
+                .number(MILLIS_IN_PROCESS, runTime.getTimeInProcess().toMillis())
                 .list(FAILURE_REASONS, event.getFailureReasons().stream()
                         .map(DynamoDBAttributes::createStringAttribute)
                         .collect(Collectors.toList()))
@@ -213,18 +217,25 @@ class DynamoDBIngestJobStatusFormat {
                         new RecordsProcessedSummary(new RecordsProcessed(
                                 getLongAttribute(item, RECORDS_READ, 0),
                                 getLongAttribute(item, RECORDS_WRITTEN, 0)),
-                                getInstantAttribute(item, START_TIME),
-                                getInstantAttribute(item, FINISH_TIME)));
+                                getRunTime(item)));
             case UPDATE_TYPE_FAILED:
                 return ProcessFailedStatus.timeAndReasons(
                         getInstantAttribute(item, UPDATE_TIME),
-                        new ProcessRunTime(
-                                getInstantAttribute(item, START_TIME),
-                                getInstantAttribute(item, FINISH_TIME)),
+                        getRunTime(item),
                         getStringListAttribute(item, FAILURE_REASONS));
             default:
                 LOGGER.warn("Found record with unrecognised update type: {}", item);
                 throw new IllegalArgumentException("Found record with unrecognised update type");
         }
+    }
+
+    private static ProcessRunTime getRunTime(Map<String, AttributeValue> item) {
+        Instant startTime = getInstantAttribute(item, START_TIME);
+        Instant finishTime = getInstantAttribute(item, FINISH_TIME);
+        long millisInProcess = getLongAttribute(item, MILLIS_IN_PROCESS, -1);
+        Duration timeInProcess = millisInProcess > -1
+                ? Duration.ofMillis(millisInProcess)
+                : Duration.between(startTime, finishTime);
+        return new ProcessRunTime(startTime, finishTime, timeInProcess);
     }
 }

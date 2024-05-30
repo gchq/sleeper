@@ -122,7 +122,12 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
 
     protected static IngestJobFailedEvent defaultJobFailedEvent(
             IngestJob job, Instant startedTime, Instant finishedTime, List<String> failureReasons) {
-        return ingestJobFailed(job, new ProcessRunTime(startedTime, finishedTime))
+        return defaultJobFailedEvent(job, new ProcessRunTime(startedTime, finishedTime), failureReasons);
+    }
+
+    protected static IngestJobFailedEvent defaultJobFailedEvent(
+            IngestJob job, ProcessRunTime runTime, List<String> failureReasons) {
+        return ingestJobFailed(job, runTime)
                 .failureReasons(failureReasons).taskId(DEFAULT_TASK_ID).build();
     }
 
@@ -139,7 +144,11 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
     }
 
     protected static IngestJobStatus defaultJobFailedStatus(IngestJob job, Instant startedTime, Instant finishedTime, List<String> failureReasons) {
-        return failedIngestJob(job, DEFAULT_TASK_ID, new ProcessRunTime(startedTime, finishedTime), failureReasons);
+        return defaultJobFailedStatus(job, new ProcessRunTime(startedTime, finishedTime), failureReasons);
+    }
+
+    protected static IngestJobStatus defaultJobFailedStatus(IngestJob job, ProcessRunTime runTime, List<String> failureReasons) {
+        return failedIngestJob(job, DEFAULT_TASK_ID, runTime, failureReasons);
     }
 
     protected static ProcessRun defaultJobStartedRun(IngestJob job, Instant startedTime) {

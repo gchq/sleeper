@@ -17,9 +17,13 @@ package sleeper.ingest.status.store.job;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.record.process.ProcessRunTime;
+import sleeper.core.record.process.RecordsProcessed;
+import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.status.store.testutils.DynamoDBIngestJobStatusStoreTestBase;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
@@ -89,5 +93,47 @@ public class StoreIngestJobUpdatesIT extends DynamoDBIngestJobStatusStoreTestBas
                 .containsExactly(jobStatus(job,
                         finishedIngestRun(job, taskId2, defaultSummary(startTime2, finishTime2)),
                         finishedIngestRun(job, taskId1, defaultSummary(startTime1, finishTime1))));
+    }
+
+    @Test
+    public void shouldStoreTimeInProcessWhenFinished() {
+        // Given
+        IngestJob job = jobWithFiles("file");
+        Instant startedTime = Instant.parse("2022-12-14T13:51:12.001Z");
+        Instant finishedTime = Instant.parse("2022-12-14T13:51:42.001Z");
+        Duration timeInProcess = Duration.ofSeconds(20);
+        RecordsProcessedSummary summary = new RecordsProcessedSummary(
+                new RecordsProcessed(123L, 45L),
+                startedTime, finishedTime, timeInProcess);
+
+        // When
+        store.jobStarted(defaultJobStartedEvent(job, startedTime));
+        store.jobFinished(defaultJobFinishedEvent(job, summary));
+
+        // Then
+        assertThat(getAllJobStatuses())
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .containsExactly(defaultJobFinishedStatus(job, summary));
+    }
+
+    @Test
+    public void shouldStoreTimeInProcessWhenFailed() {
+        // Given
+        IngestJob job = jobWithFiles("file");
+        Instant startedTime = Instant.parse("2022-12-14T13:51:12.001Z");
+        Instant finishedTime = Instant.parse("2022-12-14T13:51:42.001Z");
+        Duration timeInProcess = Duration.ofSeconds(20);
+        ProcessRunTime runTime = new ProcessRunTime(
+                startedTime, finishedTime, timeInProcess);
+        List<String> failureReasons = List.of("Some reason");
+
+        // When
+        store.jobStarted(defaultJobStartedEvent(job, startedTime));
+        store.jobFailed(defaultJobFailedEvent(job, runTime, failureReasons));
+
+        // Then
+        assertThat(getAllJobStatuses())
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .containsExactly(defaultJobFailedStatus(job, runTime, failureReasons));
     }
 }
