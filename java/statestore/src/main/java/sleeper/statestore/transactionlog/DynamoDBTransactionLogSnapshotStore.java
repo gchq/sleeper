@@ -30,9 +30,7 @@ import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotMetadataS
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.time.Instant;
 import java.util.Optional;
-import java.util.function.Supplier;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
@@ -53,13 +51,7 @@ public class DynamoDBTransactionLogSnapshotStore {
 
     public DynamoDBTransactionLogSnapshotStore(
             InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamo, Configuration configuration) {
-        this(instanceProperties, tableProperties, dynamo, configuration, Instant::now);
-    }
-
-    public DynamoDBTransactionLogSnapshotStore(
-            InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamo,
-            Configuration configuration, Supplier<Instant> timeSupplier) {
-        this(new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamo, timeSupplier),
+        this(new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamo),
                 instanceProperties, tableProperties, configuration);
     }
 
