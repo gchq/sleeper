@@ -232,7 +232,9 @@ public class IngestTaskTest {
                     Instant.parse("2024-02-22T13:50:05Z"), // Job finish
                     Instant.parse("2024-02-22T13:50:06Z"))); // Task finish
             IngestJob job = createJobOnQueue("job1");
-            RuntimeException failure = new RuntimeException("Something went wrong");
+            RuntimeException root = new RuntimeException("Root cause details");
+            RuntimeException cause = new RuntimeException("Failure cause details", root);
+            RuntimeException failure = new RuntimeException("Something went wrong", cause);
 
             // When
             runTask("test-task-1", processJobs(jobFails(failure)), times::poll);
@@ -247,7 +249,7 @@ public class IngestTaskTest {
                             new ProcessRunTime(
                                     Instant.parse("2024-02-22T13:50:01Z"),
                                     Instant.parse("2024-02-22T13:50:05Z")),
-                            List.of("Something went wrong")));
+                            List.of("Something went wrong", "Failure cause details", "Root cause details")));
         }
 
         @Test
