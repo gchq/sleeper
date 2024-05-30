@@ -49,7 +49,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
         inMemoryStateStore.addFile(file);
 
         // When we create a snapshot from the in-memory transactions
-        runSnapshotCreator(table);
+        createSnapshots(table);
 
         // Then when we read from a state store with no transaction log, we load the state from the snapshot
         StateStore stateStore = createStateStore(table);
@@ -91,8 +91,8 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
         inMemoryStateStore2.addFile(file2);
 
         // When
-        runSnapshotCreator(table1);
-        runSnapshotCreator(table2);
+        createSnapshots(table1);
+        createSnapshots(table2);
 
         // Then
         StateStore stateStore1 = createStateStore(table1);
@@ -130,7 +130,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
         FileReference file1 = FileReferenceFactory.from(partitions.buildTree())
                 .rootFile(123L);
         stateStore.addFile(file1);
-        runSnapshotCreator(table);
+        createSnapshots(table);
 
         // When
         partitions.splitToNewChildren("root", "L", "R", 123L)
@@ -138,7 +138,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
         FileReference file2 = FileReferenceFactory.from(partitions.buildTree())
                 .partitionFile("L", 456L);
         stateStore.addFile(file2);
-        runSnapshotCreator(table);
+        createSnapshots(table);
 
         // Then
         assertThat(snapshotStore(table).getLatestSnapshots())
@@ -163,10 +163,10 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
         stateStore.initialise();
         FileReferenceFactory factory = FileReferenceFactory.from(stateStore);
         stateStore.addFile(factory.rootFile(123L));
-        runSnapshotCreator(table);
+        createSnapshots(table);
 
         // When
-        runSnapshotCreator(table);
+        createSnapshots(table);
 
         // Then
         assertThat(snapshotStore(table).getLatestSnapshots())
@@ -181,7 +181,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
         TableProperties table = createTable("test-table-id-1", "test-table-1");
 
         // When
-        runSnapshotCreator(table);
+        createSnapshots(table);
 
         // Then
         assertThat(snapshotStore(table).getLatestSnapshots())
@@ -198,7 +198,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
         stateStore.initialise();
 
         // When
-        runSnapshotCreator(table);
+        createSnapshots(table);
 
         // Then
         assertThat(snapshotStore(table).getLatestSnapshots())
@@ -213,13 +213,13 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
         TableProperties table = createTable("test-table-id-1", "test-table-1");
         StateStore stateStore = createStateStoreWithInMemoryTransactionLog(table);
         stateStore.initialise();
-        runSnapshotCreator(table);
+        createSnapshots(table);
         FileReferenceFactory factory = FileReferenceFactory.from(stateStore);
         stateStore.addFile(factory.rootFile(123L));
 
         // When / Then
         IllegalStateException exception = new IllegalStateException();
-        assertThatThrownBy(() -> runSnapshotCreator(table, failedUpdate(exception)))
+        assertThatThrownBy(() -> createSnapshots(table, failedUpdate(exception)))
                 .isSameAs(exception);
         assertThat(snapshotStore(table).getFilesSnapshots()).isEmpty();
         assertThat(filesSnapshotFileExists(table, 1)).isFalse();
@@ -234,7 +234,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
 
         // When / Then
         IllegalStateException exception = new IllegalStateException();
-        assertThatThrownBy(() -> runSnapshotCreator(table, failedUpdate(exception)))
+        assertThatThrownBy(() -> createSnapshots(table, failedUpdate(exception)))
                 .isSameAs(exception);
         assertThat(snapshotStore(table).getPartitionsSnapshots()).isEmpty();
         assertThat(partitionsSnapshotFileExists(table, 1)).isFalse();
@@ -247,7 +247,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
         PartitionsBuilder partitions = new PartitionsBuilder(schema).singlePartition("root");
         StateStore stateStore = createStateStoreWithInMemoryTransactionLog(table);
         stateStore.initialise(partitions.buildList());
-        runSnapshotCreator(table);
+        createSnapshots(table);
         TransactionLogSnapshotMetadata snapshot = getLatestPartitionsSnapshot(table);
         deleteSnapshotFile(snapshot);
         // And we add a transaction that would trigger a new snapshot
@@ -255,7 +255,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
                 .applySplit(stateStore, "root");
 
         // When / Then
-        assertThatThrownBy(() -> runSnapshotCreator(table))
+        assertThatThrownBy(() -> createSnapshots(table))
                 .isInstanceOf(UncheckedIOException.class)
                 .hasCauseInstanceOf(FileNotFoundException.class);
         assertThat(snapshotStore(table).getPartitionsSnapshots()).containsExactly(snapshot);
@@ -268,17 +268,24 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
         StateStore stateStore = createStateStoreWithInMemoryTransactionLog(table);
         stateStore.initialise();
         stateStore.addFile(FileReferenceFactory.from(stateStore).rootFile("file1.parquet", 123));
-        runSnapshotCreator(table);
+        createSnapshots(table);
         TransactionLogSnapshotMetadata snapshot = getLatestFilesSnapshot(table);
         deleteSnapshotFile(snapshot);
         // And we add a transaction that would trigger a new snapshot
         stateStore.addFile(FileReferenceFactory.from(stateStore).rootFile("file2.parquet", 456));
 
         // When / Then
-        assertThatThrownBy(() -> runSnapshotCreator(table))
+        assertThatThrownBy(() -> createSnapshots(table))
                 .isInstanceOf(UncheckedIOException.class)
                 .hasCauseInstanceOf(FileNotFoundException.class);
         assertThat(snapshotStore(table).getFilesSnapshots()).containsExactly(snapshot);
+    }
+
+    private StateStore createStateStore(TableProperties tableProperties) {
+        StateStore stateStore = DynamoDBTransactionLogStateStore.create(instanceProperties, tableProperties, dynamoDBClient, s3Client, configuration);
+        stateStore.fixFileUpdateTime(DEFAULT_UPDATE_TIME);
+        stateStore.fixPartitionUpdateTime(DEFAULT_UPDATE_TIME);
+        return stateStore;
     }
 
     private SnapshotMetadataSaver failedUpdate(RuntimeException exception) {

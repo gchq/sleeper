@@ -110,30 +110,24 @@ public class TransactionLogSnapshotTestBase {
         fs.delete(path, false);
     }
 
-    protected void runSnapshotCreator(TableProperties table) {
+    protected void createSnapshots(TableProperties table) {
         DynamoDBTransactionLogSnapshotMetadataStore snapshotStore = snapshotStore(table);
-        runSnapshotCreator(table, snapshotStore::getLatestSnapshots, snapshotStore::saveSnapshot);
+        createSnapshots(table, snapshotStore::getLatestSnapshots, snapshotStore::saveSnapshot);
     }
 
-    protected void runSnapshotCreator(
+    protected void createSnapshots(
             TableProperties table, SnapshotMetadataSaver snapshotSaver) {
         DynamoDBTransactionLogSnapshotMetadataStore snapshotStore = snapshotStore(table);
-        runSnapshotCreator(table, snapshotStore::getLatestSnapshots, snapshotSaver);
+        createSnapshots(table, snapshotStore::getLatestSnapshots, snapshotSaver);
     }
 
     protected void createSnapshotsAt(TableProperties table, Instant creationTime) throws Exception {
-        DynamoDBTransactionLogSnapshotCreator.from(
-                instanceProperties, table, s3Client, dynamoDBClient, configuration, () -> creationTime)
-                .createSnapshot();
+        DynamoDBTransactionLogSnapshotMetadataStore snapshotStore = new DynamoDBTransactionLogSnapshotMetadataStore(
+                instanceProperties, table, dynamoDBClient, () -> creationTime);
+        createSnapshots(table, snapshotStore::getLatestSnapshots, snapshotStore::saveSnapshot);
     }
 
-    protected void deleteSnapshotsAt(TableProperties table, Instant deletionTime) {
-        new TransactionLogSnapshotDeleter(
-                instanceProperties, table, dynamoDBClient, configuration)
-                .deleteSnapshots(deletionTime);
-    }
-
-    protected void runSnapshotCreator(
+    protected void createSnapshots(
             TableProperties table, LatestSnapshotsMetadataLoader latestSnapshotsLoader, SnapshotMetadataSaver snapshotSaver) {
         new DynamoDBTransactionLogSnapshotCreator(
                 instanceProperties, table,
@@ -143,6 +137,12 @@ public class TransactionLogSnapshotTestBase {
                 .createSnapshot();
     }
 
+    protected void deleteSnapshotsAt(TableProperties table, Instant deletionTime) {
+        new TransactionLogSnapshotDeleter(
+                instanceProperties, table, dynamoDBClient, configuration)
+                .deleteSnapshots(deletionTime);
+    }
+
     protected StateStore createStateStoreWithInMemoryTransactionLog(TableProperties table) {
         StateStore stateStore = TransactionLogStateStore.builder()
                 .sleeperTable(table.getStatus())
@@ -150,13 +150,6 @@ public class TransactionLogSnapshotTestBase {
                 .filesLogStore(fileTransactionStoreByTableId.get(table.get(TABLE_ID)))
                 .partitionsLogStore(partitionTransactionStoreByTableId.get(table.get(TABLE_ID)))
                 .build();
-        stateStore.fixFileUpdateTime(DEFAULT_UPDATE_TIME);
-        stateStore.fixPartitionUpdateTime(DEFAULT_UPDATE_TIME);
-        return stateStore;
-    }
-
-    protected StateStore createStateStore(TableProperties tableProperties) {
-        StateStore stateStore = DynamoDBTransactionLogStateStore.create(instanceProperties, tableProperties, dynamoDBClient, s3Client, configuration);
         stateStore.fixFileUpdateTime(DEFAULT_UPDATE_TIME);
         stateStore.fixPartitionUpdateTime(DEFAULT_UPDATE_TIME);
         return stateStore;

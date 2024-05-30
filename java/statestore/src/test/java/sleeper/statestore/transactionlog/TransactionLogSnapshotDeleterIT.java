@@ -35,7 +35,7 @@ public class TransactionLogSnapshotDeleterIT extends TransactionLogSnapshotTestB
         // Given
         TableProperties table = createTable("test-table-id-1", "test-table-1");
         table.setNumber(TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS, 1);
-        StateStore stateStore = createStateStore(table);
+        StateStore stateStore = createStateStoreWithInMemoryTransactionLog(table);
         PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema).rootFirst("root");
         stateStore.initialise(partitionsBuilder.buildList());
         FileReferenceFactory factory = FileReferenceFactory.from(stateStore);
@@ -71,7 +71,7 @@ public class TransactionLogSnapshotDeleterIT extends TransactionLogSnapshotTestB
         // Given
         TableProperties table = createTable("test-table-id-1", "test-table-1");
         table.setNumber(TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS, 1);
-        StateStore stateStore = createStateStore(table);
+        StateStore stateStore = createStateStoreWithInMemoryTransactionLog(table);
         PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema).rootFirst("root");
         stateStore.initialise(partitionsBuilder.buildList());
         FileReferenceFactory factory = FileReferenceFactory.from(stateStore);
@@ -111,7 +111,7 @@ public class TransactionLogSnapshotDeleterIT extends TransactionLogSnapshotTestB
         // Given
         TableProperties table = createTable("test-table-id-1", "test-table-1");
         table.setNumber(TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS, 1);
-        StateStore stateStore = createStateStore(table);
+        StateStore stateStore = createStateStoreWithInMemoryTransactionLog(table);
         stateStore.initialise();
         FileReferenceFactory factory = FileReferenceFactory.from(stateStore);
         stateStore.addFile(factory.rootFile("test1.parquet", 123L));
@@ -138,7 +138,7 @@ public class TransactionLogSnapshotDeleterIT extends TransactionLogSnapshotTestB
         // Given
         TableProperties table = createTable("test-table-id-1", "test-table-1");
         table.setNumber(TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS, 1);
-        StateStore stateStore = createStateStore(table);
+        StateStore stateStore = createStateStoreWithInMemoryTransactionLog(table);
         PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema).rootFirst("root");
         stateStore.initialise(partitionsBuilder.buildList());
         FileReferenceFactory factory = FileReferenceFactory.from(stateStore);
