@@ -267,9 +267,9 @@ public class IngestJobValidatedEvent {
         }
 
         /**
-         * Sets the list of reasons.
+         * Sets the reasons why the validation failed.
          *
-         * @param  reasons the list of reasons
+         * @param  reasons the list of reasons why the validation failed
          * @return         the builder
          */
         public Builder reasons(List<String> reasons) {
@@ -278,9 +278,9 @@ public class IngestJobValidatedEvent {
         }
 
         /**
-         * Sets the reasons.
+         * Sets the reasons why the validation failed.
          *
-         * @param  reasons the reasons
+         * @param  reasons the reasons why the validation failed
          * @return         the builder
          */
         public Builder reasons(String... reasons) {
