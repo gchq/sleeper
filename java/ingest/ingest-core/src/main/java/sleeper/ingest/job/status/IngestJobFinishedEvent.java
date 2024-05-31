@@ -130,7 +130,7 @@ public class IngestJobFinishedEvent {
         }
 
         /**
-         * Sets the ingest job.
+         * Sets the ingest job ID and the table ID using the provided ingest job.
          *
          * @param  job the ingest job
          * @return     the builder
