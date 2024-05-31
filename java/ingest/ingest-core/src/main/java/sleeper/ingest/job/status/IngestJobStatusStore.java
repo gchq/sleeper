@@ -107,7 +107,7 @@ public interface IngestJobStatusStore {
     }
 
     /**
-     * Gets a list of ingest job statuses that have occurred within the time window.
+     * Gets a list of ingest job statuses that have occurred within a time window.
      *
      * @param  tableId   the table ID
      * @param  startTime the time window start
