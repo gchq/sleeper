@@ -54,6 +54,14 @@ public interface IngestJobStatusStore {
     }
 
     /**
+     * Stores an ingest job failed event.
+     *
+     * @param event the event
+     */
+    default void jobFailed(IngestJobFailedEvent event) {
+    }
+
+    /**
      * Streams all ingest job statuses that belong to a table.
      *
      * @param  tableId the table ID

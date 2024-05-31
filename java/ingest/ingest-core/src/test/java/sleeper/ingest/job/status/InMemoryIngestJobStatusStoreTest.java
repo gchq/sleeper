@@ -19,6 +19,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
@@ -35,11 +36,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.ingest.job.IngestJobTestData.createJobWithTableAndFiles;
+import static sleeper.ingest.job.status.IngestJobFailedEvent.ingestJobFailed;
 import static sleeper.ingest.job.status.IngestJobFinishedEvent.ingestJobFinished;
 import static sleeper.ingest.job.status.IngestJobStartedEvent.ingestJobStarted;
 import static sleeper.ingest.job.status.IngestJobStartedEvent.validatedIngestJobStarted;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRunOnTask;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRunWhichFailed;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRunWhichFinished;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRunWhichStarted;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestJob;
@@ -449,6 +452,31 @@ public class InMemoryIngestJobStatusStoreTest {
             assertThat(store.streamTableRecords(tableId))
                     .extracting(ProcessStatusUpdateRecord::getJobRunId)
                     .containsExactly("test-run", "test-run");
+        }
+
+        @Test
+        void shouldReportFailedJob() {
+            // Given
+            String jobRunId = "test-run";
+            String taskId = "test-task";
+            IngestJob job = createJobWithTableAndFiles("test-job-1", table, "test-file-1.parquet");
+            Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
+            Instant startTime = Instant.parse("2022-09-22T12:00:15.000Z");
+            ProcessRunTime runTime = new ProcessRunTime(startTime, Duration.ofMinutes(10));
+            List<String> failureReasons = List.of("Something went wrong");
+
+            // When
+            store.jobValidated(ingestJobAccepted(job, validationTime).jobRunId(jobRunId).build());
+            store.jobStarted(validatedIngestJobStarted(job, startTime).jobRunId(jobRunId).taskId(taskId).build());
+            store.jobFailed(ingestJobFailed(job, runTime).jobRunId(jobRunId).taskId(taskId).failureReasons(failureReasons).build());
+
+            // Then
+            assertThat(store.getAllJobs(tableId))
+                    .containsExactly(jobStatus(job, acceptedRunWhichFailed(job, taskId,
+                            validationTime, runTime, failureReasons)));
+            assertThat(store.streamTableRecords(tableId))
+                    .extracting(ProcessStatusUpdateRecord::getJobRunId)
+                    .containsExactly("test-run", "test-run", "test-run");
         }
     }
 

@@ -15,7 +15,9 @@
  */
 package sleeper.ingest.job.status;
 
+import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.record.process.status.ProcessFailedStatus;
 import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 
@@ -67,15 +69,25 @@ public class InMemoryIngestJobStatusStore implements IngestJobStatusStore {
     @Override
     public void jobFinished(IngestJobFinishedEvent event) {
         RecordsProcessedSummary summary = event.getSummary();
-        List<ProcessStatusUpdateRecord> jobRecords = tableJobs(event.getTableId())
-                .map(jobs -> jobs.jobIdToUpdateRecords.get(event.getJobId()))
-                .orElseThrow(() -> new IllegalStateException("Job not started: " + event.getJobId()));
-        jobRecords.add(ProcessStatusUpdateRecord.builder()
-                .jobId(event.getJobId())
-                .statusUpdate(ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary))
-                .jobRunId(event.getJobRunId())
-                .taskId(event.getTaskId())
-                .build());
+        existingJobRecords(event.getTableId(), event.getJobId())
+                .add(ProcessStatusUpdateRecord.builder()
+                        .jobId(event.getJobId())
+                        .statusUpdate(ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary))
+                        .jobRunId(event.getJobRunId())
+                        .taskId(event.getTaskId())
+                        .build());
+    }
+
+    @Override
+    public void jobFailed(IngestJobFailedEvent event) {
+        ProcessRunTime runTime = event.getRunTime();
+        existingJobRecords(event.getTableId(), event.getJobId())
+                .add(ProcessStatusUpdateRecord.builder()
+                        .jobId(event.getJobId())
+                        .statusUpdate(ProcessFailedStatus.timeAndReasons(defaultUpdateTime(runTime.getFinishTime()), runTime, event.getFailureReasons()))
+                        .jobRunId(event.getJobRunId())
+                        .taskId(event.getTaskId())
+                        .build());
     }
 
     @Override
@@ -116,6 +128,12 @@ public class InMemoryIngestJobStatusStore implements IngestJobStatusStore {
 
     private Optional<TableJobs> tableJobs(String tableId) {
         return Optional.ofNullable(tableIdToJobs.get(tableId));
+    }
+
+    private List<ProcessStatusUpdateRecord> existingJobRecords(String tableId, String jobId) {
+        return tableJobs(tableId)
+                .map(jobs -> jobs.jobIdToUpdateRecords.get(jobId))
+                .orElseThrow(() -> new IllegalStateException("Job not started: " + jobId));
     }
 
     /**

@@ -27,10 +27,7 @@ import software.constructs.Construct;
 import sleeper.cdk.Utils;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
-import java.util.Locale;
-
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
 /**
  * This configuration stack deploys the config bucket used to store the Sleeper
@@ -45,7 +42,8 @@ public class ConfigBucketStack extends NestedStack {
         super(scope, id);
 
         configBucket = Bucket.Builder.create(this, "ConfigBucket")
-                .bucketName(String.join("-", "sleeper", instanceProperties.get(ID), "config").toLowerCase(Locale.ROOT))
+                .bucketName(String.join("-", "sleeper",
+                        Utils.cleanInstanceId(instanceProperties), "config"))
                 .versioned(false)
                 .encryption(BucketEncryption.S3_MANAGED)
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)

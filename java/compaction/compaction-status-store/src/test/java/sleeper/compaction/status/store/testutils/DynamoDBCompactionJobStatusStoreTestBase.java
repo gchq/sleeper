@@ -31,6 +31,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.partition.PartitionsFromSplitPoints;
+import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
@@ -45,6 +46,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static sleeper.compaction.job.CompactionJobStatusTestData.failedCompactionRun;
 import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionRun;
@@ -121,6 +123,11 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
     protected static RecordsProcessedSummary defaultSummary() {
         return new RecordsProcessedSummary(
                 new RecordsProcessed(200L, 100L),
+                defaultRunTime());
+    }
+
+    protected static ProcessRunTime defaultRunTime() {
+        return new ProcessRunTime(
                 defaultStartTime(), Instant.parse("2022-09-23T10:52:00.001Z"));
     }
 
@@ -130,8 +137,21 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
     }
 
     protected static CompactionJobStatus finishedStatusWithDefaults(CompactionJob job) {
+        return finishedStatusWithDefaults(job, defaultSummary());
+    }
+
+    protected static CompactionJobStatus finishedStatusWithDefaults(CompactionJob job, RecordsProcessedSummary summary) {
         return jobCreated(job, ignoredUpdateTime(),
-                finishedCompactionRun(DEFAULT_TASK_ID, defaultSummary()));
+                finishedCompactionRun(DEFAULT_TASK_ID, summary));
+    }
+
+    protected static CompactionJobStatus failedStatusWithDefaults(CompactionJob job, List<String> failureReasons) {
+        return failedStatusWithDefaults(job, defaultRunTime(), failureReasons);
+    }
+
+    protected static CompactionJobStatus failedStatusWithDefaults(CompactionJob job, ProcessRunTime runTime, List<String> failureReasons) {
+        return jobCreated(job, ignoredUpdateTime(),
+                failedCompactionRun(DEFAULT_TASK_ID, runTime, failureReasons));
     }
 
     protected CompactionJobStatus getJobStatus(String jobId) {

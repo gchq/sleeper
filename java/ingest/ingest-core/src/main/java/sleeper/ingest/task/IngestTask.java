@@ -18,6 +18,7 @@ package sleeper.ingest.task;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.IngestResult;
@@ -26,10 +27,12 @@ import sleeper.ingest.job.IngestJobHandler;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import static sleeper.ingest.job.status.IngestJobFailedEvent.ingestJobFailed;
 import static sleeper.ingest.job.status.IngestJobFinishedEvent.ingestJobFinished;
 import static sleeper.ingest.job.status.IngestJobStartedEvent.ingestJobStarted;
 
@@ -65,7 +68,7 @@ public class IngestTask {
         LOGGER.info("Starting task {}", taskId);
         taskStatusStore.taskStarted(taskStatusBuilder.build());
         IngestTaskFinishedStatus.Builder taskFinishedBuilder = IngestTaskFinishedStatus.builder();
-        Instant finishTime = handleMessages(startTime, taskFinishedBuilder::addJobSummary);
+        Instant finishTime = handleMessages(startTime, taskFinishedBuilder);
         LOGGER.info("Total number of messages processed = {}", totalNumberOfMessagesProcessed);
         LOGGER.info("Total run time = {}", LoggedDuration.withFullOutput(startTime, finishTime));
 
@@ -77,11 +80,11 @@ public class IngestTask {
      * Receives a message, then deserialises and runs the ingest job. Updates the ingest job status store with progress
      * on the job.
      *
-     * @param  startTime       the start time
-     * @param  summaryConsumer a consumer for finished job summaries
-     * @return                 the finish time
+     * @param  startTime           the start time
+     * @param  taskFinishedBuilder the ingest task finished builder
+     * @return                     the finish time
      */
-    public Instant handleMessages(Instant startTime, Consumer<RecordsProcessedSummary> summaryConsumer) {
+    private Instant handleMessages(Instant startTime, IngestTaskFinishedStatus.Builder taskFinishedBuilder) {
         while (true) {
             Optional<MessageHandle> messageOpt = messageReceiver.receiveMessage();
             if (!messageOpt.isPresent()) {
@@ -91,24 +94,39 @@ public class IngestTask {
             try (MessageHandle message = messageOpt.get()) {
                 IngestJob job = message.getJob();
                 LOGGER.info("IngestJob is: {}", job);
+                Instant jobStartTime = timeSupplier.get();
                 try {
-                    Instant jobStartTime = timeSupplier.get();
                     jobStatusStore.jobStarted(ingestJobStarted(taskId, job, jobStartTime));
                     IngestResult result = ingester.ingest(job);
                     LOGGER.info("{} records were written", result.getRecordsWritten());
                     Instant jobFinishTime = timeSupplier.get();
                     RecordsProcessedSummary summary = new RecordsProcessedSummary(result.asRecordsProcessed(), jobStartTime, jobFinishTime);
                     jobStatusStore.jobFinished(ingestJobFinished(taskId, job, summary));
-                    summaryConsumer.accept(summary);
+                    taskFinishedBuilder.addJobSummary(summary);
                     message.completed(summary);
                     totalNumberOfMessagesProcessed++;
                 } catch (Exception e) {
+                    Instant jobFinishTime = timeSupplier.get();
+                    jobStatusStore.jobFailed(ingestJobFailed(job, new ProcessRunTime(jobStartTime, jobFinishTime))
+                            .taskId(taskId)
+                            .failureReasons(getFailureReasons(e))
+                            .build());
                     LOGGER.error("Failed processing ingest job, terminating task", e);
                     message.failed();
                     return timeSupplier.get();
                 }
             }
         }
+    }
+
+    private static List<String> getFailureReasons(Exception e) {
+        List<String> reasons = new ArrayList<>();
+        Throwable failure = e;
+        while (failure != null) {
+            reasons.add(failure.getMessage());
+            failure = failure.getCause();
+        }
+        return reasons;
     }
 
     /**

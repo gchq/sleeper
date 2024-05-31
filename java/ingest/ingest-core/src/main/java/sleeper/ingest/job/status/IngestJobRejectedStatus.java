@@ -61,10 +61,6 @@ public class IngestJobRejectedStatus implements IngestJobValidatedStatus, Proces
         return inputFileCount;
     }
 
-    public List<String> getReasons() {
-        return reasons;
-    }
-
     public String getJsonMessage() {
         return jsonMessage;
     }
@@ -77,6 +73,16 @@ public class IngestJobRejectedStatus implements IngestJobValidatedStatus, Proces
     @Override
     public RecordsProcessedSummary getSummary() {
         return RecordsProcessedSummary.noProcessingDoneAtTime(validationTime);
+    }
+
+    @Override
+    public boolean isSuccessful() {
+        return false;
+    }
+
+    @Override
+    public List<String> getFailureReasons() {
+        return reasons;
     }
 
     @Override

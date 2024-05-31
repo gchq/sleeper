@@ -37,7 +37,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.function.Predicate.not;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 
 public class ManagedPoliciesStack extends NestedStack {
@@ -149,7 +148,7 @@ public class ManagedPoliciesStack extends NestedStack {
 
     private ManagedPolicy createManagedPolicy(String id) {
         return ManagedPolicy.Builder.create(this, id)
-                .managedPolicyName("sleeper-" + instanceProperties.get(ID) + "-" + id)
+                .managedPolicyName(String.join("-", "sleeper", Utils.cleanInstanceId(instanceProperties), id))
                 .build();
     }
 

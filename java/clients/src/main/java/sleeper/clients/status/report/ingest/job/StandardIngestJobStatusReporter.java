@@ -139,7 +139,7 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
         } else {
             out.println("Job was rejected with reasons:");
             IngestJobRejectedStatus rejectedStatus = (IngestJobRejectedStatus) status;
-            rejectedStatus.getReasons().forEach(reason -> out.printf("- %s%n", reason));
+            rejectedStatus.getFailureReasons().forEach(reason -> out.printf("- %s%n", reason));
             if (rejectedStatus.getJsonMessage() != null) {
                 out.println();
                 out.println("Received JSON message:");

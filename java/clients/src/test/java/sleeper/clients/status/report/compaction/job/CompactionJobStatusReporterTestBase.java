@@ -23,6 +23,7 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobTestDataHelper;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.core.record.process.ProcessRunTime;
 
 import java.io.PrintStream;
 import java.time.Duration;
@@ -34,6 +35,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static sleeper.clients.testutil.ClientTestUtils.exampleUUID;
+import static sleeper.compaction.job.CompactionJobStatusTestData.failedCompactionRun;
 import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionRun;
@@ -63,11 +65,21 @@ public abstract class CompactionJobStatusReporterTestBase {
         CompactionJob job3 = dataHelper.singleFileCompaction(partition("C"));
         Instant creationTime3 = Instant.parse("2022-09-19T13:33:12.001Z");
         Instant startedTime3 = Instant.parse("2022-09-19T13:34:12.001Z");
+        CompactionJob job4 = dataHelper.singleFileCompaction(partition("D"));
+        Instant creationTime4 = Instant.parse("2022-09-20T13:33:12.001Z");
+        Instant startedTime4 = Instant.parse("2022-09-20T13:34:12.001Z");
 
         CompactionJobStatus status1 = jobCreated(job1, creationTime1);
-        CompactionJobStatus status2 = jobCreated(job2, creationTime2, startedCompactionRun(StatusReporterTestHelper.task(1), startedTime2));
-        CompactionJobStatus status3 = jobCreated(job3, creationTime3, finishedCompactionRun(StatusReporterTestHelper.task(1), summary(startedTime3, Duration.ofMinutes(1), 600, 300)));
-        return Arrays.asList(status3, status2, status1);
+        CompactionJobStatus status2 = jobCreated(job2, creationTime2,
+                startedCompactionRun(StatusReporterTestHelper.task(1), startedTime2));
+        CompactionJobStatus status3 = jobCreated(job3, creationTime3,
+                finishedCompactionRun(StatusReporterTestHelper.task(1),
+                        summary(startedTime3, Duration.ofMinutes(1), 600, 300)));
+        CompactionJobStatus status4 = jobCreated(job4, creationTime4,
+                failedCompactionRun(StatusReporterTestHelper.task(1),
+                        new ProcessRunTime(startedTime4, Duration.ofMinutes(1)),
+                        List.of("Something went wrong", "More details")));
+        return Arrays.asList(status4, status3, status2, status1);
     }
 
     protected static List<CompactionJobStatus> mixedUnfinishedJobStatuses() {

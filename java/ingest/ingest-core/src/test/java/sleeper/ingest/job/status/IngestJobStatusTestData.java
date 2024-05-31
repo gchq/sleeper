@@ -15,7 +15,9 @@
  */
 package sleeper.ingest.job.status;
 
+import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.record.process.status.ProcessFailedStatus;
 import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.record.process.status.ProcessRuns;
@@ -86,6 +88,10 @@ public class IngestJobStatusTestData {
         return jobStatus(job, finishedIngestRun(job, taskId, summary));
     }
 
+    public static IngestJobStatus failedIngestJob(IngestJob job, String taskId, ProcessRunTime runTime, List<String> failureReasons) {
+        return jobStatus(job, failedIngestRun(job, taskId, runTime, failureReasons));
+    }
+
     /**
      * Creates an ingest job status for a job that was validated and finished.
      *
@@ -143,6 +149,22 @@ public class IngestJobStatusTestData {
                                 .updateTime(defaultUpdateTime(summary.getStartTime())).build())
                 .finishedStatus(ProcessFinishedStatus
                         .updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary))
+                .build();
+    }
+
+    public static ProcessRun acceptedRunWhichFailed(
+            IngestJob job, String taskId, Instant validationTime, ProcessRunTime runTime, List<String> failureReasons) {
+        return ProcessRun.builder()
+                .taskId(taskId)
+                .startedStatus(IngestJobAcceptedStatus.from(job,
+                        validationTime, defaultUpdateTime(validationTime)))
+                .statusUpdate(
+                        IngestJobStartedStatus.withStartOfRun(false)
+                                .inputFileCount(job.getFiles().size())
+                                .startTime(runTime.getStartTime())
+                                .updateTime(defaultUpdateTime(runTime.getStartTime())).build())
+                .finishedStatus(ProcessFailedStatus
+                        .timeAndReasons(defaultUpdateTime(runTime.getFinishTime()), runTime, failureReasons))
                 .build();
     }
 
@@ -261,6 +283,13 @@ public class IngestJobStatusTestData {
         return ProcessRun.finished(taskId,
                 IngestJobStartedStatus.startAndUpdateTime(job, summary.getStartTime(), defaultUpdateTime(summary.getStartTime())),
                 ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary));
+    }
+
+    public static ProcessRun failedIngestRun(
+            IngestJob job, String taskId, ProcessRunTime runTime, List<String> failureReasons) {
+        return ProcessRun.finished(taskId,
+                IngestJobStartedStatus.startAndUpdateTime(job, runTime.getStartTime(), defaultUpdateTime(runTime.getStartTime())),
+                ProcessFailedStatus.timeAndReasons(defaultUpdateTime(runTime.getFinishTime()), runTime, failureReasons));
     }
 
     /**
