@@ -88,6 +88,15 @@ public class IngestJobStatusTestData {
         return jobStatus(job, finishedIngestRun(job, taskId, summary));
     }
 
+    /**
+     * Creates an ingest job status for a job that has failed.
+     *
+     * @param  job            the ingest job
+     * @param  taskId         the ingest task ID
+     * @param  runTime        the process run time
+     * @param  failureReasons a list of failure reasons
+     * @return                an {@link IngestJobStatus}
+     */
     public static IngestJobStatus failedIngestJob(IngestJob job, String taskId, ProcessRunTime runTime, List<String> failureReasons) {
         return jobStatus(job, failedIngestRun(job, taskId, runTime, failureReasons));
     }
@@ -152,6 +161,16 @@ public class IngestJobStatusTestData {
                 .build();
     }
 
+    /**
+     * Creates a process run for an ingest job that was validated and failed.
+     *
+     * @param  job            the ingest job
+     * @param  taskId         the ingest task ID
+     * @param  validationTime the validation time
+     * @param  runTime        the process run time
+     * @param  failureReasons a list of failure reasons
+     * @return                a {@link ProcessRun}
+     */
     public static ProcessRun acceptedRunWhichFailed(
             IngestJob job, String taskId, Instant validationTime, ProcessRunTime runTime, List<String> failureReasons) {
         return ProcessRun.builder()
@@ -285,6 +304,15 @@ public class IngestJobStatusTestData {
                 ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary));
     }
 
+    /**
+     * Creates a process run for an ingest job that finished.
+     *
+     * @param  job            the ingest job
+     * @param  taskId         the ingest task ID
+     * @param  runTime        the process run time
+     * @param  failureReasons a list of failure reasons
+     * @return                a {@link ProcessRun}
+     */
     public static ProcessRun failedIngestRun(
             IngestJob job, String taskId, ProcessRunTime runTime, List<String> failureReasons) {
         return ProcessRun.finished(taskId,
