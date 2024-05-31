@@ -130,7 +130,7 @@ public class IngestTask {
     }
 
     /**
-     * An interface for receiving ingest job messages. This is so that the message can be deleted or
+     * Receives ingest job messages. This is so that the message can be deleted or
      * returned to the queue, depending on whether the ingest job succeeds or fails.
      */
     @FunctionalInterface
@@ -144,7 +144,7 @@ public class IngestTask {
     }
 
     /**
-     * An interface for an ingest job message. Used to control the message visibility of an SQS message.
+     * A message containing an ingest job. Used to control the message visibility of an SQS message.
      */
     public interface MessageHandle extends AutoCloseable {
         /**
