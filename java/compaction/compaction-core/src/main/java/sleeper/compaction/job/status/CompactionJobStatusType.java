@@ -23,8 +23,8 @@ import java.util.stream.Stream;
 
 public enum CompactionJobStatusType {
     PENDING(CompactionJobCreatedStatus.class, 1),
-    IN_PROGRESS(CompactionJobStartedStatus.class, 2),
-    FAILED(ProcessFailedStatus.class, 3),
+    FAILED(ProcessFailedStatus.class, 2),
+    IN_PROGRESS(CompactionJobStartedStatus.class, 3),
     FINISHED(ProcessFinishedStatus.class, 4);
 
     private final Class<?> statusUpdateClass;

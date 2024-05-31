@@ -191,6 +191,29 @@ public class IngestJobStatusTest {
                     .extracting(IngestJobStatus::getFurthestStatusType)
                     .isEqualTo(FINISHED);
         }
+
+        @Test
+        void shouldReportInProgressWhenRetryingAfterFailure() {
+            Instant validationTime1 = Instant.parse("2022-09-22T13:33:10Z");
+            Instant startTime1 = Instant.parse("2022-09-22T13:33:11Z");
+            Instant finishTime1 = Instant.parse("2022-09-22T13:40:10Z");
+            Instant validationTime2 = Instant.parse("2022-09-22T14:33:10Z");
+            Instant startTime2 = Instant.parse("2022-09-22T14:33:11Z");
+
+            IngestJobStatus status = singleJobStatusFrom(records().fromUpdates(
+                    forRunOnNoTask("run-1", acceptedStatusUpdate(validationTime1)),
+                    forRunOnTask("run-1", "task",
+                            startedStatusUpdateAfterValidation(startTime1),
+                            failedStatusUpdate(startTime1, finishTime1)),
+                    forRunOnNoTask("run-2", acceptedStatusUpdate(validationTime2)),
+                    forRunOnTask("run-2", "task",
+                            startedStatusUpdateAfterValidation(startTime2))));
+
+            // Then
+            assertThat(status)
+                    .extracting(IngestJobStatus::getFurthestStatusType)
+                    .isEqualTo(IN_PROGRESS);
+        }
     }
 
     @Nested

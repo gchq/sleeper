@@ -128,4 +128,22 @@ public class CompactionJobStatusFurthestStatusTest {
         assertThat(status.getFurthestStatusType()).isEqualTo(FINISHED);
     }
 
+    @Test
+    void shouldReportJobInProgressWhenRetryingAfterFailure() {
+        // Given
+        CompactionJobCreatedStatus created = CompactionJobCreatedStatus.builder()
+                .updateTime(Instant.parse("2023-03-22T15:36:02Z"))
+                .partitionId("partition1")
+                .inputFilesCount(11)
+                .build();
+        CompactionJobStartedStatus started1 = startedCompactionStatus(Instant.parse("2023-03-22T15:36:01Z"));
+        ProcessFailedStatus failed = failedStatus(started1, Duration.ofSeconds(30), List.of("Some failure"));
+        CompactionJobStartedStatus started2 = startedCompactionStatus(Instant.parse("2023-03-22T15:37:01Z"));
+
+        // When
+        CompactionJobStatus status = jobStatusFromUpdates(created, started1, failed, started2);
+
+        // Then
+        assertThat(status.getFurthestStatusType()).isEqualTo(IN_PROGRESS);
+    }
 }
