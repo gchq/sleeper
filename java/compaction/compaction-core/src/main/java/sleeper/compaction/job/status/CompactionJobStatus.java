@@ -23,11 +23,14 @@ import sleeper.core.record.process.status.TimeWindowQuery;
 
 import java.time.Instant;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static sleeper.compaction.job.status.CompactionJobStatusType.CREATED;
 
 public class CompactionJobStatus {
 
@@ -116,6 +119,14 @@ public class CompactionJobStatus {
 
     public Optional<ProcessRun> getLatestRun() {
         return jobRuns.getLatestRun();
+    }
+
+    public CompactionJobStatusType getFurthestStatusType() {
+        return jobRuns.getRunsLatestFirst().stream()
+                .map(ProcessRun::getLatestUpdate)
+                .map(CompactionJobStatusType::of)
+                .max(Comparator.comparing(CompactionJobStatusType::getOrder))
+                .orElse(CREATED);
     }
 
     public static final class Builder {

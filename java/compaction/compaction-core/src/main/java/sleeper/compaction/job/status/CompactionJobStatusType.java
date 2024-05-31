@@ -13,8 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package sleeper.ingest.job.status;
+package sleeper.compaction.job.status;
 
 import sleeper.core.record.process.status.ProcessFailedStatus;
 import sleeper.core.record.process.status.ProcessFinishedStatus;
@@ -22,17 +21,16 @@ import sleeper.core.record.process.status.ProcessStatusUpdate;
 
 import java.util.stream.Stream;
 
-public enum IngestJobStatusType {
-    REJECTED(IngestJobRejectedStatus.class, 1),
-    ACCEPTED(IngestJobAcceptedStatus.class, 2),
-    IN_PROGRESS(IngestJobStartedStatus.class, 3),
-    FAILED(ProcessFailedStatus.class, 4),
-    FINISHED(ProcessFinishedStatus.class, 5);
+public enum CompactionJobStatusType {
+    CREATED(CompactionJobCreatedStatus.class, 1),
+    STARTED(CompactionJobStartedStatus.class, 2),
+    FAILED(ProcessFailedStatus.class, 3),
+    FINISHED(ProcessFinishedStatus.class, 4);
 
     private final Class<?> statusUpdateClass;
     private final int order;
 
-    IngestJobStatusType(Class<?> statusUpdateClass, int order) {
+    CompactionJobStatusType(Class<?> statusUpdateClass, int order) {
         this.statusUpdateClass = statusUpdateClass;
         this.order = order;
     }
@@ -41,10 +39,9 @@ public enum IngestJobStatusType {
         return order;
     }
 
-    public static IngestJobStatusType of(ProcessStatusUpdate update) {
+    public static CompactionJobStatusType of(ProcessStatusUpdate update) {
         return Stream.of(values())
                 .filter(type -> type.statusUpdateClass.isInstance(update))
                 .findFirst().orElseThrow();
     }
-
 }

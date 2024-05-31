@@ -20,8 +20,10 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.record.process.status.ProcessFailedStatus;
 import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.ingest.job.IngestJob;
 
@@ -164,6 +166,31 @@ public class IngestJobStatusTest {
                     .extracting(IngestJobStatus::getFurthestStatusType)
                     .isEqualTo(IN_PROGRESS);
         }
+
+        @Test
+        void shouldReportFinishedWhenAnotherRunFailedAfterwards() {
+            Instant validationTime1 = Instant.parse("2022-09-22T13:33:10Z");
+            Instant startTime1 = Instant.parse("2022-09-22T13:33:11Z");
+            Instant finishTime1 = Instant.parse("2022-09-22T13:40:10Z");
+            Instant validationTime2 = Instant.parse("2022-09-22T14:33:10Z");
+            Instant startTime2 = Instant.parse("2022-09-22T14:33:11Z");
+            Instant finishTime2 = Instant.parse("2022-09-22T14:40:10Z");
+
+            IngestJobStatus status = singleJobStatusFrom(records().fromUpdates(
+                    forRunOnNoTask("run-1", acceptedStatusUpdate(validationTime1)),
+                    forRunOnTask("run-1", "task",
+                            startedStatusUpdateAfterValidation(startTime1),
+                            finishedStatusUpdate(startTime1, finishTime1)),
+                    forRunOnNoTask("run-2", acceptedStatusUpdate(validationTime2)),
+                    forRunOnTask("run-2", "task",
+                            startedStatusUpdateAfterValidation(startTime2),
+                            failedStatusUpdate(startTime2, finishTime2))));
+
+            // Then
+            assertThat(status)
+                    .extracting(IngestJobStatus::getFurthestStatusType)
+                    .isEqualTo(FINISHED);
+        }
     }
 
     @Nested
@@ -214,6 +241,12 @@ public class IngestJobStatusTest {
 
     private ProcessFinishedStatus finishedStatusUpdate(Instant startTime, Instant finishTime) {
         return ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(finishTime), summary(startTime, finishTime));
+    }
+
+    private ProcessFailedStatus failedStatusUpdate(Instant startTime, Instant finishTime) {
+        return ProcessFailedStatus.timeAndReasons(
+                defaultUpdateTime(finishTime), new ProcessRunTime(startTime, finishTime),
+                List.of("Something went wrong"));
     }
 
     private RecordsProcessedSummary summary(Instant startTime, Instant finishTime) {
