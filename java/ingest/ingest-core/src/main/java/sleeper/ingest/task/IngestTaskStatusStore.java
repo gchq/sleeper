@@ -63,11 +63,11 @@ public interface IngestTaskStatusStore {
     }
 
     /**
-     * Gets the status of all tasks that have occurred within the time window.
+     * Gets the status of all tasks that have occurred within a time window.
      *
      * @param  startTime the time window start
      * @param  endTime   the time window end
-     * @return           a list of all tasks that have occurred within the time window
+     * @return           a list of all tasks that have occurred within a time window
      */
     default List<IngestTaskStatus> getTasksInTimePeriod(Instant startTime, Instant endTime) {
         throw new UnsupportedOperationException("Instance has no ingest task status store");

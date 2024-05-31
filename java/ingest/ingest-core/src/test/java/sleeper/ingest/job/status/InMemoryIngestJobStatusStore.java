@@ -137,7 +137,7 @@ public class InMemoryIngestJobStatusStore implements IngestJobStatusStore {
     }
 
     /**
-     * A class which stores job updates by job ID in memory.
+     * Stores job updates by job ID in memory.
      */
     private static class TableJobs {
         private final Map<String, List<ProcessStatusUpdateRecord>> jobIdToUpdateRecords = new HashMap<>();

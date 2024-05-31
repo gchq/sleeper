@@ -53,11 +53,11 @@ public class IngestTaskStatus {
     }
 
     /**
-     * Checks whether this task was run within the time window.
+     * Checks whether this task was run within a time window.
      *
      * @param  windowStartTime the time window start time
      * @param  windowEndTime   the time window end time
-     * @return                 whether this task was run within the time window
+     * @return                 whether this task was run within a time window
      */
     public boolean isInPeriod(Instant windowStartTime, Instant windowEndTime) {
         TimeWindowQuery timeWindowQuery = new TimeWindowQuery(windowStartTime, windowEndTime);
