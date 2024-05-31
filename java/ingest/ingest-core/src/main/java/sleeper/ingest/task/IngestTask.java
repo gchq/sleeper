@@ -78,7 +78,7 @@ public class IngestTask {
 
     /**
      * Receives a message, then deserialises and runs the ingest job. Updates the ingest job status store with progress
-     * on the job.
+     * on the job. These actions are repeated until no more messages are found.
      *
      * @param  startTime           the start time
      * @param  taskFinishedBuilder the ingest task finished builder
