@@ -23,7 +23,7 @@ import sleeper.core.record.process.status.ProcessStatusUpdate;
 import java.util.stream.Stream;
 
 /**
- * An enum for all the states an ingest job can be in.
+ * Defines all the state an ingest job can be in.
  */
 public enum IngestJobStatusType {
     REJECTED(IngestJobRejectedStatus.class, 1),

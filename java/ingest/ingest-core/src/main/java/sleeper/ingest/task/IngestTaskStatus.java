@@ -25,7 +25,7 @@ import java.time.Instant;
 import java.util.Objects;
 
 /**
- * A class for storing the status of an ingest task.
+ * Represents the status of an ingest task.
  */
 public class IngestTaskStatus {
     private final String taskId;

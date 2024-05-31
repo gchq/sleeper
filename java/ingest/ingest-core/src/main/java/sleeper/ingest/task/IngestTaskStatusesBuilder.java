@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * A helper class for constructing multiple ingest task statuses.
+ * A helper for constructing multiple ingest task statuses.
  */
 public class IngestTaskStatusesBuilder {
     private final Map<String, IngestTaskStatus.Builder> builderById = new HashMap<>();

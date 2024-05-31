@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * An interface for storing ingest job statuses.
+ * Stores the status of ingest jobs.
  */
 public interface IngestJobStatusStore {
     IngestJobStatusStore NONE = new IngestJobStatusStore() {

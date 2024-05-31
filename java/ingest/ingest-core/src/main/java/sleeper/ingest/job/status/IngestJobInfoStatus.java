@@ -19,7 +19,7 @@ package sleeper.ingest.job.status;
 import sleeper.core.record.process.status.ProcessRunStartedUpdate;
 
 /**
- * An interface for an ingest job process started update that has information about the input files.
+ * An ingest job process started update that has information about the input files.
  */
 public interface IngestJobInfoStatus extends ProcessRunStartedUpdate {
     /**

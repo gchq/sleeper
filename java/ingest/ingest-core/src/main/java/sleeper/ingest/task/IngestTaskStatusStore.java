@@ -20,7 +20,7 @@ import java.time.Instant;
 import java.util.List;
 
 /**
- * An interface for storing ingest task statuses.
+ * Stores ingest task statuses.
  */
 public interface IngestTaskStatusStore {
 

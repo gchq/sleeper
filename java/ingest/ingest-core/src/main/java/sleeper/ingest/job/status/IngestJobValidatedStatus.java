@@ -17,7 +17,7 @@
 package sleeper.ingest.job.status;
 
 /**
- * An interface for an ingest job info update that has validation information about the job.
+ * An ingest job info status that has validation information about the job.
  */
 public interface IngestJobValidatedStatus extends IngestJobInfoStatus {
     /**

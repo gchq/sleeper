@@ -22,7 +22,7 @@ import sleeper.ingest.job.IngestJob;
 import java.util.Objects;
 
 /**
- * A event class for when an ingest job was finished. Used in the ingest job status store.
+ * A event for when an ingest job was finished. Used in the ingest job status store.
  */
 public class IngestJobFinishedEvent {
     private final String jobId;
