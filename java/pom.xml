@@ -82,6 +82,8 @@
         We were getting multiple versions added to the classpath, and they both have vulnerabilities.
         -->
         <snappy.version>1.1.10.5</snappy.version>
+        <!-- Parquet declares an old version of Aircompressor with vulnerabilities. Managed from 0.21. -->
+        <aircompressor.version>0.27</aircompressor.version>
         <!-- Hadoop declares an old version of Protobuf with vulnerabilities. Managed from 2.5.0. -->
         <protobuf.version>4.27.0</protobuf.version>
         <!-- Hadoop declares an old version of Nimbus with vulnerabilities. Managed from 9.8.1. -->
@@ -456,6 +458,11 @@
                 <groupId>org.xerial.snappy</groupId>
                 <artifactId>snappy-java</artifactId>
                 <version>${snappy.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.airlift</groupId>
+                <artifactId>aircompressor</artifactId>
+                <version>${aircompressor.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.protobuf</groupId>
