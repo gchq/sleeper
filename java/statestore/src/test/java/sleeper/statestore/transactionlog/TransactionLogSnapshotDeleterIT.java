@@ -65,7 +65,9 @@ public class TransactionLogSnapshotDeleterIT extends TransactionLogSnapshotTestB
         assertThat(snapshotStore(table).getPartitionsSnapshots())
                 .containsExactly(partitionsSnapshot(table, 2));
         assertThat(tableFiles(table))
-                .containsExactlyInAnyOrder("3-files.parquet", "2-partitions.parquet");
+                .containsExactlyInAnyOrder(
+                        filesSnapshotPath(table, 3),
+                        partitionsSnapshotPath(table, 2));
     }
 
     @Test
@@ -104,8 +106,10 @@ public class TransactionLogSnapshotDeleterIT extends TransactionLogSnapshotTestB
                         partitionsSnapshot(table, 1));
         assertThat(tableFiles(table))
                 .containsExactlyInAnyOrder(
-                        "3-files.parquet", "1-files.parquet",
-                        "2-partitions.parquet", "1-partitions.parquet");
+                        filesSnapshotPath(table, 3),
+                        filesSnapshotPath(table, 1),
+                        partitionsSnapshotPath(table, 2),
+                        partitionsSnapshotPath(table, 1));
     }
 
     @Test
@@ -132,7 +136,9 @@ public class TransactionLogSnapshotDeleterIT extends TransactionLogSnapshotTestB
         assertThat(snapshotStore(table).getPartitionsSnapshots())
                 .containsExactly(partitionsSnapshot(table, 1));
         assertThat(tableFiles(table))
-                .containsExactlyInAnyOrder("1-files.parquet", "1-partitions.parquet");
+                .containsExactlyInAnyOrder(
+                        filesSnapshotPath(table, 1),
+                        partitionsSnapshotPath(table, 1));
     }
 
     @Test
@@ -171,8 +177,10 @@ public class TransactionLogSnapshotDeleterIT extends TransactionLogSnapshotTestB
                         partitionsSnapshot(table, 1));
         assertThat(tableFiles(table))
                 .containsExactlyInAnyOrder(
-                        "3-files.parquet", "1-files.parquet",
-                        "2-partitions.parquet", "1-partitions.parquet");
+                        filesSnapshotPath(table, 3),
+                        filesSnapshotPath(table, 1),
+                        partitionsSnapshotPath(table, 2),
+                        partitionsSnapshotPath(table, 1));
     }
 
     @Test
@@ -208,7 +216,9 @@ public class TransactionLogSnapshotDeleterIT extends TransactionLogSnapshotTestB
         assertThat(snapshotStore(table).getPartitionsSnapshots())
                 .containsExactly(partitionsSnapshot(table, 2));
         assertThat(tableFiles(table))
-                .containsExactlyInAnyOrder("3-files.parquet", "2-partitions.parquet");
+                .containsExactlyInAnyOrder(
+                        filesSnapshotPath(table, 3),
+                        partitionsSnapshotPath(table, 2));
     }
 
     private SnapshotFileDeleter failedDeletion(IOException e) {

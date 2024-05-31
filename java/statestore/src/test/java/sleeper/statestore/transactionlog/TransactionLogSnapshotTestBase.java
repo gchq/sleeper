@@ -194,6 +194,14 @@ public class TransactionLogSnapshotTestBase {
         return TransactionLogSnapshotMetadata.forPartitions(getBasePath(instanceProperties, table), transactionNumber);
     }
 
+    protected String filesSnapshotPath(TableProperties table, long transactionNumber) {
+        return filesSnapshot(table, transactionNumber).getPath();
+    }
+
+    protected String partitionsSnapshotPath(TableProperties table, long transactionNumber) {
+        return partitionsSnapshot(table, transactionNumber).getPath();
+    }
+
     protected boolean filesSnapshotFileExists(TableProperties table, long transactionNumber) throws IOException {
         return fs.exists(new Path(filesSnapshot(table, transactionNumber).getPath()));
     }
@@ -218,7 +226,7 @@ public class TransactionLogSnapshotTestBase {
         RemoteIterator<LocatedFileStatus> iterator = fs.listFiles(tableFilesPath, true);
         List<String> files = new ArrayList<>();
         while (iterator.hasNext()) {
-            files.add(iterator.next().getPath().getName());
+            files.add(iterator.next().getPath().toUri().toString());
         }
         return files.stream();
     }
