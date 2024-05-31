@@ -26,6 +26,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.time.Instant;
 
@@ -63,13 +64,13 @@ public class TransactionLogSnapshotDeleter {
                         Path path = new Path(snapshot.getPath());
                         FileSystem fs = path.getFileSystem(configuration);
                         if (!fs.exists(path)) {
-                            LOGGER.warn("Failed to delete file. File has already been deleted: {}", snapshot.getPath());
-                            return;
+                            LOGGER.warn("Snapshot file has already been deleted: {}", snapshot.getPath());
+                        } else {
+                            fs.delete(path, false);
                         }
-                        fs.delete(path, false);
                     } catch (IOException e) {
-                        LOGGER.error("Failed to delete file: {}", snapshot.getPath(), e);
-                        return;
+                        LOGGER.error("Failed to delete snapshot file: {}", snapshot.getPath(), e);
+                        throw new UncheckedIOException(e);
                     }
                     metadataStore.deleteSnapshot(snapshot);
                 });
