@@ -41,6 +41,10 @@ Snappy Java (org.xerial.snappy:snappy-java:1.1.10.5):
 
 - Apache License, Version 2.0
 
+Aircompressor (io.airlift:aircompressor:0.27):
+
+- Apache License, Version 2.0
+
 Protocol Buffers (com.google.protobuf:protobuf-java:4.26.1):
 
 - The 3-Clause BSD License

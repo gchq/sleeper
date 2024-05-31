@@ -239,9 +239,9 @@ public class ProcessRun {
         }
 
         /**
-         * Sets the finished status.
+         * Sets the status update that ends the run.
          *
-         * @param  finishedStatus the finished status to set
+         * @param  finishedStatus the update to set
          * @return                the builder
          */
         public Builder finishedStatus(ProcessRunFinishedUpdate finishedStatus) {

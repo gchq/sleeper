@@ -55,7 +55,6 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 import java.util.Objects;
 
 import static sleeper.cdk.Utils.createAlarmForDlq;
@@ -133,7 +132,8 @@ public class IngestStack extends NestedStack {
 
     private Queue sqsQueueForIngestJobs(CoreStacks coreStacks, Topic topic, List<IMetric> errorMetrics) {
         // Create queue for ingest job definitions
-        String dlQueueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-IngestJobDLQ");
+        String instanceId = Utils.cleanInstanceId(instanceProperties);
+        String dlQueueName = String.join("-", "sleeper", instanceId, "IngestJobDLQ");
 
         ingestDLQ = Queue.Builder
                 .create(this, "IngestJobDeadLetterQueue")
@@ -143,7 +143,7 @@ public class IngestStack extends NestedStack {
                 .maxReceiveCount(1)
                 .queue(ingestDLQ)
                 .build();
-        String queueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-IngestJobQ");
+        String queueName = String.join("-", "sleeper", instanceId, "IngestJobQ");
         ingestJobQueue = Queue.Builder
                 .create(this, "IngestJobQueue")
                 .queueName(queueName)
@@ -191,8 +191,8 @@ public class IngestStack extends NestedStack {
                 .vpcId(instanceProperties.get(VPC_ID))
                 .build();
         IVpc vpc = Vpc.fromLookup(this, "VPC1", vpcLookupOptions);
-        String clusterName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "ingest-cluster"));
+        String instanceId = Utils.cleanInstanceId(instanceProperties);
+        String clusterName = String.join("-", "sleeper", instanceId, "ingest-cluster");
         Cluster cluster = Cluster.Builder
                 .create(this, "IngestCluster")
                 .clusterName(clusterName)
@@ -203,7 +203,7 @@ public class IngestStack extends NestedStack {
 
         FargateTaskDefinition taskDefinition = FargateTaskDefinition.Builder
                 .create(this, "IngestTaskDefinition")
-                .family(instanceProperties.get(ID) + "IngestTaskFamily")
+                .family(String.join("-", "sleeper", instanceId, "IngestTask"))
                 .cpu(instanceProperties.getInt(INGEST_TASK_CPU))
                 .memoryLimitMiB(instanceProperties.getInt(INGEST_TASK_MEMORY))
                 .build();
@@ -250,8 +250,8 @@ public class IngestStack extends NestedStack {
     private void lambdaToCreateIngestTasks(CoreStacks coreStacks, Queue ingestJobQueue, LambdaCode taskCreatorJar) {
 
         // Run tasks function
-        String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "ingest-tasks-creator"));
+        String functionName = String.join("-", "sleeper",
+                Utils.cleanInstanceId(instanceProperties), "ingest-create-tasks");
 
         IFunction handler = taskCreatorJar.buildFunction(this, "IngestTasksCreator", builder -> builder
                 .functionName(functionName)

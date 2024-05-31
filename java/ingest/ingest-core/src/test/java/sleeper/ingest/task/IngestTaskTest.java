@@ -19,6 +19,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.ingest.IngestResult;
 import sleeper.ingest.job.IngestJob;
@@ -43,8 +44,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ingest.IngestResultTestData.defaultFileIngestResult;
 import static sleeper.ingest.IngestResultTestData.defaultFileIngestResultReadAndWritten;
 import static sleeper.ingest.job.IngestJobTestData.DEFAULT_TABLE_ID;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.failedIngestJob;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestJob;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestJob;
 import static sleeper.ingest.task.IngestTaskStatusTestData.finishedMultipleJobs;
 import static sleeper.ingest.task.IngestTaskStatusTestData.finishedNoJobs;
 import static sleeper.ingest.task.IngestTaskStatusTestData.finishedOneJob;
@@ -227,20 +228,28 @@ public class IngestTaskTest {
             // Given
             Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
-                    Instant.parse("2024-02-22T13:50:01Z"), // Job start + fail
-                    Instant.parse("2024-02-22T13:50:05Z"))); // Finish
+                    Instant.parse("2024-02-22T13:50:01Z"), // Job start
+                    Instant.parse("2024-02-22T13:50:05Z"), // Job failed
+                    Instant.parse("2024-02-22T13:50:06Z"))); // Task finish
             IngestJob job = createJobOnQueue("job1");
+            RuntimeException root = new RuntimeException("Root cause details");
+            RuntimeException cause = new RuntimeException("Failure cause details", root);
+            RuntimeException failure = new RuntimeException("Something went wrong", cause);
 
             // When
-            runTask("test-task-1", processJobs(jobFails()), times::poll);
+            runTask("test-task-1", processJobs(jobFails(failure)), times::poll);
 
             // Then
             assertThat(taskStore.getAllTasks()).containsExactly(
                     finishedNoJobs("test-task-1",
                             Instant.parse("2024-02-22T13:50:00Z"),
-                            Instant.parse("2024-02-22T13:50:05Z")));
+                            Instant.parse("2024-02-22T13:50:06Z")));
             assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
-                    startedIngestJob(job, "test-task-1", Instant.parse("2024-02-22T13:50:01Z")));
+                    failedIngestJob(job, "test-task-1",
+                            new ProcessRunTime(
+                                    Instant.parse("2024-02-22T13:50:01Z"),
+                                    Instant.parse("2024-02-22T13:50:05Z")),
+                            List.of("Something went wrong", "Failure cause details", "Root cause details")));
         }
 
         @Test
@@ -250,29 +259,34 @@ public class IngestTaskTest {
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:01Z"), // Job 1 start
                     Instant.parse("2024-02-22T13:50:02Z"), // Job 1 finish
-                    Instant.parse("2024-02-22T13:50:03Z"), // Job 2 start + fail
-                    Instant.parse("2024-02-22T13:50:05Z"))); // Finish
+                    Instant.parse("2024-02-22T13:50:03Z"), // Job 2 start
+                    Instant.parse("2024-02-22T13:50:05Z"), // Job 2 failed
+                    Instant.parse("2024-02-22T13:50:06Z"))); // Task finish
             IngestJob job1 = createJobOnQueue("job1");
             IngestJob job2 = createJobOnQueue("job2");
+            RuntimeException failure = new RuntimeException("Something went wrong");
 
             // When
             IngestResult job1Result = recordsReadAndWritten(10L, 10L);
             runTask("test-task-1", processJobs(
                     jobSucceeds(job1Result),
-                    jobFails()),
+                    jobFails(failure)),
                     times::poll);
 
             // Then
             assertThat(taskStore.getAllTasks()).containsExactly(
                     finishedOneJob("test-task-1",
-                            Instant.parse("2024-02-22T13:50:00Z"), Instant.parse("2024-02-22T13:50:05Z"),
+                            Instant.parse("2024-02-22T13:50:00Z"), Instant.parse("2024-02-22T13:50:06Z"),
                             Instant.parse("2024-02-22T13:50:01Z"), Instant.parse("2024-02-22T13:50:02Z"), 10L, 10L));
             assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactlyInAnyOrder(
                     finishedIngestJob(job1, "test-task-1", summary(job1Result,
                             Instant.parse("2024-02-22T13:50:01Z"),
                             Instant.parse("2024-02-22T13:50:02Z"))),
-                    startedIngestJob(job2, "test-task-1",
-                            Instant.parse("2024-02-22T13:50:03Z")));
+                    failedIngestJob(job2, "test-task-1",
+                            new ProcessRunTime(
+                                    Instant.parse("2024-02-22T13:50:03Z"),
+                                    Instant.parse("2024-02-22T13:50:05Z")),
+                            List.of("Something went wrong")));
         }
 
         @Test
@@ -390,15 +404,19 @@ public class IngestTaskTest {
     }
 
     private ProcessJob jobSucceeds(IngestResult result) {
-        return new ProcessJob(true, result);
+        return new ProcessJob(result);
     }
 
     private ProcessJob jobSucceeds() {
-        return new ProcessJob(true, defaultFileIngestResult("test-file"));
+        return new ProcessJob(defaultFileIngestResult("test-file"));
     }
 
     private ProcessJob jobFails() {
-        return new ProcessJob(false, defaultFileIngestResult("test-file"));
+        return new ProcessJob(new RuntimeException("Failed to process job"));
+    }
+
+    private ProcessJob jobFails(RuntimeException e) {
+        return new ProcessJob(e);
     }
 
     private IngestJobHandler processNoJobs() {
@@ -410,12 +428,12 @@ public class IngestTaskTest {
         return job -> {
             if (getAction.hasNext()) {
                 ProcessJob action = getAction.next();
-                try {
-                    action.run(job);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
+                if (action.failure != null) {
+                    throw action.failure;
+                } else {
+                    successfulJobs.add(job);
+                    return action.result;
                 }
-                return action.result;
             } else {
                 throw new IllegalStateException("Unexpected job: " + job);
             }
@@ -423,20 +441,17 @@ public class IngestTaskTest {
     }
 
     private class ProcessJob {
-        private final boolean succeed;
+        private final RuntimeException failure;
         private final IngestResult result;
 
-        ProcessJob(boolean succeed, IngestResult result) {
-            this.succeed = succeed;
-            this.result = result;
+        ProcessJob(RuntimeException failure) {
+            this.failure = failure;
+            this.result = null;
         }
 
-        public void run(IngestJob job) throws Exception {
-            if (succeed) {
-                successfulJobs.add(job);
-            } else {
-                throw new Exception("Failed to process job");
-            }
+        ProcessJob(IngestResult result) {
+            this.failure = null;
+            this.result = result;
         }
     }
 

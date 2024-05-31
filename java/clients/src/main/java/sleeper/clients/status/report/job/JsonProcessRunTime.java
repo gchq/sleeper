@@ -20,23 +20,24 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
-import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.record.process.ProcessRunTime;
 
-public class JsonRecordsProcessedSummary {
+public class JsonProcessRunTime {
 
-    private JsonRecordsProcessedSummary() {
+    private JsonProcessRunTime() {
     }
 
-    public static JsonSerializer<RecordsProcessedSummary> serializer() {
-        return (summary, type, context) -> createSummaryJson(summary, context);
+    public static JsonSerializer<ProcessRunTime> serializer() {
+        return (runTime, type, context) -> createRunTimeJson(runTime, context);
     }
 
-    private static JsonElement createSummaryJson(RecordsProcessedSummary summary, JsonSerializationContext context) {
+    private static JsonElement createRunTimeJson(ProcessRunTime runTime, JsonSerializationContext context) {
         JsonObject jsonObject = new JsonObject();
-        jsonObject.add("recordsProcessed", context.serialize(summary.getRecordsProcessed()));
-        jsonObject.add("runTime", context.serialize(summary.getRunTime()));
-        jsonObject.addProperty("recordsReadPerSecond", summary.getRecordsReadPerSecond());
-        jsonObject.addProperty("recordsWrittenPerSecond", summary.getRecordsWrittenPerSecond());
+        jsonObject.add("startTime", context.serialize(runTime.getStartTime()));
+        jsonObject.add("finishTime", context.serialize(runTime.getFinishTime()));
+        jsonObject.addProperty("durationInSeconds", runTime.getDurationInSeconds());
+        jsonObject.addProperty("timeInProcessInSeconds", runTime.getTimeInProcessInSeconds());
         return jsonObject;
     }
+
 }

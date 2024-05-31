@@ -16,6 +16,7 @@
 
 package sleeper.ingest.job.status;
 
+import sleeper.core.record.process.status.ProcessFailedStatus;
 import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessStatusUpdate;
 
@@ -25,7 +26,8 @@ public enum IngestJobStatusType {
     REJECTED(IngestJobRejectedStatus.class, 1),
     ACCEPTED(IngestJobAcceptedStatus.class, 2),
     IN_PROGRESS(IngestJobStartedStatus.class, 3),
-    FINISHED(ProcessFinishedStatus.class, 4);
+    FINISHED(ProcessFinishedStatus.class, 4),
+    FAILED(ProcessFailedStatus.class, 5);
 
     private final Class<?> statusUpdateClass;
     private final int order;

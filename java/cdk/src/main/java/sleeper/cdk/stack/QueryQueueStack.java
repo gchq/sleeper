@@ -62,7 +62,8 @@ public class QueryQueueStack extends NestedStack {
      * @return                    the queue to be used for queries
      */
     private Queue setupQueryQueue(InstanceProperties instanceProperties, Topic topic, CoreStacks coreStacks, List<IMetric> errorMetrics) {
-        String dlQueueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-QueryDLQ");
+        String instanceId = Utils.cleanInstanceId(instanceProperties);
+        String dlQueueName = String.join("-", "sleeper", instanceId, "QueryDLQ");
         Queue queryDlq = Queue.Builder
                 .create(this, "QueryDeadLetterQueue")
                 .queueName(dlQueueName)
@@ -71,7 +72,7 @@ public class QueryQueueStack extends NestedStack {
                 .maxReceiveCount(1)
                 .queue(queryDlq)
                 .build();
-        String queryQueueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-QueryQueue");
+        String queryQueueName = String.join("-", "sleeper", instanceId, "QueryQueue");
         Queue queryQueue = Queue.Builder
                 .create(this, "QueryQueue")
                 .queueName(queryQueueName)

@@ -26,6 +26,7 @@ import sleeper.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.StateStore;
@@ -39,6 +40,7 @@ import java.util.Queue;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.compaction.job.CompactionJobStatusTestData.failedCompactionRun;
 import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionRun;
@@ -261,21 +263,29 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             // Given
             Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
-                    Instant.parse("2024-02-22T13:50:01Z"), // Job started
-                    Instant.parse("2024-02-22T13:50:05Z"))); // Finish
+                    Instant.parse("2024-02-22T13:50:01Z"), // Job start
+                    Instant.parse("2024-02-22T13:50:05Z"), // Job failed
+                    Instant.parse("2024-02-22T13:50:06Z"))); // Task finish
             CompactionJob job = createJobOnQueue("job1");
+            RuntimeException root = new RuntimeException("Root failure");
+            RuntimeException cause = new RuntimeException("Details of cause", root);
+            RuntimeException failure = new RuntimeException("Something went wrong", cause);
 
             // When
-            runTask("test-task-1", processJobs(jobFails()), times::poll);
+            runTask("test-task-1", processJobs(jobFails(failure)), times::poll);
 
             // Then
             assertThat(taskStore.getAllTasks()).containsExactly(
                     finishedCompactionTask("test-task-1",
                             Instant.parse("2024-02-22T13:50:00Z"),
-                            Instant.parse("2024-02-22T13:50:05Z")));
+                            Instant.parse("2024-02-22T13:50:06Z")));
             assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
                     jobCreated(job, DEFAULT_CREATED_TIME,
-                            startedCompactionRun("test-task-1", Instant.parse("2024-02-22T13:50:01Z"))));
+                            failedCompactionRun("test-task-1",
+                                    new ProcessRunTime(
+                                            Instant.parse("2024-02-22T13:50:01Z"),
+                                            Instant.parse("2024-02-22T13:50:05Z")),
+                                    List.of("Something went wrong", "Details of cause", "Root failure"))));
         }
 
         @Test

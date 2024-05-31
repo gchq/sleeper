@@ -25,10 +25,7 @@ import java.util.Objects;
 public class RecordsProcessedSummary {
 
     private final RecordsProcessed recordsProcessed;
-    private final Instant startTime;
-    private final Instant finishTime;
-    private final Duration duration;
-    private final Duration timeInProcess;
+    private final ProcessRunTime runTime;
     private final double recordsReadPerSecond;
     private final double recordsWrittenPerSecond;
 
@@ -41,13 +38,15 @@ public class RecordsProcessedSummary {
     }
 
     public RecordsProcessedSummary(RecordsProcessed recordsProcessed, Instant startTime, Instant finishTime, Duration timeInProcess) {
+        this(recordsProcessed, new ProcessRunTime(startTime, finishTime, timeInProcess));
+    }
+
+    public RecordsProcessedSummary(RecordsProcessed recordsProcessed, ProcessRunTime runTime) {
         this.recordsProcessed = Objects.requireNonNull(recordsProcessed, "recordsProcessed must not be null");
-        this.startTime = Objects.requireNonNull(startTime, "startTime must not be null");
-        this.finishTime = Objects.requireNonNull(finishTime, "finishTime must not be null");
-        this.timeInProcess = Objects.requireNonNull(timeInProcess, "timeInProcess must not be null");
-        this.duration = Duration.between(startTime, finishTime);
-        this.recordsReadPerSecond = recordsProcessed.getRecordsRead() / (this.timeInProcess.toMillis() / 1000.0);
-        this.recordsWrittenPerSecond = recordsProcessed.getRecordsWritten() / (this.timeInProcess.toMillis() / 1000.0);
+        this.runTime = Objects.requireNonNull(runTime, "runTime must not be null");
+        double secondsInProcess = runTime.getTimeInProcessInSeconds();
+        this.recordsReadPerSecond = recordsProcessed.getRecordsRead() / secondsInProcess;
+        this.recordsWrittenPerSecond = recordsProcessed.getRecordsWritten() / secondsInProcess;
     }
 
     /**
@@ -62,6 +61,16 @@ public class RecordsProcessedSummary {
                 startTime, Duration.ZERO);
     }
 
+    /**
+     * Creates an instance of this class with no records processed, and the given run time.
+     *
+     * @param  runTime the run time
+     * @return         an instance of this class
+     */
+    public static RecordsProcessedSummary noRecordsProcessed(ProcessRunTime runTime) {
+        return new RecordsProcessedSummary(new RecordsProcessed(0, 0), runTime);
+    }
+
     public long getRecordsRead() {
         return recordsProcessed.getRecordsRead();
     }
@@ -74,24 +83,28 @@ public class RecordsProcessedSummary {
         return recordsProcessed;
     }
 
+    public ProcessRunTime getRunTime() {
+        return runTime;
+    }
+
     public Instant getStartTime() {
-        return startTime;
+        return runTime.getStartTime();
     }
 
     public Instant getFinishTime() {
-        return finishTime;
+        return runTime.getFinishTime();
     }
 
     public double getDurationInSeconds() {
-        return duration.toMillis() / 1000.0;
+        return runTime.getDurationInSeconds();
     }
 
     public Duration getDuration() {
-        return duration;
+        return runTime.getDuration();
     }
 
     public Duration getTimeInProcess() {
-        return timeInProcess;
+        return runTime.getTimeInProcess();
     }
 
     public double getRecordsReadPerSecond() {
@@ -111,24 +124,19 @@ public class RecordsProcessedSummary {
             return false;
         }
         RecordsProcessedSummary that = (RecordsProcessedSummary) o;
-        return recordsProcessed.equals(that.recordsProcessed) &&
-                startTime.equals(that.startTime) && finishTime.equals(that.finishTime) &&
-                timeInProcess.equals(that.timeInProcess);
+        return recordsProcessed.equals(that.recordsProcessed) && runTime.equals(that.runTime);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(recordsProcessed, startTime, finishTime, timeInProcess);
+        return Objects.hash(recordsProcessed, runTime);
     }
 
     @Override
     public String toString() {
         return "RecordsProcessedSummary{" +
                 "recordsProcessed=" + recordsProcessed +
-                ", startTime=" + startTime +
-                ", finishTime=" + finishTime +
-                ", duration=" + duration +
-                ", timeInProcess=" + timeInProcess +
+                ", runTime=" + runTime +
                 ", recordsReadPerSecond=" + recordsReadPerSecond +
                 ", recordsWrittenPerSecond=" + recordsWrittenPerSecond +
                 '}';
