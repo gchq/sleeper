@@ -24,23 +24,30 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.record.process.status.ProcessFailedStatus;
 import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessStatusUpdate;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
+import sleeper.dynamodb.tools.DynamoDBAttributes;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
 import java.security.SecureRandom;
+import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.stream.Stream;
 
+import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getInstantAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getIntAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getLongAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getStringAttribute;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.getStringListAttribute;
 
 class DynamoDBCompactionJobStatusFormat {
 
@@ -56,12 +63,15 @@ class DynamoDBCompactionJobStatusFormat {
     private static final String INPUT_FILES_COUNT = "InputFilesCount";
     private static final String START_TIME = "StartTime";
     private static final String FINISH_TIME = "FinishTime";
+    private static final String MILLIS_IN_PROCESS = "MillisInProcess";
     private static final String RECORDS_READ = "RecordsRead";
     private static final String RECORDS_WRITTEN = "RecordsWritten";
+    private static final String FAILURE_REASONS = "FailureReasons";
     private static final String TASK_ID = "TaskId";
     private static final String UPDATE_TYPE_CREATED = "created";
     private static final String UPDATE_TYPE_STARTED = "started";
     private static final String UPDATE_TYPE_FINISHED = "finished";
+    private static final String UPDATE_TYPE_FAILED = "failed";
 
     private static final Random JOB_UPDATE_ID_GENERATOR = new SecureRandom();
 
@@ -92,8 +102,23 @@ class DynamoDBCompactionJobStatusFormat {
                 .number(START_TIME, summary.getStartTime().toEpochMilli())
                 .string(TASK_ID, taskId)
                 .number(FINISH_TIME, summary.getFinishTime().toEpochMilli())
+                .number(MILLIS_IN_PROCESS, summary.getTimeInProcess().toMillis())
                 .number(RECORDS_READ, summary.getRecordsRead())
                 .number(RECORDS_WRITTEN, summary.getRecordsWritten())
+                .build();
+    }
+
+    public static Map<String, AttributeValue> createJobFailedUpdate(
+            ProcessRunTime runTime, String taskId, List<String> failureReasons, DynamoDBRecordBuilder builder) {
+        return builder
+                .string(UPDATE_TYPE, UPDATE_TYPE_FAILED)
+                .number(START_TIME, runTime.getStartTime().toEpochMilli())
+                .string(TASK_ID, taskId)
+                .number(FINISH_TIME, runTime.getFinishTime().toEpochMilli())
+                .number(MILLIS_IN_PROCESS, runTime.getTimeInProcess().toMillis())
+                .list(FAILURE_REASONS, failureReasons.stream()
+                        .map(DynamoDBAttributes::createStringAttribute)
+                        .collect(toUnmodifiableList()))
                 .build();
     }
 
@@ -144,11 +169,25 @@ class DynamoDBCompactionJobStatusFormat {
                         new RecordsProcessedSummary(new RecordsProcessed(
                                 getLongAttribute(item, RECORDS_READ, 0),
                                 getLongAttribute(item, RECORDS_WRITTEN, 0)),
-                                getInstantAttribute(item, START_TIME),
-                                getInstantAttribute(item, FINISH_TIME)));
+                                getRunTime(item)));
+            case UPDATE_TYPE_FAILED:
+                return ProcessFailedStatus.timeAndReasons(
+                        getInstantAttribute(item, UPDATE_TIME),
+                        getRunTime(item),
+                        getStringListAttribute(item, FAILURE_REASONS));
             default:
                 LOGGER.warn("Found record with unrecognised update type: {}", item);
                 throw new IllegalArgumentException("Found record with unrecognised update type");
         }
+    }
+
+    private static ProcessRunTime getRunTime(Map<String, AttributeValue> item) {
+        Instant startTime = getInstantAttribute(item, START_TIME);
+        Instant finishTime = getInstantAttribute(item, FINISH_TIME);
+        long millisInProcess = getLongAttribute(item, MILLIS_IN_PROCESS, -1);
+        Duration timeInProcess = millisInProcess > -1
+                ? Duration.ofMillis(millisInProcess)
+                : Duration.between(startTime, finishTime);
+        return new ProcessRunTime(startTime, finishTime, timeInProcess);
     }
 }

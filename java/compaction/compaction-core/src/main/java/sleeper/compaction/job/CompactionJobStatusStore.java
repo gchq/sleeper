@@ -16,6 +16,7 @@
 package sleeper.compaction.job;
 
 import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessedSummary;
 
 import java.time.Instant;
@@ -36,6 +37,9 @@ public interface CompactionJobStatusStore {
     }
 
     default void jobFinished(CompactionJob compactionJob, RecordsProcessedSummary summary, String taskId) {
+    }
+
+    default void jobFailed(CompactionJob compactionJob, ProcessRunTime runTime, String taskId, List<String> failureReasons) {
     }
 
     default Optional<CompactionJobStatus> getJob(String jobId) {

@@ -238,15 +238,19 @@ public class CompactionTaskTestBase {
     }
 
     protected ProcessJob jobSucceeds(RecordsProcessed summary) {
-        return new ProcessJob(true, summary);
+        return new ProcessJob(summary);
     }
 
     protected ProcessJob jobSucceeds() {
-        return new ProcessJob(true, 10L);
+        return new ProcessJob(10L);
     }
 
     protected ProcessJob jobFails() {
-        return new ProcessJob(false, 0L);
+        return new ProcessJob(new RuntimeException("Something failed"));
+    }
+
+    protected ProcessJob jobFails(RuntimeException failure) {
+        return new ProcessJob(failure);
     }
 
     protected CompactionRunner processNoJobs() {
@@ -258,8 +262,12 @@ public class CompactionTaskTestBase {
         return job -> {
             if (getAction.hasNext()) {
                 ProcessJob action = getAction.next();
-                action.run(job);
-                return action.summary;
+                if (action.failure != null) {
+                    throw action.failure;
+                } else {
+                    successfulJobs.add(job);
+                    return action.recordsProcessed;
+                }
             } else {
                 throw new IllegalStateException("Unexpected job: " + job);
             }
@@ -267,24 +275,21 @@ public class CompactionTaskTestBase {
     }
 
     protected class ProcessJob {
-        private final boolean succeed;
-        private final RecordsProcessed summary;
+        private final RuntimeException failure;
+        private final RecordsProcessed recordsProcessed;
 
-        ProcessJob(boolean succeed, long records) {
-            this(succeed, new RecordsProcessed(records, records));
+        ProcessJob(RuntimeException failure) {
+            this.failure = failure;
+            this.recordsProcessed = null;
         }
 
-        ProcessJob(boolean succeed, RecordsProcessed summary) {
-            this.succeed = succeed;
-            this.summary = summary;
+        ProcessJob(long records) {
+            this(new RecordsProcessed(records, records));
         }
 
-        public void run(CompactionJob job) throws Exception {
-            if (succeed) {
-                successfulJobs.add(job);
-            } else {
-                throw new Exception("Failed to process job");
-            }
+        ProcessJob(RecordsProcessed summary) {
+            this.failure = null;
+            this.recordsProcessed = summary;
         }
     }
 

@@ -24,11 +24,14 @@ import sleeper.compaction.job.CompactionJobTestDataHelper;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessedSummary;
 
 import java.time.Instant;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.compaction.job.CompactionJobStatusTestData.failedCompactionStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobStatusFrom;
@@ -98,6 +101,26 @@ class InMemoryCompactionJobStatusStoreTest {
                             forJobOnTask(job.getId(), taskId,
                                     startedCompactionStatus(startedTime),
                                     finishedCompactionStatus(summary(startedTime, finishedTime, 100, 100))))));
+        }
+
+        @Test
+        void shouldStoreFailedJob() {
+            // Given
+            Instant createdTime = Instant.parse("2023-03-29T12:27:42Z");
+            Instant startedTime = Instant.parse("2023-03-29T12:27:43Z");
+            Instant finishedTime = Instant.parse("2023-03-29T12:27:44Z");
+            String taskId = "test-task";
+            List<String> failureReasons = List.of("Something went wrong");
+            CompactionJob job = addFailedJob(createdTime,
+                    new ProcessRunTime(startedTime, finishedTime), taskId, failureReasons);
+
+            // When / Then
+            assertThat(store.streamAllJobs(tableId))
+                    .containsExactly(jobStatusFrom(records().fromUpdates(
+                            forJob(job.getId(), CompactionJobCreatedStatus.from(job, createdTime)),
+                            forJobOnTask(job.getId(), taskId,
+                                    startedCompactionStatus(startedTime),
+                                    failedCompactionStatus(new ProcessRunTime(startedTime, finishedTime), failureReasons)))));
         }
 
         @Test
@@ -336,6 +359,13 @@ class InMemoryCompactionJobStatusStoreTest {
         CompactionJob job = addStartedJob(createdTime, summary.getStartTime(), taskId);
         store.fixUpdateTime(defaultUpdateTime(summary.getFinishTime()));
         store.jobFinished(job, summary, taskId);
+        return job;
+    }
+
+    private CompactionJob addFailedJob(Instant createdTime, ProcessRunTime runTime, String taskId, List<String> failureReasons) {
+        CompactionJob job = addStartedJob(createdTime, runTime.getStartTime(), taskId);
+        store.fixUpdateTime(defaultUpdateTime(runTime.getFinishTime()));
+        store.jobFailed(job, runTime, taskId, failureReasons);
         return job;
     }
 }
