@@ -46,6 +46,7 @@ import sleeper.core.statestore.transactionlog.TransactionLogStore;
 import sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.LatestSnapshotsMetadataLoader;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.SnapshotMetadataSaver;
+import sleeper.statestore.transactionlog.TransactionLogSnapshotDeleter.SnapshotFileDeleter;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -150,6 +151,12 @@ public class TransactionLogSnapshotTestBase {
     protected void deleteSnapshotsAt(TableProperties table, Instant deletionTime) {
         new TransactionLogSnapshotDeleter(
                 instanceProperties, table, dynamoDBClient, configuration)
+                .deleteSnapshots(deletionTime);
+    }
+
+    protected void deleteSnapshotsAt(TableProperties table, Instant deletionTime, SnapshotFileDeleter fileDeleter) {
+        new TransactionLogSnapshotDeleter(
+                instanceProperties, table, dynamoDBClient, fileDeleter)
                 .deleteSnapshots(deletionTime);
     }
 

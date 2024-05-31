@@ -37,16 +37,22 @@ import static sleeper.configuration.properties.table.TableProperty.TRANSACTION_L
  */
 public class TransactionLogSnapshotDeleter {
     public static final Logger LOGGER = LoggerFactory.getLogger(TransactionLogSnapshotDeleter.class);
-    private final Configuration configuration;
     private final DynamoDBTransactionLogSnapshotMetadataStore metadataStore;
     private final Duration expiryInDays;
+    private final SnapshotFileDeleter snapshotFileDeleter;
 
     public TransactionLogSnapshotDeleter(
             InstanceProperties instanceProperties, TableProperties tableProperties,
             AmazonDynamoDB dynamoDB, Configuration configuration) {
-        this.configuration = configuration;
+        this(instanceProperties, tableProperties, dynamoDB, hadoopFileDeleter(configuration));
+    }
+
+    public TransactionLogSnapshotDeleter(
+            InstanceProperties instanceProperties, TableProperties tableProperties,
+            AmazonDynamoDB dynamoDB, SnapshotFileDeleter fileDeleter) {
         this.metadataStore = new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamoDB);
         this.expiryInDays = Duration.ofDays(tableProperties.getInt(TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS));
+        this.snapshotFileDeleter = fileDeleter;
     }
 
     /**
@@ -61,18 +67,37 @@ public class TransactionLogSnapshotDeleter {
                 .forEach(snapshot -> {
                     LOGGER.info("Deleting snapshot {}", snapshot);
                     try {
-                        Path path = new Path(snapshot.getPath());
-                        FileSystem fs = path.getFileSystem(configuration);
-                        if (!fs.exists(path)) {
-                            LOGGER.warn("Snapshot file has already been deleted: {}", snapshot.getPath());
-                        } else {
-                            fs.delete(path, false);
-                        }
+                        snapshotFileDeleter.delete(snapshot.getPath());
                     } catch (IOException e) {
                         LOGGER.error("Failed to delete snapshot file: {}", snapshot.getPath(), e);
                         throw new UncheckedIOException(e);
                     }
                     metadataStore.deleteSnapshot(snapshot);
                 });
+    }
+
+    private static SnapshotFileDeleter hadoopFileDeleter(Configuration configuration) {
+        return file -> {
+            Path path = new Path(file);
+            FileSystem fs = path.getFileSystem(configuration);
+            if (!fs.exists(path)) {
+                LOGGER.warn("Snapshot file has already been deleted: {}", file);
+            } else {
+                fs.delete(path, false);
+            }
+        };
+    }
+
+    /**
+     * Deletes a snapshot file.
+     */
+    public interface SnapshotFileDeleter {
+        /**
+         * Deletes a snapshot file.
+         *
+         * @param  path        the path to the snapshot file
+         * @throws IOException if the file fails to delete
+         */
+        void delete(String path) throws IOException;
     }
 }

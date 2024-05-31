@@ -22,10 +22,14 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotMetadataStore.LatestSnapshots;
+import sleeper.statestore.transactionlog.TransactionLogSnapshotDeleter.SnapshotFileDeleter;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.table.TableProperty.TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS;
 
 public class TransactionLogSnapshotDeleterIT extends TransactionLogSnapshotTestBase {
@@ -132,6 +136,46 @@ public class TransactionLogSnapshotDeleterIT extends TransactionLogSnapshotTestB
     }
 
     @Test
+    void shouldNotDeleteSnapshotMetadataIfSnapshotFileFailedToDelete() throws Exception {
+        // Given
+        TableProperties table = createTable("test-table-id-1", "test-table-1");
+        table.setNumber(TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS, 1);
+        StateStore stateStore = createStateStoreWithInMemoryTransactionLog(table);
+        PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema).rootFirst("root");
+        stateStore.initialise(partitionsBuilder.buildList());
+        FileReferenceFactory factory = FileReferenceFactory.from(stateStore);
+        stateStore.addFile(factory.rootFile("test1.parquet", 123L));
+        createSnapshotsAt(table, Instant.parse("2024-04-24T11:24:00Z"));
+        stateStore.clearFileData();
+        stateStore.initialise(partitionsBuilder.splitToNewChildren("root", "L", "R", 123L).buildList());
+        factory = FileReferenceFactory.from(stateStore);
+        stateStore.addFile(factory.rootFile("test3.parquet", 789L));
+        createSnapshotsAt(table, Instant.parse("2024-04-25T11:24:00Z"));
+        IOException exception = new IOException("Failed to delete file");
+
+        // When / Then
+        assertThatThrownBy(() -> deleteSnapshotsAt(table, Instant.parse("2024-04-27T11:24:00Z"), failedDeletion(exception)))
+                .isInstanceOf(UncheckedIOException.class)
+                .hasCause(exception);
+        assertThat(snapshotStore(table).getLatestSnapshots())
+                .isEqualTo(new LatestSnapshots(
+                        filesSnapshot(table, 3),
+                        partitionsSnapshot(table, 2)));
+        assertThat(snapshotStore(table).getFilesSnapshots())
+                .containsExactlyInAnyOrder(
+                        filesSnapshot(table, 3),
+                        filesSnapshot(table, 1));
+        assertThat(snapshotStore(table).getPartitionsSnapshots())
+                .containsExactlyInAnyOrder(
+                        partitionsSnapshot(table, 2),
+                        partitionsSnapshot(table, 1));
+        assertThat(tableFiles(table))
+                .containsExactlyInAnyOrder(
+                        "3-files.parquet", "1-files.parquet",
+                        "2-partitions.parquet", "1-partitions.parquet");
+    }
+
+    @Test
     void shouldDeleteOldSnapshotMetadataIfSnapshotFilesHaveAlreadyBeenDeleted() throws Exception {
         // Given
         TableProperties table = createTable("test-table-id-1", "test-table-1");
@@ -165,5 +209,11 @@ public class TransactionLogSnapshotDeleterIT extends TransactionLogSnapshotTestB
                 .containsExactly(partitionsSnapshot(table, 2));
         assertThat(tableFiles(table))
                 .containsExactlyInAnyOrder("3-files.parquet", "2-partitions.parquet");
+    }
+
+    private SnapshotFileDeleter failedDeletion(IOException e) {
+        return file -> {
+            throw e;
+        };
     }
 }
