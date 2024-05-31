@@ -130,7 +130,8 @@ public class IngestTask {
     }
 
     /**
-     * An interface for receiving message handles.
+     * An interface for receiving ingest job messages. This is so that the message can be deleted or
+     * returned to the queue, depending on whether the ingest job succeeds or fails.
      */
     @FunctionalInterface
     public interface MessageReceiver {
@@ -143,30 +144,32 @@ public class IngestTask {
     }
 
     /**
-     * An interface for a message. Used to control the message visibility of an SQS message.
+     * An interface for an ingest job message. Used to control the message visibility of an SQS message.
      */
     public interface MessageHandle extends AutoCloseable {
         /**
-         * Gets the ingest job this message handle is linked to.
+         * Reads the ingest job from the message.
          *
          * @return an {@link IngestJob}
          */
         IngestJob getJob();
 
         /**
-         * Called when a job completes successfully.
+         * Called when a job completes successfully. This will delete the message from the queue, and may run further
+         * reporting on the job.
          *
          * @param summary the records processed summary for the finished job
          */
         void completed(RecordsProcessedSummary summary);
 
         /**
-         * Called when a job fails.
+         * Called when a job fails. This will return the message to the queue to be retried.
          */
         void failed();
 
         /**
-         * Called when this message handle is closed.
+         * Called when this message handle is closed. This will stop the ingest task from updating SQS to keep the
+         * message assigned to the task. This is called whether the job succeeds or fails.
          */
         void close();
     }
