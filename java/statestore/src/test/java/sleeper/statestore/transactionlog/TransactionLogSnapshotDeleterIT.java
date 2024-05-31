@@ -60,7 +60,7 @@ public class TransactionLogSnapshotDeleterIT extends TransactionLogSnapshotTestB
                 .containsExactly(filesSnapshot(table, 3));
         assertThat(snapshotStore(table).getPartitionsSnapshots())
                 .containsExactly(partitionsSnapshot(table, 2));
-        assertThat(snapshotFiles(table))
+        assertThat(tableFiles(table))
                 .containsExactlyInAnyOrder("3-files.parquet", "2-partitions.parquet");
     }
 
@@ -98,7 +98,7 @@ public class TransactionLogSnapshotDeleterIT extends TransactionLogSnapshotTestB
                 .containsExactlyInAnyOrder(
                         partitionsSnapshot(table, 2),
                         partitionsSnapshot(table, 1));
-        assertThat(snapshotFiles(table))
+        assertThat(tableFiles(table))
                 .containsExactlyInAnyOrder(
                         "3-files.parquet", "1-files.parquet",
                         "2-partitions.parquet", "1-partitions.parquet");
@@ -127,7 +127,7 @@ public class TransactionLogSnapshotDeleterIT extends TransactionLogSnapshotTestB
                 .containsExactly(filesSnapshot(table, 1));
         assertThat(snapshotStore(table).getPartitionsSnapshots())
                 .containsExactly(partitionsSnapshot(table, 1));
-        assertThat(snapshotFiles(table))
+        assertThat(tableFiles(table))
                 .containsExactlyInAnyOrder("1-files.parquet", "1-partitions.parquet");
     }
 
@@ -167,7 +167,7 @@ public class TransactionLogSnapshotDeleterIT extends TransactionLogSnapshotTestB
                 .containsExactly(
                         partitionsSnapshot(table, 1),
                         partitionsSnapshot(table, 2));
-        assertThat(snapshotFiles(table))
+        assertThat(tableFiles(table))
                 .containsExactlyInAnyOrder("3-files.parquet", "2-partitions.parquet");
     }
 }
