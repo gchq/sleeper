@@ -32,7 +32,7 @@ public interface IngestJobHandler {
      *
      * @param  job                 the ingest job to run
      * @return                     an {@link IngestResult} object
-     * @throws IteratorException   if an error occurs sorting the files
+     * @throws IteratorException   if the table iterator could not be created
      * @throws StateStoreException if an error occurs adding the files to the state store
      * @throws IOException         if an error occurs reading or writing files
      */
