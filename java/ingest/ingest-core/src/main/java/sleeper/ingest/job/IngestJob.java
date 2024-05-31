@@ -118,7 +118,7 @@ public class IngestJob {
         }
 
         /**
-         * Sets the table name of the table to write to.
+         * Sets the name of the Sleeper table to write to.
          *
          * @param  tableName the table name
          * @return           the builder
@@ -129,7 +129,7 @@ public class IngestJob {
         }
 
         /**
-         * Sets the internal table ID of the sleeper table to write to. This should only ever be set internally by
+         * Sets the internal ID of the Sleeper table to write to. This should only ever be set internally by
          * Sleeper.
          *
          * @param  tableId the internal table ID
