@@ -30,7 +30,7 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 /**
- * A class for storing the status of an ingest job.
+ * Stores the status of an ingest job. This is used for reporting on the state of ingest jobs.
  */
 public class IngestJobStatus {
     private final String jobId;
@@ -48,7 +48,9 @@ public class IngestJobStatus {
     }
 
     /**
-     * Creates a stream of ingest job statuses from a stream of process status update records.
+     * Creates a stream of ingest job statuses from a stream of process status update records. The records passed into
+     * this method come from the underlying {@link IngestJobStatusStore}, and this constructor collects them, building
+     * them into a format used for reporting.
      *
      * @param  records the stream of {@link ProcessStatusUpdateRecord}s
      * @return         a stream of ingest job statuses
@@ -194,7 +196,7 @@ public class IngestJobStatus {
         }
 
         /**
-         * Sets the expiry date.
+         * Sets the expiry date. This is the date after which the job status will be removed from the status store.
          *
          * @param  expiryDate the expiry date
          * @return            the builder
