@@ -134,7 +134,7 @@ public class IngestJobStartedStatus implements IngestJobInfoStatus {
         }
 
         /**
-         * Sets the ingest job.
+         * Sets the input file count using the provided ingest job.
          *
          * @param  job the ingest job
          * @return     the builder
