@@ -22,8 +22,8 @@ import sleeper.core.record.process.status.ProcessStatusUpdate;
 import java.util.stream.Stream;
 
 public enum CompactionJobStatusType {
-    CREATED(CompactionJobCreatedStatus.class, 1),
-    STARTED(CompactionJobStartedStatus.class, 2),
+    PENDING(CompactionJobCreatedStatus.class, 1),
+    IN_PROGRESS(CompactionJobStartedStatus.class, 2),
     FAILED(ProcessFailedStatus.class, 3),
     FINISHED(ProcessFinishedStatus.class, 4);
 

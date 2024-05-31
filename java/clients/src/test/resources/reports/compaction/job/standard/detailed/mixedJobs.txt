@@ -2,7 +2,7 @@
 Compaction Job Status Report
 ----------------------------
 Details for job $(jobId4):
-State: FINISHED
+State: FAILED
 Creation Time: 2022-09-20T13:33:12.001Z
 Partition ID: partnDDD-DDDD-DDDD-DDDD-DDDDDDDDDDDD
 
@@ -34,7 +34,7 @@ Read Rate (reads per second): 10.00
 Write Rate (writes per second): 5.00
 --------------------------
 Details for job $(jobId2):
-State: IN PROGRESS
+State: IN_PROGRESS
 Creation Time: 2022-09-18T13:33:12.001Z
 Partition ID: partnBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB
 

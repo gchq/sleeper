@@ -48,8 +48,6 @@ public class StandardProcessRunReporter {
     public static final TableFieldDefinition WRITE_RATE = TableFieldDefinition.numeric("WRITE_RATE (s)");
 
     private final PrintStream out;
-    public static final String STATE_IN_PROGRESS = "IN PROGRESS";
-    public static final String STATE_FINISHED = "FINISHED";
 
     public StandardProcessRunReporter(PrintStream out, TableWriterFactory.Builder tableBuilder) {
         this(out);
@@ -149,13 +147,6 @@ public class StandardProcessRunReporter {
 
     public List<TableFieldDefinition> getFinishedFields() {
         return Arrays.asList(FINISH_TIME, DURATION, RECORDS_READ, RECORDS_WRITTEN, READ_RATE, WRITE_RATE);
-    }
-
-    public static String getState(ProcessRun run) {
-        if (run.isFinished()) {
-            return STATE_FINISHED;
-        }
-        return STATE_IN_PROGRESS;
     }
 
     private static String getDurationString(RecordsProcessedSummary summary) {

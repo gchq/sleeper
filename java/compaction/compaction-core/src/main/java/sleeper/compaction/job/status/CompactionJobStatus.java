@@ -30,7 +30,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static sleeper.compaction.job.status.CompactionJobStatusType.CREATED;
+import static sleeper.compaction.job.status.CompactionJobStatusType.PENDING;
 
 public class CompactionJobStatus {
 
@@ -126,7 +126,7 @@ public class CompactionJobStatus {
                 .map(ProcessRun::getLatestUpdate)
                 .map(CompactionJobStatusType::of)
                 .max(Comparator.comparing(CompactionJobStatusType::getOrder))
-                .orElse(CREATED);
+                .orElse(PENDING);
     }
 
     public static final class Builder {

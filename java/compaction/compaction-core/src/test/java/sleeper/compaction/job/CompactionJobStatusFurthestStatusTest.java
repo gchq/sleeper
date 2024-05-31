@@ -30,10 +30,10 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobStatusFromUpdates;
 import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionStatus;
-import static sleeper.compaction.job.status.CompactionJobStatusType.CREATED;
 import static sleeper.compaction.job.status.CompactionJobStatusType.FAILED;
 import static sleeper.compaction.job.status.CompactionJobStatusType.FINISHED;
-import static sleeper.compaction.job.status.CompactionJobStatusType.STARTED;
+import static sleeper.compaction.job.status.CompactionJobStatusType.IN_PROGRESS;
+import static sleeper.compaction.job.status.CompactionJobStatusType.PENDING;
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.failedStatus;
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.finishedStatus;
 
@@ -52,7 +52,7 @@ public class CompactionJobStatusFurthestStatusTest {
         CompactionJobStatus status = jobStatusFromUpdates(created);
 
         // Then
-        assertThat(status.getFurthestStatusType()).isEqualTo(CREATED);
+        assertThat(status.getFurthestStatusType()).isEqualTo(PENDING);
     }
 
     @Test
@@ -69,7 +69,7 @@ public class CompactionJobStatusFurthestStatusTest {
         CompactionJobStatus status = jobStatusFromUpdates(created, started);
 
         // Then
-        assertThat(status.getFurthestStatusType()).isEqualTo(STARTED);
+        assertThat(status.getFurthestStatusType()).isEqualTo(IN_PROGRESS);
     }
 
     @Test
