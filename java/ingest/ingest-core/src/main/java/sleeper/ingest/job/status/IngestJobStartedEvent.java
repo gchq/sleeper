@@ -170,7 +170,7 @@ public class IngestJobStartedEvent {
         }
 
         /**
-         * Sets the ingest job.
+         * Sets the ingest job ID, table ID, and file count using the provided ingest job.
          *
          * @param  job the ingest job
          * @return     the builder
