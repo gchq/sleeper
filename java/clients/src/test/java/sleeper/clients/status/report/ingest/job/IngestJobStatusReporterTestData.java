@@ -17,6 +17,7 @@
 package sleeper.clients.status.report.ingest.job;
 
 import sleeper.clients.status.report.StatusReporterTestHelper;
+import sleeper.core.record.process.ProcessRunTime;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.status.IngestJobAcceptedStatus;
 import sleeper.ingest.job.status.IngestJobRejectedStatus;
@@ -34,6 +35,7 @@ import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summ
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRunWhichStarted;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.failedIngestJob;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestJob;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
@@ -50,9 +52,15 @@ public class IngestJobStatusReporterTestData {
     }
 
     public static List<IngestJobStatus> mixedUnfinishedJobStatuses() {
-        return mixedJobStatuses().stream()
-                .filter(status -> !status.isFinished())
-                .collect(Collectors.toList());
+        IngestJob job1 = createJob(2, 1);
+        Instant startTime1 = Instant.parse("2022-09-18T13:34:12.001Z");
+
+        IngestJob job3 = createJob(5, 3);
+        Instant startTime3 = Instant.parse("2022-09-21T13:34:12.001Z");
+
+        return Arrays.asList(
+                startedIngestJob(job3, StatusReporterTestHelper.task(2), startTime3),
+                startedIngestJob(job1, StatusReporterTestHelper.task(1), startTime1));
     }
 
     public static List<IngestJobStatus> mixedJobStatuses() {
@@ -72,7 +80,7 @@ public class IngestJobStatusReporterTestData {
                 finishedIngestJob(job4, StatusReporterTestHelper.task(2), summary(startTime4, Duration.ofMinutes(1), 600, 300)),
                 startedIngestJob(job3, StatusReporterTestHelper.task(2), startTime3),
                 finishedIngestJob(job2, StatusReporterTestHelper.task(1), summary(startTime2, Duration.ofMinutes(1), 600, 300)),
-                startedIngestJob(job1, StatusReporterTestHelper.task(1), startTime1));
+                failedIngestJob(job1, StatusReporterTestHelper.task(1), new ProcessRunTime(startTime1, Duration.ofMinutes(1)), List.of("Something went wrong")));
     }
 
     public static List<IngestJobStatus> jobWithMultipleRuns() {

@@ -23,9 +23,12 @@
                 "recordsRead": 600,
                 "recordsWritten": 300
               },
-              "startTime": "2022-09-19T13:34:12.001Z",
-              "finishTime": "2022-09-19T13:35:12.001Z",
-              "durationInSeconds": 60.0,
+              "runTime": {
+                "startTime": "2022-09-19T13:34:12.001Z",
+                "finishTime": "2022-09-19T13:35:12.001Z",
+                "durationInSeconds": 60.0,
+                "timeInProcessInSeconds": 60.0
+              },
               "recordsReadPerSecond": 10.0,
               "recordsWrittenPerSecond": 5.0
             }

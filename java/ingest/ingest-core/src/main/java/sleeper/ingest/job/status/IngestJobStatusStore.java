@@ -35,6 +35,9 @@ public interface IngestJobStatusStore {
     default void jobFinished(IngestJobFinishedEvent event) {
     }
 
+    default void jobFailed(IngestJobFailedEvent event) {
+    }
+
     default Stream<IngestJobStatus> streamAllJobs(String tableId) {
         throw new UnsupportedOperationException("Instance has no ingest job status store");
     }
