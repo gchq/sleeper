@@ -35,7 +35,6 @@ import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
@@ -66,6 +65,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
+import static sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.getBasePath;
 
 @Testcontainers
 public class TransactionLogSnapshotTestBase {
@@ -229,11 +229,5 @@ public class TransactionLogSnapshotTestBase {
             files.add(iterator.next().getPath().toUri().toString());
         }
         return files.stream();
-    }
-
-    protected static String getBasePath(InstanceProperties instanceProperties, TableProperties tableProperties) {
-        return instanceProperties.get(FILE_SYSTEM)
-                + instanceProperties.get(DATA_BUCKET) + "/"
-                + tableProperties.get(TableProperty.TABLE_ID);
     }
 }
