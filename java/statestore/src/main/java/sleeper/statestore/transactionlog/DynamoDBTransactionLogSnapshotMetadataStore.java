@@ -217,6 +217,48 @@ public class DynamoDBTransactionLogSnapshotMetadataStore {
     }
 
     /**
+     * Retrieves metadata of snapshots older than an expiry date. Note that this excludes latest snapshots.
+     *
+     * @param  expiryDate the time used to decide which snapshots to retrieve
+     * @return            a stream of snapshots that were last updated before the provided time
+     */
+    public Stream<TransactionLogSnapshotMetadata> getSnapshotsBefore(Instant expiryDate) {
+        LatestSnapshots latestSnapshots = getLatestSnapshots();
+        return Stream.concat(
+                getSnapshotsBefore(latestSnapshots.getFilesSnapshot()
+                        .map(TransactionLogSnapshotMetadata::getTransactionNumber)
+                        .orElse(0L), SnapshotType.FILES, expiryDate.toEpochMilli()),
+                getSnapshotsBefore(latestSnapshots.getPartitionsSnapshot()
+                        .map(TransactionLogSnapshotMetadata::getTransactionNumber)
+                        .orElse(0L), SnapshotType.PARTITIONS, expiryDate.toEpochMilli()));
+    }
+
+    private Stream<TransactionLogSnapshotMetadata> getSnapshotsBefore(long latestSnapshotNumber, SnapshotType type, long time) {
+        return streamPagedItems(dynamo, new QueryRequest()
+                .withTableName(allSnapshotsTable)
+                .withKeyConditionExpression("#TableIdAndType = :table_id_and_type")
+                .withFilterExpression("#UpdateTime < :expiry_time")
+                .withExpressionAttributeNames(Map.of(
+                        "#TableIdAndType", TABLE_ID_AND_SNAPSHOT_TYPE,
+                        "#UpdateTime", UPDATE_TIME))
+                .withExpressionAttributeValues(new DynamoDBRecordBuilder()
+                        .string(":table_id_and_type", tableAndType(sleeperTableId, type))
+                        .number(":expiry_time", time)
+                        .build()))
+                .map(DynamoDBTransactionLogSnapshotMetadataStore::getSnapshotFromItem)
+                .filter(snapshot -> snapshot.getTransactionNumber() != latestSnapshotNumber);
+    }
+
+    void deleteSnapshot(TransactionLogSnapshotMetadata snapshot) {
+        dynamo.deleteItem(allSnapshotsTable, getKeyFromSnapshot(snapshot));
+    }
+
+    private Map<String, AttributeValue> getKeyFromSnapshot(TransactionLogSnapshotMetadata snapshot) {
+        return Map.of(TABLE_ID_AND_SNAPSHOT_TYPE, new AttributeValue().withS(tableAndType(sleeperTableId, snapshot.getType())),
+                TRANSACTION_NUMBER, new AttributeValue().withN(snapshot.getTransactionNumber() + ""));
+    }
+
+    /**
      * Metadata about the latest snapshots in a Sleeper table.
      */
     public static class LatestSnapshots {
