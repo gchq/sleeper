@@ -32,7 +32,7 @@ public interface PartitionFileWriter {
      * order.
      *
      * @param  record      The record to append
-     * @throws IOException -
+     * @throws IOException if there was a failure writing the file
      */
     void append(Record record) throws IOException;
 
@@ -41,7 +41,7 @@ public interface PartitionFileWriter {
      * final storage and any intermediate data should be cleared.
      *
      * @return             Details about the new partition file
-     * @throws IOException -
+     * @throws IOException if there was a failure writing the file
      */
     CompletableFuture<FileReference> close() throws IOException;
 
