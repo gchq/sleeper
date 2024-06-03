@@ -94,7 +94,7 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
      * @param  localWorkingDirectory the local directory to use to create temporary files
      * @param  s3BucketName          the S3 bucket name and prefix to write to
      * @param  filePathPrefix        the prefix for S3 objects to write
-     * @throws IOException           -
+     * @throws IOException           if there was a failure writing the file
      */
     public AsyncS3PartitionFileWriter(
             Partition partition,
