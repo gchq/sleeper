@@ -110,8 +110,9 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
                             "Compaction Job Status Report\n" +
                             "----------------------------\n" +
                             "Total unfinished jobs: 1\n" +
+                            "Total unfinished jobs not started: 0\n" +
                             "Total unfinished jobs in progress: 1\n" +
-                            "Total unfinished jobs not started: 0");
+                            "Total unfinished jobs awaiting retry: 0");
 
             verifyWithNumberOfPromptsBeforeExit(4);
         }
