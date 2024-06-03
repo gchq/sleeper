@@ -24,6 +24,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
 
+/**
+ * Represents the status of an ingest task.
+ */
 public class IngestTaskStatus {
     private final String taskId;
     private final Instant startTime;
@@ -49,6 +52,13 @@ public class IngestTaskStatus {
         return finishedStatus;
     }
 
+    /**
+     * Checks whether this task was run within a time window.
+     *
+     * @param  windowStartTime the time window start time
+     * @param  windowEndTime   the time window end time
+     * @return                 whether this task was run within a time window
+     */
     public boolean isInPeriod(Instant windowStartTime, Instant windowEndTime) {
         TimeWindowQuery timeWindowQuery = new TimeWindowQuery(windowStartTime, windowEndTime);
         if (isFinished()) {
@@ -62,6 +72,11 @@ public class IngestTaskStatus {
         return startTime;
     }
 
+    /**
+     * Gets the finish time for this task.
+     *
+     * @return the finish time for this task, or null if the task has not finished
+     */
     public Instant getFinishTime() {
         if (isFinished()) {
             return finishedStatus.getFinishTime();
@@ -70,6 +85,11 @@ public class IngestTaskStatus {
         }
     }
 
+    /**
+     * Gets the total duration of task.
+     *
+     * @return the duration of this task, or null if the task has not finished
+     */
     public Duration getDuration() {
         if (isFinished()) {
             return Duration.between(startTime, finishedStatus.getFinishTime());
@@ -86,6 +106,11 @@ public class IngestTaskStatus {
         return finishedStatus != null;
     }
 
+    /**
+     * Gets the number of job runs performed by this task.
+     *
+     * @return the number of job runs, or null if the task has not finished
+     */
     public Integer getJobRunsOrNull() {
         if (isFinished()) {
             return finishedStatus.getTotalJobRuns();
@@ -94,6 +119,11 @@ public class IngestTaskStatus {
         }
     }
 
+    /**
+     * Gets the number of job runs performed by this task.
+     *
+     * @return the number of job runs, or 0 if the task has not finished
+     */
     public int getJobRuns() {
         if (isFinished()) {
             return finishedStatus.getTotalJobRuns();
@@ -102,6 +132,11 @@ public class IngestTaskStatus {
         }
     }
 
+    /**
+     * Creates a process run object from this task.
+     *
+     * @return a {@link ProcessRun} object
+     */
     public ProcessRun asProcessRun() {
         return ProcessRun.builder().taskId(taskId)
                 .startedStatus(IngestTaskStartedStatus.startTime(getStartTime()))
@@ -148,6 +183,9 @@ public class IngestTaskStatus {
                 '}';
     }
 
+    /**
+     * Builder for ingest task status objects.
+     */
     public static final class Builder {
         private String taskId;
         private Instant startTime;
@@ -161,38 +199,71 @@ public class IngestTaskStatus {
             return new Builder();
         }
 
+        /**
+         * Sets the ingest task ID.
+         *
+         * @param  taskId the ingest task ID
+         * @return        the builder
+         */
         public Builder taskId(String taskId) {
             this.taskId = taskId;
             return this;
         }
 
+        /**
+         * Sets the start time.
+         *
+         * @param  startTime the start time, in milliseconds since the epoch
+         * @return           the builder
+         */
         public Builder startTime(long startTime) {
             return startTime(Instant.ofEpochMilli(startTime));
         }
 
+        /**
+         * Sets the start time.
+         *
+         * @param  startTime the start time
+         * @return           the builder
+         */
         public Builder startTime(Instant startTime) {
             this.startTime = startTime;
             return this;
         }
 
+        /**
+         * Sets the finished status.
+         *
+         * @param  finishedStatus the finished status
+         * @return                the builder
+         */
         public Builder finishedStatus(IngestTaskFinishedStatus finishedStatus) {
             this.finishedStatus = finishedStatus;
             return this;
         }
 
+        /**
+         * Sets the expiry date.
+         *
+         * @param  expiryDate the expiry date
+         * @return            the builder
+         */
         public Builder expiryDate(Instant expiryDate) {
             this.expiryDate = expiryDate;
             return this;
         }
 
+        /**
+         * Sets the finished status from the finish time and a task finished status builder.
+         *
+         * @param  finishTime          the finish time
+         * @param  taskFinishedBuilder the task finished status builder
+         * @return                     the builder
+         */
         public Builder finished(Instant finishTime, IngestTaskFinishedStatus.Builder taskFinishedBuilder) {
             return finishedStatus(taskFinishedBuilder
                     .finish(finishTime)
                     .build());
-        }
-
-        public String getTaskId() {
-            return this.taskId;
         }
 
         public IngestTaskStatus build() {

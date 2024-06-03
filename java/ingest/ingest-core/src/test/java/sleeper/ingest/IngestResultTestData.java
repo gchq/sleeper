@@ -19,16 +19,33 @@ import sleeper.core.statestore.FileReferenceTestData;
 
 import java.util.Collections;
 
+/**
+ * A helper for creating ingest results for tests.
+ */
 public class IngestResultTestData {
 
     private IngestResultTestData() {
     }
 
+    /**
+     * Creates an ingest result for a single file on the root partition, where all records were read and written.
+     *
+     * @param  filename the name of the file
+     * @return          an {@link IngestResult}
+     */
     public static IngestResult defaultFileIngestResult(String filename) {
         return IngestResult.allReadWereWritten(Collections.singletonList(
                 FileReferenceTestData.defaultFileOnRootPartition(filename)));
     }
 
+    /**
+     * Creates an ingest result for a single file on the root partition.
+     *
+     * @param  filename       the name of the file
+     * @param  recordsRead    the number of records read
+     * @param  recordsWritten the number of records written
+     * @return                an {@link IngestResult}
+     */
     public static IngestResult defaultFileIngestResultReadAndWritten(
             String filename, long recordsRead, long recordsWritten) {
         return IngestResult.fromReadAndWritten(recordsRead, Collections.singletonList(

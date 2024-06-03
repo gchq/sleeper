@@ -18,45 +18,66 @@ package sleeper.ingest.task;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.stream.Stream;
 
-import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
-import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_NUMBER_OF_RECORDS;
-
+/**
+ * Test helpers for setting up ingest task statuses.
+ */
 public class IngestTaskStatusTestData {
+    public static final Instant DEFAULT_START_TIME = Instant.parse("2022-12-07T14:56:00.001Z");
+    public static final Instant DEFAULT_FINISH_TIME = Instant.parse("2022-12-07T14:57:00.001Z");
+
     private IngestTaskStatusTestData() {
     }
 
+    /**
+     * Creates an ingest task status that finished with no jobs.
+     *
+     * @return an ingest task status that finished with no jobs
+     */
     public static IngestTaskStatus finishedNoJobsDefault() {
         return finishedNoJobsDefault(startedBuilderWithDefaults());
     }
 
+    /**
+     * Creates an ingest task status that finished with no jobs.
+     *
+     * @param  builder the task status builder to use
+     * @return         an ingest task status that finished with no jobs
+     */
     public static IngestTaskStatus finishedNoJobsDefault(IngestTaskStatus.Builder builder) {
-        return finishedNoJobs(builder, Instant.parse("2022-12-07T14:57:00.001Z"));
+        return finishedNoJobs(builder, DEFAULT_FINISH_TIME);
     }
 
+    /**
+     * Creates an ingest task status that finished with no jobs.
+     *
+     * @param  taskId     the task ID
+     * @param  startTime  the start time
+     * @param  finishTime the finish time
+     * @return            an ingest task status that finished with no jobs
+     */
     public static IngestTaskStatus finishedNoJobs(String taskId, Instant startTime, Instant finishTime) {
         return finishedNoJobs(IngestTaskStatus.builder().taskId(taskId).startTime(startTime), finishTime);
     }
 
-    public static IngestTaskStatus finishedNoJobs(IngestTaskStatus.Builder builder, Instant finishTime) {
+    private static IngestTaskStatus finishedNoJobs(IngestTaskStatus.Builder builder, Instant finishTime) {
         return builder.finished(finishTime, IngestTaskFinishedStatus.builder()).build();
     }
 
-    public static IngestTaskStatus finishedOneJobNoFiles(
-            String taskId, Instant startTaskTime, Instant finishTaskTime, Instant startJobTime, Instant finishJobTime) {
-        return finishedOneJob(taskId, startTaskTime, finishTaskTime, startJobTime, finishJobTime, 0L, 0L);
-    }
-
-    public static IngestTaskStatus finishedOneJobOneFile(
-            String taskId, Instant startTaskTime, Instant finishTaskTime, Instant startJobTime, Instant finishJobTime) {
-        return finishedOneJob(taskId, startTaskTime, finishTaskTime, startJobTime, finishJobTime,
-                DEFAULT_NUMBER_OF_RECORDS, DEFAULT_NUMBER_OF_RECORDS);
-
-    }
-
+    /**
+     * Creates an ingest task status that finished with one job.
+     *
+     * @param  taskId         the task ID
+     * @param  startTaskTime  the start time for the task
+     * @param  finishTaskTime the finish time for the task
+     * @param  startJobTime   the start time for the job
+     * @param  finishJobTime  the finish time for the job
+     * @param  recordsRead    the number of records read when running the job
+     * @param  recordsWritten the number of records written when running the job
+     * @return                an ingest task status that finished with one job
+     */
     public static IngestTaskStatus finishedOneJob(
             String taskId, Instant startTaskTime, Instant finishTaskTime,
             Instant startJobTime, Instant finishJobTime,
@@ -69,12 +90,15 @@ public class IngestTaskStatusTestData {
                 .build();
     }
 
-    public static IngestTaskStatus finishedMultipleJobs(
-            String taskId, Instant startTaskTime, Instant finishTaskTime, Duration duration, Instant... startJobTimes) {
-        return finishedMultipleJobs(taskId, startTaskTime, finishTaskTime,
-                Stream.of(startJobTimes).map(startJobTime -> summary(startJobTime, duration, DEFAULT_NUMBER_OF_RECORDS, DEFAULT_NUMBER_OF_RECORDS)));
-    }
-
+    /**
+     * Creates an ingest task status that finished with multiple jobs.
+     *
+     * @param  taskId         the task ID
+     * @param  startTaskTime  the start time for the task
+     * @param  finishTaskTime the finish time for the task
+     * @param  summaries      a collection of record processed summaries from running jobs
+     * @return                an ingest task status that finished with multiple jobs
+     */
     public static IngestTaskStatus finishedMultipleJobs(
             String taskId, Instant startTaskTime, Instant finishTaskTime, RecordsProcessedSummary... summaries) {
         return finishedMultipleJobs(taskId, startTaskTime, finishTaskTime, Stream.of(summaries));
@@ -87,8 +111,13 @@ public class IngestTaskStatusTestData {
                 .build();
     }
 
+    /**
+     * Creates an ingest task status builder populated with default values.
+     *
+     * @return an ingest task status builder
+     */
     public static IngestTaskStatus.Builder startedBuilderWithDefaults() {
         return IngestTaskStatus.builder().taskId("test-task")
-                .startTime(Instant.parse("2022-12-07T14:56:00.001Z"));
+                .startTime(DEFAULT_START_TIME);
     }
 }

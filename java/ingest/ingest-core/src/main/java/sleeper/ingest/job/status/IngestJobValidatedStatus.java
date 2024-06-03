@@ -16,6 +16,14 @@
 
 package sleeper.ingest.job.status;
 
+/**
+ * An ingest job info status that has validation information about the job.
+ */
 public interface IngestJobValidatedStatus extends IngestJobInfoStatus {
+    /**
+     * Checks whether the job passed validation.
+     *
+     * @return whether the job passed validation checks
+     */
     boolean isValid();
 }
