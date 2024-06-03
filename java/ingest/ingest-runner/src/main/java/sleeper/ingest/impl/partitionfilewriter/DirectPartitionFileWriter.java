@@ -69,7 +69,7 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
      *                              specified in the filePathPrefix.
      * @param  filePathPrefix       the prefix to apply to the partition files, such as 's3a://mybucket' or
      *                              'file://mydirectory'
-     * @throws IOException          -
+     * @throws IOException          if there was a failure writing the file
      */
     public DirectPartitionFileWriter(
             Partition partition,
