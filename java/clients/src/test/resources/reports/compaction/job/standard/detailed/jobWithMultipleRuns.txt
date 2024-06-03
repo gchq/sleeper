@@ -2,7 +2,7 @@
 Compaction Job Status Report
 ----------------------------
 Details for job $(jobId1):
-State: IN PROGRESS
+State: FINISHED
 Creation Time: 2022-10-12T10:00:00.001Z
 Partition ID: root
 

@@ -26,7 +26,8 @@ public class TransactionLogSnapshotMetadata {
     private final long transactionNumber;
 
     /**
-     * Creates metadata about a snapshot of files. Generates a path to the file in which the snapshot will be stored.
+     * Creates metadata about a snapshot of files. Generates a path to the Arrow file in which the snapshot will be
+     * stored.
      *
      * @param  basePath          the base path under which data is held for the given Sleeper table
      * @param  transactionNumber the transaction number the snapshot was made against
@@ -37,7 +38,7 @@ public class TransactionLogSnapshotMetadata {
     }
 
     /**
-     * Creates metadata about a snapshot of partitions. Generates a path to the file in which the snapshot will be
+     * Creates metadata about a snapshot of partitions. Generates a path to the Arrow file in which the snapshot will be
      * stored.
      *
      * @param  basePath          the base path under which data is held for the given Sleeper table
@@ -67,11 +68,11 @@ public class TransactionLogSnapshotMetadata {
     }
 
     private static String getFilesPath(String basePath, long transactionNumber) {
-        return basePath + "/statestore/snapshots/" + transactionNumber + "-files.parquet";
+        return basePath + "/statestore/snapshots/" + transactionNumber + "-files.arrow";
     }
 
     private static String getPartitionsPath(String basePath, long transactionNumber) {
-        return basePath + "/statestore/snapshots/" + transactionNumber + "-partitions.parquet";
+        return basePath + "/statestore/snapshots/" + transactionNumber + "-partitions.arrow";
     }
 
     @Override
