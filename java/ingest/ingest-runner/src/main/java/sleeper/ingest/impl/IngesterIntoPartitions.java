@@ -112,7 +112,7 @@ class IngesterIntoPartitions {
      *                               in
      * @return                       a {@link CompletableFuture} which completes to return a list of
      *                               {@link FileReference} objects, one for each partition file that has been created
-     * @throws IOException           -
+     * @throws IOException           if there was a failure writing the file
      */
     public CompletableFuture<List<FileReference>> initiateIngest(
             CloseableIterator<Record> orderedRecordIterator, PartitionTree partitionTree) throws IOException {
