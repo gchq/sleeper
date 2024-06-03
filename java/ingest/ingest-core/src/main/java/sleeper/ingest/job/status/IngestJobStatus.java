@@ -109,6 +109,12 @@ public class IngestJobStatus {
         return jobRuns.getRunsLatestFirst();
     }
 
+    /**
+     * Checks whether the job is unfinished. Counts as unfinished if a run of the job is accepted or in progress, or if
+     * all the runs of the job failed and it may be retried. If the job was rejected, it will not count as unfinished.
+     *
+     * @return true if the job is unfinished
+     */
     public boolean isUnfinishedOrAnyRunInProgress() {
         Set<IngestJobStatusType> runStatuses = runStatusTypes().collect(toSet());
         return runStatuses.stream().anyMatch(IngestJobStatusType::isRunInProgress)
