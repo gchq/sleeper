@@ -18,6 +18,14 @@ package sleeper.ingest.job.status;
 
 import sleeper.core.record.process.status.ProcessRunStartedUpdate;
 
+/**
+ * An ingest job process started update that has information about the input files.
+ */
 public interface IngestJobInfoStatus extends ProcessRunStartedUpdate {
+    /**
+     * Gets the input file count for the ingest job.
+     *
+     * @return the input file count
+     */
     int getInputFileCount();
 }

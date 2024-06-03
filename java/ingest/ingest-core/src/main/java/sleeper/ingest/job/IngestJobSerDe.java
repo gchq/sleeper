@@ -18,6 +18,9 @@ package sleeper.ingest.job;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+/**
+ * Serialises an ingest job to and from a JSON string.
+ */
 public class IngestJobSerDe {
     private final Gson gson;
     private final Gson gsonPrettyPrinting;
@@ -29,10 +32,23 @@ public class IngestJobSerDe {
                 .create();
     }
 
+    /**
+     * Serialise an ingest job to JSON.
+     *
+     * @param  ingestJob the ingest job
+     * @return           a JSON representation of the ingest job
+     */
     public String toJson(IngestJob ingestJob) {
         return gson.toJson(ingestJob);
     }
 
+    /**
+     * Serialise an ingest job to JSON.
+     *
+     * @param  ingestJob   the ingest job
+     * @param  prettyPrint true if the JSON should be formatted for readability
+     * @return             a JSON representation of the ingest job
+     */
     public String toJson(IngestJob ingestJob, boolean prettyPrint) {
         if (prettyPrint) {
             return gsonPrettyPrinting.toJson(ingestJob);
@@ -40,7 +56,13 @@ public class IngestJobSerDe {
         return toJson(ingestJob);
     }
 
-    public IngestJob fromJson(String jsonIngestJob) {
-        return gson.fromJson(jsonIngestJob, IngestJob.class);
+    /**
+     * Deserialises a JSON string to an ingest job.
+     *
+     * @param  jsonString the JSON string
+     * @return            the ingest job
+     */
+    public IngestJob fromJson(String jsonString) {
+        return gson.fromJson(jsonString, IngestJob.class);
     }
 }
