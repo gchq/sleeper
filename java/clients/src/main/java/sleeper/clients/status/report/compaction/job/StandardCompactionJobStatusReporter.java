@@ -24,6 +24,7 @@ import sleeper.clients.util.table.TableRow;
 import sleeper.clients.util.table.TableWriter;
 import sleeper.clients.util.table.TableWriterFactory;
 import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.compaction.job.status.CompactionJobStatusType;
 import sleeper.core.record.process.AverageRecordRate;
 
 import java.io.PrintStream;
@@ -39,8 +40,6 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
     private final StandardProcessRunReporter runReporter;
     private final TableWriterFactory tableFactory;
     private final PrintStream out;
-
-    private static final String STATE_PENDING = "PENDING";
 
     public StandardCompactionJobStatusReporter() {
         this(System.out);
@@ -103,7 +102,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
 
     private void printSingleJobSummary(CompactionJobStatus jobStatus) {
         out.printf("Details for job %s:%n", jobStatus.getJobId());
-        out.printf("State: %s%n", getState(jobStatus));
+        out.printf("State: %s%n", jobStatus.getFurthestStatusType());
         out.printf("Creation Time: %s%n", jobStatus.getCreateUpdateTime().toString());
         out.printf("Partition ID: %s%n", jobStatus.getPartitionId());
         jobStatus.getJobRuns().forEach(runReporter::printProcessJobRun);
@@ -134,13 +133,13 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
     private void writeJob(CompactionJobStatus job, TableWriter.Builder table) {
         if (job.getJobRuns().isEmpty()) {
             table.row(row -> {
-                row.value(stateField, STATE_PENDING);
+                row.value(stateField, CompactionJobStatusType.PENDING);
                 writeJobFields(job, row);
             });
         } else {
             job.getJobRuns().forEach(run -> table.row(row -> {
                 writeJobFields(job, row);
-                row.value(stateField, StandardProcessRunReporter.getState(run));
+                row.value(stateField, CompactionJobStatusType.of(run.getLatestUpdate()));
                 runReporter.writeRunFields(run, row);
             }));
         }
@@ -151,14 +150,5 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
                 .value(jobIdField, job.getJobId())
                 .value(inputFilesCount, job.getInputFilesCount())
                 .value(partitionIdField, job.getPartitionId());
-    }
-
-    private static String getState(CompactionJobStatus job) {
-        if (job.isFinished()) {
-            return StandardProcessRunReporter.STATE_FINISHED;
-        } else if (job.isStarted()) {
-            return StandardProcessRunReporter.STATE_IN_PROGRESS;
-        }
-        return STATE_PENDING;
     }
 }
