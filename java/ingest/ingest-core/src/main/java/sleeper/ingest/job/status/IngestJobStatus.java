@@ -23,11 +23,13 @@ import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 import sleeper.core.record.process.status.TimeWindowQuery;
 
 import java.time.Instant;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
+
+import static java.util.Comparator.comparing;
+import static sleeper.ingest.job.status.IngestJobStatusType.FINISHED;
 
 public class IngestJobStatus {
     private final String jobId;
@@ -92,22 +94,30 @@ public class IngestJobStatus {
         return jobRuns.isFinishedAndNoRunsInProgress();
     }
 
-    public IngestJobStatusType getFurthestStatusType() {
-        return jobRuns.getRunsLatestFirst().stream()
-                .map(ProcessRun::getLatestUpdate)
-                .map(IngestJobStatusType::of)
-                .max(Comparator.comparing(IngestJobStatusType::getOrder))
-                .orElseThrow();
+    public boolean isAnyRunSuccessful() {
+        return runStatusTypes().anyMatch(status -> status == FINISHED);
     }
 
     public boolean isInPeriod(Instant windowStartTime, Instant windowEndTime) {
         TimeWindowQuery timeWindowQuery = new TimeWindowQuery(windowStartTime, windowEndTime);
-        if (isFinished()) {
+        if (jobRuns.isFinishedAndNoRunsInProgress()) {
             return timeWindowQuery.isFinishedProcessInWindow(
                     jobRuns.firstTime().orElseThrow(), jobRuns.lastTime().orElseThrow());
         } else {
             return timeWindowQuery.isUnfinishedProcessInWindow(jobRuns.firstTime().orElseThrow());
         }
+    }
+
+    public IngestJobStatusType getFurthestStatusType() {
+        return runStatusTypes()
+                .max(comparing(IngestJobStatusType::getOrder))
+                .orElseThrow();
+    }
+
+    private Stream<IngestJobStatusType> runStatusTypes() {
+        return jobRuns.getRunsLatestFirst().stream()
+                .map(ProcessRun::getLatestUpdate)
+                .map(IngestJobStatusType::of);
     }
 
     @Override
