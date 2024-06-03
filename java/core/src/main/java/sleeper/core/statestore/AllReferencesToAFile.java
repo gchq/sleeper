@@ -182,10 +182,6 @@ public class AllReferencesToAFile {
         return totalReferenceCount;
     }
 
-    public int getExternalReferenceCount() {
-        return totalReferenceCount - internalReferenceByPartitionId.size();
-    }
-
     public Collection<FileReference> getInternalReferences() {
         return internalReferenceByPartitionId.values();
     }
