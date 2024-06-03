@@ -23,13 +23,16 @@ import sleeper.core.record.process.status.TimeWindowQuery;
 
 import java.time.Instant;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.util.Comparator.comparing;
+import static sleeper.compaction.job.status.CompactionJobStatusType.FAILED;
+import static sleeper.compaction.job.status.CompactionJobStatusType.FINISHED;
+import static sleeper.compaction.job.status.CompactionJobStatusType.IN_PROGRESS;
 import static sleeper.compaction.job.status.CompactionJobStatusType.PENDING;
 
 public class CompactionJobStatus {
@@ -91,6 +94,18 @@ public class CompactionJobStatus {
         return jobRuns.isFinishedAndNoRunsInProgress();
     }
 
+    public boolean isAnyRunInProgress() {
+        return runStatusTypes().anyMatch(status -> status == IN_PROGRESS);
+    }
+
+    public boolean isAnyRunSuccessful() {
+        return runStatusTypes().anyMatch(status -> status == FINISHED);
+    }
+
+    public boolean isAnyRunFailed() {
+        return runStatusTypes().anyMatch(status -> status == FAILED);
+    }
+
     public Instant getExpiryDate() {
         return expiryDate;
     }
@@ -122,11 +137,15 @@ public class CompactionJobStatus {
     }
 
     public CompactionJobStatusType getFurthestStatusType() {
+        return runStatusTypes()
+                .max(comparing(CompactionJobStatusType::getOrder))
+                .orElse(PENDING);
+    }
+
+    private Stream<CompactionJobStatusType> runStatusTypes() {
         return jobRuns.getRunsLatestFirst().stream()
                 .map(ProcessRun::getLatestUpdate)
-                .map(CompactionJobStatusType::of)
-                .max(Comparator.comparing(CompactionJobStatusType::getOrder))
-                .orElse(PENDING);
+                .map(CompactionJobStatusType::of);
     }
 
     public static final class Builder {
