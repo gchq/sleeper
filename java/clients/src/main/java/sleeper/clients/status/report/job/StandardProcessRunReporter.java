@@ -146,7 +146,8 @@ public class StandardProcessRunReporter {
             out.printf("Write Rate (writes per second): %s%n", getRecordsWrittenPerSecond(summary));
         } else {
             out.println("Run failed, reasons:");
-            update.getFailureReasons().forEach(out::println);
+            update.getFailureReasons()
+                    .forEach(reason -> out.printf("- %s%n", reason));
         }
     }
 

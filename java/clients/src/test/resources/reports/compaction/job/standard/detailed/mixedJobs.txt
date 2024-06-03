@@ -13,8 +13,8 @@ Finish Time: 2022-09-20T13:35:12.001Z
 Finish Update Time: 2022-09-20T13:35:12.123Z
 Duration: 1m
 Run failed, reasons:
-Something went wrong
-More details
+- Something went wrong
+- More details
 --------------------------
 Details for job $(jobId3):
 State: FINISHED
