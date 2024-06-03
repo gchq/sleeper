@@ -19,6 +19,7 @@ import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -53,8 +54,8 @@ public class StateStoreFiles {
      *
      * @return all files
      */
-    public Stream<AllReferencesToAFile> referencedAndUnreferenced() {
-        return filesByFilename.values().stream();
+    public Collection<AllReferencesToAFile> referencedAndUnreferenced() {
+        return filesByFilename.values();
     }
 
     /**

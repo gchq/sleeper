@@ -139,6 +139,18 @@ public class StateStoreFilesArrowFormatTest {
         assertThat(read(bytes)).containsExactly(file);
     }
 
+    @Test
+    void shouldWriteNoFiles() throws Exception {
+        // Given
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+
+        // When
+        write(List.of(), bytes);
+
+        // Then
+        assertThat(read(bytes)).isEmpty();
+    }
+
     private void write(List<AllReferencesToAFile> files, ByteArrayOutputStream stream) throws Exception {
         StateStoreFilesArrowFormat.write(files, allocator, Channels.newChannel(stream));
     }
