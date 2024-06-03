@@ -48,7 +48,7 @@ public class IngestJobFailedEvent {
     /**
      * Creates an instance of this class.
      *
-     * @param  job     the imgest job
+     * @param  job     the ingest job
      * @param  runTime the process run time
      * @return         an instance of this class
      */
@@ -126,7 +126,7 @@ public class IngestJobFailedEvent {
         }
 
         /**
-         * Sets the ingest job.
+         * Sets the ingest job ID.
          *
          * @param  jobId the ingest job ID
          * @return       the builder
