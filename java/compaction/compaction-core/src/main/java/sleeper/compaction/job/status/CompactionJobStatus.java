@@ -109,6 +109,10 @@ public class CompactionJobStatus {
         return runStatusTypes().anyMatch(status -> status == FAILED);
     }
 
+    public boolean isAwaitingRetry() {
+        return isStarted() && runStatusTypes().allMatch(status -> status == FAILED);
+    }
+
     public Instant getExpiryDate() {
         return expiryDate;
     }
