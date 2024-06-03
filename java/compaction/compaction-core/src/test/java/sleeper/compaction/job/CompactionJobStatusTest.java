@@ -59,8 +59,8 @@ class CompactionJobStatusTest {
         CompactionJobStatus status = jobCreated(job, updateTime);
 
         // Then
-        assertThat(status).extracting(CompactionJobStatus::isStarted, CompactionJobStatus::isFinishedAndNoRunsInProgress)
-                .containsExactly(false, false);
+        assertThat(status).extracting(CompactionJobStatus::isStarted, CompactionJobStatus::isUnstartedOrAnyRunInProgress)
+                .containsExactly(false, true);
     }
 
     @Test
@@ -73,8 +73,8 @@ class CompactionJobStatusTest {
                 startedCompactionRun(DEFAULT_TASK_ID, Instant.parse("2022-09-22T13:33:30.001Z")));
 
         // Then
-        assertThat(status).extracting(CompactionJobStatus::isStarted, CompactionJobStatus::isFinishedAndNoRunsInProgress)
-                .containsExactly(true, false);
+        assertThat(status).extracting(CompactionJobStatus::isStarted, CompactionJobStatus::isUnstartedOrAnyRunInProgress)
+                .containsExactly(true, true);
     }
 
     @Test
@@ -91,7 +91,7 @@ class CompactionJobStatusTest {
                 finishedCompactionRun(DEFAULT_TASK_ID, summary));
 
         // Then
-        assertThat(status).extracting(CompactionJobStatus::isStarted, CompactionJobStatus::isFinishedAndNoRunsInProgress)
-                .containsExactly(true, true);
+        assertThat(status).extracting(CompactionJobStatus::isStarted, CompactionJobStatus::isUnstartedOrAnyRunInProgress)
+                .containsExactly(true, false);
     }
 }
