@@ -26,10 +26,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Comparator.comparing;
+import static java.util.stream.Collectors.toSet;
 import static sleeper.compaction.job.status.CompactionJobStatusType.FAILED;
 import static sleeper.compaction.job.status.CompactionJobStatusType.FINISHED;
 import static sleeper.compaction.job.status.CompactionJobStatusType.IN_PROGRESS;
@@ -90,8 +92,9 @@ public class CompactionJobStatus {
         return jobRuns.isStarted();
     }
 
-    public boolean isUnstartedOrAnyRunInProgress() {
-        return !isStarted() || isAnyRunInProgress();
+    public boolean isUnstartedOrInProgress() {
+        Set<CompactionJobStatusType> runStatuses = runStatusTypes().collect(toSet());
+        return !isStarted() || runStatuses.contains(IN_PROGRESS) || !runStatuses.contains(FINISHED);
     }
 
     public boolean isAnyRunInProgress() {

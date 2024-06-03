@@ -51,7 +51,7 @@ public class CompactionJobRunTest {
         // Then
         assertThat(status.getJobRuns())
                 .isEmpty();
-        assertThat(status.isUnstartedOrAnyRunInProgress()).isTrue();
+        assertThat(status.isUnstartedOrInProgress()).isTrue();
     }
 
     @Test
@@ -72,7 +72,7 @@ public class CompactionJobRunTest {
                 .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                 .containsExactly(
                         tuple(DEFAULT_TASK_ID, started, null));
-        assertThat(status.isUnstartedOrAnyRunInProgress()).isTrue();
+        assertThat(status.isUnstartedOrInProgress()).isTrue();
     }
 
     @Test
@@ -94,6 +94,6 @@ public class CompactionJobRunTest {
                 .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                 .containsExactly(
                         tuple(DEFAULT_TASK_ID, started, finished));
-        assertThat(status.isUnstartedOrAnyRunInProgress()).isFalse();
+        assertThat(status.isUnstartedOrInProgress()).isFalse();
     }
 }

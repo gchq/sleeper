@@ -56,7 +56,7 @@ public interface CompactionJobStatusStore {
 
     default List<CompactionJobStatus> getUnfinishedJobs(String tableId) {
         return streamAllJobs(tableId)
-                .filter(CompactionJobStatus::isUnstartedOrAnyRunInProgress)
+                .filter(CompactionJobStatus::isUnstartedOrInProgress)
                 .collect(Collectors.toList());
     }
 
