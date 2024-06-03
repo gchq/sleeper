@@ -46,7 +46,7 @@ class RecordIteratorFromArrowStreamReader implements CloseableIterator<Record> {
      * Read the next small batch of rows from the source file. Instruct the {@link ArrowStreamReader} to read into its
      * internal {@link VectorSchemaRoot}.
      *
-     * @throws IOException -
+     * @throws IOException if there was a failure reading a batch from the source file
      */
     private void loadNextBatch() throws IOException {
         nextBatchLoaded = arrowStreamReader.loadNextBatch();
