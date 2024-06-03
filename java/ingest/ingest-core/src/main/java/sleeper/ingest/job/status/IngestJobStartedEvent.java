@@ -88,8 +88,8 @@ public class IngestJobStartedEvent {
      * Note that this does not mark the start of a job run. Once the bulk import starter picks up a bulk import job, it
      * validates the job and saves an event then, which marks the start of a job run.
      * <p>
-     * This is not used for ingest jobs this, and this validation event marks the start of a job run. Ingest jobs
-     * should use the {@link IngestJobStartedEvent#ingestJobStarted} constructor.
+     * This is not used for ingest jobs. Ingest jobs should use the {@link IngestJobStartedEvent#ingestJobStarted}
+     * constructor.
      *
      * @param  job       the ingest job
      * @param  startTime the start time
