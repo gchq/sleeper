@@ -24,9 +24,20 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * A helper for constructing multiple ingest task statuses.
+ */
 public class IngestTaskStatusesBuilder {
     private final Map<String, IngestTaskStatus.Builder> builderById = new HashMap<>();
 
+    /**
+     * Updates the ingest task status builder with start time and an expiry date.
+     *
+     * @param  taskId     the ingest task ID
+     * @param  startTime  the start time
+     * @param  expiryDate the expiry date
+     * @return            this class for chaining
+     */
     public IngestTaskStatusesBuilder taskStarted(
             String taskId, Instant startTime, Instant expiryDate) {
         builderById.computeIfAbsent(taskId,
@@ -35,6 +46,13 @@ public class IngestTaskStatusesBuilder {
         return this;
     }
 
+    /**
+     * Updates the ingest task status builder with a task finished status.
+     *
+     * @param  taskId         the ingest task ID
+     * @param  finishedStatus the task finished status
+     * @return                this class for chaining
+     */
     public IngestTaskStatusesBuilder taskFinished(
             String taskId, IngestTaskFinishedStatus finishedStatus) {
         Optional.ofNullable(builderById.get(taskId))
@@ -42,6 +60,11 @@ public class IngestTaskStatusesBuilder {
         return this;
     }
 
+    /**
+     * Stream all builders, building them and sorting them by oldest first.
+     *
+     * @return a stream of {@link IngestTaskStatus}, ordered by oldest first
+     */
     public Stream<IngestTaskStatus> stream() {
         return builderById.values().stream()
                 .map(IngestTaskStatus.Builder::build)

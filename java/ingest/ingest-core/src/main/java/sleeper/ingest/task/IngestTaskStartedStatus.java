@@ -20,6 +20,9 @@ import sleeper.core.record.process.status.ProcessRunStartedUpdate;
 import java.time.Instant;
 import java.util.Objects;
 
+/**
+ * A status for ingest tasks that have started.
+ */
 public class IngestTaskStartedStatus implements ProcessRunStartedUpdate {
 
     private final Instant startTime;
@@ -28,6 +31,12 @@ public class IngestTaskStartedStatus implements ProcessRunStartedUpdate {
         this.startTime = Objects.requireNonNull(startTime, "startTime may not be null");
     }
 
+    /**
+     * Creates an instance of this class with the start time set.
+     *
+     * @param  startTime the start time
+     * @return           an instance of this class
+     */
     public static IngestTaskStartedStatus startTime(Instant startTime) {
         return new IngestTaskStartedStatus(startTime);
     }
