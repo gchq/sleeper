@@ -117,7 +117,7 @@ public class IngestJobFinishedEvent {
     }
 
     /**
-     * Builder class for ingest job finished event objects.
+     * Builder for ingest job finished event objects.
      */
     public static final class Builder {
         private String jobId;

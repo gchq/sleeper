@@ -104,7 +104,7 @@ public class IngestJobFailedEvent {
     }
 
     /**
-     * Builder class for ingest job failed event objects.
+     * Builder for ingest job failed event objects.
      */
     public static final class Builder {
         private String jobId;

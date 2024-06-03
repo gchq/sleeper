@@ -164,7 +164,7 @@ public class IngestJobStartedEvent {
     }
 
     /**
-     * Builder class for ingest job started event objects.
+     * Builder for ingest job started event objects.
      */
     public static final class Builder {
         private String jobId;

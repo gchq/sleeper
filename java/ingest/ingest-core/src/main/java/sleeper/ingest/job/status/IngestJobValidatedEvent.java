@@ -195,7 +195,7 @@ public class IngestJobValidatedEvent {
     }
 
     /**
-     * Builder class for ingest job validated event objects.
+     * Builder for ingest job validated event objects.
      */
     public static final class Builder {
         private String jobId;
