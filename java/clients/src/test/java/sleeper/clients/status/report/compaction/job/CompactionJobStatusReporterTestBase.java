@@ -84,7 +84,7 @@ public abstract class CompactionJobStatusReporterTestBase {
 
     protected static List<CompactionJobStatus> mixedUnfinishedJobStatuses() {
         return mixedJobStatuses().stream()
-                .filter(job -> !job.isFinished())
+                .filter(job -> !job.isFinishedAndNoRunsInProgress())
                 .collect(Collectors.toList());
     }
 

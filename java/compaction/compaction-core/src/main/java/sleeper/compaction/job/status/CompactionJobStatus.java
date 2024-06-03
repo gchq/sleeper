@@ -87,8 +87,8 @@ public class CompactionJobStatus {
         return jobRuns.isStarted();
     }
 
-    public boolean isFinished() {
-        return jobRuns.isFinished();
+    public boolean isFinishedAndNoRunsInProgress() {
+        return jobRuns.isFinishedAndNoRunsInProgress();
     }
 
     public Instant getExpiryDate() {
@@ -105,7 +105,7 @@ public class CompactionJobStatus {
 
     public boolean isInPeriod(Instant windowStartTime, Instant windowEndTime) {
         TimeWindowQuery timeWindowQuery = new TimeWindowQuery(windowStartTime, windowEndTime);
-        if (isFinished()) {
+        if (isFinishedAndNoRunsInProgress()) {
             return timeWindowQuery.isFinishedProcessInWindow(
                     createdStatus.getUpdateTime(), jobRuns.lastTime().orElseThrow());
         } else {

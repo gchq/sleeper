@@ -120,8 +120,8 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
     private void printAllSummary(List<CompactionJobStatus> jobStatusList) {
         out.printf("Total jobs: %d%n", jobStatusList.size());
         out.printf("Total jobs pending: %d%n", jobStatusList.stream().filter(job -> !job.isStarted()).count());
-        out.printf("Total jobs in progress: %d%n", jobStatusList.stream().filter(job -> job.isStarted() && !job.isFinished()).count());
-        out.printf("Total jobs finished: %d%n", jobStatusList.stream().filter(CompactionJobStatus::isFinished).count());
+        out.printf("Total jobs in progress: %d%n", jobStatusList.stream().filter(job -> job.isStarted() && !job.isFinishedAndNoRunsInProgress()).count());
+        out.printf("Total jobs finished: %d%n", jobStatusList.stream().filter(CompactionJobStatus::isFinishedAndNoRunsInProgress).count());
         AverageRecordRateReport.printf("Average compaction rate: %s%n", recordRate(jobStatusList), out);
     }
 
