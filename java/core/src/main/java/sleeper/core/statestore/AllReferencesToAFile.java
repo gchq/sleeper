@@ -216,10 +216,12 @@ public class AllReferencesToAFile {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
-        if (!(obj instanceof AllReferencesToAFile))
+        }
+        if (!(obj instanceof AllReferencesToAFile)) {
             return false;
+        }
         AllReferencesToAFile other = (AllReferencesToAFile) obj;
         return Objects.equals(filename, other.filename)
                 && Objects.equals(lastStateStoreUpdateTime, other.lastStateStoreUpdateTime)
