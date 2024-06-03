@@ -80,7 +80,9 @@ public class IngestJobStatusReporterTestData {
                 finishedIngestJob(job4, StatusReporterTestHelper.task(2), summary(startTime4, Duration.ofMinutes(1), 600, 300)),
                 startedIngestJob(job3, StatusReporterTestHelper.task(2), startTime3),
                 finishedIngestJob(job2, StatusReporterTestHelper.task(1), summary(startTime2, Duration.ofMinutes(1), 600, 300)),
-                failedIngestJob(job1, StatusReporterTestHelper.task(1), new ProcessRunTime(startTime1, Duration.ofMinutes(1)), List.of("Something went wrong")));
+                failedIngestJob(job1, StatusReporterTestHelper.task(1),
+                        new ProcessRunTime(startTime1, Duration.ofMinutes(1)),
+                        List.of("Something went wrong", "More details")));
     }
 
     public static List<IngestJobStatus> jobWithMultipleRuns() {

@@ -139,10 +139,16 @@ public class StandardProcessRunReporter {
         out.printf("Finish Time: %s%n", summary.getFinishTime());
         out.printf("Finish Update Time: %s%n", update.getUpdateTime());
         out.printf("Duration: %s%n", getDurationString(summary)); // Duration from job started in driver or job accepted in executor?
-        out.printf("Records Read: %s%n", getRecordsRead(summary));
-        out.printf("Records Written: %s%n", getRecordsWritten(summary));
-        out.printf("Read Rate (reads per second): %s%n", getRecordsReadPerSecond(summary));
-        out.printf("Write Rate (writes per second): %s%n", getRecordsWrittenPerSecond(summary));
+        if (update.isSuccessful()) {
+            out.printf("Records Read: %s%n", getRecordsRead(summary));
+            out.printf("Records Written: %s%n", getRecordsWritten(summary));
+            out.printf("Read Rate (reads per second): %s%n", getRecordsReadPerSecond(summary));
+            out.printf("Write Rate (writes per second): %s%n", getRecordsWrittenPerSecond(summary));
+        } else {
+            out.println("Run failed, reasons:");
+            update.getFailureReasons()
+                    .forEach(reason -> out.printf("- %s%n", reason));
+        }
     }
 
     public List<TableFieldDefinition> getFinishedFields() {
