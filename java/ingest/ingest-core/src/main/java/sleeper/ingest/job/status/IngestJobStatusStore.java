@@ -48,7 +48,7 @@ public interface IngestJobStatusStore {
 
     default List<IngestJobStatus> getUnfinishedJobs(String tableId) {
         return streamAllJobs(tableId)
-                .filter(job -> !job.isFinished())
+                .filter(job -> !job.isUnfinishedOrAnyRunInProgress())
                 .collect(Collectors.toList());
     }
 

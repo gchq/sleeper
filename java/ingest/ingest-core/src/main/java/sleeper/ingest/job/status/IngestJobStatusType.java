@@ -41,6 +41,14 @@ public enum IngestJobStatusType {
         return order;
     }
 
+    public boolean isRunInProgress() {
+        return this == ACCEPTED || this == IN_PROGRESS;
+    }
+
+    public boolean isEndOfJob() {
+        return this == REJECTED || this == FINISHED;
+    }
+
     public static IngestJobStatusType of(ProcessStatusUpdate update) {
         return Stream.of(values())
                 .filter(type -> type.statusUpdateClass.isInstance(update))

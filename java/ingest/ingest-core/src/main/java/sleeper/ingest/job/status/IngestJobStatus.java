@@ -26,9 +26,11 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import static java.util.Comparator.comparing;
+import static java.util.stream.Collectors.toSet;
 import static sleeper.ingest.job.status.IngestJobStatusType.FINISHED;
 
 public class IngestJobStatus {
@@ -90,8 +92,10 @@ public class IngestJobStatus {
         return jobRuns.getRunsLatestFirst();
     }
 
-    public boolean isFinished() {
-        return jobRuns.isFinishedAndNoRunsInProgress();
+    public boolean isUnfinishedOrAnyRunInProgress() {
+        Set<IngestJobStatusType> runStatuses = runStatusTypes().collect(toSet());
+        return runStatuses.stream().anyMatch(IngestJobStatusType::isRunInProgress)
+                || runStatuses.stream().noneMatch(IngestJobStatusType::isEndOfJob);
     }
 
     public boolean isAnyRunSuccessful() {
