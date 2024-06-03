@@ -31,7 +31,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.iterator.IteratorException;
+import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.iterator.MergingIterator;
 import sleeper.core.iterator.SortedRecordIterator;
 import sleeper.core.partition.Partition;
@@ -87,7 +87,7 @@ public class CompactSortedFiles implements CompactionTask.CompactionRunner {
         this.configuration = configuration;
     }
 
-    public RecordsProcessed compact(CompactionJob compactionJob) throws IOException, IteratorException, StateStoreException, InterruptedException {
+    public RecordsProcessed compact(CompactionJob compactionJob) throws IOException, IteratorCreationException, StateStoreException, InterruptedException {
         TableProperties tableProperties = tablePropertiesProvider.getById(compactionJob.getTableId());
         Schema schema = tableProperties.getSchema();
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
@@ -164,7 +164,7 @@ public class CompactSortedFiles implements CompactionTask.CompactionRunner {
 
     public static CloseableIterator<Record> getMergingIterator(
             ObjectFactory objectFactory, Schema schema, CompactionJob compactionJob,
-            List<CloseableIterator<Record>> inputIterators) throws IteratorException {
+            List<CloseableIterator<Record>> inputIterators) throws IteratorCreationException {
         CloseableIterator<Record> mergingIterator = new MergingIterator(schema, inputIterators);
 
         // Apply an iterator if one is provided
@@ -173,7 +173,7 @@ public class CompactSortedFiles implements CompactionTask.CompactionRunner {
             try {
                 iterator = objectFactory.getObject(compactionJob.getIteratorClassName(), SortedRecordIterator.class);
             } catch (ObjectFactoryException e) {
-                throw new IteratorException("ObjectFactoryException creating iterator of class " + compactionJob.getIteratorClassName(), e);
+                throw new IteratorCreationException("ObjectFactoryException creating iterator of class " + compactionJob.getIteratorClassName(), e);
             }
             LOGGER.debug("Created iterator of class {}", compactionJob.getIteratorClassName());
             iterator.init(compactionJob.getIteratorConfig(), schema);

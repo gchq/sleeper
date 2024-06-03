@@ -18,7 +18,7 @@ package sleeper.systemtest.datageneration;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.iterator.IteratorException;
+import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStoreException;
@@ -56,7 +56,7 @@ public class WriteRandomDataDirect {
 
         try {
             ingestFactory.ingestFromRecordIteratorAndClose(tableProperties, recordIterator);
-        } catch (StateStoreException | IteratorException e) {
+        } catch (StateStoreException | IteratorCreationException e) {
             throw new IOException("Failed to write records using iterator", e);
         }
     }

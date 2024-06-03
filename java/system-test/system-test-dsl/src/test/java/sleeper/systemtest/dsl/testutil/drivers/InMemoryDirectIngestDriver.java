@@ -19,7 +19,7 @@ package sleeper.systemtest.dsl.testutil.drivers;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.iterator.IteratorException;
+import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.IngestRecordsFromIterator;
@@ -58,7 +58,7 @@ public class InMemoryDirectIngestDriver implements DirectIngestDriver {
                 .stateStore(instance.getStateStore(tableProperties))
                 .build()) {
             return new IngestRecordsFromIterator(coordinator, records).write();
-        } catch (StateStoreException | IteratorException | IOException e) {
+        } catch (StateStoreException | IteratorCreationException | IOException e) {
             throw new RuntimeException(e);
         }
     }

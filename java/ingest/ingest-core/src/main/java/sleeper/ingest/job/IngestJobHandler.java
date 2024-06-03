@@ -15,12 +15,12 @@
  */
 package sleeper.ingest.job;
 
-import sleeper.core.iterator.IteratorException;
+import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.IngestResult;
 
 import java.io.IOException;
 
 public interface IngestJobHandler {
-    IngestResult ingest(IngestJob job) throws IteratorException, StateStoreException, IOException;
+    IngestResult ingest(IngestJob job) throws IteratorCreationException, StateStoreException, IOException;
 }
