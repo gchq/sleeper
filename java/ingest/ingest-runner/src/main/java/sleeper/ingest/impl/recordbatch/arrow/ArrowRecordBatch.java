@@ -213,7 +213,7 @@ public class ArrowRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGD
      *                                                data of this size into a single file, to reduce the memory
      *                                                footprint
      * @return                                        number of bytes written
-     * @throws IOException                            -
+     * @throws IOException                            if there was a failure writing the local Arrow file
      */
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     private static long sortArrowAndWriteToLocalFile(BufferAllocator temporaryBufferAllocator,
@@ -285,7 +285,7 @@ public class ArrowRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGD
      * @param  bufferAllocator    the Arrow {@link BufferAllocator} to use as a working buffer during file-reading
      * @param  localArrowFileName the Arrow file to read
      * @return                    an iterator of records read from the Arrow file
-     * @throws IOException        -
+     * @throws IOException        if there was a failure reading from or writing to the Arrow file
      */
     private static CloseableIterator<Record> createCloseableRecordIteratorForArrowFile(BufferAllocator bufferAllocator,
             String localArrowFileName) throws IOException {
