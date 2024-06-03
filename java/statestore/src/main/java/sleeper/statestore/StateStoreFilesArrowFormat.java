@@ -128,7 +128,6 @@ public class StateStoreFilesArrowFormat {
                         .filename(filename)
                         .lastStateStoreUpdateTime(Instant.ofEpochMilli(updateTimeVector.get(rowNumber)))
                         .references(references)
-                        .referenceCount(references.size())
                         .build());
             }
         }

@@ -51,7 +51,6 @@ public class AllReferencesToAFileTestHelper {
         return AllReferencesToAFile.builder()
                 .filename(filename)
                 .references(List.of())
-                .referenceCount(0)
                 .lastStateStoreUpdateTime(updateTime)
                 .build();
     }

@@ -31,7 +31,6 @@ import static sleeper.dynamodb.tools.DynamoDBAttributes.createInstantAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createNumberAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getInstantAttribute;
-import static sleeper.dynamodb.tools.DynamoDBAttributes.getIntAttribute;
 
 /**
  * Reads and writes DynamoDB items to store Sleeper file references and reference counts.
@@ -156,7 +155,6 @@ class DynamoDBFileReferenceFormat {
         String filename = getFilenameFromReferenceCount(referenceCountItem);
         return AllReferencesToAFile.builder().filename(filename)
                 .lastStateStoreUpdateTime(getInstantAttribute(referenceCountItem, LAST_UPDATE_TIME))
-                .referenceCount(getIntAttribute(referenceCountItem, REFERENCES, 0))
                 .references(referencesByFilename.getOrDefault(filename, List.of()))
                 .build();
     }
