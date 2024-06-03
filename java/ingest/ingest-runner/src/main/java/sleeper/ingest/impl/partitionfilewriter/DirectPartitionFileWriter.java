@@ -91,7 +91,7 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
      * Append a record to the partition file.
      *
      * @param  record      The record to append
-     * @throws IOException -
+     * @throws IOException if there was a failure writing to the file
      */
     @Override
     public void append(Record record) throws IOException {
@@ -111,7 +111,7 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
      * returned.
      *
      * @return             a completed future containing the details of the file that was written
-     * @throws IOException -
+     * @throws IOException if there was a failure closing the partition writer or writing the sketches file
      */
     @Override
     public CompletableFuture<FileReference> close() throws IOException {
