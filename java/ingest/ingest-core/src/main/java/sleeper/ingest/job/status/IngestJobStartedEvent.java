@@ -22,7 +22,7 @@ import java.time.Instant;
 import java.util.Objects;
 
 /**
- * A event for when an ingest job was started. Used in the ingest job status store.
+ * An event for when an ingest job was started. Used in the ingest job status store.
  */
 public class IngestJobStartedEvent {
     private final String jobId;

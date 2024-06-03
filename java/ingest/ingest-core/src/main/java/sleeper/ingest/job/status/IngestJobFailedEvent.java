@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * A event for when an ingest job failed. Used in the ingest job status store.
+ * An event for when an ingest job failed. Used in the ingest job status store.
  */
 public class IngestJobFailedEvent {
     private final String jobId;

@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * A event for when an ingest job was validated. Used in the ingest job status store.
+ * An event for when an ingest job was validated. Used in the ingest job status store.
  */
 public class IngestJobValidatedEvent {
     private final String jobId;
