@@ -228,7 +228,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
      * Retrieves the partition tree from the state store if the current view is out of date. If too much time has
      * elapsed since the last refresh, it queries the {@link StateStore} to retrieve the current partition tree.
      *
-     * @throws StateStoreException -
+     * @throws StateStoreException if there was a failure reading partitions from the state store
      */
     private void updatePartitionTreeIfNecessary() throws StateStoreException {
         if (lastPartitionsUpdateTime == null) {
