@@ -5,6 +5,7 @@ Jobs waiting in ingest queue (excluded from report): 0
 Total jobs waiting across all queues: 0
 Total jobs in progress: 0
 Total jobs finished: 4
+Total jobs: 4
 Average ingest rate: 7,921.07 read/s, 5,209.97 write/s
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 | STATE    | JOB_ID                               | INPUT_FILES | TASK_ID | START_TIME           | FINISH_TIME              |  DURATION | RECORDS_READ | RECORDS_WRITTEN | READ_RATE (s) | WRITE_RATE (s) |

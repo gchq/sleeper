@@ -102,6 +102,10 @@ public class IngestJobStatus {
         return runStatusTypes().anyMatch(status -> status == FINISHED);
     }
 
+    public boolean isAnyRunInProgress() {
+        return runStatusTypes().anyMatch(status -> status.isRunInProgress());
+    }
+
     public boolean isInPeriod(Instant windowStartTime, Instant windowEndTime) {
         TimeWindowQuery timeWindowQuery = new TimeWindowQuery(windowStartTime, windowEndTime);
         if (jobRuns.isFinishedAndNoRunsInProgress()) {
