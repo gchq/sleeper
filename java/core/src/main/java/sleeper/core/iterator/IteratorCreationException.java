@@ -16,7 +16,7 @@
 package sleeper.core.iterator;
 
 /**
- * An exception for failures relating to Sleeper iterators.
+ * An exception for failures when creating Sleeper iterators.
  */
 public class IteratorCreationException extends Exception {
 
