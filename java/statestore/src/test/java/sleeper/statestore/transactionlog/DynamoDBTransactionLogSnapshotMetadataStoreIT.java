@@ -32,6 +32,8 @@ import sleeper.dynamodb.tools.DynamoDBContainer;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotMetadataStore.LatestSnapshots;
 
 import java.time.Instant;
+import java.util.List;
+import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -235,16 +237,57 @@ public class DynamoDBTransactionLogSnapshotMetadataStoreIT {
                         partitionsSnapshot(table2, 2)));
     }
 
+    @Nested
+    @DisplayName("Get oldest snapshots")
+    class GetOldestSnapshots {
+        @Test
+        void shouldGetSnapshotsThatAreOldEnough() throws Exception {
+            // Given
+            DynamoDBTransactionLogSnapshotMetadataStore snapshotStore = snapshotStore(List.of(
+                    Instant.parse("2024-04-24T15:45:00Z"),
+                    Instant.parse("2024-04-25T15:15:00Z"),
+                    Instant.parse("2024-04-26T15:45:00Z"),
+                    Instant.parse("2024-04-26T16:00:00Z")).iterator()::next);
+            snapshotStore.saveSnapshot(filesSnapshot(1));
+            snapshotStore.saveSnapshot(filesSnapshot(2));
+            snapshotStore.saveSnapshot(filesSnapshot(3));
+            snapshotStore.saveSnapshot(filesSnapshot(4));
+
+            // When / Then
+            assertThat(snapshotStore.getSnapshotsBefore(Instant.parse("2024-04-25T16:30:00Z")))
+                    .containsExactly(filesSnapshot(1), filesSnapshot(2));
+        }
+
+        @Test
+        void shouldIgnoreLatestSnapshotIfItIsOldEnough() throws Exception {
+            // Given
+            DynamoDBTransactionLogSnapshotMetadataStore snapshotStore = snapshotStore(() -> Instant.parse("2024-04-24T15:45:00Z"));
+            snapshotStore.saveSnapshot(filesSnapshot(1));
+
+            // When / Then
+            assertThat(snapshotStore.getSnapshotsBefore(Instant.parse("2024-04-25T16:00:00Z")))
+                    .isEmpty();
+        }
+    }
+
     private TableProperties createTable() {
         return createTestTableProperties(instanceProperties, schema);
     }
 
     private DynamoDBTransactionLogSnapshotMetadataStore snapshotStore() {
-        return snapshotStore(tableProperties);
+        return snapshotStore(Instant::now);
+    }
+
+    private DynamoDBTransactionLogSnapshotMetadataStore snapshotStore(Supplier<Instant> timeSupplier) {
+        return snapshotStore(tableProperties, timeSupplier);
     }
 
     private DynamoDBTransactionLogSnapshotMetadataStore snapshotStore(TableProperties tableProperties) {
-        return new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamoDBClient, Instant::now);
+        return snapshotStore(tableProperties, Instant::now);
+    }
+
+    private DynamoDBTransactionLogSnapshotMetadataStore snapshotStore(TableProperties tableProperties, Supplier<Instant> timeSupplier) {
+        return new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamoDBClient, timeSupplier);
     }
 
     private TransactionLogSnapshotMetadata filesSnapshot(long transactionNumber) {

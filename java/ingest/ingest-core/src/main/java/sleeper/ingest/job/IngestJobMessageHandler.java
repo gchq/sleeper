@@ -36,6 +36,12 @@ import java.util.function.Supplier;
 
 import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobRejected;
 
+/**
+ * Deserialises and validates a JSON string to a type of ingest job. Any validation failures are recorded in the
+ * {@link IngestJobStatusStore}.
+ *
+ * @param <T> the type of ingest job
+ */
 public class IngestJobMessageHandler<T> {
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestJobMessageHandler.class);
     private final TableIndex tableIndex;
@@ -58,6 +64,11 @@ public class IngestJobMessageHandler<T> {
         timeSupplier = Objects.requireNonNull(builder.timeSupplier, "timeSupplier must not be null");
     }
 
+    /**
+     * Creates a builder for this class configured to deserialise ingest jobs.
+     *
+     * @return a builder for this class
+     */
     public static Builder<IngestJob> forIngestJob() {
         return builder()
                 .deserialiser(new IngestJobSerDe()::fromJson)
@@ -69,6 +80,20 @@ public class IngestJobMessageHandler<T> {
         return new Builder<>();
     }
 
+    /**
+     * Deserialise a JSON string to an ingest job. This also performs validation on the job, which includes the
+     * following:
+     * - Checks if the files provided in the job exist. If the input files are directories, they will be expanded and
+     * files inside these directories will be added to the job. If no files exist the job will be rejected.
+     * - Finds the table ID of the table from the table name provided by the job. If no table exists with that name the
+     * job will be rejected.
+     * - Generates a random job ID if one was not provided by the job. Jobs that have been deserialised without a job ID
+     * will not fail validation.
+     *
+     * @param  message the JSON string
+     * @return         an optional containing the validated job, or an empty optional if the deserialisation or
+     *                 validation failed
+     */
     public Optional<T> deserialiseAndValidate(String message) {
         T job;
         try {
@@ -150,6 +175,11 @@ public class IngestJobMessageHandler<T> {
                 .validationTime(timeSupplier.get());
     }
 
+    /**
+     * Builder for creating ingest job message handler objects.
+     *
+     * @param <T> the type of job to deserialise and validate
+     */
     public static final class Builder<T> {
         private TableIndex tableIndex;
         private IngestJobStatusStore ingestJobStatusStore;
@@ -163,41 +193,90 @@ public class IngestJobMessageHandler<T> {
         private Builder() {
         }
 
+        /**
+         * Sets the table index.
+         *
+         * @param  tableIndex the table index
+         * @return            the builder
+         */
         public Builder<T> tableIndex(TableIndex tableIndex) {
             this.tableIndex = tableIndex;
             return this;
         }
 
+        /**
+         * Sets the ingest job status store.
+         *
+         * @param  ingestJobStatusStore the ingest job status store
+         * @return                      the builder
+         */
         public Builder<T> ingestJobStatusStore(IngestJobStatusStore ingestJobStatusStore) {
             this.ingestJobStatusStore = ingestJobStatusStore;
             return this;
         }
 
+        /**
+         * Sets the deserialiser.
+         *
+         * @param  deserialiser the deserialiser
+         * @return              the builder
+         */
         public <N> Builder<N> deserialiser(Function<String, N> deserialiser) {
             this.deserialiser = (Function<String, T>) deserialiser;
             return (Builder<N>) this;
         }
 
+        /**
+         * Sets the function that converts the generic ingest job to an ingest job.
+         *
+         * @param  toIngestJob the function that converts the generic ingest job to an ingest job
+         * @return             the builder
+         */
         public Builder<T> toIngestJob(Function<T, IngestJob> toIngestJob) {
             this.toIngestJob = toIngestJob;
             return this;
         }
 
+        /**
+         * Sets the function that applies changes to the generic ingest job after deserialisation and validation.
+         *
+         * @param  applyIngestJobChanges the function that applies changes to the generic ingest job
+         * @return                       the builder
+         */
         public Builder<T> applyIngestJobChanges(BiFunction<T, IngestJob, T> applyIngestJobChanges) {
             this.applyIngestJobChanges = applyIngestJobChanges;
             return this;
         }
 
+        /**
+         * Sets the function that expands directories.
+         *
+         * @param  expandDirectories the function that expands directories
+         * @return                   the builder
+         */
         public Builder<T> expandDirectories(Function<List<String>, List<String>> expandDirectories) {
             this.expandDirectories = expandDirectories;
             return this;
         }
 
+        /**
+         * Sets the job ID supplier. If the deserialised ingest job does not have an ID, this supplier is used to
+         * generate a new ID.
+         *
+         * @param  jobIdSupplier the job ID supplier
+         * @return               the builder
+         */
         public Builder<T> jobIdSupplier(Supplier<String> jobIdSupplier) {
             this.jobIdSupplier = jobIdSupplier;
             return this;
         }
 
+        /**
+         * Sets the time supplier.
+         *
+         * @param  timeSupplier the time supplier
+         * @return              the builder
+         */
         public Builder<T> timeSupplier(Supplier<Instant> timeSupplier) {
             this.timeSupplier = timeSupplier;
             return this;

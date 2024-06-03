@@ -194,8 +194,8 @@ public class DeleteTableIT {
                         FilenameUtils.getName(rootFile.getFilename()),
                         FilenameUtils.getName(rootFile.getFilename()).replace("parquet", "sketches"),
                         // Snapshot files
-                        "1-files.parquet",
-                        "1-partitions.parquet");
+                        "1-files.arrow",
+                        "1-partitions.arrow");
 
         // When
         deleteTable("table-1");

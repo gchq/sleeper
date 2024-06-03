@@ -22,7 +22,6 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.cdk.stack.bulkimport.PersistentEmrBulkImportStack;
 import sleeper.systemtest.dsl.SleeperSystemTest;
-import sleeper.systemtest.dsl.extension.AfterTestPurgeQueues;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
 import sleeper.systemtest.suite.fixtures.SystemTestSchema;
@@ -50,11 +49,12 @@ import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.partitionsB
 public class EmrPersistentBulkImportIT {
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper, AfterTestReports reporting, AfterTestPurgeQueues purgeQueues) {
+    void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {
         sleeper.connectToInstance(MAIN);
         sleeper.enableOptionalStack(PersistentEmrBulkImportStack.class);
         reporting.reportAlways(SystemTestReports.SystemTestBuilder::ingestJobs);
-        purgeQueues.purgeIfTestFailed(BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL);
+        // Note that we don't purge the bulk import job queue when the test fails,
+        // because it is deleted when the optional stack is disabled.
     }
 
     @AfterEach

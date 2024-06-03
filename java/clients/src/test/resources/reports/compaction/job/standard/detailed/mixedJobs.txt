@@ -2,7 +2,7 @@
 Compaction Job Status Report
 ----------------------------
 Details for job $(jobId4):
-State: FINISHED
+State: FAILED
 Creation Time: 2022-09-20T13:33:12.001Z
 Partition ID: partnDDD-DDDD-DDDD-DDDD-DDDDDDDDDDDD
 
@@ -12,10 +12,9 @@ Start Update Time: 2022-09-20T13:34:12.123Z
 Finish Time: 2022-09-20T13:35:12.001Z
 Finish Update Time: 2022-09-20T13:35:12.123Z
 Duration: 1m
-Records Read: 0
-Records Written: 0
-Read Rate (reads per second): 0.00
-Write Rate (writes per second): 0.00
+Run failed, reasons:
+- Something went wrong
+- More details
 --------------------------
 Details for job $(jobId3):
 State: FINISHED
@@ -34,7 +33,7 @@ Read Rate (reads per second): 10.00
 Write Rate (writes per second): 5.00
 --------------------------
 Details for job $(jobId2):
-State: IN PROGRESS
+State: IN_PROGRESS
 Creation Time: 2022-09-18T13:33:12.001Z
 Partition ID: partnBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB
 
