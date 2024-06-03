@@ -418,7 +418,7 @@ public class ArrowRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGD
     /**
      * Flush the in-memory Arrow data to a new local file, clearing the Arrow batch and updating the internal counters.
      *
-     * @throws IOException -
+     * @throws IOException if there was a failure writing the local file
      */
     protected void flushToLocalArrowFileThenClear() throws IOException {
         if (currentInsertIndex <= 0) {
@@ -498,7 +498,7 @@ public class ArrowRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGD
      * which were sorted as it was written).
      *
      * @return             An iterator to iterate through all of the records in sorted order.
-     * @throws IOException -
+     * @throws IOException if there was a failure writing the local file
      */
     private CloseableIterator<Record> createSortedRecordIterator() throws IOException {
         if (currentInsertIndex > 0) {
