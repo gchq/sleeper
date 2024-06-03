@@ -183,11 +183,11 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
      * iterator if required, split the sorted data into partitions and ingest the partitions into the back-end store.
      *
      * @param  isClosing                 Indicates that the {@link IngestCoordinator} is closing, so force the ingest,
-     *                                   even if
-     *                                   the record batch is not full, and do not recreate internal data structures
-     * @throws IOException               -
-     * @throws IteratorCreationException -
-     * @throws StateStoreException       -
+     *                                   even if the record batch is not full, and do not recreate internal data
+     *                                   structures
+     * @throws IOException               if there was a failure writing the new files
+     * @throws IteratorCreationException if there was a failure creating the Sleeper iterator
+     * @throws StateStoreException       if there was a failure adding files to the state store
      */
     private void initiateIngestIfNecessary(boolean isClosing) throws StateStoreException, IteratorCreationException, IOException {
         if (currentRecordBatch == null) {
@@ -258,9 +258,9 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
      * This method uses {@link #asyncCloseReturningResult()} and waits for that future to complete before
      * returning.
      *
-     * @throws IOException               -
-     * @throws IteratorCreationException -
-     * @throws StateStoreException       -
+     * @throws IOException               if there was a failure writing the new files
+     * @throws IteratorCreationException if there was a failure creating the Sleeper iterator
+     * @throws StateStoreException       if there was a failure adding files to the state store
      */
     @Override
     public void close() throws StateStoreException, IteratorCreationException, IOException {
@@ -277,9 +277,9 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
      * before returning.
      *
      * @return                           Details about every file that was added to the state store.
-     * @throws IOException               -
-     * @throws IteratorCreationException -
-     * @throws StateStoreException       -
+     * @throws IOException               if there was a failure writing the new files
+     * @throws IteratorCreationException if there was a failure creating the Sleeper iterator
+     * @throws StateStoreException       if there was a failure adding files to the state store
      */
     public IngestResult closeReturningResult() throws StateStoreException, IteratorCreationException, IOException {
         return asyncCloseReturningResult().join();
@@ -292,12 +292,10 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
      * only resolve once this is complete and all intermediate resources have been freed.
      *
      * @return                           A {@link CompletableFuture} which resolves to a list of information about every
-     *                                   file
-     *                                   that was added to
-     *                                   the state store.
-     * @throws IOException               -
-     * @throws IteratorCreationException -
-     * @throws StateStoreException       -
+     *                                   file that was added to the state store.
+     * @throws IOException               if there was a failure writing the new files
+     * @throws IteratorCreationException if there was a failure creating the Sleeper iterator
+     * @throws StateStoreException       if there was a failure adding files to the state store
      */
     public CompletableFuture<IngestResult> asyncCloseReturningResult() throws StateStoreException, IteratorCreationException, IOException {
         if (isClosed) {
@@ -364,11 +362,11 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
      * files on a remote file store. The amount of time taken by a call to this function varies significantly.
      *
      * @param  data                      The data to ingest
-     * @throws StateStoreException       -
-     * @throws IteratorCreationException -
-     * @throws IOException               -
+     * @throws IOException               if there was a failure writing the new files
+     * @throws IteratorCreationException if there was a failure creating the Sleeper iterator
+     * @throws StateStoreException       if there was a failure adding files to the state store
      */
-    public void write(INCOMINGDATATYPE data) throws StateStoreException, IteratorCreationException, IOException {
+    public void write(INCOMINGDATATYPE data) throws IOException, IteratorCreationException, StateStoreException {
         try {
             initiateIngestIfNecessary(false);
             currentRecordBatch.append(data);
