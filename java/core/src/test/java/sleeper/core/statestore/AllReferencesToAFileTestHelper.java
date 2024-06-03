@@ -50,8 +50,8 @@ public class AllReferencesToAFileTestHelper {
     public static AllReferencesToAFile fileWithNoReferences(String filename, Instant updateTime) {
         return AllReferencesToAFile.builder()
                 .filename(filename)
-                .internalReferences(List.of())
-                .totalReferenceCount(0)
+                .references(List.of())
+                .referenceCount(0)
                 .lastStateStoreUpdateTime(updateTime)
                 .build();
     }

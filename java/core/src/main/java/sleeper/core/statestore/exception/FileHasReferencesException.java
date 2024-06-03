@@ -24,7 +24,7 @@ import sleeper.core.statestore.StateStoreException;
  */
 public class FileHasReferencesException extends StateStoreException {
     public FileHasReferencesException(AllReferencesToAFile fileReferences) {
-        this(fileReferences.getFilename(), fileReferences.getTotalReferenceCount());
+        this(fileReferences.getFilename(), fileReferences.getReferenceCount());
     }
 
     public FileHasReferencesException(String filename, int totalReferenceCount) {

@@ -76,12 +76,12 @@ public class FileReferenceSerDeTest {
         FileReference rightFile = SplitFileReference.referenceForChildPartition(rootFile, "R");
         AllReferencesToAFile file = AllReferencesToAFile.builder()
                 .filename("test.parquet")
-                .internalReferences(List.of(leftFile, rightFile))
+                .references(List.of(leftFile, rightFile))
                 .build();
         FileReferenceSerDe serde = new FileReferenceSerDe();
 
         // When
-        List<FileReference> read = serde.listFromJson(serde.collectionToJson(file.getInternalReferences()));
+        List<FileReference> read = serde.listFromJson(serde.collectionToJson(file.getReferences()));
 
         // Then
         assertThat(read).containsExactly(leftFile, rightFile);
@@ -100,7 +100,7 @@ public class FileReferenceSerDeTest {
         FileReferenceSerDe serde = new FileReferenceSerDe();
 
         // When
-        List<FileReference> read = serde.listFromJson(serde.collectionToJson(file.getInternalReferences()));
+        List<FileReference> read = serde.listFromJson(serde.collectionToJson(file.getReferences()));
 
         // Then
         assertThat(read).containsExactly(reference);

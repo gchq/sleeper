@@ -1185,7 +1185,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             // Given
             store.addFilesWithReferences(List.of(AllReferencesToAFile.builder()
                     .filename("file")
-                    .internalReferences(List.of())
+                    .references(List.of())
                     .build()));
 
             // When

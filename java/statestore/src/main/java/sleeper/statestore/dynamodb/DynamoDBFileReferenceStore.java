@@ -123,7 +123,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
 
     private void addFile(AllReferencesToAFile file, Instant updateTime) throws StateStoreException {
         addFileReferenceCount(file.getFilename(), 0, updateTime);
-        for (FileReference reference : file.getInternalReferences()) {
+        for (FileReference reference : file.getReferences()) {
             addFileReference(reference, updateTime);
         }
     }
