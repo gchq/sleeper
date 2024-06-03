@@ -48,7 +48,7 @@ class RecordIteratorWithSleeperIteratorApplied implements CloseableIterator<Reco
      * @param  sleeperIteratorClassName  the Sleeper iterator to apply
      * @param  sleeperIteratorConfig     the configuration for the Sleeper iterator
      * @param  sourceIterator            the {@link CloseableIterator} to provide the source {@link Record} objects
-     * @throws IteratorCreationException thrown when there is an error in the Sleeper iterator
+     * @throws IteratorCreationException if there was a failure creating the Sleeper iterator
      */
     RecordIteratorWithSleeperIteratorApplied(
             ObjectFactory objectFactory,
@@ -74,7 +74,7 @@ class RecordIteratorWithSleeperIteratorApplied implements CloseableIterator<Reco
      * @param  sleeperIteratorConfig     the configuration for the Sleeper iterator
      * @param  sourceIterator            the {@link CloseableIterator} to provide the source {@link Record} objects
      * @return                           the record iterator, with the Sleeper iterator applied
-     * @throws IteratorCreationException thrown when there is an error in the Sleeper iterator
+     * @throws IteratorCreationException if there was a failure creating the Sleeper iterator
      */
     private static CloseableIterator<Record> applyIterator(
             ObjectFactory objectFactory,
