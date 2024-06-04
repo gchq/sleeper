@@ -19,29 +19,65 @@ package sleeper.ingest.task;
 import java.time.Instant;
 import java.util.List;
 
+/**
+ * Stores ingest task statuses.
+ */
 public interface IngestTaskStatusStore {
 
     IngestTaskStatusStore NONE = new IngestTaskStatusStore() {
     };
 
+    /**
+     * Saves an ingest task that has started.
+     *
+     * @param taskStatus the ingest task status
+     */
     default void taskStarted(IngestTaskStatus taskStatus) {
     }
 
+    /**
+     * Saves an ingest task that has finished.
+     *
+     * @param taskStatus the ingest task status
+     */
     default void taskFinished(IngestTaskStatus taskStatus) {
     }
 
+    /**
+     * Get the status of an ingest task by the task ID.
+     *
+     * @param  taskId the task ID
+     * @return        the ingest task status
+     */
     default IngestTaskStatus getTask(String taskId) {
         throw new UnsupportedOperationException("Instance has no ingest task status store");
     }
 
+    /**
+     * Gets the status of all ingest tasks.
+     *
+     * @return a list of all ingest task
+     */
     default List<IngestTaskStatus> getAllTasks() {
         throw new UnsupportedOperationException("Instance has no ingest task status store");
     }
 
+    /**
+     * Gets the status of all tasks that have occurred within a time window.
+     *
+     * @param  startTime the time window start
+     * @param  endTime   the time window end
+     * @return           a list of all tasks that have occurred within a time window
+     */
     default List<IngestTaskStatus> getTasksInTimePeriod(Instant startTime, Instant endTime) {
         throw new UnsupportedOperationException("Instance has no ingest task status store");
     }
 
+    /**
+     * Gets the status of all tasks that have not finished.
+     *
+     * @return a list of all tasks that have not finished
+     */
     default List<IngestTaskStatus> getTasksInProgress() {
         throw new UnsupportedOperationException("Instance has no ingest task status store");
     }

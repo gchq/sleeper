@@ -102,7 +102,8 @@
             {
               "type": "ProcessFailedStatus",
               "failureReasons": [
-                "Something went wrong"
+                "Something went wrong",
+                "More details"
               ],
               "runTime": {
                 "startTime": "2022-09-18T13:34:12.001Z",

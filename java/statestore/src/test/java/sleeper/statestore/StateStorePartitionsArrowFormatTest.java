@@ -187,6 +187,18 @@ public class StateStorePartitionsArrowFormatTest {
         assertThat(read(bytes)).isEqualTo(tree.getAllPartitions());
     }
 
+    @Test
+    void shouldWriteNoPartitions() throws Exception {
+        // Given
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+
+        // When
+        write(List.of(), bytes);
+
+        // Then
+        assertThat(read(bytes)).isEmpty();
+    }
+
     private void write(List<Partition> partitions, ByteArrayOutputStream stream) throws Exception {
         StateStorePartitionsArrowFormat.write(partitions, allocator, Channels.newChannel(stream));
     }

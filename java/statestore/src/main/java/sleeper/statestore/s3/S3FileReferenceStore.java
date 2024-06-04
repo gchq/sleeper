@@ -37,7 +37,7 @@ import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.core.statestore.exception.SplitRequestsFailedException;
-import sleeper.statestore.StateStoreParquetSerDe;
+import sleeper.statestore.StateStoreArrowFileStore;
 
 import java.io.IOException;
 import java.time.Clock;
@@ -77,7 +77,7 @@ class S3FileReferenceStore implements FileReferenceStore {
     private final Configuration conf;
     private final S3RevisionIdStore s3RevisionIdStore;
     private final S3StateStoreDataFile<List<AllReferencesToAFile>> s3StateStoreFile;
-    private final StateStoreParquetSerDe parquetSerDe;
+    private final StateStoreArrowFileStore dataStore;
     private Clock clock = Clock.systemUTC();
 
     private S3FileReferenceStore(Builder builder) {
@@ -89,10 +89,10 @@ class S3FileReferenceStore implements FileReferenceStore {
                 .description("files")
                 .revisionIdKey(CURRENT_FILES_REVISION_ID_KEY)
                 .buildPathFromRevisionId(this::getFilesPath)
-                .loadAndWriteData(this::readFilesFromParquet, this::writeFilesToParquet)
+                .loadAndWriteData(this::readFiles, this::writeFiles)
                 .hadoopConf(conf)
                 .build();
-        parquetSerDe = new StateStoreParquetSerDe(conf);
+        dataStore = new StateStoreArrowFileStore(conf);
     }
 
     static Builder builder() {
@@ -331,12 +331,11 @@ class S3FileReferenceStore implements FileReferenceStore {
 
     @Override
     public List<FileReference> getFileReferences() throws StateStoreException {
-        // TODO Optimise the following by pushing the predicate down to the Parquet reader
         S3RevisionId revisionId = getCurrentFilesRevisionId();
         if (null == revisionId) {
             return Collections.emptyList();
         }
-        List<AllReferencesToAFile> files = readFilesFromParquet(getFilesPath(revisionId));
+        List<AllReferencesToAFile> files = readFiles(getFilesPath(revisionId));
         return files.stream()
                 .flatMap(file -> file.getInternalReferences().stream())
                 .collect(Collectors.toList());
@@ -344,7 +343,7 @@ class S3FileReferenceStore implements FileReferenceStore {
 
     @Override
     public Stream<String> getReadyForGCFilenamesBefore(Instant maxUpdateTime) throws StateStoreException {
-        List<AllReferencesToAFile> files = readFilesFromParquet(getFilesPath(getCurrentFilesRevisionId()));
+        List<AllReferencesToAFile> files = readFiles(getFilesPath(getCurrentFilesRevisionId()));
         return files.stream()
                 .filter(file -> file.getTotalReferenceCount() == 0 && file.getLastStateStoreUpdateTime().isBefore(maxUpdateTime))
                 .map(AllReferencesToAFile::getFilename).distinct();
@@ -352,8 +351,7 @@ class S3FileReferenceStore implements FileReferenceStore {
 
     @Override
     public List<FileReference> getFileReferencesWithNoJobId() throws StateStoreException {
-        // TODO Optimise the following by pushing the predicate down to the Parquet reader
-        List<AllReferencesToAFile> files = readFilesFromParquet(getFilesPath(getCurrentFilesRevisionId()));
+        List<AllReferencesToAFile> files = readFiles(getFilesPath(getCurrentFilesRevisionId()));
         return files.stream()
                 .flatMap(file -> file.getInternalReferences().stream())
                 .filter(f -> f.getJobId() == null)
@@ -362,7 +360,7 @@ class S3FileReferenceStore implements FileReferenceStore {
 
     @Override
     public AllReferencesToAllFiles getAllFilesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException {
-        List<AllReferencesToAFile> allFiles = readFilesFromParquet(getFilesPath(getCurrentFilesRevisionId()));
+        List<AllReferencesToAFile> allFiles = readFiles(getFilesPath(getCurrentFilesRevisionId()));
         List<AllReferencesToAFile> filesWithNoReferences = allFiles.stream()
                 .filter(file -> file.getTotalReferenceCount() < 1)
                 .collect(toUnmodifiableList());
@@ -393,7 +391,7 @@ class S3FileReferenceStore implements FileReferenceStore {
         S3RevisionId firstRevisionId = S3RevisionId.firstRevision(UUID.randomUUID().toString());
         String path = getFilesPath(firstRevisionId);
         LOGGER.debug("Writing initial empty file (revisionId = {}, path = {})", firstRevisionId, path);
-        writeFilesToParquet(Collections.emptyList(), path);
+        writeFiles(Collections.emptyList(), path);
         s3RevisionIdStore.saveFirstFilesRevision(firstRevisionId);
     }
 
@@ -404,7 +402,7 @@ class S3FileReferenceStore implements FileReferenceStore {
             return true;
         }
         try {
-            return parquetSerDe.isEmpty(getFilesPath(revisionId));
+            return dataStore.isEmpty(getFilesPath(revisionId));
         } catch (IOException e) {
             throw new StateStoreException("Failed to load files", e);
         }
@@ -422,29 +420,23 @@ class S3FileReferenceStore implements FileReferenceStore {
     }
 
     private String getFilesPath(S3RevisionId revisionId) {
-        return stateStorePath + "/files/" + revisionId.getRevision() + "-" + revisionId.getUuid() + "-files.parquet";
+        return stateStorePath + "/files/" + revisionId.getRevision() + "-" + revisionId.getUuid() + "-files.arrow";
     }
 
-    private void writeFilesToParquet(List<AllReferencesToAFile> files, String path) throws StateStoreException {
-        LOGGER.debug("Writing {} file records to {}", files.size(), path);
+    private void writeFiles(List<AllReferencesToAFile> files, String path) throws StateStoreException {
         try {
-            parquetSerDe.saveFiles(path, files.stream());
+            dataStore.saveFiles(path, files);
         } catch (IOException e) {
             throw new StateStoreException("Failed to save files", e);
         }
-        LOGGER.debug("Wrote {} file records to {}", files.size(), path);
     }
 
-    private List<AllReferencesToAFile> readFilesFromParquet(String path) throws StateStoreException {
-        LOGGER.debug("Loading file records from {}", path);
-        List<AllReferencesToAFile> files = new ArrayList<>();
+    private List<AllReferencesToAFile> readFiles(String path) throws StateStoreException {
         try {
-            parquetSerDe.loadFiles(path, files::add);
+            return dataStore.loadFiles(path);
         } catch (IOException e) {
             throw new StateStoreException("Failed to load files", e);
         }
-        LOGGER.debug("Loaded {} file records from {}", files.size(), path);
-        return files;
     }
 
     public void fixFileUpdateTime(Instant now) {
