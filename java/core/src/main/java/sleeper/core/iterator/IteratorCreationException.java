@@ -16,19 +16,19 @@
 package sleeper.core.iterator;
 
 /**
- * An exception for failures relating to Sleeper iterators.
+ * An exception for failures when creating Sleeper iterators.
  */
-public class IteratorException extends Exception {
+public class IteratorCreationException extends Exception {
 
-    public IteratorException(Throwable cause) {
+    public IteratorCreationException(Throwable cause) {
         super(cause);
     }
 
-    public IteratorException(String message, Throwable e) {
+    public IteratorCreationException(String message, Throwable e) {
         super(message, e);
     }
 
-    public IteratorException(String message) {
+    public IteratorCreationException(String message) {
         super(message);
     }
 }

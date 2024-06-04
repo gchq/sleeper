@@ -15,7 +15,7 @@
  */
 package sleeper.ingest;
 
-import sleeper.core.iterator.IteratorException;
+import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.impl.IngestCoordinator;
@@ -37,11 +37,11 @@ public class IngestRecords {
         // Do nothing
     }
 
-    public void write(Record record) throws IOException, IteratorException, StateStoreException {
+    public void write(Record record) throws IOException, IteratorCreationException, StateStoreException {
         ingestCoordinator.write(record);
     }
 
-    public IngestResult close() throws StateStoreException, IteratorException, IOException {
+    public IngestResult close() throws StateStoreException, IteratorCreationException, IOException {
         return ingestCoordinator.closeReturningResult();
     }
 }
