@@ -43,9 +43,7 @@ public class AllReferencesToAFile {
         filename = Objects.requireNonNull(builder.filename, "filename must not be null");
         lastStateStoreUpdateTime = builder.lastStateStoreUpdateTime;
         referenceByPartitionId = Objects.requireNonNull(builder.referenceByPartitionId, "referenceByPartitionId must not be null");
-        referenceCount = referenceByPartitionId.entrySet().stream()
-                .flatMap(entry -> Stream.of(entry.getValue()))
-                .mapToInt(reference -> 1).sum();
+        referenceCount = referenceByPartitionId.size();
     }
 
     public static Builder builder() {
