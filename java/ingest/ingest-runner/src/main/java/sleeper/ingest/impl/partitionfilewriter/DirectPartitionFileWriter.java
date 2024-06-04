@@ -90,7 +90,7 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
     /**
      * Append a record to the partition file.
      *
-     * @param  record      The record to append
+     * @param  record      the record to append
      * @throws IOException if there was a failure writing to the file
      */
     @Override

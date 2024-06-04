@@ -31,7 +31,7 @@ public interface RecordBatch<INCOMINGDATATYPE> extends AutoCloseable {
     /**
      * Append data to the batch.
      *
-     * @param  data        The data to append
+     * @param  data        the data to append
      * @throws IOException if there was a failure writing to the file
      */
     void append(INCOMINGDATATYPE data) throws IOException;
@@ -39,7 +39,7 @@ public interface RecordBatch<INCOMINGDATATYPE> extends AutoCloseable {
     /**
      * Indicate whether the batch has any avaialble space.
      *
-     * @return True if the batch is full
+     * @return true if the batch is full
      */
     boolean isFull();
 

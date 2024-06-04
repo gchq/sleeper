@@ -184,7 +184,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
      *
      * @param  isClosing                 Indicates that the {@link IngestCoordinator} is closing, so force the ingest,
      *                                   even if the record batch is not full, and do not recreate internal data
-     *                                   structures
+     *                                   structures.
      * @throws IOException               if there was a failure writing the new files
      * @throws IteratorCreationException if there was a failure creating the Sleeper iterator
      * @throws StateStoreException       if there was a failure adding files to the state store
@@ -361,7 +361,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
      * data that is held in memory and flushing it to local disk, or merging local files and saving them as partition
      * files on a remote file store. The amount of time taken by a call to this function varies significantly.
      *
-     * @param  data                      The data to ingest
+     * @param  data                      the data to ingest
      * @throws IOException               if there was a failure writing the new files
      * @throws IteratorCreationException if there was a failure creating the Sleeper iterator
      * @throws StateStoreException       if there was a failure adding files to the state store

@@ -160,7 +160,7 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
     /**
      * Append a record to the partition. This writes the record to a local Parquet file and does not upload it to S3.
      *
-     * @param  record      The record to append
+     * @param  record      the record to append
      * @throws IOException if there was a failure writing to the file
      */
     @Override
@@ -178,7 +178,7 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
      * for both the Parquet file and for the associated quantiles sketch file. The local copies are deleted and then the
      * {@link CompletableFuture} completes. The details of new partition file are returned in the completed future.
      *
-     * @return             Details about the new partition file
+     * @return             details about the new partition file
      * @throws IOException if there was a failure closing the partition writer or writing the sketches file
      */
     @Override
