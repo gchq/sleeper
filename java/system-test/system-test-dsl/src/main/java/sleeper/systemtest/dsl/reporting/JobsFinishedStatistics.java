@@ -41,11 +41,11 @@ public class JobsFinishedStatistics {
     }
 
     public static JobsFinishedStatistics fromIngestJobs(List<IngestJobStatus> jobs) {
-        return builder().jobs(jobs, IngestJobStatus::isFinished, IngestJobStatus::getJobRuns).build();
+        return builder().jobs(jobs, IngestJobStatus::isAnyRunSuccessful, IngestJobStatus::getJobRuns).build();
     }
 
     public static JobsFinishedStatistics fromCompactionJobs(List<CompactionJobStatus> jobs) {
-        return builder().jobs(jobs, CompactionJobStatus::isFinished, CompactionJobStatus::getJobRuns).build();
+        return builder().jobs(jobs, CompactionJobStatus::isAnyRunSuccessful, CompactionJobStatus::getJobRuns).build();
     }
 
     private static Builder builder() {

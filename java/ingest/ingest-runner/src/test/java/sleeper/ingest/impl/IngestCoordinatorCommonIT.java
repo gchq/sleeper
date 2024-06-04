@@ -37,7 +37,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.validation.IngestFileWritingStrategy;
 import sleeper.core.CommonTestConstants;
-import sleeper.core.iterator.IteratorException;
+import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.iterator.impl.AdditionIterator;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
@@ -132,7 +132,7 @@ public class IngestCoordinatorCommonIT {
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
-    public void shouldWriteRecordsCorrectly(TestIngestType ingestType) throws StateStoreException, IOException, IteratorException {
+    public void shouldWriteRecordsCorrectly(TestIngestType ingestType) throws StateStoreException, IOException, IteratorCreationException {
         // Given
         RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(
                 new LongType(),
@@ -178,7 +178,7 @@ public class IngestCoordinatorCommonIT {
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
-    public void shouldWriteRecordsSplitByPartitionIntKey(TestIngestType ingestType) throws StateStoreException, IOException, IteratorException {
+    public void shouldWriteRecordsSplitByPartitionIntKey(TestIngestType ingestType) throws StateStoreException, IOException, IteratorCreationException {
         // Given
         RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(
                 new IntType(),
@@ -231,7 +231,7 @@ public class IngestCoordinatorCommonIT {
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
-    public void shouldWriteRecordsSplitByPartitionLongKey(TestIngestType ingestType) throws StateStoreException, IOException, IteratorException {
+    public void shouldWriteRecordsSplitByPartitionLongKey(TestIngestType ingestType) throws StateStoreException, IOException, IteratorCreationException {
         // Given
         RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(
                 new LongType(),
@@ -338,7 +338,7 @@ public class IngestCoordinatorCommonIT {
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
-    public void shouldWriteRecordsSplitByPartitionByteArrayKey(TestIngestType ingestType) throws StateStoreException, IOException, IteratorException {
+    public void shouldWriteRecordsSplitByPartitionByteArrayKey(TestIngestType ingestType) throws StateStoreException, IOException, IteratorCreationException {
         // Given
         RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(
                 new ByteArrayType(),
@@ -461,7 +461,7 @@ public class IngestCoordinatorCommonIT {
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
-    public void shouldWriteRecordsSplitByPartition2DimensionalByteArrayKey(TestIngestType ingestType) throws StateStoreException, IOException, IteratorException {
+    public void shouldWriteRecordsSplitByPartition2DimensionalByteArrayKey(TestIngestType ingestType) throws StateStoreException, IOException, IteratorCreationException {
         // Given
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey2D(
                 new ByteArrayType(), new ByteArrayType(),
@@ -529,7 +529,7 @@ public class IngestCoordinatorCommonIT {
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
     public void shouldWriteRecordsSplitByPartition2DimensionalIntLongKeyWhenSplitOnDim1(
-            TestIngestType ingestType) throws StateStoreException, IOException, IteratorException {
+            TestIngestType ingestType) throws StateStoreException, IOException, IteratorCreationException {
         // Given
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey2D(
                 new IntType(), new LongType(),
@@ -591,7 +591,7 @@ public class IngestCoordinatorCommonIT {
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
     public void shouldWriteRecordsSplitByPartition2DimensionalLongStringKeyWhenSplitOnDim1(
-            TestIngestType ingestType) throws StateStoreException, IOException, IteratorException {
+            TestIngestType ingestType) throws StateStoreException, IOException, IteratorCreationException {
         // Given
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey2D(
                 new LongType(), new StringType(),
@@ -659,7 +659,7 @@ public class IngestCoordinatorCommonIT {
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
     public void shouldWriteRecordsSplitByPartitionWhenThereIsOnlyDataInOnePartition(
-            TestIngestType ingestType) throws StateStoreException, IOException, IteratorException {
+            TestIngestType ingestType) throws StateStoreException, IOException, IteratorCreationException {
         // Given
         RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(
                 new LongType(),
@@ -705,7 +705,7 @@ public class IngestCoordinatorCommonIT {
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
     public void shouldWriteDuplicateRecords(
-            TestIngestType ingestType) throws StateStoreException, IOException, IteratorException {
+            TestIngestType ingestType) throws StateStoreException, IOException, IteratorCreationException {
         // Given
         RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(
                 new LongType(),
@@ -755,7 +755,7 @@ public class IngestCoordinatorCommonIT {
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
-    public void shouldWriteNoRecordsSuccessfully(TestIngestType ingestType) throws StateStoreException, IOException, IteratorException {
+    public void shouldWriteNoRecordsSuccessfully(TestIngestType ingestType) throws StateStoreException, IOException, IteratorCreationException {
         // Given
         RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(
                 new LongType(),
@@ -786,7 +786,7 @@ public class IngestCoordinatorCommonIT {
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
     public void shouldApplyIterator(
-            TestIngestType ingestType) throws StateStoreException, IOException, IteratorException {
+            TestIngestType ingestType) throws StateStoreException, IOException, IteratorCreationException {
         // Given
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.byteArrayRowKeyLongSortKey(
                 Arrays.asList(new byte[]{1, 1}, new byte[]{1, 1}, new byte[]{11, 12}, new byte[]{11, 12}),
@@ -847,7 +847,7 @@ public class IngestCoordinatorCommonIT {
     private static void ingestRecords(
             RecordGenerator.RecordListAndSchema recordListAndSchema,
             IngestCoordinatorTestParameters ingestCoordinatorTestParameters,
-            TestIngestType ingestType) throws StateStoreException, IteratorException, IOException {
+            TestIngestType ingestType) throws StateStoreException, IteratorCreationException, IOException {
         try (IngestCoordinator<Record> ingestCoordinator = ingestType.createIngestCoordinator(
                 ingestCoordinatorTestParameters)) {
             for (Record record : recordListAndSchema.recordList) {
