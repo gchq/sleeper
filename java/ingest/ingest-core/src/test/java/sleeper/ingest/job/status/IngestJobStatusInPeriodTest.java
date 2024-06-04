@@ -25,6 +25,7 @@ import sleeper.core.record.process.status.ProcessStatusUpdate;
 import sleeper.ingest.job.IngestJob;
 
 import java.time.Instant;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
@@ -36,7 +37,7 @@ import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestJob
 
 public class IngestJobStatusInPeriodTest {
     private final IngestJob job = IngestJob.builder()
-            .id("test-job").files("test.parquet").tableName("test-table").build();
+            .id("test-job").files(List.of("test.parquet")).tableName("test-table").build();
 
     @Nested
     @DisplayName("Unfinished job")

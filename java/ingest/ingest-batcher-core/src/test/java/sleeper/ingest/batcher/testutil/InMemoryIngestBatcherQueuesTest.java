@@ -32,7 +32,7 @@ class InMemoryIngestBatcherQueuesTest {
     void shouldSendJobToNamedQueue() {
         IngestJob job = IngestJob.builder()
                 .id("test-ingest-job")
-                .files("test-bucket/test-file.parquet")
+                .files(List.of("test-bucket/test-file.parquet"))
                 .tableName("test-table")
                 .build();
         queueClient.send("test-queue-url", job);
@@ -45,12 +45,12 @@ class InMemoryIngestBatcherQueuesTest {
     void shouldSendJobsToMultipleQueues() {
         IngestJob job1 = IngestJob.builder()
                 .id("test-ingest-job-1")
-                .files("test-bucket/test-file-1.parquet")
+                .files(List.of("test-bucket/test-file-1.parquet"))
                 .tableName("test-table")
                 .build();
         IngestJob job2 = IngestJob.builder()
                 .id("test-ingest-job-2")
-                .files("test-bucket/test-file-2.parquet")
+                .files(List.of("test-bucket/test-file-2.parquet"))
                 .tableName("test-table")
                 .build();
         queueClient.send("test-queue-url-1", job1);
@@ -65,12 +65,12 @@ class InMemoryIngestBatcherQueuesTest {
     void shouldSendMultipleJobsToOneQueue() {
         IngestJob job1 = IngestJob.builder()
                 .id("test-ingest-job-1")
-                .files("test-bucket/test-file-1.parquet")
+                .files(List.of("test-bucket/test-file-1.parquet"))
                 .tableName("test-table")
                 .build();
         IngestJob job2 = IngestJob.builder()
                 .id("test-ingest-job-2")
-                .files("test-bucket/test-file-2.parquet")
+                .files(List.of("test-bucket/test-file-2.parquet"))
                 .tableName("test-table")
                 .build();
         queueClient.send("test-queue-url", job1);
@@ -84,7 +84,7 @@ class InMemoryIngestBatcherQueuesTest {
     void shouldSendSameJobMultipleTimes() {
         IngestJob job = IngestJob.builder()
                 .id("test-ingest-job")
-                .files("test-bucket/test-file.parquet")
+                .files(List.of("test-bucket/test-file.parquet"))
                 .tableName("test-table")
                 .build();
         queueClient.send("test-queue-url", job);

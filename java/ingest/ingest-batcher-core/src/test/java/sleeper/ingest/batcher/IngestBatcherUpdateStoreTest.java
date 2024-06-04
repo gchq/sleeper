@@ -109,7 +109,7 @@ class IngestBatcherUpdateStoreTest extends IngestBatcherTestBase {
         IngestJob expectedJob = IngestJob.builder()
                 .id("fail-job-id")
                 .tableId("fail-table")
-                .files("test-bucket/fail.parquet")
+                .files(List.of("test-bucket/fail.parquet"))
                 .build();
 
         instanceProperties.set(INGEST_JOB_QUEUE_URL, "fail-ingest-queue-url");

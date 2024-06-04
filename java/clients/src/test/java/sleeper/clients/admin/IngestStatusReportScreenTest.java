@@ -208,7 +208,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
         }
 
         private IngestJobStatus startedJobStatus(String jobId) {
-            return startedIngestJob(IngestJob.builder().id(jobId).files("test.parquet").build(),
+            return startedIngestJob(IngestJob.builder().id(jobId).files(List.of("test.parquet")).build(),
                     "test-task", Instant.parse("2023-03-15T17:52:12.001Z"));
         }
 

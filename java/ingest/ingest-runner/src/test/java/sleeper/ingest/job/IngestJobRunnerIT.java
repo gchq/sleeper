@@ -346,9 +346,9 @@ class IngestJobRunnerIT {
         writeParquetFileForIngest(new Path("s3a://" + ingestDataBucketName + "/ingest/file2.parquet"), records2);
 
         IngestJob ingestJob = IngestJob.builder()
-                .tableName(tableName).id("id").files(
+                .tableName(tableName).id("id").files(List.of(
                         tableDataBucketName + "/ingest/file1.parquet",
-                        ingestDataBucketName + "/ingest/file2.parquet")
+                        ingestDataBucketName + "/ingest/file2.parquet"))
                 .build();
         List<Record> expectedRecords = new ArrayList<>();
         expectedRecords.addAll(records1.recordList);

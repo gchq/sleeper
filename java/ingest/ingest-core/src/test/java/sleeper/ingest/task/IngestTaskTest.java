@@ -371,7 +371,7 @@ public class IngestTaskTest {
         IngestJob job = IngestJob.builder()
                 .tableId(DEFAULT_TABLE_ID)
                 .tableName("test-table")
-                .files(UUID.randomUUID().toString())
+                .files(List.of(UUID.randomUUID().toString()))
                 .id(jobId)
                 .build();
         jobsOnQueue.add(job);

@@ -72,7 +72,7 @@ public class IngestJobMessageHandlerTest {
                             .id("test-job-id")
                             .tableName("test-table")
                             .tableId("test-table-id")
-                            .files("file1.parquet", "file2.parquet")
+                            .files(List.of("file1.parquet", "file2.parquet"))
                             .build());
             assertThat(ingestJobStatusStore.getInvalidJobs()).isEmpty();
             assertThat(ingestJobStatusStore.getAllJobs(tableId)).isEmpty();
@@ -95,7 +95,7 @@ public class IngestJobMessageHandlerTest {
                             .id("test-job-id")
                             .tableName("test-table")
                             .tableId("test-table-id")
-                            .files("file1.parquet", "file2.parquet")
+                            .files(List.of("file1.parquet", "file2.parquet"))
                             .build());
             assertThat(ingestJobStatusStore.getInvalidJobs()).isEmpty();
             assertThat(ingestJobStatusStore.getAllJobs(tableId)).isEmpty();
@@ -119,7 +119,7 @@ public class IngestJobMessageHandlerTest {
                             .id("test-job-id")
                             .tableName("test-table")
                             .tableId("test-table-id")
-                            .files("file1.parquet", "file2.parquet")
+                            .files(List.of("file1.parquet", "file2.parquet"))
                             .build());
             assertThat(ingestJobStatusStore.getInvalidJobs()).isEmpty();
             assertThat(ingestJobStatusStore.getAllJobs(tableId)).isEmpty();
@@ -141,7 +141,7 @@ public class IngestJobMessageHandlerTest {
                             .id("test-job-id")
                             .tableName("test-table")
                             .tableId("test-table-id")
-                            .files("file1.parquet", "file2.parquet")
+                            .files(List.of("file1.parquet", "file2.parquet"))
                             .build());
             assertThat(ingestJobStatusStore.getInvalidJobs()).isEmpty();
             assertThat(ingestJobStatusStore.getAllJobs(tableId)).isEmpty();
