@@ -443,7 +443,7 @@ public class InMemoryIngestJobStatusStoreTest {
             RecordsProcessedSummary summary = summary(startTime, Duration.ofMinutes(10), 100L, 100L);
 
             // When
-            store.jobStarted(ingestJobStarted(job, startTime).jobRunId(jobRunId).taskId(taskId).build());
+            store.jobStarted(ingestJobStartedBuilder(job, startTime).jobRunId(jobRunId).taskId(taskId).build());
             store.jobFinished(ingestJobFinished(job, summary).jobRunId(jobRunId).taskId(taskId).build());
 
             // Then
@@ -484,4 +484,10 @@ public class InMemoryIngestJobStatusStoreTest {
         return TableStatusTestHelper.uniqueIdAndName(new TableIdGenerator().generateString(), tableName);
     }
 
+    private static IngestJobStartedEvent.Builder ingestJobStartedBuilder(IngestJob job, Instant startTime) {
+        return IngestJobStartedEvent.builder()
+                .job(job)
+                .startTime(startTime)
+                .startOfRun(true);
+    }
 }
