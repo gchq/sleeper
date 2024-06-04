@@ -75,7 +75,6 @@ public class AllReferencesToAFileSerDe {
         public JsonElement serialize(AllReferencesToAFile file, Type type, JsonSerializationContext context) {
             JsonObject object = new JsonObject();
             object.addProperty("filename", file.getFilename());
-            object.addProperty("totalReferenceCount", file.getReferenceCount());
             JsonArray referencesArr = new JsonArray();
             for (FileReference reference : file.getReferences()) {
                 JsonObject referenceObj = context.serialize(reference).getAsJsonObject();
