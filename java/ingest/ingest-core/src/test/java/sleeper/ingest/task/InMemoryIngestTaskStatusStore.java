@@ -23,6 +23,9 @@ import java.util.Map;
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
+/**
+ * An in-memory ingest task status store backed by a map.
+ */
 public class InMemoryIngestTaskStatusStore implements IngestTaskStatusStore {
 
     private final Map<String, IngestTaskStatus> statusByTaskId = new LinkedHashMap<>();

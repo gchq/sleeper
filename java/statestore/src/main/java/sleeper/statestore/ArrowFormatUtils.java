@@ -20,8 +20,11 @@ import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.vector.complex.writer.BaseWriter.StructWriter;
 import org.apache.arrow.vector.complex.writer.VarBinaryWriter;
 import org.apache.arrow.vector.complex.writer.VarCharWriter;
+import org.apache.arrow.vector.ipc.ArrowStreamReader;
 import org.apache.arrow.vector.types.pojo.Field;
 
+import java.io.IOException;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 
@@ -31,6 +34,21 @@ import java.time.Instant;
 public class ArrowFormatUtils {
 
     private ArrowFormatUtils() {
+    }
+
+    /**
+     * Checks if an Arrow file is empty.
+     *
+     * @param  allocator   the allocator
+     * @param  channel     the channel
+     * @return             true if the file is empty
+     * @throws IOException if the file could not be read
+     */
+    public static boolean isEmpty(BufferAllocator allocator, ReadableByteChannel channel) throws IOException {
+        try (ArrowStreamReader reader = new ArrowStreamReader(channel, allocator)) {
+            reader.loadNextBatch();
+            return reader.getVectorSchemaRoot().getRowCount() == 0;
+        }
     }
 
     /**

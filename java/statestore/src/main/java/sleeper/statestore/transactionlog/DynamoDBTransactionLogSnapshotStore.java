@@ -48,6 +48,7 @@ public class DynamoDBTransactionLogSnapshotStore {
     private final InstanceProperties instanceProperties;
     private final TableProperties tableProperties;
     private final Configuration configuration;
+    private final String basePath;
 
     public DynamoDBTransactionLogSnapshotStore(
             InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamo, Configuration configuration) {
@@ -70,6 +71,7 @@ public class DynamoDBTransactionLogSnapshotStore {
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
         this.configuration = configuration;
+        this.basePath = getBasePath(instanceProperties, tableProperties);
     }
 
     /**
@@ -147,7 +149,7 @@ public class DynamoDBTransactionLogSnapshotStore {
      */
     public void saveFilesSnapshot(TransactionLogSnapshot snapshot) throws IOException, DuplicateSnapshotException {
         TransactionLogSnapshotMetadata snapshotMetadata = TransactionLogSnapshotMetadata.forFiles(
-                getBasePath(), snapshot.getTransactionNumber());
+                basePath, snapshot.getTransactionNumber());
 
         snapshotSerDe.saveFiles(snapshotMetadata, snapshot.getState());
         try {
@@ -171,7 +173,7 @@ public class DynamoDBTransactionLogSnapshotStore {
      */
     public void savePartitionsSnapshot(TransactionLogSnapshot snapshot) throws IOException, DuplicateSnapshotException {
         TransactionLogSnapshotMetadata snapshotMetadata = TransactionLogSnapshotMetadata.forPartitions(
-                getBasePath(), snapshot.getTransactionNumber());
+                basePath, snapshot.getTransactionNumber());
         snapshotSerDe.savePartitions(snapshotMetadata, snapshot.getState());
         try {
             metadataSaver.save(snapshotMetadata);
@@ -184,7 +186,14 @@ public class DynamoDBTransactionLogSnapshotStore {
         }
     }
 
-    private String getBasePath() {
+    /**
+     * Constructs the base path to a table data bucket.
+     *
+     * @param  instanceProperties the instance properties
+     * @param  tableProperties    the table properties
+     * @return                    the full path to the table data bucket (including the file system)
+     */
+    public static String getBasePath(InstanceProperties instanceProperties, TableProperties tableProperties) {
         return instanceProperties.get(FILE_SYSTEM)
                 + instanceProperties.get(DATA_BUCKET) + "/"
                 + tableProperties.get(TableProperty.TABLE_ID);

@@ -25,6 +25,9 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.stream.Stream;
 
+/**
+ * A status for ingest tasks that have finished.
+ */
 public class IngestTaskFinishedStatus {
     private final Instant finishTime;
     private final int totalJobRuns;
@@ -76,6 +79,12 @@ public class IngestTaskFinishedStatus {
         return recordsWrittenPerSecond;
     }
 
+    /**
+     * Creates a records processed summary using a start time.
+     *
+     * @param  startTime the start time
+     * @return           a {@link RecordProcessedSummary}
+     */
     public RecordsProcessedSummary asSummary(Instant startTime) {
         return new RecordsProcessedSummary(
                 new RecordsProcessed(totalRecordsRead, totalRecordsWritten),
@@ -119,6 +128,9 @@ public class IngestTaskFinishedStatus {
                 '}';
     }
 
+    /**
+     * Builder class for ingest task finished status objects.
+     */
     public static final class Builder {
         private Instant finishTime;
         private int totalJobRuns;
@@ -132,46 +144,100 @@ public class IngestTaskFinishedStatus {
         private Builder() {
         }
 
+        /**
+         * Sets the finish time.
+         *
+         * @param  finishTime the finish time
+         * @return            the builder
+         */
         public Builder finishTime(Instant finishTime) {
             this.finishTime = finishTime;
             return this;
         }
 
+        /**
+         * Sets the total job runs.
+         *
+         * @param  totalJobRuns the total job runs
+         * @return              the builder
+         */
         public Builder totalJobRuns(int totalJobRuns) {
             this.totalJobRuns = totalJobRuns;
             return this;
         }
 
+        /**
+         * Sets the time spent on jobs.
+         *
+         * @param  timeSpentOnJobs the time spent on jobs
+         * @return                 the builder
+         */
         public Builder timeSpentOnJobs(Duration timeSpentOnJobs) {
             this.timeSpentOnJobs = timeSpentOnJobs;
             return this;
         }
 
+        /**
+         * Sets the total records read.
+         *
+         * @param  totalRecordsRead the total records read
+         * @return                  the builder
+         */
         public Builder totalRecordsRead(long totalRecordsRead) {
             this.totalRecordsRead = totalRecordsRead;
             return this;
         }
 
+        /**
+         * Sets the total records written.
+         *
+         * @param  totalRecordsWritten the total records written
+         * @return                     the builder
+         */
         public Builder totalRecordsWritten(long totalRecordsWritten) {
             this.totalRecordsWritten = totalRecordsWritten;
             return this;
         }
 
+        /**
+         * Sets the records read per second.
+         *
+         * @param  recordsReadPerSecond the records read per second
+         * @return                      the builder
+         */
         public Builder recordsReadPerSecond(double recordsReadPerSecond) {
             this.recordsReadPerSecond = recordsReadPerSecond;
             return this;
         }
 
+        /**
+         * Sets the records written per second.
+         *
+         * @param  recordsWrittenPerSecond the records written per second
+         * @return                         the builder
+         */
         public Builder recordsWrittenPerSecond(double recordsWrittenPerSecond) {
             this.recordsWrittenPerSecond = recordsWrittenPerSecond;
             return this;
         }
 
+        /**
+         * Adds a job summary to calculate the average record rates.
+         *
+         * @param  jobSummary the job summary
+         * @return            the builder
+         */
         public Builder addJobSummary(RecordsProcessedSummary jobSummary) {
             rateBuilder.summary(jobSummary);
             return this;
         }
 
+        /**
+         * Adds job summaries to calculate the average record rates.
+         *
+         * @param  jobSummaries the job summaries
+         * @return              the builder
+         */
         public Builder jobSummaries(Stream<RecordsProcessedSummary> jobSummaries) {
             rateBuilder.summaries(jobSummaries);
             return this;

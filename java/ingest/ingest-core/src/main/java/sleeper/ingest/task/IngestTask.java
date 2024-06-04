@@ -59,6 +59,9 @@ public class IngestTask {
         this.taskId = taskId;
     }
 
+    /**
+     * Executes jobs from a queue, updating the status stores with progress of the task.
+     */
     public void run() {
         Instant startTime = timeSupplier.get();
         IngestTaskStatus.Builder taskStatusBuilder = IngestTaskStatus.builder().taskId(taskId).startTime(startTime);
@@ -73,6 +76,14 @@ public class IngestTask {
         taskStatusStore.taskFinished(taskFinished);
     }
 
+    /**
+     * Receives messages, deserialising each message to an ingest job, then runs it. Updates the ingest job status
+     * store with progress on the job. These actions are repeated until no more messages are found.
+     *
+     * @param  startTime           the start time
+     * @param  taskFinishedBuilder the ingest task finished builder
+     * @return                     the finish time
+     */
     private Instant handleMessages(Instant startTime, IngestTaskFinishedStatus.Builder taskFinishedBuilder) {
         while (true) {
             Optional<MessageHandle> messageOpt = messageReceiver.receiveMessage();
@@ -118,18 +129,48 @@ public class IngestTask {
         return reasons;
     }
 
+    /**
+     * Receives ingest job messages. This is so that the message can be deleted or
+     * returned to the queue, depending on whether the ingest job succeeds or fails.
+     */
     @FunctionalInterface
     public interface MessageReceiver {
+        /**
+         * Receives a message.
+         *
+         * @return a {@link MessageHandle}, or an empty optional if there are no messages
+         */
         Optional<MessageHandle> receiveMessage();
     }
 
+    /**
+     * A message containing an ingest job. Used to control the message visibility of an SQS message.
+     */
     public interface MessageHandle extends AutoCloseable {
+        /**
+         * Reads the ingest job from the message.
+         *
+         * @return an {@link IngestJob}
+         */
         IngestJob getJob();
 
+        /**
+         * Called when a job completes successfully. This will delete the message from the queue, and may run further
+         * reporting on the job.
+         *
+         * @param summary the records processed summary for the finished job
+         */
         void completed(RecordsProcessedSummary summary);
 
+        /**
+         * Called when a job fails. This will return the message to the queue to be retried.
+         */
         void failed();
 
+        /**
+         * Called when this message handle is closed. This will stop the ingest task from updating SQS to keep the
+         * message assigned to the task. This is called whether the job succeeds or fails.
+         */
         void close();
     }
 }
