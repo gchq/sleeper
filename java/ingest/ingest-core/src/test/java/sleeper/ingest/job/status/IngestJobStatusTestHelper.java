@@ -34,9 +34,9 @@ import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.d
 /**
  * A helper for creating ingest job statuses for tests.
  */
-public class IngestJobStatusTestData {
+public class IngestJobStatusTestHelper {
 
-    private IngestJobStatusTestData() {
+    private IngestJobStatusTestHelper() {
     }
 
     /**
@@ -358,4 +358,17 @@ public class IngestJobStatusTestData {
                 .startTime(startTime).updateTime(updateTime)
                 .build();
     }
+
+    /**
+     * Creates an ingest job validated event for a rejected job.
+     *
+     * @param  job            the ingest job
+     * @param  validationTime the validation time
+     * @param  reasons        the list of reasons
+     * @return                an ingest job validated event for a rejected job
+     */
+    public static IngestJobValidatedEvent ingestJobRejected(IngestJob job, Instant validationTime, String... reasons) {
+        return IngestJobValidatedEvent.ingestJobRejected(job.getId(), "{}", validationTime, reasons);
+    }
+
 }

@@ -31,9 +31,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.records;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestJob;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.singleJobStatusFrom;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestJob;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.finishedIngestJob;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.singleJobStatusFrom;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.startedIngestJob;
 
 public class IngestJobStatusInPeriodTest {
     private final IngestJob job = IngestJob.builder()
@@ -206,7 +206,7 @@ public class IngestJobStatusInPeriodTest {
     }
 
     private ProcessStatusUpdate startedRun(Instant startedTime) {
-        return IngestJobStatusTestData.startAndUpdateTime(job, startedTime, defaultUpdateTime(startedTime));
+        return IngestJobStatusTestHelper.startAndUpdateTime(job, startedTime, defaultUpdateTime(startedTime));
     }
 
     private ProcessStatusUpdate finishedRun(Instant startedTime, Instant finishedTime) {

@@ -48,7 +48,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.defaultFileOnRootPartitionWithRecords;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestJobWithValidation;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.finishedIngestJobWithValidation;
 import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobAccepted;
 
 class BulkImportJobDriverTest {

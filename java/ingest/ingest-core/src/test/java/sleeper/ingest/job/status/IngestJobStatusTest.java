@@ -38,11 +38,11 @@ import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.records;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.withExpiry;
 import static sleeper.ingest.job.IngestJobTestData.createJobInDefaultTable;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestRun;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatusListFrom;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.singleJobStatusFrom;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestRun;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.finishedIngestRun;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.jobStatus;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.jobStatusListFrom;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.singleJobStatusFrom;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.startedIngestRun;
 import static sleeper.ingest.job.status.IngestJobStatusType.ACCEPTED;
 import static sleeper.ingest.job.status.IngestJobStatusType.FINISHED;
 import static sleeper.ingest.job.status.IngestJobStatusType.IN_PROGRESS;
@@ -253,7 +253,7 @@ public class IngestJobStatusTest {
     }
 
     private IngestJobStartedStatus startedStatusUpdate(Instant startTime) {
-        return IngestJobStatusTestData.startAndUpdateTime(job, startTime, defaultUpdateTime(startTime));
+        return IngestJobStatusTestHelper.startAndUpdateTime(job, startTime, defaultUpdateTime(startTime));
     }
 
     private IngestJobStartedStatus startedStatusUpdateAfterValidation(Instant startTime) {
