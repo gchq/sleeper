@@ -2,7 +2,6 @@
   "files": [
     {
       "filename": "file1.parquet",
-      "totalReferenceCount": 1,
       "references": [
         {
           "partitionId": "root",
@@ -15,7 +14,6 @@
     },
     {
       "filename": "file2.parquet",
-      "totalReferenceCount": 1,
       "references": [
         {
           "partitionId": "root",
