@@ -30,9 +30,9 @@ import static sleeper.ingest.job.status.IngestJobStartedEvent.validatedIngestJob
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.acceptedRunOnTask;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.acceptedRunWhichStarted;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.jobStatus;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.rejectedEvent;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.rejectedRun;
 import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobAccepted;
-import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobRejected;
 
 public class StoreIngestJobValidatedIT extends DynamoDBIngestJobStatusStoreTestBase {
     @Test
@@ -77,7 +77,7 @@ public class StoreIngestJobValidatedIT extends DynamoDBIngestJobStatusStoreTestB
         Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
 
         // When
-        store.jobValidated(ingestJobRejected(job, validationTime, "Test validation reason"));
+        store.jobValidated(rejectedEvent(job, validationTime, "Test validation reason"));
 
         // Then
         assertThat(getAllJobStatuses())
@@ -93,7 +93,7 @@ public class StoreIngestJobValidatedIT extends DynamoDBIngestJobStatusStoreTestB
         Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
 
         // When
-        store.jobValidated(ingestJobRejected(job, validationTime,
+        store.jobValidated(rejectedEvent(job, validationTime,
                 "Test validation reason 1", "Test validation reason 2"));
 
         // Then

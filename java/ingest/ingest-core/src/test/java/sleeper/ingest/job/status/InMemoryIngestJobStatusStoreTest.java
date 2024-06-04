@@ -48,10 +48,10 @@ import static sleeper.ingest.job.status.IngestJobStatusTestHelper.acceptedRunWhi
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.finishedIngestJob;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.finishedIngestRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.jobStatus;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.rejectedEvent;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.rejectedRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.startedIngestRun;
 import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobAccepted;
-import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobRejected;
 
 public class InMemoryIngestJobStatusStoreTest {
 
@@ -222,7 +222,7 @@ public class InMemoryIngestJobStatusStoreTest {
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
 
             // When
-            store.jobValidated(ingestJobRejected(job, validationTime, "Test validation reason"));
+            store.jobValidated(rejectedEvent(job, validationTime, "Test validation reason"));
 
             // Then
             assertThat(store.getInvalidJobs())
@@ -240,7 +240,7 @@ public class InMemoryIngestJobStatusStoreTest {
             Instant validationTime2 = Instant.parse("2022-09-22T12:02:10.000Z");
 
             // When
-            store.jobValidated(ingestJobRejected(job1, validationTime1, "Test validation reason"));
+            store.jobValidated(rejectedEvent(job1, validationTime1, "Test validation reason"));
             store.jobValidated(ingestJobAccepted(job2, validationTime2).build());
 
             // Then
@@ -259,8 +259,8 @@ public class InMemoryIngestJobStatusStoreTest {
             Instant validationTime2 = Instant.parse("2022-09-22T12:00:31.000Z");
 
             // When
-            store.jobValidated(ingestJobRejected(job1, validationTime1, "Test reason 1"));
-            store.jobValidated(ingestJobRejected(job2, validationTime2, "Test reason 2"));
+            store.jobValidated(rejectedEvent(job1, validationTime1, "Test reason 1"));
+            store.jobValidated(rejectedEvent(job2, validationTime2, "Test reason 2"));
 
             // Then
             assertThat(store.getInvalidJobs()).containsExactly(
@@ -277,7 +277,7 @@ public class InMemoryIngestJobStatusStoreTest {
             Instant validationTime2 = Instant.parse("2022-09-22T12:02:10.000Z");
 
             // When
-            store.jobValidated(ingestJobRejected(job1, validationTime1, "Test validation reason"));
+            store.jobValidated(rejectedEvent(job1, validationTime1, "Test validation reason"));
             store.jobValidated(ingestJobAccepted(job1, validationTime2).build());
 
             // Then
@@ -291,7 +291,7 @@ public class InMemoryIngestJobStatusStoreTest {
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
 
             // When
-            store.jobValidated(ingestJobRejected(job, validationTime, "Test validation reason"));
+            store.jobValidated(rejectedEvent(job, validationTime, "Test validation reason"));
 
             // Then
             assertThat(store.getInvalidJobs()).containsExactly(
@@ -342,7 +342,7 @@ public class InMemoryIngestJobStatusStoreTest {
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
 
             // When
-            store.jobValidated(ingestJobRejected(job, validationTime, "Test validation reason"));
+            store.jobValidated(rejectedEvent(job, validationTime, "Test validation reason"));
 
             // Then
             assertThat(store.getAllJobs(tableId))
@@ -357,7 +357,7 @@ public class InMemoryIngestJobStatusStoreTest {
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
 
             // When
-            store.jobValidated(ingestJobRejected(job, validationTime,
+            store.jobValidated(rejectedEvent(job, validationTime,
                     "Test validation reason 1", "Test validation reason 2"));
 
             // Then

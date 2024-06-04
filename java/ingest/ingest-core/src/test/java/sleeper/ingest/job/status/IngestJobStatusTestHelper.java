@@ -367,7 +367,7 @@ public class IngestJobStatusTestHelper {
      * @param  reasons        the list of reasons
      * @return                an ingest job validated event for a rejected job
      */
-    public static IngestJobValidatedEvent ingestJobRejected(IngestJob job, Instant validationTime, String... reasons) {
+    public static IngestJobValidatedEvent rejectedEvent(IngestJob job, Instant validationTime, String... reasons) {
         return IngestJobValidatedEvent.ingestJobRejected(job.getId(), "{}", validationTime, reasons);
     }
 
