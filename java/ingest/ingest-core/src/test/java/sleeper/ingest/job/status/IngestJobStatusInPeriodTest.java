@@ -206,7 +206,7 @@ public class IngestJobStatusInPeriodTest {
     }
 
     private ProcessStatusUpdate startedRun(Instant startedTime) {
-        return IngestJobStartedStatus.startAndUpdateTime(job, startedTime, defaultUpdateTime(startedTime));
+        return IngestJobStatusTestData.startAndUpdateTime(job, startedTime, defaultUpdateTime(startedTime));
     }
 
     private ProcessStatusUpdate finishedRun(Instant startedTime, Instant finishedTime) {

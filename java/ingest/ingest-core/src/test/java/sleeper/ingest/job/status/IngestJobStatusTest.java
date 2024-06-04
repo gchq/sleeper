@@ -253,7 +253,7 @@ public class IngestJobStatusTest {
     }
 
     private IngestJobStartedStatus startedStatusUpdate(Instant startTime) {
-        return IngestJobStartedStatus.startAndUpdateTime(job, startTime, defaultUpdateTime(startTime));
+        return IngestJobStatusTestData.startAndUpdateTime(job, startTime, defaultUpdateTime(startTime));
     }
 
     private IngestJobStartedStatus startedStatusUpdateAfterValidation(Instant startTime) {
