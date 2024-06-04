@@ -106,7 +106,7 @@ public class IngestJobStatus {
     }
 
     public boolean isFinished() {
-        return jobRuns.isFinished();
+        return jobRuns.isFinishedAndNoRunsInProgress();
     }
 
     public IngestJobStatusType getFurthestStatusType() {

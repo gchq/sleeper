@@ -19,12 +19,16 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.partition.Partition;
+import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 
+import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.compaction.job.CompactionJobStatusTestData.failedCompactionRun;
 import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionRun;
@@ -59,8 +63,8 @@ class CompactionJobStatusTest {
         CompactionJobStatus status = jobCreated(job, updateTime);
 
         // Then
-        assertThat(status).extracting(CompactionJobStatus::isStarted, CompactionJobStatus::isFinished)
-                .containsExactly(false, false);
+        assertThat(status).extracting(CompactionJobStatus::isStarted, CompactionJobStatus::isUnstartedOrInProgress)
+                .containsExactly(false, true);
     }
 
     @Test
@@ -73,8 +77,8 @@ class CompactionJobStatusTest {
                 startedCompactionRun(DEFAULT_TASK_ID, Instant.parse("2022-09-22T13:33:30.001Z")));
 
         // Then
-        assertThat(status).extracting(CompactionJobStatus::isStarted, CompactionJobStatus::isFinished)
-                .containsExactly(true, false);
+        assertThat(status).extracting(CompactionJobStatus::isStarted, CompactionJobStatus::isUnstartedOrInProgress)
+                .containsExactly(true, true);
     }
 
     @Test
@@ -91,7 +95,44 @@ class CompactionJobStatusTest {
                 finishedCompactionRun(DEFAULT_TASK_ID, summary));
 
         // Then
-        assertThat(status).extracting(CompactionJobStatus::isStarted, CompactionJobStatus::isFinished)
+        assertThat(status).extracting(CompactionJobStatus::isStarted, CompactionJobStatus::isUnstartedOrInProgress)
+                .containsExactly(true, false);
+    }
+
+    @Test
+    void shouldBuildCompactionJobFailedWaitingForRetry() {
+        // Given
+        CompactionJob job = dataHelper.singleFileCompaction();
+        Instant startTime = Instant.parse("2022-09-22T13:33:10.001Z");
+        Instant finishTime = Instant.parse("2022-09-22T13:34:10.001Z");
+        ProcessRunTime runTime = new ProcessRunTime(startTime, finishTime);
+        List<String> failureReasons = List.of("Could not read input file", "Some IO failure");
+
+        // When
+        CompactionJobStatus status = jobCreated(job, Instant.parse("2022-09-22T13:33:00.001Z"),
+                failedCompactionRun(DEFAULT_TASK_ID, runTime, failureReasons));
+
+        // Then
+        assertThat(status).extracting(CompactionJobStatus::isStarted, CompactionJobStatus::isUnstartedOrInProgress)
+                .containsExactly(true, true);
+    }
+
+    @Test
+    void shouldBuildCompactionJobFinishedAndInProgress() {
+        // Given
+        CompactionJob job = dataHelper.singleFileCompaction();
+        RecordsProcessedSummary run1Summary = new RecordsProcessedSummary(
+                new RecordsProcessed(450L, 300L),
+                Instant.parse("2022-09-22T13:33:10.001Z"), Duration.ofMinutes(1));
+        Instant startTime2 = Instant.parse("2022-09-22T13:33:15.001Z");
+
+        // When
+        CompactionJobStatus status = jobCreated(job, Instant.parse("2022-09-22T13:33:00.001Z"),
+                finishedCompactionRun("task-1", run1Summary),
+                startedCompactionRun("task-2", startTime2));
+
+        // Then
+        assertThat(status).extracting(CompactionJobStatus::isStarted, CompactionJobStatus::isUnstartedOrInProgress)
                 .containsExactly(true, true);
     }
 }
