@@ -132,20 +132,4 @@ public class CompactionJobCommitterTestBase {
     protected StateStore stateStore(TableProperties table) {
         return stateStoreByTableId.get(table.get(TABLE_ID));
     }
-
-    protected void actionOnWait(WaitAction action) throws Exception {
-        Waiter wrapWaiter = waiter;
-        waiter = millis -> {
-            try {
-                action.run();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-            wrapWaiter.waitForMillis(millis);
-        };
-    }
-
-    protected interface WaitAction {
-        void run() throws Exception;
-    }
 }
