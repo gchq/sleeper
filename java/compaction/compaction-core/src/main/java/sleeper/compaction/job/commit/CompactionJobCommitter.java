@@ -23,8 +23,6 @@ import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
-import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
 
@@ -79,26 +77,8 @@ public class CompactionJobCommitter {
                 .countApproximate(false)
                 .onlyContainsDataForThisPartition(true)
                 .build();
-
-        // Compaction jobs are sent for execution before updating the state store to assign the input files to the job.
-        // Sometimes the compaction can finish before the job assignment is finished. We wait for the job assignment
-        // rather than immediately failing the job run.
-        ReplaceRequestsFailedException failure = null;
-        for (int attempt = 1; attempt <= jobAssignmentWaitAttempts; attempt++) {
-            jobAssignmentWaitBackoff.waitBeforeAttempt(attempt);
-            try {
-                stateStore.atomicallyReplaceFileReferencesWithNewOnes(List.of(
-                        replaceJobFileReferences(job.getId(), job.getPartitionId(), job.getInputFiles(), fileReference)));
-                return;
-            } catch (ReplaceRequestsFailedException e) {
-                if (e.getFailures().stream().anyMatch(e1 -> e1 instanceof FileReferenceNotAssignedToJobException)) {
-                    failure = e;
-                } else {
-                    throw e;
-                }
-            }
-        }
-        throw new TimedOutWaitingForFileAssignmentsException(failure);
+        stateStore.atomicallyReplaceFileReferencesWithNewOnes(List.of(
+                replaceJobFileReferences(job.getId(), job.getPartitionId(), job.getInputFiles(), fileReference)));
     }
 
     @FunctionalInterface
