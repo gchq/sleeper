@@ -18,7 +18,8 @@ package sleeper.compaction.job.execution;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.execution.CompactionTask.FileAssignmentCheck;
+import sleeper.compaction.job.execution.CompactionTask.WaitForFileAssignment;
+import sleeper.core.util.PollWithRetries;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -63,18 +64,20 @@ public class CompactionTaskAssignFilesTest extends CompactionTaskTestBase {
         assertThat(assignmentCheckRetries).containsExactly(job);
     }
 
-    private FileAssignmentCheck waitForFilesAssignment(Boolean... checkResults) {
+    private WaitForFileAssignment waitForFilesAssignment(Boolean... checkResults) {
         Iterator<Boolean> checks = List.of(checkResults).iterator();
         return job -> {
-            if (checks.hasNext()) {
-                boolean check = checks.next();
-                if (!check) {
-                    assignmentCheckRetries.add(job);
+            PollWithRetries.immediateRetries(10).pollUntil("files assigned to job", () -> {
+                if (checks.hasNext()) {
+                    boolean check = checks.next();
+                    if (!check) {
+                        assignmentCheckRetries.add(job);
+                    }
+                    return check;
+                } else {
+                    return false;
                 }
-                return check;
-            } else {
-                return false;
-            }
+            });
         };
     }
 }

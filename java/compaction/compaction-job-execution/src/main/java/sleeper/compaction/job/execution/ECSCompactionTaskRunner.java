@@ -94,7 +94,8 @@ public class ECSCompactionTaskRunner {
             CompactionJobCommitterOrSendToLambda committerOrLambda = new CompactionJobCommitterOrSendToLambda(
                     tablePropertiesProvider, stateStoreProvider, jobStatusStore, instanceProperties, sqsClient);
             CompactionTask task = new CompactionTask(instanceProperties, propertiesReloader,
-                    new SqsCompactionQueueHandler(sqsClient, instanceProperties), compactSortedFiles,
+                    new SqsCompactionQueueHandler(sqsClient, instanceProperties), job -> {
+                    }, compactSortedFiles,
                     committerOrLambda, jobStatusStore, taskStatusStore, taskId);
             task.run();
         } finally {

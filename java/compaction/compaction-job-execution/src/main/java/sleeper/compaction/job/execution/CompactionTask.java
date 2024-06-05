@@ -31,7 +31,6 @@ import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.util.LoggedDuration;
-import sleeper.core.util.PollWithRetries;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -53,7 +52,6 @@ import static sleeper.core.metrics.MetricsLogger.METRICS_LOGGER;
 public class CompactionTask {
     private static final Logger LOGGER = LoggerFactory.getLogger(CompactionTask.class);
 
-    private final PollWithRetries pollWithRetries;
     private final Supplier<Instant> timeSupplier;
     private final Consumer<Duration> sleepForTime;
     private final int maxConsecutiveFailures;
@@ -66,21 +64,21 @@ public class CompactionTask {
     private final CompactionJobCommitterOrSendToLambda jobCommitter;
     private final String taskId;
     private final PropertiesReloader propertiesReloader;
-    private final FileAssignmentCheck fileAssignmentCheck;
+    private final WaitForFileAssignment waitForFiles;
     private int numConsecutiveFailures = 0;
     private int totalNumberOfMessagesProcessed = 0;
 
     public CompactionTask(InstanceProperties instanceProperties, PropertiesReloader propertiesReloader,
-            MessageReceiver messageReceiver, CompactionRunner compactor, FileAssignmentCheck fileAssignmentCheck,
+            MessageReceiver messageReceiver, WaitForFileAssignment waitForFiles, CompactionRunner compactor,
             CompactionJobCommitterOrSendToLambda jobCommitter, CompactionJobStatusStore jobStore,
             CompactionTaskStatusStore taskStore, String taskId) {
-        this(instanceProperties, propertiesReloader, messageReceiver, compactor, PollWithRetries.intervalAndMaxPolls(1000, 30),
-                fileAssignmentCheck, jobCommitter, jobStore, taskStore, taskId, Instant::now, threadSleep());
+        this(instanceProperties, propertiesReloader, messageReceiver, waitForFiles, compactor, jobCommitter,
+                jobStore, taskStore, taskId, Instant::now, threadSleep());
     }
 
     public CompactionTask(InstanceProperties instanceProperties, PropertiesReloader propertiesReloader,
-            MessageReceiver messageReceiver, CompactionRunner compactor, PollWithRetries pollWithRetries,
-            FileAssignmentCheck fileAssignmentCheck, CompactionJobCommitterOrSendToLambda jobCommitter,
+            MessageReceiver messageReceiver, WaitForFileAssignment waitForFiles,
+            CompactionRunner compactor, CompactionJobCommitterOrSendToLambda jobCommitter,
             CompactionJobStatusStore jobStore, CompactionTaskStatusStore taskStore,
             String taskId, Supplier<Instant> timeSupplier, Consumer<Duration> sleepForTime) {
         maxIdleTime = Duration.ofSeconds(instanceProperties.getInt(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS));
@@ -95,8 +93,7 @@ public class CompactionTask {
         this.taskStatusStore = taskStore;
         this.taskId = taskId;
         this.jobCommitter = jobCommitter;
-        this.pollWithRetries = pollWithRetries;
-        this.fileAssignmentCheck = fileAssignmentCheck;
+        this.waitForFiles = waitForFiles;
     }
 
     public void run() throws IOException {
@@ -142,9 +139,7 @@ public class CompactionTask {
                 CompactionJob job = message.getJob();
                 Instant jobStartTime = timeSupplier.get();
                 try {
-                    pollWithRetries.pollUntil("files assigned to job", () -> {
-                        return fileAssignmentCheck.check(job);
-                    });
+                    waitForFiles.wait(job);
                     RecordsProcessedSummary summary = compact(job, jobStartTime);
                     taskFinishedBuilder.addJobSummary(summary);
                     message.completed();
@@ -205,8 +200,8 @@ public class CompactionTask {
     }
 
     @FunctionalInterface
-    interface FileAssignmentCheck {
-        boolean check(CompactionJob job);
+    interface WaitForFileAssignment {
+        void wait(CompactionJob job) throws InterruptedException;
     }
 
     interface MessageHandle extends AutoCloseable {
