@@ -34,7 +34,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
-import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.noJitter;
 
 public class CompactionJobCommitterTest extends CompactionJobCommitterTestBase {
 
@@ -91,7 +90,7 @@ public class CompactionJobCommitterTest extends CompactionJobCommitterTestBase {
         CompactionJobCommitRequest commit = runCompactionJobOnTask("test-task", job);
 
         // When
-        assertThatThrownBy(() -> jobCommitter(noJitter()).apply(commit))
+        assertThatThrownBy(() -> jobCommitter().apply(commit))
                 .isInstanceOf(ReplaceRequestsFailedException.class)
                 .hasCauseInstanceOf(FileNotFoundException.class);
 

@@ -28,7 +28,6 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ExponentialBackoffWithJitter.Waiter;
 
 import java.time.Duration;
@@ -38,7 +37,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.function.DoubleSupplier;
 
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
@@ -46,7 +44,6 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
-import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.fixJitterSeed;
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.recordWaits;
 
 public class CompactionJobCommitterTestBase {
@@ -116,12 +113,7 @@ public class CompactionJobCommitterTestBase {
     }
 
     protected CompactionJobCommitter jobCommitter() {
-        return jobCommitter(fixJitterSeed());
-    }
-
-    protected CompactionJobCommitter jobCommitter(DoubleSupplier randomJitter) {
-        return new CompactionJobCommitter(statusStore, stateStoreByTableId::get,
-                CompactionJobCommitter.JOB_ASSIGNMENT_WAIT_ATTEMPTS, backoff(randomJitter));
+        return new CompactionJobCommitter(statusStore, stateStoreByTableId::get);
     }
 
     protected FileReferenceFactory fileFactory(TableProperties table, Instant updateTime) {
@@ -151,12 +143,6 @@ public class CompactionJobCommitterTestBase {
             }
             wrapWaiter.waitForMillis(millis);
         };
-    }
-
-    private ExponentialBackoffWithJitter backoff(DoubleSupplier randomJitter) {
-        return new ExponentialBackoffWithJitter(
-                CompactionJobCommitter.JOB_ASSIGNMENT_WAIT_RANGE,
-                randomJitter, waiter);
     }
 
     protected interface WaitAction {

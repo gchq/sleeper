@@ -23,8 +23,6 @@ import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.util.ExponentialBackoffWithJitter;
-import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
 
 import java.util.List;
 
@@ -33,43 +31,26 @@ import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFil
 public class CompactionJobCommitter {
     public static final Logger LOGGER = LoggerFactory.getLogger(CompactionJobCommitter.class);
 
-    public static final int JOB_ASSIGNMENT_WAIT_ATTEMPTS = 10;
-    public static final WaitRange JOB_ASSIGNMENT_WAIT_RANGE = WaitRange.firstAndMaxWaitCeilingSecs(2, 60);
-
     private final CompactionJobStatusStore statusStore;
     private final GetStateStore stateStoreProvider;
-    private final int jobAssignmentWaitAttempts;
-    private final ExponentialBackoffWithJitter jobAssignmentWaitBackoff;
 
     public CompactionJobCommitter(
             CompactionJobStatusStore statusStore, GetStateStore stateStoreProvider) {
-        this(statusStore, stateStoreProvider, JOB_ASSIGNMENT_WAIT_ATTEMPTS,
-                new ExponentialBackoffWithJitter(JOB_ASSIGNMENT_WAIT_RANGE));
-    }
-
-    public CompactionJobCommitter(
-            CompactionJobStatusStore statusStore, GetStateStore stateStoreProvider,
-            int jobAssignmentWaitAttempts, ExponentialBackoffWithJitter jobAssignmentWaitBackoff) {
         this.statusStore = statusStore;
         this.stateStoreProvider = stateStoreProvider;
-        this.jobAssignmentWaitAttempts = jobAssignmentWaitAttempts;
-        this.jobAssignmentWaitBackoff = jobAssignmentWaitBackoff;
     }
 
     public void apply(CompactionJobCommitRequest request) throws StateStoreException, InterruptedException {
         CompactionJob job = request.getJob();
         updateStateStoreSuccess(
-                job, request.getRecordsWritten(), stateStoreProvider.getByTableId(job.getTableId()),
-                jobAssignmentWaitAttempts, jobAssignmentWaitBackoff);
+                job, request.getRecordsWritten(), stateStoreProvider.getByTableId(job.getTableId()));
         statusStore.jobFinished(job, request.buildRecordsProcessedSummary(), request.getTaskId());
     }
 
     public static void updateStateStoreSuccess(
             CompactionJob job,
             long recordsWritten,
-            StateStore stateStore,
-            int jobAssignmentWaitAttempts,
-            ExponentialBackoffWithJitter jobAssignmentWaitBackoff) throws StateStoreException, InterruptedException {
+            StateStore stateStore) throws StateStoreException, InterruptedException {
         FileReference fileReference = FileReference.builder()
                 .filename(job.getOutputFile())
                 .partitionId(job.getPartitionId())

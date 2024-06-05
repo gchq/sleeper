@@ -26,18 +26,21 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.util.ExponentialBackoffWithJitter;
+import sleeper.core.util.ExponentialBackoffWithJitter.Waiter;
 import sleeper.statestore.FixedStateStoreProvider;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.compaction.job.execution.StateStoreWaitForFilesTestHelper.waitWithRetries;
 import static sleeper.compaction.job.execution.testutils.CompactSortedFilesTestUtils.assignJobIdToInputFiles;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
+import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.noJitter;
+import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.noWaits;
 
 public class StateStoreWaitForFilesTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
@@ -45,6 +48,7 @@ public class StateStoreWaitForFilesTest {
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
     private final StateStore stateStore = inMemoryStateStoreWithSinglePartition(schema);
     private final FileReferenceFactory factory = FileReferenceFactory.from(stateStore);
+    private Waiter waiter = noWaits();
 
     @Test
     void shouldSkipWaitIfFilesAreAlreadyAssignedToJob() throws Exception {
@@ -53,6 +57,21 @@ public class StateStoreWaitForFilesTest {
         stateStore.addFile(file);
         CompactionJob job = jobForFileAtRoot(file);
         assignJobIdToInputFiles(stateStore, job);
+
+        // When / Then
+        assertThatCode(() -> waitForFiles(job))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    void shouldRetryThenCheckFilesAreAssignedToJob() throws Exception {
+        // Given
+        FileReference file = factory.rootFile("test.parquet", 123L);
+        stateStore.addFile(file);
+        CompactionJob job = jobForFileAtRoot(file);
+        actionOnWait(() -> {
+            assignJobIdToInputFiles(stateStore, job);
+        });
 
         // When / Then
         assertThatCode(() -> waitForFiles(job))
@@ -76,9 +95,28 @@ public class StateStoreWaitForFilesTest {
     }
 
     private void waitForFiles(CompactionJob job) throws InterruptedException {
-        waitWithRetries(1,
+        new StateStoreWaitForFiles(2,
+                new ExponentialBackoffWithJitter(
+                        StateStoreWaitForFiles.JOB_ASSIGNMENT_WAIT_RANGE,
+                        noJitter(), waiter),
                 new FixedStateStoreProvider(tableProperties, stateStore),
                 new FixedTablePropertiesProvider(tableProperties))
                 .wait(job);
+    }
+
+    protected void actionOnWait(WaitAction action) throws Exception {
+        Waiter wrapWaiter = waiter;
+        waiter = millis -> {
+            try {
+                action.run();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            wrapWaiter.waitForMillis(millis);
+        };
+    }
+
+    protected interface WaitAction {
+        void run() throws Exception;
     }
 }
