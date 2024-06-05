@@ -15,6 +15,9 @@
  */
 package sleeper.compaction.job.execution;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.execution.CompactionTask.WaitForFileAssignment;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
@@ -23,9 +26,13 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
+import sleeper.core.util.LoggedDuration;
 import sleeper.statestore.StateStoreProvider;
 
+import java.time.Instant;
+
 public class StateStoreWaitForFiles implements WaitForFileAssignment {
+    public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreWaitForFiles.class);
     public static final int JOB_ASSIGNMENT_WAIT_ATTEMPTS = 10;
     public static final WaitRange JOB_ASSIGNMENT_WAIT_RANGE = WaitRange.firstAndMaxWaitCeilingSecs(2, 60);
     private final int jobAssignmentWaitAttempts;
@@ -49,17 +56,23 @@ public class StateStoreWaitForFiles implements WaitForFileAssignment {
 
     @Override
     public void wait(CompactionJob job) throws InterruptedException {
+        Instant startTime = Instant.now();
+        LOGGER.info("Waiting for {} file{} to be assigned to compaction job {}",
+                job.getInputFiles().size(), job.getInputFiles().size() > 1 ? "s" : "", job.getId());
         StateStore stateStore = stateStoreProvider.getStateStore(tablePropertiesProvider.getById(job.getTableId()));
         for (int attempt = 1; attempt <= jobAssignmentWaitAttempts; attempt++) {
             jobAssignmentWaitBackoff.waitBeforeAttempt(attempt);
             try {
                 if (allFilesAssignedToJob(stateStore, job)) {
+                    LOGGER.info("All files are assigned to job. Checked {} time{} and took {}",
+                            attempt, attempt > 1 ? "s" : "", LoggedDuration.withFullOutput(startTime, Instant.now()));
                     return;
                 }
             } catch (StateStoreException e) {
                 throw new RuntimeException(e);
             }
         }
+        LOGGER.info("Reached maximum attempts of {} for checking if files are assigned to job", jobAssignmentWaitAttempts);
         throw new TimedOutWaitingForFileAssignmentsException();
     }
 
