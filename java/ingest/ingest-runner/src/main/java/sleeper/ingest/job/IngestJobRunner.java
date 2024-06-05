@@ -29,7 +29,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.ConcatenatingIterator;
-import sleeper.core.iterator.IteratorException;
+import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStoreException;
@@ -82,7 +82,7 @@ public class IngestJobRunner implements IngestJobHandler {
     }
 
     @Override
-    public IngestResult ingest(IngestJob job) throws IteratorException, StateStoreException, IOException {
+    public IngestResult ingest(IngestJob job) throws IteratorCreationException, StateStoreException, IOException {
         propertiesReloader.reloadIfNeeded();
         TableProperties tableProperties = tablePropertiesProvider.getByName(job.getTableName());
         Schema schema = tableProperties.getSchema();

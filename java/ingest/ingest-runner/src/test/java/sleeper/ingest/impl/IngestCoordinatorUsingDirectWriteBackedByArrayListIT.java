@@ -32,7 +32,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.validation.IngestFileWritingStrategy;
 import sleeper.core.CommonTestConstants;
-import sleeper.core.iterator.IteratorException;
+import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
@@ -181,7 +181,7 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
             int maxNoOfRecordsInMemory,
             long maxNoOfRecordsInLocalStore,
             String ingestLocalWorkingDirectory,
-            Stream<String> fileNames) throws StateStoreException, IteratorException, IOException {
+            Stream<String> fileNames) throws StateStoreException, IteratorCreationException, IOException {
         ParquetConfiguration parquetConfiguration = parquetConfiguration(
                 recordListAndSchema.sleeperSchema, hadoopConfiguration);
         try (IngestCoordinator<Record> ingestCoordinator = standardIngestCoordinatorBuilder(

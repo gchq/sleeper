@@ -67,8 +67,7 @@ public class AllReferencesToAFileSerDe {
             }
             return AllReferencesToAFile.builder()
                     .filename(filename)
-                    .totalReferenceCount(object.get("totalReferenceCount").getAsInt())
-                    .internalReferences(references)
+                    .references(references)
                     .build();
         }
 
@@ -76,9 +75,8 @@ public class AllReferencesToAFileSerDe {
         public JsonElement serialize(AllReferencesToAFile file, Type type, JsonSerializationContext context) {
             JsonObject object = new JsonObject();
             object.addProperty("filename", file.getFilename());
-            object.addProperty("totalReferenceCount", file.getTotalReferenceCount());
             JsonArray referencesArr = new JsonArray();
-            for (FileReference reference : file.getInternalReferences()) {
+            for (FileReference reference : file.getReferences()) {
                 JsonObject referenceObj = context.serialize(reference).getAsJsonObject();
                 referenceObj.remove("filename");
                 referencesArr.add(referenceObj);

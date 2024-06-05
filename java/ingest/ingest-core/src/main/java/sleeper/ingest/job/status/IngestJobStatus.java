@@ -23,11 +23,15 @@ import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 import sleeper.core.record.process.status.TimeWindowQuery;
 
 import java.time.Instant;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
+
+import static java.util.Comparator.comparing;
+import static java.util.stream.Collectors.toSet;
+import static sleeper.ingest.job.status.IngestJobStatusType.FINISHED;
 
 /**
  * Stores the status of an ingest job. This is used for reporting on the state of ingest jobs.
@@ -105,20 +109,28 @@ public class IngestJobStatus {
         return jobRuns.getRunsLatestFirst();
     }
 
-    public boolean isFinished() {
-        return jobRuns.isFinished();
+    /**
+     * Checks whether the job is unfinished. Counts as unfinished if a run of the job is accepted or in progress, or if
+     * all the runs of the job failed and it may be retried. If the job was rejected, it will not count as unfinished.
+     *
+     * @return true if the job is unfinished
+     */
+    public boolean isUnfinishedOrAnyRunInProgress() {
+        Set<IngestJobStatusType> runStatuses = runStatusTypes().collect(toSet());
+        return runStatuses.stream().anyMatch(IngestJobStatusType::isRunInProgress)
+                || runStatuses.stream().noneMatch(IngestJobStatusType::isEndOfJob);
     }
 
-    public IngestJobStatusType getFurthestStatusType() {
-        return jobRuns.getRunsLatestFirst().stream()
-                .map(ProcessRun::getLatestUpdate)
-                .map(IngestJobStatusType::of)
-                .max(Comparator.comparing(IngestJobStatusType::getOrder))
-                .orElseThrow();
+    public boolean isAnyRunSuccessful() {
+        return runStatusTypes().anyMatch(status -> status == FINISHED);
+    }
+
+    public boolean isAnyRunInProgress() {
+        return runStatusTypes().anyMatch(status -> status.isRunInProgress());
     }
 
     /**
-     * Checks whether one or more job runs were performed in the time window.
+     * Checks whether one or more job runs were performed in a time window.
      *
      * @param  windowStartTime the start of the time window
      * @param  windowEndTime   the end of the time window
@@ -126,12 +138,24 @@ public class IngestJobStatus {
      */
     public boolean isInPeriod(Instant windowStartTime, Instant windowEndTime) {
         TimeWindowQuery timeWindowQuery = new TimeWindowQuery(windowStartTime, windowEndTime);
-        if (isFinished()) {
+        if (jobRuns.isFinishedAndNoRunsInProgress()) {
             return timeWindowQuery.isFinishedProcessInWindow(
                     jobRuns.firstTime().orElseThrow(), jobRuns.lastTime().orElseThrow());
         } else {
             return timeWindowQuery.isUnfinishedProcessInWindow(jobRuns.firstTime().orElseThrow());
         }
+    }
+
+    public IngestJobStatusType getFurthestStatusType() {
+        return runStatusTypes()
+                .max(comparing(IngestJobStatusType::getOrder))
+                .orElseThrow();
+    }
+
+    private Stream<IngestJobStatusType> runStatusTypes() {
+        return jobRuns.getRunsLatestFirst().stream()
+                .map(ProcessRun::getLatestUpdate)
+                .map(IngestJobStatusType::of);
     }
 
     @Override

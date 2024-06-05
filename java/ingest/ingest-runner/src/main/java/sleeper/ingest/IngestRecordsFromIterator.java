@@ -18,7 +18,7 @@ package sleeper.ingest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.core.iterator.IteratorException;
+import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.impl.IngestCoordinator;
@@ -41,7 +41,7 @@ public class IngestRecordsFromIterator {
         this.ingestRecords = new IngestRecords(ingestCoordinator);
     }
 
-    public IngestResult write() throws StateStoreException, IteratorException, IOException {
+    public IngestResult write() throws StateStoreException, IteratorCreationException, IOException {
         ingestRecords.init();
         long count = 0L;
         while (recordsIterator.hasNext()) {

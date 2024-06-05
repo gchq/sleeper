@@ -34,7 +34,7 @@ import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.iterator.IteratorException;
+import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.range.Region;
@@ -211,7 +211,7 @@ public class InMemoryCompaction {
         try {
             mergingIterator = StandardCompactor.getMergingIterator(
                     ObjectFactory.noUserJars(), schema, job, inputIterators);
-        } catch (IteratorException e) {
+        } catch (IteratorCreationException e) {
             throw new RuntimeException(e);
         }
         Map<String, ItemsSketch> keyFieldToSketchMap = PartitionFileWriterUtils.createQuantileSketchMap(schema);
