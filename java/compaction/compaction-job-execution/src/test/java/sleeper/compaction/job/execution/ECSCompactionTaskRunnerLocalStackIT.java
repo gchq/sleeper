@@ -72,7 +72,6 @@ import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
-import sleeper.core.util.PollWithRetries;
 import sleeper.ingest.IngestFactory;
 import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.io.parquet.record.ParquetRecordReader;
@@ -99,6 +98,7 @@ import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static sleeper.compaction.job.execution.StateStoreWaitForFilesTestHelper.waitWithRetries;
 import static sleeper.compaction.job.execution.testutils.CompactSortedFilesTestUtils.assignJobIdsToInputFiles;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_COMMITTER_QUEUE_URL;
@@ -454,7 +454,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
                 instanceProperties, sqs);
         CompactionTask task = new CompactionTask(instanceProperties,
                 PropertiesReloader.neverReload(), new SqsCompactionQueueHandler(sqs, instanceProperties),
-                new StateStoreWaitForFiles(PollWithRetries.immediateRetries(10), stateStoreProvider, tablePropertiesProvider),
+                waitWithRetries(1, stateStoreProvider, tablePropertiesProvider),
                 compactSortedFiles, committer, jobStatusStore, taskStatusStore, taskId,
                 timeSupplier, duration -> {
                 });
@@ -541,5 +541,4 @@ public class ECSCompactionTaskRunnerLocalStackIT {
             throw new RuntimeException("Failed reading records", e);
         }
     }
-
 }

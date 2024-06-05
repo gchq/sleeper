@@ -38,7 +38,6 @@ import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.util.LoggedDuration;
-import sleeper.core.util.PollWithRetries;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.job.common.EC2ContainerMetadata;
 import sleeper.statestore.StateStoreProvider;
@@ -91,8 +90,7 @@ public class ECSCompactionTaskRunner {
             String taskId = UUID.randomUUID().toString();
 
             ObjectFactory objectFactory = new ObjectFactory(instanceProperties, s3Client, "/tmp");
-            WaitForFileAssignment waitForFiles = new StateStoreWaitForFiles(PollWithRetries.intervalAndMaxPolls(1000, 30),
-                    stateStoreProvider, tablePropertiesProvider);
+            WaitForFileAssignment waitForFiles = new StateStoreWaitForFiles(stateStoreProvider, tablePropertiesProvider);
             CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties,
                     tablePropertiesProvider, stateStoreProvider, objectFactory);
             CompactionJobCommitterOrSendToLambda committerOrLambda = new CompactionJobCommitterOrSendToLambda(

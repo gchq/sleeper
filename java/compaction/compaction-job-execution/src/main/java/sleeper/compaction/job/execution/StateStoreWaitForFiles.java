@@ -16,21 +16,34 @@
 package sleeper.compaction.job.execution;
 
 import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.commit.TimedOutWaitingForFileAssignmentsException;
 import sleeper.compaction.job.execution.CompactionTask.WaitForFileAssignment;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.util.PollWithRetries;
+import sleeper.core.util.ExponentialBackoffWithJitter;
+import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
 import sleeper.statestore.StateStoreProvider;
 
 public class StateStoreWaitForFiles implements WaitForFileAssignment {
-    private final PollWithRetries pollWithRetries;
+    public static final int JOB_ASSIGNMENT_WAIT_ATTEMPTS = 10;
+    public static final WaitRange JOB_ASSIGNMENT_WAIT_RANGE = WaitRange.firstAndMaxWaitCeilingSecs(2, 60);
+    private final int jobAssignmentWaitAttempts;
+    private final ExponentialBackoffWithJitter jobAssignmentWaitBackoff;
     private final StateStoreProvider stateStoreProvider;
     private final TablePropertiesProvider tablePropertiesProvider;
 
-    public StateStoreWaitForFiles(PollWithRetries pollWithRetries, StateStoreProvider stateStoreProvider, TablePropertiesProvider tablePropertiesProvider) {
-        this.pollWithRetries = pollWithRetries;
+    public StateStoreWaitForFiles(StateStoreProvider stateStoreProvider, TablePropertiesProvider tablePropertiesProvider) {
+        this(JOB_ASSIGNMENT_WAIT_ATTEMPTS, new ExponentialBackoffWithJitter(JOB_ASSIGNMENT_WAIT_RANGE),
+                stateStoreProvider, tablePropertiesProvider);
+    }
+
+    public StateStoreWaitForFiles(
+            int jobAssignmentWaitAttempts, ExponentialBackoffWithJitter jobAssignmentWaitBackoff,
+            StateStoreProvider stateStoreProvider, TablePropertiesProvider tablePropertiesProvider) {
+        this.jobAssignmentWaitAttempts = jobAssignmentWaitAttempts;
+        this.jobAssignmentWaitBackoff = jobAssignmentWaitBackoff;
         this.stateStoreProvider = stateStoreProvider;
         this.tablePropertiesProvider = tablePropertiesProvider;
     }
@@ -38,15 +51,23 @@ public class StateStoreWaitForFiles implements WaitForFileAssignment {
     @Override
     public void wait(CompactionJob job) throws InterruptedException {
         StateStore stateStore = stateStoreProvider.getStateStore(tablePropertiesProvider.getById(job.getTableId()));
-        pollWithRetries.pollUntil("files assigned to job", () -> {
+        for (int attempt = 1; attempt <= jobAssignmentWaitAttempts; attempt++) {
+            jobAssignmentWaitBackoff.waitBeforeAttempt(attempt);
             try {
-                return stateStore.getFileReferences().stream()
-                        .filter(file -> isInputFileForJob(file, job))
-                        .allMatch(file -> job.getId().equals(file.getJobId()));
+                if (allFilesAssignedToJob(stateStore, job)) {
+                    return;
+                }
             } catch (StateStoreException e) {
                 throw new RuntimeException(e);
             }
-        });
+        }
+        throw new TimedOutWaitingForFileAssignmentsException();
+    }
+
+    private boolean allFilesAssignedToJob(StateStore stateStore, CompactionJob job) throws StateStoreException {
+        return stateStore.getFileReferences().stream()
+                .filter(file -> isInputFileForJob(file, job))
+                .allMatch(file -> job.getId().equals(file.getJobId()));
     }
 
     private static boolean isInputFileForJob(FileReference file, CompactionJob job) {

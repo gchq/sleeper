@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobFactory;
+import sleeper.compaction.job.commit.TimedOutWaitingForFileAssignmentsException;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
@@ -26,14 +27,13 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.util.PollWithRetries;
-import sleeper.core.util.PollWithRetries.TimedOutException;
 import sleeper.statestore.FixedStateStoreProvider;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.compaction.job.execution.StateStoreWaitForFilesTestHelper.waitWithRetries;
 import static sleeper.compaction.job.execution.testutils.CompactSortedFilesTestUtils.assignJobIdToInputFiles;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
@@ -69,7 +69,7 @@ public class StateStoreWaitForFilesTest {
 
         // When / Then
         assertThatThrownBy(() -> waitForFiles(job))
-                .isInstanceOf(TimedOutException.class);
+                .isInstanceOf(TimedOutWaitingForFileAssignmentsException.class);
     }
 
     private CompactionJob jobForFileAtRoot(FileReference... files) {
@@ -77,7 +77,7 @@ public class StateStoreWaitForFilesTest {
     }
 
     private void waitForFiles(CompactionJob job) throws InterruptedException {
-        new StateStoreWaitForFiles(PollWithRetries.immediateRetries(10),
+        waitWithRetries(1,
                 new FixedStateStoreProvider(tableProperties, stateStore),
                 new FixedTablePropertiesProvider(tableProperties))
                 .wait(job);
