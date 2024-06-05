@@ -72,6 +72,7 @@ import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
+import sleeper.core.util.PollWithRetries;
 import sleeper.ingest.IngestFactory;
 import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.io.parquet.record.ParquetRecordReader;
@@ -453,8 +454,8 @@ public class ECSCompactionTaskRunnerLocalStackIT {
                 instanceProperties, sqs);
         CompactionTask task = new CompactionTask(instanceProperties,
                 PropertiesReloader.neverReload(), new SqsCompactionQueueHandler(sqs, instanceProperties), compactSortedFiles,
-                job -> {
-                }, committer, jobStatusStore, taskStatusStore, taskId, timeSupplier, duration -> {
+                PollWithRetries.immediateRetries(10), job -> true, committer, jobStatusStore, taskStatusStore,
+                taskId, timeSupplier, duration -> {
                 });
         return task;
     }

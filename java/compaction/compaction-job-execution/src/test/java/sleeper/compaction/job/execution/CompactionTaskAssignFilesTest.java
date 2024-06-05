@@ -18,8 +18,7 @@ package sleeper.compaction.job.execution;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.execution.CompactionTask.WaitForFileAssignments;
-import sleeper.core.util.PollWithRetries;
+import sleeper.compaction.job.execution.CompactionTask.FileAssignmentCheck;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -47,19 +46,35 @@ public class CompactionTaskAssignFilesTest extends CompactionTaskTestBase {
         assertThat(assignmentCheckRetries).containsExactly(job);
     }
 
-    private WaitForFileAssignments waitForFilesAssignment(Boolean... checkResults) {
+    @Test
+    void shouldFailJobWhenTimingOutWaitingForFilesToBeAssignedToJob() throws Exception {
+        // Given
+        CompactionJob job = createJobOnQueue("job1");
+
+        // When
+        runTaskCheckingFiles(
+                waitForFilesAssignment(false),
+                jobsSucceed(1));
+
+        // Then
+        assertThat(successfulJobs).isEmpty();
+        assertThat(failedJobs).containsExactly(job);
+        assertThat(jobsOnQueue).isEmpty();
+        assertThat(assignmentCheckRetries).containsExactly(job);
+    }
+
+    private FileAssignmentCheck waitForFilesAssignment(Boolean... checkResults) {
         Iterator<Boolean> checks = List.of(checkResults).iterator();
         return job -> {
-            PollWithRetries.immediateRetries(10).pollUntil("files are assigned to the job", () -> {
-                if (!checks.hasNext()) {
-                    return false;
-                }
+            if (checks.hasNext()) {
                 boolean check = checks.next();
                 if (!check) {
                     assignmentCheckRetries.add(job);
                 }
                 return check;
-            });
+            } else {
+                return false;
+            }
         };
     }
 }
