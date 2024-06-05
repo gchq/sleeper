@@ -1186,7 +1186,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
             // Given
             store.addFilesWithReferences(List.of(AllReferencesToAFile.builder()
                     .filename("file")
-                    .internalReferences(List.of())
+                    .references(List.of())
                     .build()));
 
             // When

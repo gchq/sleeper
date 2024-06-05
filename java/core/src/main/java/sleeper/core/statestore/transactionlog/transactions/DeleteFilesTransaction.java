@@ -42,7 +42,7 @@ public class DeleteFilesTransaction implements FileReferenceTransaction {
         for (String filename : filenames) {
             AllReferencesToAFile file = stateStoreFiles.file(filename)
                     .orElseThrow(() -> new FileNotFoundException(filename));
-            if (file.getTotalReferenceCount() > 0) {
+            if (file.getReferenceCount() > 0) {
                 throw new FileHasReferencesException(file);
             }
         }
