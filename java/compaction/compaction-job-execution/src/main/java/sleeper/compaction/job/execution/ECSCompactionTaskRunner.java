@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.job.execution.CompactionTask.WaitForFileAssignment;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
 import sleeper.compaction.task.CompactionTaskStatusStore;
@@ -37,6 +38,7 @@ import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.util.LoggedDuration;
+import sleeper.core.util.PollWithRetries;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.job.common.EC2ContainerMetadata;
 import sleeper.statestore.StateStoreProvider;
@@ -89,14 +91,15 @@ public class ECSCompactionTaskRunner {
             String taskId = UUID.randomUUID().toString();
 
             ObjectFactory objectFactory = new ObjectFactory(instanceProperties, s3Client, "/tmp");
+            WaitForFileAssignment waitForFiles = new StateStoreWaitForFiles(PollWithRetries.intervalAndMaxPolls(1000, 30),
+                    stateStoreProvider, tablePropertiesProvider);
             CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties,
                     tablePropertiesProvider, stateStoreProvider, objectFactory);
             CompactionJobCommitterOrSendToLambda committerOrLambda = new CompactionJobCommitterOrSendToLambda(
                     tablePropertiesProvider, stateStoreProvider, jobStatusStore, instanceProperties, sqsClient);
             CompactionTask task = new CompactionTask(instanceProperties, propertiesReloader,
-                    new SqsCompactionQueueHandler(sqsClient, instanceProperties), job -> {
-                    }, compactSortedFiles,
-                    committerOrLambda, jobStatusStore, taskStatusStore, taskId);
+                    new SqsCompactionQueueHandler(sqsClient, instanceProperties),
+                    waitForFiles, compactSortedFiles, committerOrLambda, jobStatusStore, taskStatusStore, taskId);
             task.run();
         } finally {
             sqsClient.shutdown();
