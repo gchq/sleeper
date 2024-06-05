@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.job.commit;
+package sleeper.compaction.job.execution;
 
 public class TimedOutWaitingForFileAssignmentsException extends RuntimeException {
 

@@ -16,7 +16,6 @@
 package sleeper.compaction.job.execution;
 
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.commit.TimedOutWaitingForFileAssignmentsException;
 import sleeper.compaction.job.execution.CompactionTask.WaitForFileAssignment;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.FileReference;
