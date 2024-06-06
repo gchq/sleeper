@@ -98,6 +98,7 @@ import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static sleeper.compaction.job.execution.StateStoreWaitForFilesTestHelper.waitWithRetries;
 import static sleeper.compaction.job.execution.testutils.CompactSortedFilesTestUtils.assignJobIdsToInputFiles;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_COMMITTER_QUEUE_URL;
@@ -452,8 +453,10 @@ public class ECSCompactionTaskRunnerLocalStackIT {
                 tablePropertiesProvider, stateStoreProvider, jobStatusStore,
                 instanceProperties, sqs);
         CompactionTask task = new CompactionTask(instanceProperties,
-                PropertiesReloader.neverReload(), new SqsCompactionQueueHandler(sqs, instanceProperties), compactSortedFiles,
-                committer, jobStatusStore, taskStatusStore, taskId, timeSupplier, duration -> {
+                PropertiesReloader.neverReload(), new SqsCompactionQueueHandler(sqs, instanceProperties),
+                waitWithRetries(1, stateStoreProvider, tablePropertiesProvider),
+                compactSortedFiles, committer, jobStatusStore, taskStatusStore, taskId,
+                timeSupplier, duration -> {
                 });
         return task;
     }
@@ -538,5 +541,4 @@ public class ECSCompactionTaskRunnerLocalStackIT {
             throw new RuntimeException("Failed reading records", e);
         }
     }
-
 }
