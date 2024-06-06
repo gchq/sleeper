@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.committer.lambda;
+package sleeper.committer.lambda;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
@@ -48,17 +48,20 @@ import java.util.List;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
-public class CompactionJobCommitterLambda implements RequestHandler<SQSEvent, SQSBatchResponse> {
-    public static final Logger LOGGER = LoggerFactory.getLogger(CompactionJobCommitterLambda.class);
+/**
+ * A lambda that allows for asynchronous commits to a state store.
+ */
+public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBatchResponse> {
+    public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreCommitterLambda.class);
 
     private final CompactionJobCommitter compactionJobCommitter;
     private final CompactionJobCommitRequestSerDe serDe = new CompactionJobCommitRequestSerDe();
 
-    public CompactionJobCommitterLambda() {
+    public StateStoreCommitterLambda() {
         this(connectToAws());
     }
 
-    public CompactionJobCommitterLambda(CompactionJobCommitter compactionJobCommitter) {
+    public StateStoreCommitterLambda(CompactionJobCommitter compactionJobCommitter) {
         this.compactionJobCommitter = compactionJobCommitter;
     }
 
