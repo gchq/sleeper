@@ -76,7 +76,7 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
                 CompactionJobCommitRequest request = serDe.fromJson(message.getBody());
                 compactionJobCommitter.apply(request);
                 LOGGER.info("Successfully committed compaction job {}", request.getJob());
-            } catch (RuntimeException | StateStoreException | InterruptedException e) {
+            } catch (RuntimeException | StateStoreException e) {
                 LOGGER.error("Failed committing compaction job", e);
                 batchItemFailures.add(new BatchItemFailure(message.getMessageId()));
             }
