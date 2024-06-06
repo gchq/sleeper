@@ -70,7 +70,7 @@ public class CompactionTask {
     private int totalNumberOfMessagesProcessed = 0;
 
     public CompactionTask(InstanceProperties instanceProperties, PropertiesReloader propertiesReloader,
-            MessageReceiver messageReceiver, WaitForFileAssignment waitForFiles, 
+            MessageReceiver messageReceiver, WaitForFileAssignment waitForFiles,
             CompactionJobCommitterOrSendToLambda jobCommitter, CompactionJobStatusStore jobStore,
             CompactionTaskStatusStore taskStore, CompactionAlgorithmSelector selector, String taskId) {
         this(instanceProperties, propertiesReloader, messageReceiver, waitForFiles, jobCommitter,

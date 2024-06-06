@@ -94,7 +94,7 @@ public class ECSCompactionTaskRunner {
 
             DefaultSelector compactionSelector = new DefaultSelector(instanceProperties, tablePropertiesProvider, stateStoreProvider, objectFactory);
 
-            WaitForFileAssignment waitForFiles = new StateStoreWaitForFiles(stateStoreProvider, tablePropertiesProvider);                    
+            WaitForFileAssignment waitForFiles = new StateStoreWaitForFiles(stateStoreProvider, tablePropertiesProvider);
 
             CompactionJobCommitterOrSendToLambda committerOrLambda = new CompactionJobCommitterOrSendToLambda(
                     tablePropertiesProvider, stateStoreProvider, jobStatusStore, instanceProperties, sqsClient);
