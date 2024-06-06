@@ -157,13 +157,7 @@ public class SleeperCdkApp extends Stack {
                 new ConfigBucketStack(this, "Configuration", instanceProperties, policiesStack),
                 new TableIndexStack(this, "TableIndex", instanceProperties, policiesStack),
                 policiesStack, stateStoreStacks, dataStack);
-        // Stack to asynchronously apply state store updates
-        StateStoreUpdateStack stateStoreUpdateStack = new StateStoreUpdateStack(this, "StateStoreUpdate",
-                instanceProperties, jars,
-                topicStack.getTopic(),
-                coreStacks,
-                compactionStatusStoreStack,
-                errorMetrics);
+
         new TransactionLogSnapshotStack(this, "TransactionLogSnapshot",
                 instanceProperties, jars, coreStacks, transactionLogStateStoreStack, topicStack.getTopic(), errorMetrics);
         if (optionalStacks.contains(TableMetricsStack.class.getSimpleName())) {
@@ -245,7 +239,16 @@ public class SleeperCdkApp extends Stack {
                     coreStacks,
                     errorMetrics);
         }
-
+        compactionStatusStoreStack = new CompactionStatusStoreStack(this, "CompactionStatusStore",
+                instanceProperties,
+                coreStacks);
+        // Stack to asynchronously apply state store updates
+        StateStoreUpdateStack stateStoreUpdateStack = new StateStoreUpdateStack(this, "StateStoreUpdate",
+                instanceProperties, jars,
+                topicStack.getTopic(),
+                coreStacks,
+                compactionStatusStoreStack,
+                errorMetrics);
         // Stack for containers for compactions and splitting compactions
         if (optionalStacks.contains(CompactionStack.class.getSimpleName())) {
             compactionStack = new CompactionStack(this,
