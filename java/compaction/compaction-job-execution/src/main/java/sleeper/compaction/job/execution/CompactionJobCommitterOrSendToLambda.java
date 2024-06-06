@@ -56,7 +56,7 @@ public class CompactionJobCommitterOrSendToLambda {
         this.jobCommitQueueSender = jobCommitQueueSender;
     }
 
-    public void commit(CompactionJobCommitRequest commitRequest) throws StateStoreException, InterruptedException {
+    public void commit(CompactionJobCommitRequest commitRequest) throws StateStoreException {
         if (tablePropertiesProvider.getById(commitRequest.getJob().getTableId()).getBoolean(COMPACTION_JOB_COMMIT_ASYNC)) {
             LOGGER.info("Sending compaction job {} to queue to be committed asynchronously", commitRequest.getJob().getId());
             jobCommitQueueSender.send(commitRequest);

@@ -15,9 +15,6 @@
  */
 package sleeper.compaction.job.commit;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
@@ -25,23 +22,18 @@ import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.exception.FileNotFoundException;
-import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
 import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
-import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.noJitter;
 
 public class CompactionJobCommitterTest extends CompactionJobCommitterTestBase {
 
@@ -89,80 +81,22 @@ public class CompactionJobCommitterTest extends CompactionJobCommitterTestBase {
                         .rootFile(job2.getOutputFile(), 400));
     }
 
-    @Nested
-    @DisplayName("Retry state store update")
-    class RetryStateStoreUpdate {
+    @Test
+    void shouldFailWhenFileDoesNotExistInStateStore() throws Exception {
+        // Given
+        createTable();
+        FileReference file = inputFileFactory().rootFile("file.parquet", 123);
+        CompactionJob job = createCompactionJobForOneFileAndRecordStatus(file);
+        CompactionJobCommitRequest commit = runCompactionJobOnTask("test-task", job);
 
-        @BeforeEach
-        void setUp() {
-            createTable();
-        }
+        // When
+        assertThatThrownBy(() -> jobCommitter().apply(commit))
+                .isInstanceOf(ReplaceRequestsFailedException.class)
+                .hasCauseInstanceOf(FileNotFoundException.class);
 
-        @Test
-        void shouldRetryStateStoreUpdateWhenFilesNotAssignedToJob() throws Exception {
-            // Given
-            FileReference file = addInputFile("file.parquet", 123);
-            CompactionJob job = createCompactionJobForOneFileAndRecordStatus(file);
-            CompactionJobCommitRequest commit = runCompactionJobOnTask("test-task", job);
-            actionOnWait(() -> {
-                stateStore().assignJobIds(List.of(AssignJobIdRequest.assignJobOnPartitionToFiles(
-                        job.getId(), file.getPartitionId(), List.of(file.getFilename()))));
-            });
-            Instant updateTime = Instant.parse("2024-05-01T10:59:30Z");
-            stateStore().fixFileUpdateTime(updateTime);
-
-            // When
-            jobCommitter(noJitter()).apply(commit);
-
-            // Then
-            assertThat(stateStore().getFileReferences()).containsExactly(
-                    FileReferenceFactory.fromUpdatedAt(stateStore(), updateTime)
-                            .rootFile(job.getOutputFile(), 100));
-            assertThat(foundWaits).containsExactly(Duration.ofSeconds(2));
-        }
-
-        @Test
-        void shouldFailAfterMaxAttemptsWhenFilesNotAssignedToJob() throws Exception {
-            // Given
-            FileReference file = addInputFile("file.parquet", 123);
-            CompactionJob job = createCompactionJobForOneFileAndRecordStatus(file);
-            CompactionJobCommitRequest commit = runCompactionJobOnTask("test-task", job);
-
-            // When
-            assertThatThrownBy(() -> jobCommitter(noJitter()).apply(commit))
-                    .isInstanceOf(TimedOutWaitingForFileAssignmentsException.class)
-                    .cause().isInstanceOf(ReplaceRequestsFailedException.class)
-                    .cause().isInstanceOf(FileReferenceNotAssignedToJobException.class);
-
-            // Then
-            assertThat(stateStore().getFileReferences()).containsExactly(file);
-            assertThat(foundWaits).containsExactly(
-                    Duration.ofSeconds(2),
-                    Duration.ofSeconds(4),
-                    Duration.ofSeconds(8),
-                    Duration.ofSeconds(16),
-                    Duration.ofSeconds(32),
-                    Duration.ofMinutes(1),
-                    Duration.ofMinutes(1),
-                    Duration.ofMinutes(1),
-                    Duration.ofMinutes(1));
-        }
-
-        @Test
-        void shouldFailWithNoRetriesWhenFileDoesNotExistInStateStore() throws Exception {
-            // Given
-            FileReference file = inputFileFactory().rootFile("file.parquet", 123);
-            CompactionJob job = createCompactionJobForOneFileAndRecordStatus(file);
-            CompactionJobCommitRequest commit = runCompactionJobOnTask("test-task", job);
-
-            // When
-            assertThatThrownBy(() -> jobCommitter(noJitter()).apply(commit))
-                    .isInstanceOf(ReplaceRequestsFailedException.class)
-                    .hasCauseInstanceOf(FileNotFoundException.class);
-
-            // Then
-            assertThat(stateStore().getFileReferences()).isEmpty();
-            assertThat(foundWaits).isEmpty();
-        }
+        // Then
+        assertThat(stateStore().getFileReferences()).isEmpty();
+        assertThat(foundWaits).isEmpty();
     }
+
 }
