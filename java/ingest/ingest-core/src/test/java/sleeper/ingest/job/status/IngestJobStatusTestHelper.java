@@ -368,7 +368,7 @@ public class IngestJobStatusTestHelper {
      * @return                an ingest job validated event for a rejected job
      */
     public static IngestJobValidatedEvent rejectedEvent(IngestJob job, Instant validationTime, String... reasons) {
-        return IngestJobValidatedEvent.ingestJobRejected(job.getId(), "{}", validationTime, reasons);
+        return IngestJobValidatedEvent.ingestJobRejected(job, validationTime, List.of(reasons));
     }
 
 }
