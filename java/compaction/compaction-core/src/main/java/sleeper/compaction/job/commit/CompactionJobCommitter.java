@@ -40,7 +40,7 @@ public class CompactionJobCommitter {
         this.stateStoreProvider = stateStoreProvider;
     }
 
-    public void apply(CompactionJobCommitRequest request) throws StateStoreException, InterruptedException {
+    public void apply(CompactionJobCommitRequest request) throws StateStoreException {
         CompactionJob job = request.getJob();
         updateStateStoreSuccess(
                 job, request.getRecordsWritten(), stateStoreProvider.getByTableId(job.getTableId()));
@@ -50,7 +50,7 @@ public class CompactionJobCommitter {
     public static void updateStateStoreSuccess(
             CompactionJob job,
             long recordsWritten,
-            StateStore stateStore) throws StateStoreException, InterruptedException {
+            StateStore stateStore) throws StateStoreException {
         FileReference fileReference = FileReference.builder()
                 .filename(job.getOutputFile())
                 .partitionId(job.getPartitionId())
