@@ -50,7 +50,6 @@ import static software.amazon.awscdk.services.lambda.Runtime.JAVA_11;
 public class StateStoreUpdateStack extends NestedStack {
     private final InstanceProperties instanceProperties;
     private final Queue commitQueue;
-    private final IFunction committerFunction;
 
     public StateStoreUpdateStack(
             Construct scope,
@@ -67,9 +66,8 @@ public class StateStoreUpdateStack extends NestedStack {
         LambdaCode committerJar = jars.lambdaCode(BuiltJar.STATESTORE_COMMITTER, jarsBucket);
 
         commitQueue = sqsQueueForStateStoreCommitter(topic, errorMetrics);
-        committerFunction = lambdaToCommitStateStoreUpdates(coreStacks, topic, errorMetrics, jarsBucket, committerJar,
+        lambdaToCommitStateStoreUpdates(coreStacks, topic, errorMetrics, jarsBucket, committerJar,
                 compactionStatusStoreStack.getResources());
-
     }
 
     private Queue sqsQueueForStateStoreCommitter(Topic topic, List<IMetric> errorMetrics) {
@@ -102,7 +100,7 @@ public class StateStoreUpdateStack extends NestedStack {
         return queue;
     }
 
-    private IFunction lambdaToCommitStateStoreUpdates(
+    private void lambdaToCommitStateStoreUpdates(
             CoreStacks coreStacks, Topic topic, List<IMetric> errorMetrics,
             IBucket jarsBucket, LambdaCode jobCommitterJar, CompactionStatusStoreResources compactionStatusStoreResources) {
         Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
@@ -126,15 +124,10 @@ public class StateStoreUpdateStack extends NestedStack {
 
         coreStacks.grantRunCompactionJobs(handlerFunction);
         jarsBucket.grantRead(handlerFunction);
-        compactionStatusStoreResources.grantWriteJobEvent(committerFunction);
-        return handlerFunction;
+        compactionStatusStoreResources.grantWriteJobEvent(handlerFunction);
     }
 
     public Queue getCommitQueue() {
         return commitQueue;
-    }
-
-    public IFunction getCommitterFunction() {
-        return committerFunction;
     }
 }
