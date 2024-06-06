@@ -29,6 +29,7 @@ import software.constructs.Construct;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.stack.AthenaStack;
 import sleeper.cdk.stack.CompactionStack;
+import sleeper.cdk.stack.CompactionStatusStoreStack;
 import sleeper.cdk.stack.ConfigBucketStack;
 import sleeper.cdk.stack.CoreStacks;
 import sleeper.cdk.stack.DashboardStack;
@@ -88,6 +89,7 @@ public class SleeperCdkApp extends Stack {
     private IngestStack ingestStack;
     private IngestBatcherStack ingestBatcherStack;
     private CompactionStack compactionStack;
+    private CompactionStatusStoreStack compactionStatusStoreStack;
     private PartitionSplittingStack partitionSplittingStack;
     private BulkImportBucketStack bulkImportBucketStack;
     private CommonEmrBulkImportStack emrBulkImportCommonStack;
@@ -160,6 +162,7 @@ public class SleeperCdkApp extends Stack {
                 instanceProperties, jars,
                 topicStack.getTopic(),
                 coreStacks,
+                compactionStatusStoreStack,
                 errorMetrics);
         new TransactionLogSnapshotStack(this, "TransactionLogSnapshot",
                 instanceProperties, jars, coreStacks, transactionLogStateStoreStack, topicStack.getTopic(), errorMetrics);
@@ -250,6 +253,7 @@ public class SleeperCdkApp extends Stack {
                     instanceProperties, jars,
                     topicStack.getTopic(),
                     coreStacks,
+                    compactionStatusStoreStack,
                     stateStoreUpdateStack,
                     errorMetrics);
         }

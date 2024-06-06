@@ -160,11 +160,12 @@ public class CompactionStack extends NestedStack {
             BuiltJars jars,
             Topic topic,
             CoreStacks coreStacks,
+            CompactionStatusStoreStack statusStoreStack,
             StateStoreUpdateStack stateStoreUpdateStack,
             List<IMetric> errorMetrics) {
         super(scope, id);
         this.instanceProperties = instanceProperties;
-        statusStore = CompactionStatusStoreResources.from(this, instanceProperties, coreStacks);
+        this.statusStore = statusStoreStack.getResources();
         // The compaction stack consists of the following components:
         // - An SQS queue for the compaction jobs.
         // - A lambda to periodically check for compaction jobs that should be created.
@@ -202,9 +203,6 @@ public class CompactionStack extends NestedStack {
                         "autoscaling:SetDesiredCapacity", "autoscaling:DescribeAutoScalingGroups"))
                 .resources(List.of("*"))
                 .build());
-
-        // Allow the state store committer lambda to save compaction jobs
-        statusStore.grantWriteJobEvent(stateStoreUpdateStack.getCommitterFunction());
 
         Utils.addStackTagIfSet(this, instanceProperties);
     }

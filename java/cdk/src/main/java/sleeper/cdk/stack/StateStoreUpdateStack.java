@@ -59,6 +59,7 @@ public class StateStoreUpdateStack extends NestedStack {
             BuiltJars jars,
             Topic topic,
             CoreStacks coreStacks,
+            CompactionStatusStoreStack compactionStatusStoreStack,
             List<IMetric> errorMetrics) {
         super(scope, id);
         this.instanceProperties = instanceProperties;
@@ -66,7 +67,9 @@ public class StateStoreUpdateStack extends NestedStack {
         LambdaCode committerJar = jars.lambdaCode(BuiltJar.STATESTORE_COMMITTER, jarsBucket);
 
         commitQueue = sqsQueueForStateStoreCommitter(topic, errorMetrics);
-        committerFunction = lambdaToCommitStateStoreUpdates(coreStacks, topic, errorMetrics, jarsBucket, committerJar);
+        committerFunction = lambdaToCommitStateStoreUpdates(coreStacks, topic, errorMetrics, jarsBucket, committerJar,
+                compactionStatusStoreStack.getResources());
+
     }
 
     private Queue sqsQueueForStateStoreCommitter(Topic topic, List<IMetric> errorMetrics) {
@@ -101,13 +104,13 @@ public class StateStoreUpdateStack extends NestedStack {
 
     private IFunction lambdaToCommitStateStoreUpdates(
             CoreStacks coreStacks, Topic topic, List<IMetric> errorMetrics,
-            IBucket jarsBucket, LambdaCode jobCommitterJar) {
+            IBucket jarsBucket, LambdaCode jobCommitterJar, CompactionStatusStoreResources compactionStatusStoreResources) {
         Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
 
         String functionName = String.join("-", "sleeper",
-                Utils.cleanInstanceId(instanceProperties), "compaction-job-committer");
+                Utils.cleanInstanceId(instanceProperties), "statestore-committer");
 
-        IFunction handlerFunction = jobCommitterJar.buildFunction(this, "CompactionJobCommitter", builder -> builder
+        IFunction handlerFunction = jobCommitterJar.buildFunction(this, "StateStoreCommitter", builder -> builder
                 .functionName(functionName)
                 .description("Applies the results of a compaction job to the state store and updates the status store.")
                 .runtime(JAVA_11)
@@ -121,9 +124,9 @@ public class StateStoreUpdateStack extends NestedStack {
                 .batchSize(instanceProperties.getInt(STATESTORE_COMMITTER_BATCH_SIZE))
                 .build());
 
-        commitQueue.grantSendMessages(handlerFunction);
         coreStacks.grantRunCompactionJobs(handlerFunction);
         jarsBucket.grantRead(handlerFunction);
+        compactionStatusStoreResources.grantWriteJobEvent(committerFunction);
         return handlerFunction;
     }
 
