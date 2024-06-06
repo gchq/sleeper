@@ -27,6 +27,7 @@ import sleeper.core.record.process.status.ProcessFailedStatus;
 import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.ingest.job.IngestJob;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
@@ -38,9 +39,12 @@ import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.records;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.withExpiry;
 import static sleeper.ingest.job.IngestJobTestData.createJobInDefaultTable;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.acceptedRun;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.failedIngestRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.finishedIngestRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.jobStatus;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.jobStatusListFrom;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.rejectedRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.singleJobStatusFrom;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.startedIngestRun;
 import static sleeper.ingest.job.status.IngestJobStatusType.ACCEPTED;
@@ -51,10 +55,10 @@ public class IngestJobStatusTest {
     private final IngestJob job = createJobInDefaultTable("test-job", "test.parquet", "test2.parquet");
 
     @Nested
-    @DisplayName("Report when a job is finished")
-    class ReportFinished {
+    @DisplayName("Report when a job is unfinished")
+    class ReportUnfinished {
         @Test
-        public void shouldBuildAndReportIngestJobStarted() {
+        public void shouldReportIngestJobStarted() {
             // Given
             Instant startTime = Instant.parse("2022-09-22T13:33:10.001Z");
 
@@ -63,12 +67,12 @@ public class IngestJobStatusTest {
 
             // Then
             assertThat(status)
-                    .extracting(IngestJobStatus::isFinished)
-                    .isEqualTo(false);
+                    .extracting(IngestJobStatus::isUnfinishedOrAnyRunInProgress)
+                    .isEqualTo(true);
         }
 
         @Test
-        public void shouldBuildAndReportIngestJobFinished() {
+        public void shouldReportIngestJobFinished() {
             // Given
             Instant startTime = Instant.parse("2022-09-22T13:33:10.001Z");
             Instant finishTime = Instant.parse("2022-09-22T13:34:10.001Z");
@@ -79,7 +83,92 @@ public class IngestJobStatusTest {
 
             // Then
             assertThat(status)
-                    .extracting(IngestJobStatus::isFinished)
+                    .extracting(IngestJobStatus::isUnfinishedOrAnyRunInProgress)
+                    .isEqualTo(false);
+        }
+
+        @Test
+        public void shouldReportIngestJobUnstartedWhenAccepted() {
+            // Given
+            Instant validationTime = Instant.parse("2022-09-22T13:33:10.001Z");
+
+            // When
+            IngestJobStatus status = jobStatus(job, acceptedRun(job, validationTime));
+
+            // Then
+            assertThat(status)
+                    .extracting(IngestJobStatus::isUnfinishedOrAnyRunInProgress)
+                    .isEqualTo(true);
+        }
+
+        @Test
+        public void shouldReportIngestJobNotInProgressWhenRejected() {
+            // Given
+            Instant validationTime = Instant.parse("2022-09-22T13:33:10.001Z");
+
+            // When
+            IngestJobStatus status = jobStatus(job, rejectedRun(job, validationTime));
+
+            // Then
+            assertThat(status)
+                    .extracting(IngestJobStatus::isUnfinishedOrAnyRunInProgress)
+                    .isEqualTo(false);
+        }
+
+        @Test
+        public void shouldReportIngestJobInProgressWhenFailedAndExpectingRetry() {
+            // Given
+            Instant startTime = Instant.parse("2022-09-22T13:33:10.001Z");
+            Instant failTime = Instant.parse("2022-09-22T13:34:10.001Z");
+
+            // When
+            IngestJobStatus status = jobStatus(job,
+                    failedIngestRun(job, "test-task", new ProcessRunTime(startTime, failTime),
+                            List.of("Failed reading input file", "Some IO failure")));
+
+            // Then
+            assertThat(status)
+                    .extracting(IngestJobStatus::isUnfinishedOrAnyRunInProgress)
+                    .isEqualTo(true);
+        }
+
+        @Test
+        public void shouldReportIngestJobFinishedWhenFailedAndRetried() {
+            // Given
+            Instant startTime1 = Instant.parse("2022-09-22T13:33:10.001Z");
+            Instant startTime2 = Instant.parse("2022-09-22T13:34:15.001Z");
+            RecordsProcessed recordsProcessed = new RecordsProcessed(123L, 100L);
+
+            // When
+            IngestJobStatus status = jobStatus(job,
+                    finishedIngestRun(job, "test-task", new RecordsProcessedSummary(
+                            recordsProcessed, new ProcessRunTime(startTime2, Duration.ofMinutes(1)))),
+                    failedIngestRun(job, "test-task",
+                            new ProcessRunTime(startTime1, Duration.ofMinutes(1)),
+                            List.of("Failed reading input file", "Some IO failure")));
+
+            // Then
+            assertThat(status)
+                    .extracting(IngestJobStatus::isUnfinishedOrAnyRunInProgress)
+                    .isEqualTo(false);
+        }
+
+        @Test
+        public void shouldReportIngestJobInProgressWhenFinishedButAnotherRunInProgress() {
+            // Given
+            Instant startTime1 = Instant.parse("2022-09-22T13:33:10.001Z");
+            Instant startTime2 = Instant.parse("2022-09-22T13:33:15.001Z");
+            RecordsProcessed recordsProcessed = new RecordsProcessed(123L, 100L);
+
+            // When
+            IngestJobStatus status = jobStatus(job,
+                    startedIngestRun(job, "task-2", startTime2),
+                    finishedIngestRun(job, "task-1", new RecordsProcessedSummary(
+                            recordsProcessed, new ProcessRunTime(startTime1, Duration.ofMinutes(1)))));
+
+            // Then
+            assertThat(status)
+                    .extracting(IngestJobStatus::isUnfinishedOrAnyRunInProgress)
                     .isEqualTo(true);
         }
     }

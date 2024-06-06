@@ -27,7 +27,7 @@ import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
-import sleeper.core.iterator.IteratorException;
+import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
@@ -108,7 +108,7 @@ public class TestUtils {
                     .instanceProperties(instanceProperties)
                     .build();
             factory.ingestFromRecordIterator(table, generateTimeSeriesData().iterator());
-        } catch (IOException | StateStoreException | IteratorException e) {
+        } catch (IOException | StateStoreException | IteratorCreationException e) {
             throw new RuntimeException("Failed to Ingest data", e);
         }
     }

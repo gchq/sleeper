@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.iterator.IteratorException;
+import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.iterator.SortedRecordIterator;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
@@ -43,19 +43,19 @@ class RecordIteratorWithSleeperIteratorApplied implements CloseableIterator<Reco
     /**
      * Create an instance.
      *
-     * @param  objectFactory            the {@link ObjectFactory} to use to create the Sleeper iterator
-     * @param  sleeperSchema            the Sleeper {@link Schema} of the {@link Record} objects
-     * @param  sleeperIteratorClassName the Sleeper iterator to apply
-     * @param  sleeperIteratorConfig    the configuration for the Sleeper iterator
-     * @param  sourceIterator           the {@link CloseableIterator} to provide the source {@link Record} objects
-     * @throws IteratorException        thrown when there is an error in the Sleeper iterator
+     * @param  objectFactory             the {@link ObjectFactory} to use to create the Sleeper iterator
+     * @param  sleeperSchema             the Sleeper {@link Schema} of the {@link Record} objects
+     * @param  sleeperIteratorClassName  the Sleeper iterator to apply
+     * @param  sleeperIteratorConfig     the configuration for the Sleeper iterator
+     * @param  sourceIterator            the {@link CloseableIterator} to provide the source {@link Record} objects
+     * @throws IteratorCreationException if there was a failure creating the Sleeper iterator
      */
     RecordIteratorWithSleeperIteratorApplied(
             ObjectFactory objectFactory,
             Schema sleeperSchema,
             String sleeperIteratorClassName,
             String sleeperIteratorConfig,
-            CloseableIterator<Record> sourceIterator) throws IteratorException {
+            CloseableIterator<Record> sourceIterator) throws IteratorCreationException {
         this.inputIterator = requireNonNull(sourceIterator);
         this.outputIterator = applyIterator(
                 objectFactory,
@@ -68,26 +68,26 @@ class RecordIteratorWithSleeperIteratorApplied implements CloseableIterator<Reco
     /**
      * Apply the Sleeper iterator.
      *
-     * @param  objectFactory            the {@link ObjectFactory} to use to create the Sleeper iterator
-     * @param  sleeperSchema            the Sleeper {@link Schema} of the {@link Record} objects
-     * @param  sleeperIteratorClassName the Sleeper iterator to apply
-     * @param  sleeperIteratorConfig    the configuration for the Sleeper iterator
-     * @param  sourceIterator           the {@link CloseableIterator} to provide the source {@link Record} objects
-     * @return                          the record iterator, with the Sleeper iterator applied
-     * @throws IteratorException        thrown when there is an error in the Sleeper iterator
+     * @param  objectFactory             the {@link ObjectFactory} to use to create the Sleeper iterator
+     * @param  sleeperSchema             the Sleeper {@link Schema} of the {@link Record} objects
+     * @param  sleeperIteratorClassName  the Sleeper iterator to apply
+     * @param  sleeperIteratorConfig     the configuration for the Sleeper iterator
+     * @param  sourceIterator            the {@link CloseableIterator} to provide the source {@link Record} objects
+     * @return                           the record iterator, with the Sleeper iterator applied
+     * @throws IteratorCreationException if there was a failure creating the Sleeper iterator
      */
     private static CloseableIterator<Record> applyIterator(
             ObjectFactory objectFactory,
             Schema sleeperSchema,
             String sleeperIteratorClassName,
             String sleeperIteratorConfig,
-            CloseableIterator<Record> sourceIterator) throws IteratorException {
+            CloseableIterator<Record> sourceIterator) throws IteratorCreationException {
         if (null != sleeperIteratorClassName) {
             SortedRecordIterator iterator;
             try {
                 iterator = objectFactory.getObject(sleeperIteratorClassName, SortedRecordIterator.class);
             } catch (ObjectFactoryException e) {
-                throw new IteratorException("ObjectFactoryException creating iterator of class " + sleeperIteratorClassName, e);
+                throw new IteratorCreationException("ObjectFactoryException creating iterator of class " + sleeperIteratorClassName, e);
             }
             LOGGER.debug("Created iterator of class {}", sleeperIteratorClassName);
             iterator.init(sleeperIteratorConfig, sleeperSchema);

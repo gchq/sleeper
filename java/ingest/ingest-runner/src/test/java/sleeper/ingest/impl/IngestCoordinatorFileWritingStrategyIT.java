@@ -36,7 +36,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.validation.IngestFileWritingStrategy;
 import sleeper.core.CommonTestConstants;
-import sleeper.core.iterator.IteratorException;
+import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
@@ -508,7 +508,7 @@ public class IngestCoordinatorFileWritingStrategyIT {
             RecordGenerator.RecordListAndSchema recordListAndSchema,
             IngestCoordinatorTestParameters ingestCoordinatorTestParameters,
             int maxRecordsInMemory,
-            long maxNoOfBytesToWriteToLocalStore) throws StateStoreException, IteratorException, IOException {
+            long maxNoOfBytesToWriteToLocalStore) throws StateStoreException, IteratorCreationException, IOException {
         try (IngestCoordinator<Record> ingestCoordinator = directWriteBackedByArrayListWriteToLocalFile(
                 arrayList -> arrayList
                         .maxNoOfRecordsInMemory(maxRecordsInMemory)
@@ -522,7 +522,7 @@ public class IngestCoordinatorFileWritingStrategyIT {
 
     private static void ingestRecords(
             RecordGenerator.RecordListAndSchema recordListAndSchema,
-            IngestCoordinatorTestParameters ingestCoordinatorTestParameters) throws StateStoreException, IteratorException, IOException {
+            IngestCoordinatorTestParameters ingestCoordinatorTestParameters) throws StateStoreException, IteratorCreationException, IOException {
         try (IngestCoordinator<Record> ingestCoordinator = directWriteBackedByArrowWriteToLocalFile()
                 .createIngestCoordinator(ingestCoordinatorTestParameters)) {
             for (Record record : recordListAndSchema.recordList) {

@@ -2,9 +2,10 @@
 Compaction Job Status Report
 ----------------------------
 Total jobs: 0
-Total jobs pending: 0
-Total jobs in progress: 0
-Total jobs finished: 0
+Total jobs not yet started: 0
+Total jobs with a run in progress: 0
+Total jobs finished successfully: 0
+Total jobs with any failed run: 0
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 | STATE | CREATE_TIME | JOB_ID | INPUT_FILES | PARTITION_ID | TASK_ID | START_TIME | FINISH_TIME | DURATION | RECORDS_READ | RECORDS_WRITTEN | READ_RATE (s) | WRITE_RATE (s) |
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

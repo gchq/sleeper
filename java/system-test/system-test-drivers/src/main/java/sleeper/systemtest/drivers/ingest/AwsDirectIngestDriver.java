@@ -17,7 +17,7 @@
 package sleeper.systemtest.drivers.ingest;
 
 import sleeper.configuration.jars.ObjectFactory;
-import sleeper.core.iterator.IteratorException;
+import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.IngestFactory;
@@ -39,7 +39,7 @@ public class AwsDirectIngestDriver implements DirectIngestDriver {
     public void ingest(Path tempDir, Iterator<Record> records) {
         try {
             factory(tempDir).ingestFromRecordIterator(instance.getTableProperties(), records);
-        } catch (StateStoreException | IteratorException e) {
+        } catch (StateStoreException | IteratorCreationException e) {
             throw new RuntimeException(e);
         } catch (IOException e) {
             throw new UncheckedIOException(e);

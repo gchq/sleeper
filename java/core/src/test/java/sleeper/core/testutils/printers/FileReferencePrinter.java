@@ -107,7 +107,7 @@ public class FileReferencePrinter {
 
     private static List<FileReference> sortFileReferences(AllReferencesToAllFiles files) {
         return files.getFilesWithReferences().stream()
-                .flatMap(file -> file.getInternalReferences().stream())
+                .flatMap(file -> file.getReferences().stream())
                 .sorted(comparing(FileReference::onlyContainsDataForThisPartition)
                         .thenComparing(FileReference::getNumberOfRecords)
                         .reversed())

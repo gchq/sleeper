@@ -31,15 +31,15 @@ public interface RecordBatch<INCOMINGDATATYPE> extends AutoCloseable {
     /**
      * Append data to the batch.
      *
-     * @param  data        The data to append
-     * @throws IOException -
+     * @param  data        the data to append
+     * @throws IOException if there was a failure writing to the file
      */
     void append(INCOMINGDATATYPE data) throws IOException;
 
     /**
      * Indicate whether the batch has any avaialble space.
      *
-     * @return True if the batch is full
+     * @return true if the batch is full
      */
     boolean isFull();
 
@@ -48,7 +48,7 @@ public interface RecordBatch<INCOMINGDATATYPE> extends AutoCloseable {
      * caller to close the iterator. This method may only be called once per {@link RecordBatch}.
      *
      * @return             the iterator
-     * @throws IOException -
+     * @throws IOException if there was a failure writing the file
      */
     CloseableIterator<Record> createOrderedRecordIterator() throws IOException;
 

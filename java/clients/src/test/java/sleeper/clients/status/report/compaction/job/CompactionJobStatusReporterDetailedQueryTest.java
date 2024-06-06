@@ -44,7 +44,7 @@ public class CompactionJobStatusReporterDetailedQueryTest extends CompactionJobS
     @Test
     public void shouldReportCompactionJobStatusForMultipleRunsOfSameJob() throws Exception {
         // Given
-        List<CompactionJobStatus> statusList = jobWithMultipleRuns();
+        List<CompactionJobStatus> statusList = jobsWithMultipleRuns();
 
         // When / Then
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, JobQuery.Type.DETAILED))

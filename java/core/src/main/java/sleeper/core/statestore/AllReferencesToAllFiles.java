@@ -38,9 +38,9 @@ public class AllReferencesToAllFiles {
     public AllReferencesToAllFiles(Collection<AllReferencesToAFile> files, boolean moreThanMax) {
         this.filesByFilename = filesByFilename(files.stream());
         this.filesWithReferencesByFilename = filesByFilename(files.stream()
-                .filter(file -> file.getTotalReferenceCount() > 0));
+                .filter(file -> file.getReferenceCount() > 0));
         this.filesWithNoReferencesByFilename = filesByFilename(files.stream()
-                .filter(file -> file.getTotalReferenceCount() < 1));
+                .filter(file -> file.getReferenceCount() < 1));
         this.moreThanMax = moreThanMax;
     }
 
@@ -63,7 +63,7 @@ public class AllReferencesToAllFiles {
      */
     public List<FileReference> listFileReferences() {
         return getFilesWithReferences().stream()
-                .flatMap(file -> file.getInternalReferences().stream())
+                .flatMap(file -> file.getReferences().stream())
                 .collect(toUnmodifiableList());
     }
 

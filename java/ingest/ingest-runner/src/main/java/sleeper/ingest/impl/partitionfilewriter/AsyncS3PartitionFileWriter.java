@@ -94,7 +94,7 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
      * @param  localWorkingDirectory the local directory to use to create temporary files
      * @param  s3BucketName          the S3 bucket name and prefix to write to
      * @param  filePathPrefix        the prefix for S3 objects to write
-     * @throws IOException           -
+     * @throws IOException           if there was a failure writing the file
      */
     public AsyncS3PartitionFileWriter(
             Partition partition,
@@ -160,8 +160,8 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
     /**
      * Append a record to the partition. This writes the record to a local Parquet file and does not upload it to S3.
      *
-     * @param  record      The record to append
-     * @throws IOException -
+     * @param  record      the record to append
+     * @throws IOException if there was a failure writing to the file
      */
     @Override
     public void append(Record record) throws IOException {
@@ -178,8 +178,8 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
      * for both the Parquet file and for the associated quantiles sketch file. The local copies are deleted and then the
      * {@link CompletableFuture} completes. The details of new partition file are returned in the completed future.
      *
-     * @return             Details about the new partition file
-     * @throws IOException -
+     * @return             details about the new partition file
+     * @throws IOException if there was a failure closing the partition writer or writing the sketches file
      */
     @Override
     public CompletableFuture<FileReference> close() throws IOException {

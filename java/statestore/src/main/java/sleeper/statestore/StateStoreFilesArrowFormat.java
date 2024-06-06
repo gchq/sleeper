@@ -127,8 +127,7 @@ public class StateStoreFilesArrowFormat {
                 files.add(AllReferencesToAFile.builder()
                         .filename(filename)
                         .lastStateStoreUpdateTime(Instant.ofEpochMilli(updateTimeVector.get(rowNumber)))
-                        .internalReferences(references)
-                        .totalReferenceCount(references.size())
+                        .references(references)
                         .build());
             }
         }
@@ -138,7 +137,7 @@ public class StateStoreFilesArrowFormat {
     private static void writeReferences(AllReferencesToAFile file, int fileNumber, BufferAllocator allocator, UnionListWriter writer) {
         writer.setPosition(fileNumber);
         writer.startList();
-        for (FileReference reference : file.getInternalReferences()) {
+        for (FileReference reference : file.getReferences()) {
             StructWriter struct = writer.struct();
             struct.start();
             writeVarChar(struct, allocator, PARTITION_ID, reference.getPartitionId());
