@@ -84,7 +84,7 @@ class IngestBatcherMinBatchSizeTest extends IngestBatcherTestBase {
                     .isEqualTo(queueMessages(IngestJob.builder()
                             .tableId("test-table-1")
                             .id("test-job-id")
-                            .files("test-bucket/test-1.parquet")
+                            .files(List.of("test-bucket/test-1.parquet"))
                             .build()));
         }
 
@@ -163,7 +163,7 @@ class IngestBatcherMinBatchSizeTest extends IngestBatcherTestBase {
                     .isEqualTo(queueMessages(IngestJob.builder()
                             .tableId("test-table-1")
                             .id("test-job-id")
-                            .files("test-bucket/test-1.parquet")
+                            .files(List.of("test-bucket/test-1.parquet"))
                             .build()));
         }
 

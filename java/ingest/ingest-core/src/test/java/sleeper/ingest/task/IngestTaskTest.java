@@ -44,8 +44,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ingest.IngestResultTestData.defaultFileIngestResult;
 import static sleeper.ingest.IngestResultTestData.defaultFileIngestResultReadAndWritten;
 import static sleeper.ingest.job.IngestJobTestData.DEFAULT_TABLE_ID;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.failedIngestJob;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestJob;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.failedIngestJob;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.finishedIngestJob;
 import static sleeper.ingest.task.IngestTaskStatusTestData.finishedMultipleJobs;
 import static sleeper.ingest.task.IngestTaskStatusTestData.finishedNoJobs;
 import static sleeper.ingest.task.IngestTaskStatusTestData.finishedOneJob;
@@ -371,7 +371,7 @@ public class IngestTaskTest {
         IngestJob job = IngestJob.builder()
                 .tableId(DEFAULT_TABLE_ID)
                 .tableName("test-table")
-                .files(UUID.randomUUID().toString())
+                .files(List.of(UUID.randomUUID().toString()))
                 .id(jobId)
                 .build();
         jobsOnQueue.add(job);

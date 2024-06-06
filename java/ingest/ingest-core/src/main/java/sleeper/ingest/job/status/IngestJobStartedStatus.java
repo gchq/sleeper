@@ -58,20 +58,6 @@ public class IngestJobStartedStatus implements IngestJobInfoStatus {
         return builder().isStartOfRun(startOfRun);
     }
 
-    /**
-     * Creates an instance of this class.
-     *
-     * @param  job        the ingest job
-     * @param  startTime  the start time
-     * @param  updateTime the update time
-     * @return            an instance of this class
-     */
-    public static IngestJobStartedStatus startAndUpdateTime(IngestJob job, Instant startTime, Instant updateTime) {
-        return withStartOfRun(true).job(job)
-                .startTime(startTime).updateTime(updateTime)
-                .build();
-    }
-
     public int getInputFileCount() {
         return inputFileCount;
     }
