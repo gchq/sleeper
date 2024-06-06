@@ -17,6 +17,8 @@ pkgs.mkShell {
     gcc
     rustup
     cargo-cross
+    pkg-config # Used to find openssl install
+    openssl # Needed by git2 module in Rust
   ];
   shellHook = ''
     rustup default stable
