@@ -47,6 +47,7 @@ import sleeper.cdk.stack.QueryQueueStack;
 import sleeper.cdk.stack.QueryStack;
 import sleeper.cdk.stack.S3StateStoreStack;
 import sleeper.cdk.stack.StateStoreStacks;
+import sleeper.cdk.stack.StateStoreUpdateStack;
 import sleeper.cdk.stack.TableDataStack;
 import sleeper.cdk.stack.TableIndexStack;
 import sleeper.cdk.stack.TableMetricsStack;
@@ -129,6 +130,7 @@ public class SleeperCdkApp extends Stack {
             WebSocketQueryStack.class)
             .map(Class::getSimpleName).collect(Collectors.toList());
 
+    @SuppressWarnings("checkstyle:methodlength")
     public void create() {
         // Optional stacks to be included
         List<String> optionalStacks = instanceProperties.getList(OPTIONAL_STACKS);
@@ -153,6 +155,12 @@ public class SleeperCdkApp extends Stack {
                 new ConfigBucketStack(this, "Configuration", instanceProperties, policiesStack),
                 new TableIndexStack(this, "TableIndex", instanceProperties, policiesStack),
                 policiesStack, stateStoreStacks, dataStack);
+        // Stack to asynchronously apply state store updates
+        StateStoreUpdateStack stateStoreUpdateStack = new StateStoreUpdateStack(this, "StateStoreUpdate",
+                instanceProperties, jars,
+                topicStack.getTopic(),
+                coreStacks,
+                errorMetrics);
         new TransactionLogSnapshotStack(this, "TransactionLogSnapshot",
                 instanceProperties, jars, coreStacks, transactionLogStateStoreStack, topicStack.getTopic(), errorMetrics);
         if (optionalStacks.contains(TableMetricsStack.class.getSimpleName())) {
@@ -242,6 +250,7 @@ public class SleeperCdkApp extends Stack {
                     instanceProperties, jars,
                     topicStack.getTopic(),
                     coreStacks,
+                    stateStoreUpdateStack,
                     errorMetrics);
         }
 

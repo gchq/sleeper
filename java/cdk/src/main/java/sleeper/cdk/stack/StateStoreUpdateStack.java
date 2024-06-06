@@ -49,23 +49,24 @@ import static software.amazon.awscdk.services.lambda.Runtime.JAVA_11;
 
 public class StateStoreUpdateStack extends NestedStack {
     private final InstanceProperties instanceProperties;
+    private final Queue commitQueue;
+    private final IFunction committerFunction;
 
     public StateStoreUpdateStack(
             Construct scope,
             String id,
             InstanceProperties instanceProperties,
             BuiltJars jars,
-            CompactionStatusStoreResources compactionStatusStore,
             Topic topic,
             CoreStacks coreStacks,
             List<IMetric> errorMetrics) {
         super(scope, id);
         this.instanceProperties = instanceProperties;
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
-        LambdaCode jobCommitterJar = jars.lambdaCode(BuiltJar.STATESTORE_COMMITTER, jarsBucket);
+        LambdaCode committerJar = jars.lambdaCode(BuiltJar.STATESTORE_COMMITTER, jarsBucket);
 
-        Queue queue = sqsQueueForStateStoreCommitter(topic, errorMetrics);
-        lambdaToCommitStateStoreUpdates(coreStacks, topic, errorMetrics, jarsBucket, jobCommitterJar, queue, compactionStatusStore);
+        commitQueue = sqsQueueForStateStoreCommitter(topic, errorMetrics);
+        committerFunction = lambdaToCommitStateStoreUpdates(coreStacks, topic, errorMetrics, jarsBucket, committerJar);
     }
 
     private Queue sqsQueueForStateStoreCommitter(Topic topic, List<IMetric> errorMetrics) {
@@ -98,10 +99,9 @@ public class StateStoreUpdateStack extends NestedStack {
         return queue;
     }
 
-    private void lambdaToCommitStateStoreUpdates(
+    private IFunction lambdaToCommitStateStoreUpdates(
             CoreStacks coreStacks, Topic topic, List<IMetric> errorMetrics,
-            IBucket jarsBucket, LambdaCode jobCommitterJar, Queue jobCommitterQueue,
-            CompactionStatusStoreResources compactionStatusStore) {
+            IBucket jarsBucket, LambdaCode jobCommitterJar) {
         Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
 
         String functionName = String.join("-", "sleeper",
@@ -117,13 +117,21 @@ public class StateStoreUpdateStack extends NestedStack {
                 .environment(environmentVariables)
                 .logGroup(createLambdaLogGroup(this, "StateStoreCommitterLogGroup", functionName, instanceProperties)));
 
-        handlerFunction.addEventSource(SqsEventSource.Builder.create(jobCommitterQueue)
+        handlerFunction.addEventSource(SqsEventSource.Builder.create(commitQueue)
                 .batchSize(instanceProperties.getInt(STATESTORE_COMMITTER_BATCH_SIZE))
                 .build());
 
-        jobCommitterQueue.grantSendMessages(handlerFunction);
+        commitQueue.grantSendMessages(handlerFunction);
         coreStacks.grantRunCompactionJobs(handlerFunction);
         jarsBucket.grantRead(handlerFunction);
-        compactionStatusStore.grantWriteJobEvent(handlerFunction);
+        return handlerFunction;
+    }
+
+    public Queue getCommitQueue() {
+        return commitQueue;
+    }
+
+    public IFunction getCommitterFunction() {
+        return committerFunction;
     }
 }
