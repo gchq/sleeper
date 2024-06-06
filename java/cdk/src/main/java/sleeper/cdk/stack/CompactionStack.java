@@ -187,7 +187,7 @@ public class CompactionStack extends NestedStack {
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
         LambdaCode jobCreatorJar = jars.lambdaCode(BuiltJar.COMPACTION_JOB_CREATOR, jarsBucket);
         LambdaCode taskCreatorJar = jars.lambdaCode(BuiltJar.COMPACTION_TASK_CREATOR, jarsBucket);
-        LambdaCode jobCommitterJar = jars.lambdaCode(BuiltJar.COMPACTION_JOB_COMMITTER, jarsBucket);
+        LambdaCode jobCommitterJar = jars.lambdaCode(BuiltJar.STATESTORE_COMMITTER, jarsBucket);
 
         // SQS queue for the compaction jobs
         Queue compactionJobsQueue = sqsQueueForCompactionJobs(coreStacks, topic, errorMetrics);

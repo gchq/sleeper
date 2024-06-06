@@ -48,6 +48,9 @@ import java.util.List;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
+/**
+ * A lambda that allows for asynchronous commits to a state store.
+ */
 public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBatchResponse> {
     public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreCommitterLambda.class);
 
