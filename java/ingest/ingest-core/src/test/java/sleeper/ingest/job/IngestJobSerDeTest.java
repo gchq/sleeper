@@ -17,6 +17,8 @@ package sleeper.ingest.job;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class IngestJobSerDeTest {
@@ -25,7 +27,7 @@ class IngestJobSerDeTest {
     void shouldSerDeCorrectly() {
         // Given
         IngestJob ingestJob = IngestJob.builder()
-                .tableName("table").id("id").files("file1", "file2")
+                .tableName("table").id("id").files(List.of("file1", "file2"))
                 .build();
         IngestJobSerDe ingestJobSerDe = new IngestJobSerDe();
 

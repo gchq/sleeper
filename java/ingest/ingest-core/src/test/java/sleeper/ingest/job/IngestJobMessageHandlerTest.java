@@ -37,8 +37,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.rejectedRun;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.jobStatus;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.rejectedRun;
 
 public class IngestJobMessageHandlerTest {
 
@@ -72,7 +72,7 @@ public class IngestJobMessageHandlerTest {
                             .id("test-job-id")
                             .tableName("test-table")
                             .tableId("test-table-id")
-                            .files("file1.parquet", "file2.parquet")
+                            .files(List.of("file1.parquet", "file2.parquet"))
                             .build());
             assertThat(ingestJobStatusStore.getInvalidJobs()).isEmpty();
             assertThat(ingestJobStatusStore.getAllJobs(tableId)).isEmpty();
@@ -95,7 +95,7 @@ public class IngestJobMessageHandlerTest {
                             .id("test-job-id")
                             .tableName("test-table")
                             .tableId("test-table-id")
-                            .files("file1.parquet", "file2.parquet")
+                            .files(List.of("file1.parquet", "file2.parquet"))
                             .build());
             assertThat(ingestJobStatusStore.getInvalidJobs()).isEmpty();
             assertThat(ingestJobStatusStore.getAllJobs(tableId)).isEmpty();
@@ -119,7 +119,7 @@ public class IngestJobMessageHandlerTest {
                             .id("test-job-id")
                             .tableName("test-table")
                             .tableId("test-table-id")
-                            .files("file1.parquet", "file2.parquet")
+                            .files(List.of("file1.parquet", "file2.parquet"))
                             .build());
             assertThat(ingestJobStatusStore.getInvalidJobs()).isEmpty();
             assertThat(ingestJobStatusStore.getAllJobs(tableId)).isEmpty();
@@ -141,7 +141,7 @@ public class IngestJobMessageHandlerTest {
                             .id("test-job-id")
                             .tableName("test-table")
                             .tableId("test-table-id")
-                            .files("file1.parquet", "file2.parquet")
+                            .files(List.of("file1.parquet", "file2.parquet"))
                             .build());
             assertThat(ingestJobStatusStore.getInvalidJobs()).isEmpty();
             assertThat(ingestJobStatusStore.getAllJobs(tableId)).isEmpty();

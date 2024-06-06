@@ -34,16 +34,16 @@ import static sleeper.clients.status.report.StatusReporterTestHelper.job;
 import static sleeper.clients.status.report.StatusReporterTestHelper.task;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRun;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRunWhichStarted;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.failedIngestJob;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.failedIngestRun;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestJob;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestRun;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.rejectedRun;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestJob;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestRun;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.acceptedRun;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.acceptedRunWhichStarted;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.failedIngestJob;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.failedIngestRun;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.finishedIngestJob;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.finishedIngestRun;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.jobStatus;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.rejectedRun;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.startedIngestJob;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.startedIngestRun;
 
 public class IngestJobStatusReporterTestData {
     private IngestJobStatusReporterTestData() {

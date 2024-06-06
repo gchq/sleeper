@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.job.execution.CompactionTask.WaitForFileAssignment;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
 import sleeper.compaction.task.CompactionTaskStatusStore;
@@ -90,14 +91,16 @@ public class ECSCompactionTaskRunner {
 
             ObjectFactory objectFactory = new ObjectFactory(instanceProperties, s3Client, "/tmp");
 
-            DefaultSelector compactionSelector = new DefaultSelector(instanceProperties,
-                    tablePropertiesProvider, stateStoreProvider, objectFactory);
+
+            DefaultSelector compactionSelector = new DefaultSelector(instanceProperties, tablePropertiesProvider, stateStoreProvider, objectFactory);
+
+            WaitForFileAssignment waitForFiles = new StateStoreWaitForFiles(stateStoreProvider, tablePropertiesProvider);                    
 
             CompactionJobCommitterOrSendToLambda committerOrLambda = new CompactionJobCommitterOrSendToLambda(
                     tablePropertiesProvider, stateStoreProvider, jobStatusStore, instanceProperties, sqsClient);
             CompactionTask task = new CompactionTask(instanceProperties, propertiesReloader,
                     new SqsCompactionQueueHandler(sqsClient, instanceProperties),
-                    committerOrLambda, jobStatusStore, taskStatusStore, compactionSelector, taskId);
+                    waitForFiles, committerOrLambda, jobStatusStore, taskStatusStore, compactionSelector, taskId);
             task.run();
         } finally {
             sqsClient.shutdown();

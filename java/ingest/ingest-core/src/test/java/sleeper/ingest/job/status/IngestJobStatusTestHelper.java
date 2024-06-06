@@ -34,9 +34,9 @@ import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.d
 /**
  * A helper for creating ingest job statuses for tests.
  */
-public class IngestJobStatusTestData {
+public class IngestJobStatusTestHelper {
 
-    private IngestJobStatusTestData() {
+    private IngestJobStatusTestHelper() {
     }
 
     /**
@@ -286,7 +286,7 @@ public class IngestJobStatusTestData {
      */
     public static ProcessRun startedIngestRun(IngestJob job, String taskId, Instant startTime) {
         return ProcessRun.started(taskId,
-                IngestJobStartedStatus.startAndUpdateTime(job, startTime, defaultUpdateTime(startTime)));
+                startAndUpdateTime(job, startTime, defaultUpdateTime(startTime)));
     }
 
     /**
@@ -300,7 +300,7 @@ public class IngestJobStatusTestData {
     public static ProcessRun finishedIngestRun(
             IngestJob job, String taskId, RecordsProcessedSummary summary) {
         return ProcessRun.finished(taskId,
-                IngestJobStartedStatus.startAndUpdateTime(job, summary.getStartTime(), defaultUpdateTime(summary.getStartTime())),
+                startAndUpdateTime(job, summary.getStartTime(), defaultUpdateTime(summary.getStartTime())),
                 ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary));
     }
 
@@ -316,7 +316,7 @@ public class IngestJobStatusTestData {
     public static ProcessRun failedIngestRun(
             IngestJob job, String taskId, ProcessRunTime runTime, List<String> failureReasons) {
         return ProcessRun.finished(taskId,
-                IngestJobStartedStatus.startAndUpdateTime(job, runTime.getStartTime(), defaultUpdateTime(runTime.getStartTime())),
+                startAndUpdateTime(job, runTime.getStartTime(), defaultUpdateTime(runTime.getStartTime())),
                 ProcessFailedStatus.timeAndReasons(defaultUpdateTime(runTime.getFinishTime()), runTime, failureReasons));
     }
 
@@ -344,4 +344,31 @@ public class IngestJobStatusTestData {
         }
         return jobs.get(0);
     }
+
+    /**
+     * Creates an ingest job started status.
+     *
+     * @param  job        the ingest job
+     * @param  startTime  the start time
+     * @param  updateTime the update time
+     * @return            an ingest job started status
+     */
+    public static IngestJobStartedStatus startAndUpdateTime(IngestJob job, Instant startTime, Instant updateTime) {
+        return IngestJobStartedStatus.withStartOfRun(true).job(job)
+                .startTime(startTime).updateTime(updateTime)
+                .build();
+    }
+
+    /**
+     * Creates an ingest job validated event for a rejected job.
+     *
+     * @param  job            the ingest job
+     * @param  validationTime the validation time
+     * @param  reasons        the list of reasons
+     * @return                an ingest job validated event for a rejected job
+     */
+    public static IngestJobValidatedEvent rejectedEvent(IngestJob job, Instant validationTime, String... reasons) {
+        return IngestJobValidatedEvent.ingestJobRejected(job, validationTime, List.of(reasons));
+    }
+
 }

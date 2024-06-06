@@ -80,18 +80,6 @@ public class IngestJobValidatedEvent {
      *
      * @param  job            the ingest job
      * @param  validationTime the validation time
-     * @param  reasons        the reasons why the validation failed
-     * @return                an instance of this class
-     */
-    public static IngestJobValidatedEvent ingestJobRejected(IngestJob job, Instant validationTime, String... reasons) {
-        return builder().job(job).validationTime(validationTime).reasons(reasons).build();
-    }
-
-    /**
-     * Creates an instance of this class for when an ingest job failed validation checks.
-     *
-     * @param  job            the ingest job
-     * @param  validationTime the validation time
      * @param  reasons        the list of reasons why the validation failed
      * @return                an instance of this class
      */

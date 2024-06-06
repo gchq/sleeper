@@ -32,11 +32,11 @@ import static sleeper.ingest.job.IngestJobTestData.createJobWithTableAndFiles;
 import static sleeper.ingest.job.status.IngestJobFailedEvent.ingestJobFailed;
 import static sleeper.ingest.job.status.IngestJobFinishedEvent.ingestJobFinished;
 import static sleeper.ingest.job.status.IngestJobStartedEvent.validatedIngestJobStarted;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRun;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRunWhichFailed;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRunWhichFinished;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRunWhichStarted;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.acceptedRun;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.acceptedRunWhichFailed;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.acceptedRunWhichFinished;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.acceptedRunWhichStarted;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.jobStatus;
 import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobAccepted;
 
 public class StoreIngestJobRunIdIT extends DynamoDBIngestJobStatusStoreTestBase {

@@ -44,7 +44,6 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.PollWithRetries;
 import sleeper.ingest.impl.partitionfilewriter.PartitionFileWriterUtils;
 import sleeper.query.runner.recordretrieval.InMemoryDataStore;
@@ -180,13 +179,8 @@ public class InMemoryCompaction {
         Partition partition = getPartitionForJob(stateStore, job);
         RecordsProcessed recordsProcessed = mergeInputFiles(job, partition, schema);
         try {
-            CompactionJobCommitter.updateStateStoreSuccess(job, recordsProcessed.getRecordsWritten(), stateStore,
-                    CompactionJobCommitter.JOB_ASSIGNMENT_WAIT_ATTEMPTS,
-                    new ExponentialBackoffWithJitter(CompactionJobCommitter.JOB_ASSIGNMENT_WAIT_RANGE));
+            CompactionJobCommitter.updateStateStoreSuccess(job, recordsProcessed.getRecordsWritten(), stateStore);
         } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
             throw new RuntimeException(e);
         }
         Instant finishTime = startTime.plus(Duration.ofMinutes(1));
