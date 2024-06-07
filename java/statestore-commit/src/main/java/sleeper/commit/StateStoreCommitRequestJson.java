@@ -20,8 +20,12 @@ import sleeper.compaction.job.commit.CompactionJobCommitRequest;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.statestore.FileReference;
+import sleeper.ingest.job.IngestJob;
+import sleeper.ingest.job.commit.IngestJobCommitRequest;
 
 import java.time.Instant;
+import java.util.List;
 
 /**
  * Represents a JSON string for a commit request. Used in deserialisation.
@@ -43,9 +47,11 @@ public class StateStoreCommitRequestJson {
     public StateStoreCommitRequest getCommitRequest() {
         if (CompactionJobCommitRequest.class.getSimpleName().equals(type)) {
             return StateStoreCommitRequest.forCompactionJob(request.toCompactionJobCommitRequest());
-        } else {
-            throw new CommitRequestValidationException("Commit request type not recognised: " + type);
         }
+        if (IngestJobCommitRequest.class.getSimpleName().equals(type)) {
+            return StateStoreCommitRequest.forIngestJob(request.toIngestJobCommitRequest());
+        }
+        throw new CommitRequestValidationException("Commit request type not recognised: " + type);
     }
 
     /**
@@ -53,6 +59,8 @@ public class StateStoreCommitRequestJson {
      */
     private static class CommitRequest {
         private CompactionJob job;
+        private IngestJob ingestJob;
+        private List<FileReference> fileReferenceList;
         private String taskId;
         private Instant startTime;
         private Instant finishTime;
@@ -60,8 +68,16 @@ public class StateStoreCommitRequestJson {
         private long recordsWritten;
 
         CompactionJobCommitRequest toCompactionJobCommitRequest() {
-            return new CompactionJobCommitRequest(job, taskId, new RecordsProcessedSummary(
-                    new RecordsProcessed(recordsRead, recordsWritten), new ProcessRunTime(startTime, finishTime)));
+            return new CompactionJobCommitRequest(job, taskId, recordsProcessedSummary());
+        }
+
+        IngestJobCommitRequest toIngestJobCommitRequest() {
+            return new IngestJobCommitRequest(ingestJob, taskId, fileReferenceList, recordsProcessedSummary());
+        }
+
+        RecordsProcessedSummary recordsProcessedSummary() {
+            return new RecordsProcessedSummary(
+                    new RecordsProcessed(recordsRead, recordsWritten), new ProcessRunTime(startTime, finishTime));
         }
     }
 }

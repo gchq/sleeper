@@ -1,7 +1,7 @@
 {
   "type": "IngestJobCommitRequest",
   "request": {
-    "job": {
+    "ingestJob": {
       "id": "test-job-id",
       "tableName": "test-table-name",
       "tableId": "test-table-id",

@@ -28,7 +28,7 @@ import java.util.Objects;
  * A request to commit the results of an ingest job to the state store and job status store.
  */
 public class IngestJobCommitRequest {
-    private final IngestJob job;
+    private final IngestJob ingestJob;
     private final String taskId;
     private final List<FileReference> fileReferenceList;
     private final Instant startTime;
@@ -37,7 +37,7 @@ public class IngestJobCommitRequest {
     private final long recordsWritten;
 
     public IngestJobCommitRequest(IngestJob job, String taskId, List<FileReference> fileReferenceList, RecordsProcessedSummary recordsProcessed) {
-        this.job = job;
+        this.ingestJob = job;
         this.taskId = taskId;
         this.fileReferenceList = fileReferenceList;
         this.startTime = recordsProcessed.getStartTime();
@@ -47,7 +47,7 @@ public class IngestJobCommitRequest {
     }
 
     public IngestJob getJob() {
-        return job;
+        return ingestJob;
     }
 
     public String getTaskId() {
@@ -86,7 +86,7 @@ public class IngestJobCommitRequest {
 
     @Override
     public int hashCode() {
-        return Objects.hash(job, taskId, fileReferenceList, startTime, finishTime, recordsRead, recordsWritten);
+        return Objects.hash(ingestJob, taskId, fileReferenceList, startTime, finishTime, recordsRead, recordsWritten);
     }
 
     @Override
@@ -98,7 +98,7 @@ public class IngestJobCommitRequest {
             return false;
         }
         IngestJobCommitRequest other = (IngestJobCommitRequest) obj;
-        return Objects.equals(job, other.job)
+        return Objects.equals(ingestJob, other.ingestJob)
                 && Objects.equals(taskId, other.taskId)
                 && Objects.equals(fileReferenceList, other.fileReferenceList)
                 && Objects.equals(startTime, other.startTime)
@@ -109,7 +109,7 @@ public class IngestJobCommitRequest {
 
     @Override
     public String toString() {
-        return "IngestJobCommitRequest{job=" + job +
+        return "IngestJobCommitRequest{job=" + ingestJob +
                 ", taskId=" + taskId +
                 ", fileReferenceList=" + fileReferenceList +
                 ", startTime=" + startTime +
