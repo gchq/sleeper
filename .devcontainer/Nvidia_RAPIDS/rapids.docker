@@ -1,0 +1,31 @@
+# A C++ Nvidia RAPIDS development image
+FROM nvcr.io/nvidia/rapidsai/base:24.04-cuda12.2-py3.11
+
+USER root
+# Install tools
+RUN apt-get update
+RUN apt-get install -y software-properties-common
+RUN add-apt-repository ppa:ubuntu-toolchain-r/test && apt-get update
+RUN apt-get install -y sudo make cmake htop dstat less nano gcc-13 g++-13 wget
+
+# Install Clang
+RUN wget https://apt.llvm.org/llvm.sh && chmod u+x llvm.sh && ./llvm.sh 18 all
+
+# Install AWS CLI
+RUN pip3 install awscli
+
+# Use shell form for redirection and enable sudo
+ARG USERNAME=rapids
+RUN echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME
+RUN chmod 0440 /etc/sudoers.d/$USERNAME
+
+# This is to enable persistent BASH history
+RUN SNIPPET="export PROMPT_COMMAND='history -a' && export HISTFILE=/commandhistory/.bash_history" \
+    && mkdir /commandhistory \
+    && touch /commandhistory/.bash_history \
+    && chown -R $USERNAME /commandhistory \
+    && echo "$SNIPPET" >> "/home/$USERNAME/.bashrc"
+
+# Drop to normal user
+USER $USERNAME
+WORKDIR /home/rapids
