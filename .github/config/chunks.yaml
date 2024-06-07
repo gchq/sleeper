@@ -42,7 +42,7 @@ chunks:
   statestore:
     name: State Store
     workflow: chunk-statestore.yaml
-    modules: [ statestore, statestore-commit-lambda, statestore-snapshot-lambda  ]
+    modules: [ statestore, statestore-commit, statestore-commit-lambda, statestore-snapshot-lambda  ]
   trino:
     name: Trino
     workflow: chunk-trino.yaml
