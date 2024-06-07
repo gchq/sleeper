@@ -16,7 +16,7 @@ pkgs.mkShell {
     cmake
     gcc
     rustup
-    cargo-cross
+    cargo-cross # For Rust cross compiling
     pkg-config # Used to find openssl install
     openssl # Needed by git2 module in Rust
   ];
