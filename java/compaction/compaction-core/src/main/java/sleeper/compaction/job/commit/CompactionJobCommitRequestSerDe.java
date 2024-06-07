@@ -44,11 +44,14 @@ public class CompactionJobCommitRequestSerDe {
     }
 
     public CompactionJobCommitRequest fromJson(String json) {
-        return gson.fromJson(json, WrappedCommitRequest.class).request;
+        WrappedCommitRequest wrappedRequest = gson.fromJson(json, WrappedCommitRequest.class);
+        if (CompactionJobCommitRequest.class.getSimpleName().equals(wrappedRequest.type)) {
+            return wrappedRequest.request;
+        }
+        return null;
     }
 
-    @SuppressWarnings("unused")
-    private class WrappedCommitRequest {
+    private static class WrappedCommitRequest {
         private String type;
         private CompactionJobCommitRequest request;
 

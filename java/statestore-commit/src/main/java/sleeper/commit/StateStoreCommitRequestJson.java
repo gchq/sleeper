@@ -26,10 +26,14 @@ import java.time.Instant;
 /**
  * Represents a JSON string for a commit request. Used in deserialisation.
  */
-@SuppressWarnings("unused")
 public class StateStoreCommitRequestJson {
     private String type;
     private CommitRequest request;
+
+    public StateStoreCommitRequestJson(String type, CommitRequest request) {
+        this.type = type;
+        this.request = request;
+    }
 
     /**
      * Gets the compaction job commit request.
@@ -38,7 +42,7 @@ public class StateStoreCommitRequestJson {
      */
     public StateStoreCommitRequest getCommitRequest() {
         if (CompactionJobCommitRequest.class.getSimpleName().equals(type)) {
-            return new StateStoreCommitRequest(request.toCompactionJobCommitRequest());
+            return StateStoreCommitRequest.forCompactionJob(request.toCompactionJobCommitRequest());
         }
         return null;
     }
@@ -46,7 +50,7 @@ public class StateStoreCommitRequestJson {
     /**
      * Represents a compaction job commit request.
      */
-    private class CommitRequest {
+    private static class CommitRequest {
         private CompactionJob job;
         private String taskId;
         private Instant startTime;

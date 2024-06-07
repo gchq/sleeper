@@ -24,11 +24,30 @@ public class StateStoreCommitRequest {
     private String type;
     private CompactionJobCommitRequest compactionJobCommitRequest;
 
-    public StateStoreCommitRequest(CompactionJobCommitRequest compactionJobCommitRequest) {
+    /**
+     * Creates a request to commit a compaction job.
+     *
+     * @param  jobCommitRequest the compaction job commit request
+     * @return                  a state store commit request
+     */
+    public static StateStoreCommitRequest forCompactionJob(CompactionJobCommitRequest jobCommitRequest) {
+        return new StateStoreCommitRequest(CompactionJobCommitRequest.class.getSimpleName(), jobCommitRequest);
+    }
+
+    private StateStoreCommitRequest(String type, CompactionJobCommitRequest compactionJobCommitRequest) {
+        this.type = type;
         this.compactionJobCommitRequest = compactionJobCommitRequest;
     }
 
+    /**
+     * Gets the compaction job commit request, or null if the request is not for a compaction commit.
+     *
+     * @return the compaction job commit request, or null if the request is not for a compaction commit
+     */
     public CompactionJobCommitRequest getCompactionJobCommitRequest() {
-        return compactionJobCommitRequest;
+        if (CompactionJobCommitRequest.class.getSimpleName().equals(type)) {
+            return compactionJobCommitRequest;
+        }
+        return null;
     }
 }
