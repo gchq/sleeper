@@ -110,7 +110,7 @@ public class StateStoreUpdateStack extends NestedStack {
 
         IFunction handlerFunction = jobCommitterJar.buildFunction(this, "StateStoreCommitter", builder -> builder
                 .functionName(functionName)
-                .description("Applies the results of a compaction job to the state store and updates the status store.")
+                .description("Commits updates to the state store. Used to commit compaction and ingest jobs asynchronously.")
                 .runtime(JAVA_11)
                 .memorySize(instanceProperties.getInt(STATESTORE_COMMITTER_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(STATESTORE_COMMITTER_LAMBDA_TIMEOUT_IN_SECONDS)))

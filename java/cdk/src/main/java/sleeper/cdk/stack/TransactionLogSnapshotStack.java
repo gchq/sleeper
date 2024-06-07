@@ -70,7 +70,7 @@ public class TransactionLogSnapshotStack extends NestedStack {
             Topic topic, List<IMetric> errorMetrics) {
         super(scope, id);
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
-        LambdaCode statestoreJar = jars.lambdaCode(BuiltJar.STATESTORE_LAMBDA, jarsBucket);
+        LambdaCode statestoreJar = jars.lambdaCode(BuiltJar.STATESTORE_SNAPSHOT, jarsBucket);
         createSnapshotCreationLambda(instanceProperties, statestoreJar, coreStacks, transactionLogStateStoreStack, topic, errorMetrics);
         createSnapshotDeletionLambda(instanceProperties, statestoreJar, coreStacks, transactionLogStateStoreStack, topic, errorMetrics);
         Utils.addStackTagIfSet(this, instanceProperties);
