@@ -74,9 +74,8 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
         for (SQSMessage message : event.getRecords()) {
             LOGGER.info("Found message: {}", message.getBody());
             StateStoreCommitRequest request = serDe.fromJson(message.getBody());
-            if (request.getCompactionJobCommitRequest() != null) {
-                commitCompactionJob(request.getCompactionJobCommitRequest(),
-                        () -> batchItemFailures.add(new BatchItemFailure(message.getMessageId())));
+            if (request.getCompactionJobCommitRequest().isPresent()) {
+                commitCompactionJob(request.getCompactionJobCommitRequest().get(), batchItemFailures, message);
             }
         }
         Instant finishTime = Instant.now();
@@ -85,13 +84,13 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
         return new SQSBatchResponse(batchItemFailures);
     }
 
-    private void commitCompactionJob(CompactionJobCommitRequest request, Runnable onFailure) {
+    private void commitCompactionJob(CompactionJobCommitRequest request, List<BatchItemFailure> batchItemFailures, SQSMessage message) {
         try {
             compactionJobCommitter.apply(request);
             LOGGER.info("Successfully committed compaction job {}", request.getJob());
         } catch (RuntimeException | StateStoreException e) {
             LOGGER.error("Failed committing compaction job", e);
-            onFailure.run();
+            batchItemFailures.add(new BatchItemFailure(message.getMessageId()));
         }
     }
 

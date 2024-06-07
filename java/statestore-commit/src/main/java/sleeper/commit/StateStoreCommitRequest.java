@@ -17,12 +17,13 @@ package sleeper.commit;
 
 import sleeper.compaction.job.commit.CompactionJobCommitRequest;
 
+import java.util.Optional;
+
 /**
  * A request to commit updates to the state store.
  */
 public class StateStoreCommitRequest {
 
-    private String type;
     private CompactionJobCommitRequest compactionJobCommitRequest;
 
     /**
@@ -32,25 +33,19 @@ public class StateStoreCommitRequest {
      * @return                  a state store commit request
      */
     public static StateStoreCommitRequest forCompactionJob(CompactionJobCommitRequest jobCommitRequest) {
-        return new StateStoreCommitRequest(CompactionJobCommitRequest.class.getSimpleName(), jobCommitRequest);
+        return new StateStoreCommitRequest(jobCommitRequest);
     }
 
-    private StateStoreCommitRequest(String type, CompactionJobCommitRequest compactionJobCommitRequest) {
-        this.type = type;
+    private StateStoreCommitRequest(CompactionJobCommitRequest compactionJobCommitRequest) {
         this.compactionJobCommitRequest = compactionJobCommitRequest;
     }
 
     /**
      * Gets the compaction job commit request.
      *
-     * @return                                  the compaction job commit request
-     * @throws CommitRequestValidationException if this commit request is not a compaction job commit request
+     * @return the compaction job commit request
      */
-    public CompactionJobCommitRequest getCompactionJobCommitRequest() {
-        if (CompactionJobCommitRequest.class.getSimpleName().equals(type)) {
-            return compactionJobCommitRequest;
-        } else {
-            throw new CommitRequestValidationException("Commit request is not a compaction job commit request");
-        }
+    public Optional<CompactionJobCommitRequest> getCompactionJobCommitRequest() {
+        return Optional.ofNullable(compactionJobCommitRequest);
     }
 }
