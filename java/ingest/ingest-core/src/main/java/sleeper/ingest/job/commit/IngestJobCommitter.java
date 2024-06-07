@@ -22,10 +22,11 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.job.IngestJob;
-import sleeper.ingest.job.status.IngestJobFinishedEvent;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 
 import java.util.List;
+
+import static sleeper.ingest.job.status.IngestJobFinishedEvent.ingestJobFinished;
 
 /**
  * Commits the result of an ingest job to the state store and reports that the ingest job has finished.
@@ -49,11 +50,11 @@ public class IngestJobCommitter {
      */
     public void apply(IngestJobCommitRequest request) throws StateStoreException {
         IngestJob job = request.getJob();
-        updateStateStoreSuccess(request.getFileReferenceList(), stateStoreProvider.getByTableId(job.getTableId()));
-        statusStore.jobFinished(IngestJobFinishedEvent.ingestJobFinished(request.getTaskId(), job, request.buildRecordsProcessedSummary()));
+        addFilesToStateStore(request.getFileReferenceList(), stateStoreProvider.getByTableId(job.getTableId()));
+        statusStore.jobFinished(ingestJobFinished(request.getTaskId(), job, request.buildRecordsProcessedSummary()));
     }
 
-    private static void updateStateStoreSuccess(List<FileReference> fileReferences, StateStore stateStore) throws StateStoreException {
+    private static void addFilesToStateStore(List<FileReference> fileReferences, StateStore stateStore) throws StateStoreException {
         stateStore.addFiles(fileReferences);
     }
 

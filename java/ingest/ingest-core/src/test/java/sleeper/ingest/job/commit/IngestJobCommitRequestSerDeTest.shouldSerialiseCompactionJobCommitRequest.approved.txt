@@ -1,0 +1,39 @@
+{
+  "type": "IngestJobCommitRequest",
+  "request": {
+    "job": {
+      "id": "test-job-id",
+      "tableName": "test-table-name",
+      "tableId": "test-table-id",
+      "files": [
+        "file1.parquet",
+        "file2.parquet"
+      ]
+    },
+    "taskId": "test-task",
+    "fileReferenceList": [
+      {
+        "filename": "file1.parquet",
+        "partitionId": "root",
+        "numberOfRecords": 100,
+        "jobId": null,
+        "lastStateStoreUpdateTime": null,
+        "countApproximate": false,
+        "onlyContainsDataForThisPartition": true
+      },
+      {
+        "filename": "file2.parquet",
+        "partitionId": "root",
+        "numberOfRecords": 200,
+        "jobId": null,
+        "lastStateStoreUpdateTime": null,
+        "countApproximate": false,
+        "onlyContainsDataForThisPartition": true
+      }
+    ],
+    "startTime": 1714561080000,
+    "finishTime": 1714561140000,
+    "recordsRead": 300,
+    "recordsWritten": 300
+  }
+}
