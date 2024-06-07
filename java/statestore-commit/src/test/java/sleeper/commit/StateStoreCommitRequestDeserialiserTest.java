@@ -51,7 +51,7 @@ public class StateStoreCommitRequestDeserialiserTest {
 
         // When / Then
         assertThat(commitRequestSerDe.fromJson(jobCommitRequestString).getCompactionJobCommitRequest())
-                .isEqualTo(commit);
+                .contains(commit);
     }
 
     @Test
