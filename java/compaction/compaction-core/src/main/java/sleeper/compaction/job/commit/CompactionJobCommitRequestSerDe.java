@@ -46,16 +46,27 @@ public class CompactionJobCommitRequestSerDe {
         gsonPrettyPrint = builder.setPrettyPrinting().create();
     }
 
-    public String toJson(CompactionJobCommitRequest jobRun) {
-        return gson.toJson(jobRun);
+    public String toJson(CompactionJobCommitRequest compactionJobCommitRequest) {
+        return gson.toJson(new WrappedCommitRequest(compactionJobCommitRequest), WrappedCommitRequest.class);
     }
 
-    public String toJsonPrettyPrint(CompactionJobCommitRequest jobRun) {
-        return gsonPrettyPrint.toJson(jobRun);
+    public String toJsonPrettyPrint(CompactionJobCommitRequest compactionJobCommitRequest) {
+        return gsonPrettyPrint.toJson(new WrappedCommitRequest(compactionJobCommitRequest), WrappedCommitRequest.class);
     }
 
     public CompactionJobCommitRequest fromJson(String json) {
-        return gson.fromJson(json, CompactionJobCommitRequest.class);
+        return gson.fromJson(json, WrappedCommitRequest.class).request;
+    }
+
+    @SuppressWarnings("unused")
+    private class WrappedCommitRequest {
+        private String type;
+        private CompactionJobCommitRequest request;
+
+        WrappedCommitRequest(CompactionJobCommitRequest request) {
+            this.type = CompactionJobCommitRequest.class.getSimpleName();
+            this.request = request;
+        }
     }
 
     /**

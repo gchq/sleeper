@@ -53,6 +53,10 @@ public class CompactionJobCommitRequest {
         return startTime;
     }
 
+    public Instant getFinishTime() {
+        return finishTime;
+    }
+
     public long getRecordsWritten() {
         return recordsWritten;
     }
