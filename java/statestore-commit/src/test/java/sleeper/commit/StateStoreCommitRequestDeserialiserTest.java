@@ -15,7 +15,6 @@
  */
 package sleeper.commit;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
@@ -34,7 +33,6 @@ public class StateStoreCommitRequestDeserialiserTest {
     StateStoreCommitRequestDeserialiser commitRequestSerDe = new StateStoreCommitRequestDeserialiser();
 
     @Test
-    @Disabled("TODO")
     void shouldDeserialiseCompactionJobCommitRequest() {
         // Given
         CompactionJob job = CompactionJob.builder()
@@ -51,7 +49,7 @@ public class StateStoreCommitRequestDeserialiserTest {
         String jobCommitRequestString = new CompactionJobCommitRequestSerDe().toJson(commit);
 
         // When / Then
-        assertThat(commitRequestSerDe.fromJson(jobCommitRequestString))
+        assertThat(commitRequestSerDe.fromJson(jobCommitRequestString).getCompactionJobCommitRequest())
                 .isEqualTo(commit);
     }
 }

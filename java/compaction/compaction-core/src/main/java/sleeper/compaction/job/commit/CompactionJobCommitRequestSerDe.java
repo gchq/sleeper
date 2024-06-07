@@ -17,21 +17,10 @@ package sleeper.compaction.job.commit;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonDeserializationContext;
-import com.google.gson.JsonDeserializer;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonPrimitive;
-import com.google.gson.JsonSerializationContext;
-import com.google.gson.JsonSerializer;
 
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionJobSerDe;
+import sleeper.compaction.job.CompactionJobJsonSerDe;
 import sleeper.core.util.GsonConfig;
-
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.lang.reflect.Type;
 
 public class CompactionJobCommitRequestSerDe {
 
@@ -66,29 +55,6 @@ public class CompactionJobCommitRequestSerDe {
         WrappedCommitRequest(CompactionJobCommitRequest request) {
             this.type = CompactionJobCommitRequest.class.getSimpleName();
             this.request = request;
-        }
-    }
-
-    /**
-     * A GSON plugin to serialise/deserialise a compaction job.
-     */
-    private static class CompactionJobJsonSerDe implements JsonSerializer<CompactionJob>, JsonDeserializer<CompactionJob> {
-        @Override
-        public CompactionJob deserialize(JsonElement element, Type type, JsonDeserializationContext context) throws JsonParseException {
-            try {
-                return CompactionJobSerDe.deserialiseFromString(element.getAsString());
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        }
-
-        @Override
-        public JsonElement serialize(CompactionJob job, Type type, JsonSerializationContext context) {
-            try {
-                return new JsonPrimitive(CompactionJobSerDe.serialiseToString(job));
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
         }
     }
 }

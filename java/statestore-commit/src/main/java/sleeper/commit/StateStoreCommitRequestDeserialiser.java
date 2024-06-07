@@ -15,10 +15,20 @@
  */
 package sleeper.commit;
 
+import com.google.gson.Gson;
+
+import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.CompactionJobJsonSerDe;
+import sleeper.core.util.GsonConfig;
+
 /**
  * Deserialises a state store commit request.
  */
 public class StateStoreCommitRequestDeserialiser {
+    private final Gson gson = GsonConfig.standardBuilder()
+            .registerTypeAdapter(CompactionJob.class, new CompactionJobJsonSerDe())
+            .serializeNulls()
+            .create();
 
     /**
      * Deserialises a state store commit request.
@@ -26,7 +36,8 @@ public class StateStoreCommitRequestDeserialiser {
      * @param  jsonString the JSON string
      * @return            a commit request
      */
-    public Object fromJson(String jsonString) {
-        return null;
+    public StateStoreCommitRequest fromJson(String jsonString) {
+        StateStoreCommitRequestJson commitRequestJson = gson.fromJson(jsonString, StateStoreCommitRequestJson.class);
+        return commitRequestJson.getCommitRequest();
     }
 }
