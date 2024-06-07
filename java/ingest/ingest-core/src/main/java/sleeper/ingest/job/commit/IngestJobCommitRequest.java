@@ -86,7 +86,7 @@ public class IngestJobCommitRequest {
 
     @Override
     public int hashCode() {
-        return Objects.hash(job, taskId, startTime, finishTime, recordsRead, recordsWritten);
+        return Objects.hash(job, taskId, fileReferenceList, startTime, finishTime, recordsRead, recordsWritten);
     }
 
     @Override
@@ -100,6 +100,7 @@ public class IngestJobCommitRequest {
         IngestJobCommitRequest other = (IngestJobCommitRequest) obj;
         return Objects.equals(job, other.job)
                 && Objects.equals(taskId, other.taskId)
+                && Objects.equals(fileReferenceList, other.fileReferenceList)
                 && Objects.equals(startTime, other.startTime)
                 && Objects.equals(finishTime, other.finishTime)
                 && recordsRead == other.recordsRead
@@ -110,6 +111,7 @@ public class IngestJobCommitRequest {
     public String toString() {
         return "IngestJobCommitRequest{job=" + job +
                 ", taskId=" + taskId +
+                ", fileReferenceList=" + fileReferenceList +
                 ", startTime=" + startTime +
                 ", finishTime=" + finishTime +
                 ", recordsRead=" + recordsRead +
