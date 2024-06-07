@@ -43,8 +43,9 @@ public class StateStoreCommitRequestJson {
     public StateStoreCommitRequest getCommitRequest() {
         if (CompactionJobCommitRequest.class.getSimpleName().equals(type)) {
             return StateStoreCommitRequest.forCompactionJob(request.toCompactionJobCommitRequest());
+        } else {
+            throw new CommitRequestValidationException("Commit request type not recognised: " + type);
         }
-        return null;
     }
 
     /**

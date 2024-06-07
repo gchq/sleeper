@@ -28,6 +28,7 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class StateStoreCommitRequestDeserialiserTest {
     StateStoreCommitRequestDeserialiser commitRequestSerDe = new StateStoreCommitRequestDeserialiser();
@@ -51,5 +52,15 @@ public class StateStoreCommitRequestDeserialiserTest {
         // When / Then
         assertThat(commitRequestSerDe.fromJson(jobCommitRequestString).getCompactionJobCommitRequest())
                 .isEqualTo(commit);
+    }
+
+    @Test
+    void shouldThrowExceptionIfCommitRequestTypeInvalid() {
+        // Given
+        String jsonString = "{\"type\":\"invalid-type\", \"request\":{}}";
+
+        // When / Then
+        assertThatThrownBy(() -> commitRequestSerDe.fromJson(jsonString))
+                .isInstanceOf(CommitRequestValidationException.class);
     }
 }

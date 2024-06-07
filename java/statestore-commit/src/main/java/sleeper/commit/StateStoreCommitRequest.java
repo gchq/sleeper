@@ -44,10 +44,11 @@ public class StateStoreCommitRequest {
      *
      * @return the compaction job commit request, or null if the request is not for a compaction commit
      */
-    public CompactionJobCommitRequest getCompactionJobCommitRequest() {
+    public CompactionJobCommitRequest getCompactionJobCommitRequest() throws CommitRequestValidationException {
         if (CompactionJobCommitRequest.class.getSimpleName().equals(type)) {
             return compactionJobCommitRequest;
+        } else {
+            throw new CommitRequestValidationException("Commit request is not a compaction job commit request");
         }
-        return null;
     }
 }
