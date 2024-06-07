@@ -26,7 +26,6 @@ on:
       - 'java/sketches/**'
       - 'java/ingest/ingest-core/**'
       - 'java/statestore/**'
-      - 'java/statestore-commit-lambda/**'
       - 'java/parquet/**'
       - 'java/configuration/**'
       - 'java/common/dynamodb-tools/**'

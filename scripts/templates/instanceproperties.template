@@ -188,6 +188,16 @@ sleeper.batch.table.lambdas.memory=1024
 # create compaction jobs, run garbage collection, perform partition splitting.
 sleeper.batch.table.lambdas.timeout.seconds=60
 
+# The amount of memory for the lambda that commits state store updates.
+sleeper.statestore.committer.lambda.memory=1024
+
+# The timeout for the lambda that commits state store updates in seconds.
+sleeper.statestore.committer.lambda.timeout.seconds=900
+
+# The number of state store updates to be sent to the state store committer lambda in one invocation.
+# This will be the batch size for a lambda as an SQS FIFO event source. This can be a maximum of 10.
+sleeper.statestore.committer.batch.size=10
+
 
 ## The following properties relate to standard ingest.
 
@@ -836,16 +846,6 @@ sleeper.compaction.job.creation.memory=1024
 
 # The timeout for the lambda that creates compaction jobs in seconds.
 sleeper.compaction.job.creation.timeout.seconds=900
-
-# The amount of memory for the lambda that commits compaction jobs.
-sleeper.compaction.job.committer.lambda.memory=1024
-
-# The timeout for the lambda that commits compaction jobs in seconds.
-sleeper.compaction.job.committer.lambda.timeout.seconds=900
-
-# The number of compacton jobs to be sent to the committer lambda in one invocation. This will be the
-# batch size for a lambda as an SQS FIFO event source. This can be a maximum of 10.
-sleeper.compaction.job.committer.batch.size=10
 
 # The maximum number of concurrent compaction tasks to run.
 sleeper.compaction.max.concurrent.tasks=300

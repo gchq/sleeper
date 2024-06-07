@@ -261,6 +261,23 @@ public interface CommonProperty {
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
+    UserDefinedInstanceProperty STATESTORE_COMMITTER_LAMBDA_MEMORY_IN_MB = Index.propertyBuilder("sleeper.statestore.committer.lambda.memory")
+            .description("The amount of memory for the lambda that commits state store updates.")
+            .defaultValue("1024")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty STATESTORE_COMMITTER_LAMBDA_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.statestore.committer.lambda.timeout.seconds")
+            .description("The timeout for the lambda that commits state store updates in seconds.")
+            .defaultValue("900")
+            .validationPredicate(Utils::isValidLambdaTimeout)
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty STATESTORE_COMMITTER_BATCH_SIZE = Index.propertyBuilder("sleeper.statestore.committer.batch.size")
+            .description("The number of state store updates to be sent to the state store committer lambda in one invocation. " +
+                    "This will be the batch size for a lambda as an SQS FIFO event source. This can be a maximum of 10.")
+            .defaultValue("10")
+            .validationPredicate(Utils::isPositiveIntegerLtEq10)
+            .propertyGroup(InstancePropertyGroup.COMMON).build();
 
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();

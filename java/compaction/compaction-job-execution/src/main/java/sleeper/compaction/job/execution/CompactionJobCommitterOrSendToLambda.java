@@ -31,7 +31,7 @@ import sleeper.statestore.StateStoreProvider;
 
 import java.util.UUID;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_COMMITTER_QUEUE_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_JOB_COMMIT_ASYNC;
 
 public class CompactionJobCommitterOrSendToLambda {
@@ -79,7 +79,7 @@ public class CompactionJobCommitterOrSendToLambda {
 
     private static CommitQueueSender sendToSqs(InstanceProperties instanceProperties, AmazonSQS sqsClient) {
         return request -> {
-            String queueUrl = instanceProperties.get(COMPACTION_JOB_COMMITTER_QUEUE_URL);
+            String queueUrl = instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL);
             String tableId = request.getJob().getTableId();
             sqsClient.sendMessage(new SendMessageRequest()
                     .withQueueUrl(queueUrl)
