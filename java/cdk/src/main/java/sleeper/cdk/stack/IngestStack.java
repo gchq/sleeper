@@ -123,10 +123,10 @@ public class IngestStack extends NestedStack {
         sqsQueueForIngestJobs(coreStacks, topic, errorMetrics);
 
         // ECS cluster for ingest tasks
-        ecsClusterForIngestTasks(jarsBucket, coreStacks, ingestJobQueue);
+        ecsClusterForIngestTasks(jarsBucket, coreStacks, ingestJobQueue, stateStoreUpdateStack.getCommitQueue());
 
         // Lambda to create ingest tasks
-        lambdaToCreateIngestTasks(coreStacks, stateStoreUpdateStack.getCommitQueue(), ingestJobQueue, taskCreatorJar);
+        lambdaToCreateIngestTasks(coreStacks, ingestJobQueue, taskCreatorJar);
 
         Utils.addStackTagIfSet(this, instanceProperties);
     }
@@ -187,7 +187,8 @@ public class IngestStack extends NestedStack {
     private Cluster ecsClusterForIngestTasks(
             IBucket jarsBucket,
             CoreStacks coreStacks,
-            Queue ingestJobQueue) {
+            Queue ingestJobQueue,
+            Queue jobCommitQueue) {
         VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
                 .vpcId(instanceProperties.get(VPC_ID))
                 .build();
@@ -227,6 +228,7 @@ public class IngestStack extends NestedStack {
         statusStore.grantWriteJobEvent(taskDefinition.getTaskRole());
         statusStore.grantWriteTaskEvent(taskDefinition.getTaskRole());
         ingestJobQueue.grantConsumeMessages(taskDefinition.getTaskRole());
+        jobCommitQueue.grantSendMessages(taskDefinition.getTaskRole());
         taskDefinition.getTaskRole().addToPrincipalPolicy(PolicyStatement.Builder.create()
                 .effect(Effect.ALLOW)
                 .actions(Collections.singletonList("cloudwatch:PutMetricData"))
@@ -248,7 +250,7 @@ public class IngestStack extends NestedStack {
         return cluster;
     }
 
-    private void lambdaToCreateIngestTasks(CoreStacks coreStacks, Queue ingestJobQueue, Queue jobCommitQueue, LambdaCode taskCreatorJar) {
+    private void lambdaToCreateIngestTasks(CoreStacks coreStacks, Queue ingestJobQueue, LambdaCode taskCreatorJar) {
 
         // Run tasks function
         String functionName = String.join("-", "sleeper",
@@ -274,7 +276,6 @@ public class IngestStack extends NestedStack {
         statusStore.grantWriteJobEvent(handler);
         statusStore.grantWriteTaskEvent(handler);
         coreStacks.grantInvokeScheduled(handler);
-        jobCommitQueue.grantSendMessages(handler);
 
         // Grant this function permission to query ECS for the number of tasks, etc
         PolicyStatement policyStatement = PolicyStatement.Builder
