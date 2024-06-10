@@ -108,8 +108,10 @@ public class IngestTask {
                     Instant jobFinishTime = timeSupplier.get();
                     RecordsProcessedSummary summary = new RecordsProcessedSummary(result.asRecordsProcessed(), jobStartTime, jobFinishTime);
                     if (tableCommitConfig.shouldCommitAsync(job.getTableId())) {
+                        LOGGER.info("Sending ingest job commit request to state store committer lambda");
                         asyncCommitter.commit(new IngestJobCommitRequest(job, taskId, result.getFileReferenceList(), summary));
                     } else {
+                        LOGGER.info("Committing result of ingest to status store");
                         jobStatusStore.jobFinished(ingestJobFinished(taskId, job, summary));
                     }
                     taskFinishedBuilder.addJobSummary(summary);
