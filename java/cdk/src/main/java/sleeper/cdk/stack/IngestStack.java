@@ -100,6 +100,7 @@ public class IngestStack extends NestedStack {
             BuiltJars jars,
             Topic topic,
             CoreStacks coreStacks,
+            StateStoreUpdateStack stateStoreUpdateStack,
             IngestStatusStoreStack statusStoreStack,
             List<IMetric> errorMetrics) {
         super(scope, id);
@@ -125,7 +126,7 @@ public class IngestStack extends NestedStack {
         ecsClusterForIngestTasks(jarsBucket, coreStacks, ingestJobQueue);
 
         // Lambda to create ingest tasks
-        lambdaToCreateIngestTasks(coreStacks, ingestJobQueue, taskCreatorJar);
+        lambdaToCreateIngestTasks(coreStacks, stateStoreUpdateStack.getCommitQueue(), ingestJobQueue, taskCreatorJar);
 
         Utils.addStackTagIfSet(this, instanceProperties);
     }
@@ -247,7 +248,7 @@ public class IngestStack extends NestedStack {
         return cluster;
     }
 
-    private void lambdaToCreateIngestTasks(CoreStacks coreStacks, Queue ingestJobQueue, LambdaCode taskCreatorJar) {
+    private void lambdaToCreateIngestTasks(CoreStacks coreStacks, Queue ingestJobQueue, Queue jobCommitQueue, LambdaCode taskCreatorJar) {
 
         // Run tasks function
         String functionName = String.join("-", "sleeper",
@@ -273,6 +274,7 @@ public class IngestStack extends NestedStack {
         statusStore.grantWriteJobEvent(handler);
         statusStore.grantWriteTaskEvent(handler);
         coreStacks.grantInvokeScheduled(handler);
+        jobCommitQueue.grantSendMessages(handler);
 
         // Grant this function permission to query ECS for the number of tasks, etc
         PolicyStatement policyStatement = PolicyStatement.Builder

@@ -299,6 +299,7 @@ public class SleeperCdkApp extends Stack {
                     instanceProperties, jars,
                     topicStack.getTopic(),
                     coreStacks,
+                    stateStoreUpdateStack,
                     ingestStatusStoreStack,
                     errorMetrics);
         }
