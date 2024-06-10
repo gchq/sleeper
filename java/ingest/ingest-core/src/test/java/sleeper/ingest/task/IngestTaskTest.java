@@ -24,6 +24,7 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.ingest.IngestResult;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.IngestJobHandler;
+import sleeper.ingest.job.commit.IngestJobCommitRequest;
 import sleeper.ingest.job.status.InMemoryIngestJobStatusStore;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.task.IngestTask.MessageHandle;
@@ -46,6 +47,7 @@ import static sleeper.ingest.IngestResultTestData.defaultFileIngestResultReadAnd
 import static sleeper.ingest.job.IngestJobTestData.DEFAULT_TABLE_ID;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.failedIngestJob;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestJob;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestJob;
 import static sleeper.ingest.task.IngestTaskStatusTestData.finishedMultipleJobs;
 import static sleeper.ingest.task.IngestTaskStatusTestData.finishedNoJobs;
 import static sleeper.ingest.task.IngestTaskStatusTestData.finishedOneJob;
@@ -56,6 +58,7 @@ public class IngestTaskTest {
     private final Queue<IngestJob> jobsOnQueue = new LinkedList<>();
     private final List<IngestJob> successfulJobs = new ArrayList<>();
     private final List<IngestJob> failedJobs = new ArrayList<>();
+    private final List<IngestJobCommitRequest> asyncCommitRequests = new ArrayList<>();
     private final IngestJobStatusStore jobStore = new InMemoryIngestJobStatusStore();
     private final IngestTaskStatusStore taskStore = new InMemoryIngestTaskStatusStore();
 
@@ -333,6 +336,34 @@ public class IngestTaskTest {
                             Instant.parse("2024-02-22T13:50:01Z"),
                             Instant.parse("2024-02-22T13:50:02Z"))));
         }
+
+        @Test
+        void shouldNotUpdateStateStoresIfAsyncCommitsEnabled() throws Exception {
+            // Given
+            Queue<Instant> times = new LinkedList<>(List.of(
+                    Instant.parse("2024-02-22T13:50:00Z"), // Start
+                    Instant.parse("2024-02-22T13:50:01Z"), // Job start
+                    Instant.parse("2024-02-22T13:50:02Z"), // Job finish
+                    Instant.parse("2024-02-22T13:50:05Z"))); // Finish
+            IngestJob job = createJobOnQueue("job1");
+
+            // When
+            IngestResult jobResult = recordsReadAndWritten(10L, 10L);
+            runTaskWithAsyncCommits("test-task-1", processJobs(
+                    jobSucceeds(jobResult)),
+                    times::poll);
+
+            // Then
+            assertThat(asyncCommitRequests)
+                    .containsExactly(new IngestJobCommitRequest(job, "test-task-1", jobResult.getFileReferenceList(),
+                            summary(jobResult, Instant.parse("2024-02-22T13:50:01Z"), Instant.parse("2024-02-22T13:50:02Z"))));
+            assertThat(taskStore.getAllTasks()).containsExactly(
+                    finishedOneJob("test-task-1",
+                            Instant.parse("2024-02-22T13:50:00Z"), Instant.parse("2024-02-22T13:50:05Z"),
+                            Instant.parse("2024-02-22T13:50:01Z"), Instant.parse("2024-02-22T13:50:02Z"), 10L, 10L));
+            assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
+                    startedIngestJob(job, "test-task-1", Instant.parse("2024-02-22T13:50:01Z")));
+        }
     }
 
     private void runTask(IngestJobHandler ingestRunner) throws Exception {
@@ -340,19 +371,25 @@ public class IngestTaskTest {
     }
 
     private void runTask(IngestJobHandler ingestRunner, Supplier<Instant> timeSupplier) throws Exception {
-        runTask(pollQueue(), ingestRunner, timeSupplier, DEFAULT_TASK_ID);
+        runTask(pollQueue(), ingestRunner, timeSupplier, DEFAULT_TASK_ID, false);
     }
 
     private void runTask(String taskId, IngestJobHandler ingestRunner, Supplier<Instant> timeSupplier) throws Exception {
-        runTask(pollQueue(), ingestRunner, timeSupplier, taskId);
+        runTask(pollQueue(), ingestRunner, timeSupplier, taskId, false);
+    }
+
+    private void runTaskWithAsyncCommits(String taskId, IngestJobHandler ingestRunner, Supplier<Instant> timeSupplier) throws Exception {
+        runTask(pollQueue(), ingestRunner, timeSupplier, taskId, true);
     }
 
     private void runTask(
             MessageReceiver messageReceiver,
             IngestJobHandler ingestRunner,
             Supplier<Instant> timeSupplier,
-            String taskId) throws Exception {
-        new IngestTask(timeSupplier, messageReceiver, ingestRunner, jobStore, taskStore, taskId)
+            String taskId,
+            boolean asyncCommit) throws Exception {
+        new IngestTask(timeSupplier, messageReceiver, ingestRunner, tableId -> asyncCommit, asyncCommitRequests::add,
+                jobStore, taskStore, taskId)
                 .run();
     }
 

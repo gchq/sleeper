@@ -24,6 +24,7 @@ import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.IngestResult;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.IngestJobHandler;
+import sleeper.ingest.job.commit.IngestJobCommitRequest;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 
 import java.time.Instant;
@@ -46,14 +47,19 @@ public class IngestTask {
     private final IngestJobHandler ingester;
     private final IngestJobStatusStore jobStatusStore;
     private final IngestTaskStatusStore taskStatusStore;
+    private final TableCommitConfig tableCommitConfig;
+    private final AsyncCommitter asyncCommitter;
     private final String taskId;
     private int totalNumberOfMessagesProcessed = 0;
 
     public IngestTask(Supplier<Instant> timeSupplier, MessageReceiver messageReceiver, IngestJobHandler ingester,
-            IngestJobStatusStore jobStatusStore, IngestTaskStatusStore taskStore, String taskId) {
+            TableCommitConfig tableCommitConfig, AsyncCommitter asyncCommitter, IngestJobStatusStore jobStatusStore,
+            IngestTaskStatusStore taskStore, String taskId) {
         this.timeSupplier = timeSupplier;
         this.messageReceiver = messageReceiver;
         this.ingester = ingester;
+        this.tableCommitConfig = tableCommitConfig;
+        this.asyncCommitter = asyncCommitter;
         this.jobStatusStore = jobStatusStore;
         this.taskStatusStore = taskStore;
         this.taskId = taskId;
@@ -101,7 +107,11 @@ public class IngestTask {
                     LOGGER.info("{} records were written", result.getRecordsWritten());
                     Instant jobFinishTime = timeSupplier.get();
                     RecordsProcessedSummary summary = new RecordsProcessedSummary(result.asRecordsProcessed(), jobStartTime, jobFinishTime);
-                    jobStatusStore.jobFinished(ingestJobFinished(taskId, job, summary));
+                    if (tableCommitConfig.shouldCommitAsync(job.getTableId())) {
+                        asyncCommitter.commit(new IngestJobCommitRequest(job, taskId, result.getFileReferenceList(), summary));
+                    } else {
+                        jobStatusStore.jobFinished(ingestJobFinished(taskId, job, summary));
+                    }
                     taskFinishedBuilder.addJobSummary(summary);
                     message.completed(summary);
                     totalNumberOfMessagesProcessed++;
@@ -172,5 +182,30 @@ public class IngestTask {
          * message assigned to the task. This is called whether the job succeeds or fails.
          */
         void close();
+    }
+
+    /**
+     * Checks how the table is configured to commit ingest jobs.
+     */
+    public interface TableCommitConfig {
+        /**
+         * Checks how the table is configured to commit ingest jobs.
+         *
+         * @param  tableId the table ID
+         * @return         true if ingest jobs are to be committed asynchronously, false if otherwise
+         */
+        boolean shouldCommitAsync(String tableId);
+    }
+
+    /**
+     * Commits the results of an ingest job asynchronously.
+     */
+    public interface AsyncCommitter {
+        /**
+         * Commits the results of an ingest job asynchronously.
+         *
+         * @param commitRequest the ingest job commit request
+         */
+        void commit(IngestJobCommitRequest commitRequest);
     }
 }

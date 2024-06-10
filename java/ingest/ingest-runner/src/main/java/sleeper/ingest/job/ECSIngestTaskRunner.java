@@ -37,10 +37,12 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.impl.partitionfilewriter.AsyncS3PartitionFileWriterFactory;
+import sleeper.ingest.job.commit.IngestJobCommitRequestSerDe;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
 import sleeper.ingest.task.IngestTask;
+import sleeper.ingest.task.IngestTask.AsyncCommitter;
 import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreProvider;
@@ -48,7 +50,9 @@ import sleeper.statestore.StateStoreProvider;
 import java.time.Instant;
 import java.util.UUID;
 
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 import static sleeper.configuration.properties.instance.IngestProperty.S3A_INPUT_FADVISE;
+import static sleeper.configuration.properties.table.TableProperty.INGEST_JOB_COMMIT_ASYNC;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 /**
@@ -115,7 +119,16 @@ public class ECSIngestTaskRunner {
         IngestJobQueueConsumer queueConsumer = new IngestJobQueueConsumer(
                 sqsClient, cloudWatchClient, instanceProperties, hadoopConfiguration,
                 new DynamoDBTableIndex(instanceProperties, dynamoDBClient), jobStore);
-        return new IngestTask(Instant::now, queueConsumer, ingestJobRunner, jobStore, taskStore, taskId);
+        return new IngestTask(Instant::now, queueConsumer, ingestJobRunner,
+                tableId -> tablePropertiesProvider.getById(tableId).getBoolean(INGEST_JOB_COMMIT_ASYNC),
+                asyncCommitter(sqsClient, instanceProperties), jobStore, taskStore, taskId);
+    }
+
+    private static AsyncCommitter asyncCommitter(AmazonSQS sqsClient, InstanceProperties instanceProperties) {
+        return commitRequest -> sqsClient.sendMessage(
+                instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL),
+                new IngestJobCommitRequestSerDe().toJson(commitRequest));
+
     }
 
     private static Configuration ingestHadoopConfiguration(InstanceProperties instanceProperties) {
