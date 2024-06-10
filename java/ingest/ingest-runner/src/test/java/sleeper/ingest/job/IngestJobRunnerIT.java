@@ -73,6 +73,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYST
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_RECORD_BATCH_TYPE;
+import static sleeper.configuration.properties.table.TableProperty.INGEST_JOB_COMMIT_ASYNC;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
@@ -137,6 +138,7 @@ class IngestJobRunnerIT {
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, tableName);
         tableProperties.setSchema(schema);
+        tableProperties.set(INGEST_JOB_COMMIT_ASYNC, "false");
         return tableProperties;
     }
 

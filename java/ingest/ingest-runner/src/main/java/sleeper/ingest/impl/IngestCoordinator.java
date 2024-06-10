@@ -48,6 +48,7 @@ import java.util.stream.Collectors;
 import static java.util.Objects.requireNonNull;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
+import static sleeper.configuration.properties.table.TableProperty.INGEST_JOB_COMMIT_ASYNC;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
 import static sleeper.core.metrics.MetricsLogger.METRICS_LOGGER;
@@ -107,6 +108,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
     private final IngesterIntoPartitions ingesterIntoPartitions;
     private final List<CompletableFuture<List<FileReference>>> ingestFutures;
     private final Instant ingestCoordinatorCreationTime;
+    private final boolean commitAsync;
     protected RecordBatch<INCOMINGDATATYPE> currentRecordBatch;
     private Instant lastPartitionsUpdateTime;
     private long recordsRead;
@@ -131,6 +133,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
         this.partitionFileWriterFactory = requireNonNull(builder.partitionFileWriterFactory);
         this.ingesterIntoPartitions = new IngesterIntoPartitions(sleeperSchema,
                 partitionFileWriterFactory::createPartitionFileWriter, builder.ingestFileWritingStrategy);
+        this.commitAsync = builder.commitAsync;
         this.currentRecordBatch = this.recordBatchFactory.createRecordBatch();
         this.isClosed = false;
     }
@@ -213,7 +216,9 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
                 CompletableFuture<List<FileReference>> consumedFuture = ingesterIntoPartitions
                         .initiateIngest(recordIteratorWithSleeperIteratorApplied, partitionTree)
                         .thenApply(fileReferenceList -> {
-                            updateStateStore(sleeperStateStore, fileReferenceList);
+                            if (!commitAsync) {
+                                updateStateStore(sleeperStateStore, fileReferenceList);
+                            }
                             return fileReferenceList;
                         });
                 ingestFutures.add(consumedFuture);
@@ -387,6 +392,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
         private RecordBatchFactory<T> recordBatchFactory;
         private PartitionFileWriterFactory partitionFileWriterFactory;
         private IngestFileWritingStrategy ingestFileWritingStrategy = IngestFileWritingStrategy.ONE_FILE_PER_LEAF;
+        private boolean commitAsync = false;
 
         Builder() {
         }
@@ -491,6 +497,18 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
             return this;
         }
 
+        /**
+         * Determines whether the results of the ingest job will be committed to the state store by the ingest
+         * coordinator (synchonously), or by sending them to the state store committer lambda (asynchrnously).
+         *
+         * @param  commitAsync whether to commit the results of the ingest job asynchronously
+         * @return             the builder for call chaining
+         */
+        public Builder<T> commitAsync(boolean commitAsync) {
+            this.commitAsync = commitAsync;
+            return this;
+        }
+
         public Builder<T> instanceProperties(InstanceProperties instanceProperties) {
             return ingestPartitionRefreshFrequencyInSeconds(
                     instanceProperties.getInt(INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS));
@@ -500,7 +518,8 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
             return schema(tableProperties.getSchema())
                     .iteratorClassName(tableProperties.get(ITERATOR_CLASS_NAME))
                     .iteratorConfig(tableProperties.get(ITERATOR_CONFIG))
-                    .ingestFileWritingStrategy(tableProperties.getEnumValue(INGEST_FILE_WRITING_STRATEGY, IngestFileWritingStrategy.class));
+                    .ingestFileWritingStrategy(tableProperties.getEnumValue(INGEST_FILE_WRITING_STRATEGY, IngestFileWritingStrategy.class))
+                    .commitAsync(tableProperties.getBoolean(INGEST_JOB_COMMIT_ASYNC));
         }
 
         public IngestCoordinator<T> build() {

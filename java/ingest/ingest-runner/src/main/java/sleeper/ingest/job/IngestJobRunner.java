@@ -46,6 +46,7 @@ import java.util.List;
 import java.util.function.Supplier;
 
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.table.TableProperty.INGEST_JOB_COMMIT_ASYNC;
 
 /**
  * An IngestJobRunner takes ingest jobs and runs them.
@@ -118,6 +119,9 @@ public class IngestJobRunner implements IngestJobHandler {
 
         // Run the ingest
         IngestResult result = ingestFactory.ingestFromRecordIteratorAndClose(tableProperties, concatenatingIterator);
+        if (tableProperties.getBoolean(INGEST_JOB_COMMIT_ASYNC)) {
+            // TODO Send message to async commit queue
+        }
         LOGGER.info("Ingest job {}: Wrote {} records from files {}", job.getId(), result.getRecordsWritten(), paths);
         return result;
     }

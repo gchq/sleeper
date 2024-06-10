@@ -65,6 +65,7 @@ import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_RECORD_BATCH_TYPE;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_JOB_QUEUE_WAIT_TIME;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
+import static sleeper.configuration.properties.table.TableProperty.INGEST_JOB_COMMIT_ASYNC;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.ingest.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
@@ -115,6 +116,7 @@ public abstract class IngestJobQueueConsumerTestBase {
 
     protected StateStore createTable(Schema schema) throws IOException, StateStoreException {
         tableProperties.setSchema(schema);
+        tableProperties.set(INGEST_JOB_COMMIT_ASYNC, "false");
         tablePropertiesStore.save(tableProperties);
         StateStore stateStore = new StateStoreFactory(instanceProperties, s3, dynamoDB, hadoopConfiguration)
                 .getStateStore(tableProperties);
