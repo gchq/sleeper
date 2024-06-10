@@ -224,8 +224,14 @@ public interface DefaultProperty {
             .defaultValue("async")
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_COMPACTION_JOB_COMMIT_ASYNC = Index.propertyBuilder("sleeper.default.compaction.job.commit.async")
-            .description("If true, compaction job commit requests will be sent to the compaction job committer lambda " +
+            .description("If true, compaction job commit requests will be sent to the state store committer lambda " +
                     "to be performed asynchronously. If false, compaction jobs will be committed synchronously by compaction tasks.")
+            .defaultValue("true")
+            .validationPredicate(Utils::isTrueOrFalse)
+            .propertyGroup(InstancePropertyGroup.DEFAULT).build();
+    UserDefinedInstanceProperty DEFAULT_INGEST_JOB_COMMIT_ASYNC = Index.propertyBuilder("sleeper.default.ingest.job.commit.async")
+            .description("If true, ingest job commit requests will be sent to the state store committer lambda " +
+                    "to be performed asynchronously. If false, ingest jobs will be committed synchronously by ingest tasks.")
             .defaultValue("true")
             .validationPredicate(Utils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
