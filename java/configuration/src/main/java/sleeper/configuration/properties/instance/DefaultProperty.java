@@ -232,7 +232,7 @@ public interface DefaultProperty {
     UserDefinedInstanceProperty DEFAULT_INGEST_JOB_COMMIT_ASYNC = Index.propertyBuilder("sleeper.default.ingest.job.commit.async")
             .description("If true, ingest job commit requests will be sent to the state store committer lambda " +
                     "to be performed asynchronously. If false, ingest jobs will be committed synchronously by ingest tasks.")
-            .defaultValue("true")
+            .defaultValue("false")
             .validationPredicate(Utils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
 
