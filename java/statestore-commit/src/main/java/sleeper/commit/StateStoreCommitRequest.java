@@ -54,13 +54,12 @@ public class StateStoreCommitRequest {
         this.ingestJobCommitRequest = ingestJobCommitRequest;
     }
 
-    /**
-     * Gets the compaction job commit request.
-     *
-     * @return the compaction job commit request
-     */
     public Optional<CompactionJobCommitRequest> getCompactionJobCommitRequest() {
         return Optional.ofNullable(compactionJobCommitRequest);
+    }
+
+    public Optional<IngestJobCommitRequest> getIngestJobCommitRequest() {
+        return Optional.ofNullable(ingestJobCommitRequest);
     }
 
     @Override
