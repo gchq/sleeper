@@ -338,7 +338,7 @@ public class IngestTaskTest {
         }
 
         @Test
-        void shouldNotUpdateStateStoresIfAsyncCommitsEnabled() throws Exception {
+        void shouldNotUpdateJobStatusStoreIfAsyncCommitsEnabled() throws Exception {
             // Given
             Queue<Instant> times = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
