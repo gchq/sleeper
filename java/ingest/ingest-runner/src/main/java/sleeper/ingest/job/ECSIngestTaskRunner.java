@@ -23,6 +23,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import com.amazonaws.services.sqs.model.SendMessageRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
@@ -42,7 +43,7 @@ import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
 import sleeper.ingest.task.IngestTask;
-import sleeper.ingest.task.IngestTask.AsyncCommitter;
+import sleeper.ingest.task.IngestTask.CommitQueueSender;
 import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreProvider;
@@ -121,13 +122,19 @@ public class ECSIngestTaskRunner {
                 new DynamoDBTableIndex(instanceProperties, dynamoDBClient), jobStore);
         return new IngestTask(Instant::now, queueConsumer, ingestJobRunner,
                 tableId -> tablePropertiesProvider.getById(tableId).getBoolean(INGEST_JOB_COMMIT_ASYNC),
-                asyncCommitter(sqsClient, instanceProperties), jobStore, taskStore, taskId);
+                commitQueueSender(sqsClient, instanceProperties), jobStore, taskStore, taskId);
     }
 
-    private static AsyncCommitter asyncCommitter(AmazonSQS sqsClient, InstanceProperties instanceProperties) {
-        return commitRequest -> sqsClient.sendMessage(
-                instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL),
-                new IngestJobCommitRequestSerDe().toJson(commitRequest));
+    private static CommitQueueSender commitQueueSender(AmazonSQS sqsClient, InstanceProperties instanceProperties) {
+        return request -> {
+            String queueUrl = instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL);
+            String tableId = request.getJob().getTableId();
+            sqsClient.sendMessage(new SendMessageRequest()
+                    .withQueueUrl(queueUrl)
+                    .withMessageDeduplicationId(UUID.randomUUID().toString())
+                    .withMessageGroupId(tableId)
+                    .withMessageBody(new IngestJobCommitRequestSerDe().toJson(request)));
+        };
 
     }
 

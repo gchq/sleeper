@@ -48,12 +48,12 @@ public class IngestTask {
     private final IngestJobStatusStore jobStatusStore;
     private final IngestTaskStatusStore taskStatusStore;
     private final TableCommitConfig tableCommitConfig;
-    private final AsyncCommitter asyncCommitter;
+    private final CommitQueueSender asyncCommitter;
     private final String taskId;
     private int totalNumberOfMessagesProcessed = 0;
 
     public IngestTask(Supplier<Instant> timeSupplier, MessageReceiver messageReceiver, IngestJobHandler ingester,
-            TableCommitConfig tableCommitConfig, AsyncCommitter asyncCommitter, IngestJobStatusStore jobStatusStore,
+            TableCommitConfig tableCommitConfig, CommitQueueSender asyncCommitter, IngestJobStatusStore jobStatusStore,
             IngestTaskStatusStore taskStore, String taskId) {
         this.timeSupplier = timeSupplier;
         this.messageReceiver = messageReceiver;
@@ -202,7 +202,7 @@ public class IngestTask {
     /**
      * Commits the results of an ingest job asynchronously.
      */
-    public interface AsyncCommitter {
+    public interface CommitQueueSender {
         /**
          * Commits the results of an ingest job asynchronously.
          *
