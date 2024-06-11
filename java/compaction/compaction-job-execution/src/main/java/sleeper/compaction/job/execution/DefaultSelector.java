@@ -15,13 +15,13 @@
  */
 package sleeper.compaction.job.execution;
 
+import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionRunner;
 import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperty;
@@ -34,20 +34,20 @@ import java.util.Locale;
  * other environmental information.
  */
 public class DefaultSelector implements CompactionAlgorithmSelector {
-    private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final ObjectFactory objectFactory;
     private final StateStoreProvider stateStoreProvider;
+    private final Configuration configuration;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultSelector.class);
 
     public DefaultSelector(
-            InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
-            StateStoreProvider stateStoreProvider, ObjectFactory objectFactory) {
-        this.instanceProperties = instanceProperties;
+            TablePropertiesProvider tablePropertiesProvider,
+            StateStoreProvider stateStoreProvider, ObjectFactory objectFactory, Configuration configuration) {
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.objectFactory = objectFactory;
         this.stateStoreProvider = stateStoreProvider;
+        this.configuration = configuration;
     }
 
     @Override
@@ -64,7 +64,7 @@ public class DefaultSelector implements CompactionAlgorithmSelector {
             desired = CompactionMethod.DEFAULT;
         }
 
-        CompactionRunner defaultRunner = new StandardCompactor(instanceProperties, tablePropertiesProvider, stateStoreProvider, objectFactory);
+        CompactionRunner defaultRunner = new StandardCompactor(tablePropertiesProvider, stateStoreProvider, objectFactory, configuration);
         CompactionRunner runner = defaultRunner;
         switch (desired) {
             case RUST:

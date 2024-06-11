@@ -26,6 +26,7 @@ import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
+import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 
 import java.util.List;
 
@@ -53,7 +54,8 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
         assignJobIdToInputFiles(stateStore, compactionJob);
 
         // When
-        DefaultSelector compactSortedFiles = createCompactSortedFiles(schema);
+        DefaultSelector compactSortedFiles = createCompactionSelector(schema,
+            HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
         CompactionRunner runner = compactSortedFiles.chooseCompactor(compactionJob);
         RecordsProcessed summary = runner.compact(compactionJob);
 
@@ -78,7 +80,8 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
         assignJobIdToInputFiles(stateStore, compactionJob);
 
         // When
-        DefaultSelector compactSortedFiles = createCompactSortedFiles(schema);
+        DefaultSelector compactSortedFiles = createCompactionSelector(schema,
+            HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
         sleeper.compaction.job.CompactionRunner runner = compactSortedFiles.chooseCompactor(compactionJob);
         RecordsProcessed summary = runner.compact(compactionJob);
 

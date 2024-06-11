@@ -104,23 +104,6 @@ public interface CompactionProperty {
             .validationPredicate(Utils::isValidLambdaTimeout)
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty COMPACTION_JOB_COMMITTER_LAMBDA_MEMORY_IN_MB = Index.propertyBuilder("sleeper.compaction.job.committer.lambda.memory")
-            .description("The amount of memory for the lambda that commits compaction jobs.")
-            .defaultValue("1024")
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty COMPACTION_JOB_COMMITTER_LAMBDA_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.job.committer.lambda.timeout.seconds")
-            .description("The timeout for the lambda that commits compaction jobs in seconds.")
-            .defaultValue("900")
-            .validationPredicate(Utils::isValidLambdaTimeout)
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty COMPACTION_JOB_COMMITTER_BATCH_SIZE = Index.propertyBuilder("sleeper.compaction.job.committer.batch.size")
-            .description("The number of compacton jobs to be sent to the committer lambda in one invocation. " +
-                    "This will be the batch size for a lambda as an SQS FIFO event source. This can be a maximum of 10.")
-            .defaultValue("10")
-            .validationPredicate(Utils::isPositiveIntegerLtEq10)
-            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty MAXIMUM_CONCURRENT_COMPACTION_TASKS = Index.propertyBuilder("sleeper.compaction.max.concurrent.tasks")
             .description("The maximum number of concurrent compaction tasks to run.")
             .defaultValue("300")
@@ -269,7 +252,7 @@ public interface CompactionProperty {
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
 
     UserDefinedInstanceProperty DEFAULT_COMPACTION_METHOD = Index.propertyBuilder("sleeper.default.table.compaction.method")
-            .description("Select what compation method to use on a table. Current options are JAVA and RUST. Rust compaction support is" +
+            .description("Select what compation method to use on a table. Current options are JAVA and RUST. Rust compaction support is " +
                     "experimental.")
             .defaultValue("JAVA")
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();

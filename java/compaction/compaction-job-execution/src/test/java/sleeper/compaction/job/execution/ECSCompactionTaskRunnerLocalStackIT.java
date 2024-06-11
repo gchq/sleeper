@@ -101,11 +101,11 @@ import static org.mockito.Mockito.mock;
 import static sleeper.compaction.job.execution.StateStoreWaitForFilesTestHelper.waitWithRetries;
 import static sleeper.compaction.job.execution.testutils.CompactSortedFilesTestUtils.assignJobIdsToInputFiles;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_COMMITTER_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
@@ -382,7 +382,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
         assertThat(messagesOnQueue(COMPACTION_JOB_QUEUE_URL)).isEmpty();
         assertThat(messagesOnQueue(COMPACTION_JOB_DLQ_URL)).isEmpty();
         // - A compaction commit request should be on the job commit queue
-        assertThat(messagesOnQueue(COMPACTION_JOB_COMMITTER_QUEUE_URL))
+        assertThat(messagesOnQueue(STATESTORE_COMMITTER_QUEUE_URL))
                 .extracting(Message::getBody, this::getMessageGroupId)
                 .containsExactly(tuple(
                         commitRequestOnQueue(job, "task-id",
@@ -430,7 +430,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
         String jobCommitQueueUrl = sqs.createQueue(new CreateQueueRequest()
                 .withQueueName(UUID.randomUUID().toString() + ".fifo")
                 .withAttributes(Map.of("FifoQueue", "true"))).getQueueUrl();
-        instanceProperties.set(COMPACTION_JOB_COMMITTER_QUEUE_URL, jobCommitQueueUrl);
+        instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, jobCommitQueueUrl);
     }
 
     private CompactionTask createTaskWithTimes(String taskId, Supplier<Instant> timeSupplier) {
@@ -446,9 +446,8 @@ public class ECSCompactionTaskRunnerLocalStackIT {
     }
 
     private CompactionTask createTask(String taskId, StateStoreProvider stateStoreProvider, Supplier<Instant> timeSupplier) {
-        DefaultSelector compactSortedFiles = new DefaultSelector(instanceProperties,
-                tablePropertiesProvider, stateStoreProvider,
-                ObjectFactory.noUserJars());
+        DefaultSelector compactSortedFiles = new DefaultSelector(tablePropertiesProvider, stateStoreProvider,
+                ObjectFactory.noUserJars(), configuration);
         CompactionJobCommitterOrSendToLambda committer = new CompactionJobCommitterOrSendToLambda(
                 tablePropertiesProvider, stateStoreProvider, jobStatusStore,
                 instanceProperties, sqs);

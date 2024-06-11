@@ -16,6 +16,9 @@ jobs:
         with:
           java-version: '17'
           distribution: 'corretto'
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install cargo cross
+        run: cargo install cross
       - name: Get current date
         id: date
         run: echo "::set-output name=date::$(date +'%Y-%m-%d')"

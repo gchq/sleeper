@@ -68,6 +68,6 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Rust and C++
-RUN apt-get install -y gcc g++ cmake make
+RUN apt-get update && apt-get install -y gcc g++ cmake make
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | bash -s -- -y -c clippy,rustfmt
 RUN $HOME/.cargo/bin/cargo install cross

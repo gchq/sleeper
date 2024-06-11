@@ -15,6 +15,7 @@
  */
 package sleeper.compaction.job.execution.testutils;
 
+import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -66,12 +67,12 @@ public class CompactSortedFilesTestBase {
         return new CompactionJobFactory(instanceProperties, tableProperties);
     }
 
-    protected DefaultSelector createCompactSortedFiles(Schema schema) throws Exception {
+    protected DefaultSelector createCompactionSelector(Schema schema, Configuration configuration) throws Exception {
         tableProperties.setSchema(schema);
-        return new DefaultSelector(instanceProperties,
-                new FixedTablePropertiesProvider(tableProperties),
+        return new DefaultSelector(new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties, stateStore),
-                ObjectFactory.noUserJars());
+                ObjectFactory.noUserJars(),
+                configuration);
     }
 
     protected FileReference ingestRecordsGetFile(List<Record> records) throws Exception {

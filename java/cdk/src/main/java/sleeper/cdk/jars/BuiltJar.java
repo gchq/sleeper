@@ -35,7 +35,7 @@ public class BuiltJar {
     public static final BuiltJar QUERY = fromFormat("query-%s.jar");
     public static final BuiltJar CUSTOM_RESOURCES = fromFormat("cdk-custom-resources-%s.jar");
     public static final BuiltJar METRICS = fromFormat("metrics-%s.jar");
-    public static final BuiltJar STATESTORE_LAMBDA = fromFormat("statestore-lambda-%s.jar");
+    public static final BuiltJar STATESTORE_SNAPSHOT = fromFormat("statestore-snapshot-lambda-%s.jar");
 
     private final String fileName;
 
