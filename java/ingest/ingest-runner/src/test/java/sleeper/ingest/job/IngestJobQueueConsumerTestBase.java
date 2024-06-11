@@ -24,6 +24,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import com.amazonaws.services.sqs.model.CreateQueueRequest;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
@@ -55,6 +56,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
@@ -95,7 +97,7 @@ public abstract class IngestJobQueueConsumerTestBase {
     protected final String tableName = tableProperties.get(TABLE_NAME);
     protected final String tableId = tableProperties.get(TABLE_ID);
     private final String ingestQueueName = instanceId + "-ingestqueue";
-    private final String asyncCommitQueueName = instanceId + "-statestore-commit-queue";
+    private final String asyncCommitQueueName = instanceId + "-statestore-commit-queue.fifo";
     private final String configBucketName = instanceProperties.get(CONFIG_BUCKET);
     private final String ingestDataBucketName = instanceId + "-ingestdata";
     private final String dataBucketName = instanceProperties.get(DATA_BUCKET);
@@ -109,7 +111,9 @@ public abstract class IngestJobQueueConsumerTestBase {
         s3.createBucket(dataBucketName);
         s3.createBucket(ingestDataBucketName);
         sqs.createQueue(ingestQueueName);
-        sqs.createQueue(asyncCommitQueueName);
+        sqs.createQueue(new CreateQueueRequest()
+                .withQueueName(asyncCommitQueueName)
+                .withAttributes(Map.of("FifoQueue", "true")));
         instanceProperties.set(INGEST_JOB_QUEUE_URL, sqs.getQueueUrl(ingestQueueName).getQueueUrl());
         instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, sqs.getQueueUrl(asyncCommitQueueName).getQueueUrl());
         instanceProperties.set(FILE_SYSTEM, fileSystemPrefix);
