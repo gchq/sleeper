@@ -446,9 +446,8 @@ public class ECSCompactionTaskRunnerLocalStackIT {
     }
 
     private CompactionTask createTask(String taskId, StateStoreProvider stateStoreProvider, Supplier<Instant> timeSupplier) {
-        DefaultSelector compactSortedFiles = new DefaultSelector(instanceProperties,
-                tablePropertiesProvider, stateStoreProvider,
-                ObjectFactory.noUserJars());
+        DefaultSelector compactSortedFiles = new DefaultSelector(tablePropertiesProvider, stateStoreProvider,
+                ObjectFactory.noUserJars(), configuration);
         CompactionJobCommitterOrSendToLambda committer = new CompactionJobCommitterOrSendToLambda(
                 tablePropertiesProvider, stateStoreProvider, jobStatusStore,
                 instanceProperties, sqs);

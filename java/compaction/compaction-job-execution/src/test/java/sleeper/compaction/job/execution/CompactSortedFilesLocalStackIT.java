@@ -116,10 +116,10 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
 
     private DefaultSelector createCompactSortedFiles(Schema schema, StateStore stateStore) throws Exception {
         tableProperties.setSchema(schema);
-        return new DefaultSelector(instanceProperties,
-                new FixedTablePropertiesProvider(tableProperties),
+        return new DefaultSelector(new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties, stateStore),
-                ObjectFactory.noUserJars());
+                ObjectFactory.noUserJars(),
+                configuration);
     }
 
     @Test
