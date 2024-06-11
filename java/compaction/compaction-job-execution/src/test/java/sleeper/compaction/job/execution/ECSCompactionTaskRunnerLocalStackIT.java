@@ -73,6 +73,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.ingest.IngestFactory;
+import sleeper.ingest.IngestResult;
 import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.statestore.FixedStateStoreProvider;
@@ -484,7 +485,9 @@ public class ECSCompactionTaskRunnerLocalStackIT {
         for (int i = 0; i < 100; i++) {
             coordinator.write(recordCreator.apply(i));
         }
-        return coordinator.closeReturningResult().getFileReferenceList().get(0);
+        IngestResult result = coordinator.closeReturningResult();
+        getStateStore().addFiles(result.getFileReferenceList());
+        return result.getFileReferenceList().get(0);
     }
 
     private String sendCompactionJobForFilesGetJson(String jobId, String outputFilename, FileReference... fileReferences) throws IOException {

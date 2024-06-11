@@ -100,8 +100,7 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
     }
 
     protected FileReference ingestRecordsGetFile(StateStore stateStore, List<Record> records) throws Exception {
-        return ingestRecordsGetFile(records, builder -> builder
-                .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
+        return ingestRecordsGetFile(stateStore, records, builder -> builder
                 .hadoopConfiguration(configuration)
                 .s3AsyncClient(s3AsyncClient));
     }

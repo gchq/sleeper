@@ -80,6 +80,10 @@ public class CompactSortedFilesTestBase {
     }
 
     protected FileReference ingestRecordsGetFile(List<Record> records, Consumer<IngestFactory.Builder> config) throws Exception {
+        return ingestRecordsGetFile(stateStore, records, config);
+    }
+
+    protected FileReference ingestRecordsGetFile(StateStore stateStore, List<Record> records, Consumer<IngestFactory.Builder> config) throws Exception {
         String localDir = createTempDirectory(tempDir, null).toString();
         IngestFactory.Builder builder = IngestFactory.builder()
                 .objectFactory(ObjectFactory.noUserJars())
@@ -89,6 +93,7 @@ public class CompactSortedFilesTestBase {
         config.accept(builder);
         IngestResult result = builder.build().ingestFromRecordIterator(tableProperties, records.iterator());
         List<FileReference> files = result.getFileReferenceList();
+        stateStore.addFiles(files);
         if (files.size() != 1) {
             throw new IllegalStateException("Expected 1 file ingested, found: " + files);
         }
