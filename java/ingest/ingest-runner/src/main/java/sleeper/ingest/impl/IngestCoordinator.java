@@ -499,7 +499,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
 
         /**
          * Determines whether the results of the ingest job will be committed to the state store by the ingest
-         * coordinator (synchonously), or by sending them to the state store committer lambda (asynchrnously).
+         * coordinator (synchronously), or by sending them to the state store committer lambda (asynchronously).
          *
          * @param  commitAsync whether to commit the results of the ingest job asynchronously
          * @return             the builder for call chaining
