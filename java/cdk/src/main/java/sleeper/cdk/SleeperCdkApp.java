@@ -248,6 +248,7 @@ public class SleeperCdkApp extends Stack {
                 topicStack.getTopic(),
                 coreStacks,
                 compactionStatusStoreStack,
+                ingestStatusStoreStack,
                 errorMetrics);
         // Stack for containers for compactions and splitting compactions
         if (optionalStacks.contains(CompactionStack.class.getSimpleName())) {

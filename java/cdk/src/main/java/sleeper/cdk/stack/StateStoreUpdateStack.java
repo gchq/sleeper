@@ -59,6 +59,7 @@ public class StateStoreUpdateStack extends NestedStack {
             Topic topic,
             CoreStacks coreStacks,
             CompactionStatusStoreStack compactionStatusStoreStack,
+            IngestStatusStoreStack ingestStatusStoreStack,
             List<IMetric> errorMetrics) {
         super(scope, id);
         this.instanceProperties = instanceProperties;
@@ -67,7 +68,8 @@ public class StateStoreUpdateStack extends NestedStack {
 
         commitQueue = sqsQueueForStateStoreCommitter(topic, errorMetrics);
         lambdaToCommitStateStoreUpdates(coreStacks, topic, errorMetrics, jarsBucket, committerJar,
-                compactionStatusStoreStack.getResources());
+                compactionStatusStoreStack.getResources(),
+                ingestStatusStoreStack.getResources());
     }
 
     private Queue sqsQueueForStateStoreCommitter(Topic topic, List<IMetric> errorMetrics) {
@@ -102,7 +104,9 @@ public class StateStoreUpdateStack extends NestedStack {
 
     private void lambdaToCommitStateStoreUpdates(
             CoreStacks coreStacks, Topic topic, List<IMetric> errorMetrics,
-            IBucket jarsBucket, LambdaCode jobCommitterJar, CompactionStatusStoreResources compactionStatusStoreResources) {
+            IBucket jarsBucket, LambdaCode jobCommitterJar,
+            CompactionStatusStoreResources compactionStatusStoreResources,
+            IngestStatusStoreResources ingestStatusStoreResources) {
         Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
 
         String functionName = String.join("-", "sleeper",
@@ -125,6 +129,7 @@ public class StateStoreUpdateStack extends NestedStack {
         coreStacks.grantRunCompactionJobs(handlerFunction);
         jarsBucket.grantRead(handlerFunction);
         compactionStatusStoreResources.grantWriteJobEvent(handlerFunction);
+        ingestStatusStoreResources.grantWriteJobEvent(handlerFunction);
     }
 
     public Queue getCommitQueue() {
