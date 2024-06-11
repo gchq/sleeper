@@ -179,6 +179,7 @@ public class DeleteTableIT {
         IngestResult result = ingestRecords(table, List.of(
                 new Record(Map.of("key1", 25L)),
                 new Record(Map.of("key1", 100L))));
+        stateStore.addFiles(result.getFileReferenceList());
         FileReference rootFile = result.getFileReferenceList().get(0);
 
         DynamoDBTransactionLogSnapshotCreator.from(instanceProperties, table, s3, dynamoDB, conf)

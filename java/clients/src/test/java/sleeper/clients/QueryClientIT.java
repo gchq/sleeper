@@ -41,6 +41,7 @@ import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableStatusTestHelper;
 import sleeper.ingest.IngestFactory;
+import sleeper.ingest.IngestResult;
 import sleeper.ingest.testutils.IngestRecordsTestDataHelper;
 import sleeper.statestore.FixedStateStoreProvider;
 
@@ -353,6 +354,7 @@ public class QueryClientIT {
         tableProperties.set(COMPRESSION_CODEC, "snappy");
         IngestFactory factory = IngestRecordsTestDataHelper.createIngestFactory(tempDir.toString(),
                 new FixedStateStoreProvider(tableProperties, stateStore), instanceProperties);
-        factory.ingestFromRecordIterator(tableProperties, recordIterator);
+        IngestResult result = factory.ingestFromRecordIterator(tableProperties, recordIterator);
+        stateStore.addFiles(result.getFileReferenceList());
     }
 }

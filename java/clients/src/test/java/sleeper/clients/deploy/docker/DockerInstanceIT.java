@@ -37,6 +37,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.record.Record;
 import sleeper.ingest.IngestFactory;
+import sleeper.ingest.IngestResult;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.s3.S3StateStore;
@@ -235,14 +236,16 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
 
         private void ingestRecords(
                 InstanceProperties instanceProperties, TableProperties tableProperties, List<Record> records) throws Exception {
-            IngestFactory.builder()
+            StateStoreProvider provider = new StateStoreProvider(instanceProperties, s3Client, dynamoDB, getHadoopConfiguration());
+            IngestResult result = IngestFactory.builder()
                     .instanceProperties(instanceProperties)
                     .objectFactory(ObjectFactory.noUserJars())
                     .localDir(tempDir.toString())
                     .hadoopConfiguration(getHadoopConfiguration())
-                    .stateStoreProvider(new StateStoreProvider(instanceProperties, s3Client, dynamoDB, getHadoopConfiguration()))
+                    .stateStoreProvider(provider)
                     .s3AsyncClient(createS3AsyncClient())
                     .build().ingestFromRecordIteratorAndClose(tableProperties, new WrappedIterator<>(records.iterator()));
+            provider.getStateStore(tableProperties).addFiles(result.getFileReferenceList());
         }
     }
 
