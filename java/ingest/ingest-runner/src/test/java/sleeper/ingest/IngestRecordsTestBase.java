@@ -104,18 +104,24 @@ public class IngestRecordsTestBase {
         for (Record record : records) {
             ingestRecords.write(record);
         }
-        return ingestRecords.close();
+        IngestResult result = ingestRecords.close();
+        stateStore.addFiles(result.getFileReferenceList());
+        return result;
     }
 
     protected IngestResult ingestFromRecordIterator(Schema schema, StateStore stateStore, Iterator<Record> iterator) throws StateStoreException, IteratorCreationException, IOException {
         tableProperties.setSchema(schema);
         IngestFactory factory = createIngestFactory(stateStore);
-        return factory.ingestFromRecordIterator(tableProperties, iterator);
+        IngestResult result = factory.ingestFromRecordIterator(tableProperties, iterator);
+        stateStore.addFiles(result.getFileReferenceList());
+        return result;
     }
 
     protected IngestResult ingestFromRecordIterator(StateStore stateStore, Iterator<Record> iterator) throws StateStoreException, IteratorCreationException, IOException {
         IngestFactory factory = createIngestFactory(stateStore);
-        return factory.ingestFromRecordIterator(tableProperties, iterator);
+        IngestResult result = factory.ingestFromRecordIterator(tableProperties, iterator);
+        stateStore.addFiles(result.getFileReferenceList());
+        return result;
     }
 
     private IngestFactory createIngestFactory(StateStore stateStore) {

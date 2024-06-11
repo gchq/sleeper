@@ -47,6 +47,7 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
+import sleeper.ingest.IngestResult;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
@@ -207,7 +208,7 @@ class IngestJobRunnerIT {
                 .flatMap(List::stream).collect(Collectors.toList());
 
         // When
-        runIngestJob(
+        runIngestJobAndCommitResult(
                 stateStore,
                 fileSystemPrefix,
                 recordBatchType,
@@ -254,7 +255,7 @@ class IngestJobRunnerIT {
         StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(recordListAndSchema.sleeperSchema);
 
         // When
-        runIngestJob(
+        runIngestJobAndCommitResult(
                 stateStore,
                 fileSystemPrefix,
                 recordBatchType,
@@ -308,7 +309,7 @@ class IngestJobRunnerIT {
         StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(recordListAndSchema.sleeperSchema);
 
         // When
-        runIngestJob(
+        runIngestJobAndCommitResult(
                 stateStore,
                 fileSystemPrefix,
                 recordBatchType,
@@ -357,9 +358,7 @@ class IngestJobRunnerIT {
         InstanceProperties instanceProperties = getInstanceProperties("s3a://", "arrow", "async");
         TableProperties tableProperties = createTable(records1.sleeperSchema, "s3a://", "arrow", "async");
         StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(records1.sleeperSchema);
-
-        // When
-        new IngestJobRunner(
+        IngestJobRunner jobRunner = new IngestJobRunner(
                 new ObjectFactory(instanceProperties, null, createTempDirectory(temporaryFolder, null).toString()),
                 instanceProperties,
                 new FixedTablePropertiesProvider(tableProperties),
@@ -367,8 +366,10 @@ class IngestJobRunnerIT {
                 new FixedStateStoreProvider(tableProperties, stateStore),
                 localDir,
                 s3Async,
-                hadoopConfiguration)
-                .ingest(ingestJob);
+                hadoopConfiguration);
+
+        // When
+        runIngestJobAndCommitResult(stateStore, jobRunner, ingestJob);
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
@@ -387,7 +388,7 @@ class IngestJobRunnerIT {
                 hadoopConfiguration);
     }
 
-    private void runIngestJob(
+    private void runIngestJobAndCommitResult(
             StateStore stateStore,
             String fileSystemPrefix,
             String recordBatchType,
@@ -398,7 +399,7 @@ class IngestJobRunnerIT {
         InstanceProperties instanceProperties = getInstanceProperties(fileSystemPrefix, recordBatchType, partitionFileWriterType);
         TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(createTable(recordListAndSchema.sleeperSchema, fileSystemPrefix, recordBatchType, partitionFileWriterType));
         StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tablePropertiesProvider.getByName(tableName), stateStore);
-        new IngestJobRunner(
+        IngestJobRunner jobRunner = new IngestJobRunner(
                 new ObjectFactory(instanceProperties, null, createTempDirectory(temporaryFolder, null).toString()),
                 instanceProperties,
                 tablePropertiesProvider,
@@ -406,11 +407,17 @@ class IngestJobRunnerIT {
                 stateStoreProvider,
                 localDir,
                 s3Async,
-                hadoopConfiguration)
-                .ingest(IngestJob.builder()
-                        .tableName(tableName)
-                        .id("id")
-                        .files(files)
-                        .build());
+                hadoopConfiguration);
+        IngestJob job = IngestJob.builder()
+                .tableName(tableName)
+                .id("id")
+                .files(files)
+                .build();
+        runIngestJobAndCommitResult(stateStore, jobRunner, job);
+    }
+
+    private void runIngestJobAndCommitResult(StateStore stateStore, IngestJobRunner jobRunner, IngestJob job) throws Exception {
+        IngestResult result = jobRunner.ingest(job);
+        stateStore.addFiles(result.getFileReferenceList());
     }
 }
