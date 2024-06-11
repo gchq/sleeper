@@ -31,9 +31,13 @@ TABLE_NAME=$2
 SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd "../" && pwd)
 
 if [[ -z $3 ]]; then
-  java -cp "${SCRIPTS_DIR}"/jars/clients-*-utility.jar sleeper.clients.status.report.StatusReport "${INSTANCE_ID}" "${TABLE_NAME}"
+  java -cp "${SCRIPTS_DIR}"/jars/clients-*-utility.jar \
+    --add-opens java.base/java.nio=ALL-UNNAMED \
+    sleeper.clients.status.report.StatusReport "${INSTANCE_ID}" "${TABLE_NAME}"
 else
   VERBOSE=$3
   echo "Optional Parameter for <Verbose> recognised and set to" "${VERBOSE}"
-  java -cp "${SCRIPTS_DIR}"/jars/clients-*-utility.jar sleeper.clients.status.report.StatusReport "${INSTANCE_ID}" "${TABLE_NAME}" "${VERBOSE}"
+  java -cp "${SCRIPTS_DIR}"/jars/clients-*-utility.jar \
+    --add-opens java.base/java.nio=ALL-UNNAMED \
+    sleeper.clients.status.report.StatusReport "${INSTANCE_ID}" "${TABLE_NAME}" "${VERBOSE}"
 fi
