@@ -21,6 +21,9 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.commons.text.RandomStringGenerator;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.LocatedFileStatus;
+import org.apache.hadoop.fs.RemoteIterator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Named;
 import org.junit.jupiter.api.io.TempDir;
@@ -47,8 +50,6 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.testutils.IngestCoordinatorTestParameters;
@@ -58,10 +59,12 @@ import sleeper.ingest.testutils.TestIngestType;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -84,8 +87,7 @@ import static sleeper.configuration.properties.validation.IngestFileWritingStrat
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.ingest.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.ingest.testutils.RecordGenerator.genericKey1D;
-import static sleeper.ingest.testutils.ResultVerifier.readMergedRecordsFromPartitionDataFiles;
-import static sleeper.ingest.testutils.ResultVerifier.readRecordsFromPartitionDataFile;
+import static sleeper.ingest.testutils.ResultVerifier.readMergedRecordsFromDataFiles;
 import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
 @Testcontainers
@@ -142,8 +144,6 @@ public class IngestCoordinatorCommonIT {
                 .rootFirst("root")
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
-        Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
-        stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("rootFile"))
@@ -156,23 +156,20 @@ public class IngestCoordinatorCommonIT {
         ingestRecords(recordListAndSchema, parameters, ingestType);
 
         // Then
-        List<FileReference> actualFiles = stateStore.getFileReferences();
-        List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
-        FileReference fileReference = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime)
-                .rootFile(ingestType.getFilePrefix(parameters) + "/data/partition_root/rootFile.parquet", 200);
+        List<String> files = List.of(ingestType.getFilePrefix(parameters) + "/data/partition_root/rootFile.parquet");
+        List<Record> actualRecords = readMergedRecordsFromDataFiles(recordListAndSchema.sleeperSchema, files, hadoopConfiguration);
 
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
-        assertThat(actualFiles).containsExactly(fileReference);
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
         assertThat(actualRecords).extracting(record -> record.getValues(List.of("key0")))
                 .containsExactlyElementsOf(LongStream.range(-100, 100).boxed()
                         .map(List::<Object>of)
                         .collect(Collectors.toList()));
 
-        ResultVerifier.assertOnSketch(
+        ResultVerifier.assertOnSketchFiles(
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
-                actualFiles,
+                files.stream(),
                 hadoopConfiguration);
     }
 
@@ -189,8 +186,6 @@ public class IngestCoordinatorCommonIT {
                 .splitToNewChildren("root", "left", "right", 2)
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
-        Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
-        stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile", "rightFile"))
@@ -203,29 +198,24 @@ public class IngestCoordinatorCommonIT {
         ingestRecords(recordListAndSchema, parameters, ingestType);
 
         // Then
-        List<FileReference> actualFiles = stateStore.getFileReferences();
-        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
-        FileReference leftFile = fileReferenceFactory.partitionFile("left",
-                ingestType.getFilePrefix(parameters) + "/data/partition_left/leftFile.parquet", 102);
-        FileReference rightFile = fileReferenceFactory.partitionFile("right",
-                ingestType.getFilePrefix(parameters) + "/data/partition_right/rightFile.parquet", 98);
-        List<Record> leftRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, leftFile, hadoopConfiguration);
-        List<Record> rightRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rightFile, hadoopConfiguration);
+        String leftFile = ingestType.getFilePrefix(parameters) + "/data/partition_left/leftFile.parquet";
+        String rightFile = ingestType.getFilePrefix(parameters) + "/data/partition_right/rightFile.parquet";
+        List<Record> leftRecords = readMergedRecordsFromDataFiles(recordListAndSchema.sleeperSchema, List.of(leftFile), hadoopConfiguration);
+        List<Record> rightRecords = readMergedRecordsFromDataFiles(recordListAndSchema.sleeperSchema, List.of(rightFile), hadoopConfiguration);
         List<Record> allRecords = Stream.of(leftRecords, rightRecords)
                 .flatMap(List::stream).collect(Collectors.toUnmodifiableList());
 
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
-        assertThat(actualFiles).containsExactlyInAnyOrder(leftFile, rightFile);
         assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
         assertThat(leftRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
                 .containsExactly(IntStream.range(-100, 2).boxed().toArray());
         assertThat(rightRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
                 .containsExactly(IntStream.range(2, 100).boxed().toArray());
 
-        ResultVerifier.assertOnSketch(
+        ResultVerifier.assertOnSketchFiles(
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
-                actualFiles,
+                Stream.of(leftFile, rightFile),
                 hadoopConfiguration);
     }
 
@@ -242,8 +232,6 @@ public class IngestCoordinatorCommonIT {
                 .splitToNewChildren("root", "left", "right", 2L)
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
-        Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
-        stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile", "rightFile"))
@@ -256,27 +244,24 @@ public class IngestCoordinatorCommonIT {
         ingestRecords(recordListAndSchema, parameters, ingestType);
 
         // Then
-        List<FileReference> actualFiles = stateStore.getFileReferences();
-        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
-        FileReference leftFile = fileReferenceFactory.partitionFile("left", ingestType.getFilePrefix(parameters) + "/data/partition_left/leftFile.parquet", 102);
-        FileReference rightFile = fileReferenceFactory.partitionFile("right", ingestType.getFilePrefix(parameters) + "/data/partition_right/rightFile.parquet", 98);
-        List<Record> leftRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, leftFile, hadoopConfiguration);
-        List<Record> rightRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rightFile, hadoopConfiguration);
+        String leftFile = ingestType.getFilePrefix(parameters) + "/data/partition_left/leftFile.parquet";
+        String rightFile = ingestType.getFilePrefix(parameters) + "/data/partition_right/rightFile.parquet";
+        List<Record> leftRecords = readMergedRecordsFromDataFiles(recordListAndSchema.sleeperSchema, List.of(leftFile), hadoopConfiguration);
+        List<Record> rightRecords = readMergedRecordsFromDataFiles(recordListAndSchema.sleeperSchema, List.of(rightFile), hadoopConfiguration);
         List<Record> allRecords = Stream.of(leftRecords, rightRecords)
                 .flatMap(List::stream).collect(Collectors.toUnmodifiableList());
 
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
-        assertThat(actualFiles).containsExactlyInAnyOrder(leftFile, rightFile);
         assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
         assertThat(leftRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
                 .containsExactly(LongStream.range(-100, 2).boxed().toArray());
         assertThat(rightRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
                 .containsExactly(LongStream.range(2, 100).boxed().toArray());
 
-        ResultVerifier.assertOnSketch(
+        ResultVerifier.assertOnSketchFiles(
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
-                actualFiles,
+                Stream.of(leftFile, rightFile),
                 hadoopConfiguration);
     }
 
@@ -296,8 +281,6 @@ public class IngestCoordinatorCommonIT {
                 .splitToNewChildren("root", "left", "right", "000000102")
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
-        Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
-        stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile", "rightFile"))
@@ -310,29 +293,24 @@ public class IngestCoordinatorCommonIT {
         ingestRecords(recordListAndSchema, parameters, ingestType);
 
         // Then
-        List<FileReference> actualFiles = stateStore.getFileReferences();
-        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
-        FileReference leftFile = fileReferenceFactory.partitionFile("left",
-                ingestType.getFilePrefix(parameters) + "/data/partition_left/leftFile.parquet", 102);
-        FileReference rightFile = fileReferenceFactory.partitionFile("right",
-                ingestType.getFilePrefix(parameters) + "/data/partition_right/rightFile.parquet", 98);
-        List<Record> leftRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, leftFile, hadoopConfiguration);
-        List<Record> rightRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rightFile, hadoopConfiguration);
+        String leftFile = ingestType.getFilePrefix(parameters) + "/data/partition_left/leftFile.parquet";
+        String rightFile = ingestType.getFilePrefix(parameters) + "/data/partition_right/rightFile.parquet";
+        List<Record> leftRecords = readMergedRecordsFromDataFiles(recordListAndSchema.sleeperSchema, List.of(leftFile), hadoopConfiguration);
+        List<Record> rightRecords = readMergedRecordsFromDataFiles(recordListAndSchema.sleeperSchema, List.of(rightFile), hadoopConfiguration);
         List<Record> allRecords = Stream.of(leftRecords, rightRecords)
                 .flatMap(List::stream).collect(Collectors.toUnmodifiableList());
 
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
-        assertThat(actualFiles).containsExactlyInAnyOrder(leftFile, rightFile);
         assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
         assertThat(leftRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
                 .containsExactlyElementsOf(keys.subList(0, 102));
         assertThat(rightRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
                 .containsExactlyElementsOf(keys.subList(102, 200));
 
-        ResultVerifier.assertOnSketch(
+        ResultVerifier.assertOnSketchFiles(
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
-                actualFiles,
+                Stream.of(leftFile, rightFile),
                 hadoopConfiguration);
     }
 
@@ -366,29 +344,24 @@ public class IngestCoordinatorCommonIT {
         ingestRecords(recordListAndSchema, parameters, ingestType);
 
         // Then
-        List<FileReference> actualFiles = stateStore.getFileReferences();
-        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
-        FileReference leftFile = fileReferenceFactory.partitionFile("left",
-                ingestType.getFilePrefix(parameters) + "/data/partition_left/leftFile.parquet", 2);
-        FileReference rightFile = fileReferenceFactory.partitionFile("right",
-                ingestType.getFilePrefix(parameters) + "/data/partition_right/rightFile.parquet", 1);
-        List<Record> leftRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, leftFile, hadoopConfiguration);
-        List<Record> rightRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rightFile, hadoopConfiguration);
+        String leftFile = ingestType.getFilePrefix(parameters) + "/data/partition_left/leftFile.parquet";
+        String rightFile = ingestType.getFilePrefix(parameters) + "/data/partition_right/rightFile.parquet";
+        List<Record> leftRecords = readMergedRecordsFromDataFiles(recordListAndSchema.sleeperSchema, List.of(leftFile), hadoopConfiguration);
+        List<Record> rightRecords = readMergedRecordsFromDataFiles(recordListAndSchema.sleeperSchema, List.of(rightFile), hadoopConfiguration);
         List<Record> allRecords = Stream.of(leftRecords, rightRecords)
                 .flatMap(List::stream).collect(Collectors.toUnmodifiableList());
 
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
-        assertThat(actualFiles).containsExactlyInAnyOrder(leftFile, rightFile);
         assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
         assertThat(leftRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
                 .containsExactly(new byte[]{1, 1}, new byte[]{2, 2});
         assertThat(rightRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
                 .containsExactly(new byte[]{64, 65});
 
-        ResultVerifier.assertOnSketch(
+        ResultVerifier.assertOnSketchFiles(
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
-                actualFiles,
+                Stream.of(leftFile, rightFile),
                 hadoopConfiguration);
     }
 
@@ -429,19 +402,14 @@ public class IngestCoordinatorCommonIT {
         ingestRecords(recordListAndSchema, parameters, ingestType);
 
         // Then
-        List<FileReference> actualFiles = stateStore.getFileReferences();
-        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
-        FileReference leftFile = fileReferenceFactory.partitionFile("left",
-                ingestType.getFilePrefix(parameters) + "/data/partition_left/leftFile.parquet", 306);
-        FileReference rightFile = fileReferenceFactory.partitionFile("right",
-                ingestType.getFilePrefix(parameters) + "/data/partition_right/rightFile.parquet", 294);
-        List<Record> leftRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, leftFile, hadoopConfiguration);
-        List<Record> rightRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rightFile, hadoopConfiguration);
+        String leftFile = ingestType.getFilePrefix(parameters) + "/data/partition_left/leftFile.parquet";
+        String rightFile = ingestType.getFilePrefix(parameters) + "/data/partition_right/rightFile.parquet";
+        List<Record> leftRecords = readMergedRecordsFromDataFiles(recordListAndSchema.sleeperSchema, List.of(leftFile), hadoopConfiguration);
+        List<Record> rightRecords = readMergedRecordsFromDataFiles(recordListAndSchema.sleeperSchema, List.of(rightFile), hadoopConfiguration);
         List<Record> allRecords = Stream.of(leftRecords, rightRecords)
                 .flatMap(List::stream).collect(Collectors.toUnmodifiableList());
 
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
-        assertThat(actualFiles).containsExactlyInAnyOrder(leftFile, rightFile);
         assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
         assertThat(leftRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
                 .containsExactlyElementsOf(stringKeys.subList(0, 306));
@@ -452,10 +420,10 @@ public class IngestCoordinatorCommonIT {
         assertThat(rightRecords).extracting(record -> record.getValues(List.of("sortKey0")).get(0))
                 .containsExactlyElementsOf(longKeys.subList(306, 600));
 
-        ResultVerifier.assertOnSketch(
+        ResultVerifier.assertOnSketchFiles(
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
-                actualFiles,
+                Stream.of(leftFile, rightFile),
                 hadoopConfiguration);
     }
 
@@ -473,8 +441,6 @@ public class IngestCoordinatorCommonIT {
                 .splitToNewChildrenOnDimension("root", "left", "right", 0, new byte[]{10})
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
-        Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
-        stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile", "rightFile"))
@@ -487,19 +453,14 @@ public class IngestCoordinatorCommonIT {
         ingestRecords(recordListAndSchema, parameters, ingestType);
 
         // Then
-        List<FileReference> actualFiles = stateStore.getFileReferences();
-        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
-        FileReference leftFile = fileReferenceFactory.partitionFile("left",
-                ingestType.getFilePrefix(parameters) + "/data/partition_left/leftFile.parquet", 2);
-        FileReference rightFile = fileReferenceFactory.partitionFile("right",
-                ingestType.getFilePrefix(parameters) + "/data/partition_right/rightFile.parquet", 2);
-        List<Record> leftRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, leftFile, hadoopConfiguration);
-        List<Record> rightRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rightFile, hadoopConfiguration);
+        String leftFile = ingestType.getFilePrefix(parameters) + "/data/partition_left/leftFile.parquet";
+        String rightFile = ingestType.getFilePrefix(parameters) + "/data/partition_right/rightFile.parquet";
+        List<Record> leftRecords = readMergedRecordsFromDataFiles(recordListAndSchema.sleeperSchema, List.of(leftFile), hadoopConfiguration);
+        List<Record> rightRecords = readMergedRecordsFromDataFiles(recordListAndSchema.sleeperSchema, List.of(rightFile), hadoopConfiguration);
         List<Record> allRecords = Stream.of(leftRecords, rightRecords)
                 .flatMap(List::stream).collect(Collectors.toUnmodifiableList());
 
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
-        assertThat(actualFiles).containsExactlyInAnyOrder(leftFile, rightFile);
         assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
         assertThat(leftRecords)
                 .extracting(record -> record.getValues(List.of("key0")).get(0))
@@ -514,15 +475,15 @@ public class IngestCoordinatorCommonIT {
                 .extracting(record -> record.getValues(List.of("key1")).get(0))
                 .containsExactly(new byte[]{2, 2}, new byte[]{67, 68});
 
-        ResultVerifier.assertOnSketch(
+        ResultVerifier.assertOnSketchFiles(
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
-                actualFiles,
+                Stream.of(leftFile, rightFile),
                 hadoopConfiguration);
-        ResultVerifier.assertOnSketch(
+        ResultVerifier.assertOnSketchFiles(
                 recordListAndSchema.sleeperSchema.getField("key1").orElseThrow(),
                 recordListAndSchema,
-                actualFiles,
+                Stream.of(leftFile, rightFile),
                 hadoopConfiguration);
     }
 
@@ -541,8 +502,6 @@ public class IngestCoordinatorCommonIT {
                 .splitToNewChildrenOnDimension("root", "left", "right", 1, 10L)
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
-        Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
-        stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile", "rightFile"))
@@ -555,19 +514,14 @@ public class IngestCoordinatorCommonIT {
         ingestRecords(recordListAndSchema, parameters, ingestType);
 
         // Then
-        List<FileReference> actualFiles = stateStore.getFileReferences();
-        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
-        FileReference rightFile = fileReferenceFactory.partitionFile("right", ingestType.getFilePrefix(parameters) +
-                "/data/partition_right/rightFile.parquet", 2);
-        FileReference leftFile = fileReferenceFactory.partitionFile("left", ingestType.getFilePrefix(parameters) +
-                "/data/partition_left/leftFile.parquet", 2);
-        List<Record> leftRecords = ResultVerifier.readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, leftFile, hadoopConfiguration);
-        List<Record> rightRecords = ResultVerifier.readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rightFile, hadoopConfiguration);
+        String leftFile = ingestType.getFilePrefix(parameters) + "/data/partition_left/leftFile.parquet";
+        String rightFile = ingestType.getFilePrefix(parameters) + "/data/partition_right/rightFile.parquet";
+        List<Record> leftRecords = readMergedRecordsFromDataFiles(recordListAndSchema.sleeperSchema, List.of(leftFile), hadoopConfiguration);
+        List<Record> rightRecords = readMergedRecordsFromDataFiles(recordListAndSchema.sleeperSchema, List.of(rightFile), hadoopConfiguration);
         List<Record> allRecords = Stream.of(leftRecords, rightRecords)
                 .flatMap(List::stream).collect(Collectors.toUnmodifiableList());
 
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
-        assertThat(actualFiles).containsExactlyInAnyOrder(leftFile, rightFile);
         assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
         assertThat(leftRecords)
                 .extracting(record -> record.getValues(List.of("key0", "key1")))
@@ -576,15 +530,15 @@ public class IngestCoordinatorCommonIT {
                 .extracting(record -> record.getValues(List.of("key0", "key1")))
                 .containsExactly(List.of(0, 20L), List.of(100, 50L));
 
-        ResultVerifier.assertOnSketch(
+        ResultVerifier.assertOnSketchFiles(
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
-                actualFiles,
+                Stream.of(leftFile, rightFile),
                 hadoopConfiguration);
-        ResultVerifier.assertOnSketch(
+        ResultVerifier.assertOnSketchFiles(
                 recordListAndSchema.sleeperSchema.getField("key1").orElseThrow(),
                 recordListAndSchema,
-                actualFiles,
+                Stream.of(leftFile, rightFile),
                 hadoopConfiguration);
     }
 
@@ -603,8 +557,6 @@ public class IngestCoordinatorCommonIT {
                 .splitToNewChildrenOnDimension("root", "left", "right", 1, "2")
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
-        Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
-        stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile", "rightFile"))
@@ -617,19 +569,14 @@ public class IngestCoordinatorCommonIT {
         ingestRecords(recordListAndSchema, parameters, ingestType);
 
         // Then
-        List<FileReference> actualFiles = stateStore.getFileReferences();
-        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
-        FileReference leftFile = fileReferenceFactory.partitionFile("left", ingestType.getFilePrefix(parameters) +
-                "/data/partition_left/leftFile.parquet", 112);
-        FileReference rightFile = fileReferenceFactory.partitionFile("right", ingestType.getFilePrefix(parameters) +
-                "/data/partition_right/rightFile.parquet", 88);
-        List<Record> leftRecords = ResultVerifier.readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, leftFile, hadoopConfiguration);
-        List<Record> rightRecords = ResultVerifier.readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rightFile, hadoopConfiguration);
+        String leftFile = ingestType.getFilePrefix(parameters) + "/data/partition_left/leftFile.parquet";
+        String rightFile = ingestType.getFilePrefix(parameters) + "/data/partition_right/rightFile.parquet";
+        List<Record> leftRecords = readMergedRecordsFromDataFiles(recordListAndSchema.sleeperSchema, List.of(leftFile), hadoopConfiguration);
+        List<Record> rightRecords = readMergedRecordsFromDataFiles(recordListAndSchema.sleeperSchema, List.of(rightFile), hadoopConfiguration);
         List<Record> allRecords = Stream.of(leftRecords, rightRecords)
                 .flatMap(List::stream).collect(Collectors.toUnmodifiableList());
 
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
-        assertThat(actualFiles).containsExactlyInAnyOrder(leftFile, rightFile);
         assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
         assertThat(leftRecords)
                 .extracting(record -> record.getValues(List.of("key0", "key1")))
@@ -644,15 +591,15 @@ public class IngestCoordinatorCommonIT {
                         .map(x -> List.<Object>of(x, String.valueOf(x)))
                         .collect(Collectors.toList()));
 
-        ResultVerifier.assertOnSketch(
+        ResultVerifier.assertOnSketchFiles(
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
-                actualFiles,
+                Stream.of(leftFile, rightFile),
                 hadoopConfiguration);
-        ResultVerifier.assertOnSketch(
+        ResultVerifier.assertOnSketchFiles(
                 recordListAndSchema.sleeperSchema.getField("key1").orElseThrow(),
                 recordListAndSchema,
-                actualFiles,
+                Stream.of(leftFile, rightFile),
                 hadoopConfiguration);
     }
 
@@ -670,8 +617,6 @@ public class IngestCoordinatorCommonIT {
                 .splitToNewChildren("root", "left", "right", 2L)
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
-        Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
-        stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile", "rightFile"))
@@ -684,21 +629,17 @@ public class IngestCoordinatorCommonIT {
         ingestRecords(recordListAndSchema, parameters, ingestType);
 
         // Then
-        List<FileReference> actualFiles = stateStore.getFileReferences();
-        List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
-        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
-        FileReference expectedFile = fileReferenceFactory.partitionFile("left",
-                ingestType.getFilePrefix(parameters) + "/data/partition_left/leftFile.parquet", 2);
+        String leftFile = ingestType.getFilePrefix(parameters) + "/data/partition_left/leftFile.parquet";
+        List<Record> leftRecords = readMergedRecordsFromDataFiles(recordListAndSchema.sleeperSchema, List.of(leftFile), hadoopConfiguration);
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
-        assertThat(actualFiles).containsExactly(expectedFile);
-        assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
-        assertThat(actualRecords).extracting(record -> record.getValues(List.of("key0")))
+        assertThat(leftRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
+        assertThat(leftRecords).extracting(record -> record.getValues(List.of("key0")))
                 .containsExactly(List.of(0L), List.of(1L));
 
-        ResultVerifier.assertOnSketch(
+        ResultVerifier.assertOnSketchFiles(
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
-                actualFiles,
+                Stream.of(leftFile),
                 hadoopConfiguration);
     }
 
@@ -720,8 +661,6 @@ public class IngestCoordinatorCommonIT {
                 .rootFirst("root")
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
-        Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
-        stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile", "rightFile"))
@@ -734,22 +673,20 @@ public class IngestCoordinatorCommonIT {
         ingestRecords(duplicatedRecordListAndSchema, parameters, ingestType);
 
         // Then
-        List<FileReference> actualFiles = stateStore.getFileReferences();
-        List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(duplicatedRecordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
-        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
-        FileReference expectedFile = fileReferenceFactory.rootFile(ingestType.getFilePrefix(parameters) + "/data/partition_root/leftFile.parquet", 400);
+        String leftFile = ingestType.getFilePrefix(parameters) + "/data/partition_root/leftFile.parquet";
+        List<Record> allRecords = readMergedRecordsFromDataFiles(recordListAndSchema.sleeperSchema, List.of(leftFile), hadoopConfiguration);
+
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
-        assertThat(actualFiles).containsExactly(expectedFile);
-        assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(duplicatedRecordListAndSchema.recordList);
-        assertThat(actualRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
+        assertThat(allRecords).containsExactlyInAnyOrderElementsOf(duplicatedRecordListAndSchema.recordList);
+        assertThat(allRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
                 .containsExactlyElementsOf(LongStream.range(-100, 100).boxed()
                         .flatMap(longValue -> Stream.of(longValue, longValue))
                         .collect(Collectors.toList()));
 
-        ResultVerifier.assertOnSketch(
+        ResultVerifier.assertOnSketchFiles(
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 duplicatedRecordListAndSchema,
-                actualFiles,
+                Stream.of(leftFile),
                 hadoopConfiguration);
     }
 
@@ -777,10 +714,7 @@ public class IngestCoordinatorCommonIT {
         ingestRecords(recordListAndSchema, parameters, ingestType);
 
         // Then
-        List<FileReference> actualFiles = stateStore.getFileReferences();
-        List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
-        assertThat(actualFiles).isEmpty();
-        assertThat(actualRecords).isEmpty();
+        assertThat(filesInDataBucket(ingestType.getFilePrefix(parameters))).isEmpty();
     }
 
     @ParameterizedTest
@@ -806,8 +740,6 @@ public class IngestCoordinatorCommonIT {
                 .rootFirst("root")
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
-        Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
-        stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("rootFile"))
@@ -821,18 +753,15 @@ public class IngestCoordinatorCommonIT {
         ingestRecords(recordListAndSchema, parameters, ingestType);
 
         // Then
-        List<FileReference> actualFiles = stateStore.getFileReferences();
-        List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
-        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
-        FileReference expectedFile = fileReferenceFactory.rootFile(ingestType.getFilePrefix(parameters) + "/data/partition_root/rootFile.parquet", 2);
-        assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
-        assertThat(actualFiles).containsExactly(expectedFile);
+        List<String> files = List.of(ingestType.getFilePrefix(parameters) + "/data/partition_root/rootFile.parquet");
+        List<Record> actualRecords = readMergedRecordsFromDataFiles(recordListAndSchema.sleeperSchema, files, hadoopConfiguration);
+
         assertThat(actualRecords).containsExactlyElementsOf(expectedRecords);
 
-        ResultVerifier.assertOnSketch(
+        ResultVerifier.assertOnSketchFiles(
                 recordListAndSchema.sleeperSchema.getField("key").orElseThrow(),
                 new RecordGenerator.RecordListAndSchema(expectedRecords, recordListAndSchema.sleeperSchema),
-                actualFiles,
+                files.stream(),
                 hadoopConfiguration);
     }
 
@@ -865,5 +794,20 @@ public class IngestCoordinatorCommonIT {
                 .dataBucketName(dataBucketName)
                 .tableId(tableProperties.get(TABLE_ID))
                 .ingestFileWritingStrategy(tableProperties.getEnumValue(INGEST_FILE_WRITING_STRATEGY, IngestFileWritingStrategy.class));
+    }
+
+    private Stream<String> filesInDataBucket(String basePath) throws IOException {
+        org.apache.hadoop.fs.Path path = new org.apache.hadoop.fs.Path(basePath + "/data");
+        FileSystem fs = path.getFileSystem(hadoopConfiguration);
+        try {
+            RemoteIterator<LocatedFileStatus> iterator = fs.listFiles(path, true);
+            List<String> files = new ArrayList<>();
+            while (iterator.hasNext()) {
+                files.add(iterator.next().getPath().toUri().toString());
+            }
+            return files.stream();
+        } catch (FileNotFoundException e) {
+            return Stream.empty();
+        }
     }
 }

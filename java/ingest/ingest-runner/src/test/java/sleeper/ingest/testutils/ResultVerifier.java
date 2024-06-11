@@ -49,6 +49,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -57,25 +58,35 @@ public class ResultVerifier {
     private ResultVerifier() {
     }
 
-    public static Map<Field, ItemsSketch> readFieldToItemSketchMap(Schema sleeperSchema,
+    public static Map<Field, ItemsSketch> readFieldToItemSketchMapForFileReferences(Schema sleeperSchema,
             List<FileReference> partitionFileReferenceList,
             Configuration hadoopConfiguration) {
-        List<Sketches> readSketchesList = partitionFileReferenceList.stream()
-                .map(fileReference -> {
+        return readFieldToItemSketchMapForFiles(sleeperSchema, partitionFileReferenceList.stream().map(FileReference::getFilename), hadoopConfiguration);
+    }
+
+    public static Map<Field, ItemsSketch> readFieldToItemSketchMapForFiles(Schema sleeperSchema,
+            Stream<String> filenameStream,
+            Configuration hadoopConfiguration) {
+        List<Sketches> readSketchesList = filenameStream
+                .map(filename -> {
                     try {
-                        String sketchFileName = fileReference.getFilename().replace(".parquet", ".sketches");
+                        String sketchFileName = filename.replace(".parquet", ".sketches");
                         return new SketchesSerDeToS3(sleeperSchema).loadFromHadoopFS(new Path(sketchFileName), hadoopConfiguration);
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
                 }).collect(Collectors.toList());
-        Set<String> fieldNameSet = readSketchesList.stream()
+        return readFieldToItemSketchMap(sleeperSchema, readSketchesList, hadoopConfiguration);
+    }
+
+    public static Map<Field, ItemsSketch> readFieldToItemSketchMap(Schema schema, List<Sketches> sketchesList, Configuration hadoopConfiguration) {
+        Set<String> fieldNameSet = sketchesList.stream()
                 .flatMap(sketches -> sketches.getQuantilesSketches().keySet().stream())
                 .collect(Collectors.toSet());
         return fieldNameSet.stream()
                 .map(fieldName -> {
-                    List<ItemsSketch> itemsSketchList = readSketchesList.stream().map(sketches -> sketches.getQuantilesSketch(fieldName)).collect(Collectors.toList());
-                    Field field = sleeperSchema.getField(fieldName).orElseThrow();
+                    List<ItemsSketch> itemsSketchList = sketchesList.stream().map(sketches -> sketches.getQuantilesSketch(fieldName)).collect(Collectors.toList());
+                    Field field = schema.getField(fieldName).orElseThrow();
                     return new AbstractMap.SimpleEntry<>(field, mergeSketches(itemsSketchList));
                 }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
@@ -100,6 +111,21 @@ public class ResultVerifier {
             recordList.forEach(record -> itemsSketch.update(record.get(field.getName())));
         }
         return itemsSketch;
+    }
+
+    public static List<Record> readMergedRecordsFromDataFiles(Schema sleeperSchema,
+            List<String> filenameList,
+            Configuration hadoopConfiguration) {
+        List<Record> recordsRead = new ArrayList<>();
+        for (String filename : filenameList) {
+            try (CloseableIterator<Record> iterator = createParquetReaderIterator(
+                    sleeperSchema, new Path(filename), hadoopConfiguration)) {
+                iterator.forEachRemaining(recordsRead::add);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+        return recordsRead;
     }
 
     public static List<Record> readMergedRecordsFromPartitionDataFiles(Schema sleeperSchema,
@@ -151,8 +177,13 @@ public class ResultVerifier {
 
     public static void assertOnSketch(Field field, RecordGenerator.RecordListAndSchema recordListAndSchema,
             List<FileReference> actualFiles, Configuration hadoopConfiguration) {
+        assertOnSketchFiles(field, recordListAndSchema, actualFiles.stream().map(FileReference::getFilename), hadoopConfiguration);
+    }
+
+    public static void assertOnSketchFiles(Field field, RecordGenerator.RecordListAndSchema recordListAndSchema,
+            Stream<String> filenames, Configuration hadoopConfiguration) {
         ItemsSketch expectedSketch = createItemSketch(field, recordListAndSchema.recordList);
-        ItemsSketch savedSketch = readFieldToItemSketchMap(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration).get(field);
+        ItemsSketch savedSketch = readFieldToItemSketchMapForFiles(recordListAndSchema.sleeperSchema, filenames, hadoopConfiguration).get(field);
         assertOnSketch(field, expectedSketch, savedSketch);
     }
 
