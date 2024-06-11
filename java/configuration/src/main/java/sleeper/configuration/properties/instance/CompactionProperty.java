@@ -252,7 +252,7 @@ public interface CompactionProperty {
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
 
     UserDefinedInstanceProperty DEFAULT_COMPACTION_METHOD = Index.propertyBuilder("sleeper.default.table.compaction.method")
-            .description("Select what compation method to use on a table. Current options are JAVA and RUST. Rust compaction support is" +
+            .description("Select what compation method to use on a table. Current options are JAVA and RUST. Rust compaction support is " +
                     "experimental.")
             .defaultValue("JAVA")
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
