@@ -39,11 +39,13 @@ import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.impl.partitionfilewriter.AsyncS3PartitionFileWriterFactory;
 import sleeper.ingest.job.commit.IngestJobCommitRequestSerDe;
+import sleeper.ingest.job.commit.IngestJobCommitter;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
+import sleeper.ingest.task.IngestJobCommitterOrSendToLambda;
+import sleeper.ingest.task.IngestJobCommitterOrSendToLambda.CommitQueueSender;
 import sleeper.ingest.task.IngestTask;
-import sleeper.ingest.task.IngestTask.CommitQueueSender;
 import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreProvider;
@@ -120,9 +122,12 @@ public class ECSIngestTaskRunner {
         IngestJobQueueConsumer queueConsumer = new IngestJobQueueConsumer(
                 sqsClient, cloudWatchClient, instanceProperties, hadoopConfiguration,
                 new DynamoDBTableIndex(instanceProperties, dynamoDBClient), jobStore);
-        return new IngestTask(Instant::now, queueConsumer, ingestJobRunner,
+        IngestJobCommitter jobCommitter = new IngestJobCommitter(jobStore,
+                tableId -> stateStoreProvider.getStateStore(tablePropertiesProvider.getById(tableId)));
+        IngestJobCommitterOrSendToLambda committerOrLambda = new IngestJobCommitterOrSendToLambda(
                 tableId -> tablePropertiesProvider.getById(tableId).getBoolean(INGEST_JOB_COMMIT_ASYNC),
-                commitQueueSender(sqsClient, instanceProperties), jobStore, taskStore, taskId);
+                jobCommitter, commitQueueSender(sqsClient, instanceProperties));
+        return new IngestTask(Instant::now, queueConsumer, ingestJobRunner, committerOrLambda, jobStore, taskStore, taskId);
     }
 
     private static CommitQueueSender commitQueueSender(AmazonSQS sqsClient, InstanceProperties instanceProperties) {

@@ -21,10 +21,13 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.schema.Schema;
+import sleeper.core.statestore.StateStore;
 import sleeper.ingest.IngestResult;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.IngestJobHandler;
 import sleeper.ingest.job.commit.IngestJobCommitRequest;
+import sleeper.ingest.job.commit.IngestJobCommitter;
 import sleeper.ingest.job.status.InMemoryIngestJobStatusStore;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.task.IngestTask.MessageHandle;
@@ -42,6 +45,8 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 import static sleeper.ingest.IngestResultTestData.defaultFileIngestResult;
 import static sleeper.ingest.IngestResultTestData.defaultFileIngestResultReadAndWritten;
 import static sleeper.ingest.job.IngestJobTestData.DEFAULT_TABLE_ID;
@@ -55,6 +60,8 @@ import static sleeper.ingest.task.IngestTaskStatusTestData.finishedOneJob;
 public class IngestTaskTest {
     private static final String DEFAULT_TASK_ID = "test-task-id";
 
+    private final Schema schema = schemaWithKey("key");
+    private final StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(schema);
     private final Queue<IngestJob> jobsOnQueue = new LinkedList<>();
     private final List<IngestJob> successfulJobs = new ArrayList<>();
     private final List<IngestJob> failedJobs = new ArrayList<>();
@@ -387,8 +394,12 @@ public class IngestTaskTest {
             IngestJobHandler ingestRunner,
             Supplier<Instant> timeSupplier,
             String taskId,
-            boolean asyncCommit) throws Exception {
-        new IngestTask(timeSupplier, messageReceiver, ingestRunner, tableId -> asyncCommit, asyncCommitRequests::add,
+            boolean shouldAsyncCommit) throws Exception {
+        IngestJobCommitterOrSendToLambda jobCommitterOrSendToLambda = new IngestJobCommitterOrSendToLambda(
+                tableId -> shouldAsyncCommit,
+                new IngestJobCommitter(jobStore, tableId -> stateStore),
+                asyncCommitRequests::add);
+        new IngestTask(timeSupplier, messageReceiver, ingestRunner, jobCommitterOrSendToLambda,
                 jobStore, taskStore, taskId)
                 .run();
     }

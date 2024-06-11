@@ -25,7 +25,10 @@ import sleeper.ingest.IngestResult;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.IngestJobHandler;
 import sleeper.ingest.job.commit.IngestJobCommitRequest;
+import sleeper.ingest.job.commit.IngestJobCommitter;
 import sleeper.ingest.job.status.IngestJobStatusStore;
+import sleeper.ingest.task.IngestJobCommitterOrSendToLambda.CommitQueueSender;
+import sleeper.ingest.task.IngestJobCommitterOrSendToLambda.TableCommitConfig;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -34,7 +37,6 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import static sleeper.ingest.job.status.IngestJobFailedEvent.ingestJobFailed;
-import static sleeper.ingest.job.status.IngestJobFinishedEvent.ingestJobFinished;
 import static sleeper.ingest.job.status.IngestJobStartedEvent.ingestJobStarted;
 
 /**
@@ -47,22 +49,28 @@ public class IngestTask {
     private final IngestJobHandler ingester;
     private final IngestJobStatusStore jobStatusStore;
     private final IngestTaskStatusStore taskStatusStore;
-    private final TableCommitConfig tableCommitConfig;
-    private final CommitQueueSender asyncCommitter;
+    private final IngestJobCommitterOrSendToLambda jobCommitter;
     private final String taskId;
     private int totalNumberOfMessagesProcessed = 0;
 
     public IngestTask(Supplier<Instant> timeSupplier, MessageReceiver messageReceiver, IngestJobHandler ingester,
-            TableCommitConfig tableCommitConfig, CommitQueueSender asyncCommitter, IngestJobStatusStore jobStatusStore,
-            IngestTaskStatusStore taskStore, String taskId) {
+            TableCommitConfig tableCommitConfig, IngestJobCommitter jobCommitter, CommitQueueSender asyncCommitter,
+            IngestJobStatusStore jobStatusStore, IngestTaskStatusStore taskStore, String taskId) {
+        this(timeSupplier, messageReceiver, ingester,
+                new IngestJobCommitterOrSendToLambda(tableCommitConfig, jobCommitter, asyncCommitter),
+                jobStatusStore, taskStore, taskId);
+    }
+
+    public IngestTask(Supplier<Instant> timeSupplier, MessageReceiver messageReceiver, IngestJobHandler ingester,
+            IngestJobCommitterOrSendToLambda jobCommitter,
+            IngestJobStatusStore jobStatusStore, IngestTaskStatusStore taskStore, String taskId) {
         this.timeSupplier = timeSupplier;
         this.messageReceiver = messageReceiver;
         this.ingester = ingester;
-        this.tableCommitConfig = tableCommitConfig;
-        this.asyncCommitter = asyncCommitter;
         this.jobStatusStore = jobStatusStore;
         this.taskStatusStore = taskStore;
         this.taskId = taskId;
+        this.jobCommitter = jobCommitter;
     }
 
     /**
@@ -107,13 +115,7 @@ public class IngestTask {
                     LOGGER.info("{} records were written", result.getRecordsWritten());
                     Instant jobFinishTime = timeSupplier.get();
                     RecordsProcessedSummary summary = new RecordsProcessedSummary(result.asRecordsProcessed(), jobStartTime, jobFinishTime);
-                    if (tableCommitConfig.shouldCommitAsync(job.getTableId())) {
-                        LOGGER.info("Sending ingest job commit request to state store committer lambda");
-                        asyncCommitter.commit(new IngestJobCommitRequest(job, taskId, result.getFileReferenceList(), summary));
-                    } else {
-                        LOGGER.info("Committing result of ingest to status store");
-                        jobStatusStore.jobFinished(ingestJobFinished(taskId, job, summary));
-                    }
+                    jobCommitter.commit(new IngestJobCommitRequest(job, taskId, result.getFileReferenceList(), summary));
                     taskFinishedBuilder.addJobSummary(summary);
                     message.completed(summary);
                     totalNumberOfMessagesProcessed++;
@@ -184,30 +186,5 @@ public class IngestTask {
          * message assigned to the task. This is called whether the job succeeds or fails.
          */
         void close();
-    }
-
-    /**
-     * Checks how the table is configured to commit ingest jobs.
-     */
-    public interface TableCommitConfig {
-        /**
-         * Checks how the table is configured to commit ingest jobs.
-         *
-         * @param  tableId the table ID
-         * @return         true if ingest jobs are to be committed asynchronously, false if otherwise
-         */
-        boolean shouldCommitAsync(String tableId);
-    }
-
-    /**
-     * Commits the results of an ingest job asynchronously.
-     */
-    public interface CommitQueueSender {
-        /**
-         * Commits the results of an ingest job asynchronously.
-         *
-         * @param commitRequest the ingest job commit request
-         */
-        void commit(IngestJobCommitRequest commitRequest);
     }
 }
