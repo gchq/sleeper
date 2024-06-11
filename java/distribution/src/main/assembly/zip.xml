@@ -219,10 +219,10 @@
         </file>
         <file>
             <source>
-                ${project.basedir}/../statestore-lambda/target/statestore-lambda-${project.version}-utility.jar
+                ${project.basedir}/../statestore-snapshot-lambda/target/statestore-snapshot-lambda-${project.version}-utility.jar
             </source>
             <outputDirectory>scripts/jars</outputDirectory>
-            <destName>statestore-lambda-${project.version}.jar</destName>
+            <destName>statestore-snapshot-lambda-${project.version}.jar</destName>
         </file>
     </files>
 </assembly>
