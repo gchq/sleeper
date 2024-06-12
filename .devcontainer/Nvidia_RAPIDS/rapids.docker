@@ -1,6 +1,7 @@
 # A C++ Nvidia RAPIDS development image
-FROM nvcr.io/nvidia/rapidsai/base:24.04-cuda12.2-py3.11
+FROM nvcr.io/nvidia/rapidsai/base:24.04-cuda12.2-py3.11 AS base
 
+FROM base AS builder
 USER root
 # Install tools
 RUN apt-get update

@@ -1,7 +1,8 @@
 {
     "name": "Nvidia RAPIDS dev container",
     "build": {
-        "dockerfile": "./rapids.docker"
+        "dockerfile": "./rapids.docker",
+        "target": "builder"
     },
     "features": {
         "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
