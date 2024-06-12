@@ -13,6 +13,7 @@ on:
       - 'java/compaction/compaction-job-execution/**'
       - 'java/compaction/compaction-task-creation/**'
       - 'java/compaction/compaction-rust/**'
+      - 'java/compaction/compaction-gpu/**'
       - 'java/compaction/compaction-job-creation/**'
       - 'java/compaction/compaction-job-creation-lambda/**'
       - 'java/compaction/compaction-status-store/**'

@@ -26,7 +26,11 @@ public enum CompactionMethod {
      * Rust compaction method. This uses a native library written in Rust to perform a
      * compaction.
      */
-    RUST;
+    RUST,
+    /**
+     * GPU compaction method. This uses a separate GPU process to perform a compaction.
+     */
+    GPU;
 
     public static final CompactionMethod DEFAULT = CompactionMethod.JAVA;
 }
