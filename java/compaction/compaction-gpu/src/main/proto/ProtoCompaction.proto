@@ -1,0 +1,81 @@
+/*
+ * Copyright 2022-2024 Crown Copyright
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+syntax = "proto3";
+
+option java_package = "sleeper.compaction.job.execution";
+
+/**
+ * The compaction input data that will be populated from the Java side.
+ */
+message CompactionParams {
+  /** Array of input files to compact. */
+  repeated string input_files = 1;
+  /** Output file name. */
+  string output_file = 2;
+  /** Names of Sleeper row key columns from schema. */
+  repeated string row_key_cols = 3;
+  /** Types for region schema 1 = Int, 2 = Long, 3 = String, 4 = Byte
+  array. */
+  repeated int32 row_key_schema = 4;
+  /** Names of Sleeper sort key columns from schema. */
+  repeated string sort_key_cols = 5;
+  /** Maximum size of output Parquet row group in rows. */
+  uint64 max_row_group_size = 6;
+  /** Maximum size of output Parquet page size in bytes. */
+  uint64 max_page_size = 7;
+  /** Output Parquet compression codec. */
+  string compression = 8;
+  /** Output Parquet writer version. Must be 1.0 or 2.0 */
+  string writer_version = 9;
+  /** Column min/max values truncation length in output Parquet. */
+  uint64 column_truncate_length = 10;
+  /** Max sizeof statistics block in output Parquet. */
+  uint64 stats_truncate_length = 11;
+  /** Should row key columns use dictionary encoding in output
+  Parquet.
+  */
+  bool dict_enc_row_keys = 12;
+  /** Should sort key columns use dictionary encoding in output
+  Parquet. */
+  bool dict_enc_sort_keys = 13;
+  /** Should value columns use dictionary encoding in output Parquet.
+   */
+  bool dict_enc_values = 14;
+  /** Compaction partition region minimums. MUST BE SAME LENGTH AS
+  row_key_cols. */
+  repeated bytes region_mins = 15;
+  /** Compaction partition region maximums. MUST BE SAME LENGTH AS
+  row_key_cols. */
+  repeated bytes region_maxs = 16;
+  /** Compaction partition region minimums are inclusive? MUST BE
+  SAME LENGTH AS row_key_cols. */
+  repeated bool region_mins_inclusive = 17;
+  /** Compaction partition region maximums are inclusive? MUST BE
+  SAME LENGTH AS row_key_cols. */
+  repeated bool region_maxs_inclusive = 18;
+}
+
+/**
+ * The compaction output data that the native code will populate.
+ */
+message CompactionResult {
+  uint64 rows_read = 1;
+  uint64 rows_written = 2;
+}
+
+service CompactionService {
+  rpc compact(CompactionParams) returns (CompactionResult) {}
+}
