@@ -115,7 +115,7 @@
         <aws-java-sdk.version>1.12.498</aws-java-sdk.version>
         <aws-java-sdk-v2.version>2.25.70</aws-java-sdk-v2.version>
         <aws-crt.version>0.29.20</aws-crt.version>
-        <aws-lambda-java-events.version>3.11.5</aws-lambda-java-events.version>
+        <aws-lambda-java-events.version>3.11.6</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.2.3</aws-lambda-java-core.version>
         <aws-lambda-powertools.version>1.18.0</aws-lambda-powertools.version>
         <commons-lang3.version>3.14.0</commons-lang3.version>
