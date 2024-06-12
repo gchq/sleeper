@@ -17,6 +17,7 @@
                 "ms-vscode.cmake-tools",
                 "cheshirekow.cmake-format",
                 "cschlosser.doxdocgen",
+                "zxh404.vscode-proto3"
             ]
         }
     },
