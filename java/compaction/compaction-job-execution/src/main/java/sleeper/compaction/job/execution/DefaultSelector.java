@@ -70,6 +70,9 @@ public class DefaultSelector implements CompactionAlgorithmSelector {
             case RUST:
                 runner = new RustCompaction(tablePropertiesProvider, stateStoreProvider);
                 break;
+            case GPU:
+                runner = new GPUCompaction(tablePropertiesProvider, stateStoreProvider);
+                break;
             default:
                 break;
         }
