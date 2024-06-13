@@ -1,5 +1,5 @@
 {
-  "type": "CompactionJobCommitRequest",
+  "type": "COMPACTION",
   "request": {
     "job": "AAp0ZXN0LXRhYmxlAAh0ZXN0LWpvYgARdGVzdC1wYXJ0aXRpb24taWQAAAACAA1maWxlMS5wYXJxdWV0AA1maWxlMi5wYXJxdWV0AQEAE3Rlc3Qtb3V0cHV0LnBhcnF1ZXQ\u003d",
     "taskId": "test-task",
