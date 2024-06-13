@@ -238,8 +238,9 @@ public class RustBridge {
          * A base pointer is allocated pointers set to other
          * dynamically allocated memory containing items from array.
          *
-         * @param arr          array data
-         * @param nullsAllowed if null pointers are allowed in the data array
+         * @param  arr                  array data
+         * @param  nullsAllowed         if null pointers are allowed in the data array
+         * @throws NullPointerException if a null is found but not allowed
          */
         public void populate(final T[] arr, boolean nullsAllowed) {
             final jnr.ffi.Runtime r = len.struct().getRuntime();

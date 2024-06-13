@@ -17,6 +17,16 @@ syntax = "proto3";
 
 option java_package = "sleeper.compaction.job.execution";
 
+message Null {}
+
+/** An optional bytes type.*/
+message OptBytes {
+  oneof choice {
+    Null null = 1;
+    bytes value = 2;
+  }
+}
+
 /**
  * The compaction input data that will be populated from the Java side.
  */
@@ -56,10 +66,10 @@ message CompactionParams {
   bool dict_enc_values = 14;
   /** Compaction partition region minimums. MUST BE SAME LENGTH AS
   row_key_cols. */
-  repeated bytes region_mins = 15;
+  repeated OptBytes region_mins = 15;
   /** Compaction partition region maximums. MUST BE SAME LENGTH AS
   row_key_cols. */
-  repeated bytes region_maxs = 16;
+  repeated OptBytes region_maxs = 16;
   /** Compaction partition region minimums are inclusive? MUST BE
   SAME LENGTH AS row_key_cols. */
   repeated bool region_mins_inclusive = 17;
