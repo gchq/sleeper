@@ -19,12 +19,14 @@ import com.google.protobuf.ByteString;
 import io.grpc.Deadline;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import io.grpc.StatusRuntimeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionRunner;
 import sleeper.compaction.job.execution.ProtoCompaction.CompactionParams;
+import sleeper.compaction.job.execution.ProtoCompaction.CompactionResult;
 import sleeper.compaction.job.execution.ProtoCompaction.OptBytes;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
@@ -40,6 +42,7 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
 import sleeper.statestore.StateStoreProvider;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.time.LocalDateTime;
@@ -91,7 +94,15 @@ public class GPUCompaction implements CompactionRunner {
 
         CompactionParams params = createParams(job, tableProperties, schema, region);
 
-        RecordsProcessed result = new RecordsProcessed(0, 0);
+        CompactionResult grpc_result;
+        try {
+            grpc_result = stub.compact(params);
+        } catch (StatusRuntimeException e) {
+            LOGGER.error("gRPC failed: {0}", e.getStatus());
+            throw new IOException("GPU compaction failed due to gRPC failure: " + e.getStatus());
+        }
+
+        RecordsProcessed result = new RecordsProcessed(grpc_result.getRowsRead(), grpc_result.getRowsWritten());
 
         LOGGER.info("Compaction job {}: compaction finished at {}", job.getId(),
                 LocalDateTime.now());
