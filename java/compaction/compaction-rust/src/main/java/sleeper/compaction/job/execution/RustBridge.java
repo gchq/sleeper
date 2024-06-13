@@ -195,11 +195,11 @@ public class RustBridge {
             if (rowKeys != row_key_schema.len.get()) {
                 throw new IllegalStateException("row key schema array has length " + row_key_schema.len.get() + " but there are " + rowKeys + " row key columns");
             }
-            if (rowKeys != region_maxs.len.get()) {
-                throw new IllegalStateException("region maxs has length " + region_maxs.len.get() + " but there are " + rowKeys + " row key columns");
-            }
             if (rowKeys != region_mins.len.get()) {
                 throw new IllegalStateException("region mins has length " + region_mins.len.get() + " but there are " + rowKeys + " row key columns");
+            }
+            if (rowKeys != region_maxs.len.get()) {
+                throw new IllegalStateException("region maxs has length " + region_maxs.len.get() + " but there are " + rowKeys + " row key columns");
             }
             if (rowKeys != region_mins_inclusive.len.get()) {
                 throw new IllegalStateException("region mins inclusives has length " + region_mins_inclusive.len.get() + " but there are " + rowKeys + " row key columns");
