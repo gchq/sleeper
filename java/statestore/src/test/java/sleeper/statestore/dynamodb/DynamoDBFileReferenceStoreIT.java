@@ -1186,7 +1186,7 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreOneTableTest
             // Given
             store.addFilesWithReferences(List.of(AllReferencesToAFile.builder()
                     .filename("file")
-                    .internalReferences(List.of())
+                    .references(List.of())
                     .build()));
 
             // When

@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.job.commit;
+package sleeper.compaction.job.execution;
 
 public class TimedOutWaitingForFileAssignmentsException extends RuntimeException {
 
-    public TimedOutWaitingForFileAssignmentsException(Throwable cause) {
-        super("Too many retries waiting for input files to be assigned to job in state store", cause);
+    public TimedOutWaitingForFileAssignmentsException() {
+        super("Too many retries waiting for input files to be assigned to job in state store");
     }
 
 }

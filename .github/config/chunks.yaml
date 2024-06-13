@@ -22,7 +22,7 @@ chunks:
   compaction:
     name: Compaction
     workflow: chunk-compaction.yaml
-    modules: [ compaction/compaction-job-execution, compaction/compaction-task-creation, compaction/compaction-job-creation, compaction/compaction-job-creation-lambda, compaction/compaction-job-committer-lambda, compaction/compaction-status-store, compaction/compaction-core, splitter/splitter-core, splitter/splitter-lambda ]
+    modules: [ compaction/compaction-job-execution, compaction/compaction-task-creation, compaction/compaction-job-creation, compaction/compaction-job-creation-lambda, compaction/compaction-status-store, compaction/compaction-core, splitter/splitter-core, splitter/splitter-lambda ]
   data:
     name: Data
     workflow: chunk-data.yaml
@@ -42,7 +42,7 @@ chunks:
   statestore:
     name: State Store
     workflow: chunk-statestore.yaml
-    modules: [ statestore, statestore-lambda ]
+    modules: [ statestore, statestore-commit-lambda, statestore-snapshot-lambda  ]
   trino:
     name: Trino
     workflow: chunk-trino.yaml

@@ -44,6 +44,14 @@ public enum IngestJobStatusType {
         return order;
     }
 
+    public boolean isRunInProgress() {
+        return this == ACCEPTED || this == IN_PROGRESS;
+    }
+
+    public boolean isEndOfJob() {
+        return this == REJECTED || this == FINISHED;
+    }
+
     /**
      * Gets the status type for the provided process status update.
      *

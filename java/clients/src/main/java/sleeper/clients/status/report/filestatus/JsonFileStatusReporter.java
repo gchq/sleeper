@@ -69,9 +69,9 @@ public class JsonFileStatusReporter implements FileStatusReporter {
         JsonObject fileObj = new JsonObject();
         fileObj.addProperty("filename", file.getFilename());
         fileObj.add("lastUpdateTime", context.serialize(file.getLastStateStoreUpdateTime()));
-        fileObj.addProperty("totalReferenceCount", file.getTotalReferenceCount());
+        fileObj.addProperty("totalReferenceCount", file.getReferenceCount());
         JsonArray referencesArr = new JsonArray();
-        for (FileReference reference : file.getInternalReferences()) {
+        for (FileReference reference : file.getReferences()) {
             referencesArr.add(createFileReferenceJson(reference, context));
         }
         fileObj.add("internalReferences", referencesArr);

@@ -2,9 +2,10 @@
 Compaction Job Status Report
 ----------------------------
 Total jobs: 4
-Total jobs pending: 1
-Total jobs in progress: 1
-Total jobs finished: 2
+Total jobs not yet started: 1
+Total jobs with a run in progress: 1
+Total jobs finished successfully: 1
+Total jobs with any failed run: 1
 Average compaction rate: 10.00 read/s, 5.00 write/s
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 | STATE       | CREATE_TIME              | JOB_ID                               | INPUT_FILES | PARTITION_ID                         | TASK_ID                              | START_TIME               | FINISH_TIME              | DURATION | RECORDS_READ | RECORDS_WRITTEN | READ_RATE (s) | WRITE_RATE (s) |

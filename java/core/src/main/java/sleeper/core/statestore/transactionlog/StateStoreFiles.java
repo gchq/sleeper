@@ -46,7 +46,7 @@ public class StateStoreFiles {
      */
     public Stream<FileReference> references() {
         return filesByFilename.values().stream()
-                .flatMap(file -> file.getInternalReferences().stream());
+                .flatMap(file -> file.getReferences().stream());
     }
 
     /**
@@ -67,7 +67,7 @@ public class StateStoreFiles {
      */
     public Stream<String> unreferencedBefore(Instant maxUpdateTime) {
         return filesByFilename.values().stream()
-                .filter(file -> file.getTotalReferenceCount() == 0)
+                .filter(file -> file.getReferenceCount() == 0)
                 .filter(file -> file.getLastStateStoreUpdateTime().isBefore(maxUpdateTime))
                 .map(AllReferencesToAFile::getFilename)
                 .collect(toUnmodifiableList()).stream(); // Avoid concurrent modification during GC

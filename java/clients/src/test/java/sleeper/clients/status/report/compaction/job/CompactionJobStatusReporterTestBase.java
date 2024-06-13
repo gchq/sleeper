@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static sleeper.clients.status.report.StatusReporterTestHelper.task;
 import static sleeper.clients.testutil.ClientTestUtils.exampleUUID;
 import static sleeper.compaction.job.CompactionJobStatusTestData.failedCompactionRun;
 import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
@@ -71,12 +72,12 @@ public abstract class CompactionJobStatusReporterTestBase {
 
         CompactionJobStatus status1 = jobCreated(job1, creationTime1);
         CompactionJobStatus status2 = jobCreated(job2, creationTime2,
-                startedCompactionRun(StatusReporterTestHelper.task(1), startedTime2));
+                startedCompactionRun(task(1), startedTime2));
         CompactionJobStatus status3 = jobCreated(job3, creationTime3,
-                finishedCompactionRun(StatusReporterTestHelper.task(1),
+                finishedCompactionRun(task(1),
                         summary(startedTime3, Duration.ofMinutes(1), 600, 300)));
         CompactionJobStatus status4 = jobCreated(job4, creationTime4,
-                failedCompactionRun(StatusReporterTestHelper.task(1),
+                failedCompactionRun(task(1),
                         new ProcessRunTime(startedTime4, Duration.ofMinutes(1)),
                         List.of("Something went wrong", "More details")));
         return Arrays.asList(status4, status3, status2, status1);
@@ -84,23 +85,37 @@ public abstract class CompactionJobStatusReporterTestBase {
 
     protected static List<CompactionJobStatus> mixedUnfinishedJobStatuses() {
         return mixedJobStatuses().stream()
-                .filter(job -> !job.isFinished())
+                .filter(CompactionJobStatus::isUnstartedOrInProgress)
                 .collect(Collectors.toList());
     }
 
-    protected static List<CompactionJobStatus> jobWithMultipleRuns() {
+    protected static List<CompactionJobStatus> jobsWithMultipleRuns() {
         CompactionJobTestDataHelper dataHelper = new CompactionJobTestDataHelper();
 
-        CompactionJob job = dataHelper.singleFileCompaction();
-        CompactionJobStatus status = jobCreated(job, Instant.parse("2022-10-12T10:00:00.001Z"),
-                startedCompactionRun(StatusReporterTestHelper.task(1), Instant.parse("2022-10-12T10:02:00.001Z")),
-                finishedCompactionRun(StatusReporterTestHelper.task(2), summary(
-                        Instant.parse("2022-10-12T10:01:15.001Z"),
-                        Duration.ofSeconds(30), 300L, 200L)),
-                finishedCompactionRun(StatusReporterTestHelper.task(1), summary(
-                        Instant.parse("2022-10-12T10:01:00.001Z"),
-                        Duration.ofSeconds(20), 300L, 200L)));
-        return Collections.singletonList(status);
+        CompactionJobStatus succeededThenFailed = jobCreated(dataHelper.singleFileCompaction(),
+                Instant.parse("2022-10-10T10:00:00.001Z"),
+                failedCompactionRun(task(2), new ProcessRunTime(
+                        Instant.parse("2022-10-10T10:01:15.001Z"), Duration.ofSeconds(30)),
+                        List.of("Compaction has already been committed", "Failed database update")),
+                finishedCompactionRun(task(1), summary(
+                        Instant.parse("2022-10-10T10:01:00.001Z"), Duration.ofSeconds(20), 200L, 100L)));
+
+        CompactionJobStatus failedThenInProgress = jobCreated(dataHelper.singleFileCompaction(),
+                Instant.parse("2022-10-11T10:00:00.001Z"),
+                startedCompactionRun(task(1), Instant.parse("2022-10-11T10:02:00.001Z")),
+                failedCompactionRun(task(2), new ProcessRunTime(
+                        Instant.parse("2022-10-11T10:01:00.001Z"), Duration.ofSeconds(30)),
+                        List.of("Unexpected failure reading input file", "Some temporary IO problem")));
+
+        CompactionJobStatus twoFinishedRunsOneInProgress = jobCreated(dataHelper.singleFileCompaction(),
+                Instant.parse("2022-10-12T10:00:00.001Z"),
+                startedCompactionRun(task(1), Instant.parse("2022-10-12T10:02:00.001Z")),
+                finishedCompactionRun(task(2), summary(
+                        Instant.parse("2022-10-12T10:01:15.001Z"), Duration.ofSeconds(30), 300L, 150L)),
+                finishedCompactionRun(task(1), summary(
+                        Instant.parse("2022-10-12T10:01:00.001Z"), Duration.ofSeconds(30), 300L, 150L)));
+
+        return List.of(twoFinishedRunsOneInProgress, failedThenInProgress, succeededThenFailed);
     }
 
     protected static List<CompactionJobStatus> jobsWithLargeAndDecimalStatistics() {

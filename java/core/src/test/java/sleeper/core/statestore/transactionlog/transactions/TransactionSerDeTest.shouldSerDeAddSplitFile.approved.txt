@@ -2,7 +2,6 @@
   "files": [
     {
       "filename": "file.parquet",
-      "totalReferenceCount": 2,
       "references": [
         {
           "partitionId": "L",

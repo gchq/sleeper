@@ -137,7 +137,7 @@ class S3FileReferenceStore implements FileReferenceStore {
         return list -> {
             Map<String, FileReference> activePartitionFiles = new HashMap<>();
             for (AllReferencesToAFile existingFile : list) {
-                for (FileReference reference : existingFile.getInternalReferences()) {
+                for (FileReference reference : existingFile.getReferences()) {
                     activePartitionFiles.put(getPartitionIdAndFilename(reference), reference);
                 }
             }
@@ -203,7 +203,7 @@ class S3FileReferenceStore implements FileReferenceStore {
                     .collect(Collectors.toMap(AllReferencesToAFile::getFilename, Function.identity()));
             Map<String, FileReference> activePartitionFiles = new HashMap<>();
             for (AllReferencesToAFile existingFile : list) {
-                for (FileReference reference : existingFile.getInternalReferences()) {
+                for (FileReference reference : existingFile.getReferences()) {
                     activePartitionFiles.put(getPartitionIdAndFilename(reference), reference);
                 }
             }
@@ -315,7 +315,7 @@ class S3FileReferenceStore implements FileReferenceStore {
                 exception = new FileNotFoundException(missingFilenames.stream().findFirst().orElseThrow());
             }
             for (AllReferencesToAFile reference : references) {
-                if (reference.getTotalReferenceCount() > 0) {
+                if (reference.getReferenceCount() > 0) {
                     exception = new FileHasReferencesException(reference);
                 }
             }
@@ -337,7 +337,7 @@ class S3FileReferenceStore implements FileReferenceStore {
         }
         List<AllReferencesToAFile> files = readFiles(getFilesPath(revisionId));
         return files.stream()
-                .flatMap(file -> file.getInternalReferences().stream())
+                .flatMap(file -> file.getReferences().stream())
                 .collect(Collectors.toList());
     }
 
@@ -345,7 +345,7 @@ class S3FileReferenceStore implements FileReferenceStore {
     public Stream<String> getReadyForGCFilenamesBefore(Instant maxUpdateTime) throws StateStoreException {
         List<AllReferencesToAFile> files = readFiles(getFilesPath(getCurrentFilesRevisionId()));
         return files.stream()
-                .filter(file -> file.getTotalReferenceCount() == 0 && file.getLastStateStoreUpdateTime().isBefore(maxUpdateTime))
+                .filter(file -> file.getReferenceCount() == 0 && file.getLastStateStoreUpdateTime().isBefore(maxUpdateTime))
                 .map(AllReferencesToAFile::getFilename).distinct();
     }
 
@@ -353,7 +353,7 @@ class S3FileReferenceStore implements FileReferenceStore {
     public List<FileReference> getFileReferencesWithNoJobId() throws StateStoreException {
         List<AllReferencesToAFile> files = readFiles(getFilesPath(getCurrentFilesRevisionId()));
         return files.stream()
-                .flatMap(file -> file.getInternalReferences().stream())
+                .flatMap(file -> file.getReferences().stream())
                 .filter(f -> f.getJobId() == null)
                 .collect(Collectors.toList());
     }
@@ -362,11 +362,11 @@ class S3FileReferenceStore implements FileReferenceStore {
     public AllReferencesToAllFiles getAllFilesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException {
         List<AllReferencesToAFile> allFiles = readFiles(getFilesPath(getCurrentFilesRevisionId()));
         List<AllReferencesToAFile> filesWithNoReferences = allFiles.stream()
-                .filter(file -> file.getTotalReferenceCount() < 1)
+                .filter(file -> file.getReferenceCount() < 1)
                 .collect(toUnmodifiableList());
         List<AllReferencesToAFile> resultFiles = Stream.concat(
                 allFiles.stream()
-                        .filter(file -> file.getTotalReferenceCount() > 0),
+                        .filter(file -> file.getReferenceCount() > 0),
                 filesWithNoReferences.stream().limit(maxUnreferencedFiles))
                 .collect(toUnmodifiableList());
         return new AllReferencesToAllFiles(resultFiles, filesWithNoReferences.size() > maxUnreferencedFiles);

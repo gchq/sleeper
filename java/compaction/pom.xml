@@ -31,7 +31,6 @@
         <module>compaction-job-creation</module>
         <module>compaction-job-creation-lambda</module>
         <module>compaction-job-execution</module>
-        <module>compaction-job-committer-lambda</module>
         <module>compaction-status-store</module>
         <module>compaction-task-creation</module>
     </modules>

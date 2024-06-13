@@ -15,7 +15,6 @@
  */
 package sleeper.ingest.job;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -149,16 +148,6 @@ public class IngestJob {
         public Builder files(List<String> files) {
             this.files = files;
             return this;
-        }
-
-        /**
-         * Sets the input files.
-         *
-         * @param  files the input files
-         * @return       the builder
-         */
-        public Builder files(String... files) {
-            return files(Arrays.asList(files));
         }
 
         public IngestJob build() {

@@ -63,7 +63,7 @@ public class ProcessRuns {
         return !latestFirst.isEmpty();
     }
 
-    public boolean isFinished() {
+    public boolean isFinishedAndNoRunsInProgress() {
         return !latestFirst.isEmpty() && latestFirst.stream().allMatch(ProcessRun::isFinished);
     }
 

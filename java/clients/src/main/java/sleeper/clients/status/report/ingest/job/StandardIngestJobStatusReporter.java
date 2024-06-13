@@ -162,7 +162,7 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
             List<IngestJobStatus> statusList, IngestQueueMessages queueMessages,
             Map<String, Integer> persistentEmrStepCount) {
         printUnfinishedSummary(statusList, queueMessages, persistentEmrStepCount);
-        out.printf("Total jobs finished: %s%n", statusList.stream().filter(IngestJobStatus::isFinished).count());
+        out.printf("Total jobs finished: %s%n", statusList.stream().filter(IngestJobStatus::isAnyRunSuccessful).count());
         AverageRecordRateReport.printf("Average ingest rate: %s%n", recordRate(statusList), out);
     }
 
@@ -170,7 +170,8 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
             Map<String, Integer> persistentEmrStepCount) {
         queueMessages.print(out);
         printPendingEmrStepCount(persistentEmrStepCount);
-        out.printf("Total jobs in progress: %s%n", statusList.stream().filter(status -> !status.isFinished()).count());
+        out.printf("Total jobs in report: %s%n", statusList.size());
+        out.printf("Total jobs in progress: %s%n", statusList.stream().filter(IngestJobStatus::isAnyRunInProgress).count());
     }
 
     private void printPendingEmrStepCount(Map<String, Integer> stepCount) {

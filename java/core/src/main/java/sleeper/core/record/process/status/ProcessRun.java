@@ -86,7 +86,11 @@ public class ProcessRun {
     }
 
     public boolean isFinished() {
-        return getFinishedStatus() != null;
+        return finishedStatus != null;
+    }
+
+    public boolean isFinishedSuccessfully() {
+        return finishedStatus != null && finishedStatus.isSuccessful();
     }
 
     public Instant getStartTime() {

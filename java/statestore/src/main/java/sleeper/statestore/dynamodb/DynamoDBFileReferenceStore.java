@@ -122,8 +122,8 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
     }
 
     private void addFile(AllReferencesToAFile file, Instant updateTime) throws StateStoreException {
-        addFileReferenceCount(file.getFilename(), file.getExternalReferenceCount(), updateTime);
-        for (FileReference reference : file.getInternalReferences()) {
+        addNewFileReferenceCount(file.getFilename(), updateTime);
+        for (FileReference reference : file.getReferences()) {
             addFileReference(reference, updateTime);
         }
     }
@@ -148,11 +148,11 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
         }
     }
 
-    private void addFileReferenceCount(String filename, int referenceCount, Instant updateTime) throws StateStoreException {
+    private void addNewFileReferenceCount(String filename, Instant updateTime) throws StateStoreException {
         try {
             TransactWriteItemsResult transactWriteItemsResult = dynamoDB.transactWriteItems(new TransactWriteItemsRequest()
                     .withTransactItems(
-                            new TransactWriteItem().withPut(putNewFileReferenceCount(filename, referenceCount, updateTime)))
+                            new TransactWriteItem().withPut(putNewFileReferenceCount(filename, 0, updateTime)))
                     .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL));
             List<ConsumedCapacity> consumedCapacity = transactWriteItemsResult.getConsumedCapacity();
             double totalConsumed = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();

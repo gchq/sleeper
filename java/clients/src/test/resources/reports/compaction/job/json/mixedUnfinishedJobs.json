@@ -1,5 +1,39 @@
 [
   {
+    "jobId": "$(jobId3)",
+    "createdStatus": {
+      "updateTime": "2022-09-20T13:33:12.001Z",
+      "partitionId": "partnDDD-DDDD-DDDD-DDDD-DDDDDDDDDDDD",
+      "inputFilesCount": 1
+    },
+    "jobRuns": [
+      {
+        "taskId": "task1111-1111-1111-1111-111111111111",
+        "updates": [
+          {
+            "startTime": "2022-09-20T13:34:12.001Z",
+            "type": "CompactionJobStartedStatus",
+            "updateTime": "2022-09-20T13:34:12.123Z"
+          },
+          {
+            "failureReasons": [
+              "Something went wrong",
+              "More details"
+            ],
+            "runTime": {
+              "durationInSeconds": 60.0,
+              "finishTime": "2022-09-20T13:35:12.001Z",
+              "startTime": "2022-09-20T13:34:12.001Z",
+              "timeInProcessInSeconds": 60.0
+            },
+            "type": "ProcessFailedStatus",
+            "updateTime": "2022-09-20T13:35:12.123Z"
+          }
+        ]
+      }
+    ]
+  },
+  {
     "jobId": "$(jobId2)",
     "createdStatus": {
       "updateTime": "2022-09-18T13:33:12.001Z",

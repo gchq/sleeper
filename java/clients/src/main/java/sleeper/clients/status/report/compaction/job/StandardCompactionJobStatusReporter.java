@@ -30,6 +30,8 @@ import sleeper.core.record.process.AverageRecordRate;
 import java.io.PrintStream;
 import java.util.List;
 
+import static java.util.function.Predicate.not;
+
 public class StandardCompactionJobStatusReporter implements CompactionJobStatusReporter {
 
     private final TableField stateField;
@@ -111,17 +113,20 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
 
     private void printUnfinishedSummary(List<CompactionJobStatus> jobStatusList) {
         out.printf("Total unfinished jobs: %d%n", jobStatusList.size());
-        out.printf("Total unfinished jobs in progress: %d%n",
-                jobStatusList.stream().filter(CompactionJobStatus::isStarted).count());
         out.printf("Total unfinished jobs not started: %d%n",
-                jobStatusList.size() - jobStatusList.stream().filter(CompactionJobStatus::isStarted).count());
+                jobStatusList.stream().filter(not(CompactionJobStatus::isStarted)).count());
+        out.printf("Total unfinished jobs in progress: %d%n",
+                jobStatusList.stream().filter(CompactionJobStatus::isAnyRunInProgress).count());
+        out.printf("Total unfinished jobs awaiting retry: %d%n",
+                jobStatusList.stream().filter(CompactionJobStatus::isAwaitingRetry).count());
     }
 
     private void printAllSummary(List<CompactionJobStatus> jobStatusList) {
         out.printf("Total jobs: %d%n", jobStatusList.size());
-        out.printf("Total jobs pending: %d%n", jobStatusList.stream().filter(job -> !job.isStarted()).count());
-        out.printf("Total jobs in progress: %d%n", jobStatusList.stream().filter(job -> job.isStarted() && !job.isFinished()).count());
-        out.printf("Total jobs finished: %d%n", jobStatusList.stream().filter(CompactionJobStatus::isFinished).count());
+        out.printf("Total jobs not yet started: %d%n", jobStatusList.stream().filter(job -> !job.isStarted()).count());
+        out.printf("Total jobs with a run in progress: %d%n", jobStatusList.stream().filter(CompactionJobStatus::isAnyRunInProgress).count());
+        out.printf("Total jobs finished successfully: %d%n", jobStatusList.stream().filter(CompactionJobStatus::isAnyRunSuccessful).count());
+        out.printf("Total jobs with any failed run: %d%n", jobStatusList.stream().filter(CompactionJobStatus::isAnyRunFailed).count());
         AverageRecordRateReport.printf("Average compaction rate: %s%n", recordRate(jobStatusList), out);
     }
 

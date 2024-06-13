@@ -3,6 +3,7 @@ Ingest Job Status Report
 ------------------------
 Jobs waiting in ingest queue (excluded from report): 0
 Total jobs waiting across all queues: 0
+Total jobs in report: 0
 Total jobs in progress: 0
 Total jobs finished: 0
 --------------------------------------------------------------------------------------------------------------------------------------------------

@@ -104,9 +104,9 @@ public class StandardFileStatusReporter implements FileStatusReporter {
 
     private void printFile(AllReferencesToAFile file) {
         out.println(file.getFilename()
-                + totalReferenceCountStr(file.getTotalReferenceCount())
+                + totalReferenceCountStr(file.getReferenceCount())
                 + ", last updated at " + file.getLastStateStoreUpdateTime());
-        file.getInternalReferences().forEach(this::printFileReference);
+        file.getReferences().forEach(this::printFileReference);
     }
 
     private void printFileReference(FileReference reference) {

@@ -35,8 +35,8 @@ import java.time.Instant;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static sleeper.bulkimport.starter.BulkImportStarterLambdaTestHelper.getSqsEvent;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.rejectedRun;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.jobStatus;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.rejectedRun;
 
 public class BulkImportStarterLambdaTest {
     BulkImportExecutor executor = mock(BulkImportExecutor.class);

@@ -104,7 +104,7 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
         boolean moreThanMax = false;
         StateStoreFiles state = files();
         for (AllReferencesToAFile file : state.referencedAndUnreferenced()) {
-            if (file.getTotalReferenceCount() < 1) {
+            if (file.getReferenceCount() < 1) {
                 if (foundUnreferenced >= maxUnreferencedFiles) {
                     moreThanMax = true;
                     continue;

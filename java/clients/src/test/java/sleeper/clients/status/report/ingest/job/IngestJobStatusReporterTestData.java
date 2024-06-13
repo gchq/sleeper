@@ -16,7 +16,6 @@
 
 package sleeper.clients.status.report.ingest.job;
 
-import sleeper.clients.status.report.StatusReporterTestHelper;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.status.IngestJobAcceptedStatus;
@@ -31,17 +30,20 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static sleeper.clients.status.report.StatusReporterTestHelper.job;
+import static sleeper.clients.status.report.StatusReporterTestHelper.task;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRun;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRunWhichStarted;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.failedIngestJob;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestJob;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestRun;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.rejectedRun;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestJob;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestRun;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.acceptedRun;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.acceptedRunWhichStarted;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.failedIngestJob;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.failedIngestRun;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.finishedIngestJob;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.finishedIngestRun;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.jobStatus;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.rejectedRun;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.startedIngestJob;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.startedIngestRun;
 
 public class IngestJobStatusReporterTestData {
     private IngestJobStatusReporterTestData() {
@@ -52,15 +54,21 @@ public class IngestJobStatusReporterTestData {
     }
 
     public static List<IngestJobStatus> mixedUnfinishedJobStatuses() {
-        IngestJob job1 = createJob(2, 1);
+        IngestJob job1 = createJob(1, 1);
         Instant startTime1 = Instant.parse("2022-09-18T13:34:12.001Z");
 
-        IngestJob job3 = createJob(5, 3);
-        Instant startTime3 = Instant.parse("2022-09-21T13:34:12.001Z");
+        IngestJob job2 = createJob(2, 2);
+        Instant startTime2 = Instant.parse("2022-09-19T13:34:12.001Z");
+
+        IngestJob job3 = createJob(3, 3);
+        Instant startTime3 = Instant.parse("2022-09-20T13:34:12.001Z");
 
         return Arrays.asList(
-                startedIngestJob(job3, StatusReporterTestHelper.task(2), startTime3),
-                startedIngestJob(job1, StatusReporterTestHelper.task(1), startTime1));
+                jobStatus(job3, failedIngestRun(job3, task(2),
+                        new ProcessRunTime(startTime3, Duration.ofSeconds(30)),
+                        List.of("Unexpected failure", "Some IO problem"))),
+                jobStatus(job2, startedIngestRun(job2, task(1), startTime2)),
+                jobStatus(job1, acceptedRun(job1, startTime1)));
     }
 
     public static List<IngestJobStatus> mixedJobStatuses() {
@@ -77,10 +85,10 @@ public class IngestJobStatusReporterTestData {
         Instant startTime4 = Instant.parse("2022-09-22T13:34:12.001Z");
 
         return Arrays.asList(
-                finishedIngestJob(job4, StatusReporterTestHelper.task(2), summary(startTime4, Duration.ofMinutes(1), 600, 300)),
-                startedIngestJob(job3, StatusReporterTestHelper.task(2), startTime3),
-                finishedIngestJob(job2, StatusReporterTestHelper.task(1), summary(startTime2, Duration.ofMinutes(1), 600, 300)),
-                failedIngestJob(job1, StatusReporterTestHelper.task(1),
+                finishedIngestJob(job4, task(2), summary(startTime4, Duration.ofMinutes(1), 600, 300)),
+                startedIngestJob(job3, task(2), startTime3),
+                finishedIngestJob(job2, task(1), summary(startTime2, Duration.ofMinutes(1), 600, 300)),
+                failedIngestJob(job1, task(1),
                         new ProcessRunTime(startTime1, Duration.ofMinutes(1)),
                         List.of("Something went wrong", "More details")));
     }
@@ -89,9 +97,9 @@ public class IngestJobStatusReporterTestData {
         IngestJob job = createJob(2, 1);
 
         return Collections.singletonList(jobStatus(job,
-                startedIngestRun(job, StatusReporterTestHelper.task(1), Instant.parse("2022-10-12T10:02:00.001Z")),
-                finishedIngestRun(job, StatusReporterTestHelper.task(2), summary(Instant.parse("2022-10-12T10:01:15.001Z"), Duration.ofSeconds(30), 300, 200)),
-                finishedIngestRun(job, StatusReporterTestHelper.task(1), summary(Instant.parse("2022-10-12T10:01:00.001Z"), Duration.ofSeconds(20), 300, 200))));
+                startedIngestRun(job, task(1), Instant.parse("2022-10-12T10:02:00.001Z")),
+                finishedIngestRun(job, task(2), summary(Instant.parse("2022-10-12T10:01:15.001Z"), Duration.ofSeconds(30), 300, 200)),
+                finishedIngestRun(job, task(1), summary(Instant.parse("2022-10-12T10:01:00.001Z"), Duration.ofSeconds(20), 300, 200))));
     }
 
     public static List<IngestJobStatus> jobsWithLargeAndDecimalStatistics() {
@@ -137,7 +145,7 @@ public class IngestJobStatusReporterTestData {
 
     public static IngestJob createJob(int jobNum, int inputFileCount) {
         return IngestJob.builder()
-                .id(StatusReporterTestHelper.job(jobNum))
+                .id(job(jobNum))
                 .files(IntStream.range(1, inputFileCount + 1)
                         .mapToObj(f -> String.format("test%1d.parquet", f))
                         .collect(Collectors.toList()))

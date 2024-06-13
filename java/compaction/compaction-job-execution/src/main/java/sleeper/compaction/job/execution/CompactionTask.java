@@ -64,18 +64,23 @@ public class CompactionTask {
     private final CompactionJobCommitterOrSendToLambda jobCommitter;
     private final String taskId;
     private final PropertiesReloader propertiesReloader;
+    private final WaitForFileAssignment waitForFiles;
     private int numConsecutiveFailures = 0;
     private int totalNumberOfMessagesProcessed = 0;
 
     public CompactionTask(InstanceProperties instanceProperties, PropertiesReloader propertiesReloader,
-            MessageReceiver messageReceiver, CompactionRunner compactor, CompactionJobCommitterOrSendToLambda jobCommitter,
-            CompactionJobStatusStore jobStore, CompactionTaskStatusStore taskStore, String taskId) {
-        this(instanceProperties, propertiesReloader, messageReceiver, compactor, jobCommitter, jobStore, taskStore, taskId, Instant::now, threadSleep());
+            MessageReceiver messageReceiver, WaitForFileAssignment waitForFiles, CompactionRunner compactor,
+            CompactionJobCommitterOrSendToLambda jobCommitter, CompactionJobStatusStore jobStore,
+            CompactionTaskStatusStore taskStore, String taskId) {
+        this(instanceProperties, propertiesReloader, messageReceiver, waitForFiles, compactor, jobCommitter,
+                jobStore, taskStore, taskId, Instant::now, threadSleep());
     }
 
     public CompactionTask(InstanceProperties instanceProperties, PropertiesReloader propertiesReloader,
-            MessageReceiver messageReceiver, CompactionRunner compactor, CompactionJobCommitterOrSendToLambda jobCommitter,
-            CompactionJobStatusStore jobStore, CompactionTaskStatusStore taskStore, String taskId, Supplier<Instant> timeSupplier, Consumer<Duration> sleepForTime) {
+            MessageReceiver messageReceiver, WaitForFileAssignment waitForFiles,
+            CompactionRunner compactor, CompactionJobCommitterOrSendToLambda jobCommitter,
+            CompactionJobStatusStore jobStore, CompactionTaskStatusStore taskStore,
+            String taskId, Supplier<Instant> timeSupplier, Consumer<Duration> sleepForTime) {
         maxIdleTime = Duration.ofSeconds(instanceProperties.getInt(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS));
         maxConsecutiveFailures = instanceProperties.getInt(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES);
         delayBeforeRetry = Duration.ofSeconds(instanceProperties.getInt(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS));
@@ -88,6 +93,7 @@ public class CompactionTask {
         this.taskStatusStore = taskStore;
         this.taskId = taskId;
         this.jobCommitter = jobCommitter;
+        this.waitForFiles = waitForFiles;
     }
 
     public void run() throws IOException {
@@ -133,6 +139,7 @@ public class CompactionTask {
                 CompactionJob job = message.getJob();
                 Instant jobStartTime = timeSupplier.get();
                 try {
+                    waitForFiles.wait(job);
                     RecordsProcessedSummary summary = compact(job, jobStartTime);
                     taskFinishedBuilder.addJobSummary(summary);
                     message.completed();
@@ -190,6 +197,11 @@ public class CompactionTask {
     @FunctionalInterface
     interface CompactionRunner {
         RecordsProcessed compact(CompactionJob job) throws Exception;
+    }
+
+    @FunctionalInterface
+    interface WaitForFileAssignment {
+        void wait(CompactionJob job) throws InterruptedException;
     }
 
     interface MessageHandle extends AutoCloseable {

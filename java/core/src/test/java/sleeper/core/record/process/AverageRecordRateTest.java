@@ -17,15 +17,18 @@ package sleeper.core.record.process;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.record.process.status.ProcessFailedStatus;
 import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.record.process.status.ProcessStatusUpdateTestHelper;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.DEFAULT_TASK_ID;
 
 public class AverageRecordRateTest {
@@ -172,6 +175,21 @@ public class AverageRecordRateTest {
                 "recordsReadPerSecond", "recordsWrittenPerSecond",
                 "averageRunRecordsReadPerSecond", "averageRunRecordsWrittenPerSecond")
                 .containsExactly(2, 20L, 20L, Duration.ofSeconds(10), 2.0, 2.0, 1.0, 1.0);
+    }
+
+    @Test
+    void shouldIgnoreFailedRun() {
+        Instant startTime = Instant.parse("2022-10-13T10:18:00.000Z");
+        Instant finishTime = Instant.parse("2022-10-13T10:19:00.000Z");
+
+        assertThat(AverageRecordRate.of(Stream.of(
+                ProcessRun.finished(DEFAULT_TASK_ID,
+                        ProcessStatusUpdateTestHelper.startedStatus(startTime),
+                        ProcessFailedStatus.timeAndReasons(defaultUpdateTime(finishTime),
+                                new ProcessRunTime(startTime, finishTime),
+                                List.of("Unexpected failure", "Some IO problem"))))))
+                .extracting("runCount", "recordsRead", "recordsWritten", "totalDuration")
+                .containsExactly(0, 0L, 0L, Duration.ofSeconds(0));
     }
 
     private static AverageRecordRate rateFrom(RecordsProcessedSummary... summaries) {

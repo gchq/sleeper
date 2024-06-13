@@ -29,13 +29,13 @@ public class BuiltJar {
     public static final BuiltJar INGEST_BATCHER_JOB_CREATOR = fromFormat("ingest-batcher-job-creator-%s.jar");
     public static final BuiltJar GARBAGE_COLLECTOR = fromFormat("lambda-garbagecollector-%s.jar");
     public static final BuiltJar COMPACTION_JOB_CREATOR = fromFormat("lambda-jobSpecCreationLambda-%s.jar");
-    public static final BuiltJar COMPACTION_JOB_COMMITTER = fromFormat("lambda-jobCommitterLambda-%s.jar");
+    public static final BuiltJar STATESTORE_COMMITTER = fromFormat("lambda-statestoreCommitterLambda-%s.jar");
     public static final BuiltJar COMPACTION_TASK_CREATOR = fromFormat("runningjobs-%s.jar");
     public static final BuiltJar PARTITION_SPLITTER = fromFormat("lambda-splitter-%s.jar");
     public static final BuiltJar QUERY = fromFormat("query-%s.jar");
     public static final BuiltJar CUSTOM_RESOURCES = fromFormat("cdk-custom-resources-%s.jar");
     public static final BuiltJar METRICS = fromFormat("metrics-%s.jar");
-    public static final BuiltJar STATESTORE_LAMBDA = fromFormat("statestore-lambda-%s.jar");
+    public static final BuiltJar STATESTORE_SNAPSHOT = fromFormat("statestore-snapshot-lambda-%s.jar");
 
     private final String fileName;
 

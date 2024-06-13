@@ -117,7 +117,7 @@ public class IngestBatcherJobCreatorLambdaIT {
                 .containsExactly(IngestJob.builder()
                         .id("test-job-id")
                         .tableId(tableProperties.get(TABLE_ID))
-                        .files("some-bucket/some-file.parquet")
+                        .files(List.of("some-bucket/some-file.parquet"))
                         .build());
     }
 

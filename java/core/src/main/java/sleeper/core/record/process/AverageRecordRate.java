@@ -59,7 +59,7 @@ public class AverageRecordRate {
      */
     public static AverageRecordRate of(Stream<ProcessRun> runs) {
         return builder().summaries(runs
-                .filter(ProcessRun::isFinished)
+                .filter(ProcessRun::isFinishedSuccessfully)
                 .map(ProcessRun::getFinishedSummary)).build();
     }
 

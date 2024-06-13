@@ -81,7 +81,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
     @Override
     public Stream<String> getReadyForGCFilenamesBefore(Instant maxUpdateTime) {
         List<String> filenames = filesByFilename.values().stream()
-                .filter(file -> file.getTotalReferenceCount() < 1)
+                .filter(file -> file.getReferenceCount() < 1)
                 .filter(file -> file.getLastStateStoreUpdateTime().isBefore(maxUpdateTime))
                 .map(AllReferencesToAFile::getFilename)
                 .collect(toUnmodifiableList());
@@ -176,7 +176,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
             if (file == null) {
                 throw new FileNotFoundException(filename);
             }
-            Optional<FileReference> referenceOpt = file.getInternalReferences().stream()
+            Optional<FileReference> referenceOpt = file.getReferences().stream()
                     .filter(ref -> request.getPartitionId().equals(ref.getPartitionId())).findFirst();
             if (referenceOpt.isEmpty()) {
                 throw new FileReferenceNotFoundException(filename, request.getPartitionId());
@@ -204,7 +204,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
 
     private Stream<FileReference> streamFileReferences() {
         return filesByFilename.values().stream()
-                .flatMap(file -> file.getInternalReferences().stream());
+                .flatMap(file -> file.getReferences().stream());
     }
 
     @Override
@@ -241,7 +241,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
             AllReferencesToAFile file = filesByFilename.get(filename);
             if (file == null) {
                 throw new FileNotFoundException(filename);
-            } else if (file.getTotalReferenceCount() > 0) {
+            } else if (file.getReferenceCount() > 0) {
                 throw new FileHasReferencesException(file);
             }
         }
@@ -251,11 +251,11 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
     @Override
     public AllReferencesToAllFiles getAllFilesWithMaxUnreferenced(int maxUnreferencedFiles) {
         List<AllReferencesToAFile> filesWithNoReferences = filesByFilename.values().stream()
-                .filter(file -> file.getTotalReferenceCount() < 1)
+                .filter(file -> file.getReferenceCount() < 1)
                 .collect(toUnmodifiableList());
         List<AllReferencesToAFile> files = Stream.concat(
                 filesByFilename.values().stream()
-                        .filter(file -> file.getTotalReferenceCount() > 0),
+                        .filter(file -> file.getReferenceCount() > 0),
                 filesWithNoReferences.stream().limit(maxUnreferencedFiles))
                 .collect(toUnmodifiableList());
         return new AllReferencesToAllFiles(files, filesWithNoReferences.size() > maxUnreferencedFiles);

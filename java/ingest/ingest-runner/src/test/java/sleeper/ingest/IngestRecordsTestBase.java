@@ -21,7 +21,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.iterator.IteratorException;
+import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -107,13 +107,13 @@ public class IngestRecordsTestBase {
         return ingestRecords.close();
     }
 
-    protected IngestResult ingestFromRecordIterator(Schema schema, StateStore stateStore, Iterator<Record> iterator) throws StateStoreException, IteratorException, IOException {
+    protected IngestResult ingestFromRecordIterator(Schema schema, StateStore stateStore, Iterator<Record> iterator) throws StateStoreException, IteratorCreationException, IOException {
         tableProperties.setSchema(schema);
         IngestFactory factory = createIngestFactory(stateStore);
         return factory.ingestFromRecordIterator(tableProperties, iterator);
     }
 
-    protected IngestResult ingestFromRecordIterator(StateStore stateStore, Iterator<Record> iterator) throws StateStoreException, IteratorException, IOException {
+    protected IngestResult ingestFromRecordIterator(StateStore stateStore, Iterator<Record> iterator) throws StateStoreException, IteratorCreationException, IOException {
         IngestFactory factory = createIngestFactory(stateStore);
         return factory.ingestFromRecordIterator(tableProperties, iterator);
     }
