@@ -20,6 +20,7 @@ import com.google.gson.GsonBuilder;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobJsonSerDe;
+import sleeper.core.statestore.CommitRequestType;
 import sleeper.core.util.GsonConfig;
 
 public class CompactionJobCommitRequestSerDe {
@@ -45,18 +46,18 @@ public class CompactionJobCommitRequestSerDe {
 
     public CompactionJobCommitRequest fromJson(String json) {
         WrappedCommitRequest wrappedRequest = gson.fromJson(json, WrappedCommitRequest.class);
-        if (CompactionJobCommitRequest.class.getSimpleName().equals(wrappedRequest.type)) {
+        if (CommitRequestType.COMPACTION == wrappedRequest.type) {
             return wrappedRequest.request;
         }
         return null;
     }
 
     private static class WrappedCommitRequest {
-        private String type;
+        private CommitRequestType type;
         private CompactionJobCommitRequest request;
 
         WrappedCommitRequest(CompactionJobCommitRequest request) {
-            this.type = CompactionJobCommitRequest.class.getSimpleName();
+            this.type = CommitRequestType.COMPACTION;
             this.request = request;
         }
     }
