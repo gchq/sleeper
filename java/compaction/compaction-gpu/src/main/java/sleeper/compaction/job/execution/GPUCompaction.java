@@ -16,7 +16,7 @@
 package sleeper.compaction.job.execution;
 
 import com.google.protobuf.ByteString;
-import io.grpc.Deadline;
+import io.grpc.Channel;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
@@ -28,6 +28,7 @@ import sleeper.compaction.job.CompactionRunner;
 import sleeper.compaction.job.execution.ProtoCompaction.CompactionParams;
 import sleeper.compaction.job.execution.ProtoCompaction.CompactionResult;
 import sleeper.compaction.job.execution.ProtoCompaction.OptBytes;
+import sleeper.compaction.job.execution.ProtoCompaction.ReturnCode;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.range.Range;
@@ -67,6 +68,7 @@ public class GPUCompaction implements CompactionRunner {
     private final StateStoreProvider stateStoreProvider;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GPUCompaction.class);
+    public static final int GRPC_PORT = 1430;
 
     /** Maximum number of rows in a Parquet row group. */
     private static final long GPU_MAX_ROW_GROUP_ROWS = 1_000_000;
@@ -75,6 +77,10 @@ public class GPUCompaction implements CompactionRunner {
             StateStoreProvider stateStoreProvider) {
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
+    }
+
+    protected ManagedChannel createChannel() {
+        return ManagedChannelBuilder.forAddress("localhost", GRPC_PORT).build();
     }
 
     @Override
@@ -88,25 +94,53 @@ public class GPUCompaction implements CompactionRunner {
                 .findFirst().orElseThrow(() -> new NoSuchElementException("Partition not found for compaction job"))
                 .getRegion();
 
-        ManagedChannel channel = ManagedChannelBuilder.forAddress("localhost", 1430).build();
-        CompactionServiceGrpc.CompactionServiceBlockingStub stub = CompactionServiceGrpc.newBlockingStub(channel)
-                .withWaitForReady().withDeadline(Deadline.after(15, TimeUnit.SECONDS));
+        ManagedChannel channel = null;
+        try {
+            channel = createChannel();
 
+            RecordsProcessed result = gRpcCompact(channel, job, tableProperties, schema, region);
+            LOGGER.info("Compaction job {}: compaction finished at {}", job.getId(),
+                    LocalDateTime.now());
+            return result;
+        } finally {
+            if (channel != null) {
+                channel.shutdownNow().awaitTermination(5, TimeUnit.SECONDS);
+            }
+        }
+    }
+
+    /**
+     * Makes a gRPC call over the given channel to a compaction server.
+     * 
+     * @param  channel         managed channel to server
+     * @param  job             compaction job
+     * @param  tableProperties table properties for compaction job
+     * @param  schema          table schema
+     * @param  region          table partition for compaction
+     * @return                 number of records read and written in compaction
+     * @throws IOException     if compaction failed, either due to a gRPC failure or a compaction failure
+     */
+    public RecordsProcessed gRpcCompact(Channel channel, CompactionJob job, TableProperties tableProperties, Schema schema, Region region) throws IOException {
+        CompactionServiceGrpc.CompactionServiceBlockingStub stub = CompactionServiceGrpc.newBlockingStub(channel)
+                .withWaitForReady();
         CompactionParams params = createParams(job, tableProperties, schema, region);
 
         CompactionResult grpc_result;
         try {
             grpc_result = stub.compact(params);
+
+            // check exit status of compaction
+            if (grpc_result.getExitStatus() != ReturnCode.OK) {
+                String exitReason = grpc_result.hasExitReason() ? grpc_result.getExitReason() : "not specified";
+                throw new IOException("GPU compaction failed with exit status " + grpc_result.getExitStatus().name() + " due to " + exitReason);
+            }
+
+            RecordsProcessed result = new RecordsProcessed(grpc_result.getRowsRead(), grpc_result.getRowsWritten());
+            return result;
         } catch (StatusRuntimeException e) {
             LOGGER.error("gRPC failed: {0}", e.getStatus());
-            throw new IOException("GPU compaction failed due to gRPC failure: " + e.getStatus());
+            throw new IOException("GPU compaction failed due to gRPC failure: " + e.getStatus(), e);
         }
-
-        RecordsProcessed result = new RecordsProcessed(grpc_result.getRowsRead(), grpc_result.getRowsWritten());
-
-        LOGGER.info("Compaction job {}: compaction finished at {}", job.getId(),
-                LocalDateTime.now());
-        return result;
     }
 
     /**
