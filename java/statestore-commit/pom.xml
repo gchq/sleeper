@@ -39,7 +39,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>configuration</artifactId>
+            <artifactId>ingest-core</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
     </dependencies>

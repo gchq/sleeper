@@ -12,6 +12,7 @@ on:
       - 'java/statestore-commit/**'
       - 'java/statestore-commit-lambda/**'
       - 'java/statestore-snapshot-lambda/**'
+      - 'java/ingest/ingest-core/**'
       - 'java/compaction/compaction-status-store/**'
       - 'java/compaction/compaction-core/**'
       - 'java/common/common-invoke-tables/**'

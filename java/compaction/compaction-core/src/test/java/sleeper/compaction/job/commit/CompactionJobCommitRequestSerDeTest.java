@@ -27,6 +27,7 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class CompactionJobCommitRequestSerDeTest {
 
@@ -53,5 +54,11 @@ public class CompactionJobCommitRequestSerDeTest {
         // Then
         assertThat(serDe.fromJson(json)).isEqualTo(commit);
         Approvals.verify(json);
+    }
+
+    @Test
+    void shouldFailToDeserialiseNonCompactionCommitRequest() {
+        assertThatThrownBy(() -> serDe.fromJson("{\"type\": \"OTHER\", \"request\":{}}"))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 }

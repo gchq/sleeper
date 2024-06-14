@@ -22,6 +22,10 @@ import sleeper.compaction.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobCommitRequestSerDe;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.statestore.FileReference;
+import sleeper.ingest.job.IngestJob;
+import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
+import sleeper.ingest.job.commit.IngestAddFilesCommitRequestSerDe;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -43,15 +47,44 @@ public class StateStoreCommitRequestDeserialiserTest {
                 .outputFile("test-output.parquet")
                 .partitionId("test-partition-id")
                 .build();
-        CompactionJobCommitRequest commit = new CompactionJobCommitRequest(job, "test-task",
+        CompactionJobCommitRequest compactionJobCommitRequest = new CompactionJobCommitRequest(job, "test-task",
                 new RecordsProcessedSummary(
                         new RecordsProcessed(120, 100),
                         Instant.parse("2024-05-01T10:58:00Z"), Duration.ofMinutes(1)));
-        String jobCommitRequestString = new CompactionJobCommitRequestSerDe().toJson(commit);
+        String jsonString = new CompactionJobCommitRequestSerDe().toJson(compactionJobCommitRequest);
 
         // When / Then
-        assertThat(commitRequestSerDe.fromJson(jobCommitRequestString).getCompactionJobCommitRequest())
-                .contains(commit);
+        assertThat(commitRequestSerDe.fromJson(jsonString))
+                .isEqualTo(StateStoreCommitRequest.forCompactionJob(compactionJobCommitRequest));
+    }
+
+    @Test
+    void shouldDeserialiseIngestJobCommitRequest() {
+        // Given
+        IngestJob job = IngestJob.builder()
+                .id("test-job-id")
+                .files(List.of("file1.parquet", "file2.parquet"))
+                .tableId("test-table-id")
+                .tableName("test-table-name")
+                .build();
+        FileReference file1 = FileReference.builder()
+                .filename("file1.parquet")
+                .partitionId("root")
+                .numberOfRecords(100L)
+                .onlyContainsDataForThisPartition(true)
+                .build();
+        FileReference file2 = FileReference.builder()
+                .filename("file2.parquet")
+                .partitionId("root")
+                .numberOfRecords(200L)
+                .onlyContainsDataForThisPartition(true)
+                .build();
+        IngestAddFilesCommitRequest ingestJobCommitRequest = new IngestAddFilesCommitRequest(job, "test-task", "test-job-run", List.of(file1, file2));
+        String jsonString = new IngestAddFilesCommitRequestSerDe().toJson(ingestJobCommitRequest);
+
+        // When / Then
+        assertThat(commitRequestSerDe.fromJson(jsonString))
+                .isEqualTo(StateStoreCommitRequest.forIngestAddFiles(ingestJobCommitRequest));
     }
 
     @Test

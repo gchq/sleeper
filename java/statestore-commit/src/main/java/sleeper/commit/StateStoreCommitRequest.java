@@ -16,7 +16,9 @@
 package sleeper.commit;
 
 import sleeper.compaction.job.commit.CompactionJobCommitRequest;
+import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
 
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -24,20 +26,30 @@ import java.util.Optional;
  */
 public class StateStoreCommitRequest {
 
-    private CompactionJobCommitRequest compactionJobCommitRequest;
+    private final Object request;
 
     /**
-     * Creates a request to commit a compaction job.
+     * Creates a request to commit the results of a compaction job.
      *
-     * @param  jobCommitRequest the compaction job commit request
-     * @return                  a state store commit request
+     * @param  request the compaction job commit request
+     * @return         a state store commit request
      */
-    public static StateStoreCommitRequest forCompactionJob(CompactionJobCommitRequest jobCommitRequest) {
-        return new StateStoreCommitRequest(jobCommitRequest);
+    public static StateStoreCommitRequest forCompactionJob(CompactionJobCommitRequest request) {
+        return new StateStoreCommitRequest(request);
     }
 
-    private StateStoreCommitRequest(CompactionJobCommitRequest compactionJobCommitRequest) {
-        this.compactionJobCommitRequest = compactionJobCommitRequest;
+    /**
+     * Creates a request to commit files written during ingest or bulk import.
+     *
+     * @param  request the commit request
+     * @return         a state store commit request
+     */
+    public static StateStoreCommitRequest forIngestAddFiles(IngestAddFilesCommitRequest request) {
+        return new StateStoreCommitRequest(request);
+    }
+
+    private StateStoreCommitRequest(Object request) {
+        this.request = request;
     }
 
     /**
@@ -46,6 +58,33 @@ public class StateStoreCommitRequest {
      * @return the compaction job commit request
      */
     public Optional<CompactionJobCommitRequest> getCompactionJobCommitRequest() {
-        return Optional.ofNullable(compactionJobCommitRequest);
+        if (request instanceof CompactionJobCommitRequest) {
+            return Optional.of((CompactionJobCommitRequest) request);
+        } else {
+            return Optional.empty();
+        }
     }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(request);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof StateStoreCommitRequest)) {
+            return false;
+        }
+        StateStoreCommitRequest other = (StateStoreCommitRequest) obj;
+        return Objects.equals(request, other.request);
+    }
+
+    @Override
+    public String toString() {
+        return "StateStoreCommitRequest{request=" + request + "}";
+    }
+
 }
