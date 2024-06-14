@@ -39,6 +39,11 @@
         <!-- Sleeper dependencies -->
         <dependency>
             <groupId>sleeper</groupId>
+            <artifactId>configuration</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
             <artifactId>statestore-commit</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
