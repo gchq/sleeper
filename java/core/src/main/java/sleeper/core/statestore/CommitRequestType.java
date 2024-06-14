@@ -19,6 +19,6 @@ package sleeper.core.statestore;
  * Represents the different types of state store commit requests that can be performed.
  */
 public enum CommitRequestType {
-    COMPACTION,
-    INGEST
+    COMPACTION_FINISHED,
+    INGEST_ADD_FILES
 }

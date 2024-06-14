@@ -46,7 +46,7 @@ public class CompactionJobCommitRequestSerDe {
 
     public CompactionJobCommitRequest fromJson(String json) {
         WrappedCommitRequest wrappedRequest = gson.fromJson(json, WrappedCommitRequest.class);
-        if (CommitRequestType.COMPACTION == wrappedRequest.type) {
+        if (CommitRequestType.COMPACTION_FINISHED == wrappedRequest.type) {
             return wrappedRequest.request;
         }
         return null;
@@ -57,7 +57,7 @@ public class CompactionJobCommitRequestSerDe {
         private CompactionJobCommitRequest request;
 
         WrappedCommitRequest(CompactionJobCommitRequest request) {
-            this.type = CommitRequestType.COMPACTION;
+            this.type = CommitRequestType.COMPACTION_FINISHED;
             this.request = request;
         }
     }

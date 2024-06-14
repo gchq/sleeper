@@ -42,7 +42,7 @@ public class StateStoreCommitRequestJson {
      * @return the compaction job commit request
      */
     public StateStoreCommitRequest getCommitRequest() {
-        if (CommitRequestType.COMPACTION == type) {
+        if (CommitRequestType.COMPACTION_FINISHED == type) {
             return StateStoreCommitRequest.forCompactionJob(request.toCompactionJobCommitRequest());
         } else {
             throw new CommitRequestValidationException("Commit request type not recognised: " + type);
