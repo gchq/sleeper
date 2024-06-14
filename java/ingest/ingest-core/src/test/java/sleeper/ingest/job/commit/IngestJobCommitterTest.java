@@ -46,7 +46,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 import static sleeper.ingest.job.IngestJobTestData.createJobWithTableAndFiles;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestJob;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.finishedIngestJob;
 
 public class IngestJobCommitterTest {
     private static final Instant DEFAULT_UPDATE_TIME = Instant.parse("2024-06-07T15:08:00Z");

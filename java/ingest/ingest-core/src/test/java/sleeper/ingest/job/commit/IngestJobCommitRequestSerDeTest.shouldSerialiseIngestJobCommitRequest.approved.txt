@@ -1,5 +1,5 @@
 {
-  "type": "IngestJobCommitRequest",
+  "type": "INGEST_ADD_FILES",
   "request": {
     "ingestJob": {
       "id": "test-job-id",
