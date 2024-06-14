@@ -67,7 +67,7 @@ public class IngestAddFilesCommitRequestSerDe {
         if (CommitRequestType.INGEST_ADD_FILES == wrappedRequest.type) {
             return wrappedRequest.request;
         }
-        return null;
+        throw new IllegalArgumentException("Unexpected request type");
     }
 
     /**

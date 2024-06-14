@@ -24,6 +24,7 @@ import sleeper.ingest.job.IngestJob;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class IngestAddFilesCommitRequestSerDeTest {
 
@@ -58,5 +59,11 @@ public class IngestAddFilesCommitRequestSerDeTest {
         // Then
         assertThat(serDe.fromJson(json)).isEqualTo(commit);
         Approvals.verify(json);
+    }
+
+    @Test
+    void shouldFailToDeserialiseNonIngestCommitRequest() {
+        assertThatThrownBy(() -> serDe.fromJson("{\"type\": \"OTHER\", \"request\":{}}"))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 }
