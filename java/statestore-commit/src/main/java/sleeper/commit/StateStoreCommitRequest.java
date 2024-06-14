@@ -44,7 +44,7 @@ public class StateStoreCommitRequest {
      * @param  request the commit request
      * @return         a state store commit request
      */
-    public static StateStoreCommitRequest forIngestJob(IngestAddFilesCommitRequest request) {
+    public static StateStoreCommitRequest forIngestAddFiles(IngestAddFilesCommitRequest request) {
         return new StateStoreCommitRequest(request);
     }
 
