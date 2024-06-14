@@ -23,7 +23,7 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.CommitRequestType;
 import sleeper.core.statestore.FileReference;
 import sleeper.ingest.job.IngestJob;
-import sleeper.ingest.job.commit.IngestJobCommitRequest;
+import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
 
 import java.time.Instant;
 import java.util.List;
@@ -73,8 +73,8 @@ public class StateStoreCommitRequestJson {
             return new CompactionJobCommitRequest(job, taskId, recordsProcessedSummary());
         }
 
-        IngestJobCommitRequest toIngestJobCommitRequest() {
-            return new IngestJobCommitRequest(ingestJob, taskId, jobRunId, fileReferences);
+        IngestAddFilesCommitRequest toIngestJobCommitRequest() {
+            return new IngestAddFilesCommitRequest(ingestJob, taskId, jobRunId, fileReferences);
         }
 
         RecordsProcessedSummary recordsProcessedSummary() {

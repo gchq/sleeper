@@ -24,13 +24,13 @@ import java.util.Objects;
 /**
  * A request to commit the results of an ingest job to the state store and job status store.
  */
-public class IngestJobCommitRequest {
+public class IngestAddFilesCommitRequest {
     private final IngestJob ingestJob;
     private final String taskId;
     private final String jobRunId;
     private final List<FileReference> fileReferences;
 
-    public IngestJobCommitRequest(IngestJob job, String taskId, String jobRunId, List<FileReference> fileReferences) {
+    public IngestAddFilesCommitRequest(IngestJob job, String taskId, String jobRunId, List<FileReference> fileReferences) {
         this.ingestJob = job;
         this.taskId = taskId;
         this.jobRunId = jobRunId;
@@ -59,10 +59,10 @@ public class IngestJobCommitRequest {
         if (this == obj) {
             return true;
         }
-        if (!(obj instanceof IngestJobCommitRequest)) {
+        if (!(obj instanceof IngestAddFilesCommitRequest)) {
             return false;
         }
-        IngestJobCommitRequest other = (IngestJobCommitRequest) obj;
+        IngestAddFilesCommitRequest other = (IngestAddFilesCommitRequest) obj;
         return Objects.equals(ingestJob, other.ingestJob)
                 && Objects.equals(taskId, other.taskId)
                 && Objects.equals(fileReferences, other.fileReferences)

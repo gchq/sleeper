@@ -16,7 +16,7 @@
 package sleeper.commit;
 
 import sleeper.compaction.job.commit.CompactionJobCommitRequest;
-import sleeper.ingest.job.commit.IngestJobCommitRequest;
+import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -44,7 +44,7 @@ public class StateStoreCommitRequest {
      * @param  request the ingest job commit request
      * @return         a state store commit request
      */
-    public static StateStoreCommitRequest forIngestJob(IngestJobCommitRequest request) {
+    public static StateStoreCommitRequest forIngestJob(IngestAddFilesCommitRequest request) {
         return new StateStoreCommitRequest(request);
     }
 

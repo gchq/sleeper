@@ -25,9 +25,9 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class IngestJobCommitRequestSerDeTest {
+public class IngestAddFilesCommitRequestSerDeTest {
 
-    private final IngestJobCommitRequestSerDe serDe = new IngestJobCommitRequestSerDe();
+    private final IngestAddFilesCommitRequestSerDe serDe = new IngestAddFilesCommitRequestSerDe();
 
     @Test
     void shouldSerialiseIngestJobCommitRequest() throws Exception {
@@ -50,7 +50,7 @@ public class IngestJobCommitRequestSerDeTest {
                 .numberOfRecords(200L)
                 .onlyContainsDataForThisPartition(true)
                 .build();
-        IngestJobCommitRequest commit = new IngestJobCommitRequest(job, "test-task", "test-job-run", List.of(file1, file2));
+        IngestAddFilesCommitRequest commit = new IngestAddFilesCommitRequest(job, "test-task", "test-job-run", List.of(file1, file2));
 
         // When
         String json = serDe.toJsonPrettyPrint(commit);

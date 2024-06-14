@@ -24,12 +24,12 @@ import sleeper.core.util.GsonConfig;
 /**
  * Serialises and deserialises an ingest job commit request to and from JSON.
  */
-public class IngestJobCommitRequestSerDe {
+public class IngestAddFilesCommitRequestSerDe {
 
     private final Gson gson;
     private final Gson gsonPrettyPrint;
 
-    public IngestJobCommitRequestSerDe() {
+    public IngestAddFilesCommitRequestSerDe() {
         GsonBuilder builder = GsonConfig.standardBuilder()
                 .serializeNulls();
         gson = builder.create();
@@ -42,7 +42,7 @@ public class IngestJobCommitRequestSerDe {
      * @param  request the ingest job commit request
      * @return         the JSON string
      */
-    public String toJson(IngestJobCommitRequest request) {
+    public String toJson(IngestAddFilesCommitRequest request) {
         return gson.toJson(new WrappedCommitRequest(request), WrappedCommitRequest.class);
     }
 
@@ -52,7 +52,7 @@ public class IngestJobCommitRequestSerDe {
      * @param  request the ingest job commit request
      * @return         the pretty-printed JSON string
      */
-    public String toJsonPrettyPrint(IngestJobCommitRequest request) {
+    public String toJsonPrettyPrint(IngestAddFilesCommitRequest request) {
         return gsonPrettyPrint.toJson(new WrappedCommitRequest(request), WrappedCommitRequest.class);
     }
 
@@ -62,7 +62,7 @@ public class IngestJobCommitRequestSerDe {
      * @param  json the JSON string
      * @return      the ingest job commit request
      */
-    public IngestJobCommitRequest fromJson(String json) {
+    public IngestAddFilesCommitRequest fromJson(String json) {
         WrappedCommitRequest wrappedRequest = gson.fromJson(json, WrappedCommitRequest.class);
         if (CommitRequestType.INGEST_ADD_FILES == wrappedRequest.type) {
             return wrappedRequest.request;
@@ -76,9 +76,9 @@ public class IngestJobCommitRequestSerDe {
      */
     private static class WrappedCommitRequest {
         private CommitRequestType type;
-        private IngestJobCommitRequest request;
+        private IngestAddFilesCommitRequest request;
 
-        WrappedCommitRequest(IngestJobCommitRequest request) {
+        WrappedCommitRequest(IngestAddFilesCommitRequest request) {
             this.type = CommitRequestType.INGEST_ADD_FILES;
             this.request = request;
         }

@@ -24,8 +24,8 @@ import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.FileReference;
 import sleeper.ingest.job.IngestJob;
-import sleeper.ingest.job.commit.IngestJobCommitRequest;
-import sleeper.ingest.job.commit.IngestJobCommitRequestSerDe;
+import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
+import sleeper.ingest.job.commit.IngestAddFilesCommitRequestSerDe;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -79,8 +79,8 @@ public class StateStoreCommitRequestDeserialiserTest {
                 .numberOfRecords(200L)
                 .onlyContainsDataForThisPartition(true)
                 .build();
-        IngestJobCommitRequest ingestJobCommitRequest = new IngestJobCommitRequest(job, "test-task", "test-job-run", List.of(file1, file2));
-        String jsonString = new IngestJobCommitRequestSerDe().toJson(ingestJobCommitRequest);
+        IngestAddFilesCommitRequest ingestJobCommitRequest = new IngestAddFilesCommitRequest(job, "test-task", "test-job-run", List.of(file1, file2));
+        String jsonString = new IngestAddFilesCommitRequestSerDe().toJson(ingestJobCommitRequest);
 
         // When / Then
         assertThat(commitRequestSerDe.fromJson(jsonString))
