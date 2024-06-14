@@ -63,7 +63,7 @@ public class StateStoreCommitRequestDeserialiserTest {
         // Given
         IngestJob job = IngestJob.builder()
                 .id("test-job-id")
-                .files("file1.parquet", "file2.parquet")
+                .files(List.of("file1.parquet", "file2.parquet"))
                 .tableId("test-table-id")
                 .tableName("test-table-name")
                 .build();
