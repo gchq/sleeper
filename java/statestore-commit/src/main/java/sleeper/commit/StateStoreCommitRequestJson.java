@@ -20,6 +20,7 @@ import sleeper.compaction.job.commit.CompactionJobCommitRequest;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.statestore.CommitRequestType;
 import sleeper.core.statestore.FileReference;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.commit.IngestJobCommitRequest;
@@ -31,10 +32,10 @@ import java.util.List;
  * Represents a JSON string for a commit request. Used in deserialisation.
  */
 public class StateStoreCommitRequestJson {
-    private String type;
+    private CommitRequestType type;
     private CommitRequest request;
 
-    public StateStoreCommitRequestJson(String type, CommitRequest request) {
+    public StateStoreCommitRequestJson(CommitRequestType type, CommitRequest request) {
         this.type = type;
         this.request = request;
     }
@@ -45,10 +46,10 @@ public class StateStoreCommitRequestJson {
      * @return the compaction job commit request
      */
     public StateStoreCommitRequest getCommitRequest() {
-        if (CompactionJobCommitRequest.class.getSimpleName().equals(type)) {
+        if (CommitRequestType.COMPACTION_FINISHED == type) {
             return StateStoreCommitRequest.forCompactionJob(request.toCompactionJobCommitRequest());
         }
-        if (IngestJobCommitRequest.class.getSimpleName().equals(type)) {
+        if (CommitRequestType.INGEST_ADD_FILES == type) {
             return StateStoreCommitRequest.forIngestJob(request.toIngestJobCommitRequest());
         }
         throw new CommitRequestValidationException("Commit request type not recognised: " + type);

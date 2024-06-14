@@ -25,18 +25,19 @@ import sleeper.core.record.process.status.ProcessStatusUpdate;
 import sleeper.ingest.job.IngestJob;
 
 import java.time.Instant;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.records;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestJob;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.singleJobStatusFrom;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestJob;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.finishedIngestJob;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.singleJobStatusFrom;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.startedIngestJob;
 
 public class IngestJobStatusInPeriodTest {
     private final IngestJob job = IngestJob.builder()
-            .id("test-job").files("test.parquet").tableName("test-table").build();
+            .id("test-job").files(List.of("test.parquet")).tableName("test-table").build();
 
     @Nested
     @DisplayName("Unfinished job")
@@ -205,7 +206,7 @@ public class IngestJobStatusInPeriodTest {
     }
 
     private ProcessStatusUpdate startedRun(Instant startedTime) {
-        return IngestJobStartedStatus.startAndUpdateTime(job, startedTime, defaultUpdateTime(startedTime));
+        return IngestJobStatusTestHelper.startAndUpdateTime(job, startedTime, defaultUpdateTime(startedTime));
     }
 
     private ProcessStatusUpdate finishedRun(Instant startedTime, Instant finishedTime) {

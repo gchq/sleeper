@@ -71,7 +71,7 @@ public class IngestBatcherTestBase {
 
     protected IngestJob jobWithFiles(String jobId, String... files) {
         return IngestJob.builder()
-                .files(files)
+                .files(List.of(files))
                 .tableId(DEFAULT_TABLE_ID)
                 .id(jobId)
                 .build();

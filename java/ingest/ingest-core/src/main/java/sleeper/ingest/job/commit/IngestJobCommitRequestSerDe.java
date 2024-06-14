@@ -18,6 +18,7 @@ package sleeper.ingest.job.commit;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+import sleeper.core.statestore.CommitRequestType;
 import sleeper.core.util.GsonConfig;
 
 /**
@@ -63,7 +64,7 @@ public class IngestJobCommitRequestSerDe {
      */
     public IngestJobCommitRequest fromJson(String json) {
         WrappedCommitRequest wrappedRequest = gson.fromJson(json, WrappedCommitRequest.class);
-        if (IngestJobCommitRequest.class.getSimpleName().equals(wrappedRequest.type)) {
+        if (CommitRequestType.INGEST_ADD_FILES == wrappedRequest.type) {
             return wrappedRequest.request;
         }
         return null;
@@ -74,11 +75,11 @@ public class IngestJobCommitRequestSerDe {
      * deserialise the correct commit request.
      */
     private static class WrappedCommitRequest {
-        private String type;
+        private CommitRequestType type;
         private IngestJobCommitRequest request;
 
         WrappedCommitRequest(IngestJobCommitRequest request) {
-            this.type = IngestJobCommitRequest.class.getSimpleName();
+            this.type = CommitRequestType.INGEST_ADD_FILES;
             this.request = request;
         }
     }
