@@ -34,7 +34,6 @@ import sleeper.commit.StateStoreCommitRequestDeserialiser;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobCommitter;
-import sleeper.compaction.job.commit.CompactionJobCommitter.GetStateStore;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
@@ -106,13 +105,6 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, hadoopConf);
         CompactionJobStatusStore statusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
-        return new CompactionJobCommitter(
-                statusStore, stateStoreProviderForCommitter(tablePropertiesProvider, stateStoreProvider));
+        return new CompactionJobCommitter(statusStore, stateStoreProvider.byTableId(tablePropertiesProvider));
     }
-
-    private static GetStateStore stateStoreProviderForCommitter(
-            TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider) {
-        return tableId -> stateStoreProvider.getStateStore(tablePropertiesProvider.getById(tableId));
-    }
-
 }

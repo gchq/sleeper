@@ -73,8 +73,7 @@ public class CompactionJobCommitterOrSendToLambda {
     private static CompactionJobCommitter committer(
             TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider,
             CompactionJobStatusStore jobStatusStore) {
-        return new CompactionJobCommitter(jobStatusStore,
-                tableId -> stateStoreProvider.getStateStore(tablePropertiesProvider.getById(tableId)));
+        return new CompactionJobCommitter(jobStatusStore, stateStoreProvider.byTableId(tablePropertiesProvider));
     }
 
     private static CommitQueueSender sendToSqs(InstanceProperties instanceProperties, AmazonSQS sqsClient) {
