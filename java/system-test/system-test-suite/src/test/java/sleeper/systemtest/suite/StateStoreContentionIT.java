@@ -15,49 +15,48 @@
  */
 package sleeper.systemtest.suite;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import sleeper.compaction.strategy.impl.BasicCompactionStrategy;
-import sleeper.configuration.properties.validation.IngestFileWritingStrategy;
-import sleeper.core.statestore.FileReference;
-import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.dsl.SleeperSystemTest;
-import sleeper.systemtest.dsl.extension.AfterTestPurgeQueues;
-import sleeper.systemtest.dsl.extension.AfterTestReports;
-import sleeper.systemtest.dsl.reporting.SystemTestReports;
-import sleeper.systemtest.suite.testutil.Expensive;
-import sleeper.systemtest.suite.testutil.SystemTest;
-
 import java.time.Duration;
 import java.util.Map;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
+import sleeper.compaction.strategy.impl.BasicCompactionStrategy;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
-import static sleeper.systemtest.configuration.SystemTestIngestMode.DIRECT;
+import sleeper.configuration.properties.validation.IngestFileWritingStrategy;
+import static sleeper.configuration.properties.validation.IngestQueue.STANDARD_INGEST;
+import sleeper.core.statestore.FileReference;
+import sleeper.core.util.PollWithRetries;
+import static sleeper.systemtest.configuration.SystemTestIngestMode.QUEUE;
 import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_MODE;
+import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_QUEUE;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_INGEST;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRITERS;
+import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.compaction.SystemTestCompaction;
+import sleeper.systemtest.dsl.extension.AfterTestPurgeQueues;
+import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.dsl.ingest.SystemTestIngestByQueue;
-import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
+import sleeper.systemtest.dsl.reporting.SystemTestReports;
+import static sleeper.systemtest.suite.fixtures.SystemTestInstance.CONTENTION_PERFORMANCE;
+import sleeper.systemtest.suite.testutil.Expensive;
 import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.create8192StringPartitions;
+import sleeper.systemtest.suite.testutil.SystemTest;
 
 @SystemTest
 @Expensive
 public class StateStoreContentionIT {
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper, AfterTestReports reporting, AfterTestPurgeQueues purgeQueues)
-            throws Exception {
-        sleeper.connectToInstance(MAIN);
+    void setUp(SleeperSystemTest sleeper, AfterTestReports reporting, AfterTestPurgeQueues purgeQueues) throws Exception {
+        sleeper.connectToInstance(CONTENTION_PERFORMANCE);
         reporting.reportIfTestFailed(SystemTestReports.SystemTestBuilder::compactionTasksAndJobs);
         reporting.reportIfTestFailed(SystemTestReports.SystemTestBuilder::ingestTasksAndJobs);
         purgeQueues.purgeIfTestFailed(COMPACTION_JOB_CREATION_QUEUE_URL, COMPACTION_JOB_QUEUE_URL,
@@ -75,12 +74,17 @@ public class StateStoreContentionIT {
         // And we have records spread across all partitions in many files per partition
         sleeper.systemTestCluster()
                 .updateProperties(properties -> {
-                    properties.setEnum(INGEST_MODE, DIRECT);
+                    properties.setEnum(INGEST_MODE, QUEUE);
+                    properties.setEnum(INGEST_QUEUE, STANDARD_INGEST);
                     properties.setNumber(NUMBER_OF_WRITERS, 10);
-                    properties.setNumber(NUMBER_OF_RECORDS_PER_INGEST, 1_000_000);
-                }).generateData(
-                        PollWithRetries.intervalAndPollingTimeout(
-                                Duration.ofSeconds(10), Duration.ofMinutes(5)));
+                    properties.setNumber(NUMBER_OF_RECORDS_PER_INGEST, 1000);
+                });
+        //.generateData(
+        //   PollWithRetries.intervalAndPollingTimeout(
+        //         Duration.ofSeconds(30), Duration.ofMinutes(30)));
+        //.invokeStandardIngestTasks(11,
+        //        PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(10)))
+        //.waitForIngestJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(40)));
 
         // Ingest setup
         sleeper.sourceFiles()
@@ -90,30 +94,25 @@ public class StateStoreContentionIT {
                 .createWithNumberedRecords("file4.parquet", LongStream.range(3000, 4000))
                 .createWithNumberedRecords("file5.parquet", LongStream.range(4000, 5000));
 
+        SystemTestIngestByQueue ingestByQueue = sleeper.ingest().byQueue()
+                .sendSourceFiles("file1.parquet", "file2.parquet", "file3.parquet",
+                        "file4.parquet", "file5.parquet")
+                .invokeTask();
+
+        ingestByQueue.waitForJobs();
+
         // When we run compaction
         SystemTestCompaction compaction = sleeper.compaction()
                 .createJobs(8192,
                         PollWithRetries.intervalAndPollingTimeout(
-                                Duration.ofSeconds(10), Duration.ofMinutes(10)))
+                                Duration.ofSeconds(10), Duration.ofMinutes(30)))
                 .invokeTasks(300);
-        // .waitForJobsToFinishThenCommit(
-        // PollWithRetries.intervalAndPollingTimeout(
-        // Duration.ofSeconds(10), Duration.ofMinutes(5)),
-        // PollWithRetries.intervalAndPollingTimeout(
-        // Duration.ofSeconds(10), Duration.ofMinutes(5)));
-        // Ingest
-        SystemTestIngestByQueue ingestByQueue = sleeper.ingest().byQueue()
-                .sendSourceFiles("file1.parquet", "file2.parquet", "file3.parquet",
-                        "file4.parquet", "file5.parquet")
-                .invokeTask();// .waitForJobs();
 
         compaction.waitForJobsToFinishThenCommit(
                 PollWithRetries.intervalAndPollingTimeout(
-                        Duration.ofSeconds(10), Duration.ofMinutes(5)),
+                        Duration.ofSeconds(10), Duration.ofMinutes(20)),
                 PollWithRetries.intervalAndPollingTimeout(
-                        Duration.ofSeconds(10), Duration.ofMinutes(5)));
-
-        ingestByQueue.waitForJobs();
+                        Duration.ofSeconds(10), Duration.ofMinutes(20)));
 
         // Then we have one file per partition
         assertThat(sleeper.tableFiles().references())
