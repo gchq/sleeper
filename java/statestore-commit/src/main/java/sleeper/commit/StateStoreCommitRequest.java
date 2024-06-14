@@ -39,9 +39,9 @@ public class StateStoreCommitRequest {
     }
 
     /**
-     * Creates a request to commit the results of an ingest job.
+     * Creates a request to commit files written during ingest or bulk import.
      *
-     * @param  request the ingest job commit request
+     * @param  request the commit request
      * @return         a state store commit request
      */
     public static StateStoreCommitRequest forIngestJob(IngestAddFilesCommitRequest request) {
