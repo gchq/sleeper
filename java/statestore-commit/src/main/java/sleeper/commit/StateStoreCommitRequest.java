@@ -26,8 +26,7 @@ import java.util.Optional;
  */
 public class StateStoreCommitRequest {
 
-    private CompactionJobCommitRequest compactionJobCommitRequest;
-    private IngestJobCommitRequest ingestJobCommitRequest;
+    private final Object request;
 
     /**
      * Creates a request to commit the results of a compaction job.
@@ -36,7 +35,7 @@ public class StateStoreCommitRequest {
      * @return         a state store commit request
      */
     public static StateStoreCommitRequest forCompactionJob(CompactionJobCommitRequest request) {
-        return new StateStoreCommitRequest(request, null);
+        return new StateStoreCommitRequest(request);
     }
 
     /**
@@ -46,12 +45,11 @@ public class StateStoreCommitRequest {
      * @return         a state store commit request
      */
     public static StateStoreCommitRequest forIngestJob(IngestJobCommitRequest request) {
-        return new StateStoreCommitRequest(null, request);
+        return new StateStoreCommitRequest(request);
     }
 
-    private StateStoreCommitRequest(CompactionJobCommitRequest compactionJobCommitRequest, IngestJobCommitRequest ingestJobCommitRequest) {
-        this.compactionJobCommitRequest = compactionJobCommitRequest;
-        this.ingestJobCommitRequest = ingestJobCommitRequest;
+    private StateStoreCommitRequest(Object request) {
+        this.request = request;
     }
 
     /**
@@ -60,12 +58,16 @@ public class StateStoreCommitRequest {
      * @return the compaction job commit request
      */
     public Optional<CompactionJobCommitRequest> getCompactionJobCommitRequest() {
-        return Optional.ofNullable(compactionJobCommitRequest);
+        if (request instanceof CompactionJobCommitRequest) {
+            return Optional.of((CompactionJobCommitRequest) request);
+        } else {
+            return Optional.empty();
+        }
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(compactionJobCommitRequest, ingestJobCommitRequest);
+        return Objects.hash(request);
     }
 
     @Override
@@ -77,14 +79,12 @@ public class StateStoreCommitRequest {
             return false;
         }
         StateStoreCommitRequest other = (StateStoreCommitRequest) obj;
-        return Objects.equals(compactionJobCommitRequest, other.compactionJobCommitRequest)
-                && Objects.equals(ingestJobCommitRequest, other.ingestJobCommitRequest);
+        return Objects.equals(request, other.request);
     }
 
     @Override
     public String toString() {
-        return "StateStoreCommitRequest{compactionJobCommitRequest=" + compactionJobCommitRequest +
-                ", ingestJobCommitRequest=" + ingestJobCommitRequest + "}";
+        return "StateStoreCommitRequest{request=" + request + "}";
     }
 
 }
