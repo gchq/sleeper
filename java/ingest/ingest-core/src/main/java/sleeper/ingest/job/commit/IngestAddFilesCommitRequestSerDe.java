@@ -22,7 +22,7 @@ import sleeper.core.statestore.CommitRequestType;
 import sleeper.core.util.GsonConfig;
 
 /**
- * Serialises and deserialises an ingest job commit request to and from JSON.
+ * Serialises and deserialises an add files commit request to and from JSON.
  */
 public class IngestAddFilesCommitRequestSerDe {
 
@@ -37,9 +37,9 @@ public class IngestAddFilesCommitRequestSerDe {
     }
 
     /**
-     * Serialises an ingest job commit request to a JSON string.
+     * Serialises an add files commit request to a JSON string.
      *
-     * @param  request the ingest job commit request
+     * @param  request the commit request
      * @return         the JSON string
      */
     public String toJson(IngestAddFilesCommitRequest request) {
@@ -47,9 +47,9 @@ public class IngestAddFilesCommitRequestSerDe {
     }
 
     /**
-     * Serialises an ingest job commit request to a pretty-printed JSON string.
+     * Serialises an add files commit request to a pretty-printed JSON string.
      *
-     * @param  request the ingest job commit request
+     * @param  request the commit request
      * @return         the pretty-printed JSON string
      */
     public String toJsonPrettyPrint(IngestAddFilesCommitRequest request) {
@@ -57,10 +57,10 @@ public class IngestAddFilesCommitRequestSerDe {
     }
 
     /**
-     * Deserialises an ingest job commit request from a JSON string.
+     * Deserialises an add files commit request from a JSON string.
      *
      * @param  json the JSON string
-     * @return      the ingest job commit request
+     * @return      the commit request
      */
     public IngestAddFilesCommitRequest fromJson(String json) {
         WrappedCommitRequest wrappedRequest = gson.fromJson(json, WrappedCommitRequest.class);
@@ -71,7 +71,7 @@ public class IngestAddFilesCommitRequestSerDe {
     }
 
     /**
-     * Stores an ingest job commit request with the type of commit request. Used by the state store committer to
+     * Stores an add files commit request with the type of commit request. Used by the state store committer to
      * deserialise the correct commit request.
      */
     private static class WrappedCommitRequest {

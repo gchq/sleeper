@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * A request to commit the results of an ingest job to the state store and job status store.
+ * A request to commit files to the state store that have been written during an ingest or bulk import.
  */
 public class IngestAddFilesCommitRequest {
     private final IngestJob ingestJob;
