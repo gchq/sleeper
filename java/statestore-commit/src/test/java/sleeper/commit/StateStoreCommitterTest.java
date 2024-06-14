@@ -41,7 +41,6 @@ import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompact
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobStatusFrom;
 import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionStatus;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
-import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forJob;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forJobOnTask;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.records;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
@@ -88,7 +87,8 @@ public class StateStoreCommitterTest {
         assertThat(stateStore.getFileReferences()).containsExactly(outputFile);
         assertThat(compactionJobStatusStore.getJob("test-job"))
                 .contains(jobStatusFrom(records()
-                        .fromUpdates(forJob("test-job", CompactionJobCreatedStatus.from(job, createdTime)))
+                        .fromUpdates(forJobOnTask("test-job", null,
+                                CompactionJobCreatedStatus.from(job, createdTime)))
                         .fromUpdates(forJobOnTask("test-job", "test-task",
                                 startedCompactionStatus(summary.getStartTime()),
                                 finishedCompactionStatus(summary)))));
