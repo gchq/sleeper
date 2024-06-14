@@ -15,7 +15,11 @@
  */
 package sleeper.commit;
 
+import sleeper.compaction.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobCommitter;
+import sleeper.core.statestore.StateStoreException;
+
+import java.util.Optional;
 
 /**
  * Applies a state store commit request.
@@ -25,6 +29,18 @@ public class StateStoreCommitter {
 
     public StateStoreCommitter(CompactionJobCommitter compactionJobCommitter) {
         this.compactionJobCommitter = compactionJobCommitter;
+    }
+
+    /**
+     * Applies a state store commit request.
+     *
+     * @param request the commit request
+     */
+    public void apply(StateStoreCommitRequest request) throws StateStoreException {
+        Optional<CompactionJobCommitRequest> compactionCommit = request.getCompactionJobCommitRequest();
+        if (compactionCommit.isPresent()) {
+            compactionJobCommitter.apply(compactionCommit.get());
+        }
     }
 
 }
