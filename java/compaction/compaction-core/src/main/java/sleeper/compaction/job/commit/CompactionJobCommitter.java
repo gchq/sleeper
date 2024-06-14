@@ -35,8 +35,7 @@ public class CompactionJobCommitter {
     private final CompactionJobStatusStore statusStore;
     private final GetStateStoreByTableId stateStoreProvider;
 
-    public CompactionJobCommitter(
-            CompactionJobStatusStore statusStore, GetStateStoreByTableId stateStoreProvider) {
+    public CompactionJobCommitter(CompactionJobStatusStore statusStore, GetStateStoreByTableId stateStoreProvider) {
         this.statusStore = statusStore;
         this.stateStoreProvider = stateStoreProvider;
     }
