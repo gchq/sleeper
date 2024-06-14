@@ -65,8 +65,8 @@ public class StateStoreCommitterTest {
         CompactionJob job = CompactionJob.builder()
                 .tableId("test-table")
                 .jobId("test-job")
-                .inputFiles(List.of(inputFile.getFilename()))
-                .outputFile(outputFile.getFilename())
+                .inputFiles(List.of("input.parquet"))
+                .outputFile("output.parquet")
                 .partitionId("root")
                 .build();
         Instant createdTime = Instant.parse("2024-06-14T15:34:00Z");
