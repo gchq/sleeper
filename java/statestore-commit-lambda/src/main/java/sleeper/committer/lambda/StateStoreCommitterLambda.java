@@ -34,10 +34,10 @@ import sleeper.commit.StateStoreCommitRequestDeserialiser;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobCommitter;
-import sleeper.compaction.job.commit.CompactionJobCommitter.GetStateStore;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.core.statestore.GetStateStoreByTableId;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.LoggedDuration;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
@@ -110,7 +110,7 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
                 statusStore, stateStoreProviderForCommitter(tablePropertiesProvider, stateStoreProvider));
     }
 
-    private static GetStateStore stateStoreProviderForCommitter(
+    private static GetStateStoreByTableId stateStoreProviderForCommitter(
             TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider) {
         return tableId -> stateStoreProvider.getStateStore(tablePropertiesProvider.getById(tableId));
     }
