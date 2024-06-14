@@ -75,8 +75,8 @@ public class IngestAddFilesCommitRequestSerDe {
      * deserialise the correct commit request.
      */
     private static class WrappedCommitRequest {
-        private CommitRequestType type;
-        private IngestAddFilesCommitRequest request;
+        private final CommitRequestType type;
+        private final IngestAddFilesCommitRequest request;
 
         WrappedCommitRequest(IngestAddFilesCommitRequest request) {
             this.type = CommitRequestType.INGEST_ADD_FILES;

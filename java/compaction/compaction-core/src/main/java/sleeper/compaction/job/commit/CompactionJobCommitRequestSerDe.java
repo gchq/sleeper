@@ -49,12 +49,12 @@ public class CompactionJobCommitRequestSerDe {
         if (CommitRequestType.COMPACTION_FINISHED == wrappedRequest.type) {
             return wrappedRequest.request;
         }
-        return null;
+        throw new IllegalArgumentException("Unexpected request type");
     }
 
     private static class WrappedCommitRequest {
-        private CommitRequestType type;
-        private CompactionJobCommitRequest request;
+        private final CommitRequestType type;
+        private final CompactionJobCommitRequest request;
 
         WrappedCommitRequest(CompactionJobCommitRequest request) {
             this.type = CommitRequestType.COMPACTION_FINISHED;
