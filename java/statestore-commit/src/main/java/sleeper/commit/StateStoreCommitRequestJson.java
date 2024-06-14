@@ -41,9 +41,9 @@ public class StateStoreCommitRequestJson {
     }
 
     /**
-     * Gets the compaction job commit request.
+     * Gets the state store commit request.
      *
-     * @return the compaction job commit request
+     * @return the state store commit request
      */
     public StateStoreCommitRequest getCommitRequest() {
         if (CommitRequestType.COMPACTION_FINISHED == type) {
@@ -56,13 +56,14 @@ public class StateStoreCommitRequestJson {
     }
 
     /**
-     * Represents a compaction job commit request.
+     * Represents a state store commit request.
      */
     private static class CommitRequest {
         private CompactionJob job;
         private IngestJob ingestJob;
-        private List<FileReference> fileReferenceList;
+        private List<FileReference> fileReferences;
         private String taskId;
+        private String jobRunId;
         private Instant startTime;
         private Instant finishTime;
         private long recordsRead;
@@ -73,7 +74,7 @@ public class StateStoreCommitRequestJson {
         }
 
         IngestJobCommitRequest toIngestJobCommitRequest() {
-            return new IngestJobCommitRequest(ingestJob, taskId, fileReferenceList, recordsProcessedSummary());
+            return new IngestJobCommitRequest(ingestJob, taskId, jobRunId, fileReferences);
         }
 
         RecordsProcessedSummary recordsProcessedSummary() {

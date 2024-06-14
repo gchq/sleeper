@@ -15,12 +15,9 @@
  */
 package sleeper.ingest.job.commit;
 
-import sleeper.core.record.process.RecordsProcessed;
-import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.FileReference;
 import sleeper.ingest.job.IngestJob;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 
@@ -30,20 +27,14 @@ import java.util.Objects;
 public class IngestJobCommitRequest {
     private final IngestJob ingestJob;
     private final String taskId;
-    private final List<FileReference> fileReferenceList;
-    private final Instant startTime;
-    private final Instant finishTime;
-    private final long recordsRead;
-    private final long recordsWritten;
+    private final String jobRunId;
+    private final List<FileReference> fileReferences;
 
-    public IngestJobCommitRequest(IngestJob job, String taskId, List<FileReference> fileReferenceList, RecordsProcessedSummary recordsProcessed) {
+    public IngestJobCommitRequest(IngestJob job, String taskId, String jobRunId, List<FileReference> fileReferences) {
         this.ingestJob = job;
         this.taskId = taskId;
-        this.fileReferenceList = fileReferenceList;
-        this.startTime = recordsProcessed.getStartTime();
-        this.finishTime = recordsProcessed.getFinishTime();
-        this.recordsRead = recordsProcessed.getRecordsRead();
-        this.recordsWritten = recordsProcessed.getRecordsWritten();
+        this.jobRunId = jobRunId;
+        this.fileReferences = fileReferences;
     }
 
     public IngestJob getJob() {
@@ -54,39 +45,13 @@ public class IngestJobCommitRequest {
         return taskId;
     }
 
-    public List<FileReference> getFileReferenceList() {
-        return fileReferenceList;
-    }
-
-    public long getRecordsRead() {
-        return recordsRead;
-    }
-
-    public long getRecordsWritten() {
-        return recordsWritten;
-    }
-
-    /**
-     * Creates a records processed object from the records read and written.
-     *
-     * @return a records processed object
-     */
-    public RecordsProcessed buildRecordsProcessed() {
-        return new RecordsProcessed(recordsRead, recordsWritten);
-    }
-
-    /**
-     * Creates a records processed summary from the records read and written, as well as the start and finish time.
-     *
-     * @return a records processed summary
-     */
-    public RecordsProcessedSummary buildRecordsProcessedSummary() {
-        return new RecordsProcessedSummary(buildRecordsProcessed(), startTime, finishTime);
+    public List<FileReference> getFileReferences() {
+        return fileReferences;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(ingestJob, taskId, fileReferenceList, startTime, finishTime, recordsRead, recordsWritten);
+        return Objects.hash(ingestJob, taskId, jobRunId, fileReferences);
     }
 
     @Override
@@ -100,22 +65,16 @@ public class IngestJobCommitRequest {
         IngestJobCommitRequest other = (IngestJobCommitRequest) obj;
         return Objects.equals(ingestJob, other.ingestJob)
                 && Objects.equals(taskId, other.taskId)
-                && Objects.equals(fileReferenceList, other.fileReferenceList)
-                && Objects.equals(startTime, other.startTime)
-                && Objects.equals(finishTime, other.finishTime)
-                && recordsRead == other.recordsRead
-                && recordsWritten == other.recordsWritten;
+                && Objects.equals(fileReferences, other.fileReferences)
+                && Objects.equals(jobRunId, other.jobRunId);
     }
 
     @Override
     public String toString() {
         return "IngestJobCommitRequest{job=" + ingestJob +
                 ", taskId=" + taskId +
-                ", fileReferenceList=" + fileReferenceList +
-                ", startTime=" + startTime +
-                ", finishTime=" + finishTime +
-                ", recordsRead=" + recordsRead +
-                ", recordsWritten=" + recordsWritten + "}";
+                ", fileReferences=" + fileReferences +
+                ", jobRunId=" + jobRunId + "}";
     }
 
 }

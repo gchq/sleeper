@@ -11,7 +11,8 @@
       ]
     },
     "taskId": "test-task",
-    "fileReferenceList": [
+    "jobRunId": "test-job-run",
+    "fileReferences": [
       {
         "filename": "file1.parquet",
         "partitionId": "root",
@@ -30,10 +31,6 @@
         "countApproximate": false,
         "onlyContainsDataForThisPartition": true
       }
-    ],
-    "startTime": 1714561080000,
-    "finishTime": 1714561140000,
-    "recordsRead": 300,
-    "recordsWritten": 300
+    ]
   }
 }

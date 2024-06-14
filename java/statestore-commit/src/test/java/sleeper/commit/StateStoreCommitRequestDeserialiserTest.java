@@ -79,10 +79,7 @@ public class StateStoreCommitRequestDeserialiserTest {
                 .numberOfRecords(200L)
                 .onlyContainsDataForThisPartition(true)
                 .build();
-        IngestJobCommitRequest ingestJobCommitRequest = new IngestJobCommitRequest(job, "test-task", List.of(file1, file2),
-                new RecordsProcessedSummary(
-                        new RecordsProcessed(300, 300),
-                        Instant.parse("2024-05-01T10:58:00Z"), Duration.ofMinutes(1)));
+        IngestJobCommitRequest ingestJobCommitRequest = new IngestJobCommitRequest(job, "test-task", "test-job-run", List.of(file1, file2));
         String jsonString = new IngestJobCommitRequestSerDe().toJson(ingestJobCommitRequest);
 
         // When / Then

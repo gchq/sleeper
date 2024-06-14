@@ -18,13 +18,9 @@ package sleeper.ingest.job.commit;
 import org.approvaltests.Approvals;
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.record.process.RecordsProcessed;
-import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.FileReference;
 import sleeper.ingest.job.IngestJob;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -54,10 +50,7 @@ public class IngestJobCommitRequestSerDeTest {
                 .numberOfRecords(200L)
                 .onlyContainsDataForThisPartition(true)
                 .build();
-        IngestJobCommitRequest commit = new IngestJobCommitRequest(job, "test-task", List.of(file1, file2),
-                new RecordsProcessedSummary(
-                        new RecordsProcessed(300, 300),
-                        Instant.parse("2024-05-01T10:58:00Z"), Duration.ofMinutes(1)));
+        IngestJobCommitRequest commit = new IngestJobCommitRequest(job, "test-task", "test-job-run", List.of(file1, file2));
 
         // When
         String json = serDe.toJsonPrettyPrint(commit);
