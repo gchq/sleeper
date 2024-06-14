@@ -63,18 +63,14 @@ public class IngestAddFilesCommitRequest {
             return false;
         }
         IngestAddFilesCommitRequest other = (IngestAddFilesCommitRequest) obj;
-        return Objects.equals(ingestJob, other.ingestJob)
-                && Objects.equals(taskId, other.taskId)
-                && Objects.equals(fileReferences, other.fileReferences)
-                && Objects.equals(jobRunId, other.jobRunId);
+        return Objects.equals(ingestJob, other.ingestJob) && Objects.equals(taskId, other.taskId)
+                && Objects.equals(jobRunId, other.jobRunId) && Objects.equals(fileReferences, other.fileReferences);
     }
 
     @Override
     public String toString() {
-        return "IngestJobCommitRequest{job=" + ingestJob +
-                ", taskId=" + taskId +
-                ", fileReferences=" + fileReferences +
-                ", jobRunId=" + jobRunId + "}";
+        return "IngestAddFilesCommitRequest{ingestJob=" + ingestJob + ", taskId=" + taskId
+                + ", jobRunId=" + jobRunId + ", fileReferences=" + fileReferences + "}";
     }
 
 }
