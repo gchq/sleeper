@@ -29,9 +29,10 @@ import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.commit.StateStoreCommitRequest;
+import sleeper.commit.StateStoreCommitRequestDeserialiser;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.commit.CompactionJobCommitRequest;
-import sleeper.compaction.job.commit.CompactionJobCommitRequestSerDe;
 import sleeper.compaction.job.commit.CompactionJobCommitter;
 import sleeper.compaction.job.commit.CompactionJobCommitter.GetStateStore;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
@@ -55,7 +56,7 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
     public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreCommitterLambda.class);
 
     private final CompactionJobCommitter compactionJobCommitter;
-    private final CompactionJobCommitRequestSerDe serDe = new CompactionJobCommitRequestSerDe();
+    private final StateStoreCommitRequestDeserialiser serDe = new StateStoreCommitRequestDeserialiser();
 
     public StateStoreCommitterLambda() {
         this(connectToAws());
@@ -71,20 +72,26 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
         LOGGER.info("Lambda started at {}", startTime);
         List<BatchItemFailure> batchItemFailures = new ArrayList<>();
         for (SQSMessage message : event.getRecords()) {
-            try {
-                LOGGER.info("Found message: {}", message.getBody());
-                CompactionJobCommitRequest request = serDe.fromJson(message.getBody());
-                compactionJobCommitter.apply(request);
-                LOGGER.info("Successfully committed compaction job {}", request.getJob());
-            } catch (RuntimeException | StateStoreException e) {
-                LOGGER.error("Failed committing compaction job", e);
-                batchItemFailures.add(new BatchItemFailure(message.getMessageId()));
+            LOGGER.info("Found message: {}", message.getBody());
+            StateStoreCommitRequest request = serDe.fromJson(message.getBody());
+            if (request.getCompactionJobCommitRequest().isPresent()) {
+                commitCompactionJob(request.getCompactionJobCommitRequest().get(), batchItemFailures, message);
             }
         }
         Instant finishTime = Instant.now();
         LOGGER.info("Lambda finished at {} (ran for {})",
                 finishTime, LoggedDuration.withFullOutput(startTime, finishTime));
         return new SQSBatchResponse(batchItemFailures);
+    }
+
+    private void commitCompactionJob(CompactionJobCommitRequest request, List<BatchItemFailure> batchItemFailures, SQSMessage message) {
+        try {
+            compactionJobCommitter.apply(request);
+            LOGGER.info("Successfully committed compaction job {}", request.getJob());
+        } catch (RuntimeException | StateStoreException e) {
+            LOGGER.error("Failed committing compaction job", e);
+            batchItemFailures.add(new BatchItemFailure(message.getMessageId()));
+        }
     }
 
     private static CompactionJobCommitter connectToAws() {

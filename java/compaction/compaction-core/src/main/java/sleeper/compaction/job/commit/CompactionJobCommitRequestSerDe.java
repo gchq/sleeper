@@ -17,21 +17,11 @@ package sleeper.compaction.job.commit;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonDeserializationContext;
-import com.google.gson.JsonDeserializer;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonPrimitive;
-import com.google.gson.JsonSerializationContext;
-import com.google.gson.JsonSerializer;
 
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionJobSerDe;
+import sleeper.compaction.job.CompactionJobJsonSerDe;
+import sleeper.core.statestore.CommitRequestType;
 import sleeper.core.util.GsonConfig;
-
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.lang.reflect.Type;
 
 public class CompactionJobCommitRequestSerDe {
 
@@ -46,38 +36,29 @@ public class CompactionJobCommitRequestSerDe {
         gsonPrettyPrint = builder.setPrettyPrinting().create();
     }
 
-    public String toJson(CompactionJobCommitRequest jobRun) {
-        return gson.toJson(jobRun);
+    public String toJson(CompactionJobCommitRequest compactionJobCommitRequest) {
+        return gson.toJson(new WrappedCommitRequest(compactionJobCommitRequest), WrappedCommitRequest.class);
     }
 
-    public String toJsonPrettyPrint(CompactionJobCommitRequest jobRun) {
-        return gsonPrettyPrint.toJson(jobRun);
+    public String toJsonPrettyPrint(CompactionJobCommitRequest compactionJobCommitRequest) {
+        return gsonPrettyPrint.toJson(new WrappedCommitRequest(compactionJobCommitRequest), WrappedCommitRequest.class);
     }
 
     public CompactionJobCommitRequest fromJson(String json) {
-        return gson.fromJson(json, CompactionJobCommitRequest.class);
+        WrappedCommitRequest wrappedRequest = gson.fromJson(json, WrappedCommitRequest.class);
+        if (CommitRequestType.COMPACTION_FINISHED == wrappedRequest.type) {
+            return wrappedRequest.request;
+        }
+        return null;
     }
 
-    /**
-     * A GSON plugin to serialise/deserialise a compaction job.
-     */
-    private static class CompactionJobJsonSerDe implements JsonSerializer<CompactionJob>, JsonDeserializer<CompactionJob> {
-        @Override
-        public CompactionJob deserialize(JsonElement element, Type type, JsonDeserializationContext context) throws JsonParseException {
-            try {
-                return CompactionJobSerDe.deserialiseFromString(element.getAsString());
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        }
+    private static class WrappedCommitRequest {
+        private CommitRequestType type;
+        private CompactionJobCommitRequest request;
 
-        @Override
-        public JsonElement serialize(CompactionJob job, Type type, JsonSerializationContext context) {
-            try {
-                return new JsonPrimitive(CompactionJobSerDe.serialiseToString(job));
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
+        WrappedCommitRequest(CompactionJobCommitRequest request) {
+            this.type = CommitRequestType.COMPACTION_FINISHED;
+            this.request = request;
         }
     }
 }

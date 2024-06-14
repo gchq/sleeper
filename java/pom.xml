@@ -29,6 +29,7 @@
         <module>parquet</module>
         <module>clients</module>
         <module>statestore</module>
+        <module>statestore-commit</module>
         <module>statestore-commit-lambda</module>
         <module>statestore-snapshot-lambda</module>
         <module>configuration</module>
