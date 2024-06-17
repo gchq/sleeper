@@ -239,6 +239,14 @@ class BulkImportExecutorIT {
         return new FakeExecutor(validationTime);
     }
 
+    public BulkImportExecutor executorAtTime(Instant validationTime) {
+        TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(tableProperties);
+        StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tableProperties,
+                inMemoryStateStoreWithFixedSinglePartition(SCHEMA));
+        return new BulkImportExecutor(instanceProperties, tablePropertiesProvider, stateStoreProvider,
+                ingestJobStatusStore, s3, new FakeExecutor(validationTime), List.of(validationTime).iterator()::next);
+    }
+
     private class FakeExecutor implements PlatformExecutor {
         private final List<BulkImportJob> jobsRun = new ArrayList<>();
         private final List<String> jobRunIdsOfJobsRun = new ArrayList<>();
