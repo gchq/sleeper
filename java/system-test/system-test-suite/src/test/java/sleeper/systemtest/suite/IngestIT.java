@@ -30,11 +30,13 @@ import sleeper.systemtest.dsl.ingest.SystemTestIngestType;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
+import java.util.Map;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.table.TableProperty.INGEST_FILES_COMMIT_ASYNC;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 import static sleeper.systemtest.suite.testutil.FileReferenceSystemTestHelper.numberOfRecordsIn;
 
@@ -102,6 +104,23 @@ public class IngestIT {
         assertThat(sleeper.directQuery().allRecordsInTable())
                 .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 400)));
         assertThat(sleeper.tableFiles().references()).hasSize(2);
+    }
+
+    @Test
+    void shouldIngest1FileAndCommitResultsAsynchronously(SleeperSystemTest sleeper) {
+        // Given
+        sleeper.updateTableProperties(Map.of(INGEST_FILES_COMMIT_ASYNC, "true"));
+        sleeper.sourceFiles()
+                .createWithNumberedRecords("file.parquet", LongStream.range(0, 100));
+
+        // When
+        sleeper.ingest().byQueue().sendSourceFiles("file.parquet")
+                .invokeTask().waitForJobs();
+
+        // Then
+        assertThat(sleeper.directQuery().allRecordsInTable())
+                .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
+        assertThat(sleeper.tableFiles().references()).hasSize(1);
     }
 
     @ParameterizedTest

@@ -82,7 +82,6 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_FILES_COMMIT_ASYNC;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_RECORD_BATCH_TYPE;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_FILES_COMMIT_ASYNC;
@@ -154,7 +153,6 @@ class IngestJobRunnerIT {
         instanceProperties.set(DEFAULT_INGEST_RECORD_BATCH_TYPE, recordBatchType);
         instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, partitionFileWriterType);
         instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, commitQueueUrl);
-        instanceProperties.set(DEFAULT_INGEST_FILES_COMMIT_ASYNC, "false");
         return instanceProperties;
     }
 

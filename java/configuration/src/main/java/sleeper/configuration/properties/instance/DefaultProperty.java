@@ -232,7 +232,7 @@ public interface DefaultProperty {
     UserDefinedInstanceProperty DEFAULT_INGEST_FILES_COMMIT_ASYNC = Index.propertyBuilder("sleeper.default.ingest.job.files.commit.async")
             .description("If true, ingest tasks will add files via requests sent to the state store committer lambda " +
                     "asynchronously. If false, ingest tasks will commit new files synchronously.")
-            .defaultValue("true")
+            .defaultValue("false")
             .validationPredicate(Utils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
 
