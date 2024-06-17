@@ -27,8 +27,6 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
 
-import java.util.Optional;
-
 /**
  * Applies a state store commit request.
  */
@@ -49,13 +47,11 @@ public class StateStoreCommitter {
      * @param request the commit request
      */
     public void apply(StateStoreCommitRequest request) throws StateStoreException {
-        Optional<CompactionJobCommitRequest> compactionCommit = request.getCompactionJobCommitRequest();
-        if (compactionCommit.isPresent()) {
-            compactionJobCommitter.apply(compactionCommit.get());
-        }
-        Optional<IngestAddFilesCommitRequest> addFilesCommitOpt = request.getAddFilesCommitRequest();
-        if (addFilesCommitOpt.isPresent()) {
-            apply(addFilesCommitOpt.get());
+        Object requestObj = request.getRequest();
+        if (requestObj instanceof CompactionJobCommitRequest) {
+            compactionJobCommitter.apply((CompactionJobCommitRequest) requestObj);
+        } else if (requestObj instanceof IngestAddFilesCommitRequest) {
+            apply((IngestAddFilesCommitRequest) requestObj);
         }
     }
 
