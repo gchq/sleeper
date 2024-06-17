@@ -144,9 +144,8 @@ public class IngestJobRunner implements IngestJobHandler {
 
     private AddFilesToStateStore addFilesToStateStore(IngestJob job, TableProperties tableProperties) {
         if (tableProperties.getBoolean(INGEST_FILES_COMMIT_ASYNC)) {
-            return AddFilesToStateStore.bySqs(sqsClient, instanceProperties, builder -> builder
-                    .ingestJob(job)
-                    .taskId(taskId));
+            return AddFilesToStateStore.bySqs(sqsClient, instanceProperties,
+                    requestBuilder -> requestBuilder.ingestJob(job).taskId(taskId));
         } else {
             return AddFilesToStateStore.synchronous(stateStoreProvider.getStateStore(tableProperties));
         }
