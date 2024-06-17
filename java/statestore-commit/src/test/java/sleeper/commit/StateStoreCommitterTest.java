@@ -100,7 +100,7 @@ public class StateStoreCommitterTest {
 
     @Test
     void shouldApplyIngestJobAddFilesCommitRequest() throws Exception {
-        // Given
+        // Given we have a commit request during an ingest job, which may still be in progress
         StateStore stateStore = createTable("test-table");
         FileReference outputFile = fileFactory.rootFile("output.parquet", 123L);
         IngestJob ingestJob = IngestJob.builder()
@@ -129,7 +129,7 @@ public class StateStoreCommitterTest {
 
     @Test
     void shouldApplyIngestStreamAddFilesCommitRequest() throws Exception {
-        // Given
+        // Given we have a commit request without an ingest job (e.g. from an endless stream of records)
         StateStore stateStore = createTable("test-table");
         FileReference outputFile = fileFactory.rootFile("output.parquet", 123L);
         IngestAddFilesCommitRequest commitRequest = IngestAddFilesCommitRequest.builder()
