@@ -53,13 +53,28 @@ public class StateStoreCommitRequest {
     }
 
     /**
-     * Gets the compaction job commit request.
+     * Gets the commit request if it is a compaction job commit request. If the type does not match, then
+     * return an empty optional.
      *
-     * @return the compaction job commit request
+     * @return the compaction job commit request if the type matches
      */
     public Optional<CompactionJobCommitRequest> getCompactionJobCommitRequest() {
         if (request instanceof CompactionJobCommitRequest) {
             return Optional.of((CompactionJobCommitRequest) request);
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Gets the commit request if it is an ingest add files commit request. If the type does not match, then
+     * return an empty optional.
+     *
+     * @return the ingest add files commit request if the type matches
+     */
+    public Optional<IngestAddFilesCommitRequest> getAddFilesCommitRequest() {
+        if (request instanceof IngestAddFilesCommitRequest) {
+            return Optional.of((IngestAddFilesCommitRequest) request);
         } else {
             return Optional.empty();
         }

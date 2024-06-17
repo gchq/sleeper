@@ -19,7 +19,6 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.commit.CompactionJobCommitRequest;
-import sleeper.compaction.job.commit.CompactionJobCommitter;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.testutils.InMemoryCompactionJobStatusStore;
 import sleeper.core.partition.PartitionTree;
@@ -31,6 +30,7 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
+import sleeper.ingest.job.status.InMemoryIngestJobStatusStore;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -48,6 +48,8 @@ import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
+import static sleeper.ingest.job.status.IngestJobStartedEvent.ingestJobStarted;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.startedIngestJob;
 
 public class StateStoreCommitterTest {
     private static final Instant DEFAULT_UPDATE_TIME = Instant.parse("2024-06-14T13:33:00Z");
@@ -55,6 +57,7 @@ public class StateStoreCommitterTest {
     private final PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
     private final FileReferenceFactory fileFactory = FileReferenceFactory.fromUpdatedAt(partitions, DEFAULT_UPDATE_TIME);
     private final InMemoryCompactionJobStatusStore compactionJobStatusStore = new InMemoryCompactionJobStatusStore();
+    private final InMemoryIngestJobStatusStore ingestJobStatusStore = new InMemoryIngestJobStatusStore();
     private final Map<String, StateStore> stateStoreByTableId = new HashMap<>();
 
     @Test
@@ -71,14 +74,15 @@ public class StateStoreCommitterTest {
                 .partitionId("root")
                 .build();
         Instant createdTime = Instant.parse("2024-06-14T15:34:00Z");
-        RecordsProcessedSummary summary = summary(Instant.parse("2024-06-14T15:35:00Z"), Duration.ofMinutes(2), 123, 123);
+        Instant startTime = Instant.parse("2024-06-14T15:35:00Z");
+        RecordsProcessedSummary summary = summary(startTime, Duration.ofMinutes(2), 123, 123);
         CompactionJobCommitRequest commitRequest = new CompactionJobCommitRequest(job, "test-task", summary);
 
         stateStore.addFile(inputFile);
         stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles(
                 "test-job", "root", List.of("input.parquet"))));
         compactionJobStatusStore.jobCreated(job, createdTime);
-        compactionJobStatusStore.jobStarted(job, summary.getStartTime(), "test-task");
+        compactionJobStatusStore.jobStarted(job, startTime, "test-task");
 
         // When
         committer().apply(StateStoreCommitRequest.forCompactionJob(commitRequest));
@@ -90,12 +94,12 @@ public class StateStoreCommitterTest {
                         .fromUpdates(forJobOnTask("test-job", null,
                                 CompactionJobCreatedStatus.from(job, createdTime)))
                         .fromUpdates(forJobOnTask("test-job", "test-task",
-                                startedCompactionStatus(summary.getStartTime()),
+                                startedCompactionStatus(startTime),
                                 finishedCompactionStatus(summary)))));
     }
 
     @Test
-    void shouldApplyIngestAddFilesCommitRequest() {
+    void shouldApplyIngestAddFilesCommitRequest() throws Exception {
         // Given
         StateStore stateStore = createTable("test-table");
         FileReference outputFile = fileFactory.rootFile("output.parquet", 123L);
@@ -110,10 +114,21 @@ public class StateStoreCommitterTest {
                 .jobRunId("test-job-run-id")
                 .fileReferences(List.of(outputFile))
                 .build();
+
+        Instant startTime = Instant.parse("2024-06-14T15:34:00Z");
+        ingestJobStatusStore.jobStarted(ingestJobStarted("test-task-id", ingestJob, startTime));
+
+        // When
+        committer().apply(StateStoreCommitRequest.forIngestAddFiles(commitRequest));
+
+        // Then
+        assertThat(stateStore.getFileReferences()).containsExactly(outputFile);
+        assertThat(ingestJobStatusStore.getJob("test-job"))
+                .contains(startedIngestJob(ingestJob, "test-task-id", startTime));
     }
 
     private StateStoreCommitter committer() {
-        return new StateStoreCommitter(new CompactionJobCommitter(compactionJobStatusStore, stateStoreByTableId::get));
+        return new StateStoreCommitter(compactionJobStatusStore, stateStoreByTableId::get);
     }
 
     private StateStore createTable(String tableId) {

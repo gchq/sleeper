@@ -15,9 +15,13 @@
  */
 package sleeper.commit;
 
+import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobCommitter;
+import sleeper.core.statestore.GetStateStoreByTableId;
+import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
 
 import java.util.Optional;
 
@@ -26,9 +30,11 @@ import java.util.Optional;
  */
 public class StateStoreCommitter {
     private final CompactionJobCommitter compactionJobCommitter;
+    private GetStateStoreByTableId stateStoreProvider;
 
-    public StateStoreCommitter(CompactionJobCommitter compactionJobCommitter) {
-        this.compactionJobCommitter = compactionJobCommitter;
+    public StateStoreCommitter(CompactionJobStatusStore compactionJobStatusStore, GetStateStoreByTableId stateStoreProvider) {
+        this.compactionJobCommitter = new CompactionJobCommitter(compactionJobStatusStore, stateStoreProvider);
+        this.stateStoreProvider = stateStoreProvider;
     }
 
     /**
@@ -40,6 +46,12 @@ public class StateStoreCommitter {
         Optional<CompactionJobCommitRequest> compactionCommit = request.getCompactionJobCommitRequest();
         if (compactionCommit.isPresent()) {
             compactionJobCommitter.apply(compactionCommit.get());
+        }
+        Optional<IngestAddFilesCommitRequest> addFilesCommitOpt = request.getAddFilesCommitRequest();
+        if (addFilesCommitOpt.isPresent()) {
+            IngestAddFilesCommitRequest addFilesCommit = addFilesCommitOpt.get();
+            StateStore stateStore = stateStoreProvider.getByTableId(addFilesCommit.getJob().getTableId());
+            stateStore.addFiles(addFilesCommit.getFileReferences());
         }
     }
 
