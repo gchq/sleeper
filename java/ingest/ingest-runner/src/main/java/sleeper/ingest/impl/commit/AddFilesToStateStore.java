@@ -15,11 +15,19 @@
  */
 package sleeper.ingest.impl.commit;
 
+import com.amazonaws.services.sqs.AmazonSQS;
+
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.ingest.job.IngestJob;
+import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
+import sleeper.ingest.job.commit.IngestAddFilesCommitRequestSerDe;
 
 import java.util.List;
+
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 
 @FunctionalInterface
 public interface AddFilesToStateStore {
@@ -30,4 +38,28 @@ public interface AddFilesToStateStore {
         return stateStore::addFiles;
     }
 
+    static AddFilesToStateStore bySqsWithJob(AmazonSQS sqsClient, InstanceProperties instanceProperties,
+            IngestJob job, String taskId, String jobRunId) {
+        return references -> {
+            String jobCommitQueue = instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL);
+            IngestAddFilesCommitRequest commitRequest = IngestAddFilesCommitRequest.builder()
+                    .ingestJob(job)
+                    .taskId(taskId)
+                    .jobRunId(jobRunId)
+                    .fileReferences(references)
+                    .build();
+            sqsClient.sendMessage(jobCommitQueue, new IngestAddFilesCommitRequestSerDe().toJson(commitRequest));
+        };
+    }
+
+    static AddFilesToStateStore bySqsNoJob(AmazonSQS sqsClient, InstanceProperties instanceProperties, String tableId) {
+        return references -> {
+            String jobCommitQueue = instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL);
+            IngestAddFilesCommitRequest commitRequest = IngestAddFilesCommitRequest.builder()
+                    .tableId(tableId)
+                    .fileReferences(references)
+                    .build();
+            sqsClient.sendMessage(jobCommitQueue, new IngestAddFilesCommitRequestSerDe().toJson(commitRequest));
+        };
+    }
 }

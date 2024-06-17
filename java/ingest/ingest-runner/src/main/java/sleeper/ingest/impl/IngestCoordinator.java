@@ -47,6 +47,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.Objects.requireNonNullElseGet;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
@@ -121,7 +122,8 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
         // Supplied member variables
         this.objectFactory = requireNonNull(builder.objectFactory);
         this.sleeperStateStore = requireNonNull(builder.stateStore);
-        this.addFilesToStateStore = requireNonNull(builder.addFilesToStateStore);
+        this.addFilesToStateStore = requireNonNullElseGet(builder.addFilesToStateStore,
+                () -> AddFilesToStateStore.synchronous(sleeperStateStore));
         this.sleeperSchema = requireNonNull(builder.schema);
         this.sleeperIteratorClassName = builder.iteratorClassName;
         this.sleeperIteratorConfig = builder.iteratorConfig;
@@ -386,7 +388,17 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
          */
         public Builder<T> stateStore(StateStore stateStore) {
             this.stateStore = stateStore;
-            this.addFilesToStateStore = AddFilesToStateStore.synchronous(stateStore);
+            return this;
+        }
+
+        /**
+         * The function to add files to the state store.
+         *
+         * @param  addFilesToStateStore the function
+         * @return                      the builder for call chaining
+         */
+        public Builder<T> addFilesToStateStore(AddFilesToStateStore addFilesToStateStore) {
+            this.addFilesToStateStore = addFilesToStateStore;
             return this;
         }
 
