@@ -100,6 +100,7 @@ public class IngestStack extends NestedStack {
             BuiltJars jars,
             Topic topic,
             CoreStacks coreStacks,
+            StateStoreUpdateStack stateStoreUpdateStack,
             IngestStatusStoreStack statusStoreStack,
             List<IMetric> errorMetrics) {
         super(scope, id);
@@ -122,7 +123,7 @@ public class IngestStack extends NestedStack {
         sqsQueueForIngestJobs(coreStacks, topic, errorMetrics);
 
         // ECS cluster for ingest tasks
-        ecsClusterForIngestTasks(jarsBucket, coreStacks, ingestJobQueue);
+        ecsClusterForIngestTasks(jarsBucket, coreStacks, ingestJobQueue, stateStoreUpdateStack.getCommitQueue());
 
         // Lambda to create ingest tasks
         lambdaToCreateIngestTasks(coreStacks, ingestJobQueue, taskCreatorJar);
@@ -186,7 +187,8 @@ public class IngestStack extends NestedStack {
     private Cluster ecsClusterForIngestTasks(
             IBucket jarsBucket,
             CoreStacks coreStacks,
-            Queue ingestJobQueue) {
+            Queue ingestJobQueue,
+            Queue stateStoreCommitQueue) {
         VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
                 .vpcId(instanceProperties.get(VPC_ID))
                 .build();
@@ -226,6 +228,7 @@ public class IngestStack extends NestedStack {
         statusStore.grantWriteJobEvent(taskDefinition.getTaskRole());
         statusStore.grantWriteTaskEvent(taskDefinition.getTaskRole());
         ingestJobQueue.grantConsumeMessages(taskDefinition.getTaskRole());
+        stateStoreCommitQueue.grantSendMessages(taskDefinition.getTaskRole());
         taskDefinition.getTaskRole().addToPrincipalPolicy(PolicyStatement.Builder.create()
                 .effect(Effect.ALLOW)
                 .actions(Collections.singletonList("cloudwatch:PutMetricData"))
