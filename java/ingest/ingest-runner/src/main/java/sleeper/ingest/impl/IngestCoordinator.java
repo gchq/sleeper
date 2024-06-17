@@ -149,39 +149,6 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
     }
 
     /**
-     * Updates the Sleeper table state store with the details of new data files which are available. This method will
-     * repeatedly retry if the update fails, with an exponential backoff.
-     *
-     * @param addFilesToStateStore a function to update the state store
-     * @param fileReferenceList    the file references to add to the state store
-     */
-    private static void updateStateStore(
-            AddFilesToStateStore addFilesToStateStore,
-            List<FileReference> fileReferenceList) {
-        boolean success = false;
-        int numberOfFailures = 0;
-        while (!success) {
-            try {
-                addFilesToStateStore.addFiles(fileReferenceList);
-                success = true;
-            } catch (StateStoreException e) {
-                LOGGER.error("Failed to update DynamoDB with new files", e);
-                numberOfFailures++;
-                if (numberOfFailures >= 10) {
-                    throw new RetryStateStoreException("Unable to update StateStore after 10 attempts (most recent exception was " + e.getMessage() + ")", e);
-                }
-                // Sleep with exponential back-off
-                try {
-                    Thread.sleep((long) Math.pow(2.0D, numberOfFailures));
-                } catch (InterruptedException e2) {
-                    Thread.currentThread().interrupt();
-                    throw new RetryStateStoreException("Interrupted retrying state store update after previous failure", e);
-                }
-            }
-        }
-    }
-
-    /**
      * Commits data to the Sleeper table and state store if the current record batch is full. If the current
      * {@link RecordBatch} reports it is full, retrieve the records from the batch in sorted order, apply a Sleeper
      * iterator if required, split the sorted data into partitions and ingest the partitions into the back-end store.
@@ -191,7 +158,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
      *                                   structures.
      * @throws IOException               if there was a failure writing the new files
      * @throws IteratorCreationException if there was a failure creating the Sleeper iterator
-     * @throws StateStoreException       if there was a failure adding files to the state store
+     * @throws StateStoreException       if there was a failure reading partitions from the state store
      */
     private void initiateIngestIfNecessary(boolean isClosing) throws StateStoreException, IteratorCreationException, IOException {
         if (currentRecordBatch == null) {
@@ -217,7 +184,11 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
                 CompletableFuture<List<FileReference>> consumedFuture = ingesterIntoPartitions
                         .initiateIngest(recordIteratorWithSleeperIteratorApplied, partitionTree)
                         .thenApply(fileReferenceList -> {
-                            updateStateStore(addFilesToStateStore, fileReferenceList);
+                            try {
+                                addFilesToStateStore.addFiles(fileReferenceList);
+                            } catch (StateStoreException e) {
+                                throw new RuntimeException(e);
+                            }
                             return fileReferenceList;
                         });
                 ingestFutures.add(consumedFuture);
@@ -264,7 +235,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
      *
      * @throws IOException               if there was a failure writing the new files
      * @throws IteratorCreationException if there was a failure creating the Sleeper iterator
-     * @throws StateStoreException       if there was a failure adding files to the state store
+     * @throws StateStoreException       if there was a failure reading partitions from the state store
      */
     @Override
     public void close() throws StateStoreException, IteratorCreationException, IOException {
@@ -283,7 +254,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
      * @return                           Details about every file that was added to the state store.
      * @throws IOException               if there was a failure writing the new files
      * @throws IteratorCreationException if there was a failure creating the Sleeper iterator
-     * @throws StateStoreException       if there was a failure adding files to the state store
+     * @throws StateStoreException       if there was a failure reading partitions from the state store
      */
     public IngestResult closeReturningResult() throws StateStoreException, IteratorCreationException, IOException {
         return asyncCloseReturningResult().join();
@@ -299,7 +270,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
      *                                   file that was added to the state store.
      * @throws IOException               if there was a failure writing the new files
      * @throws IteratorCreationException if there was a failure creating the Sleeper iterator
-     * @throws StateStoreException       if there was a failure adding files to the state store
+     * @throws StateStoreException       if there was a failure reading partitions from the state store
      */
     public CompletableFuture<IngestResult> asyncCloseReturningResult() throws StateStoreException, IteratorCreationException, IOException {
         if (isClosed) {
@@ -368,7 +339,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
      * @param  data                      the data to ingest
      * @throws IOException               if there was a failure writing the new files
      * @throws IteratorCreationException if there was a failure creating the Sleeper iterator
-     * @throws StateStoreException       if there was a failure adding files to the state store
+     * @throws StateStoreException       if there was a failure reading partitions from the state store
      */
     public void write(INCOMINGDATATYPE data) throws IOException, IteratorCreationException, StateStoreException {
         try {
