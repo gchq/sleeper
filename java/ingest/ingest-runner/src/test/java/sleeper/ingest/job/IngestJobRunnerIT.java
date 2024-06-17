@@ -365,6 +365,7 @@ class IngestJobRunnerIT {
                 new FixedTablePropertiesProvider(tableProperties),
                 PropertiesReloader.neverReload(),
                 new FixedStateStoreProvider(tableProperties, stateStore),
+                "test-task-id",
                 localDir,
                 s3Async,
                 hadoopConfiguration)
@@ -404,6 +405,7 @@ class IngestJobRunnerIT {
                 tablePropertiesProvider,
                 PropertiesReloader.neverReload(),
                 stateStoreProvider,
+                "test-task",
                 localDir,
                 s3Async,
                 hadoopConfiguration)
