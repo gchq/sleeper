@@ -453,7 +453,7 @@ public interface TableProperty extends SleeperProperty {
                     "The direct method is simpler but the async method should provide better performance when the number of partitions " +
                     "is large.")
             .propertyGroup(TablePropertyGroup.INGEST).build();
-    TableProperty INGEST_FILES_COMMIT_ASYNC = Index.propertyBuilder("sleeper.table.ingest.files.commit.async")
+    TableProperty INGEST_FILES_COMMIT_ASYNC = Index.propertyBuilder("sleeper.table.ingest.job.files.commit.async")
             .defaultProperty(DEFAULT_INGEST_FILES_COMMIT_ASYNC)
             .description("If true, ingest tasks will add files via requests sent to the state store committer lambda " +
                     "asynchronously. If false, ingest tasks will commit new files synchronously.")
