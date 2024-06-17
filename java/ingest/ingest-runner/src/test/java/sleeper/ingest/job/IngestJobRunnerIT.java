@@ -367,7 +367,7 @@ class IngestJobRunnerIT {
                 new FixedStateStoreProvider(tableProperties, stateStore),
                 "test-task-id",
                 localDir,
-                s3Async,
+                s3Async, null,
                 hadoopConfiguration)
                 .ingest(ingestJob);
 
@@ -407,7 +407,7 @@ class IngestJobRunnerIT {
                 stateStoreProvider,
                 "test-task",
                 localDir,
-                s3Async,
+                s3Async, null,
                 hadoopConfiguration)
                 .ingest(IngestJob.builder()
                         .tableName(tableName)
