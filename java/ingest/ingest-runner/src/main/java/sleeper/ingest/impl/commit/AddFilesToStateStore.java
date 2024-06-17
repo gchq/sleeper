@@ -16,6 +16,7 @@
 package sleeper.ingest.impl.commit;
 
 import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.model.SendMessageRequest;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.statestore.FileReference;
@@ -25,6 +26,7 @@ import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequestSerDe;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.function.Consumer;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
@@ -41,12 +43,17 @@ public interface AddFilesToStateStore {
     static AddFilesToStateStore bySqs(
             AmazonSQS sqsClient, InstanceProperties instanceProperties,
             Consumer<IngestAddFilesCommitRequest.Builder> requestConfig) {
+        IngestAddFilesCommitRequestSerDe serDe = new IngestAddFilesCommitRequestSerDe();
         return references -> {
-            String jobCommitQueue = instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL);
             IngestAddFilesCommitRequest.Builder requestBuilder = IngestAddFilesCommitRequest.builder()
                     .fileReferences(references);
             requestConfig.accept(requestBuilder);
-            sqsClient.sendMessage(jobCommitQueue, new IngestAddFilesCommitRequestSerDe().toJson(requestBuilder.build()));
+            IngestAddFilesCommitRequest request = requestBuilder.build();
+            sqsClient.sendMessage(new SendMessageRequest()
+                    .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
+                    .withMessageBody(serDe.toJson(request))
+                    .withMessageGroupId(request.getTableId())
+                    .withMessageDeduplicationId(UUID.randomUUID().toString()));
         };
     }
 }

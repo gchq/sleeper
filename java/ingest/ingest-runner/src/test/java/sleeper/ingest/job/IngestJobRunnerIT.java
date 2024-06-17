@@ -28,7 +28,6 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -420,7 +419,6 @@ class IngestJobRunnerIT {
     }
 
     @Test
-    @Disabled("TODO")
     void shouldCommitFilesAsynchronously() throws Exception {
         // Given
         String fileSystemPrefix = "s3a://";
@@ -435,11 +433,11 @@ class IngestJobRunnerIT {
         tableProperties.set(INGEST_FILES_COMMIT_ASYNC, "true");
         StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(recordListAndSchema.sleeperSchema);
 
-        List<String> files = writeParquetFilesForIngest(fileSystemPrefix, recordListAndSchema, "", 2);
+        List<String> files = writeParquetFilesForIngest(fileSystemPrefix, recordListAndSchema, "", 1);
         IngestJob job = IngestJob.builder()
                 .tableName(tableName)
                 .tableId(tableId)
-                .id("id")
+                .id("some-job")
                 .files(files)
                 .build();
 
@@ -457,7 +455,7 @@ class IngestJobRunnerIT {
         assertThat(Paths.get(localDir)).isEmptyDirectory();
         assertThat(actualFiles)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
-                .containsExactly(fileReferenceFactory.rootFile("anyfilename", 20));
+                .containsExactly(fileReferenceFactory.rootFile("anyfilename", 10));
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
         ResultVerifier.assertOnSketch(
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
