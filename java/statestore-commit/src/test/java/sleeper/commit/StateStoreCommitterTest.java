@@ -89,8 +89,8 @@ public class StateStoreCommitterTest {
 
         // Then
         assertThat(stateStore.getFileReferences()).containsExactly(outputFile);
-        assertThat(compactionJobStatusStore.getJob("test-job"))
-                .contains(jobStatusFrom(records()
+        assertThat(compactionJobStatusStore.getAllJobs("test-table"))
+                .containsExactly(jobStatusFrom(records()
                         .fromUpdates(forJobOnTask("test-job", null,
                                 CompactionJobCreatedStatus.from(job, createdTime)))
                         .fromUpdates(forJobOnTask("test-job", "test-task",
@@ -99,7 +99,7 @@ public class StateStoreCommitterTest {
     }
 
     @Test
-    void shouldApplyIngestAddFilesCommitRequest() throws Exception {
+    void shouldApplyIngestJobAddFilesCommitRequest() throws Exception {
         // Given
         StateStore stateStore = createTable("test-table");
         FileReference outputFile = fileFactory.rootFile("output.parquet", 123L);
@@ -123,8 +123,26 @@ public class StateStoreCommitterTest {
 
         // Then
         assertThat(stateStore.getFileReferences()).containsExactly(outputFile);
-        assertThat(ingestJobStatusStore.getJob("test-job"))
-                .contains(startedIngestJob(ingestJob, "test-task-id", startTime));
+        assertThat(ingestJobStatusStore.getAllJobs("test-table"))
+                .containsExactly(startedIngestJob(ingestJob, "test-task-id", startTime));
+    }
+
+    @Test
+    void shouldApplyIngestStreamAddFilesCommitRequest() throws Exception {
+        // Given
+        StateStore stateStore = createTable("test-table");
+        FileReference outputFile = fileFactory.rootFile("output.parquet", 123L);
+        IngestAddFilesCommitRequest commitRequest = IngestAddFilesCommitRequest.builder()
+                .tableId("test-table")
+                .fileReferences(List.of(outputFile))
+                .build();
+
+        // When
+        committer().apply(StateStoreCommitRequest.forIngestAddFiles(commitRequest));
+
+        // Then
+        assertThat(stateStore.getFileReferences()).containsExactly(outputFile);
+        assertThat(ingestJobStatusStore.getAllJobs("test-table")).isEmpty();
     }
 
     private StateStoreCommitter committer() {

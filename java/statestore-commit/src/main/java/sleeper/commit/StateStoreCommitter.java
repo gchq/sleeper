@@ -49,10 +49,13 @@ public class StateStoreCommitter {
         }
         Optional<IngestAddFilesCommitRequest> addFilesCommitOpt = request.getAddFilesCommitRequest();
         if (addFilesCommitOpt.isPresent()) {
-            IngestAddFilesCommitRequest addFilesCommit = addFilesCommitOpt.get();
-            StateStore stateStore = stateStoreProvider.getByTableId(addFilesCommit.getJob().getTableId());
-            stateStore.addFiles(addFilesCommit.getFileReferences());
+            apply(addFilesCommitOpt.get());
         }
+    }
+
+    private void apply(IngestAddFilesCommitRequest request) throws StateStoreException {
+        StateStore stateStore = stateStoreProvider.getByTableId(request.getTableId());
+        stateStore.addFiles(request.getFileReferences());
     }
 
 }

@@ -26,12 +26,14 @@ import java.util.Objects;
  */
 public class IngestAddFilesCommitRequest {
     private final IngestJob ingestJob;
+    private final String tableId;
     private final String taskId;
     private final String jobRunId;
     private final List<FileReference> fileReferences;
 
     public IngestAddFilesCommitRequest(IngestJob job, String taskId, String jobRunId, List<FileReference> fileReferences) {
         this.ingestJob = job;
+        this.tableId = job.getTableId();
         this.taskId = taskId;
         this.jobRunId = jobRunId;
         this.fileReferences = fileReferences;
@@ -39,9 +41,10 @@ public class IngestAddFilesCommitRequest {
 
     private IngestAddFilesCommitRequest(Builder builder) {
         this.ingestJob = builder.ingestJob;
+        this.tableId = Objects.requireNonNull(ingestJob == null ? builder.tableId : ingestJob.getTableId(), "tableId must not be null");
         this.taskId = builder.taskId;
         this.jobRunId = builder.jobRunId;
-        this.fileReferences = builder.fileReferences;
+        this.fileReferences = Objects.requireNonNull(builder.fileReferences, "fileReferences must not be null");
     }
 
     public static Builder builder() {
@@ -50,6 +53,10 @@ public class IngestAddFilesCommitRequest {
 
     public IngestJob getJob() {
         return ingestJob;
+    }
+
+    public String getTableId() {
+        return tableId;
     }
 
     public String getTaskId() {
@@ -89,6 +96,7 @@ public class IngestAddFilesCommitRequest {
      */
     public static class Builder {
         private IngestJob ingestJob;
+        private String tableId;
         private String taskId;
         private String jobRunId;
         private List<FileReference> fileReferences;
@@ -101,6 +109,17 @@ public class IngestAddFilesCommitRequest {
          */
         public Builder ingestJob(IngestJob ingestJob) {
             this.ingestJob = ingestJob;
+            return this;
+        }
+
+        /**
+         * Sets the Sleeper table ID.
+         *
+         * @param  tableId the table ID
+         * @return         the builder for chaining
+         */
+        public Builder tableId(String tableId) {
+            this.tableId = tableId;
             return this;
         }
 
