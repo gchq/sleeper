@@ -17,6 +17,8 @@ package sleeper.ingest.job;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -28,6 +30,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.testcontainers.containers.localstack.LocalStackContainer;
+import org.testcontainers.containers.localstack.LocalStackContainer.Service;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
@@ -85,10 +88,11 @@ class IngestJobRunnerIT {
 
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
-            .withServices(LocalStackContainer.Service.S3);
+            .withServices(Service.S3, Service.SQS);
 
-    protected final AmazonS3 s3 = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
-    protected final S3AsyncClient s3Async = buildAwsV2Client(localStackContainer, LocalStackContainer.Service.S3, S3AsyncClient.builder());
+    protected final AmazonS3 s3 = buildAwsV1Client(localStackContainer, Service.S3, AmazonS3ClientBuilder.standard());
+    protected final S3AsyncClient s3Async = buildAwsV2Client(localStackContainer, Service.S3, S3AsyncClient.builder());
+    protected final AmazonSQS sqs = buildAwsV1Client(localStackContainer, Service.SQS, AmazonSQSClientBuilder.standard());
     protected final Configuration hadoopConfiguration = getHadoopConfiguration(localStackContainer);
 
     private final String instanceId = UUID.randomUUID().toString().substring(0, 18);
@@ -407,7 +411,7 @@ class IngestJobRunnerIT {
                 stateStoreProvider,
                 "test-task",
                 localDir,
-                s3Async, null,
+                s3Async, sqs,
                 hadoopConfiguration)
                 .ingest(IngestJob.builder()
                         .tableName(tableName)
