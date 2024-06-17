@@ -33,6 +33,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.IngestResult;
+import sleeper.ingest.impl.commit.AddFilesToStateStore;
 import sleeper.ingest.impl.partitionfilewriter.PartitionFileWriterFactory;
 import sleeper.ingest.impl.recordbatch.RecordBatch;
 import sleeper.ingest.impl.recordbatch.RecordBatchFactory;
@@ -98,6 +99,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
 
     private final ObjectFactory objectFactory;
     private final StateStore sleeperStateStore;
+    private final AddFilesToStateStore addFilesToStateStore;
     private final Schema sleeperSchema;
     private final String sleeperIteratorClassName;
     private final String sleeperIteratorConfig;
@@ -119,6 +121,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
         // Supplied member variables
         this.objectFactory = requireNonNull(builder.objectFactory);
         this.sleeperStateStore = requireNonNull(builder.stateStore);
+        this.addFilesToStateStore = requireNonNull(builder.addFilesToStateStore);
         this.sleeperSchema = requireNonNull(builder.schema);
         this.sleeperIteratorClassName = builder.iteratorClassName;
         this.sleeperIteratorConfig = builder.iteratorConfig;
@@ -149,16 +152,17 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
      * Updates the Sleeper table state store with the details of new data files which are available. This method will
      * repeatedly retry if the update fails, with an exponential backoff.
      *
-     * @param sleeperStateStore The state store to update
-     * @param fileReferenceList The details of the files to add to the state store
+     * @param addFilesToStateStore a function to update the state store
+     * @param fileReferenceList    the file references to add to the state store
      */
-    private static void updateStateStore(StateStore sleeperStateStore,
+    private static void updateStateStore(
+            AddFilesToStateStore addFilesToStateStore,
             List<FileReference> fileReferenceList) {
         boolean success = false;
         int numberOfFailures = 0;
         while (!success) {
             try {
-                sleeperStateStore.addFiles(fileReferenceList);
+                addFilesToStateStore.addFiles(fileReferenceList);
                 success = true;
             } catch (StateStoreException e) {
                 LOGGER.error("Failed to update DynamoDB with new files", e);
@@ -213,7 +217,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
                 CompletableFuture<List<FileReference>> consumedFuture = ingesterIntoPartitions
                         .initiateIngest(recordIteratorWithSleeperIteratorApplied, partitionTree)
                         .thenApply(fileReferenceList -> {
-                            updateStateStore(sleeperStateStore, fileReferenceList);
+                            updateStateStore(addFilesToStateStore, fileReferenceList);
                             return fileReferenceList;
                         });
                 ingestFutures.add(consumedFuture);
@@ -244,7 +248,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
             }
         }
 
-        LOGGER.debug("Loading partitions from state store {}", sleeperStateStore);
+        LOGGER.debug("Loading partitions from state store {}", addFilesToStateStore);
         List<Partition> allPartitions = sleeperStateStore.getAllPartitions();
         partitionTree = new PartitionTree(allPartitions);
         lastPartitionsUpdateTime = Instant.now();
@@ -380,6 +384,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
     public static class Builder<T> {
         private ObjectFactory objectFactory;
         private StateStore stateStore;
+        private AddFilesToStateStore addFilesToStateStore;
         private Schema schema;
         private String iteratorClassName;
         private String iteratorConfig;
@@ -410,6 +415,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
          */
         public Builder<T> stateStore(StateStore stateStore) {
             this.stateStore = stateStore;
+            this.addFilesToStateStore = AddFilesToStateStore.synchronous(stateStore);
             return this;
         }
 
