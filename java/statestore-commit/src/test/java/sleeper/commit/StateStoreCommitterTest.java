@@ -29,6 +29,8 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
+import sleeper.ingest.job.IngestJob;
+import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -48,20 +50,19 @@ import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToF
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
 
 public class StateStoreCommitterTest {
-    private Schema schema = schemaWithKey("key");
+    private static final Instant DEFAULT_UPDATE_TIME = Instant.parse("2024-06-14T13:33:00Z");
+    private final Schema schema = schemaWithKey("key");
+    private final PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
+    private final FileReferenceFactory fileFactory = FileReferenceFactory.fromUpdatedAt(partitions, DEFAULT_UPDATE_TIME);
     private final InMemoryCompactionJobStatusStore compactionJobStatusStore = new InMemoryCompactionJobStatusStore();
     private final Map<String, StateStore> stateStoreByTableId = new HashMap<>();
 
     @Test
     void shouldApplyCompactionCommitRequest() throws Exception {
         // Given
-        PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
-        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(partitions.getAllPartitions());
-        Instant updateTime = Instant.parse("2024-06-14T13:33:00Z");
-        stateStore.fixFileUpdateTime(updateTime);
-        FileReferenceFactory factory = FileReferenceFactory.fromUpdatedAt(partitions, updateTime);
-        FileReference inputFile = factory.rootFile("input.parquet", 123L);
-        FileReference outputFile = factory.rootFile("output.parquet", 123L);
+        StateStore stateStore = createTable("test-table");
+        FileReference inputFile = fileFactory.rootFile("input.parquet", 123L);
+        FileReference outputFile = fileFactory.rootFile("output.parquet", 123L);
         CompactionJob job = CompactionJob.builder()
                 .tableId("test-table")
                 .jobId("test-job")
@@ -73,7 +74,6 @@ public class StateStoreCommitterTest {
         RecordsProcessedSummary summary = summary(Instant.parse("2024-06-14T15:35:00Z"), Duration.ofMinutes(2), 123, 123);
         CompactionJobCommitRequest commitRequest = new CompactionJobCommitRequest(job, "test-task", summary);
 
-        stateStoreByTableId.put("test-table", stateStore);
         stateStore.addFile(inputFile);
         stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles(
                 "test-job", "root", List.of("input.parquet"))));
@@ -94,7 +94,32 @@ public class StateStoreCommitterTest {
                                 finishedCompactionStatus(summary)))));
     }
 
+    @Test
+    void shouldApplyIngestAddFilesCommitRequest() {
+        // Given
+        StateStore stateStore = createTable("test-table");
+        FileReference outputFile = fileFactory.rootFile("output.parquet", 123L);
+        IngestJob ingestJob = IngestJob.builder()
+                .id("test-job")
+                .tableId("test-table")
+                .files(List.of("input.parquet"))
+                .build();
+        IngestAddFilesCommitRequest commitRequest = IngestAddFilesCommitRequest.builder()
+                .ingestJob(ingestJob)
+                .taskId("test-task-id")
+                .jobRunId("test-job-run-id")
+                .fileReferences(List.of(outputFile))
+                .build();
+    }
+
     private StateStoreCommitter committer() {
         return new StateStoreCommitter(new CompactionJobCommitter(compactionJobStatusStore, stateStoreByTableId::get));
+    }
+
+    private StateStore createTable(String tableId) {
+        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(partitions.getAllPartitions());
+        stateStore.fixFileUpdateTime(DEFAULT_UPDATE_TIME);
+        stateStoreByTableId.put(tableId, stateStore);
+        return stateStore;
     }
 }

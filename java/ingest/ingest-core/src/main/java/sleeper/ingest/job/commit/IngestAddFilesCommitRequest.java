@@ -37,6 +37,17 @@ public class IngestAddFilesCommitRequest {
         this.fileReferences = fileReferences;
     }
 
+    private IngestAddFilesCommitRequest(Builder builder) {
+        this.ingestJob = builder.ingestJob;
+        this.taskId = builder.taskId;
+        this.jobRunId = builder.jobRunId;
+        this.fileReferences = builder.fileReferences;
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
     public IngestJob getJob() {
         return ingestJob;
     }
@@ -73,4 +84,61 @@ public class IngestAddFilesCommitRequest {
                 + ", jobRunId=" + jobRunId + ", fileReferences=" + fileReferences + "}";
     }
 
+    /**
+     * Builder for add files commit requests.
+     */
+    public static class Builder {
+        private IngestJob ingestJob;
+        private String taskId;
+        private String jobRunId;
+        private List<FileReference> fileReferences;
+
+        /**
+         * Sets the ingest job.
+         *
+         * @param  ingestJob the ingest job
+         * @return           the builder for chaining
+         */
+        public Builder ingestJob(IngestJob ingestJob) {
+            this.ingestJob = ingestJob;
+            return this;
+        }
+
+        /**
+         * Sets the ingest task ID.
+         *
+         * @param  taskId the ingest task ID
+         * @return        the builder for chaining
+         */
+        public Builder taskId(String taskId) {
+            this.taskId = taskId;
+            return this;
+        }
+
+        /**
+         * Sets the job run ID.
+         *
+         * @param  jobRunId the job run ID
+         * @return          the builder for chaining
+         */
+        public Builder jobRunId(String jobRunId) {
+            this.jobRunId = jobRunId;
+            return this;
+        }
+
+        /**
+         * Sets the file references to be committed.
+         *
+         * @param  fileReferences the list of file references
+         * @return                the builder for chaining
+         */
+        public Builder fileReferences(List<FileReference> fileReferences) {
+            this.fileReferences = fileReferences;
+            return this;
+        }
+
+        public IngestAddFilesCommitRequest build() {
+            return new IngestAddFilesCommitRequest(this);
+        }
+    }
 }
