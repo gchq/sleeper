@@ -31,14 +31,6 @@ public class IngestAddFilesCommitRequest {
     private final String jobRunId;
     private final List<FileReference> fileReferences;
 
-    public IngestAddFilesCommitRequest(IngestJob job, String taskId, String jobRunId, List<FileReference> fileReferences) {
-        this.ingestJob = job;
-        this.tableId = job.getTableId();
-        this.taskId = taskId;
-        this.jobRunId = jobRunId;
-        this.fileReferences = fileReferences;
-    }
-
     private IngestAddFilesCommitRequest(Builder builder) {
         this.ingestJob = builder.ingestJob;
         this.tableId = Objects.requireNonNull(ingestJob == null ? builder.tableId : ingestJob.getTableId(), "tableId must not be null");

@@ -19,6 +19,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import sleeper.core.statestore.CommitRequestType;
+import sleeper.core.statestore.FileReferenceSerDe;
 import sleeper.core.util.GsonConfig;
 
 /**
@@ -31,7 +32,7 @@ public class IngestAddFilesCommitRequestSerDe {
 
     public IngestAddFilesCommitRequestSerDe() {
         GsonBuilder builder = GsonConfig.standardBuilder()
-                .serializeNulls();
+                .addSerializationExclusionStrategy(FileReferenceSerDe.excludeUpdateTimes());
         gson = builder.create();
         gsonPrettyPrint = builder.setPrettyPrinting().create();
     }

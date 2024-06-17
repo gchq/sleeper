@@ -51,7 +51,40 @@ public class IngestAddFilesCommitRequestSerDeTest {
                 .numberOfRecords(200L)
                 .onlyContainsDataForThisPartition(true)
                 .build();
-        IngestAddFilesCommitRequest commit = new IngestAddFilesCommitRequest(job, "test-task", "test-job-run", List.of(file1, file2));
+        IngestAddFilesCommitRequest commit = IngestAddFilesCommitRequest.builder()
+                .ingestJob(job)
+                .taskId("test-task")
+                .jobRunId("test-job-run")
+                .fileReferences(List.of(file1, file2))
+                .build();
+
+        // When
+        String json = serDe.toJsonPrettyPrint(commit);
+
+        // Then
+        assertThat(serDe.fromJson(json)).isEqualTo(commit);
+        Approvals.verify(json);
+    }
+
+    @Test
+    void shouldSerialiseIngestJobCommitRequestWithNoJob() throws Exception {
+        // Given
+        FileReference file1 = FileReference.builder()
+                .filename("file1.parquet")
+                .partitionId("root")
+                .numberOfRecords(100L)
+                .onlyContainsDataForThisPartition(true)
+                .build();
+        FileReference file2 = FileReference.builder()
+                .filename("file2.parquet")
+                .partitionId("root")
+                .numberOfRecords(200L)
+                .onlyContainsDataForThisPartition(true)
+                .build();
+        IngestAddFilesCommitRequest commit = IngestAddFilesCommitRequest.builder()
+                .tableId("test-table")
+                .fileReferences(List.of(file1, file2))
+                .build();
 
         // When
         String json = serDe.toJsonPrettyPrint(commit);

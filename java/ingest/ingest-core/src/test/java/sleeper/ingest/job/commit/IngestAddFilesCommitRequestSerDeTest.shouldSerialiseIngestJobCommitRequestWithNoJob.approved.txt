@@ -1,18 +1,7 @@
 {
   "type": "INGEST_ADD_FILES",
   "request": {
-    "ingestJob": {
-      "id": "test-job-id",
-      "tableName": "test-table-name",
-      "tableId": "test-table-id",
-      "files": [
-        "file1.parquet",
-        "file2.parquet"
-      ]
-    },
-    "tableId": "test-table-id",
-    "taskId": "test-task",
-    "jobRunId": "test-job-run",
+    "tableId": "test-table",
     "fileReferences": [
       {
         "filename": "file1.parquet",

@@ -79,7 +79,38 @@ public class StateStoreCommitRequestDeserialiserTest {
                 .numberOfRecords(200L)
                 .onlyContainsDataForThisPartition(true)
                 .build();
-        IngestAddFilesCommitRequest ingestJobCommitRequest = new IngestAddFilesCommitRequest(job, "test-task", "test-job-run", List.of(file1, file2));
+        IngestAddFilesCommitRequest ingestJobCommitRequest = IngestAddFilesCommitRequest.builder()
+                .ingestJob(job)
+                .taskId("test-task")
+                .jobRunId("test-job-run")
+                .fileReferences(List.of(file1, file2))
+                .build();
+        String jsonString = new IngestAddFilesCommitRequestSerDe().toJson(ingestJobCommitRequest);
+
+        // When / Then
+        assertThat(commitRequestSerDe.fromJson(jsonString))
+                .isEqualTo(StateStoreCommitRequest.forIngestAddFiles(ingestJobCommitRequest));
+    }
+
+    @Test
+    void shouldDeserialiseIngestCommitRequestWithNoJob() {
+        // Given
+        FileReference file1 = FileReference.builder()
+                .filename("file1.parquet")
+                .partitionId("root")
+                .numberOfRecords(100L)
+                .onlyContainsDataForThisPartition(true)
+                .build();
+        FileReference file2 = FileReference.builder()
+                .filename("file2.parquet")
+                .partitionId("root")
+                .numberOfRecords(200L)
+                .onlyContainsDataForThisPartition(true)
+                .build();
+        IngestAddFilesCommitRequest ingestJobCommitRequest = IngestAddFilesCommitRequest.builder()
+                .tableId("test-table")
+                .fileReferences(List.of(file1, file2))
+                .build();
         String jsonString = new IngestAddFilesCommitRequestSerDe().toJson(ingestJobCommitRequest);
 
         // When / Then
