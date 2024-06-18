@@ -23,10 +23,13 @@ import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.statestore.StateStore;
+import sleeper.ingest.job.status.IngestJobFailedEvent;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.statestore.StateStoreProvider;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -79,14 +82,22 @@ public class BulkImportExecutor {
         ingestJobStatusStore.jobValidated(ingestJobAccepted(
                 bulkImportJob.toIngestJob(), validationTimeSupplier.get())
                 .jobRunId(jobRunId).build());
-        LOGGER.info("Writing job with id {} to JSON file", bulkImportJob.getId());
-        writeJobToBucket.writeJobToBulkImportBucket(bulkImportJob, jobRunId);
-        LOGGER.info("Submitting job with id {}", bulkImportJob.getId());
-        platformExecutor.runJobOnPlatform(BulkImportArguments.builder()
-                .instanceProperties(instanceProperties)
-                .bulkImportJob(bulkImportJob).jobRunId(jobRunId)
-                .build());
-        LOGGER.info("Successfully submitted job");
+        try {
+            LOGGER.info("Writing job with id {} to JSON file", bulkImportJob.getId());
+            writeJobToBucket.writeJobToBulkImportBucket(bulkImportJob, jobRunId);
+            LOGGER.info("Submitting job with id {}", bulkImportJob.getId());
+            platformExecutor.runJobOnPlatform(BulkImportArguments.builder()
+                    .instanceProperties(instanceProperties)
+                    .bulkImportJob(bulkImportJob).jobRunId(jobRunId)
+                    .build());
+            LOGGER.info("Successfully submitted job");
+        } catch (RuntimeException e) {
+            ingestJobStatusStore.jobFailed(IngestJobFailedEvent.ingestJobFailed(bulkImportJob.toIngestJob(),
+                    new ProcessRunTime(validationTimeSupplier.get(), Duration.ZERO))
+                    .jobRunId(jobRunId).failure(e)
+                    .build());
+            throw e;
+        }
     }
 
     private boolean validateJob(BulkImportJob bulkImportJob) {
