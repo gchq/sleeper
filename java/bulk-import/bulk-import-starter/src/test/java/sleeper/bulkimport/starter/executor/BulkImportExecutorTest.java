@@ -15,34 +15,23 @@
  */
 package sleeper.bulkimport.starter.executor;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.google.common.collect.Lists;
 import org.assertj.core.api.recursive.comparison.RecursiveComparisonConfiguration;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.core.CommonTestConstants;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
+import sleeper.ingest.job.status.InMemoryIngestJobStatusStore;
 import sleeper.ingest.job.status.IngestJobStatusStore;
-import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStoreCreator;
-import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.StateStoreProvider;
 
@@ -54,56 +43,34 @@ import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.acceptedRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.jobStatus;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.rejectedRun;
 
-@Testcontainers
-class BulkImportExecutorIT {
+class BulkImportExecutorTest {
     protected static final RecursiveComparisonConfiguration IGNORE_UPDATE_TIMES = RecursiveComparisonConfiguration.builder()
             .withIgnoredFields("expiryDate")
             .withIgnoredFieldsMatchingRegexes("jobRun.+updateTime").build();
-    @Container
-    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
-            .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
-
-    private AmazonS3 createS3Client() {
-        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
-    }
-
-    private AmazonDynamoDB createDynamoDBClient() {
-        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
-    }
 
     private static final Schema SCHEMA = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
-    private final AmazonS3 s3 = createS3Client();
-    private final AmazonDynamoDB dynamoDB = createDynamoDBClient();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, SCHEMA);
     private final String bucketName = UUID.randomUUID().toString();
     private final String tableId = tableProperties.get(TABLE_ID);
-    private final IngestJobStatusStore ingestJobStatusStore = IngestJobStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties);
+    private final IngestJobStatusStore ingestJobStatusStore = new InMemoryIngestJobStatusStore();
+    private final List<BulkImportJob> jobsInBucket = new ArrayList<>();
+    private final List<String> jobRunIdsOfJobsInBucket = new ArrayList<>();
     private final List<BulkImportJob> jobsRun = new ArrayList<>();
     private final List<String> jobRunIdsOfJobsRun = new ArrayList<>();
 
     @BeforeEach
     void setup() {
-        DynamoDBIngestJobStatusStoreCreator.create(instanceProperties, dynamoDB);
-        instanceProperties.set(BULK_IMPORT_BUCKET, bucketName);
-        s3.createBucket(bucketName);
         tableProperties.set(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1");
-    }
-
-    @AfterEach
-    public void tearDown() {
-        s3.shutdown();
     }
 
     @Nested
@@ -176,9 +143,6 @@ class BulkImportExecutorIT {
     @Test
     void shouldCallRunOnPlatformIfJobIsValid() {
         // Given
-        s3.putObject(bucketName, "file1.parquet", "");
-        s3.putObject(bucketName, "file2.parquet", "");
-        s3.putObject(bucketName, "directory/file3.parquet", "");
         BulkImportJob importJob = jobForTable()
                 .id("my-job")
                 .files(List.of(
@@ -203,7 +167,6 @@ class BulkImportExecutorIT {
     @Test
     void shouldSucceedIfS3ObjectIsADirectoryContainingFiles() {
         // Given
-        s3.putObject(bucketName, "directory/file1.parquet", "");
         BulkImportJob importJob = jobForTable()
                 .id("my-job")
                 .files(List.of(bucketName + "/directory", bucketName + "/directory/"))
@@ -248,7 +211,7 @@ class BulkImportExecutorIT {
         StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tableProperties,
                 inMemoryStateStoreWithFixedSinglePartition(SCHEMA));
         return new BulkImportExecutor(instanceProperties, tablePropertiesProvider, stateStoreProvider,
-                ingestJobStatusStore, s3, new FakePlatformExecutor(), timeSupplier);
+                ingestJobStatusStore, new FakeWriteJobToBucket(), new FakePlatformExecutor(), timeSupplier);
     }
 
     private class FakePlatformExecutor implements PlatformExecutor {
@@ -256,6 +219,14 @@ class BulkImportExecutorIT {
         public void runJobOnPlatform(BulkImportArguments arguments) {
             jobsRun.add(arguments.getBulkImportJob());
             jobRunIdsOfJobsRun.add(arguments.getJobRunId());
+        }
+    }
+
+    private class FakeWriteJobToBucket implements BulkImportExecutor.WriteJobToBucket {
+        @Override
+        public void writeJobToBulkImportBucket(BulkImportJob bulkImportJob, String jobRunID) {
+            jobsInBucket.add(bulkImportJob);
+            jobRunIdsOfJobsInBucket.add(jobRunID);
         }
     }
 

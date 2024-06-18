@@ -21,7 +21,6 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.bulkimport.CheckLeafPartitionCount;
 import sleeper.bulkimport.job.BulkImportJob;
-import sleeper.bulkimport.job.BulkImportJobSerDe;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
@@ -37,7 +36,6 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobAccepted;
 import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobRejected;
 
@@ -49,7 +47,7 @@ public class BulkImportExecutor {
     protected final TablePropertiesProvider tablePropertiesProvider;
     protected final StateStoreProvider stateStoreProvider;
     protected final IngestJobStatusStore ingestJobStatusStore;
-    protected final AmazonS3 s3Client;
+    protected final WriteJobToBucket writeJobToBucket;
     protected final PlatformExecutor platformExecutor;
     protected final Supplier<Instant> validationTimeSupplier;
 
@@ -57,11 +55,20 @@ public class BulkImportExecutor {
             InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider, IngestJobStatusStore ingestJobStatusStore, AmazonS3 s3Client,
             PlatformExecutor platformExecutor, Supplier<Instant> validationTimeSupplier) {
+        this(instanceProperties, tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore,
+                new BulkImportJobWriterToS3(instanceProperties, s3Client),
+                platformExecutor, validationTimeSupplier);
+    }
+
+    public BulkImportExecutor(
+            InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
+            StateStoreProvider stateStoreProvider, IngestJobStatusStore ingestJobStatusStore,
+            WriteJobToBucket writeJobToBucket, PlatformExecutor platformExecutor, Supplier<Instant> validationTimeSupplier) {
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
         this.ingestJobStatusStore = ingestJobStatusStore;
-        this.s3Client = s3Client;
+        this.writeJobToBucket = writeJobToBucket;
         this.platformExecutor = platformExecutor;
         this.validationTimeSupplier = validationTimeSupplier;
     }
@@ -83,7 +90,7 @@ public class BulkImportExecutor {
                 bulkImportJob.toIngestJob(), validationTimeSupplier.get())
                 .jobRunId(jobRunId).build());
         LOGGER.info("Writing job with id {} to JSON file", bulkImportJob.getId());
-        writeJobToJSONFile(bulkImportJob, jobRunId);
+        writeJobToBucket.writeJobToBulkImportBucket(bulkImportJob, jobRunId);
         LOGGER.info("Submitting job with id {}", bulkImportJob.getId());
         platformExecutor.runJobOnPlatform(BulkImportArguments.builder()
                 .instanceProperties(instanceProperties)
@@ -128,14 +135,12 @@ public class BulkImportExecutor {
         return CheckLeafPartitionCount.hasMinimumPartitions(tableProperties, stateStore, bulkImportJob);
     }
 
-    private void writeJobToJSONFile(BulkImportJob bulkImportJob, String jobRunID) {
-        String bulkImportBucket = instanceProperties.get(BULK_IMPORT_BUCKET);
-        if (null == bulkImportBucket) {
-            throw new RuntimeException("sleeper.bulk.import.bucket was not set. Has one of the bulk import stacks been deployed?");
-        }
-        String key = "bulk_import/" + bulkImportJob.getId() + "-" + jobRunID + ".json";
-        String bulkImportJobJSON = new BulkImportJobSerDe().toJson(bulkImportJob);
-        s3Client.putObject(bulkImportBucket, key, bulkImportJobJSON);
-        LOGGER.info("Put object for job {} to key {} in bucket {}", bulkImportJob.getId(), key, bulkImportBucket);
+    /**
+     * Writes a bulk import job to the bulk import bucket, to be read by a Spark driver.
+     */
+    @FunctionalInterface
+    public interface WriteJobToBucket {
+
+        void writeJobToBulkImportBucket(BulkImportJob bulkImportJob, String jobRunID);
     }
 }
