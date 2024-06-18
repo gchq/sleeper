@@ -125,7 +125,7 @@ public class DynamoDBCompactionTaskStatusStore implements CompactionTaskStatusSt
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
                 .withTableName(statusTableName);
         PutItemResult result = dynamoDB.putItem(putItemRequest);
-        LOGGER.info("Put {} event for task {} to table {}, capacity consumed = {}, took {}",
+        LOGGER.debug("Put {} event for task {} to table {}, capacity consumed = {}, took {}",
                 item.get(UPDATE_TYPE).getS(), item.get(TASK_ID).getS(), statusTableName,
                 result.getConsumedCapacity().getCapacityUnits(),
                 LoggedDuration.withFullOutput(startTime, Instant.now()));
