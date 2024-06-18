@@ -50,6 +50,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -89,6 +90,8 @@ class BulkImportExecutorIT {
     private final String bucketName = UUID.randomUUID().toString();
     private final String tableId = tableProperties.get(TABLE_ID);
     private final IngestJobStatusStore ingestJobStatusStore = IngestJobStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties);
+    private final List<BulkImportJob> jobsRun = new ArrayList<>();
+    private final List<String> jobRunIdsOfJobsRun = new ArrayList<>();
 
     @BeforeEach
     void setup() {
@@ -113,17 +116,17 @@ class BulkImportExecutorIT {
                     .id("my-job")
                     .files(Lists.newArrayList())
                     .build();
-            FakeExecutor fakeExecutor = buildExecutorWithValidationTime(Instant.parse("2023-06-02T15:41:00Z"));
+            Instant validationTime = Instant.parse("2023-06-02T15:41:00Z");
 
             // When
-            fakeExecutor.runJob(importJob);
+            executorAtTime(validationTime).runJob(importJob);
 
             // Then
-            assertThat(fakeExecutor.getJobsRun()).isEmpty();
+            assertThat(jobsRun).isEmpty();
             assertThat(ingestJobStatusStore.getAllJobs(tableId))
                     .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                     .containsExactly(jobStatus(importJob.toIngestJob(),
-                            rejectedRun(importJob.toIngestJob(), Instant.parse("2023-06-02T15:41:00Z"),
+                            rejectedRun(importJob.toIngestJob(), validationTime,
                                     "The input files must be set to a non-null and non-empty value.")));
         }
 
@@ -135,16 +138,16 @@ class BulkImportExecutorIT {
                     .files(Lists.newArrayList("file1.parquet"))
                     .id(invalidId)
                     .build();
-            FakeExecutor fakeExecutor = buildExecutorWithValidationTime(Instant.parse("2023-06-02T15:41:00Z"));
+            Instant validationTime = Instant.parse("2023-06-02T15:41:00Z");
             // When
-            fakeExecutor.runJob(importJob);
+            executorAtTime(validationTime).runJob(importJob);
 
             // Then
-            assertThat(fakeExecutor.getJobsRun()).isEmpty();
+            assertThat(jobsRun).isEmpty();
             assertThat(ingestJobStatusStore.getAllJobs(tableId))
                     .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                     .containsExactly(jobStatus(importJob.toIngestJob(),
-                            rejectedRun(importJob.toIngestJob(), Instant.parse("2023-06-02T15:41:00Z"),
+                            rejectedRun(importJob.toIngestJob(), validationTime,
                                     "Job IDs are only allowed to be up to 63 characters long.")));
         }
 
@@ -155,17 +158,17 @@ class BulkImportExecutorIT {
                     .id("importJob")
                     .files(Lists.newArrayList("file1.parquet"))
                     .build();
-            FakeExecutor fakeExecutor = buildExecutorWithValidationTime(Instant.parse("2023-06-02T15:41:00Z"));
+            Instant validationTime = Instant.parse("2023-06-02T15:41:00Z");
 
             // When
-            fakeExecutor.runJob(importJob);
+            executorAtTime(validationTime).runJob(importJob);
 
             // Then
-            assertThat(fakeExecutor.getJobsRun()).isEmpty();
+            assertThat(jobsRun).isEmpty();
             assertThat(ingestJobStatusStore.getAllJobs(tableId))
                     .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                     .containsExactly(jobStatus(importJob.toIngestJob(),
-                            rejectedRun(importJob.toIngestJob(), Instant.parse("2023-06-02T15:41:00Z"),
+                            rejectedRun(importJob.toIngestJob(), validationTime,
                                     "Job Ids must only contain lowercase alphanumerics and dashes.")));
         }
     }
@@ -183,18 +186,18 @@ class BulkImportExecutorIT {
                         bucketName + "/file2.parquet",
                         bucketName + "/directory/file3.parquet"))
                 .build();
-        FakeExecutor fakeExecutor = buildExecutorWithValidationTime(Instant.parse("2023-06-02T15:41:00Z"));
+        Instant validationTime = Instant.parse("2023-06-02T15:41:00Z");
 
         // When
-        fakeExecutor.runJob(importJob, "job-run-id");
+        executorAtTime(validationTime).runJob(importJob, "job-run-id");
 
         // Then
-        assertThat(fakeExecutor.getJobsRun()).containsExactly(importJob);
-        assertThat(fakeExecutor.getJobRunIdsOfJobsRun()).containsExactly("job-run-id");
+        assertThat(jobsRun).containsExactly(importJob);
+        assertThat(jobRunIdsOfJobsRun).containsExactly("job-run-id");
         assertThat(ingestJobStatusStore.getAllJobs(tableId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(jobStatus(importJob.toIngestJob(),
-                        acceptedRun(importJob.toIngestJob(), Instant.parse("2023-06-02T15:41:00Z"))));
+                        acceptedRun(importJob.toIngestJob(), validationTime)));
     }
 
     @Test
@@ -205,81 +208,50 @@ class BulkImportExecutorIT {
                 .id("my-job")
                 .files(List.of(bucketName + "/directory", bucketName + "/directory/"))
                 .build();
-        FakeExecutor fakeExecutor = buildExecutorWithValidationTime(Instant.parse("2023-06-02T15:41:00Z"));
+        Instant validationTime = Instant.parse("2023-06-02T15:41:00Z");
 
         // When
-        fakeExecutor.runJob(importJob, "job-run-id");
+        executorAtTime(validationTime).runJob(importJob, "job-run-id");
 
         // Then
-        assertThat(fakeExecutor.getJobsRun()).containsExactly(importJob);
-        assertThat(fakeExecutor.getJobRunIdsOfJobsRun()).containsExactly("job-run-id");
+        assertThat(jobsRun).containsExactly(importJob);
+        assertThat(jobRunIdsOfJobsRun).containsExactly("job-run-id");
         assertThat(ingestJobStatusStore.getAllJobs(tableId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(jobStatus(importJob.toIngestJob(),
-                        acceptedRun(importJob.toIngestJob(), Instant.parse("2023-06-02T15:41:00Z"))));
+                        acceptedRun(importJob.toIngestJob(), validationTime)));
     }
 
     @Test
     void shouldDoNothingWhenJobIsNull() {
-        // Given
-        FakeExecutor fakeExecutor = buildExecutorWithValidationTime(Instant.parse("2023-06-02T15:41:00Z"));
-
         // When
-        fakeExecutor.runJob(null);
+        executor().runJob(null);
 
         // Then
-        assertThat(fakeExecutor.getJobsRun()).isEmpty();
+        assertThat(jobsRun).isEmpty();
     }
 
     private BulkImportJob.Builder jobForTable() {
         return BulkImportJob.builder().tableId(tableId).tableName(tableProperties.get(TABLE_NAME));
     }
 
-    private FakeExecutor buildExecutorWithValidationTime(Instant validationTime) {
-        return new FakeExecutor(validationTime);
+    public BulkImportExecutor executorAtTime(Instant validationTime) {
+        return executor(List.of(validationTime).iterator()::next);
     }
 
-    public BulkImportExecutor executorAtTime(Instant validationTime) {
+    public BulkImportExecutor executor() {
+        return executor(List.<Instant>of().iterator()::next);
+    }
+
+    public BulkImportExecutor executor(Supplier<Instant> timeSupplier) {
         TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(tableProperties);
         StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tableProperties,
                 inMemoryStateStoreWithFixedSinglePartition(SCHEMA));
         return new BulkImportExecutor(instanceProperties, tablePropertiesProvider, stateStoreProvider,
-                ingestJobStatusStore, s3, new FakeExecutor(validationTime), List.of(validationTime).iterator()::next);
+                ingestJobStatusStore, s3, new FakePlatformExecutor(), timeSupplier);
     }
 
-    private class FakeExecutor implements PlatformExecutor {
-        private final List<BulkImportJob> jobsRun = new ArrayList<>();
-        private final List<String> jobRunIdsOfJobsRun = new ArrayList<>();
-        private final Instant validationTime;
-
-        FakeExecutor(Instant validationTime) {
-            this.validationTime = validationTime;
-        }
-
-        public List<BulkImportJob> getJobsRun() {
-            return jobsRun;
-        }
-
-        public List<String> getJobRunIdsOfJobsRun() {
-            return jobRunIdsOfJobsRun;
-        }
-
-        public void runJob(BulkImportJob bulkImportJob) {
-            bulkImportExecutor().runJob(bulkImportJob);
-        }
-
-        public void runJob(BulkImportJob bulkImportJob, String jobRunId) {
-            bulkImportExecutor().runJob(bulkImportJob, jobRunId);
-        }
-
-        private BulkImportExecutor bulkImportExecutor() {
-            TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(tableProperties);
-            StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tableProperties,
-                    inMemoryStateStoreWithFixedSinglePartition(SCHEMA));
-            return new BulkImportExecutor(instanceProperties, tablePropertiesProvider, stateStoreProvider,
-                    ingestJobStatusStore, s3, this, List.of(validationTime).iterator()::next);
-        }
-
+    private class FakePlatformExecutor implements PlatformExecutor {
         @Override
         public void runJobOnPlatform(BulkImportArguments arguments) {
             jobsRun.add(arguments.getBulkImportJob());
