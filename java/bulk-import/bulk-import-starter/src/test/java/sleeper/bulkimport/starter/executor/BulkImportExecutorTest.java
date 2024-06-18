@@ -89,6 +89,7 @@ class BulkImportExecutorTest {
             executorAtTime(validationTime).runJob(importJob);
 
             // Then
+            assertThat(jobsInBucket).isEmpty();
             assertThat(jobsRun).isEmpty();
             assertThat(ingestJobStatusStore.getAllJobs(tableId))
                     .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
@@ -110,6 +111,7 @@ class BulkImportExecutorTest {
             executorAtTime(validationTime).runJob(importJob);
 
             // Then
+            assertThat(jobsInBucket).isEmpty();
             assertThat(jobsRun).isEmpty();
             assertThat(ingestJobStatusStore.getAllJobs(tableId))
                     .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
@@ -131,6 +133,7 @@ class BulkImportExecutorTest {
             executorAtTime(validationTime).runJob(importJob);
 
             // Then
+            assertThat(jobsInBucket).isEmpty();
             assertThat(jobsRun).isEmpty();
             assertThat(ingestJobStatusStore.getAllJobs(tableId))
                     .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
@@ -156,6 +159,8 @@ class BulkImportExecutorTest {
         executorAtTime(validationTime).runJob(importJob, "job-run-id");
 
         // Then
+        assertThat(jobsInBucket).containsExactly(importJob);
+        assertThat(jobRunIdsOfJobsInBucket).containsExactly("job-run-id");
         assertThat(jobsRun).containsExactly(importJob);
         assertThat(jobRunIdsOfJobsRun).containsExactly("job-run-id");
         assertThat(ingestJobStatusStore.getAllJobs(tableId))
@@ -177,6 +182,8 @@ class BulkImportExecutorTest {
         executorAtTime(validationTime).runJob(importJob, "job-run-id");
 
         // Then
+        assertThat(jobsInBucket).containsExactly(importJob);
+        assertThat(jobRunIdsOfJobsInBucket).containsExactly("job-run-id");
         assertThat(jobsRun).containsExactly(importJob);
         assertThat(jobRunIdsOfJobsRun).containsExactly("job-run-id");
         assertThat(ingestJobStatusStore.getAllJobs(tableId))
@@ -192,6 +199,7 @@ class BulkImportExecutorTest {
 
         // Then
         assertThat(jobsRun).isEmpty();
+        assertThat(jobsInBucket).isEmpty();
     }
 
     private BulkImportJob.Builder jobForTable() {
