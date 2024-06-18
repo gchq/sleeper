@@ -26,19 +26,29 @@ import java.util.Objects;
  */
 public class IngestAddFilesCommitRequest {
     private final IngestJob ingestJob;
+    private final String tableId;
     private final String taskId;
     private final String jobRunId;
     private final List<FileReference> fileReferences;
 
-    public IngestAddFilesCommitRequest(IngestJob job, String taskId, String jobRunId, List<FileReference> fileReferences) {
-        this.ingestJob = job;
-        this.taskId = taskId;
-        this.jobRunId = jobRunId;
-        this.fileReferences = fileReferences;
+    private IngestAddFilesCommitRequest(Builder builder) {
+        this.ingestJob = builder.ingestJob;
+        this.tableId = Objects.requireNonNull(ingestJob == null ? builder.tableId : ingestJob.getTableId(), "tableId must not be null");
+        this.taskId = builder.taskId;
+        this.jobRunId = builder.jobRunId;
+        this.fileReferences = Objects.requireNonNull(builder.fileReferences, "fileReferences must not be null");
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     public IngestJob getJob() {
         return ingestJob;
+    }
+
+    public String getTableId() {
+        return tableId;
     }
 
     public String getTaskId() {
@@ -51,7 +61,7 @@ public class IngestAddFilesCommitRequest {
 
     @Override
     public int hashCode() {
-        return Objects.hash(ingestJob, taskId, jobRunId, fileReferences);
+        return Objects.hash(ingestJob, tableId, taskId, jobRunId, fileReferences);
     }
 
     @Override
@@ -63,14 +73,89 @@ public class IngestAddFilesCommitRequest {
             return false;
         }
         IngestAddFilesCommitRequest other = (IngestAddFilesCommitRequest) obj;
-        return Objects.equals(ingestJob, other.ingestJob) && Objects.equals(taskId, other.taskId)
-                && Objects.equals(jobRunId, other.jobRunId) && Objects.equals(fileReferences, other.fileReferences);
+        return Objects.equals(ingestJob, other.ingestJob)
+                && Objects.equals(tableId, other.tableId)
+                && Objects.equals(taskId, other.taskId)
+                && Objects.equals(jobRunId, other.jobRunId)
+                && Objects.equals(fileReferences, other.fileReferences);
     }
 
     @Override
     public String toString() {
-        return "IngestAddFilesCommitRequest{ingestJob=" + ingestJob + ", taskId=" + taskId
-                + ", jobRunId=" + jobRunId + ", fileReferences=" + fileReferences + "}";
+        return "IngestAddFilesCommitRequest{ingestJob=" + ingestJob +
+                ", tableId=" + tableId +
+                ", taskId=" + taskId +
+                ", jobRunId=" + jobRunId +
+                ", fileReferences=" + fileReferences + "}";
     }
 
+    /**
+     * Builder for add files commit requests.
+     */
+    public static class Builder {
+        private IngestJob ingestJob;
+        private String tableId;
+        private String taskId;
+        private String jobRunId;
+        private List<FileReference> fileReferences;
+
+        /**
+         * Sets the ingest job.
+         *
+         * @param  ingestJob the ingest job
+         * @return           the builder for chaining
+         */
+        public Builder ingestJob(IngestJob ingestJob) {
+            this.ingestJob = ingestJob;
+            return this;
+        }
+
+        /**
+         * Sets the Sleeper table ID.
+         *
+         * @param  tableId the table ID
+         * @return         the builder for chaining
+         */
+        public Builder tableId(String tableId) {
+            this.tableId = tableId;
+            return this;
+        }
+
+        /**
+         * Sets the ingest task ID.
+         *
+         * @param  taskId the ingest task ID
+         * @return        the builder for chaining
+         */
+        public Builder taskId(String taskId) {
+            this.taskId = taskId;
+            return this;
+        }
+
+        /**
+         * Sets the job run ID.
+         *
+         * @param  jobRunId the job run ID
+         * @return          the builder for chaining
+         */
+        public Builder jobRunId(String jobRunId) {
+            this.jobRunId = jobRunId;
+            return this;
+        }
+
+        /**
+         * Sets the file references to be committed.
+         *
+         * @param  fileReferences the list of file references
+         * @return                the builder for chaining
+         */
+        public Builder fileReferences(List<FileReference> fileReferences) {
+            this.fileReferences = fileReferences;
+            return this;
+        }
+
+        public IngestAddFilesCommitRequest build() {
+            return new IngestAddFilesCommitRequest(this);
+        }
+    }
 }

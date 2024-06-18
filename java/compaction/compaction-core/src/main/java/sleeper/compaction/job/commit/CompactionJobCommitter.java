@@ -45,6 +45,7 @@ public class CompactionJobCommitter {
         updateStateStoreSuccess(
                 job, request.getRecordsWritten(), stateStoreProvider.getByTableId(job.getTableId()));
         statusStore.jobFinished(job, request.buildRecordsProcessedSummary(), request.getTaskId());
+        LOGGER.info("Successfully committed compaction job {} to table with ID {}", job.getId(), job.getTableId());
     }
 
     public static void updateStateStoreSuccess(

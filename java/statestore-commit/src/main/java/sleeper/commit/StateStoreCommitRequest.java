@@ -19,7 +19,6 @@ import sleeper.compaction.job.commit.CompactionJobCommitRequest;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
 
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * A request to commit updates to the state store.
@@ -52,17 +51,8 @@ public class StateStoreCommitRequest {
         this.request = request;
     }
 
-    /**
-     * Gets the compaction job commit request.
-     *
-     * @return the compaction job commit request
-     */
-    public Optional<CompactionJobCommitRequest> getCompactionJobCommitRequest() {
-        if (request instanceof CompactionJobCommitRequest) {
-            return Optional.of((CompactionJobCommitRequest) request);
-        } else {
-            return Optional.empty();
-        }
+    public Object getRequest() {
+        return request;
     }
 
     @Override
