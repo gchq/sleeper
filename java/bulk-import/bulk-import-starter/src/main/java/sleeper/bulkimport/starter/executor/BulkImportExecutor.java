@@ -15,7 +15,6 @@
  */
 package sleeper.bulkimport.starter.executor;
 
-import com.amazonaws.services.s3.AmazonS3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,15 +49,6 @@ public class BulkImportExecutor {
     protected final WriteJobToBucket writeJobToBucket;
     protected final PlatformExecutor platformExecutor;
     protected final Supplier<Instant> validationTimeSupplier;
-
-    public BulkImportExecutor(
-            InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
-            StateStoreProvider stateStoreProvider, IngestJobStatusStore ingestJobStatusStore, AmazonS3 s3Client,
-            PlatformExecutor platformExecutor, Supplier<Instant> validationTimeSupplier) {
-        this(instanceProperties, tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore,
-                new BulkImportJobWriterToS3(instanceProperties, s3Client),
-                platformExecutor, validationTimeSupplier);
-    }
 
     public BulkImportExecutor(
             InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
