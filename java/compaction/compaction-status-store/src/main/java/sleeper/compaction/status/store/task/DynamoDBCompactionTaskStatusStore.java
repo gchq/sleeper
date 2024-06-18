@@ -32,6 +32,7 @@ import sleeper.compaction.status.store.CompactionStatusStoreException;
 import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.util.LoggedDuration;
 
 import java.time.Instant;
 import java.util.List;
@@ -40,6 +41,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusFormat.TASK_ID;
+import static sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusFormat.UPDATE_TYPE;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_STATUS_TTL_IN_SECONDS;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
@@ -67,9 +69,7 @@ public class DynamoDBCompactionTaskStatusStore implements CompactionTaskStatusSt
     @Override
     public void taskStarted(CompactionTaskStatus taskStatus) {
         try {
-            PutItemResult result = putItem(format.createTaskStartedRecord(taskStatus));
-            LOGGER.info("Put started event for task {} to table {}, capacity consumed = {}",
-                    taskStatus.getTaskId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
+            putItem(format.createTaskStartedRecord(taskStatus));
         } catch (RuntimeException e) {
             throw new CompactionStatusStoreException("Failed putItem in taskStarted for task " + taskStatus.getTaskId(), e);
         }
@@ -78,9 +78,7 @@ public class DynamoDBCompactionTaskStatusStore implements CompactionTaskStatusSt
     @Override
     public void taskFinished(CompactionTaskStatus taskStatus) {
         try {
-            PutItemResult result = putItem(format.createTaskFinishedRecord(taskStatus));
-            LOGGER.info("Put finished event for task {} to table {}, capacity consumed = {}",
-                    taskStatus.getTaskId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
+            putItem(format.createTaskFinishedRecord(taskStatus));
         } catch (RuntimeException e) {
             throw new CompactionStatusStoreException("Failed putItem in taskFinished for task " + taskStatus.getTaskId(), e);
         }
@@ -120,12 +118,17 @@ public class DynamoDBCompactionTaskStatusStore implements CompactionTaskStatusSt
                 .collect(Collectors.toList());
     }
 
-    private PutItemResult putItem(Map<String, AttributeValue> item) {
+    private void putItem(Map<String, AttributeValue> item) {
+        Instant startTime = Instant.now();
         PutItemRequest putItemRequest = new PutItemRequest()
                 .withItem(item)
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
                 .withTableName(statusTableName);
-        return dynamoDB.putItem(putItemRequest);
+        PutItemResult result = dynamoDB.putItem(putItemRequest);
+        LOGGER.info("Put {} event for task {} to table {}, capacity consumed = {}, took {}",
+                item.get(UPDATE_TYPE).getS(), item.get(TASK_ID).getS(), statusTableName,
+                result.getConsumedCapacity().getCapacityUnits(),
+                LoggedDuration.withFullOutput(startTime, Instant.now()));
     }
 
     public static String taskStatusTableName(String instanceId) {
