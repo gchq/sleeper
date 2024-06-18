@@ -234,6 +234,35 @@ class BulkImportExecutorTest {
                                 List.of("Unexpected failure", "Some cause", "Some root cause"))));
     }
 
+    @Test
+    void shouldFailJobRunWhenPlatformExecutorFails() {
+        // Given
+        BulkImportJob importJob = jobForTable()
+                .id("some-job")
+                .files(List.of(
+                        bucketName + "/file1.parquet",
+                        bucketName + "/file2.parquet",
+                        bucketName + "/directory/file3.parquet"))
+                .build();
+        Instant validationTime = Instant.parse("2023-06-02T15:41:00Z");
+        Instant failureTime = Instant.parse("2023-06-02T15:41:05Z");
+        RuntimeException rootCause = new RuntimeException("Some root cause");
+        RuntimeException cause = new RuntimeException("Some cause", rootCause);
+        RuntimeException failure = new RuntimeException("Unexpected failure", cause);
+
+        // When / Then
+        assertThatThrownBy(() -> executor(
+                recordWriteJobToBucket(), platformExecutorFails(failure), atTimes(validationTime, failureTime))
+                .runJob(importJob, "some-job-run"))
+                .isSameAs(failure);
+        assertThat(jobsInBucket).contains(importJob);
+        assertThat(ingestJobStatusStore.getAllJobs(tableId))
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .containsExactly(jobStatus(importJob.toIngestJob(),
+                        acceptedAndFailedToStartIngestRun(importJob.toIngestJob(), validationTime, failureTime,
+                                List.of("Unexpected failure", "Some cause", "Some root cause"))));
+    }
+
     private BulkImportJob.Builder jobForTable() {
         return BulkImportJob.builder().tableId(tableId).tableName(tableProperties.get(TABLE_NAME));
     }
@@ -253,6 +282,12 @@ class BulkImportExecutorTest {
 
     private WriteJobToBucket writeJobToBucketFails(RuntimeException failure) {
         return (job, jobRunId) -> {
+            throw failure;
+        };
+    }
+
+    private PlatformExecutor platformExecutorFails(RuntimeException failure) {
+        return (arguments) -> {
             throw failure;
         };
     }
