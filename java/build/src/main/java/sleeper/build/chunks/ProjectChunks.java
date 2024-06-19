@@ -70,7 +70,7 @@ public class ProjectChunks {
         }
         if (failed) {
             out.println("Please ensure chunks are configured correctly at " + project.getChunksYamlRelative());
-            throw new IllegalStateException("Failed validating chunk Maven modules");
+            throw new ProjectChunksValidationException("Failed validating chunk Maven modules");
         }
     }
 
@@ -86,7 +86,7 @@ public class ProjectChunks {
             }
         }
         if (failed) {
-            throw new IllegalStateException("Failed validating chunk workflows");
+            throw new ProjectChunksValidationException("Failed validating chunk workflows");
         }
     }
 
