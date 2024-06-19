@@ -38,6 +38,21 @@ public class IngestJobFinishedStatus implements ProcessRunFinishedUpdate {
         committedWhenAllFilesAdded = builder.committedWhenAllFilesAdded;
     }
 
+    /**
+     * Creates a status update for when an ingest job has finished.
+     *
+     * @param  updateTime the update time to set
+     * @param  summary    the records processed summary to set
+     * @return            a builder
+     */
+    public static Builder updateTimeAndSummary(Instant updateTime, RecordsProcessedSummary summary) {
+        return builder().updateTime(updateTime).summary(summary);
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
     @Override
     public Instant getUpdateTime() {
         return updateTime;
@@ -88,6 +103,9 @@ public class IngestJobFinishedStatus implements ProcessRunFinishedUpdate {
         private RecordsProcessedSummary summary;
         private Integer numFilesAddedByJob;
         private boolean committedWhenAllFilesAdded;
+
+        private Builder() {
+        }
 
         /**
          * Sets the update time.

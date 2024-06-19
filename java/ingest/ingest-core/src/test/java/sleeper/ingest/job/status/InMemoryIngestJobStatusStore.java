@@ -19,6 +19,7 @@ import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessFailedStatus;
 import sleeper.core.record.process.status.ProcessFinishedStatus;
+import sleeper.core.record.process.status.ProcessRunFinishedUpdate;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 
 import java.util.ArrayList;
@@ -83,14 +84,24 @@ public class InMemoryIngestJobStatusStore implements IngestJobStatusStore {
 
     @Override
     public void jobFinished(IngestJobFinishedEvent event) {
-        RecordsProcessedSummary summary = event.getSummary();
         existingJobRecords(event.getTableId(), event.getJobId())
                 .add(ProcessStatusUpdateRecord.builder()
                         .jobId(event.getJobId())
-                        .statusUpdate(ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary))
+                        .statusUpdate(jobFinishedUpdate(event))
                         .jobRunId(event.getJobRunId())
                         .taskId(event.getTaskId())
                         .build());
+    }
+
+    private ProcessRunFinishedUpdate jobFinishedUpdate(IngestJobFinishedEvent event) {
+        RecordsProcessedSummary summary = event.getSummary();
+        if (event.isCommittedWhenAllFilesAdded()) {
+            return IngestJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary)
+                    .committedWhenAllFilesAdded(true).numFilesAddedByJob(event.getNumFilesAddedByJob())
+                    .build();
+        } else {
+            return ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary);
+        }
     }
 
     @Override

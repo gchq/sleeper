@@ -23,7 +23,6 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 import sleeper.core.schema.type.LongType;
@@ -597,7 +596,7 @@ public class InMemoryIngestJobStatusStoreTest {
                     .containsExactly("test-run", "test-run");
         }
 
-        @Test // TODO store new event fields, allow it to not end the run
+        @Test
         void shouldReportJobFinishedButUncommitted() {
             // Given
             String jobRunId = "test-run";
@@ -623,7 +622,9 @@ public class InMemoryIngestJobStatusStoreTest {
                             .startedStatus(IngestJobStartedStatus.withStartOfRun(true)
                                     .job(job).startTime(startTime).updateTime(defaultUpdateTime(startTime))
                                     .build())
-                            .finishedStatus(ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary))
+                            .finishedStatus(IngestJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary)
+                                    .numFilesAddedByJob(1).committedWhenAllFilesAdded(true)
+                                    .build())
                             .build()));
             assertThat(store.streamTableRecords(tableId))
                     .extracting(ProcessStatusUpdateRecord::getJobRunId)

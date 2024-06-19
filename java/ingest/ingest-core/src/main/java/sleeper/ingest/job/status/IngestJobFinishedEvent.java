@@ -84,7 +84,7 @@ public class IngestJobFinishedEvent {
         return summary;
     }
 
-    public int getNumFilesAddedByJob() {
+    public Integer getNumFilesAddedByJob() {
         return numFilesAddedByJob;
     }
 
