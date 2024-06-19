@@ -36,6 +36,7 @@ import sleeper.compaction.status.store.CompactionStatusStoreException;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.util.LoggedDuration;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
 import java.time.Instant;
@@ -145,6 +146,7 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
     }
 
     private void save(Map<String, AttributeValue> update) {
+        Instant startTime = Instant.now();
         TransactWriteItemsResult result = dynamoDB.transactWriteItems(new TransactWriteItemsRequest()
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
                 .withTransactItems(
@@ -173,8 +175,9 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
                                         ":expiry", update.get(EXPIRY_DATE))))));
         List<ConsumedCapacity> consumedCapacity = result.getConsumedCapacity();
         double totalCapacity = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
-        LOGGER.debug("Added {} for job {}, capacity consumed = {}",
-                getStringAttribute(update, UPDATE_TYPE), getStringAttribute(update, JOB_ID), totalCapacity);
+        LOGGER.debug("Added {} for job {}, capacity consumed = {}, took {}",
+                getStringAttribute(update, UPDATE_TYPE), getStringAttribute(update, JOB_ID),
+                totalCapacity, LoggedDuration.withFullOutput(startTime, Instant.now()));
     }
 
     private DynamoDBRecordBuilder jobUpdateBuilder(CompactionJob job) {

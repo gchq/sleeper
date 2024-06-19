@@ -30,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.IngestStatusStoreException;
 import sleeper.ingest.task.IngestTaskStatus;
 import sleeper.ingest.task.IngestTaskStatusStore;
@@ -46,6 +47,7 @@ import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.instanceTableName;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
 import static sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusFormat.TASK_ID;
+import static sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusFormat.UPDATE_TYPE;
 
 public class DynamoDBIngestTaskStatusStore implements IngestTaskStatusStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBIngestTaskStatusStore.class);
@@ -72,9 +74,7 @@ public class DynamoDBIngestTaskStatusStore implements IngestTaskStatusStore {
     @Override
     public void taskStarted(IngestTaskStatus taskStatus) {
         try {
-            PutItemResult result = putItem(format.createTaskStartedRecord(taskStatus));
-            LOGGER.info("Put started event for task {} to table {}, capacity consumed = {}",
-                    taskStatus.getTaskId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
+            putItem(format.createTaskStartedRecord(taskStatus));
         } catch (RuntimeException e) {
             throw new IngestStatusStoreException("Failed putItem in taskStarted for task " + taskStatus.getTaskId(), e);
         }
@@ -83,9 +83,7 @@ public class DynamoDBIngestTaskStatusStore implements IngestTaskStatusStore {
     @Override
     public void taskFinished(IngestTaskStatus taskStatus) {
         try {
-            PutItemResult result = putItem(format.createTaskFinishedRecord(taskStatus));
-            LOGGER.info("Put finished event for task {} to table {}, capacity consumed = {}",
-                    taskStatus.getTaskId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
+            putItem(format.createTaskFinishedRecord(taskStatus));
         } catch (RuntimeException e) {
             throw new IngestStatusStoreException("Failed putItem in taskFinished for task " + taskStatus.getTaskId(), e);
         }
@@ -111,7 +109,6 @@ public class DynamoDBIngestTaskStatusStore implements IngestTaskStatusStore {
 
     @Override
     public List<IngestTaskStatus> getTasksInTimePeriod(Instant startTime, Instant endTime) {
-
         return DynamoDBIngestTaskStatusFormat.streamTaskStatuses(
                 streamPagedItems(dynamoDB, new ScanRequest().withTableName(statusTableName)))
                 .filter(task -> task.isInPeriod(startTime, endTime))
@@ -126,11 +123,16 @@ public class DynamoDBIngestTaskStatusStore implements IngestTaskStatusStore {
                 .collect(Collectors.toList());
     }
 
-    private PutItemResult putItem(Map<String, AttributeValue> item) {
+    private void putItem(Map<String, AttributeValue> item) {
+        Instant startTime = Instant.now();
         PutItemRequest putItemRequest = new PutItemRequest()
                 .withItem(item)
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
                 .withTableName(statusTableName);
-        return dynamoDB.putItem(putItemRequest);
+        PutItemResult result = dynamoDB.putItem(putItemRequest);
+        LOGGER.debug("Put {} event for task {} to table {}, capacity consumed = {}, took {}",
+                item.get(UPDATE_TYPE).getS(), item.get(TASK_ID).getS(),
+                statusTableName, result.getConsumedCapacity().getCapacityUnits(),
+                LoggedDuration.withFullOutput(startTime, Instant.now()));
     }
 }
