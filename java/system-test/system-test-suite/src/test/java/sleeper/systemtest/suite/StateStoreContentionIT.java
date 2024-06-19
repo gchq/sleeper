@@ -38,6 +38,7 @@ import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_MODE;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_INGEST;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRITERS;
 import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.compaction.SystemTestCompaction;
 import sleeper.systemtest.dsl.extension.AfterTestPurgeQueues;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
@@ -75,25 +76,35 @@ public class StateStoreContentionIT {
                 .updateProperties(properties -> {
                     properties.setEnum(INGEST_MODE, DIRECT);
                     properties.setNumber(NUMBER_OF_WRITERS, 10);
-                    properties.setNumber(NUMBER_OF_RECORDS_PER_INGEST, 1_000_000);
+                    properties.setNumber(NUMBER_OF_RECORDS_PER_INGEST, 10_000_000);
                 })
                 .generateData(
                         PollWithRetries.intervalAndPollingTimeout(
                                 Duration.ofSeconds(10), Duration.ofMinutes(5)));
 
         // When we run compaction
-        sleeper.compaction()
+        SystemTestCompaction compaction = sleeper.compaction()
                 .createJobs(
                         512,
                         PollWithRetries.intervalAndPollingTimeout(
                                 Duration.ofSeconds(10), Duration.ofMinutes(10)))
-                .invokeTasks(256)
-                .waitForJobsToFinishThenCommit(
-                        PollWithRetries.intervalAndPollingTimeout(
-                                Duration.ofSeconds(10), Duration.ofMinutes(5)),
+                .invokeTasks(100);
+
+        sleeper.systemTestCluster()
+                .updateProperties(properties -> {
+                    properties.setEnum(INGEST_MODE, DIRECT);
+                    properties.setNumber(NUMBER_OF_WRITERS, 10);
+                    properties.setNumber(NUMBER_OF_RECORDS_PER_INGEST, 10_000_000);
+                })
+                .generateData(
                         PollWithRetries.intervalAndPollingTimeout(
                                 Duration.ofSeconds(10), Duration.ofMinutes(5)));
 
+        compaction.waitForJobsToFinishThenCommit(
+                PollWithRetries.intervalAndPollingTimeout(
+                        Duration.ofSeconds(10), Duration.ofMinutes(5)),
+                PollWithRetries.intervalAndPollingTimeout(
+                        Duration.ofSeconds(10), Duration.ofMinutes(5)));
         // Ingest setup
         /*
          * sleeper.systemTestCluster()
