@@ -22,6 +22,7 @@ import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
@@ -48,7 +49,9 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.defaultFileOnRootPartitionWithRecords;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.acceptedRunWhichFailed;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.finishedIngestJobWithValidation;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.jobStatus;
 import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobAccepted;
 
 class BulkImportJobDriverTest {
@@ -81,13 +84,15 @@ class BulkImportJobDriverTest {
     }
 
     @Test
-    void shouldReportJobFinishedWithNoRecordsWhenJobFailed() throws Exception {
+    void shouldReportJobFailed() throws Exception {
         // Given
         BulkImportJob job = singleFileImportJob();
         Instant validationTime = Instant.parse("2023-04-06T12:30:01Z");
         Instant startTime = Instant.parse("2023-04-06T12:40:01Z");
         Instant finishTime = Instant.parse("2023-04-06T12:41:01Z");
-        RuntimeException jobFailure = new RuntimeException("Failed running job");
+        RuntimeException rootCause = new RuntimeException("Root cause");
+        RuntimeException cause = new RuntimeException("Some cause", rootCause);
+        RuntimeException jobFailure = new RuntimeException("Failed running job", cause);
 
         // When
         assertThatThrownBy(() -> runJob(job, "test-run", "test-task",
@@ -98,8 +103,10 @@ class BulkImportJobDriverTest {
 
         // Then
         assertThat(allJobsReported())
-                .containsExactly(finishedIngestJobWithValidation(job.toIngestJob(), "test-task",
-                        validationTime, summary(startTime, finishTime, 0, 0)));
+                .containsExactly(jobStatus(job.toIngestJob(), acceptedRunWhichFailed(
+                        job.toIngestJob(), "test-task", validationTime,
+                        new ProcessRunTime(startTime, finishTime),
+                        List.of("Failed running job", "Some cause", "Root cause"))));
         assertThat(stateStore.getFileReferences()).isEmpty();
     }
 
@@ -123,8 +130,10 @@ class BulkImportJobDriverTest {
 
         // Then
         assertThat(allJobsReported())
-                .containsExactly(finishedIngestJobWithValidation(job.toIngestJob(), "test-task",
-                        validationTime, summary(startTime, finishTime, 0, 0)));
+                .containsExactly(jobStatus(job.toIngestJob(), acceptedRunWhichFailed(
+                        job.toIngestJob(), "test-task", validationTime,
+                        new ProcessRunTime(startTime, finishTime),
+                        List.of("Failed updating files"))));
         verify(stateStore).addFiles(outputFiles);
         verifyNoMoreInteractions(stateStore);
     }
@@ -149,8 +158,10 @@ class BulkImportJobDriverTest {
 
         // Then
         assertThat(allJobsReported())
-                .containsExactly(finishedIngestJobWithValidation(job.toIngestJob(), "test-task",
-                        validationTime, summary(startTime, finishTime, 0, 0)));
+                .containsExactly(jobStatus(job.toIngestJob(), acceptedRunWhichFailed(
+                        job.toIngestJob(), "test-task", validationTime,
+                        new ProcessRunTime(startTime, finishTime),
+                        List.of("Failed updating files"))));
         verify(stateStore).addFiles(outputFiles);
         verifyNoMoreInteractions(stateStore);
     }
