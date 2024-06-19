@@ -320,6 +320,28 @@ class ProcessRunsTest {
         }
 
         @Test
+        void shouldIncludeUpdateForRunAfterItIsFinished() {
+            // Given
+            ProcessStartedStatus started = startedStatus(
+                    Instant.parse("2024-06-19T13:26:00Z"));
+            ProcessFinishedStatus finished = finishedStatus(
+                    started, Duration.ofMinutes(1), 123, 123);
+            CustomProcessStatus update = partOfRunWithUpdateTime(
+                    Instant.parse("2024-06-19T13:28:00Z"));
+
+            // When
+            ProcessRuns runs = runsFromUpdates(
+                    forRunOnTask("some-run", "some-task", started, finished),
+                    forRunOnNoTask("some-run", update));
+
+            // Then
+            assertThat(runs.getRunsLatestFirst())
+                    .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus, ProcessRun::getStatusUpdates)
+                    .containsExactly(
+                            tuple("some-task", started, finished, List.of(started, finished, update)));
+        }
+
+        @Test
         void shouldExcludeUpdateNotPartOfARun() {
             // Given
             CustomProcessStatus notPartOfRun = notPartOfRunWithUpdateTime(Instant.parse("2024-06-19T14:06:00Z"));
