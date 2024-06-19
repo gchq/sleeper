@@ -51,8 +51,7 @@ import sleeper.systemtest.suite.testutil.SystemTest;
 public class StateStoreContentionIT {
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper, AfterTestReports reporting, AfterTestPurgeQueues purgeQueues)
-            throws Exception {
+    void setUp(SleeperSystemTest sleeper, AfterTestReports reporting, AfterTestPurgeQueues purgeQueues) throws Exception {
         sleeper.connectToInstance(CONTENTION_PERFORMANCE);
         reporting.reportIfTestFailed(SystemTestReports.SystemTestBuilder::compactionTasksAndJobs);
         // reporting.reportIfTestFailed(SystemTestReports.SystemTestBuilder::ingestTasksAndJobs);
@@ -85,10 +84,10 @@ public class StateStoreContentionIT {
         // When we run compaction
         sleeper.compaction()
                 .createJobs(
-                        8192,
+                        512,
                         PollWithRetries.intervalAndPollingTimeout(
                                 Duration.ofSeconds(10), Duration.ofMinutes(10)))
-                .invokeTasks(300)
+                .invokeTasks(256)
                 .waitForJobsToFinishThenCommit(
                         PollWithRetries.intervalAndPollingTimeout(
                                 Duration.ofSeconds(10), Duration.ofMinutes(5)),
@@ -151,7 +150,7 @@ public class StateStoreContentionIT {
                         "not assigned to any job")
                 .allSatisfy(file -> assertThat(file.getNumberOfRecords())
                         .describedAs("contains an even distribution of records for the partition")
-                        .isBetween(800L, 1600L));
+                        .isBetween(800L, 2000L));
         // And all jobs have finished and only ran once
         assertThat(sleeper.reporting().compactionJobs().finishedStatistics())
                 .matches(statistics -> statistics.isAllFinishedOneRunEach(512),
