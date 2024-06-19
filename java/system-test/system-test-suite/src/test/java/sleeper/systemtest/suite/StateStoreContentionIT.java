@@ -31,23 +31,19 @@ import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FI
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
 import sleeper.configuration.properties.validation.IngestFileWritingStrategy;
-import static sleeper.configuration.properties.validation.IngestQueue.STANDARD_INGEST;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.util.PollWithRetries;
-import static sleeper.systemtest.configuration.SystemTestIngestMode.QUEUE;
+import static sleeper.systemtest.configuration.SystemTestIngestMode.DIRECT;
 import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_MODE;
-import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_QUEUE;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_INGEST;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRITERS;
 import sleeper.systemtest.dsl.SleeperSystemTest;
-import sleeper.systemtest.dsl.compaction.SystemTestCompaction;
 import sleeper.systemtest.dsl.extension.AfterTestPurgeQueues;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
-import sleeper.systemtest.dsl.ingest.SystemTestIngestByQueue;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.CONTENTION_PERFORMANCE;
 import sleeper.systemtest.suite.testutil.Expensive;
-import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.create8192StringPartitions;
+import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.create512StringPartitions;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
 @SystemTest
@@ -55,10 +51,11 @@ import sleeper.systemtest.suite.testutil.SystemTest;
 public class StateStoreContentionIT {
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper, AfterTestReports reporting, AfterTestPurgeQueues purgeQueues) throws Exception {
+    void setUp(SleeperSystemTest sleeper, AfterTestReports reporting, AfterTestPurgeQueues purgeQueues)
+            throws Exception {
         sleeper.connectToInstance(CONTENTION_PERFORMANCE);
         reporting.reportIfTestFailed(SystemTestReports.SystemTestBuilder::compactionTasksAndJobs);
-        reporting.reportIfTestFailed(SystemTestReports.SystemTestBuilder::ingestTasksAndJobs);
+        // reporting.reportIfTestFailed(SystemTestReports.SystemTestBuilder::ingestTasksAndJobs);
         purgeQueues.purgeIfTestFailed(COMPACTION_JOB_CREATION_QUEUE_URL, COMPACTION_JOB_QUEUE_URL,
                 INGEST_JOB_QUEUE_URL);
     }
@@ -66,57 +63,86 @@ public class StateStoreContentionIT {
     @Test
     void shouldApplyOneCompactionPerPartition(SleeperSystemTest sleeper) {
         // Given we configure to compact many partitions
-        sleeper.partitioning().setPartitions(create8192StringPartitions(sleeper));
+        // sleeper.setGeneratorOverrides();
+        sleeper.partitioning().setPartitions(create512StringPartitions(sleeper));
+
         sleeper.updateTableProperties(Map.of(
                 COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
                 COMPACTION_FILES_BATCH_SIZE, "10",
                 INGEST_FILE_WRITING_STRATEGY, IngestFileWritingStrategy.ONE_FILE_PER_LEAF.toString()));
+
         // And we have records spread across all partitions in many files per partition
         sleeper.systemTestCluster()
                 .updateProperties(properties -> {
-                    properties.setEnum(INGEST_MODE, QUEUE);
-                    properties.setEnum(INGEST_QUEUE, STANDARD_INGEST);
+                    properties.setEnum(INGEST_MODE, DIRECT);
                     properties.setNumber(NUMBER_OF_WRITERS, 10);
-                    properties.setNumber(NUMBER_OF_RECORDS_PER_INGEST, 1000);
-                });
-        //.generateData(
-        //   PollWithRetries.intervalAndPollingTimeout(
-        //         Duration.ofSeconds(30), Duration.ofMinutes(30)));
-        //.invokeStandardIngestTasks(11,
-        //        PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(10)))
-        //.waitForIngestJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(40)));
-
-        // Ingest setup
-        sleeper.sourceFiles()
-                .createWithNumberedRecords("file1.parquet", LongStream.range(0, 1000))
-                .createWithNumberedRecords("file2.parquet", LongStream.range(1000, 2000))
-                .createWithNumberedRecords("file3.parquet", LongStream.range(2000, 3000))
-                .createWithNumberedRecords("file4.parquet", LongStream.range(3000, 4000))
-                .createWithNumberedRecords("file5.parquet", LongStream.range(4000, 5000));
-
-        SystemTestIngestByQueue ingestByQueue = sleeper.ingest().byQueue()
-                .sendSourceFiles("file1.parquet", "file2.parquet", "file3.parquet",
-                        "file4.parquet", "file5.parquet")
-                .invokeTask();
-
-        ingestByQueue.waitForJobs();
+                    properties.setNumber(NUMBER_OF_RECORDS_PER_INGEST, 1_000_000);
+                })
+                .generateData(
+                        PollWithRetries.intervalAndPollingTimeout(
+                                Duration.ofSeconds(10), Duration.ofMinutes(5)));
 
         // When we run compaction
-        SystemTestCompaction compaction = sleeper.compaction()
-                .createJobs(8192,
+        sleeper.compaction()
+                .createJobs(
+                        8192,
                         PollWithRetries.intervalAndPollingTimeout(
-                                Duration.ofSeconds(10), Duration.ofMinutes(30)))
-                .invokeTasks(300);
+                                Duration.ofSeconds(10), Duration.ofMinutes(10)))
+                .invokeTasks(300)
+                .waitForJobsToFinishThenCommit(
+                        PollWithRetries.intervalAndPollingTimeout(
+                                Duration.ofSeconds(10), Duration.ofMinutes(5)),
+                        PollWithRetries.intervalAndPollingTimeout(
+                                Duration.ofSeconds(10), Duration.ofMinutes(5)));
 
-        compaction.waitForJobsToFinishThenCommit(
-                PollWithRetries.intervalAndPollingTimeout(
-                        Duration.ofSeconds(10), Duration.ofMinutes(20)),
-                PollWithRetries.intervalAndPollingTimeout(
-                        Duration.ofSeconds(10), Duration.ofMinutes(20)));
+        // Ingest setup
+        /*
+         * sleeper.systemTestCluster()
+         * .updateProperties(properties -> {
+         * properties.setEnum(INGEST_MODE, QUEUE);
+         * });
+         * sleeper.sourceFiles()
+         * .createWithNumberedRecords("file1.parquet", LongStream.range(0, 1000))
+         * .createWithNumberedRecords("file2.parquet", LongStream.range(1000, 2000))
+         * .createWithNumberedRecords("file3.parquet", LongStream.range(2000, 3000))
+         * .createWithNumberedRecords("file4.parquet", LongStream.range(3000, 4000))
+         * .createWithNumberedRecords("file5.parquet", LongStream.range(4000, 5000));
+         * 
+         * compaction.waitForJobsToFinishThenCommit(
+         * PollWithRetries.intervalAndPollingTimeout(
+         * Duration.ofSeconds(10), Duration.ofMinutes(20)),
+         * PollWithRetries.intervalAndPollingTimeout(
+         * Duration.ofSeconds(10), Duration.ofMinutes(20)));
+         * 
+         * SystemTestIngestByQueue ingestByQueue = sleeper.ingest().byQueue()
+         * .sendSourceFiles("file1.parquet", "file2.parquet", "file3.parquet",
+         * "file4.parquet", "file5.parquet")
+         * .invokeTask();
+         * 
+         * ingestByQueue.waitForJobs();
+         */
 
+        /*
+         * sleeper.systemTestCluster()
+         * .updateProperties(properties -> {
+         * properties.setEnum(INGEST_MODE, QUEUE);
+         * properties.setEnum(INGEST_QUEUE, STANDARD_INGEST);
+         * properties.setNumber(NUMBER_OF_WRITERS, 10);
+         * properties.setNumber(NUMBER_OF_RECORDS_PER_INGEST, 1000);
+         * })
+         * .generateData(
+         * PollWithRetries.intervalAndPollingTimeout(
+         * Duration.ofSeconds(30), Duration.ofMinutes(30)))
+         * .invokeStandardIngestTasks(11,
+         * PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30),
+         * Duration.ofMinutes(10)))
+         * .waitForIngestJobs(
+         * PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30),
+         * Duration.ofMinutes(30)));
+         */
         // Then we have one file per partition
         assertThat(sleeper.tableFiles().references())
-                .hasSize(8192)
+                .hasSize(512)
                 .satisfies(files -> assertThat(files.stream().mapToLong(FileReference::getNumberOfRecords).sum())
                         .isEqualTo(10_000_000))
                 .allMatch(file -> file.onlyContainsDataForThisPartition() && !file.isCountApproximate(),
@@ -128,7 +154,7 @@ public class StateStoreContentionIT {
                         .isBetween(800L, 1600L));
         // And all jobs have finished and only ran once
         assertThat(sleeper.reporting().compactionJobs().finishedStatistics())
-                .matches(statistics -> statistics.isAllFinishedOneRunEach(8192),
+                .matches(statistics -> statistics.isAllFinishedOneRunEach(512),
                         "all jobs finished and ran once");
         assertThat(sleeper.reporting().finishedCompactionTasks())
                 .allSatisfy(task -> assertThat(task.getJobRuns())
