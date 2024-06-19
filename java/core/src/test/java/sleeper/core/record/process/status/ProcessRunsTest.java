@@ -16,7 +16,6 @@
 
 package sleeper.core.record.process.status;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -82,7 +81,7 @@ class ProcessRunsTest {
         }
 
         @Test
-        void shouldIgnoreExtraFinishedStatus() {
+        void shouldIncludeExtraFinishedStatus() {
             // Given
             ProcessStartedStatus started = startedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
             ProcessFinishedStatus finished1 = finishedStatus(started, Duration.ofSeconds(30), 100, 100);
@@ -93,9 +92,9 @@ class ProcessRunsTest {
 
             // Then
             assertThat(runs.getRunsLatestFirst())
-                    .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
+                    .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus, ProcessRun::getStatusUpdates)
                     .containsExactly(
-                            tuple(DEFAULT_TASK_ID, started, finished1));
+                            tuple(DEFAULT_TASK_ID, started, finished2, List.of(started, finished1, finished2)));
             assertThat(runs.isFinishedAndNoRunsInProgress()).isTrue();
         }
     }
@@ -209,6 +208,44 @@ class ProcessRunsTest {
                             tuple(TASK_ID_1, started1, finished1));
             assertThat(runs.isFinishedAndNoRunsInProgress()).isTrue();
         }
+
+        @Test
+        void shouldExcludeUpdateNotPartOfARunBeforeTask() {
+            // Given
+            CustomProcessStatus notPartOfRun = notPartOfRunWithUpdateTime(Instant.parse("2024-06-19T14:06:00Z"));
+            ProcessStartedStatus started = startedStatus(Instant.parse("2024-06-19T14:06:01Z"));
+
+            // When
+            ProcessRuns runs = runsFromUpdates(
+                    onNoTask(notPartOfRun),
+                    onTask(TASK_ID_1, started));
+
+            // Then
+            assertThat(runs.getRunsLatestFirst())
+                    .extracting(ProcessRun::getTaskId, ProcessRun::getStatusUpdates)
+                    .containsExactly(
+                            tuple(TASK_ID_1, List.of(started)));
+            assertThat(runs.isFinishedAndNoRunsInProgress()).isFalse();
+        }
+
+        @Test
+        void shouldExcludeUpdateNotPartOfARunAfterTaskStarted() {
+            // Given
+            ProcessStartedStatus started = startedStatus(Instant.parse("2024-06-19T14:06:00Z"));
+            CustomProcessStatus notPartOfRun = notPartOfRunWithUpdateTime(Instant.parse("2024-06-19T14:06:01Z"));
+
+            // When
+            ProcessRuns runs = runsFromUpdates(
+                    onTask(TASK_ID_1, started),
+                    onNoTask(notPartOfRun));
+
+            // Then
+            assertThat(runs.getRunsLatestFirst())
+                    .extracting(ProcessRun::getTaskId, ProcessRun::getStatusUpdates)
+                    .containsExactly(
+                            tuple(TASK_ID_1, List.of(started)));
+            assertThat(runs.isFinishedAndNoRunsInProgress()).isFalse();
+        }
     }
 
     @DisplayName("Correlate process runs by run ID")
@@ -241,7 +278,7 @@ class ProcessRunsTest {
         }
 
         @Test
-        void shouldIgnoreExtraFinishedStatus() {
+        void shouldIncludeExtraFinishedStatus() {
             // Given
             ProcessStartedStatus started = startedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
             ProcessFinishedStatus finished1 = finishedStatus(started, Duration.ofSeconds(30), 100, 100);
@@ -255,20 +292,19 @@ class ProcessRunsTest {
 
             // Then
             assertThat(runs.getRunsLatestFirst())
-                    .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
+                    .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus, ProcessRun::getStatusUpdates)
                     .containsExactly(
-                            tuple("some-task", started, finished1));
+                            tuple("some-task", started, finished2, List.of(started, finished1, finished2)));
             assertThat(runs.isFinishedAndNoRunsInProgress()).isTrue();
         }
 
         @Test
-        @Disabled("TODO")
         void shouldIncludeUpdateForRunBeforeStartTimeWhenOccurredOnAnotherProcessWithOutOfSyncClock() {
             // Given a started status, and a status update that occurred on another process
             // And the other process has an out of sync clock such that the update occurred before the start update
             ProcessStartedStatus started = startedStatus(
                     Instant.parse("2024-06-19T13:26:00Z"));
-            CustomProcessStatus update = CustomProcessStatus.partOfRunWithUpdateTime(
+            CustomProcessStatus update = partOfRunWithUpdateTime(
                     Instant.parse("2024-06-19T13:25:59Z"));
 
             // When
@@ -281,6 +317,25 @@ class ProcessRunsTest {
                     .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus, ProcessRun::getStatusUpdates)
                     .containsExactly(
                             tuple("some-task", started, null, List.of(update, started)));
+        }
+
+        @Test
+        void shouldExcludeUpdateNotPartOfARun() {
+            // Given
+            CustomProcessStatus notPartOfRun = notPartOfRunWithUpdateTime(Instant.parse("2024-06-19T14:06:00Z"));
+            ProcessStartedStatus started = startedStatus(Instant.parse("2024-06-19T14:06:01Z"));
+
+            // When
+            ProcessRuns runs = runsFromUpdates(
+                    onNoTask(notPartOfRun),
+                    forRunOnTask("some-run", "some-task", started));
+
+            // Then
+            assertThat(runs.getRunsLatestFirst())
+                    .extracting(ProcessRun::getTaskId, ProcessRun::getStatusUpdates)
+                    .containsExactly(
+                            tuple("some-task", List.of(started)));
+            assertThat(runs.isFinishedAndNoRunsInProgress()).isFalse();
         }
     }
 
@@ -405,11 +460,25 @@ class ProcessRunsTest {
             CustomProcessStatus customStatus = notPartOfRunWithUpdateTime(Instant.parse("2022-09-24T10:23:30Z"));
 
             // When
-            ProcessRuns runs = runsFromUpdates(startedStatus, customStatus);
+            ProcessRuns runs = runsFromUpdates(onTask("a-task", startedStatus), onNoTask(customStatus));
 
             // Then
             assertThat(runs.getRunsLatestFirst())
-                    .containsExactly(ProcessRun.started(DEFAULT_TASK_ID, startedStatus));
+                    .containsExactly(ProcessRun.started("a-task", startedStatus));
+        }
+
+        @Test
+        void shouldCreateProcessRunWithCustomStatusUpdateNotPartOfRunButStillOnTask() {
+            // Given
+            ProcessStartedStatus startedStatus = startedStatus(Instant.parse("2022-09-24T09:23:30Z"));
+            CustomProcessStatus customStatus = notPartOfRunWithUpdateTime(Instant.parse("2022-09-24T10:23:30Z"));
+
+            // When
+            ProcessRuns runs = runsFromUpdates(onTask("a-task", startedStatus, customStatus));
+
+            // Then
+            assertThat(runs.getRunsLatestFirst())
+                    .containsExactly(ProcessRun.started("a-task", startedStatus));
         }
     }
 
