@@ -188,8 +188,8 @@ public class IngestJobAddedFilesEvent {
         /**
          * Sets the added files.
          *
-         * @param  fileReferences the files that were added
-         * @return                the builder for chaining
+         * @param  files the files that were added
+         * @return       the builder for chaining
          */
         public Builder files(List<AllReferencesToAFile> files) {
             this.fileCount = files.size();
