@@ -67,6 +67,21 @@ public class InMemoryIngestJobStatusStore implements IngestJobStatusStore {
     }
 
     @Override
+    public void jobAddedFiles(IngestJobAddedFilesEvent event) {
+        existingJobRecords(event.getTableId(), event.getJobId())
+                .add(ProcessStatusUpdateRecord.builder()
+                        .jobId(event.getJobId())
+                        .statusUpdate(IngestJobAddedFilesStatus.builder()
+                                .writtenTime(event.getWrittenTime())
+                                .updateTime(defaultUpdateTime(event.getWrittenTime()))
+                                .fileCount(event.getFileCount())
+                                .build())
+                        .jobRunId(event.getJobRunId())
+                        .taskId(event.getTaskId())
+                        .build());
+    }
+
+    @Override
     public void jobFinished(IngestJobFinishedEvent event) {
         RecordsProcessedSummary summary = event.getSummary();
         existingJobRecords(event.getTableId(), event.getJobId())

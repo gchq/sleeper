@@ -15,7 +15,7 @@
  */
 package sleeper.ingest.job.status;
 
-import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.ingest.job.IngestJob;
 
 import java.time.Instant;
@@ -45,16 +45,16 @@ public class IngestJobAddedFilesEvent {
     /**
      * Creates a builder for when an ingest job committed files to the state store.
      *
-     * @param  job            the job
-     * @param  fileReferences the file references added to the state store
-     * @param  writtenTime    the time the files were written
-     * @return                a builder to set further information
+     * @param  job         the job
+     * @param  files       the files added to the state store
+     * @param  writtenTime the time the files were written
+     * @return             a builder to set further information
      */
-    public static Builder ingestJobAddedFiles(IngestJob job, List<FileReference> fileReferences, Instant writtenTime) {
+    public static Builder ingestJobAddedFiles(IngestJob job, List<AllReferencesToAFile> files, Instant writtenTime) {
         return builder()
                 .job(job)
                 .writtenTime(writtenTime)
-                .fileReferences(fileReferences);
+                .files(files);
     }
 
     public static Builder builder() {
@@ -186,13 +186,13 @@ public class IngestJobAddedFilesEvent {
         }
 
         /**
-         * Sets the added file references.
+         * Sets the added files.
          *
-         * @param  fileReferences the file references that were added
+         * @param  fileReferences the files that were added
          * @return                the builder for chaining
          */
-        public Builder fileReferences(List<FileReference> fileReferences) {
-            this.fileCount = fileReferences.size();
+        public Builder files(List<AllReferencesToAFile> files) {
+            this.fileCount = files.size();
             return this;
         }
 
