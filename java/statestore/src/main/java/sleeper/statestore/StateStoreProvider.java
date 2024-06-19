@@ -22,6 +22,8 @@ import org.jboss.threads.ArrayQueue;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.core.statestore.GetStateStoreByTableId;
 import sleeper.core.statestore.StateStore;
 
 import java.util.HashMap;
@@ -75,6 +77,16 @@ public class StateStoreProvider {
             tableIds.add(tableId);
         }
         return tableIdToStateStoreCache.get(tableId);
+    }
+
+    /**
+     * Provides a helper to get a state store using a Sleeper table ID.
+     *
+     * @param  tablePropertiesProvider the table properties provider
+     * @return                         the helper
+     */
+    public GetStateStoreByTableId byTableId(TablePropertiesProvider tablePropertiesProvider) {
+        return tableId -> getStateStore(tablePropertiesProvider.getById(tableId));
     }
 
     /**

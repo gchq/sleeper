@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.GetStateStoreByTableId;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 
@@ -32,10 +33,9 @@ public class CompactionJobCommitter {
     public static final Logger LOGGER = LoggerFactory.getLogger(CompactionJobCommitter.class);
 
     private final CompactionJobStatusStore statusStore;
-    private final GetStateStore stateStoreProvider;
+    private final GetStateStoreByTableId stateStoreProvider;
 
-    public CompactionJobCommitter(
-            CompactionJobStatusStore statusStore, GetStateStore stateStoreProvider) {
+    public CompactionJobCommitter(CompactionJobStatusStore statusStore, GetStateStoreByTableId stateStoreProvider) {
         this.statusStore = statusStore;
         this.stateStoreProvider = stateStoreProvider;
     }
@@ -45,6 +45,7 @@ public class CompactionJobCommitter {
         updateStateStoreSuccess(
                 job, request.getRecordsWritten(), stateStoreProvider.getByTableId(job.getTableId()));
         statusStore.jobFinished(job, request.buildRecordsProcessedSummary(), request.getTaskId());
+        LOGGER.info("Successfully committed compaction job {} to table with ID {}", job.getId(), job.getTableId());
     }
 
     public static void updateStateStoreSuccess(
@@ -60,10 +61,5 @@ public class CompactionJobCommitter {
                 .build();
         stateStore.atomicallyReplaceFileReferencesWithNewOnes(List.of(
                 replaceJobFileReferences(job.getId(), job.getPartitionId(), job.getInputFiles(), fileReference)));
-    }
-
-    @FunctionalInterface
-    public interface GetStateStore {
-        StateStore getByTableId(String tableId);
     }
 }
