@@ -27,8 +27,6 @@ import sleeper.ingest.job.IngestJobHandler;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -108,8 +106,7 @@ public class IngestTask {
                 } catch (Exception e) {
                     Instant jobFinishTime = timeSupplier.get();
                     jobStatusStore.jobFailed(ingestJobFailed(job, new ProcessRunTime(jobStartTime, jobFinishTime))
-                            .taskId(taskId)
-                            .failureReasons(getFailureReasons(e))
+                            .taskId(taskId).failure(e)
                             .build());
                     LOGGER.error("Failed processing ingest job, terminating task", e);
                     message.failed();
@@ -117,16 +114,6 @@ public class IngestTask {
                 }
             }
         }
-    }
-
-    private static List<String> getFailureReasons(Exception e) {
-        List<String> reasons = new ArrayList<>();
-        Throwable failure = e;
-        while (failure != null) {
-            reasons.add(failure.getMessage());
-            failure = failure.getCause();
-        }
-        return reasons;
     }
 
     /**

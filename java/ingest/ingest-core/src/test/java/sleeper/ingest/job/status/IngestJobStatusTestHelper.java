@@ -24,6 +24,7 @@ import sleeper.core.record.process.status.ProcessRuns;
 import sleeper.core.record.process.status.TestProcessStatusUpdateRecords;
 import sleeper.ingest.job.IngestJob;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
@@ -305,7 +306,7 @@ public class IngestJobStatusTestHelper {
     }
 
     /**
-     * Creates a process run for an ingest job that finished.
+     * Creates a process run for an ingest job that failed.
      *
      * @param  job            the ingest job
      * @param  taskId         the ingest task ID
@@ -318,6 +319,25 @@ public class IngestJobStatusTestHelper {
         return ProcessRun.finished(taskId,
                 startAndUpdateTime(job, runTime.getStartTime(), defaultUpdateTime(runTime.getStartTime())),
                 ProcessFailedStatus.timeAndReasons(defaultUpdateTime(runTime.getFinishTime()), runTime, failureReasons));
+    }
+
+    /**
+     * Creates a process run for an ingest job that passed validation then failed to start.
+     *
+     * @param  job            the ingest job
+     * @param  validationTime the validation time
+     * @param  failureTime    the failure time
+     * @param  failureReasons a list of failure reasons
+     * @return                a {@link ProcessRun}
+     */
+    public static ProcessRun acceptedAndFailedToStartIngestRun(
+            IngestJob job, Instant validationTime, Instant failureTime, List<String> failureReasons) {
+        return ProcessRun.builder()
+                .startedStatus(IngestJobAcceptedStatus.from(job,
+                        validationTime, defaultUpdateTime(validationTime)))
+                .finishedStatus(ProcessFailedStatus.timeAndReasons(
+                        defaultUpdateTime(failureTime), new ProcessRunTime(failureTime, Duration.ZERO), failureReasons))
+                .build();
     }
 
     /**
