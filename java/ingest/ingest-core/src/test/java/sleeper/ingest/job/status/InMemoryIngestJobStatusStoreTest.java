@@ -561,6 +561,40 @@ public class InMemoryIngestJobStatusStoreTest {
                     .extracting(ProcessStatusUpdateRecord::getJobRunId)
                     .containsExactly("test-run", "test-run");
         }
+
+        @Test
+        void shouldReportJobAddedTwoFiles() {
+            // Given
+            String jobRunId = "test-run";
+            String taskId = "test-task";
+            IngestJob job = createJobWithTableAndFiles("test-job-1", table, "test-file-1.parquet");
+            Instant startTime = Instant.parse("2024-06-19T14:50:00.000Z");
+            Instant writtenTime = Instant.parse("2024-06-19T14:50:30.000Z");
+            FileReferenceFactory fileFactory = FileReferenceFactory.from(new PartitionsBuilder(schemaWithKey("key")).singlePartition("root").buildTree());
+            List<AllReferencesToAFile> filesAdded = filesWithReferences(List.of(
+                    fileFactory.rootFile("file1.parquet", 123),
+                    fileFactory.rootFile("file2.parquet", 456)));
+
+            // When
+            store.jobStarted(ingestJobStarted(job, startTime).jobRunId(jobRunId).taskId(taskId).build());
+            store.jobAddedFiles(ingestJobAddedFiles(job, filesAdded, writtenTime).jobRunId(jobRunId).taskId(taskId).build());
+
+            // Then
+            assertThat(store.getAllJobs(tableId))
+                    .containsExactly(jobStatus(job, ProcessRun.builder()
+                            .taskId(taskId)
+                            .startedStatus(IngestJobStartedStatus.withStartOfRun(true)
+                                    .job(job).startTime(startTime).updateTime(defaultUpdateTime(startTime))
+                                    .build())
+                            .statusUpdate(IngestJobAddedFilesStatus.builder()
+                                    .writtenTime(writtenTime).updateTime(defaultUpdateTime(writtenTime))
+                                    .fileCount(2)
+                                    .build())
+                            .build()));
+            assertThat(store.streamTableRecords(tableId))
+                    .extracting(ProcessStatusUpdateRecord::getJobRunId)
+                    .containsExactly("test-run", "test-run");
+        }
     }
 
     private TableStatus createTable(String tableName) {
