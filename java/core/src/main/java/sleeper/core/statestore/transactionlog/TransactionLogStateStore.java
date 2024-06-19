@@ -86,6 +86,7 @@ public class TransactionLogStateStore extends DelegatingStateStore {
         private Duration timeBetweenTransactionChecks = DEFAULT_TIME_BETWEEN_TRANSACTION_CHECKS;
         private Supplier<Instant> filesStateUpdateClock = Instant::now;
         private Supplier<Instant> partitionsStateUpdateClock = Instant::now;
+        private long minTransactionsBehindToDeleteOldTransactions = 1;
 
         private Builder() {
         }
@@ -237,6 +238,20 @@ public class TransactionLogStateStore extends DelegatingStateStore {
          */
         public Builder minTransactionsAheadToLoadSnapshot(long minTransactionsAheadToLoadSnapshot) {
             this.minTransactionsAheadToLoadSnapshot = minTransactionsAheadToLoadSnapshot;
+            return this;
+        }
+
+        /**
+         * The minimum number of transactions behind the latest snapshot that old transactions can be eligible for
+         * deletion. If a transaction exists that is fewer than this many transactions behind the latest snapshot,
+         * the transaction will not be eligible for deletion.
+         *
+         * @param  minTransactionsBehindToDeleteOldTransactions the minimum number of transactions behind to consider a
+         *                                                      transaction for deletion
+         * @return                                              the builder
+         */
+        public Builder minTransactionsBehindToDeleteOldTransactions(long minTransactionsBehindToDeleteOldTransactions) {
+            this.minTransactionsBehindToDeleteOldTransactions = minTransactionsBehindToDeleteOldTransactions;
             return this;
         }
 
