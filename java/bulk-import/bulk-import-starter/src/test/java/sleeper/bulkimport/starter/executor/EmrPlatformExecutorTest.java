@@ -27,7 +27,6 @@ import com.amazonaws.services.elasticmapreduce.model.InstanceTypeConfig;
 import com.amazonaws.services.elasticmapreduce.model.JobFlowInstancesConfig;
 import com.amazonaws.services.elasticmapreduce.model.RunJobFlowRequest;
 import com.amazonaws.services.elasticmapreduce.model.RunJobFlowResult;
-import com.amazonaws.services.s3.AmazonS3;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import org.junit.jupiter.api.BeforeEach;
@@ -82,7 +81,6 @@ import static sleeper.ingest.job.status.IngestJobStatusTestHelper.rejectedRun;
 class EmrPlatformExecutorTest {
     private final AmazonElasticMapReduce emr = mock(AmazonElasticMapReduce.class);
     private final AtomicReference<RunJobFlowRequest> requested = new AtomicReference<>();
-    private final AmazonS3 amazonS3 = mock(AmazonS3.class);
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
     private final String tableId = tableProperties.get(TABLE_ID);
@@ -466,7 +464,8 @@ class EmrPlatformExecutorTest {
         return new BulkImportExecutor(instanceProperties, tablePropertiesProvider,
                 new FixedStateStoreProvider(tableProperties,
                         inMemoryStateStoreWithFixedSinglePartition(tableProperties.getSchema())),
-                ingestJobStatusStore, amazonS3,
+                ingestJobStatusStore, (job, jobRunId) -> {
+                },
                 new EmrPlatformExecutor(emr, instanceProperties, tablePropertiesProvider, configuration),
                 validationTimeSupplier);
     }

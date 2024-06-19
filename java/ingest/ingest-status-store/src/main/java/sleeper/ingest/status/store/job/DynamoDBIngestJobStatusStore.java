@@ -31,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.util.LoggedDuration;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 import sleeper.ingest.IngestStatusStoreException;
 import sleeper.ingest.job.status.IngestJobFailedEvent;
@@ -136,6 +137,7 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
     }
 
     private void save(Map<String, AttributeValue> update) {
+        Instant startTime = Instant.now();
         String updateExpression = "SET " +
                 "#Table = :table, " +
                 "#FirstUpdate = if_not_exists(#FirstUpdate, :update_time), " +
@@ -175,8 +177,9 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
                                 .withExpressionAttributeValues(expressionAttributeValues))));
         List<ConsumedCapacity> consumedCapacity = result.getConsumedCapacity();
         double totalCapacity = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
-        LOGGER.debug("Added {} for job {}, capacity consumed = {}",
-                getStringAttribute(update, UPDATE_TYPE), getStringAttribute(update, JOB_ID), totalCapacity);
+        LOGGER.debug("Added {} for job {}, capacity consumed = {}, took {}",
+                getStringAttribute(update, UPDATE_TYPE), getStringAttribute(update, JOB_ID),
+                totalCapacity, LoggedDuration.withFullOutput(startTime, Instant.now()));
     }
 
     private DynamoDBRecordBuilder jobUpdateBuilder(String tableId, String jobId) {
