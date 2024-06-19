@@ -92,6 +92,8 @@ public class BulkImportExecutor {
                     .build());
             LOGGER.info("Successfully submitted job");
         } catch (RuntimeException e) {
+            LOGGER.error("Failed submitting job with id {} for table {}",
+                    bulkImportJob.getId(), bulkImportJob.getTableId(), e);
             ingestJobStatusStore.jobFailed(IngestJobFailedEvent.ingestJobFailed(bulkImportJob.toIngestJob(),
                     new ProcessRunTime(validationTimeSupplier.get(), Duration.ZERO))
                     .jobRunId(jobRunId).failure(e)
