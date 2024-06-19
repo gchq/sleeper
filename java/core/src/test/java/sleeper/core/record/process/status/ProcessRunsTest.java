@@ -16,6 +16,7 @@
 
 package sleeper.core.record.process.status;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -258,6 +259,28 @@ class ProcessRunsTest {
                     .containsExactly(
                             tuple("some-task", started, finished1));
             assertThat(runs.isFinishedAndNoRunsInProgress()).isTrue();
+        }
+
+        @Test
+        @Disabled("TODO")
+        void shouldIncludeUpdateForRunBeforeStartTimeWhenOccurredOnAnotherProcessWithOutOfSyncClock() {
+            // Given a started status, and a status update that occurred on another process
+            // And the other process has an out of sync clock such that the update occurred before the start update
+            ProcessStartedStatus started = startedStatus(
+                    Instant.parse("2024-06-19T13:26:00Z"));
+            CustomProcessStatus update = CustomProcessStatus.partOfRunWithUpdateTime(
+                    Instant.parse("2024-06-19T13:25:59Z"));
+
+            // When
+            ProcessRuns runs = runsFromUpdates(
+                    forRunOnTask("some-run", "some-task", started),
+                    forRunOnNoTask("some-run", update));
+
+            // Then
+            assertThat(runs.getRunsLatestFirst())
+                    .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus, ProcessRun::getStatusUpdates)
+                    .containsExactly(
+                            tuple("some-task", started, null, List.of(update, started)));
         }
     }
 
