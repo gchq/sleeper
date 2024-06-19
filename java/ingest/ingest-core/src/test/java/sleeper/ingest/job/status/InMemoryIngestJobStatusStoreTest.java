@@ -23,6 +23,7 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 import sleeper.core.schema.type.LongType;
@@ -590,6 +591,39 @@ public class InMemoryIngestJobStatusStoreTest {
                                     .writtenTime(writtenTime).updateTime(defaultUpdateTime(writtenTime))
                                     .fileCount(2)
                                     .build())
+                            .build()));
+            assertThat(store.streamTableRecords(tableId))
+                    .extracting(ProcessStatusUpdateRecord::getJobRunId)
+                    .containsExactly("test-run", "test-run");
+        }
+
+        @Test // TODO store new event fields, allow it to not end the run
+        void shouldReportJobFinishedButUncommitted() {
+            // Given
+            String jobRunId = "test-run";
+            String taskId = "test-task";
+            IngestJob job = createJobWithTableAndFiles("test-job-1", table, "test-file-1.parquet");
+            Instant startTime = Instant.parse("2024-06-19T14:50:00.000Z");
+            FileReferenceFactory fileFactory = FileReferenceFactory.from(new PartitionsBuilder(schemaWithKey("key")).singlePartition("root").buildTree());
+            List<AllReferencesToAFile> filesAdded = filesWithReferences(List.of(
+                    fileFactory.rootFile("file1.parquet", 123)));
+            RecordsProcessedSummary summary = summary(startTime, Duration.ofMinutes(1), 123, 123);
+
+            // When
+            store.jobStarted(ingestJobStarted(job, startTime).jobRunId(jobRunId).taskId(taskId).build());
+            store.jobFinished(ingestJobFinished(job, summary)
+                    .jobRunId(jobRunId).taskId(taskId)
+                    .filesAddedByJob(filesAdded).committedWhenAllFilesAdded(true)
+                    .build());
+
+            // Then
+            assertThat(store.getAllJobs(tableId))
+                    .containsExactly(jobStatus(job, ProcessRun.builder()
+                            .taskId(taskId)
+                            .startedStatus(IngestJobStartedStatus.withStartOfRun(true)
+                                    .job(job).startTime(startTime).updateTime(defaultUpdateTime(startTime))
+                                    .build())
+                            .finishedStatus(ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary))
                             .build()));
             assertThat(store.streamTableRecords(tableId))
                     .extracting(ProcessStatusUpdateRecord::getJobRunId)
