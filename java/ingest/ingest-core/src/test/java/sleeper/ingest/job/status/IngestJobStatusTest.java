@@ -16,7 +16,6 @@
 
 package sleeper.ingest.job.status;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -375,7 +374,6 @@ public class IngestJobStatusTest {
         }
 
         @Test
-        @Disabled("TODO")
         void shouldReportFinishedWhenAllFilesAdded() {
             Instant startTime = Instant.parse("2022-09-22T13:33:11Z");
             Instant writtenTime = Instant.parse("2022-09-22T13:39:10Z");
