@@ -476,7 +476,7 @@ public class IngestTaskTest {
 
     private IngestJobHandler processJobs(ProcessJob... actions) {
         Iterator<ProcessJob> getAction = List.of(actions).iterator();
-        return job -> {
+        return (job, jobRunId) -> {
             if (getAction.hasNext()) {
                 ProcessJob action = getAction.next();
                 if (action.failure != null) {

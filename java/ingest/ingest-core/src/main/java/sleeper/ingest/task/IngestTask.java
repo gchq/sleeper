@@ -100,7 +100,7 @@ public class IngestTask {
                 try {
                     jobStatusStore.jobStarted(ingestJobStarted(job, jobStartTime)
                             .taskId(taskId).jobRunId(jobRunId).startOfRun(true).build());
-                    IngestResult result = ingester.ingest(job);
+                    IngestResult result = ingester.ingest(job, jobRunId);
                     LOGGER.info("{} records were written", result.getRecordsWritten());
                     Instant jobFinishTime = timeSupplier.get();
                     RecordsProcessedSummary summary = new RecordsProcessedSummary(result.asRecordsProcessed(), jobStartTime, jobFinishTime);
