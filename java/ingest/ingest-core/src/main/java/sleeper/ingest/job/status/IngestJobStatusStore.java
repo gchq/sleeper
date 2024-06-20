@@ -46,6 +46,14 @@ public interface IngestJobStatusStore {
     }
 
     /**
+     * Stores an ingest job added files event.
+     *
+     * @param event the event
+     */
+    default void jobAddedFiles(IngestJobAddedFilesEvent event) {
+    }
+
+    /**
      * Stores an ingest job finished event.
      *
      * @param event the event

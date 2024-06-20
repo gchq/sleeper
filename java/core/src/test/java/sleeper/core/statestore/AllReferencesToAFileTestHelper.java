@@ -74,13 +74,24 @@ public class AllReferencesToAFileTestHelper {
      * @return            the file
      */
     public static AllReferencesToAFile fileWithReferences(Collection<FileReference> references) {
-        List<AllReferencesToAFile> files = AllReferencesToAFile
-                .newFilesWithReferences(references.stream())
-                .collect(Collectors.toUnmodifiableList());
+        List<AllReferencesToAFile> files = filesWithReferences(references);
         if (files.size() != 1) {
             throw new IllegalArgumentException("Expected one file, found: " + files);
         }
         return files.get(0);
+    }
+
+    /**
+     * Creates a list of files with given references. This will be as it is before being added to the state store, with
+     * no update time.
+     *
+     * @param  references the references
+     * @return            the file
+     */
+    public static List<AllReferencesToAFile> filesWithReferences(Collection<FileReference> references) {
+        return AllReferencesToAFile
+                .newFilesWithReferences(references.stream())
+                .collect(Collectors.toUnmodifiableList());
     }
 
 }
