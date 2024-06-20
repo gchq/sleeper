@@ -88,7 +88,7 @@ public enum IngestJobStatusType {
                 filesAdded += addedFiles.getFileCount();
             } else if (update instanceof IngestJobFinishedStatus) {
                 IngestJobFinishedStatus finishedStatus = (IngestJobFinishedStatus) update;
-                filesWritten = finishedStatus.getNumFilesAddedByJob();
+                filesWritten = finishedStatus.getNumFilesWrittenByJob();
             }
         }
         return filesAdded == filesWritten;

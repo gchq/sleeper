@@ -28,13 +28,13 @@ public class IngestJobFinishedStatus implements ProcessRunFinishedUpdate {
 
     private final Instant updateTime;
     private final RecordsProcessedSummary summary;
-    private final Integer numFilesAddedByJob;
+    private final Integer numFilesWrittenByJob;
     private final boolean committedBySeparateFileUpdates;
 
     private IngestJobFinishedStatus(Builder builder) {
         updateTime = Objects.requireNonNull(builder.updateTime, "updateTime must not be null");
         summary = Objects.requireNonNull(builder.summary, "summary must not be null");
-        numFilesAddedByJob = builder.numFilesAddedByJob;
+        numFilesWrittenByJob = builder.numFilesWrittenByJob;
         committedBySeparateFileUpdates = builder.committedBySeparateFileUpdates;
     }
 
@@ -63,8 +63,8 @@ public class IngestJobFinishedStatus implements ProcessRunFinishedUpdate {
         return summary;
     }
 
-    public Integer getNumFilesAddedByJob() {
-        return numFilesAddedByJob;
+    public Integer getNumFilesWrittenByJob() {
+        return numFilesWrittenByJob;
     }
 
     public boolean isCommittedBySeparateFileUpdates() {
@@ -73,7 +73,7 @@ public class IngestJobFinishedStatus implements ProcessRunFinishedUpdate {
 
     @Override
     public int hashCode() {
-        return Objects.hash(updateTime, summary, numFilesAddedByJob, committedBySeparateFileUpdates);
+        return Objects.hash(updateTime, summary, numFilesWrittenByJob, committedBySeparateFileUpdates);
     }
 
     @Override
@@ -85,13 +85,13 @@ public class IngestJobFinishedStatus implements ProcessRunFinishedUpdate {
             return false;
         }
         IngestJobFinishedStatus other = (IngestJobFinishedStatus) obj;
-        return Objects.equals(updateTime, other.updateTime) && Objects.equals(summary, other.summary) && Objects.equals(numFilesAddedByJob, other.numFilesAddedByJob)
+        return Objects.equals(updateTime, other.updateTime) && Objects.equals(summary, other.summary) && Objects.equals(numFilesWrittenByJob, other.numFilesWrittenByJob)
                 && committedBySeparateFileUpdates == other.committedBySeparateFileUpdates;
     }
 
     @Override
     public String toString() {
-        return "IngestJobFinishedStatus{updateTime=" + updateTime + ", summary=" + summary + ", numFilesAddedByJob=" + numFilesAddedByJob + ", committedWhenAllFilesAdded="
+        return "IngestJobFinishedStatus{updateTime=" + updateTime + ", summary=" + summary + ", numFilesWrittenByJob=" + numFilesWrittenByJob + ", committedBySeparateFileUpdates="
                 + committedBySeparateFileUpdates
                 + "}";
     }
@@ -102,7 +102,7 @@ public class IngestJobFinishedStatus implements ProcessRunFinishedUpdate {
     public static class Builder {
         private Instant updateTime;
         private RecordsProcessedSummary summary;
-        private Integer numFilesAddedByJob;
+        private Integer numFilesWrittenByJob;
         private boolean committedBySeparateFileUpdates;
 
         private Builder() {
@@ -131,13 +131,13 @@ public class IngestJobFinishedStatus implements ProcessRunFinishedUpdate {
         }
 
         /**
-         * Sets the number of files added by the job.
+         * Sets the number of files written by the job.
          *
-         * @param  numFilesAddedByJob the number of files
-         * @return                    the builder for chaining
+         * @param  numFilesWrittenByJob the number of files
+         * @return                      the builder for chaining
          */
-        public Builder numFilesAddedByJob(Integer numFilesAddedByJob) {
-            this.numFilesAddedByJob = numFilesAddedByJob;
+        public Builder numFilesWrittenByJob(Integer numFilesWrittenByJob) {
+            this.numFilesWrittenByJob = numFilesWrittenByJob;
             return this;
         }
 
