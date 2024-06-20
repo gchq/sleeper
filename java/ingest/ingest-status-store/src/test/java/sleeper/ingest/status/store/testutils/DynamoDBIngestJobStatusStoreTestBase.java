@@ -26,12 +26,15 @@ import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.schema.Schema;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.table.TableIdGenerator;
 import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableStatusTestHelper;
 import sleeper.dynamodb.tools.DynamoDBTestBase;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.IngestJobTestData;
+import sleeper.ingest.job.status.IngestJobAddedFilesEvent;
+import sleeper.ingest.job.status.IngestJobAddedFilesStatus;
 import sleeper.ingest.job.status.IngestJobFailedEvent;
 import sleeper.ingest.job.status.IngestJobFinishedEvent;
 import sleeper.ingest.job.status.IngestJobStartedEvent;
@@ -51,12 +54,17 @@ import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_JOB_STATUS_TTL_IN_SECONDS;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
+import static sleeper.core.statestore.AllReferencesToAFileTestHelper.filesWithReferences;
+import static sleeper.ingest.job.status.IngestJobAddedFilesEvent.ingestJobAddedFiles;
 import static sleeper.ingest.job.status.IngestJobFailedEvent.ingestJobFailed;
 import static sleeper.ingest.job.status.IngestJobFinishedEvent.ingestJobFinished;
 import static sleeper.ingest.job.status.IngestJobStartedEvent.ingestJobStarted;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.failedIngestJob;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.finishedIngestJob;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.finishedIngestRun;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.ingestStartedStatus;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.jobStatus;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.startedIngestJob;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.startedIngestRun;
 import static sleeper.ingest.status.store.testutils.IngestStatusStoreTestUtils.createInstanceProperties;
@@ -111,6 +119,12 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
         return ingestJobStarted(DEFAULT_TASK_ID, job, startedTime);
     }
 
+    protected static IngestJobAddedFilesEvent defaultJobAddedFilesEvent(IngestJob job, List<FileReference> files, Instant writtenTime) {
+        return ingestJobAddedFiles(job, filesWithReferences(files), writtenTime)
+                .taskId(DEFAULT_TASK_ID)
+                .build();
+    }
+
     protected static IngestJobFinishedEvent defaultJobFinishedEvent(
             IngestJob job, Instant startedTime, Instant finishedTime) {
         return defaultJobFinishedEvent(job, defaultSummary(startedTime, finishedTime));
@@ -133,6 +147,18 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
 
     protected static IngestJobStatus defaultJobStartedStatus(IngestJob job, Instant startedTime) {
         return startedIngestJob(job, DEFAULT_TASK_ID, startedTime);
+    }
+
+    protected static IngestJobStatus defaultJobAddedFilesStatus(IngestJob job, Instant startedTime, Instant writtenTime, int fileCount) {
+        return jobStatus(job, ProcessRun.builder()
+                .taskId(DEFAULT_TASK_ID)
+                .startedStatus(ingestStartedStatus(job, startedTime))
+                .statusUpdate(IngestJobAddedFilesStatus.builder()
+                        .writtenTime(writtenTime)
+                        .updateTime(defaultUpdateTime(writtenTime))
+                        .fileCount(fileCount)
+                        .build())
+                .build());
     }
 
     protected static IngestJobStatus defaultJobFinishedStatus(IngestJob job, Instant startedTime, Instant finishedTime) {

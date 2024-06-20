@@ -30,6 +30,8 @@ import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 import sleeper.dynamodb.tools.DynamoDBAttributes;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 import sleeper.ingest.job.status.IngestJobAcceptedStatus;
+import sleeper.ingest.job.status.IngestJobAddedFilesEvent;
+import sleeper.ingest.job.status.IngestJobAddedFilesStatus;
 import sleeper.ingest.job.status.IngestJobFailedEvent;
 import sleeper.ingest.job.status.IngestJobFinishedEvent;
 import sleeper.ingest.job.status.IngestJobFinishedStatus;
@@ -71,6 +73,8 @@ class DynamoDBIngestJobStatusFormat {
     static final String INPUT_FILES_COUNT = "InputFilesCount";
     static final String START_OF_RUN = "StartOfRun";
     static final String START_TIME = "StartTime";
+    static final String FILES_WRITTEN_TIME = "FilesWrittenTime";
+    static final String FILES_WRITTEN_COUNT = "FilesWrittenCount";
     static final String FINISH_TIME = "FinishTime";
     static final String MILLIS_IN_PROCESS = "MillisInProcess";
     static final String RECORDS_READ = "RecordsRead";
@@ -81,6 +85,7 @@ class DynamoDBIngestJobStatusFormat {
     static final String EXPIRY_DATE = "ExpiryDate";
     static final String UPDATE_TYPE_VALIDATED = "validated";
     static final String UPDATE_TYPE_STARTED = "started";
+    static final String UPDATE_TYPE_ADDED_FILES = "addedFiles";
     static final String UPDATE_TYPE_FINISHED = "finished";
     static final String UPDATE_TYPE_FAILED = "failed";
     static final String VALIDATION_ACCEPTED_VALUE = "ACCEPTED";
@@ -121,6 +126,17 @@ class DynamoDBIngestJobStatusFormat {
                 .string(TASK_ID, event.getTaskId())
                 .number(INPUT_FILES_COUNT, event.getFileCount())
                 .bool(START_OF_RUN, event.isStartOfRun())
+                .build();
+    }
+
+    public static Map<String, AttributeValue> createJobAddedFilesUpdate(
+            IngestJobAddedFilesEvent event, DynamoDBRecordBuilder builder) {
+        return builder
+                .string(UPDATE_TYPE, UPDATE_TYPE_ADDED_FILES)
+                .number(FILES_WRITTEN_TIME, event.getWrittenTime().toEpochMilli())
+                .string(JOB_RUN_ID, event.getJobRunId())
+                .string(TASK_ID, event.getTaskId())
+                .number(FILES_WRITTEN_COUNT, event.getFileCount())
                 .build();
     }
 
@@ -211,6 +227,12 @@ class DynamoDBIngestJobStatusFormat {
                         .inputFileCount(getIntAttribute(item, INPUT_FILES_COUNT, 0))
                         .startTime(getInstantAttribute(item, START_TIME))
                         .updateTime(getInstantAttribute(item, UPDATE_TIME)).build();
+            case UPDATE_TYPE_ADDED_FILES:
+                return IngestJobAddedFilesStatus.builder()
+                        .fileCount(getIntAttribute(item, FILES_WRITTEN_COUNT, 0))
+                        .writtenTime(getInstantAttribute(item, FILES_WRITTEN_TIME))
+                        .updateTime(getInstantAttribute(item, UPDATE_TIME))
+                        .build();
             case UPDATE_TYPE_FINISHED:
                 return IngestJobFinishedStatus.updateTimeAndSummary(
                         getInstantAttribute(item, UPDATE_TIME),

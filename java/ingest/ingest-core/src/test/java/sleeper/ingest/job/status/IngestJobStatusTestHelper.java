@@ -286,7 +286,7 @@ public class IngestJobStatusTestHelper {
      */
     public static ProcessRun startedIngestRun(IngestJob job, String taskId, Instant startTime) {
         return ProcessRun.started(taskId,
-                startAndUpdateTime(job, startTime, defaultUpdateTime(startTime)));
+                ingestStartedStatus(job, startTime, defaultUpdateTime(startTime)));
     }
 
     /**
@@ -300,7 +300,7 @@ public class IngestJobStatusTestHelper {
     public static ProcessRun finishedIngestRun(
             IngestJob job, String taskId, RecordsProcessedSummary summary) {
         return ProcessRun.finished(taskId,
-                startAndUpdateTime(job, summary.getStartTime(), defaultUpdateTime(summary.getStartTime())),
+                ingestStartedStatus(job, summary.getStartTime(), defaultUpdateTime(summary.getStartTime())),
                 IngestJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary).build());
     }
 
@@ -316,7 +316,7 @@ public class IngestJobStatusTestHelper {
     public static ProcessRun failedIngestRun(
             IngestJob job, String taskId, ProcessRunTime runTime, List<String> failureReasons) {
         return ProcessRun.finished(taskId,
-                startAndUpdateTime(job, runTime.getStartTime(), defaultUpdateTime(runTime.getStartTime())),
+                ingestStartedStatus(job, runTime.getStartTime(), defaultUpdateTime(runTime.getStartTime())),
                 ProcessFailedStatus.timeAndReasons(defaultUpdateTime(runTime.getFinishTime()), runTime, failureReasons));
     }
 
@@ -367,12 +367,23 @@ public class IngestJobStatusTestHelper {
     /**
      * Creates an ingest job started status.
      *
+     * @param  job       the ingest job
+     * @param  startTime the start time
+     * @return           an ingest job started status
+     */
+    public static IngestJobStartedStatus ingestStartedStatus(IngestJob job, Instant startTime) {
+        return ingestStartedStatus(job, startTime, defaultUpdateTime(startTime));
+    }
+
+    /**
+     * Creates an ingest job started status.
+     *
      * @param  job        the ingest job
      * @param  startTime  the start time
      * @param  updateTime the update time
      * @return            an ingest job started status
      */
-    public static IngestJobStartedStatus startAndUpdateTime(IngestJob job, Instant startTime, Instant updateTime) {
+    public static IngestJobStartedStatus ingestStartedStatus(IngestJob job, Instant startTime, Instant updateTime) {
         return IngestJobStartedStatus.withStartOfRun(true).job(job)
                 .startTime(startTime).updateTime(updateTime)
                 .build();

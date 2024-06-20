@@ -17,9 +17,12 @@ package sleeper.ingest.status.store.job;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.status.store.testutils.DynamoDBIngestJobStatusStoreTestBase;
 
@@ -28,6 +31,7 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.ingest.job.status.IngestJobFinishedEvent.ingestJobFinished;
 import static sleeper.ingest.job.status.IngestJobStartedEvent.ingestJobStarted;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.finishedIngestRun;
@@ -135,5 +139,26 @@ public class StoreIngestJobUpdatesIT extends DynamoDBIngestJobStatusStoreTestBas
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(defaultJobFailedStatus(job, runTime, failureReasons));
+    }
+
+    @Test
+    public void shouldStoreFilesAdded() {
+        // Given
+        IngestJob job = jobWithFiles("file");
+        Instant startedTime = Instant.parse("2022-12-14T13:51:12.001Z");
+        Instant writtenTime = Instant.parse("2022-12-14T13:51:42.001Z");
+        FileReferenceFactory fileFactory = FileReferenceFactory.from(new PartitionsBuilder(schemaWithKey("key")).singlePartition("root").buildTree());
+        List<FileReference> files = List.of(
+                fileFactory.rootFile("file1.parquet", 123),
+                fileFactory.rootFile("file2.parquet", 456));
+
+        // When
+        store.jobStarted(defaultJobStartedEvent(job, startedTime));
+        store.jobAddedFiles(defaultJobAddedFilesEvent(job, files, writtenTime));
+
+        // Then
+        assertThat(getAllJobStatuses())
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .containsExactly(defaultJobAddedFilesStatus(job, startedTime, writtenTime, 2));
     }
 }
