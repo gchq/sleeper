@@ -16,6 +16,7 @@
 
 package sleeper.ingest.job.status;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -331,10 +332,7 @@ public class IngestJobStatusTest {
             IngestJobStatus status = singleJobStatusFrom(records().fromUpdates(
                     forRunOnTask("some-run", "some-task",
                             startedStatusUpdate(startTime),
-                            finishedStatusUpdateBuilder(startTime, finishTime)
-                                    .committedWhenAllFilesAdded(true)
-                                    .numFilesAddedByJob(1)
-                                    .build())));
+                            finishedStatusUpdateExpectingFileCommits(startTime, finishTime, 1))));
 
             // Then
             assertThat(status)
@@ -356,6 +354,43 @@ public class IngestJobStatusTest {
             assertThat(status)
                     .extracting(IngestJobStatusType::statusTypeOfFurthestRunOfJob)
                     .isEqualTo(IN_PROGRESS);
+        }
+
+        @Test
+        void shouldReportUncommittedWhenFinishedAndSomeFilesAdded() {
+            Instant startTime = Instant.parse("2022-09-22T13:33:11Z");
+            Instant writtenTime = Instant.parse("2022-09-22T13:39:10Z");
+            Instant finishTime = Instant.parse("2022-09-22T13:40:10Z");
+
+            IngestJobStatus status = singleJobStatusFrom(records().fromUpdates(
+                    forRunOnTask("some-run", "some-task",
+                            startedStatusUpdate(startTime),
+                            filesAddedStatusUpdate(writtenTime, 1),
+                            finishedStatusUpdateExpectingFileCommits(startTime, finishTime, 2))));
+
+            // Then
+            assertThat(status)
+                    .extracting(IngestJobStatusType::statusTypeOfFurthestRunOfJob)
+                    .isEqualTo(UNCOMMITTED);
+        }
+
+        @Test
+        @Disabled("TODO")
+        void shouldReportFinishedWhenAllFilesAdded() {
+            Instant startTime = Instant.parse("2022-09-22T13:33:11Z");
+            Instant writtenTime = Instant.parse("2022-09-22T13:39:10Z");
+            Instant finishTime = Instant.parse("2022-09-22T13:40:10Z");
+
+            IngestJobStatus status = singleJobStatusFrom(records().fromUpdates(
+                    forRunOnTask("some-run", "some-task",
+                            startedStatusUpdate(startTime),
+                            filesAddedStatusUpdate(writtenTime, 2),
+                            finishedStatusUpdateExpectingFileCommits(startTime, finishTime, 2))));
+
+            // Then
+            assertThat(status)
+                    .extracting(IngestJobStatusType::statusTypeOfFurthestRunOfJob)
+                    .isEqualTo(FINISHED);
         }
     }
 
@@ -414,6 +449,14 @@ public class IngestJobStatusTest {
 
     private IngestJobFinishedStatus finishedStatusUpdate(Instant startTime, Instant finishTime) {
         return finishedStatusUpdateBuilder(startTime, finishTime).build();
+    }
+
+    private IngestJobFinishedStatus finishedStatusUpdateExpectingFileCommits(
+            Instant startTime, Instant finishTime, int numFilesAddedByJob) {
+        return finishedStatusUpdateBuilder(startTime, finishTime)
+                .committedWhenAllFilesAdded(true)
+                .numFilesAddedByJob(numFilesAddedByJob)
+                .build();
     }
 
     private IngestJobFinishedStatus.Builder finishedStatusUpdateBuilder(Instant startTime, Instant finishTime) {
