@@ -142,8 +142,8 @@ public class IngestJobFinishedStatus implements ProcessRunFinishedUpdate {
         }
 
         /**
-         * Sets whether the job is only committed when all files have been added to the state store. If not, the
-         * finished status update fully completes the job.
+         * Sets whether the job has separate updates for when files are added to the state store. If so, the job will
+         * only be finished when all files are committed. If not, the finished status update fully completes the job.
          *
          * @param  committedBySeparateFileUpdates true if the job is committed by separate updates to add files
          * @return                                the builder for chaining
