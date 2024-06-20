@@ -27,6 +27,8 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.util.stream.Collectors.toUnmodifiableList;
+
 /**
  * Reports on all the references for an individual physical file. A file may be referenced in a number of different
  * partitions. If a file is referenced in multiple partitions, the ranges covered by those partitions must not overlap,
@@ -84,6 +86,19 @@ public class AllReferencesToAFile {
                         .filename(entry.getKey())
                         .references(entry.getValue())
                         .build());
+    }
+
+    /**
+     * Aggregates file references to create a record for each referenced file. This is used in state store
+     * implementations to convert to the internal model when only references were provided to add files to the state
+     * store. Every reference to each file must be included in the input, or the resulting model will be incorrect.
+     *
+     * @param  references references to files, including every reference to each file
+     * @return            records for the referenced files
+     */
+    public static List<AllReferencesToAFile> newFilesWithReferences(List<FileReference> references) {
+        return newFilesWithReferences(references.stream())
+                .collect(toUnmodifiableList());
     }
 
     /**

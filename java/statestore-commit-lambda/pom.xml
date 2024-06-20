@@ -54,6 +54,11 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
+            <artifactId>ingest-status-store</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
             <artifactId>statestore</artifactId>
             <version>${project.parent.version}</version>
         </dependency>

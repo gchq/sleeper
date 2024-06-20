@@ -390,6 +390,17 @@ public class IngestJobStatusTestHelper {
     }
 
     /**
+     * Creates an ingest job file added status.
+     *
+     * @param  writtenTime the written time
+     * @param  fileCount   the number of files added
+     * @return             an ingest job started status
+     */
+    public static IngestJobAddedFilesStatus ingestAddedFilesStatus(Instant writtenTime, int fileCount) {
+        return IngestJobAddedFilesStatus.builder().writtenTime(writtenTime).updateTime(defaultUpdateTime(writtenTime)).fileCount(fileCount).build();
+    }
+
+    /**
      * Creates an ingest job validated event for a rejected job.
      *
      * @param  job            the ingest job

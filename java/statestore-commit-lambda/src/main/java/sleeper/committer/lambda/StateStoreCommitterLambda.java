@@ -32,12 +32,12 @@ import org.slf4j.LoggerFactory;
 import sleeper.commit.StateStoreCommitRequest;
 import sleeper.commit.StateStoreCommitRequestDeserialiser;
 import sleeper.commit.StateStoreCommitter;
-import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.LoggedDuration;
+import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreProvider;
 
@@ -96,7 +96,9 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
 
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, hadoopConf);
-        CompactionJobStatusStore statusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
-        return new StateStoreCommitter(statusStore, stateStoreProvider.byTableId(tablePropertiesProvider));
+        return new StateStoreCommitter(
+                CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties),
+                IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties),
+                stateStoreProvider.byTableId(tablePropertiesProvider));
     }
 }

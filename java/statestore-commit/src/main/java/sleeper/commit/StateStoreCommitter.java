@@ -21,11 +21,16 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobCommitter;
+import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.GetStateStoreByTableId;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
+import sleeper.ingest.job.status.IngestJobAddedFilesEvent;
+import sleeper.ingest.job.status.IngestJobStatusStore;
+
+import java.util.List;
 
 /**
  * Applies a state store commit request.
@@ -34,10 +39,15 @@ public class StateStoreCommitter {
     public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreCommitter.class);
 
     private final CompactionJobCommitter compactionJobCommitter;
+    private final IngestJobStatusStore ingestJobStatusStore;
     private final GetStateStoreByTableId stateStoreProvider;
 
-    public StateStoreCommitter(CompactionJobStatusStore compactionJobStatusStore, GetStateStoreByTableId stateStoreProvider) {
+    public StateStoreCommitter(
+            CompactionJobStatusStore compactionJobStatusStore,
+            IngestJobStatusStore ingestJobStatusStore,
+            GetStateStoreByTableId stateStoreProvider) {
         this.compactionJobCommitter = new CompactionJobCommitter(compactionJobStatusStore, stateStoreProvider);
+        this.ingestJobStatusStore = ingestJobStatusStore;
         this.stateStoreProvider = stateStoreProvider;
     }
 
@@ -57,9 +67,12 @@ public class StateStoreCommitter {
 
     private void apply(IngestAddFilesCommitRequest request) throws StateStoreException {
         StateStore stateStore = stateStoreProvider.getByTableId(request.getTableId());
-        stateStore.addFiles(request.getFileReferences());
+        List<AllReferencesToAFile> files = AllReferencesToAFile.newFilesWithReferences(request.getFileReferences());
+        stateStore.addFilesWithReferences(files);
         IngestJob job = request.getJob();
         if (job != null) {
+            ingestJobStatusStore.jobAddedFiles(IngestJobAddedFilesEvent.ingestJobAddedFiles(job, files, request.getWrittenTime())
+                    .taskId(request.getTaskId()).jobRunId(request.getJobRunId()).build());
             LOGGER.info("Successfully committed new files for ingest job {} to table with ID {}", job.getId(), request.getTableId());
         } else {
             LOGGER.info("Successfully committed new files for ingest to table with ID {}", request.getTableId());
