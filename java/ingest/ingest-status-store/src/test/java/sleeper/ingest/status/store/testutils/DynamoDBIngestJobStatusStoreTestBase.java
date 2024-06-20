@@ -37,6 +37,7 @@ import sleeper.ingest.job.status.IngestJobAddedFilesEvent;
 import sleeper.ingest.job.status.IngestJobAddedFilesStatus;
 import sleeper.ingest.job.status.IngestJobFailedEvent;
 import sleeper.ingest.job.status.IngestJobFinishedEvent;
+import sleeper.ingest.job.status.IngestJobFinishedStatus;
 import sleeper.ingest.job.status.IngestJobStartedEvent;
 import sleeper.ingest.job.status.IngestJobStatus;
 import sleeper.ingest.job.status.IngestJobStatusStore;
@@ -134,6 +135,15 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
         return ingestJobFinished(DEFAULT_TASK_ID, job, summary);
     }
 
+    protected static IngestJobFinishedEvent defaultJobFinishedButUncommittedEvent(
+            IngestJob job, Instant startedTime, Instant finishedTime, int numFilesAdded) {
+        return ingestJobFinished(job, defaultSummary(startedTime, finishedTime))
+                .committedBySeparateFileUpdates(true)
+                .numFilesAddedByJob(numFilesAdded)
+                .taskId(DEFAULT_TASK_ID)
+                .build();
+    }
+
     protected static IngestJobFailedEvent defaultJobFailedEvent(
             IngestJob job, Instant startedTime, Instant finishedTime, List<String> failureReasons) {
         return defaultJobFailedEvent(job, new ProcessRunTime(startedTime, finishedTime), failureReasons);
@@ -167,6 +177,17 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
 
     protected static IngestJobStatus defaultJobFinishedStatus(IngestJob job, RecordsProcessedSummary summary) {
         return finishedIngestJob(job, DEFAULT_TASK_ID, summary);
+    }
+
+    protected static IngestJobStatus defaultJobFinishedButUncommittedStatus(IngestJob job, Instant startedTime, Instant finishedTime, int numFiles) {
+        return jobStatus(job, ProcessRun.builder()
+                .taskId(DEFAULT_TASK_ID)
+                .startedStatus(ingestStartedStatus(job, startedTime))
+                .finishedStatus(IngestJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(finishedTime), defaultSummary(startedTime, finishedTime))
+                        .committedBySeparateFileUpdates(true)
+                        .numFilesWrittenByJob(numFiles)
+                        .build())
+                .build());
     }
 
     protected static IngestJobStatus defaultJobFailedStatus(IngestJob job, Instant startedTime, Instant finishedTime, List<String> failureReasons) {

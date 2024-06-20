@@ -54,6 +54,7 @@ import static sleeper.dynamodb.tools.DynamoDBAttributes.getBooleanAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getInstantAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getIntAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getLongAttribute;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.getNullableIntAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getStringListAttribute;
 
@@ -76,6 +77,7 @@ class DynamoDBIngestJobStatusFormat {
     static final String FILES_WRITTEN_TIME = "FilesWrittenTime";
     static final String FILES_WRITTEN_COUNT = "FilesWrittenCount";
     static final String FINISH_TIME = "FinishTime";
+    static final String JOB_COMMITTED_WHEN_FILES_ADDED = "JobCommittedWhenFilesAdded";
     static final String MILLIS_IN_PROCESS = "MillisInProcess";
     static final String RECORDS_READ = "RecordsRead";
     static final String RECORDS_WRITTEN = "RecordsWritten";
@@ -152,6 +154,8 @@ class DynamoDBIngestJobStatusFormat {
                 .number(MILLIS_IN_PROCESS, summary.getTimeInProcess().toMillis())
                 .number(RECORDS_READ, summary.getRecordsRead())
                 .number(RECORDS_WRITTEN, summary.getRecordsWritten())
+                .bool(JOB_COMMITTED_WHEN_FILES_ADDED, event.isCommittedBySeparateFileUpdates())
+                .number(FILES_WRITTEN_COUNT, event.getNumFilesAddedByJob())
                 .build();
     }
 
@@ -240,6 +244,8 @@ class DynamoDBIngestJobStatusFormat {
                                 getLongAttribute(item, RECORDS_READ, 0),
                                 getLongAttribute(item, RECORDS_WRITTEN, 0)),
                                 getRunTime(item)))
+                        .committedBySeparateFileUpdates(getBooleanAttribute(item, JOB_COMMITTED_WHEN_FILES_ADDED))
+                        .numFilesWrittenByJob(getNullableIntAttribute(item, FILES_WRITTEN_COUNT))
                         .build();
             case UPDATE_TYPE_FAILED:
                 return ProcessFailedStatus.timeAndReasons(

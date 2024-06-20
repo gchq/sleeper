@@ -161,4 +161,21 @@ public class StoreIngestJobUpdatesIT extends DynamoDBIngestJobStatusStoreTestBas
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(defaultJobAddedFilesStatus(job, startedTime, writtenTime, 2));
     }
+
+    @Test
+    public void shouldStoreJobFinishedButUncommitted() {
+        // Given
+        IngestJob job = jobWithFiles("file");
+        Instant startedTime = Instant.parse("2022-12-14T13:51:12.001Z");
+        Instant writtenTime = Instant.parse("2022-12-14T13:51:42.001Z");
+
+        // When
+        store.jobStarted(defaultJobStartedEvent(job, startedTime));
+        store.jobFinished(defaultJobFinishedButUncommittedEvent(job, startedTime, writtenTime, 2));
+
+        // Then
+        assertThat(getAllJobStatuses())
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .containsExactly(defaultJobFinishedButUncommittedStatus(job, startedTime, writtenTime, 2));
+    }
 }
