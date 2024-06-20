@@ -45,41 +45,46 @@ class ProcessRunsBuilder {
     private final List<ProcessRun.Builder> orderedBuilders = new ArrayList<>();
 
     void add(ProcessStatusUpdateRecord record) {
+        if (!record.getStatusUpdate().isPartOfRun()) {
+            return;
+        }
+        getBuilderIfCorrelatable(record)
+                .ifPresent(builder -> addToBuilder(record, builder));
+    }
+
+    private Optional<ProcessRun.Builder> getBuilderIfCorrelatable(ProcessStatusUpdateRecord record) {
         String jobRunId = record.getJobRunId();
         String taskId = record.getTaskId();
         ProcessStatusUpdate statusUpdate = record.getStatusUpdate();
-        if (isStartedUpdateAndStartOfRun(statusUpdate)) {
-            ProcessRun.Builder builder = ProcessRun.builder()
-                    .startedStatus((ProcessRunStartedUpdate) statusUpdate)
-                    .taskId(taskId);
-            if (jobRunId != null) {
-                builderByJobRunId.put(jobRunId, builder);
-            } else {
-                builderByTaskId.put(taskId, builder);
-            }
-            orderedBuilders.add(builder);
-        } else if (builderByJobRunId.containsKey(jobRunId)) {
-            addToBuilderByKey(statusUpdate, builderByJobRunId, jobRunId)
-                    .ifPresent(builder -> {
-                        if (taskId != null) {
-                            builder.taskId(taskId);
-                        }
-                    });
-        } else if (builderByTaskId.containsKey(taskId)) {
-            addToBuilderByKey(statusUpdate, builderByTaskId, taskId);
+        if (jobRunId != null) {
+            return Optional.of(builderByJobRunId.computeIfAbsent(jobRunId, id -> createOrderedBuilder()));
+        } else if (isStartedUpdateAndStartOfRun(statusUpdate)) {
+            ProcessRun.Builder builder = createOrderedBuilder();
+            builderByTaskId.put(taskId, builder);
+            return Optional.of(builder);
+        } else {
+            return Optional.ofNullable(builderByTaskId.get(taskId));
         }
     }
 
-    private Optional<ProcessRun.Builder> addToBuilderByKey(
-            ProcessStatusUpdate statusUpdate, Map<String, ProcessRun.Builder> builderMap, String key) {
-        if (statusUpdate instanceof ProcessRunFinishedUpdate) {
-            return Optional.of(builderMap.remove(key)
-                    .finishedStatus((ProcessRunFinishedUpdate) statusUpdate));
-        } else if (statusUpdate.isPartOfRun()) {
-            return Optional.of(builderMap.get(key)
-                    .statusUpdate(statusUpdate));
+    private ProcessRun.Builder createOrderedBuilder() {
+        ProcessRun.Builder builder = ProcessRun.builder();
+        orderedBuilders.add(builder);
+        return builder;
+    }
+
+    private void addToBuilder(ProcessStatusUpdateRecord record, ProcessRun.Builder builder) {
+        ProcessStatusUpdate statusUpdate = record.getStatusUpdate();
+        if (isStartedUpdateAndStartOfRun(statusUpdate)) {
+            builder.startedStatus((ProcessRunStartedUpdate) statusUpdate);
+        } else if (statusUpdate instanceof ProcessRunFinishedUpdate) {
+            builder.finishedStatus((ProcessRunFinishedUpdate) statusUpdate);
+        } else {
+            builder.statusUpdate(statusUpdate);
         }
-        return Optional.empty();
+        if (record.getTaskId() != null) {
+            builder.taskId(record.getTaskId());
+        }
     }
 
     ProcessRuns build() {
