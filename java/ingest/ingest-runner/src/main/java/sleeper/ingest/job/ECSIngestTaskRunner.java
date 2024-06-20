@@ -115,7 +115,8 @@ public class ECSIngestTaskRunner {
         IngestJobQueueConsumer queueConsumer = new IngestJobQueueConsumer(
                 sqsClient, cloudWatchClient, instanceProperties, hadoopConfiguration,
                 new DynamoDBTableIndex(instanceProperties, dynamoDBClient), jobStore);
-        return new IngestTask(Instant::now, queueConsumer, ingestJobRunner, jobStore, taskStore, taskId);
+        return new IngestTask(() -> UUID.randomUUID().toString(), Instant::now,
+                queueConsumer, ingestJobRunner, jobStore, taskStore, taskId);
     }
 
     private static Configuration ingestHadoopConfiguration(InstanceProperties instanceProperties) {
