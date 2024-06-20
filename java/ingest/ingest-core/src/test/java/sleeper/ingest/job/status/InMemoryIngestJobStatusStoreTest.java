@@ -612,7 +612,7 @@ public class InMemoryIngestJobStatusStoreTest {
             store.jobStarted(ingestJobStarted(job, startTime).jobRunId(jobRunId).taskId(taskId).build());
             store.jobFinished(ingestJobFinished(job, summary)
                     .jobRunId(jobRunId).taskId(taskId)
-                    .filesAddedByJob(filesAdded).committedWhenAllFilesAdded(true)
+                    .filesAddedByJob(filesAdded).committedBySeparateFileUpdates(true)
                     .build());
 
             // Then

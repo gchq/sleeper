@@ -31,7 +31,7 @@ public class IngestJobFinishedEvent {
     private final String tableId;
     private final RecordsProcessedSummary summary;
     private final Integer numFilesAddedByJob;
-    private final boolean committedWhenAllFilesAdded;
+    private final boolean committedBySeparateFileUpdates;
     private final String jobRunId;
     private final String taskId;
 
@@ -40,7 +40,7 @@ public class IngestJobFinishedEvent {
         tableId = Objects.requireNonNull(builder.tableId, "tableId must not be null");
         summary = Objects.requireNonNull(builder.summary, "summary must not be null");
         numFilesAddedByJob = builder.numFilesAddedByJob;
-        committedWhenAllFilesAdded = builder.committedWhenAllFilesAdded;
+        committedBySeparateFileUpdates = builder.committedBySeparateFileUpdates;
         jobRunId = builder.jobRunId;
         taskId = Objects.requireNonNull(builder.taskId, "taskId must not be null");
     }
@@ -88,8 +88,8 @@ public class IngestJobFinishedEvent {
         return numFilesAddedByJob;
     }
 
-    public boolean isCommittedWhenAllFilesAdded() {
-        return committedWhenAllFilesAdded;
+    public boolean isCommittedBySeparateFileUpdates() {
+        return committedBySeparateFileUpdates;
     }
 
     public String getJobRunId() {
@@ -102,7 +102,7 @@ public class IngestJobFinishedEvent {
 
     @Override
     public int hashCode() {
-        return Objects.hash(jobId, tableId, summary, numFilesAddedByJob, committedWhenAllFilesAdded, jobRunId, taskId);
+        return Objects.hash(jobId, tableId, summary, numFilesAddedByJob, committedBySeparateFileUpdates, jobRunId, taskId);
     }
 
     @Override
@@ -115,13 +115,13 @@ public class IngestJobFinishedEvent {
         }
         IngestJobFinishedEvent other = (IngestJobFinishedEvent) obj;
         return Objects.equals(jobId, other.jobId) && Objects.equals(tableId, other.tableId) && Objects.equals(summary, other.summary) && Objects.equals(numFilesAddedByJob, other.numFilesAddedByJob)
-                && committedWhenAllFilesAdded == other.committedWhenAllFilesAdded && Objects.equals(jobRunId, other.jobRunId) && Objects.equals(taskId, other.taskId);
+                && committedBySeparateFileUpdates == other.committedBySeparateFileUpdates && Objects.equals(jobRunId, other.jobRunId) && Objects.equals(taskId, other.taskId);
     }
 
     @Override
     public String toString() {
         return "IngestJobFinishedEvent{jobId=" + jobId + ", tableId=" + tableId + ", summary=" + summary + ", numFilesAddedByJob=" + numFilesAddedByJob + ", committedWhenAllFilesAdded="
-                + committedWhenAllFilesAdded + ", jobRunId=" + jobRunId + ", taskId=" + taskId + "}";
+                + committedBySeparateFileUpdates + ", jobRunId=" + jobRunId + ", taskId=" + taskId + "}";
     }
 
     /**
@@ -132,7 +132,7 @@ public class IngestJobFinishedEvent {
         private String tableId;
         private RecordsProcessedSummary summary;
         private Integer numFilesAddedByJob;
-        private boolean committedWhenAllFilesAdded;
+        private boolean committedBySeparateFileUpdates;
         private String jobRunId;
         private String taskId;
 
@@ -208,11 +208,11 @@ public class IngestJobFinishedEvent {
          * Sets whether or not separate status updates are used for files added to the state store. If true, the job
          * will only be committed when all files have been added.
          *
-         * @param  committedWhenAllFilesAdded true if using separate status updates for files added to the state store
-         * @return                            the builder
+         * @param  committedBySeparateFileUpdates true if the job is committed by separate updates to add files
+         * @return                                the builder
          */
-        public Builder committedWhenAllFilesAdded(boolean committedWhenAllFilesAdded) {
-            this.committedWhenAllFilesAdded = committedWhenAllFilesAdded;
+        public Builder committedBySeparateFileUpdates(boolean committedBySeparateFileUpdates) {
+            this.committedBySeparateFileUpdates = committedBySeparateFileUpdates;
             return this;
         }
 
