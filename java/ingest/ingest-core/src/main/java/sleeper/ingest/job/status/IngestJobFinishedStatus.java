@@ -29,13 +29,13 @@ public class IngestJobFinishedStatus implements ProcessRunFinishedUpdate {
     private final Instant updateTime;
     private final RecordsProcessedSummary summary;
     private final Integer numFilesAddedByJob;
-    private final boolean committedWhenAllFilesAdded;
+    private final boolean committedBySeparateFileUpdates;
 
     private IngestJobFinishedStatus(Builder builder) {
         updateTime = Objects.requireNonNull(builder.updateTime, "updateTime must not be null");
         summary = Objects.requireNonNull(builder.summary, "summary must not be null");
         numFilesAddedByJob = builder.numFilesAddedByJob;
-        committedWhenAllFilesAdded = builder.committedWhenAllFilesAdded;
+        committedBySeparateFileUpdates = builder.committedBySeparateFileUpdates;
     }
 
     /**
@@ -67,13 +67,13 @@ public class IngestJobFinishedStatus implements ProcessRunFinishedUpdate {
         return numFilesAddedByJob;
     }
 
-    public boolean isCommittedWhenAllFilesAdded() {
-        return committedWhenAllFilesAdded;
+    public boolean isCommittedBySeparateFileUpdates() {
+        return committedBySeparateFileUpdates;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(updateTime, summary, numFilesAddedByJob, committedWhenAllFilesAdded);
+        return Objects.hash(updateTime, summary, numFilesAddedByJob, committedBySeparateFileUpdates);
     }
 
     @Override
@@ -86,12 +86,13 @@ public class IngestJobFinishedStatus implements ProcessRunFinishedUpdate {
         }
         IngestJobFinishedStatus other = (IngestJobFinishedStatus) obj;
         return Objects.equals(updateTime, other.updateTime) && Objects.equals(summary, other.summary) && Objects.equals(numFilesAddedByJob, other.numFilesAddedByJob)
-                && committedWhenAllFilesAdded == other.committedWhenAllFilesAdded;
+                && committedBySeparateFileUpdates == other.committedBySeparateFileUpdates;
     }
 
     @Override
     public String toString() {
-        return "IngestJobFinishedStatus{updateTime=" + updateTime + ", summary=" + summary + ", numFilesAddedByJob=" + numFilesAddedByJob + ", committedWhenAllFilesAdded=" + committedWhenAllFilesAdded
+        return "IngestJobFinishedStatus{updateTime=" + updateTime + ", summary=" + summary + ", numFilesAddedByJob=" + numFilesAddedByJob + ", committedWhenAllFilesAdded="
+                + committedBySeparateFileUpdates
                 + "}";
     }
 
@@ -102,7 +103,7 @@ public class IngestJobFinishedStatus implements ProcessRunFinishedUpdate {
         private Instant updateTime;
         private RecordsProcessedSummary summary;
         private Integer numFilesAddedByJob;
-        private boolean committedWhenAllFilesAdded;
+        private boolean committedBySeparateFileUpdates;
 
         private Builder() {
         }
@@ -144,11 +145,11 @@ public class IngestJobFinishedStatus implements ProcessRunFinishedUpdate {
          * Sets whether the job is only committed when all files have been added to the state store. If not, the
          * finished status update fully completes the job.
          *
-         * @param  committedWhenAllFilesAdded true if the job is only committed after all files are added
-         * @return                            the builder for chaining
+         * @param  committedBySeparateFileUpdates true if the job is committed by separate updates to add files
+         * @return                                the builder for chaining
          */
-        public Builder committedWhenAllFilesAdded(boolean committedWhenAllFilesAdded) {
-            this.committedWhenAllFilesAdded = committedWhenAllFilesAdded;
+        public Builder committedBySeparateFileUpdates(boolean committedBySeparateFileUpdates) {
+            this.committedBySeparateFileUpdates = committedBySeparateFileUpdates;
             return this;
         }
 

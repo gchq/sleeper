@@ -10,14 +10,15 @@
           "taskId": "task-id",
           "updates": [
             {
-              "type": "IngestJobStartedStatus",
+              "type": "IN_PROGRESS",
               "inputFileCount": 1,
               "startTime": "2022-10-13T14:02:10Z",
               "updateTime": "2022-10-13T14:02:10.123Z"
             },
             {
-              "type": "ProcessFinishedStatus",
+              "type": "FINISHED",
               "updateTime": "2022-10-13T14:04:13.123Z",
+              "committedBySeparateFileUpdates": false,
               "summary": {
                 "recordsProcessed": {
                   "recordsRead": 1234000,
@@ -44,14 +45,15 @@
           "taskId": "task-id",
           "updates": [
             {
-              "type": "IngestJobStartedStatus",
+              "type": "IN_PROGRESS",
               "inputFileCount": 1,
               "startTime": "2022-10-13T14:01:10Z",
               "updateTime": "2022-10-13T14:01:10.123Z"
             },
             {
-              "type": "ProcessFinishedStatus",
+              "type": "FINISHED",
               "updateTime": "2022-10-13T14:02:10.123Z",
+              "committedBySeparateFileUpdates": false,
               "summary": {
                 "recordsProcessed": {
                   "recordsRead": 1000600,
@@ -78,14 +80,15 @@
           "taskId": "task-id",
           "updates": [
             {
-              "type": "IngestJobStartedStatus",
+              "type": "IN_PROGRESS",
               "inputFileCount": 1,
               "startTime": "2022-10-13T12:01:10Z",
               "updateTime": "2022-10-13T12:01:10.123Z"
             },
             {
-              "type": "ProcessFinishedStatus",
+              "type": "FINISHED",
               "updateTime": "2022-10-13T14:01:10.123Z",
+              "committedBySeparateFileUpdates": false,
               "summary": {
                 "recordsProcessed": {
                   "recordsRead": 1000600,
@@ -112,14 +115,15 @@
           "taskId": "task-id",
           "updates": [
             {
-              "type": "IngestJobStartedStatus",
+              "type": "IN_PROGRESS",
               "inputFileCount": 1,
               "startTime": "2022-10-13T10:00:10Z",
               "updateTime": "2022-10-13T10:00:10.123Z"
             },
             {
-              "type": "ProcessFinishedStatus",
+              "type": "FINISHED",
               "updateTime": "2022-10-13T10:02:13.123Z",
+              "committedBySeparateFileUpdates": false,
               "summary": {
                 "recordsProcessed": {
                   "recordsRead": 600000,

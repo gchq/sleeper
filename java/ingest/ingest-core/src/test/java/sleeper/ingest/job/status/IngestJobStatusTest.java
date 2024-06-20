@@ -452,7 +452,7 @@ public class IngestJobStatusTest {
     private IngestJobFinishedStatus finishedStatusUpdateExpectingFileCommits(
             Instant startTime, Instant finishTime, int numFilesAddedByJob) {
         return finishedStatusUpdateBuilder(startTime, finishTime)
-                .committedWhenAllFilesAdded(true)
+                .committedBySeparateFileUpdates(true)
                 .numFilesAddedByJob(numFilesAddedByJob)
                 .build();
     }

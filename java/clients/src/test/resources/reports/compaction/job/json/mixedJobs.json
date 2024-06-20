@@ -11,12 +11,12 @@
         "taskId": "task1111-1111-1111-1111-111111111111",
         "updates": [
           {
-            "type": "CompactionJobStartedStatus",
+            "type": "IN_PROGRESS",
             "updateTime": "2022-09-20T13:34:12.123Z",
             "startTime": "2022-09-20T13:34:12.001Z"
           },
           {
-            "type": "ProcessFailedStatus",
+            "type": "FAILED",
             "updateTime": "2022-09-20T13:35:12.123Z",
             "runTime": {
               "startTime": "2022-09-20T13:34:12.001Z",
@@ -45,12 +45,12 @@
         "taskId": "task1111-1111-1111-1111-111111111111",
         "updates": [
           {
-            "type": "CompactionJobStartedStatus",
+            "type": "IN_PROGRESS",
             "updateTime": "2022-09-19T13:34:12.123Z",
             "startTime": "2022-09-19T13:34:12.001Z"
           },
           {
-            "type": "ProcessFinishedStatus",
+            "type": "FINISHED",
             "updateTime": "2022-09-19T13:35:12.123Z",
             "summary": {
               "recordsProcessed": {
@@ -83,7 +83,7 @@
         "taskId": "task1111-1111-1111-1111-111111111111",
         "updates": [
           {
-            "type": "CompactionJobStartedStatus",
+            "type": "IN_PROGRESS",
             "updateTime": "2022-09-18T13:34:12.123Z",
             "startTime": "2022-09-18T13:34:12.001Z"
           }

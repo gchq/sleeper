@@ -10,13 +10,13 @@
           "taskId": "test-task",
           "updates": [
             {
-              "type": "IngestJobAcceptedStatus",
+              "type": "ACCEPTED",
               "inputFileCount": 2,
               "validationTime": "2023-06-05T17:20:00Z",
               "updateTime": "2023-06-05T17:20:00.123Z"
             },
             {
-              "type": "IngestJobStartedStatus",
+              "type": "IN_PROGRESS",
               "inputFileCount": 2,
               "startTime": "2023-06-05T18:20:00Z",
               "updateTime": "2023-06-05T18:20:00.123Z"

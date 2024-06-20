@@ -623,7 +623,7 @@ public class InMemoryIngestJobStatusStoreTest {
                                     .job(job).startTime(startTime).updateTime(defaultUpdateTime(startTime))
                                     .build())
                             .finishedStatus(IngestJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary)
-                                    .numFilesAddedByJob(1).committedWhenAllFilesAdded(true)
+                                    .numFilesAddedByJob(1).committedBySeparateFileUpdates(true)
                                     .build())
                             .build()));
             assertThat(store.streamTableRecords(tableId))

@@ -10,7 +10,7 @@
           "taskId": "task1111-1111-1111-1111-111111111111",
           "updates": [
             {
-              "type": "IngestJobStartedStatus",
+              "type": "IN_PROGRESS",
               "inputFileCount": 1,
               "startTime": "2022-10-12T10:02:00.001Z",
               "updateTime": "2022-10-12T10:02:00.123Z"
@@ -21,14 +21,15 @@
           "taskId": "task2222-2222-2222-2222-222222222222",
           "updates": [
             {
-              "type": "IngestJobStartedStatus",
+              "type": "IN_PROGRESS",
               "inputFileCount": 1,
               "startTime": "2022-10-12T10:01:15.001Z",
               "updateTime": "2022-10-12T10:01:15.123Z"
             },
             {
-              "type": "ProcessFinishedStatus",
+              "type": "FINISHED",
               "updateTime": "2022-10-12T10:01:45.123Z",
+              "committedBySeparateFileUpdates": false,
               "summary": {
                 "recordsProcessed": {
                   "recordsRead": 300,
@@ -50,14 +51,15 @@
           "taskId": "task1111-1111-1111-1111-111111111111",
           "updates": [
             {
-              "type": "IngestJobStartedStatus",
+              "type": "IN_PROGRESS",
               "inputFileCount": 1,
               "startTime": "2022-10-12T10:01:00.001Z",
               "updateTime": "2022-10-12T10:01:00.123Z"
             },
             {
-              "type": "ProcessFinishedStatus",
+              "type": "FINISHED",
               "updateTime": "2022-10-12T10:01:20.123Z",
+              "committedBySeparateFileUpdates": false,
               "summary": {
                 "recordsProcessed": {
                   "recordsRead": 300,

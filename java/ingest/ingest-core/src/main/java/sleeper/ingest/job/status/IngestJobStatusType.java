@@ -100,7 +100,7 @@ public enum IngestJobStatusType {
      * @param  update the process status update
      * @return        the ingest job status type of the update
      */
-    private static IngestJobStatusType statusTypeOfUpdate(ProcessStatusUpdate update) {
+    public static IngestJobStatusType statusTypeOfUpdate(ProcessStatusUpdate update) {
         if (update instanceof IngestJobRejectedStatus) {
             return REJECTED;
         } else if (update instanceof IngestJobAcceptedStatus) {
@@ -113,7 +113,7 @@ public enum IngestJobStatusType {
             return IN_PROGRESS;
         } else if (update instanceof IngestJobFinishedStatus) {
             IngestJobFinishedStatus finished = (IngestJobFinishedStatus) update;
-            if (!finished.isCommittedWhenAllFilesAdded()) {
+            if (!finished.isCommittedBySeparateFileUpdates()) {
                 return FINISHED;
             } else {
                 return UNCOMMITTED;

@@ -9,7 +9,7 @@
         {
           "updates": [
             {
-              "type": "IngestJobAcceptedStatus",
+              "type": "ACCEPTED",
               "inputFileCount": 2,
               "validationTime": "2023-06-05T17:20:00Z",
               "updateTime": "2023-06-05T17:20:00.123Z"
