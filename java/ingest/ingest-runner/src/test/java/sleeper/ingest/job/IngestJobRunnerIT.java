@@ -48,6 +48,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.record.Record;
+import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
@@ -95,6 +96,9 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.ingestAddedFilesStatus;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.ingestStartedStatus;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.jobStatus;
 import static sleeper.ingest.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.ingest.testutils.ResultVerifier.readMergedRecordsFromPartitionDataFiles;
 import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
@@ -395,6 +399,7 @@ class IngestJobRunnerIT {
         InstanceProperties instanceProperties = getInstanceProperties("s3a://", "arrow", "async");
         TableProperties tableProperties = createTableProperties(records1.sleeperSchema, "s3a://", "arrow", "async");
         StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(records1.sleeperSchema);
+        fixTimes(Instant.parse("2024-06-20T15:33:01Z"), Instant.parse("2024-06-20T15:33:10Z"));
 
         // When
         runIngestJob(instanceProperties, tableProperties, stateStore, localDir, ingestJob);
@@ -414,6 +419,12 @@ class IngestJobRunnerIT {
                 new RecordGenerator.RecordListAndSchema(expectedRecords, records1.sleeperSchema),
                 actualFiles,
                 hadoopConfiguration);
+        assertThat(statusStore.getAllJobs(tableId)).containsExactly(
+                jobStatus(ingestJob, ProcessRun.builder()
+                        .taskId("test-task")
+                        .startedStatus(ingestStartedStatus(ingestJob, Instant.parse("2024-06-20T15:33:01Z")))
+                        .statusUpdate(ingestAddedFilesStatus(Instant.parse("2024-06-20T15:33:10Z"), 1))
+                        .build()));
     }
 
     @Test
@@ -504,7 +515,7 @@ class IngestJobRunnerIT {
             StateStore stateStore,
             String localDir,
             IngestJob job) throws Exception {
-        statusStore.jobStarted(IngestJobStartedEvent.ingestJobStarted(job, Instant.now()).taskId("test-task").jobRunId("test-job-run").build());
+        statusStore.jobStarted(IngestJobStartedEvent.ingestJobStarted(job, timeSupplier.get()).taskId("test-task").jobRunId("test-job-run").build());
         ingestJobRunner(instanceProperties, tableProperties, stateStore, localDir)
                 .ingest(job, "test-job-run");
     }
