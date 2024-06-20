@@ -66,8 +66,8 @@ public class WaitForJobsStatusTest {
         assertThat(status).hasToString("{\n" +
                 "  \"countByLastStatus\": {\n" +
                 "    \"IngestJobAcceptedStatus\": 1,\n" +
-                "    \"IngestJobStartedStatus\": 1,\n" +
-                "    \"ProcessFinishedStatus\": 1\n" +
+                "    \"IngestJobFinishedStatus\": 1,\n" +
+                "    \"IngestJobStartedStatus\": 1\n" +
                 "  },\n" +
                 "  \"numUnfinished\": 2,\n" +
                 "  \"firstInProgressStartTime\": \"2022-09-22T13:33:10Z\",\n" +
