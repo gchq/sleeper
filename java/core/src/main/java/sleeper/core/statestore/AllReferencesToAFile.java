@@ -96,7 +96,7 @@ public class AllReferencesToAFile {
      * @param  references references to files, including every reference to each file
      * @return            records for the referenced files
      */
-    public static List<AllReferencesToAFile> newFilesWithReferences(List<FileReference> references) {
+    public static List<AllReferencesToAFile> newFilesWithReferences(Collection<FileReference> references) {
         return newFilesWithReferences(references.stream())
                 .collect(toUnmodifiableList());
     }
