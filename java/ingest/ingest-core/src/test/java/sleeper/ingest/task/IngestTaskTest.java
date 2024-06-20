@@ -47,10 +47,10 @@ import static sleeper.ingest.IngestResultTestData.defaultFileIngestResult;
 import static sleeper.ingest.IngestResultTestData.defaultFileIngestResultReadAndWritten;
 import static sleeper.ingest.job.IngestJobTestData.DEFAULT_TABLE_ID;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.failedIngestJob;
-import static sleeper.ingest.job.status.IngestJobStatusTestHelper.finishedIngestJob;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.finishedIngestJobUncommitted;
 import static sleeper.ingest.job.status.IngestJobStatusType.FAILED;
-import static sleeper.ingest.job.status.IngestJobStatusType.FINISHED;
 import static sleeper.ingest.job.status.IngestJobStatusType.IN_PROGRESS;
+import static sleeper.ingest.job.status.IngestJobStatusType.UNCOMMITTED;
 import static sleeper.ingest.task.IngestTaskStatusTestData.finishedMultipleJobs;
 import static sleeper.ingest.task.IngestTaskStatusTestData.finishedNoJobs;
 import static sleeper.ingest.task.IngestTaskStatusTestData.finishedOneJob;
@@ -156,7 +156,7 @@ public class IngestTaskTest {
                             Instant.parse("2024-02-22T13:50:00Z"), Instant.parse("2024-02-22T13:50:05Z"),
                             Instant.parse("2024-02-22T13:50:01Z"), Instant.parse("2024-02-22T13:50:02Z"), 10L, 10L));
             assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
-                    finishedIngestJob(job, "test-task-1", summary(jobResult,
+                    finishedIngestJobUncommitted(job, "test-task-1", summary(jobResult,
                             Instant.parse("2024-02-22T13:50:01Z"),
                             Instant.parse("2024-02-22T13:50:02Z"))));
         }
@@ -182,7 +182,7 @@ public class IngestTaskTest {
                             Instant.parse("2024-02-22T13:50:00Z"), Instant.parse("2024-02-22T13:50:05Z"),
                             Instant.parse("2024-02-22T13:50:01Z"), Instant.parse("2024-02-22T13:50:02Z"), 10L, 5L));
             assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
-                    finishedIngestJob(job, "test-task-1", summary(jobResult,
+                    finishedIngestJobUncommitted(job, "test-task-1", summary(jobResult,
                             Instant.parse("2024-02-22T13:50:01Z"),
                             Instant.parse("2024-02-22T13:50:02Z"))));
         }
@@ -219,10 +219,10 @@ public class IngestTaskTest {
                                     Instant.parse("2024-02-22T13:50:03Z"),
                                     Instant.parse("2024-02-22T13:50:04Z"))));
             assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactlyInAnyOrder(
-                    finishedIngestJob(job1, "test-task-1", summary(job1Result,
+                    finishedIngestJobUncommitted(job1, "test-task-1", summary(job1Result,
                             Instant.parse("2024-02-22T13:50:01Z"),
                             Instant.parse("2024-02-22T13:50:02Z"))),
-                    finishedIngestJob(job2, "test-task-1", summary(job2Result,
+                    finishedIngestJobUncommitted(job2, "test-task-1", summary(job2Result,
                             Instant.parse("2024-02-22T13:50:03Z"),
                             Instant.parse("2024-02-22T13:50:04Z"))));
         }
@@ -283,7 +283,7 @@ public class IngestTaskTest {
                             Instant.parse("2024-02-22T13:50:00Z"), Instant.parse("2024-02-22T13:50:06Z"),
                             Instant.parse("2024-02-22T13:50:01Z"), Instant.parse("2024-02-22T13:50:02Z"), 10L, 10L));
             assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactlyInAnyOrder(
-                    finishedIngestJob(job1, "test-task-1", summary(job1Result,
+                    finishedIngestJobUncommitted(job1, "test-task-1", summary(job1Result,
                             Instant.parse("2024-02-22T13:50:01Z"),
                             Instant.parse("2024-02-22T13:50:02Z"))),
                     failedIngestJob(job2, "test-task-1",
@@ -332,9 +332,9 @@ public class IngestTaskTest {
                             Instant.parse("2024-02-22T13:50:00Z"), Instant.parse("2024-02-22T13:50:05Z"),
                             Instant.parse("2024-02-22T13:50:01Z"), Instant.parse("2024-02-22T13:50:02Z"), 0L, 0L));
             assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
-                    finishedIngestJob(job, "test-task-1", summary(jobResult,
+                    finishedIngestJobUncommitted(job, "test-task-1", summary(jobResult,
                             Instant.parse("2024-02-22T13:50:01Z"),
-                            Instant.parse("2024-02-22T13:50:02Z"))));
+                            Instant.parse("2024-02-22T13:50:02Z")), 0));
         }
 
         @Test
@@ -359,7 +359,7 @@ public class IngestTaskTest {
                             record -> IngestJobStatusType.statusTypeOfUpdate(record.getStatusUpdate()))
                     .containsExactly(
                             tuple("test-job-run", IN_PROGRESS),
-                            tuple("test-job-run", FINISHED));
+                            tuple("test-job-run", UNCOMMITTED));
         }
 
         @Test

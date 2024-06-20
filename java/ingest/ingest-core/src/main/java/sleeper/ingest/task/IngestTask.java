@@ -105,7 +105,10 @@ public class IngestTask {
                     Instant jobFinishTime = timeSupplier.get();
                     RecordsProcessedSummary summary = new RecordsProcessedSummary(result.asRecordsProcessed(), jobStartTime, jobFinishTime);
                     jobStatusStore.jobFinished(ingestJobFinished(job, summary)
-                            .taskId(taskId).jobRunId(jobRunId).build());
+                            .taskId(taskId).jobRunId(jobRunId)
+                            .committedBySeparateFileUpdates(true)
+                            .fileReferencesAddedByJob(result.getFileReferenceList())
+                            .build());
                     taskFinishedBuilder.addJobSummary(summary);
                     message.completed(summary);
                     totalNumberOfMessagesProcessed++;
