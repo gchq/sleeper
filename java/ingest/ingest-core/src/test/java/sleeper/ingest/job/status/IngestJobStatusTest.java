@@ -47,8 +47,10 @@ import static sleeper.ingest.job.status.IngestJobStatusTestHelper.rejectedRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.singleJobStatusFrom;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.startedIngestRun;
 import static sleeper.ingest.job.status.IngestJobStatusType.ACCEPTED;
+import static sleeper.ingest.job.status.IngestJobStatusType.FAILED;
 import static sleeper.ingest.job.status.IngestJobStatusType.FINISHED;
 import static sleeper.ingest.job.status.IngestJobStatusType.IN_PROGRESS;
+import static sleeper.ingest.job.status.IngestJobStatusType.UNCOMMITTED;
 
 public class IngestJobStatusTest {
     private final IngestJob job = createJobInDefaultTable("test-job", "test.parquet", "test2.parquet");
@@ -184,7 +186,7 @@ public class IngestJobStatusTest {
 
             // Then
             assertThat(status)
-                    .extracting(IngestJobStatus::getFurthestStatusType)
+                    .extracting(IngestJobStatusType::statusTypeOfFurthestRunOfJob)
                     .isEqualTo(ACCEPTED);
         }
 
@@ -199,7 +201,7 @@ public class IngestJobStatusTest {
 
             // Then
             assertThat(status)
-                    .extracting(IngestJobStatus::getFurthestStatusType)
+                    .extracting(IngestJobStatusType::statusTypeOfFurthestRunOfJob)
                     .isEqualTo(IN_PROGRESS);
         }
 
@@ -217,7 +219,7 @@ public class IngestJobStatusTest {
 
             // Then
             assertThat(status)
-                    .extracting(IngestJobStatus::getFurthestStatusType)
+                    .extracting(IngestJobStatusType::statusTypeOfFurthestRunOfJob)
                     .isEqualTo(FINISHED);
         }
 
@@ -234,7 +236,7 @@ public class IngestJobStatusTest {
 
             // Then
             assertThat(status)
-                    .extracting(IngestJobStatus::getFurthestStatusType)
+                    .extracting(IngestJobStatusType::statusTypeOfFurthestRunOfJob)
                     .isEqualTo(IN_PROGRESS);
         }
 
@@ -251,8 +253,26 @@ public class IngestJobStatusTest {
 
             // Then
             assertThat(status)
-                    .extracting(IngestJobStatus::getFurthestStatusType)
+                    .extracting(IngestJobStatusType::statusTypeOfFurthestRunOfJob)
                     .isEqualTo(IN_PROGRESS);
+        }
+
+        @Test
+        void shouldReportFailedWithOneRun() {
+            Instant validationTime1 = Instant.parse("2022-09-22T13:33:10Z");
+            Instant startTime = Instant.parse("2022-09-22T13:33:11Z");
+            Instant finishTime = Instant.parse("2022-09-22T13:40:10Z");
+
+            IngestJobStatus status = singleJobStatusFrom(records().fromUpdates(
+                    forRunOnNoTask("run-1", acceptedStatusUpdate(validationTime1)),
+                    forRunOnTask("run-1", "task",
+                            startedStatusUpdateAfterValidation(startTime),
+                            failedStatusUpdate(startTime, finishTime))));
+
+            // Then
+            assertThat(status)
+                    .extracting(IngestJobStatusType::statusTypeOfFurthestRunOfJob)
+                    .isEqualTo(FAILED);
         }
 
         @Test
@@ -276,7 +296,7 @@ public class IngestJobStatusTest {
 
             // Then
             assertThat(status)
-                    .extracting(IngestJobStatus::getFurthestStatusType)
+                    .extracting(IngestJobStatusType::statusTypeOfFurthestRunOfJob)
                     .isEqualTo(FINISHED);
         }
 
@@ -299,8 +319,27 @@ public class IngestJobStatusTest {
 
             // Then
             assertThat(status)
-                    .extracting(IngestJobStatus::getFurthestStatusType)
+                    .extracting(IngestJobStatusType::statusTypeOfFurthestRunOfJob)
                     .isEqualTo(IN_PROGRESS);
+        }
+
+        @Test
+        void shouldReportUncommittedWhenFinishedWithAsynchronousCommit() {
+            Instant startTime = Instant.parse("2022-09-22T13:33:11Z");
+            Instant finishTime = Instant.parse("2022-09-22T13:40:10Z");
+
+            IngestJobStatus status = singleJobStatusFrom(records().fromUpdates(
+                    forRunOnTask("some-run", "some-task",
+                            startedStatusUpdate(startTime),
+                            finishedStatusUpdateBuilder(startTime, finishTime)
+                                    .committedWhenAllFilesAdded(true)
+                                    .numFilesAddedByJob(1)
+                                    .build())));
+
+            // Then
+            assertThat(status)
+                    .extracting(IngestJobStatusType::statusTypeOfFurthestRunOfJob)
+                    .isEqualTo(UNCOMMITTED);
         }
     }
 
@@ -351,7 +390,11 @@ public class IngestJobStatusTest {
     }
 
     private IngestJobFinishedStatus finishedStatusUpdate(Instant startTime, Instant finishTime) {
-        return IngestJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(finishTime), summary(startTime, finishTime)).build();
+        return finishedStatusUpdateBuilder(startTime, finishTime).build();
+    }
+
+    private IngestJobFinishedStatus.Builder finishedStatusUpdateBuilder(Instant startTime, Instant finishTime) {
+        return IngestJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(finishTime), summary(startTime, finishTime));
     }
 
     private ProcessFailedStatus failedStatusUpdate(Instant startTime, Instant finishTime) {

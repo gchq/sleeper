@@ -17,30 +17,26 @@
 package sleeper.ingest.job.status;
 
 import sleeper.core.record.process.status.ProcessFailedStatus;
+import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.record.process.status.ProcessStatusUpdate;
-
-import java.util.stream.Stream;
 
 /**
  * Defines the states an ingest job can be in.
  */
 public enum IngestJobStatusType {
-    REJECTED(IngestJobRejectedStatus.class, 1),
-    ACCEPTED(IngestJobAcceptedStatus.class, 2),
-    FAILED(ProcessFailedStatus.class, 3),
-    IN_PROGRESS(IngestJobStartedStatus.class, 4),
-    FINISHED(IngestJobFinishedStatus.class, 5);
+    REJECTED(1, 5),
+    ACCEPTED(2, 1),
+    FAILED(3, 6),
+    IN_PROGRESS(4, 2),
+    UNCOMMITTED(5, 3),
+    FINISHED(6, 4);
 
-    private final Class<?> statusUpdateClass;
-    private final int order;
+    private final int orderInJob;
+    private final int orderInRun;
 
-    IngestJobStatusType(Class<?> statusUpdateClass, int order) {
-        this.statusUpdateClass = statusUpdateClass;
-        this.order = order;
-    }
-
-    public int getOrder() {
-        return order;
+    IngestJobStatusType(int orderInJob, int orderInRun) {
+        this.orderInJob = orderInJob;
+        this.orderInRun = orderInRun;
     }
 
     public boolean isRunInProgress() {
@@ -52,15 +48,97 @@ public enum IngestJobStatusType {
     }
 
     /**
+     * Gets the furthest status type for any run of an ingest job.
+     *
+     * @param  job the job
+     * @return     the status type
+     */
+    public static IngestJobStatusType statusTypeOfFurthestRunOfJob(IngestJobStatus job) {
+        StatusTracker furthestStatus = StatusTracker.runStatuses();
+        for (ProcessRun run : job.getJobRuns()) {
+            furthestStatus.setIfLater(statusTypeOfJobRun(run));
+        }
+        return furthestStatus.get();
+    }
+
+    /**
+     * Gets the status type for a run of an ingest job.
+     *
+     * @param  run the run
+     * @return     the status type
+     */
+    public static IngestJobStatusType statusTypeOfJobRun(ProcessRun run) {
+        StatusTracker furthestStatus = StatusTracker.updateStatuses();
+        for (ProcessStatusUpdate update : run.getStatusUpdates()) {
+            furthestStatus.setIfLater(statusTypeOfUpdate(update));
+        }
+        return furthestStatus.get();
+    }
+
+    /**
      * Gets the status type for the provided process status update.
      *
      * @param  update the process status update
      * @return        the ingest job status type of the update
      */
-    public static IngestJobStatusType of(ProcessStatusUpdate update) {
-        return Stream.of(values())
-                .filter(type -> type.statusUpdateClass.isInstance(update))
-                .findFirst().orElseThrow();
+    private static IngestJobStatusType statusTypeOfUpdate(ProcessStatusUpdate update) {
+        if (update instanceof IngestJobRejectedStatus) {
+            return REJECTED;
+        } else if (update instanceof IngestJobAcceptedStatus) {
+            return ACCEPTED;
+        } else if (update instanceof ProcessFailedStatus) {
+            return FAILED;
+        } else if (update instanceof IngestJobStartedStatus) {
+            return IN_PROGRESS;
+        } else if (update instanceof IngestJobFinishedStatus) {
+            IngestJobFinishedStatus finished = (IngestJobFinishedStatus) update;
+            if (!finished.isCommittedWhenAllFilesAdded()) {
+                return FINISHED;
+            } else {
+                return UNCOMMITTED;
+            }
+        } else {
+            throw new IllegalArgumentException("Unrecognised status update type: " + update.getClass().getSimpleName());
+        }
+    }
+
+    /**
+     * Tracks the furthest status in a run or job. For runs, an in progress or finished run will supersede a failed
+     * one. For updates in a run, a failure will supersede any other status.
+     */
+    private static class StatusTracker {
+        private final boolean orderInJob;
+        private IngestJobStatusType latestStatus;
+
+        public static StatusTracker runStatuses() {
+            return new StatusTracker(true);
+        }
+
+        public static StatusTracker updateStatuses() {
+            return new StatusTracker(false);
+        }
+
+        private StatusTracker(boolean orderInJob) {
+            this.orderInJob = orderInJob;
+        }
+
+        public void setIfLater(IngestJobStatusType newStatus) {
+            if (latestStatus == null || order(latestStatus) < order(newStatus)) {
+                latestStatus = newStatus;
+            }
+        }
+
+        private int order(IngestJobStatusType statusType) {
+            if (orderInJob) {
+                return statusType.orderInJob;
+            } else {
+                return statusType.orderInRun;
+            }
+        }
+
+        public IngestJobStatusType get() {
+            return latestStatus;
+        }
     }
 
 }

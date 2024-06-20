@@ -116,7 +116,7 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
 
     private void printDetailedSummary(IngestJobStatus status) {
         out.printf("Details for job %s:%n", status.getJobId());
-        out.printf("State: %s%n", status.getFurthestStatusType());
+        out.printf("State: %s%n", IngestJobStatusType.statusTypeOfFurthestRunOfJob(status));
         out.printf("Number of input files: %d%n", status.getInputFilesCount());
         for (ProcessRun run : status.getJobRuns()) {
             printProcessJobRun(run);
@@ -126,7 +126,7 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
     private void printProcessJobRun(ProcessRun run) {
         runReporter.printProcessJobRunWithUpdatePrinter(run,
                 printUpdateType(IngestJobValidatedStatus.class, this::printValidation));
-        if (IngestJobStatusType.of(run.getLatestUpdate()) == IN_PROGRESS) {
+        if (IngestJobStatusType.statusTypeOfJobRun(run) == IN_PROGRESS) {
             out.println("Not finished");
         }
     }
@@ -199,7 +199,7 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
     private void writeJob(IngestJobStatus job, TableWriter.Builder table) {
         job.getJobRuns().forEach(run -> table.row(row -> {
             writeJobFields(job, row);
-            row.value(stateField, IngestJobStatusType.of(run.getLatestUpdate()));
+            row.value(stateField, IngestJobStatusType.statusTypeOfJobRun(run));
             runReporter.writeRunFields(run, row);
         }));
     }

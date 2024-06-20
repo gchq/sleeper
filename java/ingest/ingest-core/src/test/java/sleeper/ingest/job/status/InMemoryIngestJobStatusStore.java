@@ -116,7 +116,7 @@ public class InMemoryIngestJobStatusStore implements IngestJobStatusStore {
     @Override
     public List<IngestJobStatus> getInvalidJobs() {
         return streamAllJobs()
-                .filter(status -> status.getFurthestStatusType().equals(REJECTED))
+                .filter(status -> IngestJobStatusType.statusTypeOfFurthestRunOfJob(status).equals(REJECTED))
                 .collect(Collectors.toList());
     }
 
