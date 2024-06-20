@@ -65,12 +65,15 @@ import sleeper.statestore.StateStoreProvider;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
@@ -116,6 +119,7 @@ class IngestJobRunnerIT {
     public java.nio.file.Path temporaryFolder;
     private String currentLocalIngestDirectory;
     private String currentLocalTableDataDirectory;
+    private Supplier<Instant> timeSupplier = Instant::now;
 
     private static Stream<Arguments> parametersForTests() {
         return Stream.of(
@@ -398,7 +402,8 @@ class IngestJobRunnerIT {
                 "test-task-id",
                 localDir,
                 s3Async, null,
-                hadoopConfiguration)
+                hadoopConfiguration,
+                timeSupplier)
                 .ingest(ingestJob);
 
         // Then
@@ -440,6 +445,7 @@ class IngestJobRunnerIT {
                 .id("some-job")
                 .files(files)
                 .build();
+        fixTimes(Instant.parse("2024-06-20T15:10:01Z"));
 
         // When
         ingestJobRunner(instanceProperties, tableProperties, stateStore, localDir).ingest(job);
@@ -466,6 +472,7 @@ class IngestJobRunnerIT {
                 .ingestJob(job)
                 .taskId("test-task")
                 .fileReferences(actualFiles)
+                .writtenTime(Instant.parse("2024-06-20T15:10:01Z"))
                 .build());
     }
 
@@ -513,6 +520,11 @@ class IngestJobRunnerIT {
                 "test-task",
                 localDir,
                 s3Async, sqs,
-                hadoopConfiguration);
+                hadoopConfiguration,
+                timeSupplier);
+    }
+
+    private void fixTimes(Instant... times) {
+        timeSupplier = new LinkedList<>(List.of(times))::poll;
     }
 }

@@ -45,6 +45,7 @@ import sleeper.io.parquet.utils.HadoopPathUtils;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
@@ -67,6 +68,7 @@ public class IngestJobRunner implements IngestJobHandler {
     private final AmazonSQS sqsClient;
     private final IngestFactory ingestFactory;
     private final PropertiesReloader propertiesReloader;
+    private final Supplier<Instant> timeSupplier;
 
     public IngestJobRunner(ObjectFactory objectFactory,
             InstanceProperties instanceProperties,
@@ -77,7 +79,8 @@ public class IngestJobRunner implements IngestJobHandler {
             String localDir,
             S3AsyncClient s3AsyncClient,
             AmazonSQS sqsClient,
-            Configuration hadoopConfiguration) {
+            Configuration hadoopConfiguration,
+            Supplier<Instant> timeSupplier) {
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.propertiesReloader = propertiesReloader;
@@ -86,6 +89,7 @@ public class IngestJobRunner implements IngestJobHandler {
         this.taskId = taskId;
         this.stateStoreProvider = stateStoreProvider;
         this.sqsClient = sqsClient;
+        this.timeSupplier = timeSupplier;
         this.ingestFactory = IngestFactory.builder()
                 .objectFactory(objectFactory)
                 .localDir(localDir)
@@ -145,7 +149,7 @@ public class IngestJobRunner implements IngestJobHandler {
     private AddFilesToStateStore addFilesToStateStore(IngestJob job, TableProperties tableProperties) {
         if (tableProperties.getBoolean(INGEST_FILES_COMMIT_ASYNC)) {
             return AddFilesToStateStore.bySqs(sqsClient, instanceProperties,
-                    requestBuilder -> requestBuilder.ingestJob(job).taskId(taskId));
+                    requestBuilder -> requestBuilder.ingestJob(job).taskId(taskId).writtenTime(timeSupplier.get()));
         } else {
             return AddFilesToStateStore.synchronous(stateStoreProvider.getStateStore(tableProperties));
         }
