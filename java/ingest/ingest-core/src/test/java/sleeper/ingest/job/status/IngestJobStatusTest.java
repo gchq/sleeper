@@ -341,6 +341,22 @@ public class IngestJobStatusTest {
                     .extracting(IngestJobStatusType::statusTypeOfFurthestRunOfJob)
                     .isEqualTo(UNCOMMITTED);
         }
+
+        @Test
+        void shouldReportInProgressWhenFileAddedButNotFinished() {
+            Instant startTime = Instant.parse("2022-09-22T13:33:11Z");
+            Instant writtenTime = Instant.parse("2022-09-22T13:40:10Z");
+
+            IngestJobStatus status = singleJobStatusFrom(records().fromUpdates(
+                    forRunOnTask("some-run", "some-task",
+                            startedStatusUpdate(startTime),
+                            filesAddedStatusUpdate(writtenTime, 1))));
+
+            // Then
+            assertThat(status)
+                    .extracting(IngestJobStatusType::statusTypeOfFurthestRunOfJob)
+                    .isEqualTo(IN_PROGRESS);
+        }
     }
 
     @Nested
@@ -386,6 +402,13 @@ public class IngestJobStatusTest {
     private IngestJobStartedStatus startedStatusUpdateAfterValidation(Instant startTime) {
         return IngestJobStartedStatus.withStartOfRun(false).job(job)
                 .startTime(startTime).updateTime(defaultUpdateTime(startTime))
+                .build();
+    }
+
+    private IngestJobAddedFilesStatus filesAddedStatusUpdate(Instant writtenTime, int fileCount) {
+        return IngestJobAddedFilesStatus.builder()
+                .writtenTime(writtenTime).updateTime(defaultUpdateTime(writtenTime))
+                .fileCount(fileCount)
                 .build();
     }
 

@@ -90,6 +90,8 @@ public enum IngestJobStatusType {
             return FAILED;
         } else if (update instanceof IngestJobStartedStatus) {
             return IN_PROGRESS;
+        } else if (update instanceof IngestJobAddedFilesStatus) {
+            return IN_PROGRESS;
         } else if (update instanceof IngestJobFinishedStatus) {
             IngestJobFinishedStatus finished = (IngestJobFinishedStatus) update;
             if (!finished.isCommittedWhenAllFilesAdded()) {
