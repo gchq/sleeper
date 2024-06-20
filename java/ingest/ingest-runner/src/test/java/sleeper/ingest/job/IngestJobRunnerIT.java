@@ -72,7 +72,6 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -449,7 +448,7 @@ class IngestJobRunnerIT {
                 .id("some-job")
                 .files(files)
                 .build();
-        fixTimes(Instant.parse("2024-06-20T15:10:01Z"));
+        fixTimes(Instant.parse("2024-06-20T15:10:00Z"), Instant.parse("2024-06-20T15:10:01Z"));
 
         // When
         runIngestJob(instanceProperties, tableProperties, stateStore, localDir, job);
@@ -540,6 +539,6 @@ class IngestJobRunnerIT {
     }
 
     private void fixTimes(Instant... times) {
-        timeSupplier = new LinkedList<>(List.of(times))::poll;
+        timeSupplier = List.of(times).iterator()::next;
     }
 }
