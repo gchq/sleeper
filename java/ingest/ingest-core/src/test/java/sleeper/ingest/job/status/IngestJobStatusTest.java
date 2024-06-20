@@ -24,7 +24,6 @@ import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessFailedStatus;
-import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.ingest.job.IngestJob;
 
 import java.time.Duration;
@@ -351,8 +350,8 @@ public class IngestJobStatusTest {
                 .build();
     }
 
-    private ProcessFinishedStatus finishedStatusUpdate(Instant startTime, Instant finishTime) {
-        return ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(finishTime), summary(startTime, finishTime));
+    private IngestJobFinishedStatus finishedStatusUpdate(Instant startTime, Instant finishTime) {
+        return IngestJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(finishTime), summary(startTime, finishTime)).build();
     }
 
     private ProcessFailedStatus failedStatusUpdate(Instant startTime, Instant finishTime) {

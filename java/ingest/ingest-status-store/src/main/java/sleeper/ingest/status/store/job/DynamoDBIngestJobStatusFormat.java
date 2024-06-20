@@ -25,7 +25,6 @@ import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessFailedStatus;
-import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessStatusUpdate;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 import sleeper.dynamodb.tools.DynamoDBAttributes;
@@ -33,6 +32,7 @@ import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 import sleeper.ingest.job.status.IngestJobAcceptedStatus;
 import sleeper.ingest.job.status.IngestJobFailedEvent;
 import sleeper.ingest.job.status.IngestJobFinishedEvent;
+import sleeper.ingest.job.status.IngestJobFinishedStatus;
 import sleeper.ingest.job.status.IngestJobRejectedStatus;
 import sleeper.ingest.job.status.IngestJobStartedEvent;
 import sleeper.ingest.job.status.IngestJobStartedStatus;
@@ -212,12 +212,13 @@ class DynamoDBIngestJobStatusFormat {
                         .startTime(getInstantAttribute(item, START_TIME))
                         .updateTime(getInstantAttribute(item, UPDATE_TIME)).build();
             case UPDATE_TYPE_FINISHED:
-                return ProcessFinishedStatus.updateTimeAndSummary(
+                return IngestJobFinishedStatus.updateTimeAndSummary(
                         getInstantAttribute(item, UPDATE_TIME),
                         new RecordsProcessedSummary(new RecordsProcessed(
                                 getLongAttribute(item, RECORDS_READ, 0),
                                 getLongAttribute(item, RECORDS_WRITTEN, 0)),
-                                getRunTime(item)));
+                                getRunTime(item)))
+                        .build();
             case UPDATE_TYPE_FAILED:
                 return ProcessFailedStatus.timeAndReasons(
                         getInstantAttribute(item, UPDATE_TIME),

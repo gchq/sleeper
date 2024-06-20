@@ -17,7 +17,6 @@
 package sleeper.ingest.job.status;
 
 import sleeper.core.record.process.status.ProcessFailedStatus;
-import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessStatusUpdate;
 
 import java.util.stream.Stream;
@@ -30,7 +29,7 @@ public enum IngestJobStatusType {
     ACCEPTED(IngestJobAcceptedStatus.class, 2),
     FAILED(ProcessFailedStatus.class, 3),
     IN_PROGRESS(IngestJobStartedStatus.class, 4),
-    FINISHED(ProcessFinishedStatus.class, 5);
+    FINISHED(IngestJobFinishedStatus.class, 5);
 
     private final Class<?> statusUpdateClass;
     private final int order;

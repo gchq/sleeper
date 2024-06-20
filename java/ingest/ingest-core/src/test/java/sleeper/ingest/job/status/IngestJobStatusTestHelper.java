@@ -157,8 +157,8 @@ public class IngestJobStatusTestHelper {
                                 .inputFileCount(job.getFiles().size())
                                 .startTime(summary.getStartTime())
                                 .updateTime(defaultUpdateTime(summary.getStartTime())).build())
-                .finishedStatus(ProcessFinishedStatus
-                        .updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary))
+                .finishedStatus(IngestJobFinishedStatus
+                        .updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary).build())
                 .build();
     }
 
