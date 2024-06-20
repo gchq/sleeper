@@ -324,22 +324,6 @@ public class IngestJobStatusTest {
         }
 
         @Test
-        void shouldReportUncommittedWhenFinishedWithAsynchronousCommit() {
-            Instant startTime = Instant.parse("2022-09-22T13:33:11Z");
-            Instant finishTime = Instant.parse("2022-09-22T13:40:10Z");
-
-            IngestJobStatus status = singleJobStatusFrom(records().fromUpdates(
-                    forRunOnTask("some-run", "some-task",
-                            startedStatusUpdate(startTime),
-                            finishedStatusUpdateExpectingFileCommits(startTime, finishTime, 1))));
-
-            // Then
-            assertThat(status)
-                    .extracting(IngestJobStatusType::statusTypeOfFurthestRunOfJob)
-                    .isEqualTo(UNCOMMITTED);
-        }
-
-        @Test
         void shouldReportInProgressWhenFileAddedButNotFinished() {
             Instant startTime = Instant.parse("2022-09-22T13:33:11Z");
             Instant writtenTime = Instant.parse("2022-09-22T13:40:10Z");
@@ -353,6 +337,22 @@ public class IngestJobStatusTest {
             assertThat(status)
                     .extracting(IngestJobStatusType::statusTypeOfFurthestRunOfJob)
                     .isEqualTo(IN_PROGRESS);
+        }
+
+        @Test
+        void shouldReportUncommittedWhenFinishedAndNoFilesAdded() {
+            Instant startTime = Instant.parse("2022-09-22T13:33:11Z");
+            Instant finishTime = Instant.parse("2022-09-22T13:40:10Z");
+
+            IngestJobStatus status = singleJobStatusFrom(records().fromUpdates(
+                    forRunOnTask("some-run", "some-task",
+                            startedStatusUpdate(startTime),
+                            finishedStatusUpdateExpectingFileCommits(startTime, finishTime, 1))));
+
+            // Then
+            assertThat(status)
+                    .extracting(IngestJobStatusType::statusTypeOfFurthestRunOfJob)
+                    .isEqualTo(UNCOMMITTED);
         }
 
         @Test
