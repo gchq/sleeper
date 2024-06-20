@@ -188,7 +188,7 @@
         <surefire.report.plugin.version>${surefire.plugin.version}</surefire.report.plugin.version>
         <shade.plugin.version>3.6.0</shade.plugin.version>
         <assembly.plugin.version>3.7.1</assembly.plugin.version>
-        <jar.plugin.version>3.4.1</jar.plugin.version>
+        <jar.plugin.version>3.4.2</jar.plugin.version>
         <compiler.plugin.version>3.13.0</compiler.plugin.version>
         <enforcer.plugin.version>3.5.0</enforcer.plugin.version>
         <distribution.format>dir</distribution.format>
