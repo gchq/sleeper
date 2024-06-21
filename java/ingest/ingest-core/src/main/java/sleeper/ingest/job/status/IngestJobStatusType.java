@@ -16,9 +16,7 @@
 
 package sleeper.ingest.job.status;
 
-import sleeper.core.record.process.status.ProcessFailedStatus;
 import sleeper.core.record.process.status.ProcessRun;
-import sleeper.core.record.process.status.ProcessStatusUpdate;
 
 /**
  * Defines the states an ingest job can be in. Uses an order to find which run of the job determines the state of the
@@ -70,35 +68,6 @@ public enum IngestJobStatusType {
     public static IngestJobStatusType statusTypeOfJobRun(ProcessRun run) {
         return IngestJobUpdateType.typeOfFurthestUpdateInRun(run)
                 .statusTypeAfterThisInRun(run);
-    }
-
-    /**
-     * Gets the status type for the provided process status update.
-     *
-     * @param  update the process status update
-     * @return        the ingest job status type of the update
-     */
-    public static IngestJobStatusType statusTypeOfUpdate(ProcessStatusUpdate update) {
-        if (update instanceof IngestJobRejectedStatus) {
-            return REJECTED;
-        } else if (update instanceof IngestJobAcceptedStatus) {
-            return ACCEPTED;
-        } else if (update instanceof ProcessFailedStatus) {
-            return FAILED;
-        } else if (update instanceof IngestJobStartedStatus) {
-            return IN_PROGRESS;
-        } else if (update instanceof IngestJobAddedFilesStatus) {
-            return IN_PROGRESS;
-        } else if (update instanceof IngestJobFinishedStatus) {
-            IngestJobFinishedStatus finished = (IngestJobFinishedStatus) update;
-            if (!finished.isCommittedBySeparateFileUpdates()) {
-                return FINISHED;
-            } else {
-                return UNCOMMITTED;
-            }
-        } else {
-            throw new IllegalArgumentException("Unrecognised status update type: " + update.getClass().getSimpleName());
-        }
     }
 
     /**

@@ -10,7 +10,7 @@
           "taskId": "task1111-1111-1111-1111-111111111111",
           "updates": [
             {
-              "type": "IN_PROGRESS",
+              "type": "STARTED",
               "inputFileCount": 1,
               "startTime": "2022-10-12T10:02:00.001Z",
               "updateTime": "2022-10-12T10:02:00.123Z"
@@ -21,7 +21,7 @@
           "taskId": "task2222-2222-2222-2222-222222222222",
           "updates": [
             {
-              "type": "IN_PROGRESS",
+              "type": "STARTED",
               "inputFileCount": 1,
               "startTime": "2022-10-12T10:01:15.001Z",
               "updateTime": "2022-10-12T10:01:15.123Z"
@@ -51,7 +51,7 @@
           "taskId": "task1111-1111-1111-1111-111111111111",
           "updates": [
             {
-              "type": "IN_PROGRESS",
+              "type": "STARTED",
               "inputFileCount": 1,
               "startTime": "2022-10-12T10:01:00.001Z",
               "updateTime": "2022-10-12T10:01:00.123Z"
