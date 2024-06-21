@@ -45,14 +45,14 @@ public enum IngestJobUpdateType {
      * Gets the furthest update type for a run of an ingest job.
      *
      * @param  run the run
-     * @return     the status type
+     * @return     the update type
      */
     public static IngestJobUpdateType typeOfFurthestUpdateInRun(ProcessRun run) {
-        StatusTracker furthestStatus = new StatusTracker();
+        FurthestUpdateTracker furthestUpdate = new FurthestUpdateTracker();
         for (ProcessStatusUpdate update : run.getStatusUpdates()) {
-            furthestStatus.setIfLater(typeOfUpdate(update));
+            furthestUpdate.setIfFurther(typeOfUpdate(update));
         }
-        return furthestStatus.get();
+        return furthestUpdate.get();
     }
 
     /**
@@ -72,8 +72,9 @@ public enum IngestJobUpdateType {
     /**
      * Gets the type of the provided process status update.
      *
-     * @param  update the process status update
-     * @return        the type of the update
+     * @param  update                   the process status update
+     * @return                          the type of the update
+     * @throws IllegalArgumentException if the update is not of a type expected during an ingest job
      */
     public static IngestJobUpdateType typeOfUpdate(ProcessStatusUpdate update) {
         if (update instanceof IngestJobRejectedStatus) {
@@ -99,19 +100,19 @@ public enum IngestJobUpdateType {
     }
 
     /**
-     * Tracks the furthest status in a run. A failure will supersede any other status.
+     * Tracks the furthest update in a run. A failure will supersede any other update.
      */
-    private static class StatusTracker {
-        private IngestJobUpdateType latestStatus;
+    private static class FurthestUpdateTracker {
+        private IngestJobUpdateType furthestType;
 
-        public void setIfLater(IngestJobUpdateType newStatus) {
-            if (latestStatus == null || latestStatus.order < newStatus.order) {
-                latestStatus = newStatus;
+        public void setIfFurther(IngestJobUpdateType newType) {
+            if (furthestType == null || furthestType.order < newType.order) {
+                furthestType = newType;
             }
         }
 
         public IngestJobUpdateType get() {
-            return latestStatus;
+            return furthestType;
         }
     }
 
