@@ -52,9 +52,9 @@ public enum IngestJobStatusType {
      * @return     the status type
      */
     public static IngestJobStatusType statusTypeOfFurthestRunOfJob(IngestJobStatus job) {
-        StatusTracker furthestStatus = new StatusTracker();
+        FurthestStatusTracker furthestStatus = new FurthestStatusTracker();
         for (ProcessRun run : job.getJobRuns()) {
-            furthestStatus.setIfLater(statusTypeOfJobRun(run));
+            furthestStatus.setIfFurther(statusTypeOfJobRun(run));
         }
         return furthestStatus.get();
     }
@@ -73,17 +73,17 @@ public enum IngestJobStatusType {
     /**
      * Tracks the furthest status in a job. An in progress or finished run will supersede a failed one.
      */
-    private static class StatusTracker {
-        private IngestJobStatusType latestStatus;
+    private static class FurthestStatusTracker {
+        private IngestJobStatusType furthestStatus;
 
-        public void setIfLater(IngestJobStatusType newStatus) {
-            if (latestStatus == null || latestStatus.order < newStatus.order) {
-                latestStatus = newStatus;
+        public void setIfFurther(IngestJobStatusType newStatus) {
+            if (furthestStatus == null || furthestStatus.order < newStatus.order) {
+                furthestStatus = newStatus;
             }
         }
 
         public IngestJobStatusType get() {
-            return latestStatus;
+            return furthestStatus;
         }
     }
 
