@@ -39,6 +39,7 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.LoggedDuration;
+import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
@@ -70,17 +71,20 @@ public class BulkImportJobDriver {
     private final StateStoreProvider stateStoreProvider;
     private final IngestJobStatusStore statusStore;
     private final Supplier<Instant> getTime;
+    private final AddFilesAsynchronously addFilesAsync;
 
     public BulkImportJobDriver(SessionRunner sessionRunner,
             TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider,
             IngestJobStatusStore statusStore,
-            Supplier<Instant> getTime) {
+            Supplier<Instant> getTime,
+            AddFilesAsynchronously addFilesAsync) {
         this.sessionRunner = sessionRunner;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
         this.statusStore = statusStore;
         this.getTime = getTime;
+        this.addFilesAsync = addFilesAsync;
     }
 
     public static BulkImportJobDriver from(BulkImportJobRunner jobRunner, InstanceProperties instanceProperties,
@@ -97,7 +101,7 @@ public class BulkImportJobDriver {
             Supplier<Instant> getTime) {
         return new BulkImportJobDriver(new BulkImportSparkSessionRunner(
                 jobRunner, instanceProperties, tablePropertiesProvider, stateStoreProvider),
-                tablePropertiesProvider, stateStoreProvider, statusStore, getTime);
+                tablePropertiesProvider, stateStoreProvider, statusStore, getTime, null);
     }
 
     public void run(BulkImportJob job, String jobRunId, String taskId) throws IOException {
@@ -118,9 +122,19 @@ public class BulkImportJobDriver {
         }
 
         try {
-            stateStoreProvider.getStateStore(tableProperties)
-                    .addFiles(output.fileReferences());
-            LOGGER.info("Added {} files to statestore for job {}", output.numFiles(), job.getId());
+            if (tableProperties.getBoolean(BULK_IMPORT_FILES_COMMIT_ASYNC)) {
+                addFilesAsync.submit(IngestAddFilesCommitRequest.builder()
+                        .ingestJob(job.toIngestJob())
+                        .fileReferences(output.fileReferences())
+                        .jobRunId(jobRunId).taskId(taskId)
+                        .writtenTime(getTime.get())
+                        .build());
+                LOGGER.info("Submitted {} files to statestore committer for job {}", output.numFiles(), job.getId());
+            } else {
+                stateStoreProvider.getStateStore(tableProperties)
+                        .addFiles(output.fileReferences());
+                LOGGER.info("Added {} files to statestore for job {}", output.numFiles(), job.getId());
+            }
         } catch (RuntimeException | StateStoreException e) {
             statusStore.jobFailed(ingestJobFailed(job.toIngestJob(), new ProcessRunTime(startTime, getTime.get()))
                     .jobRunId(jobRunId).taskId(taskId).failure(e).build());
@@ -231,5 +245,9 @@ public class BulkImportJobDriver {
         } finally {
             sts.shutdown();
         }
+    }
+
+    public interface AddFilesAsynchronously {
+        void submit(IngestAddFilesCommitRequest request);
     }
 }
