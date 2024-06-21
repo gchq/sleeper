@@ -23,11 +23,13 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.process.ProcessRunTime;
+import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.inmemory.StateStoreTestHelper;
+import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.status.InMemoryIngestJobStatusStore;
 import sleeper.ingest.job.status.IngestJobStatus;
 import sleeper.ingest.job.status.IngestJobStatusStore;
@@ -45,14 +47,18 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_FILES_COMMIT_ASYNC;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.defaultFileOnRootPartitionWithRecords;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.acceptedRunWhichFailed;
-import static sleeper.ingest.job.status.IngestJobStatusTestHelper.finishedIngestJobWithValidation;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.ingestAcceptedStatus;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.ingestFinishedStatus;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.ingestFinishedStatusUncommitted;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.jobStatus;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.validatedIngestStartedStatus;
 import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobAccepted;
 
 class BulkImportJobDriverTest {
@@ -77,9 +83,15 @@ class BulkImportJobDriverTest {
                 driver(successfulWithOutput(outputFiles), startAndFinishTime(startTime, finishTime)));
 
         // Then
+        IngestJob ingestJob = job.toIngestJob();
         assertThat(allJobsReported())
-                .containsExactly(finishedIngestJobWithValidation(job.toIngestJob(), "test-task",
-                        validationTime, summary(startTime, finishTime, 100, 100)));
+                .containsExactly(jobStatus(ingestJob, ProcessRun.builder()
+                        .taskId("test-task")
+                        .startedStatus(ingestAcceptedStatus(ingestJob, validationTime))
+                        .statusUpdate(validatedIngestStartedStatus(ingestJob, startTime))
+                        .finishedStatus(ingestFinishedStatus(ingestJob,
+                                summary(startTime, finishTime, 100, 100), 1))
+                        .build()));
         assertThat(stateStore.getFileReferences())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .isEqualTo(outputFiles);
@@ -167,6 +179,34 @@ class BulkImportJobDriverTest {
                         List.of("Failed updating files"))));
         verify(stateStore).addFiles(outputFiles);
         verifyNoMoreInteractions(stateStore);
+    }
+
+    @Test
+    void shouldCommitNewFilesAsynchronouslyWhenConfigured() throws Exception {
+        // Given
+        tableProperties.set(BULK_IMPORT_FILES_COMMIT_ASYNC, "true");
+        BulkImportJob job = singleFileImportJob();
+        Instant validationTime = Instant.parse("2023-04-06T12:30:01Z");
+        Instant startTime = Instant.parse("2023-04-06T12:40:01Z");
+        Instant finishTime = Instant.parse("2023-04-06T12:41:01Z");
+        List<FileReference> outputFiles = List.of(
+                defaultFileOnRootPartitionWithRecords("file1.parquet", 100),
+                defaultFileOnRootPartitionWithRecords("file2.parquet", 200));
+
+        // When
+        runJob(job, "test-run", "test-task", validationTime, driver(
+                successfulWithOutput(outputFiles), startAndFinishTime(startTime, finishTime)));
+
+        // Then
+        IngestJob ingestJob = job.toIngestJob();
+        assertThat(allJobsReported())
+                .containsExactly(jobStatus(ingestJob, ProcessRun.builder()
+                        .taskId("test-task")
+                        .startedStatus(ingestAcceptedStatus(ingestJob, validationTime))
+                        .statusUpdate(validatedIngestStartedStatus(ingestJob, startTime))
+                        .finishedStatus(ingestFinishedStatusUncommitted(ingestJob,
+                                summary(startTime, finishTime, 300, 300), 2))
+                        .build()));
     }
 
     private void runJob(

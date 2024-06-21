@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.BulkImportJobSerDe;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessed;
@@ -51,6 +52,7 @@ import java.time.Instant;
 import java.util.function.Supplier;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
+import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_FILES_COMMIT_ASYNC;
 import static sleeper.ingest.job.status.IngestJobFailedEvent.ingestJobFailed;
 import static sleeper.ingest.job.status.IngestJobFinishedEvent.ingestJobFinished;
 import static sleeper.ingest.job.status.IngestJobStartedEvent.validatedIngestJobStarted;
@@ -99,6 +101,7 @@ public class BulkImportJobDriver {
     }
 
     public void run(BulkImportJob job, String jobRunId, String taskId) throws IOException {
+        TableProperties tableProperties = tablePropertiesProvider.getByName(job.getTableName());
         Instant startTime = getTime.get();
         LOGGER.info("Received bulk import job with id {} at time {}", job.getId(), startTime);
         LOGGER.info("Job is {}", job);
@@ -115,7 +118,7 @@ public class BulkImportJobDriver {
         }
 
         try {
-            stateStoreProvider.getStateStore(tablePropertiesProvider.getByName(job.getTableName()))
+            stateStoreProvider.getStateStore(tableProperties)
                     .addFiles(output.fileReferences());
             LOGGER.info("Added {} files to statestore for job {}", output.numFiles(), job.getId());
         } catch (RuntimeException | StateStoreException e) {
@@ -131,9 +134,13 @@ public class BulkImportJobDriver {
         long numRecords = output.numRecords();
         double rate = numRecords / (double) duration.getSeconds();
         LOGGER.info("Bulk import job {} took {} (rate of {} per second)", job.getId(), duration, rate);
-        statusStore.jobFinished(ingestJobFinished(job.toIngestJob(), new RecordsProcessedSummary(
-                new RecordsProcessed(numRecords, numRecords), startTime, finishTime))
-                .jobRunId(jobRunId).taskId(taskId).build());
+
+        statusStore.jobFinished(ingestJobFinished(job.toIngestJob(),
+                new RecordsProcessedSummary(new RecordsProcessed(numRecords, numRecords), startTime, finishTime))
+                .jobRunId(jobRunId).taskId(taskId)
+                .fileReferencesAddedByJob(output.fileReferences())
+                .committedBySeparateFileUpdates(tableProperties.getBoolean(BULK_IMPORT_FILES_COMMIT_ASYNC))
+                .build());
 
         // Calling this manually stops it potentially timing out after 10 seconds.
         // Note that we stop the Spark context after we've applied the changes in Sleeper.
