@@ -121,8 +121,9 @@ public class BulkImportJobDriver {
             throw e;
         }
 
+        boolean asyncCommit = tableProperties.getBoolean(BULK_IMPORT_FILES_COMMIT_ASYNC);
         try {
-            if (tableProperties.getBoolean(BULK_IMPORT_FILES_COMMIT_ASYNC)) {
+            if (asyncCommit) {
                 addFilesAsync.submit(IngestAddFilesCommitRequest.builder()
                         .ingestJob(job.toIngestJob())
                         .fileReferences(output.fileReferences())
@@ -153,7 +154,7 @@ public class BulkImportJobDriver {
                 new RecordsProcessedSummary(new RecordsProcessed(numRecords, numRecords), startTime, finishTime))
                 .jobRunId(jobRunId).taskId(taskId)
                 .fileReferencesAddedByJob(output.fileReferences())
-                .committedBySeparateFileUpdates(tableProperties.getBoolean(BULK_IMPORT_FILES_COMMIT_ASYNC))
+                .committedBySeparateFileUpdates(asyncCommit)
                 .build());
 
         // Calling this manually stops it potentially timing out after 10 seconds.
