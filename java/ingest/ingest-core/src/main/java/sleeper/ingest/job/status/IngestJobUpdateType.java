@@ -62,7 +62,7 @@ public enum IngestJobUpdateType {
      * @return     the status type
      */
     public IngestJobStatusType statusTypeAfterThisInRun(ProcessRun run) {
-        if (this == IngestJobUpdateType.FINISHED_WHEN_FILES_COMMITTED) {
+        if (this == FINISHED_WHEN_FILES_COMMITTED) {
             return haveAllFilesBeenAdded(run) ? IngestJobStatusType.FINISHED : IngestJobStatusType.UNCOMMITTED;
         } else {
             return jobStatusTypeAfterUpdate;
