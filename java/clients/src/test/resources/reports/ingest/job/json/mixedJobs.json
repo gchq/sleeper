@@ -10,7 +10,7 @@
           "taskId": "task2222-2222-2222-2222-222222222222",
           "updates": [
             {
-              "type": "IN_PROGRESS",
+              "type": "STARTED",
               "inputFileCount": 4,
               "startTime": "2022-09-22T13:34:12.001Z",
               "updateTime": "2022-09-22T13:34:12.123Z"
@@ -45,7 +45,7 @@
           "taskId": "task2222-2222-2222-2222-222222222222",
           "updates": [
             {
-              "type": "IN_PROGRESS",
+              "type": "STARTED",
               "inputFileCount": 3,
               "startTime": "2022-09-21T13:34:12.001Z",
               "updateTime": "2022-09-21T13:34:12.123Z"
@@ -61,7 +61,7 @@
           "taskId": "task1111-1111-1111-1111-111111111111",
           "updates": [
             {
-              "type": "IN_PROGRESS",
+              "type": "STARTED",
               "inputFileCount": 2,
               "startTime": "2022-09-19T13:34:12.001Z",
               "updateTime": "2022-09-19T13:34:12.123Z"
@@ -96,7 +96,7 @@
           "taskId": "task1111-1111-1111-1111-111111111111",
           "updates": [
             {
-              "type": "IN_PROGRESS",
+              "type": "STARTED",
               "inputFileCount": 1,
               "startTime": "2022-09-18T13:34:12.001Z",
               "updateTime": "2022-09-18T13:34:12.123Z"
