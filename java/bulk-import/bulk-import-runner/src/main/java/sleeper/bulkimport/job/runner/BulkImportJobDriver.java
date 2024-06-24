@@ -76,21 +76,21 @@ public class BulkImportJobDriver {
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
     private final IngestJobStatusStore statusStore;
-    private final Supplier<Instant> getTime;
     private final AddFilesAsynchronously addFilesAsync;
+    private final Supplier<Instant> getTime;
 
     public BulkImportJobDriver(SessionRunner sessionRunner,
             TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider,
             IngestJobStatusStore statusStore,
-            Supplier<Instant> getTime,
-            AddFilesAsynchronously addFilesAsync) {
+            AddFilesAsynchronously addFilesAsync,
+            Supplier<Instant> getTime) {
         this.sessionRunner = sessionRunner;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
         this.statusStore = statusStore;
-        this.getTime = getTime;
         this.addFilesAsync = addFilesAsync;
+        this.getTime = getTime;
     }
 
     public void run(BulkImportJob job, String jobRunId, String taskId) throws IOException {
@@ -198,7 +198,7 @@ public class BulkImportJobDriver {
             AddFilesAsynchronously addFilesAsync = submitFilesToCommitQueue(sqsClient, instanceProperties);
             BulkImportJobDriver driver = new BulkImportJobDriver(new BulkImportSparkSessionRunner(
                     runner, instanceProperties, tablePropertiesProvider, stateStoreProvider),
-                    tablePropertiesProvider, stateStoreProvider, statusStore, Instant::now, addFilesAsync);
+                    tablePropertiesProvider, stateStoreProvider, statusStore, addFilesAsync, Instant::now);
             driver.run(bulkImportJob, jobRunId, taskId);
         } finally {
             s3Client.shutdown();

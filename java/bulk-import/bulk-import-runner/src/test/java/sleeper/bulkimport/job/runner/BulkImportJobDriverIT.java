@@ -673,7 +673,7 @@ class BulkImportJobDriverIT {
         AddFilesAsynchronously addFilesAsync = BulkImportJobDriver.submitFilesToCommitQueue(sqsClient, instanceProperties);
         BulkImportJobDriver driver = new BulkImportJobDriver(new BulkImportSparkSessionRunner(
                 runner, instanceProperties, tablePropertiesProvider, stateStoreProvider),
-                tablePropertiesProvider, stateStoreProvider, statusStore, timeSupplier, addFilesAsync);
+                tablePropertiesProvider, stateStoreProvider, statusStore, addFilesAsync, timeSupplier);
         driver.run(job, jobRunId, taskId);
     }
 

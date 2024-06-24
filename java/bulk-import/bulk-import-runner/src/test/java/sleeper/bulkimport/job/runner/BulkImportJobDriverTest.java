@@ -241,7 +241,7 @@ class BulkImportJobDriverTest {
         return new BulkImportJobDriver(sessionRunner,
                 new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties, stateStore),
-                statusStore, timeSupplier, commitRequestQueue::add);
+                statusStore, commitRequestQueue::add, timeSupplier);
     }
 
     private BulkImportJobDriver.SessionRunner successfulWithOutput(List<FileReference> outputFiles) {
