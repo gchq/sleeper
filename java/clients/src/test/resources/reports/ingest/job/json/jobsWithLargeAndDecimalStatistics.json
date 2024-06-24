@@ -19,6 +19,7 @@
               "type": "FINISHED",
               "updateTime": "2022-10-13T14:04:13.123Z",
               "committedBySeparateFileUpdates": false,
+              "numFilesWrittenByJob": 4,
               "summary": {
                 "recordsProcessed": {
                   "recordsRead": 1234000,
@@ -54,6 +55,7 @@
               "type": "FINISHED",
               "updateTime": "2022-10-13T14:02:10.123Z",
               "committedBySeparateFileUpdates": false,
+              "numFilesWrittenByJob": 3,
               "summary": {
                 "recordsProcessed": {
                   "recordsRead": 1000600,
@@ -89,6 +91,7 @@
               "type": "FINISHED",
               "updateTime": "2022-10-13T14:01:10.123Z",
               "committedBySeparateFileUpdates": false,
+              "numFilesWrittenByJob": 2,
               "summary": {
                 "recordsProcessed": {
                   "recordsRead": 1000600,
@@ -124,6 +127,7 @@
               "type": "FINISHED",
               "updateTime": "2022-10-13T10:02:13.123Z",
               "committedBySeparateFileUpdates": false,
+              "numFilesWrittenByJob": 1,
               "summary": {
                 "recordsProcessed": {
                   "recordsRead": 600000,
