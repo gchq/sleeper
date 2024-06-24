@@ -29,6 +29,6 @@ JAR_DIR=${SCRIPTS_DIR}/jars
 VERSION=$(cat "${TEMPLATE_DIR}/version.txt")
 
 echo "-------------------------------------------------------"
-echo "Starting compaction tasks"
+echo "Running compaction tasks"
 echo "-------------------------------------------------------"
 java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" sleeper.task.common.RunCompactionTasks "$@"
