@@ -91,7 +91,7 @@ public class TransactionLogTransactionDeleterTest {
     }
 
     private void deleteOldFilesTransactions() {
-        new TransactionLogTransactionDeleter(filesLogStore, tableProperties)
-                .deleteWithLatestSnapshot(latestSnapshots.getFilesSnapshot().orElse(null));
+        new TransactionLogTransactionDeleter(tableProperties)
+                .deleteWithLatestSnapshot(filesLogStore, latestSnapshots.getFilesSnapshot().orElse(null));
     }
 }

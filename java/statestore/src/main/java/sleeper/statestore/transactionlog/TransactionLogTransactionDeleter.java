@@ -22,20 +22,19 @@ import sleeper.core.statestore.transactionlog.TransactionLogStore;
  * Given a state store, finds transactions that are old enough to be deleted and deletes them.
  */
 public class TransactionLogTransactionDeleter {
-    private final TransactionLogStore logStore;
     private final TableProperties tableProperties;
 
-    public TransactionLogTransactionDeleter(TransactionLogStore logStore, TableProperties tableProperties) {
-        this.logStore = logStore;
+    public TransactionLogTransactionDeleter(TableProperties tableProperties) {
         this.tableProperties = tableProperties;
     }
 
     /**
      * Finds transactions that are old enough to be deleted and deletes them.
      *
+     * @param logStore       the transaction log store
      * @param latestSnapshot the latest snapshot metadata, or null if there is no snapshot
      */
-    public void deleteWithLatestSnapshot(TransactionLogSnapshotMetadata latestSnapshot) {
+    public void deleteWithLatestSnapshot(TransactionLogStore logStore, TransactionLogSnapshotMetadata latestSnapshot) {
     }
 
 }
