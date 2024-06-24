@@ -55,7 +55,8 @@ public class WaitForJobsStatusTest {
         store.jobValidated(ingestJobAccepted(finishedJob, Instant.parse("2022-09-22T13:33:12Z")).jobRunId("finished-run").build());
         store.jobStarted(validatedIngestJobStarted(startedJob, Instant.parse("2022-09-22T13:33:31Z")).jobRunId("started-run").taskId("started-task").build());
         store.jobStarted(validatedIngestJobStarted(finishedJob, Instant.parse("2022-09-22T13:33:32Z")).jobRunId("finished-run").taskId("finished-task").build());
-        store.jobFinished(ingestJobFinished(finishedJob, summary(Instant.parse("2022-09-22T13:33:32Z"), Duration.ofMinutes(2), 100L, 100L)).jobRunId("finished-run").taskId("finished-task").build());
+        store.jobFinished(ingestJobFinished(finishedJob, summary(Instant.parse("2022-09-22T13:33:32Z"), Duration.ofMinutes(2), 100L, 100L))
+                .jobRunId("finished-run").taskId("finished-task").numFilesWrittenByJob(2).build());
 
         // When
         WaitForJobsStatus status = WaitForJobsStatus.forIngest(store,
