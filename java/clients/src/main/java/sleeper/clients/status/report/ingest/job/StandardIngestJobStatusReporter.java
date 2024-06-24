@@ -29,6 +29,7 @@ import sleeper.clients.util.table.TableWriter;
 import sleeper.clients.util.table.TableWriterFactory;
 import sleeper.core.record.process.AverageRecordRate;
 import sleeper.core.record.process.status.ProcessRun;
+import sleeper.ingest.job.status.IngestJobFilesWrittenAndAdded;
 import sleeper.ingest.job.status.IngestJobRejectedStatus;
 import sleeper.ingest.job.status.IngestJobStatus;
 import sleeper.ingest.job.status.IngestJobStatusType;
@@ -46,6 +47,7 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
     private final TableField stateField;
     private final TableField jobIdField;
     private final TableField inputFilesCount;
+    private final TableField addedFilesCount;
     private final TableWriterFactory tableFactory;
     private final StandardProcessRunReporter runReporter;
 
@@ -61,6 +63,7 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
         stateField = tableFactoryBuilder.addField("STATE");
         jobIdField = tableFactoryBuilder.addField("JOB_ID");
         inputFilesCount = tableFactoryBuilder.addNumericField("INPUT_FILES");
+        addedFilesCount = tableFactoryBuilder.addNumericField("ADDED_FILES");
         runReporter = new StandardProcessRunReporter(out, tableFactoryBuilder);
         tableFactory = tableFactoryBuilder.build();
     }
@@ -77,6 +80,7 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
             tableFactory.tableBuilder()
                     .showFields(query != JobQuery.Type.UNFINISHED && query != JobQuery.Type.REJECTED,
                             runReporter.getFinishedFields())
+                    .showField(query != JobQuery.Type.REJECTED, addedFilesCount)
                     .itemsAndSplittingWriter(statusList, this::writeJob)
                     .build().write(out);
         }
@@ -200,6 +204,7 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
         job.getJobRuns().forEach(run -> table.row(row -> {
             writeJobFields(job, row);
             row.value(stateField, IngestJobStatusType.statusTypeOfJobRun(run));
+            row.value(addedFilesCount, IngestJobFilesWrittenAndAdded.from(run).getFilesAddedToStateStore());
             runReporter.writeRunFields(run, row);
         }));
     }
