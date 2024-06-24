@@ -21,11 +21,12 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 import sleeper.ingest.IngestResult;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.IngestJobHandler;
 import sleeper.ingest.job.status.InMemoryIngestJobStatusStore;
-import sleeper.ingest.job.status.IngestJobStatusStore;
+import sleeper.ingest.job.status.IngestJobUpdateType;
 import sleeper.ingest.task.IngestTask.MessageHandle;
 import sleeper.ingest.task.IngestTask.MessageReceiver;
 
@@ -41,11 +42,15 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static sleeper.ingest.IngestResultTestData.defaultFileIngestResult;
 import static sleeper.ingest.IngestResultTestData.defaultFileIngestResultReadAndWritten;
 import static sleeper.ingest.job.IngestJobTestData.DEFAULT_TABLE_ID;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.failedIngestJob;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.finishedIngestJob;
+import static sleeper.ingest.job.status.IngestJobUpdateType.FAILED;
+import static sleeper.ingest.job.status.IngestJobUpdateType.FINISHED;
+import static sleeper.ingest.job.status.IngestJobUpdateType.STARTED;
 import static sleeper.ingest.task.IngestTaskStatusTestData.finishedMultipleJobs;
 import static sleeper.ingest.task.IngestTaskStatusTestData.finishedNoJobs;
 import static sleeper.ingest.task.IngestTaskStatusTestData.finishedOneJob;
@@ -56,8 +61,10 @@ public class IngestTaskTest {
     private final Queue<IngestJob> jobsOnQueue = new LinkedList<>();
     private final List<IngestJob> successfulJobs = new ArrayList<>();
     private final List<IngestJob> failedJobs = new ArrayList<>();
-    private final IngestJobStatusStore jobStore = new InMemoryIngestJobStatusStore();
+    private final InMemoryIngestJobStatusStore jobStore = new InMemoryIngestJobStatusStore();
     private final IngestTaskStatusStore taskStore = new InMemoryIngestTaskStatusStore();
+    private Supplier<Instant> timeSupplier = Instant::now;
+    private Supplier<String> jobRunIdSupplier = () -> UUID.randomUUID().toString();
 
     @Nested
     @DisplayName("Process jobs")
@@ -131,18 +138,17 @@ public class IngestTaskTest {
         @Test
         void shouldSaveTaskAndJobWhenOneJobSucceeds() throws Exception {
             // Given
-            Queue<Instant> times = new LinkedList<>(List.of(
+            fixTimes(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:01Z"), // Job start
                     Instant.parse("2024-02-22T13:50:02Z"), // Job finish
-                    Instant.parse("2024-02-22T13:50:05Z"))); // Finish
+                    Instant.parse("2024-02-22T13:50:05Z")); // Finish
             IngestJob job = createJobOnQueue("job1");
 
             // When
             IngestResult jobResult = recordsReadAndWritten(10L, 10L);
             runTask("test-task-1", processJobs(
-                    jobSucceeds(jobResult)),
-                    times::poll);
+                    jobSucceeds(jobResult)));
 
             // Then
             assertThat(taskStore.getAllTasks()).containsExactly(
@@ -158,18 +164,17 @@ public class IngestTaskTest {
         @Test
         void shouldSaveTaskAndJobWhenOneJobSucceedsWithDifferentReadAndWrittenCounts() throws Exception {
             // Given
-            Queue<Instant> times = new LinkedList<>(List.of(
+            fixTimes(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:01Z"), // Job start
                     Instant.parse("2024-02-22T13:50:02Z"), // Job finish
-                    Instant.parse("2024-02-22T13:50:05Z"))); // Finish
+                    Instant.parse("2024-02-22T13:50:05Z")); // Finish
             IngestJob job = createJobOnQueue("job1");
 
             // When
             IngestResult jobResult = recordsReadAndWritten(10L, 5L);
             runTask("test-task-1", processJobs(
-                    jobSucceeds(jobResult)),
-                    times::poll);
+                    jobSucceeds(jobResult)));
 
             // Then
             assertThat(taskStore.getAllTasks()).containsExactly(
@@ -185,13 +190,13 @@ public class IngestTaskTest {
         @Test
         void shouldSaveTaskAndJobWhenMultipleJobsSucceed() throws Exception {
             // Given
-            Queue<Instant> times = new LinkedList<>(List.of(
+            fixTimes(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:01Z"), // Job 1 start
                     Instant.parse("2024-02-22T13:50:02Z"), // Job 1 finish
                     Instant.parse("2024-02-22T13:50:03Z"), // Job 2 start
                     Instant.parse("2024-02-22T13:50:04Z"), // Job 2 finish
-                    Instant.parse("2024-02-22T13:50:05Z"))); // Finish
+                    Instant.parse("2024-02-22T13:50:05Z")); // Finish
             IngestJob job1 = createJobOnQueue("job1");
             IngestJob job2 = createJobOnQueue("job2");
 
@@ -200,8 +205,7 @@ public class IngestTaskTest {
             IngestResult job2Result = recordsReadAndWritten(5L, 5L);
             runTask("test-task-1", processJobs(
                     jobSucceeds(job1Result),
-                    jobSucceeds(job2Result)),
-                    times::poll);
+                    jobSucceeds(job2Result)));
 
             // Then
             assertThat(taskStore.getAllTasks()).containsExactly(
@@ -226,18 +230,18 @@ public class IngestTaskTest {
         @Test
         void shouldSaveTaskWhenOnlyJobFails() throws Exception {
             // Given
-            Queue<Instant> times = new LinkedList<>(List.of(
+            fixTimes(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:01Z"), // Job start
                     Instant.parse("2024-02-22T13:50:05Z"), // Job failed
-                    Instant.parse("2024-02-22T13:50:06Z"))); // Task finish
+                    Instant.parse("2024-02-22T13:50:06Z")); // Task finish
             IngestJob job = createJobOnQueue("job1");
             RuntimeException root = new RuntimeException("Root cause details");
             RuntimeException cause = new RuntimeException("Failure cause details", root);
             RuntimeException failure = new RuntimeException("Something went wrong", cause);
 
             // When
-            runTask("test-task-1", processJobs(jobFails(failure)), times::poll);
+            runTask("test-task-1", processJobs(jobFails(failure)));
 
             // Then
             assertThat(taskStore.getAllTasks()).containsExactly(
@@ -255,13 +259,14 @@ public class IngestTaskTest {
         @Test
         void shouldSaveTaskAndJobWhenSecondJobFails() throws Exception {
             // Given
-            Queue<Instant> times = new LinkedList<>(List.of(
+
+            fixTimes(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:01Z"), // Job 1 start
                     Instant.parse("2024-02-22T13:50:02Z"), // Job 1 finish
                     Instant.parse("2024-02-22T13:50:03Z"), // Job 2 start
                     Instant.parse("2024-02-22T13:50:05Z"), // Job 2 failed
-                    Instant.parse("2024-02-22T13:50:06Z"))); // Task finish
+                    Instant.parse("2024-02-22T13:50:06Z")); // Task finish
             IngestJob job1 = createJobOnQueue("job1");
             IngestJob job2 = createJobOnQueue("job2");
             RuntimeException failure = new RuntimeException("Something went wrong");
@@ -270,8 +275,7 @@ public class IngestTaskTest {
             IngestResult job1Result = recordsReadAndWritten(10L, 10L);
             runTask("test-task-1", processJobs(
                     jobSucceeds(job1Result),
-                    jobFails(failure)),
-                    times::poll);
+                    jobFails(failure)));
 
             // Then
             assertThat(taskStore.getAllTasks()).containsExactly(
@@ -292,12 +296,12 @@ public class IngestTaskTest {
         @Test
         void shouldSaveTaskWhenNoJobsFound() throws Exception {
             // Given
-            Queue<Instant> times = new LinkedList<>(List.of(
+            fixTimes(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
-                    Instant.parse("2024-02-22T13:50:05Z"))); // Finish
+                    Instant.parse("2024-02-22T13:50:05Z")); // Finish
 
             // When
-            runTask("test-task-1", processNoJobs(), times::poll);
+            runTask("test-task-1", processNoJobs());
 
             // Then
             assertThat(taskStore.getAllTasks()).containsExactly(
@@ -310,18 +314,17 @@ public class IngestTaskTest {
         @Test
         void shouldSaveTaskWhenJobWithNoFilesSucceeds() throws Exception {
             // Given
-            Queue<Instant> times = new LinkedList<>(List.of(
+            fixTimes(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:01Z"), // Job start
                     Instant.parse("2024-02-22T13:50:02Z"), // Job finish
-                    Instant.parse("2024-02-22T13:50:05Z"))); // Finish
+                    Instant.parse("2024-02-22T13:50:05Z")); // Finish
             IngestJob job = createJobOnQueueNoFiles("job1");
 
             // When
             IngestResult jobResult = IngestResult.noFiles();
             runTask("test-task-1", processJobs(
-                    jobSucceeds(jobResult)),
-                    times::poll);
+                    jobSucceeds(jobResult)));
 
             // Then
             assertThat(taskStore.getAllTasks()).containsExactly(
@@ -333,27 +336,75 @@ public class IngestTaskTest {
                             Instant.parse("2024-02-22T13:50:01Z"),
                             Instant.parse("2024-02-22T13:50:02Z"))));
         }
+
+        @Test
+        void shouldSetJobRunIdOnStatusStoreRecordsWhenFinished() throws Exception {
+            // Given
+            fixTimes(
+                    Instant.parse("2024-02-22T13:50:00Z"), // Start
+                    Instant.parse("2024-02-22T13:50:01Z"), // Job start
+                    Instant.parse("2024-02-22T13:50:02Z"), // Job finish
+                    Instant.parse("2024-02-22T13:50:05Z")); // Finish
+            fixJobRunIds("test-job-run");
+            createJobOnQueue("test-job");
+
+            // When
+            runTask("test-task", processJobs(
+                    jobSucceeds(recordsReadAndWritten(10L, 10L))));
+
+            // Then
+            assertThat(jobStore.streamTableRecords(DEFAULT_TABLE_ID))
+                    .extracting(
+                            ProcessStatusUpdateRecord::getJobRunId,
+                            record -> IngestJobUpdateType.typeOfUpdate(record.getStatusUpdate()))
+                    .containsExactly(
+                            tuple("test-job-run", STARTED),
+                            tuple("test-job-run", FINISHED));
+        }
+
+        @Test
+        void shouldSetJobRunIdOnStatusStoreRecordsWhenFailed() throws Exception {
+            // Given
+            fixTimes(
+                    Instant.parse("2024-02-22T13:50:00Z"), // Start
+                    Instant.parse("2024-02-22T13:50:01Z"), // Job start
+                    Instant.parse("2024-02-22T13:50:02Z"), // Job finish
+                    Instant.parse("2024-02-22T13:50:05Z")); // Finish
+            fixJobRunIds("test-job-run");
+            createJobOnQueue("test-job");
+            RuntimeException failure = new RuntimeException("Something went wrong");
+
+            // When
+            runTask("test-task", processJobs(jobFails(failure)));
+
+            // Then
+            assertThat(jobStore.streamTableRecords(DEFAULT_TABLE_ID))
+                    .extracting(
+                            ProcessStatusUpdateRecord::getJobRunId,
+                            record -> IngestJobUpdateType.typeOfUpdate(record.getStatusUpdate()))
+                    .containsExactly(
+                            tuple("test-job-run", STARTED),
+                            tuple("test-job-run", FAILED));
+        }
     }
 
     private void runTask(IngestJobHandler ingestRunner) throws Exception {
-        runTask(ingestRunner, Instant::now);
-    }
-
-    private void runTask(IngestJobHandler ingestRunner, Supplier<Instant> timeSupplier) throws Exception {
-        runTask(pollQueue(), ingestRunner, timeSupplier, DEFAULT_TASK_ID);
-    }
-
-    private void runTask(String taskId, IngestJobHandler ingestRunner, Supplier<Instant> timeSupplier) throws Exception {
-        runTask(pollQueue(), ingestRunner, timeSupplier, taskId);
+        runTask(DEFAULT_TASK_ID, ingestRunner);
     }
 
     private void runTask(
-            MessageReceiver messageReceiver,
-            IngestJobHandler ingestRunner,
-            Supplier<Instant> timeSupplier,
-            String taskId) throws Exception {
-        new IngestTask(timeSupplier, messageReceiver, ingestRunner, jobStore, taskStore, taskId)
+            String taskId,
+            IngestJobHandler ingestRunner) throws Exception {
+        new IngestTask(jobRunIdSupplier, timeSupplier, pollQueue(), ingestRunner, jobStore, taskStore, taskId)
                 .run();
+    }
+
+    private void fixTimes(Instant... times) {
+        timeSupplier = new LinkedList<>(List.of(times))::poll;
+    }
+
+    private void fixJobRunIds(String... jobRunIds) {
+        jobRunIdSupplier = new LinkedList<>(List.of(jobRunIds))::poll;
     }
 
     private MessageReceiver pollQueue() {
