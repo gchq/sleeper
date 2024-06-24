@@ -141,9 +141,15 @@ public interface DefaultProperty {
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.DEFAULT)
             .build();
-    UserDefinedInstanceProperty DEFAULT_TRANSACTION_LOG_MIN_BEHIND_TO_DELETE = Index.propertyBuilder("sleeper.default.metadata.transactionlog.delete.min.behind.latest.snapshot")
+    UserDefinedInstanceProperty DEFAULT_TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE = Index.propertyBuilder("sleeper.default.metadata.transactionlog.delete.number.behind.latest.snapshot")
             .description("The minimum number of transactions that a transaction must be behind the latest snapshot before being deleted.")
             .defaultValue("200")
+            .validationPredicate(Utils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.DEFAULT)
+            .build();
+    UserDefinedInstanceProperty DEFAULT_TRANSACTION_LOG_MINUTES_BEHIND_TO_DELETE = Index.propertyBuilder("sleeper.default.metadata.transactionlog.delete.mins.behind.latest.snapshot")
+            .description("The minimum number of minutes that a transaction must exist for before the latest snapshot in order to be deleted.")
+            .defaultValue("60")
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.DEFAULT)
             .build();

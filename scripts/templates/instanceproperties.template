@@ -1124,6 +1124,14 @@ sleeper.default.table.dynamo.strongly.consistent.reads=false
 # The number of days that transaction log snapshots remain in the snapshot store before being deleted.
 sleeper.default.metadata.transactionlog.snapshot.expiry.days=2
 
+# The minimum number of transactions that a transaction must be behind the latest snapshot before
+# being deleted.
+sleeper.default.metadata.transactionlog.delete.number.behind.latest.snapshot=200
+
+# The minimum number of minutes that a transaction must exist for before the latest snapshot in order
+# to be deleted.
+sleeper.default.metadata.transactionlog.delete.mins.behind.latest.snapshot=60
+
 # Specifies the minimum number of leaf partitions that are needed to run a bulk import job. If this
 # minimum has not been reached, bulk import jobs will refuse to start.
 sleeper.default.bulk.import.min.leaf.partitions=64

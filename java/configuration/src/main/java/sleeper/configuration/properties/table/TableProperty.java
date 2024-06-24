@@ -62,7 +62,8 @@ import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_STATISTICS_TRUNCATE_LENGTH;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_TIME_BETWEEN_SNAPSHOT_CHECKS_SECS;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_TIME_BETWEEN_TRANSACTION_CHECKS_MS;
-import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_TRANSACTION_LOG_MIN_BEHIND_TO_DELETE;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_TRANSACTION_LOG_MINUTES_BEHIND_TO_DELETE;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS;
 import static sleeper.configuration.properties.instance.GarbageCollectionProperty.DEFAULT_GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_ARM_INSTANCE_TYPES;
@@ -304,9 +305,14 @@ public interface TableProperty extends SleeperProperty {
             .description("The number of days that transaction log snapshots remain in the snapshot store before being deleted.")
             .propertyGroup(TablePropertyGroup.METADATA)
             .build();
-    TableProperty TRANSACTION_LOG_MIN_BEHIND_TO_DELETE = Index.propertyBuilder("sleeper.table.metadata.transactionlog.delete.min.behind.latest.snapshot")
-            .defaultProperty(DEFAULT_TRANSACTION_LOG_MIN_BEHIND_TO_DELETE)
+    TableProperty TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE = Index.propertyBuilder("sleeper.table.metadata.transactionlog.delete.number.behind.latest.snapshot")
+            .defaultProperty(DEFAULT_TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE)
             .description("The minimum number of transactions that a transaction must be behind the latest snapshot before being deleted.")
+            .propertyGroup(TablePropertyGroup.METADATA)
+            .build();
+    TableProperty TRANSACTION_LOG_MINUTES_BEHIND_TO_DELETE = Index.propertyBuilder("sleeper.table.metadata.transactionlog.delete.mins.behind.latest.snapshot")
+            .defaultProperty(DEFAULT_TRANSACTION_LOG_MINUTES_BEHIND_TO_DELETE)
+            .description("The minimum number of minutes that a transaction must exist for before the latest snapshot in order to be deleted.")
             .propertyGroup(TablePropertyGroup.METADATA)
             .build();
     TableProperty BULK_IMPORT_EMR_INSTANCE_ARCHITECTURE = Index.propertyBuilder("sleeper.table.bulk.import.emr.instance.architecture")

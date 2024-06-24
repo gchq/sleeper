@@ -38,7 +38,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.configuration.properties.table.TableProperty.TRANSACTION_LOG_MIN_BEHIND_TO_DELETE;
+import static sleeper.configuration.properties.table.TableProperty.TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
 
@@ -73,7 +73,7 @@ public class TransactionLogTransactionDeleterTest {
         // And we have a snapshot at the head of the file log
         setOnlyFilesSnapshotAtNumber(2);
         // And we configure to delete any transactions more than one before the latest snapshot
-        tableProperties.setNumber(TRANSACTION_LOG_MIN_BEHIND_TO_DELETE, 1);
+        tableProperties.setNumber(TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE, 1);
 
         // When we delete old transactions
         deleteOldFilesTransactions();
