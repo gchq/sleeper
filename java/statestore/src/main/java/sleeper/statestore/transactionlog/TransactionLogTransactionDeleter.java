@@ -21,18 +21,35 @@ import sleeper.core.statestore.transactionlog.TransactionLogStore;
  * Given a state store, finds transactions that are old enough to be deleted and deletes them.
  */
 public class TransactionLogTransactionDeleter {
-    private final TransactionLogStore logStore;
-    private final DynamoDBTransactionLogSnapshotMetadataStore metadataStore;
+    private final TransactionLogStore filesLogStore;
+    private final TransactionLogStore partitionsLogStore;
+    private final GetLatestSnapshots getLatestSnapshots;
 
-    public TransactionLogTransactionDeleter(TransactionLogStore logStore, DynamoDBTransactionLogSnapshotMetadataStore metadataStore) {
-        this.logStore = logStore;
-        this.metadataStore = metadataStore;
+    public TransactionLogTransactionDeleter(
+            TransactionLogStore filesLogStore, TransactionLogStore partitionsLogStore,
+            GetLatestSnapshots getLatestSnapshots) {
+        this.filesLogStore = filesLogStore;
+        this.partitionsLogStore = partitionsLogStore;
+        this.getLatestSnapshots = getLatestSnapshots;
     }
 
     /**
      * Finds transactions that are old enough to be deleted and deletes them.
      */
     public void delete() {
+    }
+
+    /**
+     * Retrieves metadata of the latest snapshots.
+     */
+    @FunctionalInterface
+    public interface GetLatestSnapshots {
+        /**
+         * Retrieves the latest snapshots metadata.
+         *
+         * @return the metadata
+         */
+        LatestSnapshots getLatestSnapshots();
     }
 
 }

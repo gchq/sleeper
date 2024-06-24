@@ -26,7 +26,6 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.statestore.transactionlog.TransactionLogSnapshot;
-import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotMetadataStore.LatestSnapshots;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;

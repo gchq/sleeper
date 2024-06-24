@@ -141,6 +141,12 @@ public interface DefaultProperty {
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.DEFAULT)
             .build();
+    UserDefinedInstanceProperty DEFAULT_TRANSACTION_LOG_MIN_BEHIND_TO_DELETE = Index.propertyBuilder("sleeper.default.metadata.transactionlog.delete.min.behind.latest.snapshot")
+            .description("The minimum number of transactions that a transaction must be behind the latest snapshot before being deleted.")
+            .defaultValue("200")
+            .validationPredicate(Utils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.DEFAULT)
+            .build();
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT = Index.propertyBuilder("sleeper.default.bulk.import.min.leaf.partitions")
             .description("Specifies the minimum number of leaf partitions that are needed to run a bulk import job. " +
                     "If this minimum has not been reached, bulk import jobs will refuse to start.")
