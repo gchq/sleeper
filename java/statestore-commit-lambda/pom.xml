@@ -39,7 +39,12 @@
         <!-- Sleeper dependencies -->
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>core</artifactId>
+            <artifactId>configuration</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>statestore-commit</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
@@ -49,17 +54,12 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>compaction-core</artifactId>
+            <artifactId>ingest-status-store</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
             <artifactId>statestore</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
-            <artifactId>configuration</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
     </dependencies>

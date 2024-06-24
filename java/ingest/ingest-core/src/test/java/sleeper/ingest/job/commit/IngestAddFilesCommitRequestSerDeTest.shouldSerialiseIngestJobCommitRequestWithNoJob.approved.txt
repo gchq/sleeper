@@ -1,0 +1,22 @@
+{
+  "type": "INGEST_ADD_FILES",
+  "request": {
+    "tableId": "test-table",
+    "fileReferences": [
+      {
+        "filename": "file1.parquet",
+        "partitionId": "root",
+        "numberOfRecords": 100,
+        "countApproximate": false,
+        "onlyContainsDataForThisPartition": true
+      },
+      {
+        "filename": "file2.parquet",
+        "partitionId": "root",
+        "numberOfRecords": 200,
+        "countApproximate": false,
+        "onlyContainsDataForThisPartition": true
+      }
+    ]
+  }
+}

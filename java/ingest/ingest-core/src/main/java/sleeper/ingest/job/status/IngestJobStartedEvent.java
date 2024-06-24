@@ -67,6 +67,23 @@ public class IngestJobStartedEvent {
     }
 
     /**
+     * Creates an instance of this class. This constructor is specifically for ingest jobs and creates an event that
+     * marks the start of a job run. This is not used for bulk import jobs, as they have a validation event before
+     * this, and this validation event marks the start of a job run. Bulk import jobs should use the
+     * {@link IngestJobStartedEvent#validatedIngestJobStarted} constructor.
+     *
+     * @param  job       the ingest job
+     * @param  startTime the start time
+     * @return           an instance of this class
+     */
+    public static Builder ingestJobStarted(IngestJob job, Instant startTime) {
+        return builder()
+                .job(job)
+                .startTime(startTime)
+                .startOfRun(true);
+    }
+
+    /**
      * Creates a builder for this class. This constructor is specifically for bulk import jobs and creates an event
      * that indicates the job has been picked up in the Spark cluster by the driver.
      * <p>

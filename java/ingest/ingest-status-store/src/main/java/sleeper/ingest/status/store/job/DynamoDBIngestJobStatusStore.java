@@ -31,8 +31,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.util.LoggedDuration;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 import sleeper.ingest.IngestStatusStoreException;
+import sleeper.ingest.job.status.IngestJobAddedFilesEvent;
 import sleeper.ingest.job.status.IngestJobFailedEvent;
 import sleeper.ingest.job.status.IngestJobFinishedEvent;
 import sleeper.ingest.job.status.IngestJobStartedEvent;
@@ -60,6 +62,7 @@ import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusFormat.UPDA
 import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusFormat.UPDATE_TYPE;
 import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusFormat.VALIDATION_REJECTED_VALUE;
 import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusFormat.VALIDATION_RESULT;
+import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusFormat.createJobAddedFilesUpdate;
 import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusFormat.createJobFailedUpdate;
 import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusFormat.createJobFinishedUpdate;
 import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusFormat.createJobStartedUpdate;
@@ -118,6 +121,15 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
     }
 
     @Override
+    public void jobAddedFiles(IngestJobAddedFilesEvent event) {
+        try {
+            save(createJobAddedFilesUpdate(event, jobUpdateBuilder(event.getTableId(), event.getJobId())));
+        } catch (RuntimeException e) {
+            throw new IngestStatusStoreException("Failed saving added files event for job " + event.getJobId(), e);
+        }
+    }
+
+    @Override
     public void jobFinished(IngestJobFinishedEvent event) {
         try {
             save(createJobFinishedUpdate(event, jobUpdateBuilder(event.getTableId(), event.getJobId())));
@@ -136,6 +148,7 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
     }
 
     private void save(Map<String, AttributeValue> update) {
+        Instant startTime = Instant.now();
         String updateExpression = "SET " +
                 "#Table = :table, " +
                 "#FirstUpdate = if_not_exists(#FirstUpdate, :update_time), " +
@@ -175,8 +188,9 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
                                 .withExpressionAttributeValues(expressionAttributeValues))));
         List<ConsumedCapacity> consumedCapacity = result.getConsumedCapacity();
         double totalCapacity = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
-        LOGGER.debug("Added {} for job {}, capacity consumed = {}",
-                getStringAttribute(update, UPDATE_TYPE), getStringAttribute(update, JOB_ID), totalCapacity);
+        LOGGER.debug("Added {} for job {}, capacity consumed = {}, took {}",
+                getStringAttribute(update, UPDATE_TYPE), getStringAttribute(update, JOB_ID),
+                totalCapacity, LoggedDuration.withFullOutput(startTime, Instant.now()));
     }
 
     private DynamoDBRecordBuilder jobUpdateBuilder(String tableId, String jobId) {

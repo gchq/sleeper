@@ -36,7 +36,7 @@ public class ValidateProjectChunks {
         ProjectChunks chunks = project.loadChunks();
         try {
             chunks.validate(project, System.err);
-        } catch (IllegalStateException e) {
+        } catch (ProjectChunksValidationException e) {
             System.exit(1);
         }
     }

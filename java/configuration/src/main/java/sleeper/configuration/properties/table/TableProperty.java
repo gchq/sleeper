@@ -52,6 +52,7 @@ import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_BATCHER_MIN_JOB_FILES;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_BATCHER_MIN_JOB_SIZE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_BATCHER_TRACKING_TTL_MINUTES;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_FILES_COMMIT_ASYNC;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_FILE_WRITING_STRATEGY;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_RECORD_BATCH_TYPE;
@@ -227,7 +228,7 @@ public interface TableProperty extends SleeperProperty {
             .build();
     TableProperty COMPACTION_JOB_COMMIT_ASYNC = Index.propertyBuilder("sleeper.table.compaction.job.commit.async")
             .defaultProperty(DEFAULT_COMPACTION_JOB_COMMIT_ASYNC)
-            .description("If true, compaction job commit requests will be sent to the compaction job committer lambda " +
+            .description("If true, compaction job commit requests will be sent to the state store committer lambda " +
                     "to be performed asynchronously. If false, compaction jobs will be committed synchronously by compaction tasks.")
             .propertyGroup(TablePropertyGroup.COMPACTION)
             .build();
@@ -460,6 +461,11 @@ public interface TableProperty extends SleeperProperty {
                     "copies the completed Parquet file asynchronously into S3).\n" +
                     "The direct method is simpler but the async method should provide better performance when the number of partitions " +
                     "is large.")
+            .propertyGroup(TablePropertyGroup.INGEST).build();
+    TableProperty INGEST_FILES_COMMIT_ASYNC = Index.propertyBuilder("sleeper.table.ingest.job.files.commit.async")
+            .defaultProperty(DEFAULT_INGEST_FILES_COMMIT_ASYNC)
+            .description("If true, ingest tasks will add files via requests sent to the state store committer lambda " +
+                    "asynchronously. If false, ingest tasks will commit new files synchronously.")
             .propertyGroup(TablePropertyGroup.INGEST).build();
 
     static List<TableProperty> getAll() {

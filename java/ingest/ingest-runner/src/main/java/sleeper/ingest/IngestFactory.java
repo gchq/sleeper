@@ -85,14 +85,17 @@ public class IngestFactory {
         return new IngestRecords(createIngestCoordinator(tableProperties));
     }
 
-    public IngestCoordinator<Record> createIngestCoordinator(TableProperties tableProperties) {
+    public IngestCoordinator.Builder<Record> ingestCoordinatorBuilder(TableProperties tableProperties) {
         ParquetConfiguration parquetConfiguration = ParquetConfiguration.from(tableProperties, hadoopConfiguration);
         return IngestCoordinator.builderWith(instanceProperties, tableProperties)
                 .objectFactory(objectFactory)
                 .stateStore(stateStoreProvider.getStateStore(tableProperties))
                 .recordBatchFactory(standardRecordBatchFactory(tableProperties, parquetConfiguration))
-                .partitionFileWriterFactory(standardPartitionFileWriterFactory(tableProperties, parquetConfiguration))
-                .build();
+                .partitionFileWriterFactory(standardPartitionFileWriterFactory(tableProperties, parquetConfiguration));
+    }
+
+    public IngestCoordinator<Record> createIngestCoordinator(TableProperties tableProperties) {
+        return ingestCoordinatorBuilder(tableProperties).build();
     }
 
     private RecordBatchFactory<Record> standardRecordBatchFactory(

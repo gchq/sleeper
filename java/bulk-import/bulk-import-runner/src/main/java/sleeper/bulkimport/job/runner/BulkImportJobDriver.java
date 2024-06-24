@@ -32,9 +32,11 @@ import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.BulkImportJobSerDe;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
@@ -49,6 +51,7 @@ import java.time.Instant;
 import java.util.function.Supplier;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
+import static sleeper.ingest.job.status.IngestJobFailedEvent.ingestJobFailed;
 import static sleeper.ingest.job.status.IngestJobFinishedEvent.ingestJobFinished;
 import static sleeper.ingest.job.status.IngestJobStartedEvent.validatedIngestJobStarted;
 
@@ -106,9 +109,8 @@ public class BulkImportJobDriver {
         try {
             output = sessionRunner.run(job);
         } catch (RuntimeException e) {
-            statusStore.jobFinished(ingestJobFinished(job.toIngestJob(), new RecordsProcessedSummary(
-                    new RecordsProcessed(0, 0), startTime, getTime.get()))
-                    .jobRunId(jobRunId).taskId(taskId).build());
+            statusStore.jobFailed(ingestJobFailed(job.toIngestJob(), new ProcessRunTime(startTime, getTime.get()))
+                    .jobRunId(jobRunId).taskId(taskId).failure(e).build());
             throw e;
         }
 
@@ -116,10 +118,9 @@ public class BulkImportJobDriver {
             stateStoreProvider.getStateStore(tablePropertiesProvider.getByName(job.getTableName()))
                     .addFiles(output.fileReferences());
             LOGGER.info("Added {} files to statestore for job {}", output.numFiles(), job.getId());
-        } catch (Exception e) {
-            statusStore.jobFinished(ingestJobFinished(job.toIngestJob(), new RecordsProcessedSummary(
-                    new RecordsProcessed(0, 0), startTime, getTime.get()))
-                    .jobRunId(jobRunId).taskId(taskId).build());
+        } catch (RuntimeException | StateStoreException e) {
+            statusStore.jobFailed(ingestJobFailed(job.toIngestJob(), new ProcessRunTime(startTime, getTime.get()))
+                    .jobRunId(jobRunId).taskId(taskId).failure(e).build());
             throw new RuntimeException("Failed to add files to state store. Ensure this service account has write access. Files may need to "
                     + "be re-imported for clients to access data", e);
         }

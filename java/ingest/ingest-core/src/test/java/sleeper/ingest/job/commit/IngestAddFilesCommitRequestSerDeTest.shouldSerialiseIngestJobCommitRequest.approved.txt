@@ -1,0 +1,34 @@
+{
+  "type": "INGEST_ADD_FILES",
+  "request": {
+    "ingestJob": {
+      "id": "test-job-id",
+      "tableName": "test-table-name",
+      "tableId": "test-table-id",
+      "files": [
+        "file1.parquet",
+        "file2.parquet"
+      ]
+    },
+    "tableId": "test-table-id",
+    "taskId": "test-task",
+    "jobRunId": "test-job-run",
+    "fileReferences": [
+      {
+        "filename": "file1.parquet",
+        "partitionId": "root",
+        "numberOfRecords": 100,
+        "countApproximate": false,
+        "onlyContainsDataForThisPartition": true
+      },
+      {
+        "filename": "file2.parquet",
+        "partitionId": "root",
+        "numberOfRecords": 200,
+        "countApproximate": false,
+        "onlyContainsDataForThisPartition": true
+      }
+    ],
+    "writtenTime": 1718895301000
+  }
+}

@@ -27,36 +27,39 @@ import sleeper.core.record.process.status.ProcessRuns;
 import sleeper.core.record.process.status.ProcessStatusUpdate;
 
 import java.util.List;
+import java.util.function.Function;
 
 public class JsonProcessRunReporter {
     private JsonProcessRunReporter() {
     }
 
-    public static JsonSerializer<ProcessRuns> processRunsJsonSerializer() {
-        return ((processRuns, type, context) -> createProcessRunsJson(processRuns, context));
+    public static JsonSerializer<ProcessRuns> processRunsJsonSerializer(Function<ProcessStatusUpdate, Object> getType) {
+        return ((processRuns, type, context) -> createProcessRunsJson(processRuns, context, getType));
     }
 
-    private static JsonElement createProcessRunsJson(ProcessRuns runs, JsonSerializationContext context) {
+    private static JsonElement createProcessRunsJson(
+            ProcessRuns runs, JsonSerializationContext context, Function<ProcessStatusUpdate, Object> getType) {
         JsonArray jsonArray = new JsonArray();
         for (ProcessRun run : runs.getRunsLatestFirst()) {
-            jsonArray.add(createProcessRunJson(run, context));
+            jsonArray.add(createProcessRunJson(run, context, getType));
         }
         return jsonArray;
     }
 
-    private static JsonElement createProcessRunJson(ProcessRun run, JsonSerializationContext context) {
+    private static JsonElement createProcessRunJson(
+            ProcessRun run, JsonSerializationContext context, Function<ProcessStatusUpdate, Object> getType) {
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("taskId", run.getTaskId());
-        jsonObject.add("updates", createStatusUpdatesJson(run.getStatusUpdates(), context));
+        jsonObject.add("updates", createStatusUpdatesJson(run.getStatusUpdates(), context, getType));
         return jsonObject;
     }
 
     private static JsonElement createStatusUpdatesJson(
-            List<ProcessStatusUpdate> updates, JsonSerializationContext context) {
+            List<ProcessStatusUpdate> updates, JsonSerializationContext context, Function<ProcessStatusUpdate, Object> getType) {
         JsonArray jsonArray = new JsonArray();
         for (ProcessStatusUpdate update : updates) {
             JsonObject jsonObject = context.serialize(update).getAsJsonObject();
-            jsonObject.addProperty("type", update.getClass().getSimpleName());
+            jsonObject.add("type", context.serialize(getType.apply(update)));
             jsonArray.add(jsonObject);
         }
         return jsonArray;

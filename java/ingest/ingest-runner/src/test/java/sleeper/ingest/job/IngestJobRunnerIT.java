@@ -17,6 +17,12 @@ package sleeper.ingest.job;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import com.amazonaws.services.sqs.model.CreateQueueRequest;
+import com.amazonaws.services.sqs.model.CreateQueueResult;
+import com.amazonaws.services.sqs.model.Message;
+import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -28,6 +34,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.testcontainers.containers.localstack.LocalStackContainer;
+import org.testcontainers.containers.localstack.LocalStackContainer.Service;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
@@ -41,12 +48,18 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.record.Record;
+import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
+import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
+import sleeper.ingest.job.commit.IngestAddFilesCommitRequestSerDe;
+import sleeper.ingest.job.status.InMemoryIngestJobStatusStore;
+import sleeper.ingest.job.status.IngestJobStartedEvent;
+import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
@@ -56,11 +69,14 @@ import sleeper.statestore.StateStoreProvider;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
@@ -69,13 +85,19 @@ import java.util.stream.Stream;
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_RECORD_BATCH_TYPE;
+import static sleeper.configuration.properties.table.TableProperty.INGEST_FILES_COMMIT_ASYNC;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.ingestAddedFilesStatus;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.ingestStartedStatus;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.jobStatus;
 import static sleeper.ingest.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.ingest.testutils.ResultVerifier.readMergedRecordsFromPartitionDataFiles;
 import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
@@ -85,20 +107,26 @@ class IngestJobRunnerIT {
 
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
-            .withServices(LocalStackContainer.Service.S3);
+            .withServices(Service.S3, Service.SQS);
 
-    protected final AmazonS3 s3 = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
-    protected final S3AsyncClient s3Async = buildAwsV2Client(localStackContainer, LocalStackContainer.Service.S3, S3AsyncClient.builder());
+    protected final AmazonS3 s3 = buildAwsV1Client(localStackContainer, Service.S3, AmazonS3ClientBuilder.standard());
+    protected final S3AsyncClient s3Async = buildAwsV2Client(localStackContainer, Service.S3, S3AsyncClient.builder());
+    protected final AmazonSQS sqs = buildAwsV1Client(localStackContainer, Service.SQS, AmazonSQSClientBuilder.standard());
     protected final Configuration hadoopConfiguration = getHadoopConfiguration(localStackContainer);
 
     private final String instanceId = UUID.randomUUID().toString().substring(0, 18);
-    private final String tableName = UUID.randomUUID().toString();
-    private final String ingestDataBucketName = tableName + "-ingestdata";
-    private final String tableDataBucketName = tableName + "-tabledata";
+    private final String tableName = "test-table";
+    private final String tableId = UUID.randomUUID().toString();
+    private final String ingestDataBucketName = tableId + "-ingestdata";
+    private final String tableDataBucketName = tableId + "-tabledata";
+    private final String commitQueue = tableId + "-commit-queue";
+    private final IngestJobStatusStore statusStore = new InMemoryIngestJobStatusStore();
+    private String commitQueueUrl;
     @TempDir
     public java.nio.file.Path temporaryFolder;
     private String currentLocalIngestDirectory;
     private String currentLocalTableDataDirectory;
+    private Supplier<Instant> timeSupplier = Instant::now;
 
     private static Stream<Arguments> parametersForTests() {
         return Stream.of(
@@ -116,6 +144,14 @@ class IngestJobRunnerIT {
         s3.createBucket(ingestDataBucketName);
         currentLocalIngestDirectory = createTempDirectory(temporaryFolder, null).toString();
         currentLocalTableDataDirectory = createTempDirectory(temporaryFolder, null).toString();
+        commitQueueUrl = createFifoQueueGetUrl(commitQueue);
+    }
+
+    private String createFifoQueueGetUrl(String queueName) {
+        CreateQueueResult result = sqs.createQueue(new CreateQueueRequest()
+                .withQueueName(UUID.randomUUID().toString() + ".fifo")
+                .withAttributes(Map.of("FifoQueue", "true")));
+        return result.getQueueUrl();
     }
 
     private InstanceProperties getInstanceProperties(String fileSystemPrefix,
@@ -127,15 +163,20 @@ class IngestJobRunnerIT {
         instanceProperties.set(DATA_BUCKET, getTableDataBucket(fileSystemPrefix));
         instanceProperties.set(DEFAULT_INGEST_RECORD_BATCH_TYPE, recordBatchType);
         instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, partitionFileWriterType);
+        instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, commitQueueUrl);
         return instanceProperties;
     }
 
-    private TableProperties createTable(Schema schema, String fileSystemPrefix,
+    private TableProperties createTableProperties(Schema schema, String fileSystemPrefix,
             String recordBatchType,
             String partitionFileWriterType) {
-        InstanceProperties instanceProperties = getInstanceProperties(fileSystemPrefix, recordBatchType, partitionFileWriterType);
+        return createTableProperties(schema, getInstanceProperties(fileSystemPrefix, recordBatchType, partitionFileWriterType));
+    }
+
+    private TableProperties createTableProperties(Schema schema, InstanceProperties instanceProperties) {
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, tableName);
+        tableProperties.set(TABLE_ID, tableId);
         tableProperties.setSchema(schema);
         return tableProperties;
     }
@@ -346,7 +387,7 @@ class IngestJobRunnerIT {
         writeParquetFileForIngest(new Path("s3a://" + ingestDataBucketName + "/ingest/file2.parquet"), records2);
 
         IngestJob ingestJob = IngestJob.builder()
-                .tableName(tableName).id("id").files(List.of(
+                .tableName(tableName).tableId(tableId).id("id").files(List.of(
                         tableDataBucketName + "/ingest/file1.parquet",
                         ingestDataBucketName + "/ingest/file2.parquet"))
                 .build();
@@ -355,20 +396,12 @@ class IngestJobRunnerIT {
         expectedRecords.addAll(records2.recordList);
         String localDir = createTempDirectory(temporaryFolder, null).toString();
         InstanceProperties instanceProperties = getInstanceProperties("s3a://", "arrow", "async");
-        TableProperties tableProperties = createTable(records1.sleeperSchema, "s3a://", "arrow", "async");
+        TableProperties tableProperties = createTableProperties(records1.sleeperSchema, "s3a://", "arrow", "async");
         StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(records1.sleeperSchema);
+        fixTimes(Instant.parse("2024-06-20T15:33:01Z"), Instant.parse("2024-06-20T15:33:10Z"));
 
         // When
-        new IngestJobRunner(
-                new ObjectFactory(instanceProperties, null, createTempDirectory(temporaryFolder, null).toString()),
-                instanceProperties,
-                new FixedTablePropertiesProvider(tableProperties),
-                PropertiesReloader.neverReload(),
-                new FixedStateStoreProvider(tableProperties, stateStore),
-                localDir,
-                s3Async,
-                hadoopConfiguration)
-                .ingest(ingestJob);
+        runIngestJob(instanceProperties, tableProperties, stateStore, localDir, ingestJob);
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
@@ -385,6 +418,76 @@ class IngestJobRunnerIT {
                 new RecordGenerator.RecordListAndSchema(expectedRecords, records1.sleeperSchema),
                 actualFiles,
                 hadoopConfiguration);
+        assertThat(statusStore.getAllJobs(tableId)).containsExactly(
+                jobStatus(ingestJob, ProcessRun.builder()
+                        .taskId("test-task")
+                        .startedStatus(ingestStartedStatus(ingestJob, Instant.parse("2024-06-20T15:33:01Z")))
+                        .statusUpdate(ingestAddedFilesStatus(Instant.parse("2024-06-20T15:33:10Z"), 1))
+                        .build()));
+    }
+
+    @Test
+    void shouldCommitFilesAsynchronously() throws Exception {
+        // Given
+        String fileSystemPrefix = "s3a://";
+        String recordBatchType = "arrow";
+        String partitionFileWriterType = "async";
+        RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
+                new LongType(),
+                LongStream.range(-5, 5).boxed().collect(Collectors.toList()));
+        String localDir = createTempDirectory(temporaryFolder, null).toString();
+        InstanceProperties instanceProperties = getInstanceProperties(fileSystemPrefix, recordBatchType, partitionFileWriterType);
+        TableProperties tableProperties = createTableProperties(recordListAndSchema.sleeperSchema, instanceProperties);
+        tableProperties.set(INGEST_FILES_COMMIT_ASYNC, "true");
+        StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(recordListAndSchema.sleeperSchema);
+
+        List<String> files = writeParquetFilesForIngest(fileSystemPrefix, recordListAndSchema, "", 1);
+        IngestJob job = IngestJob.builder()
+                .tableName(tableName)
+                .tableId(tableId)
+                .id("some-job")
+                .files(files)
+                .build();
+        fixTimes(Instant.parse("2024-06-20T15:10:00Z"), Instant.parse("2024-06-20T15:10:01Z"));
+
+        // When
+        runIngestJob(instanceProperties, tableProperties, stateStore, localDir, job);
+
+        // Then
+        List<IngestAddFilesCommitRequest> commitRequests = getCommitRequestsFromQueue(instanceProperties);
+        List<FileReference> actualFiles = commitRequests.stream()
+                .map(IngestAddFilesCommitRequest::getFileReferences)
+                .flatMap(List::stream)
+                .collect(Collectors.toList());
+        List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
+        assertThat(Paths.get(localDir)).isEmptyDirectory();
+        assertThat(actualFiles)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
+                .containsExactly(fileReferenceFactory.rootFile("anyfilename", 10));
+        assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
+        ResultVerifier.assertOnSketch(
+                recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
+                recordListAndSchema,
+                actualFiles,
+                hadoopConfiguration);
+        assertThat(commitRequests).containsExactly(IngestAddFilesCommitRequest.builder()
+                .ingestJob(job)
+                .taskId("test-task")
+                .jobRunId("test-job-run")
+                .fileReferences(actualFiles)
+                .writtenTime(Instant.parse("2024-06-20T15:10:01Z"))
+                .build());
+    }
+
+    private List<IngestAddFilesCommitRequest> getCommitRequestsFromQueue(InstanceProperties instanceProperties) {
+        String commitQueueUrl = instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL);
+        ReceiveMessageResult result = sqs.receiveMessage(commitQueueUrl);
+        IngestAddFilesCommitRequestSerDe serDe = new IngestAddFilesCommitRequestSerDe();
+        return result.getMessages().stream()
+                .map(Message::getBody)
+                .map(serDe::fromJson)
+                .collect(Collectors.toList());
     }
 
     private void runIngestJob(
@@ -396,21 +499,46 @@ class IngestJobRunnerIT {
             String localDir,
             List<String> files) throws Exception {
         InstanceProperties instanceProperties = getInstanceProperties(fileSystemPrefix, recordBatchType, partitionFileWriterType);
-        TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(createTable(recordListAndSchema.sleeperSchema, fileSystemPrefix, recordBatchType, partitionFileWriterType));
-        StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tablePropertiesProvider.getByName(tableName), stateStore);
-        new IngestJobRunner(
+        TableProperties tableProperties = createTableProperties(recordListAndSchema.sleeperSchema, fileSystemPrefix, recordBatchType, partitionFileWriterType);
+        IngestJob job = IngestJob.builder()
+                .tableName(tableName)
+                .tableId(tableProperties.get(TABLE_ID))
+                .id("id")
+                .files(files)
+                .build();
+        runIngestJob(instanceProperties, tableProperties, stateStore, localDir, job);
+    }
+
+    private void runIngestJob(InstanceProperties instanceProperties,
+            TableProperties tableProperties,
+            StateStore stateStore,
+            String localDir,
+            IngestJob job) throws Exception {
+        statusStore.jobStarted(IngestJobStartedEvent.ingestJobStarted(job, timeSupplier.get()).taskId("test-task").jobRunId("test-job-run").build());
+        ingestJobRunner(instanceProperties, tableProperties, stateStore, localDir)
+                .ingest(job, "test-job-run");
+    }
+
+    private IngestJobRunner ingestJobRunner(InstanceProperties instanceProperties,
+            TableProperties tableProperties,
+            StateStore stateStore,
+            String localDir) throws Exception {
+        TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(tableProperties);
+        StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tableProperties, stateStore);
+        return new IngestJobRunner(
                 new ObjectFactory(instanceProperties, null, createTempDirectory(temporaryFolder, null).toString()),
                 instanceProperties,
                 tablePropertiesProvider,
                 PropertiesReloader.neverReload(),
-                stateStoreProvider,
+                stateStoreProvider, statusStore,
+                "test-task",
                 localDir,
-                s3Async,
-                hadoopConfiguration)
-                .ingest(IngestJob.builder()
-                        .tableName(tableName)
-                        .id("id")
-                        .files(files)
-                        .build());
+                s3Async, sqs,
+                hadoopConfiguration,
+                timeSupplier);
+    }
+
+    private void fixTimes(Instant... times) {
+        timeSupplier = List.of(times).iterator()::next;
     }
 }

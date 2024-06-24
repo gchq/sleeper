@@ -31,10 +31,11 @@ public interface IngestJobHandler {
      * state store.
      *
      * @param  job                       the ingest job to run
+     * @param  jobRunId                  the run ID for tracking the job in the status store
      * @return                           an {@link IngestResult} object
      * @throws IteratorCreationException if the Sleeper table iterator could not be created
      * @throws StateStoreException       if an error occurs adding the files to the state store
      * @throws IOException               if an error occurs reading or writing files
      */
-    IngestResult ingest(IngestJob job) throws IteratorCreationException, StateStoreException, IOException;
+    IngestResult ingest(IngestJob job, String jobRunId) throws IteratorCreationException, StateStoreException, IOException;
 }
