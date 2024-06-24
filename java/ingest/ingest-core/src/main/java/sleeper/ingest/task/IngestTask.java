@@ -100,12 +100,15 @@ public class IngestTask {
                 try {
                     jobStatusStore.jobStarted(ingestJobStarted(job, jobStartTime)
                             .taskId(taskId).jobRunId(jobRunId).startOfRun(true).build());
-                    IngestResult result = ingester.ingest(job);
+                    IngestResult result = ingester.ingest(job, jobRunId);
                     LOGGER.info("{} records were written", result.getRecordsWritten());
                     Instant jobFinishTime = timeSupplier.get();
                     RecordsProcessedSummary summary = new RecordsProcessedSummary(result.asRecordsProcessed(), jobStartTime, jobFinishTime);
                     jobStatusStore.jobFinished(ingestJobFinished(job, summary)
-                            .taskId(taskId).jobRunId(jobRunId).build());
+                            .taskId(taskId).jobRunId(jobRunId)
+                            .committedBySeparateFileUpdates(true)
+                            .fileReferencesAddedByJob(result.getFileReferenceList())
+                            .build());
                     taskFinishedBuilder.addJobSummary(summary);
                     message.completed(summary);
                     totalNumberOfMessagesProcessed++;

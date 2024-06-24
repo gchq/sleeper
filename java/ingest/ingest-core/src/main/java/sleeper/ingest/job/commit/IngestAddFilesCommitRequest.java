@@ -18,6 +18,7 @@ package sleeper.ingest.job.commit;
 import sleeper.core.statestore.FileReference;
 import sleeper.ingest.job.IngestJob;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 
@@ -30,6 +31,7 @@ public class IngestAddFilesCommitRequest {
     private final String taskId;
     private final String jobRunId;
     private final List<FileReference> fileReferences;
+    private final Instant writtenTime;
 
     private IngestAddFilesCommitRequest(Builder builder) {
         this.ingestJob = builder.ingestJob;
@@ -37,6 +39,10 @@ public class IngestAddFilesCommitRequest {
         this.taskId = builder.taskId;
         this.jobRunId = builder.jobRunId;
         this.fileReferences = Objects.requireNonNull(builder.fileReferences, "fileReferences must not be null");
+        this.writtenTime = builder.writtenTime;
+        if (ingestJob != null) {
+            Objects.requireNonNull(writtenTime, "writtenTime must not be null");
+        }
     }
 
     public static Builder builder() {
@@ -55,13 +61,21 @@ public class IngestAddFilesCommitRequest {
         return taskId;
     }
 
+    public String getJobRunId() {
+        return jobRunId;
+    }
+
     public List<FileReference> getFileReferences() {
         return fileReferences;
     }
 
+    public Instant getWrittenTime() {
+        return writtenTime;
+    }
+
     @Override
     public int hashCode() {
-        return Objects.hash(ingestJob, tableId, taskId, jobRunId, fileReferences);
+        return Objects.hash(ingestJob, tableId, taskId, jobRunId, fileReferences, writtenTime);
     }
 
     @Override
@@ -77,7 +91,8 @@ public class IngestAddFilesCommitRequest {
                 && Objects.equals(tableId, other.tableId)
                 && Objects.equals(taskId, other.taskId)
                 && Objects.equals(jobRunId, other.jobRunId)
-                && Objects.equals(fileReferences, other.fileReferences);
+                && Objects.equals(fileReferences, other.fileReferences)
+                && Objects.equals(writtenTime, other.writtenTime);
     }
 
     @Override
@@ -86,7 +101,8 @@ public class IngestAddFilesCommitRequest {
                 ", tableId=" + tableId +
                 ", taskId=" + taskId +
                 ", jobRunId=" + jobRunId +
-                ", fileReferences=" + fileReferences + "}";
+                ", fileReferences=" + fileReferences +
+                ", writtenTime=" + writtenTime + "}";
     }
 
     /**
@@ -98,6 +114,7 @@ public class IngestAddFilesCommitRequest {
         private String taskId;
         private String jobRunId;
         private List<FileReference> fileReferences;
+        private Instant writtenTime;
 
         /**
          * Sets the ingest job.
@@ -151,6 +168,17 @@ public class IngestAddFilesCommitRequest {
          */
         public Builder fileReferences(List<FileReference> fileReferences) {
             this.fileReferences = fileReferences;
+            return this;
+        }
+
+        /**
+         * Sets the time the files were written.
+         *
+         * @param  writtenTime the time
+         * @return             the builder for chaining
+         */
+        public Builder writtenTime(Instant writtenTime) {
+            this.writtenTime = writtenTime;
             return this;
         }
 

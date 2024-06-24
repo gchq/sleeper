@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.statestore.FileReference;
 import sleeper.ingest.job.IngestJob;
 
+import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -56,6 +57,7 @@ public class IngestAddFilesCommitRequestSerDeTest {
                 .taskId("test-task")
                 .jobRunId("test-job-run")
                 .fileReferences(List.of(file1, file2))
+                .writtenTime(Instant.parse("2024-06-20T14:55:01Z"))
                 .build();
 
         // When

@@ -19,7 +19,6 @@ package sleeper.core.statestore;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * A test helper to create file records for a state store.
@@ -89,9 +88,7 @@ public class AllReferencesToAFileTestHelper {
      * @return            the file
      */
     public static List<AllReferencesToAFile> filesWithReferences(Collection<FileReference> references) {
-        return AllReferencesToAFile
-                .newFilesWithReferences(references.stream())
-                .collect(Collectors.toUnmodifiableList());
+        return AllReferencesToAFile.newFilesWithReferences(references);
     }
 
 }

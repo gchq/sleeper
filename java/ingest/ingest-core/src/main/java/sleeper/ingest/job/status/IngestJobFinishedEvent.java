@@ -18,6 +18,7 @@ package sleeper.ingest.job.status;
 
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.AllReferencesToAFile;
+import sleeper.core.statestore.FileReference;
 import sleeper.ingest.job.IngestJob;
 
 import java.util.List;
@@ -202,6 +203,16 @@ public class IngestJobFinishedEvent {
          */
         public Builder filesAddedByJob(List<AllReferencesToAFile> files) {
             return numFilesAddedByJob(files.size());
+        }
+
+        /**
+         * Sets the files added during the job.
+         *
+         * @param  fileReferences the file references
+         * @return                the builder
+         */
+        public Builder fileReferencesAddedByJob(List<FileReference> fileReferences) {
+            return filesAddedByJob(AllReferencesToAFile.newFilesWithReferences(fileReferences));
         }
 
         /**

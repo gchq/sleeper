@@ -39,12 +39,14 @@ import sleeper.ingest.IngestRecordsFromIterator;
 import sleeper.ingest.IngestResult;
 import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.ingest.impl.commit.AddFilesToStateStore;
+import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.io.parquet.utils.HadoopPathUtils;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
@@ -64,20 +66,24 @@ public class IngestJobRunner implements IngestJobHandler {
     private final Configuration hadoopConfiguration;
     private final String taskId;
     private final StateStoreProvider stateStoreProvider;
+    private final IngestJobStatusStore statusStore;
     private final AmazonSQS sqsClient;
     private final IngestFactory ingestFactory;
     private final PropertiesReloader propertiesReloader;
+    private final Supplier<Instant> timeSupplier;
 
     public IngestJobRunner(ObjectFactory objectFactory,
             InstanceProperties instanceProperties,
             TablePropertiesProvider tablePropertiesProvider,
             PropertiesReloader propertiesReloader,
             StateStoreProvider stateStoreProvider,
+            IngestJobStatusStore statusStore,
             String taskId,
             String localDir,
             S3AsyncClient s3AsyncClient,
             AmazonSQS sqsClient,
-            Configuration hadoopConfiguration) {
+            Configuration hadoopConfiguration,
+            Supplier<Instant> timeSupplier) {
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.propertiesReloader = propertiesReloader;
@@ -85,7 +91,9 @@ public class IngestJobRunner implements IngestJobHandler {
         this.hadoopConfiguration = hadoopConfiguration;
         this.taskId = taskId;
         this.stateStoreProvider = stateStoreProvider;
+        this.statusStore = statusStore;
         this.sqsClient = sqsClient;
+        this.timeSupplier = timeSupplier;
         this.ingestFactory = IngestFactory.builder()
                 .objectFactory(objectFactory)
                 .localDir(localDir)
@@ -97,7 +105,7 @@ public class IngestJobRunner implements IngestJobHandler {
     }
 
     @Override
-    public IngestResult ingest(IngestJob job) throws IteratorCreationException, StateStoreException, IOException {
+    public IngestResult ingest(IngestJob job, String jobRunId) throws IteratorCreationException, StateStoreException, IOException {
         propertiesReloader.reloadIfNeeded();
         TableProperties tableProperties = tablePropertiesProvider.getByName(job.getTableName());
         Schema schema = tableProperties.getSchema();
@@ -134,7 +142,7 @@ public class IngestJobRunner implements IngestJobHandler {
         // Run the ingest
         IngestResult result;
         try (IngestCoordinator<Record> ingestCoordinator = ingestFactory.ingestCoordinatorBuilder(tableProperties)
-                .addFilesToStateStore(addFilesToStateStore(job, tableProperties))
+                .addFilesToStateStore(addFilesToStateStore(job, jobRunId, tableProperties))
                 .build()) {
             result = new IngestRecordsFromIterator(ingestCoordinator, concatenatingIterator).write();
         }
@@ -142,12 +150,13 @@ public class IngestJobRunner implements IngestJobHandler {
         return result;
     }
 
-    private AddFilesToStateStore addFilesToStateStore(IngestJob job, TableProperties tableProperties) {
+    private AddFilesToStateStore addFilesToStateStore(IngestJob job, String jobRunId, TableProperties tableProperties) {
         if (tableProperties.getBoolean(INGEST_FILES_COMMIT_ASYNC)) {
             return AddFilesToStateStore.bySqs(sqsClient, instanceProperties,
-                    requestBuilder -> requestBuilder.ingestJob(job).taskId(taskId));
+                    requestBuilder -> requestBuilder.ingestJob(job).taskId(taskId).jobRunId(jobRunId).writtenTime(timeSupplier.get()));
         } else {
-            return AddFilesToStateStore.synchronous(stateStoreProvider.getStateStore(tableProperties));
+            return AddFilesToStateStore.synchronous(stateStoreProvider.getStateStore(tableProperties), statusStore,
+                    updateBuilder -> updateBuilder.job(job).taskId(taskId).jobRunId(jobRunId).writtenTime(timeSupplier.get()));
         }
     }
 }
