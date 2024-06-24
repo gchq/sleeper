@@ -24,6 +24,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Named;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -132,8 +133,11 @@ class BulkImportJobDriverIT {
     private final Instant validationTime = Instant.parse("2023-04-05T16:00:01Z");
     private final Instant startTime = Instant.parse("2023-04-05T16:01:01Z");
     private final Instant endTime = Instant.parse("2023-04-05T16:01:11Z");
+    private InstanceProperties instanceProperties;
+    private TableProperties tableProperties;
     private TablePropertiesProvider tablePropertiesProvider;
     private StateStoreProvider stateStoreProvider;
+    private String dataDir;
 
     @BeforeAll
     public static void setSparkProperties() {
@@ -145,6 +149,15 @@ class BulkImportJobDriverIT {
     public static void clearSparkProperties() {
         System.clearProperty("spark.master");
         System.clearProperty("spark.app.name");
+    }
+
+    @BeforeEach
+    void setUp() {
+        dataDir = folder.toString();
+        instanceProperties = createInstanceProperties(s3Client, dataDir);
+        tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
+        stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, getHadoopConfiguration(localStackContainer));
+        tableProperties = createTableProperties(instanceProperties);
     }
 
     private static AmazonS3 createS3Client() {
@@ -184,9 +197,6 @@ class BulkImportJobDriverIT {
         new DynamoDBStateStoreCreator(instanceProperties, dynamoDBClient).create();
         new S3StateStoreCreator(instanceProperties, dynamoDBClient).create();
         new TransactionLogStateStoreCreator(instanceProperties, dynamoDBClient).create();
-        tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
-        stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, getHadoopConfiguration(localStackContainer));
-
         return instanceProperties;
     }
 
@@ -310,10 +320,6 @@ class BulkImportJobDriverIT {
     @MethodSource("getParameters")
     void shouldImportDataSinglePartition(BulkImportJobRunner runner) throws IOException, StateStoreException {
         // Given
-        // - Instance and table properties
-        String dataDir = folder.toString();
-        InstanceProperties instanceProperties = createInstanceProperties(s3Client, dataDir);
-        TableProperties tableProperties = createTableProperties(instanceProperties);
         // - Write some data to be imported
         List<Record> records = getRecords();
         writeRecordsToFile(records, dataDir + "/import/a.parquet");
@@ -363,10 +369,6 @@ class BulkImportJobDriverIT {
     @MethodSource("getParameters")
     void shouldImportDataSinglePartitionIdenticalRowKeyDifferentSortKeys(BulkImportJobRunner runner) throws IOException, StateStoreException {
         // Given
-        // - Instance and table properties
-        String dataDir = folder.toString();
-        InstanceProperties instanceProperties = createInstanceProperties(s3Client, dataDir);
-        TableProperties tableProperties = createTableProperties(instanceProperties);
         // - Write some data to be imported
         List<Record> records = getRecordsIdenticalRowKey();
         writeRecordsToFile(records, dataDir + "/import/a.parquet");
@@ -416,10 +418,6 @@ class BulkImportJobDriverIT {
     @MethodSource("getParameters")
     void shouldImportDataMultiplePartitions(BulkImportJobRunner runner) throws IOException, StateStoreException {
         // Given
-        // - Instance and table properties
-        String dataDir = folder.toString();
-        InstanceProperties instanceProperties = createInstanceProperties(s3Client, dataDir);
-        TableProperties tableProperties = createTableProperties(instanceProperties);
         // - Write some data to be imported
         List<Record> records = getRecords();
         writeRecordsToFile(records, dataDir + "/import/a.parquet");
@@ -462,10 +460,6 @@ class BulkImportJobDriverIT {
     @MethodSource("getParameters")
     void shouldImportLargeAmountOfDataMultiplePartitions(BulkImportJobRunner runner) throws IOException, StateStoreException {
         // Given
-        // - Instance and table properties
-        String dataDir = folder.toString();
-        InstanceProperties instanceProperties = createInstanceProperties(s3Client, dataDir);
-        TableProperties tableProperties = createTableProperties(instanceProperties);
         // - Write some data to be imported
         List<Record> records = getLotsOfRecords();
         writeRecordsToFile(records, dataDir + "/import/a.parquet");
@@ -537,10 +531,6 @@ class BulkImportJobDriverIT {
     @MethodSource("getParameters")
     void shouldNotThrowExceptionIfProvidedWithDirectoryWhichContainsParquetAndNonParquetFiles(BulkImportJobRunner runner) throws IOException, StateStoreException {
         // Given
-        // - Instance and table properties
-        String dataDir = folder.toString();
-        InstanceProperties instanceProperties = createInstanceProperties(s3Client, dataDir);
-        TableProperties tableProperties = createTableProperties(instanceProperties);
         // - Write some data to be imported
         List<Record> records = getRecords();
         writeRecordsToFile(records, dataDir + "/import/a.parquet");
@@ -578,12 +568,8 @@ class BulkImportJobDriverIT {
     @MethodSource("getParameters")
     void shouldImportDataWithS3StateStore(BulkImportJobRunner runner) throws IOException, StateStoreException {
         // Given
-        // - Instance and table properties
-        String dataDir = folder.toString();
-        InstanceProperties instanceProperties = createInstanceProperties(s3Client, dataDir);
-        TableProperties tableProperties = createTableProperties(instanceProperties);
+        // - Set state store type
         tableProperties.set(STATESTORE_CLASSNAME, S3StateStore.class.getName());
-        tablePropertiesStore(instanceProperties).save(tableProperties);
         // - Write some data to be imported
         List<Record> records = getRecords();
         writeRecordsToFile(records, dataDir + "/import/a.parquet");
