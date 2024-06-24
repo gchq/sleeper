@@ -25,6 +25,7 @@ import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Named;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -49,6 +50,7 @@ import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.record.Record;
 import sleeper.core.record.RecordComparator;
+import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
@@ -59,6 +61,7 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.status.InMemoryIngestJobStatusStore;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.io.parquet.record.ParquetRecordReader;
@@ -95,7 +98,10 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
-import static sleeper.ingest.job.status.IngestJobStatusTestHelper.finishedIngestJobWithValidation;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.ingestAcceptedStatus;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.ingestFinishedStatus;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.jobStatus;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.validatedIngestStartedStatus;
 import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobAccepted;
 import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
@@ -342,9 +348,15 @@ class BulkImportJobDriverIT {
         sortRecords(expectedRecords);
         sortRecords(readRecords);
         assertThat(readRecords).isEqualTo(expectedRecords);
-        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID))).containsExactly(
-                finishedIngestJobWithValidation(job.toIngestJob(), taskId, validationTime,
-                        summary(startTime, endTime, records.size(), records.size())));
+        IngestJob ingestJob = job.toIngestJob();
+        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID)))
+                .containsExactly(jobStatus(ingestJob, ProcessRun.builder()
+                        .taskId(taskId)
+                        .startedStatus(ingestAcceptedStatus(ingestJob, validationTime))
+                        .statusUpdate(validatedIngestStartedStatus(ingestJob, startTime))
+                        .finishedStatus(ingestFinishedStatus(ingestJob,
+                                summary(startTime, endTime, 200, 200), 1))
+                        .build()));
     }
 
     @ParameterizedTest
@@ -389,9 +401,15 @@ class BulkImportJobDriverIT {
         sortRecords(expectedRecords);
         sortRecords(readRecords);
         assertThat(readRecords).isEqualTo(expectedRecords);
-        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID))).containsExactly(
-                finishedIngestJobWithValidation(job.toIngestJob(), taskId, validationTime,
-                        summary(startTime, endTime, records.size(), records.size())));
+        IngestJob ingestJob = job.toIngestJob();
+        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID)))
+                .containsExactly(jobStatus(ingestJob, ProcessRun.builder()
+                        .taskId(taskId)
+                        .startedStatus(ingestAcceptedStatus(ingestJob, validationTime))
+                        .statusUpdate(validatedIngestStartedStatus(ingestJob, startTime))
+                        .finishedStatus(ingestFinishedStatus(ingestJob,
+                                summary(startTime, endTime, 100, 100), 1))
+                        .build()));
     }
 
     @ParameterizedTest
@@ -429,9 +447,15 @@ class BulkImportJobDriverIT {
                 .containsExactlyInAnyOrder(
                         tuple(100L, leftPartition),
                         tuple(100L, rightPartition));
-        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID))).containsExactly(
-                finishedIngestJobWithValidation(job.toIngestJob(), taskId, validationTime,
-                        summary(startTime, endTime, records.size(), records.size())));
+        IngestJob ingestJob = job.toIngestJob();
+        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID)))
+                .containsExactly(jobStatus(ingestJob, ProcessRun.builder()
+                        .taskId(taskId)
+                        .startedStatus(ingestAcceptedStatus(ingestJob, validationTime))
+                        .statusUpdate(validatedIngestStartedStatus(ingestJob, startTime))
+                        .finishedStatus(ingestFinishedStatus(ingestJob,
+                                summary(startTime, endTime, 200, 200), 2))
+                        .build()));
     }
 
     @ParameterizedTest
@@ -498,9 +522,15 @@ class BulkImportJobDriverIT {
                     })
                     .forEach(read -> assertThat(read).isSortedAccordingTo(new RecordComparator(getSchema())));
         }
-        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID))).containsExactly(
-                finishedIngestJobWithValidation(job.toIngestJob(), taskId, validationTime,
-                        summary(startTime, endTime, records.size(), records.size())));
+        IngestJob ingestJob = job.toIngestJob();
+        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID)))
+                .containsExactly(jobStatus(ingestJob, ProcessRun.builder()
+                        .taskId(taskId)
+                        .startedStatus(ingestAcceptedStatus(ingestJob, validationTime))
+                        .statusUpdate(validatedIngestStartedStatus(ingestJob, startTime))
+                        .finishedStatus(ingestFinishedStatus(ingestJob,
+                                summary(startTime, endTime, 100000, 100000), 50))
+                        .build()));
     }
 
     @ParameterizedTest
@@ -533,9 +563,15 @@ class BulkImportJobDriverIT {
                 .extracting(FileReference::getNumberOfRecords, FileReference::getPartitionId,
                         file -> readRecords(file.getFilename(), schema))
                 .containsExactly(tuple(200L, expectedPartitionId, records));
-        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID))).containsExactly(
-                finishedIngestJobWithValidation(job.toIngestJob(), taskId, validationTime,
-                        summary(startTime, endTime, records.size(), records.size())));
+        IngestJob ingestJob = job.toIngestJob();
+        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID)))
+                .containsExactly(jobStatus(ingestJob, ProcessRun.builder()
+                        .taskId(taskId)
+                        .startedStatus(ingestAcceptedStatus(ingestJob, validationTime))
+                        .statusUpdate(validatedIngestStartedStatus(ingestJob, startTime))
+                        .finishedStatus(ingestFinishedStatus(ingestJob,
+                                summary(startTime, endTime, 200, 200), 1))
+                        .build()));
     }
 
     @ParameterizedTest
@@ -582,9 +618,20 @@ class BulkImportJobDriverIT {
         sortRecords(expectedRecords);
         sortRecords(readRecords);
         assertThat(readRecords).isEqualTo(expectedRecords);
-        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID))).containsExactly(
-                finishedIngestJobWithValidation(job.toIngestJob(), taskId, validationTime,
-                        summary(startTime, endTime, records.size(), records.size())));
+        IngestJob ingestJob = job.toIngestJob();
+        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID)))
+                .containsExactly(jobStatus(ingestJob, ProcessRun.builder()
+                        .taskId(taskId)
+                        .startedStatus(ingestAcceptedStatus(ingestJob, validationTime))
+                        .statusUpdate(validatedIngestStartedStatus(ingestJob, startTime))
+                        .finishedStatus(ingestFinishedStatus(ingestJob,
+                                summary(startTime, endTime, 200, 200), 1))
+                        .build()));
+    }
+
+    @Test
+    void shouldImportDataWithAsynchronousCommitOfNewFiles() {
+
     }
 
     private BulkImportJob.Builder jobForTable(TableProperties tableProperties) {
